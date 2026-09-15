@@ -1,0 +1,102 @@
+<?php
+/**
+ * Tiny render layer — escaping, component includes and score formatting.
+ * Deliberately dependency-free: no framework, no autoloader, no build step.
+ */
+
+declare(strict_types=1);
+
+if (!function_exists('e')) {
+    /** Escape for HTML text/attribute context. */
+    function e(?string $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+}
+
+if (!function_exists('component')) {
+    /**
+     * Render a component from /components. The full dashboard array is passed
+     * in as $data so components stay stateless and never read globals.
+     */
+    function component(string $name, array $data = []): void
+    {
+        $file = dirname(__DIR__) . '/components/' . basename($name) . '.php';
+
+        if (!is_file($file)) {
+            return;
+        }
+
+        (static function (string $__file, array $data): void {
+            require $__file;
+        })($file, $data);
+    }
+}
+
+if (!function_exists('has_value')) {
+    /** True when a metric carries a real (non-placeholder) value. */
+    function has_value(mixed $value): bool
+    {
+        return $value !== null && $value !== '';
+    }
+}
+
+if (!function_exists('score_text')) {
+    /** Display value for a score: the number, or an em dash while empty. */
+    function score_text(mixed $value): string
+    {
+        return has_value($value) ? (string) $value : '—';
+    }
+}
+
+if (!function_exists('score_ratio')) {
+    /** Progress ratio 0..1 for rings and bars. Empty values render as 0. */
+    function score_ratio(mixed $value, int|float $max = 100): float
+    {
+        if (!has_value($value) || $max <= 0) {
+            return 0.0;
+        }
+
+        return max(0.0, min(1.0, (float) $value / (float) $max));
+    }
+}
+
+if (!function_exists('state_class')) {
+    /** `is-empty` / `is-filled` modifier used across every data component. */
+    function state_class(mixed $value): string
+    {
+        return has_value($value) ? 'is-filled' : 'is-empty';
+    }
+}
+
+if (!function_exists('today_parts')) {
+    /**
+     * Human date for the overview header, split so the weekday can be
+     * dropped on very narrow screens: ['weekday' => 'dinsdag', 'date' => '15 september'].
+     */
+    function today_parts(?DateTimeInterface $date = null): array
+    {
+        $date = $date ?? new DateTimeImmutable('now');
+
+        $days = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
+        $months = [
+            1 => 'januari', 'februari', 'maart', 'april', 'mei', 'juni',
+            'juli', 'augustus', 'september', 'oktober', 'november', 'december',
+        ];
+
+        return [
+            'weekday' => $days[(int) $date->format('w')],
+            'date'    => sprintf('%d %s', (int) $date->format('j'), $months[(int) $date->format('n')]),
+        ];
+    }
+}
+
+if (!function_exists('today_label')) {
+    /** Full human date, e.g. "dinsdag 15 september". */
+    function today_label(?DateTimeInterface $date = null): string
+    {
+        $parts = today_parts($date);
+
+        return $parts['weekday'] . ' ' . $parts['date'];
+    }
+}

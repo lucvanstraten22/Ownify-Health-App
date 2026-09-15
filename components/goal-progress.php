@@ -1,0 +1,46 @@
+<?php
+/** Personal goal progress — answers "how close am I to my goal?". */
+declare(strict_types=1);
+
+$goal    = $data['goal'];
+$isSet   = $goal['state'] !== 'unset' && has_value($goal['progress']);
+$ratio   = score_ratio($goal['progress'], 100);
+?>
+<section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
+
+    <div class="card__head card__head--compact">
+        <span class="icon-tile" aria-hidden="true"><?= icon('target') ?></span>
+        <h2 class="card__eyebrow" id="goal-title"><?= e($goal['title']) ?></h2>
+    </div>
+
+    <div class="goal__headline">
+        <p class="goal__name"><?= e($isSet ? (string) $goal['name'] : $goal['headline']) ?></p>
+        <p class="goal__figure">
+            <span class="goal__percent" data-count-to="<?= $isSet ? e((string) $goal['progress']) : '' ?>"><?= e(score_text($goal['progress'])) ?></span><?php if ($isSet): ?><span class="goal__unit-sign">%</span><?php endif; ?>
+        </p>
+    </div>
+
+    <div class="meter meter--goal" role="img"
+         aria-label="<?= $isSet ? e((string) $goal['progress']) . '% ' . e($goal['unit']) : 'Nog geen doel ingesteld' ?>">
+        <span class="meter__fill" data-bar data-progress="<?= e((string) round($ratio, 4)) ?>"></span>
+    </div>
+
+    <ol class="milestones" role="list">
+        <?php foreach ($goal['milestones'] as $milestone): ?>
+            <li class="milestones__item<?= $milestone['reached'] ? ' is-reached' : '' ?>">
+                <span class="milestones__dot" aria-hidden="true"></span>
+                <span class="milestones__label"><?= e($milestone['label']) ?></span>
+            </li>
+        <?php endforeach; ?>
+    </ol>
+
+    <p class="card__hint card__hint--plain"><?= e($isSet ? $goal['unit'] : $goal['description']) ?></p>
+
+    <?php if (!$isSet): ?>
+        <div class="goal__action">
+            <button type="button" class="btn btn--ghost" disabled><?= e($goal['cta']['label']) ?></button>
+            <span class="goal__note"><?= e($goal['cta']['note']) ?></span>
+        </div>
+    <?php endif; ?>
+
+</section>
