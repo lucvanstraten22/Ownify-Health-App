@@ -33,6 +33,22 @@ if (!function_exists('component')) {
     }
 }
 
+if (!function_exists('page')) {
+    /** Render a screen from /pages. Same contract as component(). */
+    function page(string $name, array $data = []): void
+    {
+        $file = dirname(__DIR__) . '/pages/' . basename($name) . '.php';
+
+        if (!is_file($file)) {
+            return;
+        }
+
+        (static function (string $__file, array $data): void {
+            require $__file;
+        })($file, $data);
+    }
+}
+
 if (!function_exists('has_value')) {
     /** True when a metric carries a real (non-placeholder) value. */
     function has_value(mixed $value): bool

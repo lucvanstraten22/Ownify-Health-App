@@ -1,0 +1,224 @@
+/* ==========================================================================
+   ai.css — the AI extension layer.
+
+   No new colours, radii, spacing or type: every value below comes from the
+   tokens in theme.css. This file only arranges the one screen the assistant
+   will live on.
+   ========================================================================== */
+
+/* Same ground as the dashboard backdrop, mirrored, so the two screens read as
+   two corners of one room rather than two documents. */
+.screen--ai {
+    background:
+        radial-gradient(86% 48% at 80% 2%, rgba(60, 158, 114, 0.16), transparent 62%),
+        radial-gradient(72% 44% at 10% 24%, rgba(191, 168, 99, 0.08), transparent 60%),
+        radial-gradient(120% 64% at 50% 104%, rgba(120, 165, 96, 0.08), transparent 62%),
+        linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+}
+
+.screen__scroll--ai {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Top — the way back, and nothing else
+   -------------------------------------------------------------------------- */
+.ai-top {
+    display: flex;
+    align-items: center;
+    flex: none;
+    padding-top: max(var(--space-4), calc(var(--safe-top) + var(--space-3)));
+    padding-bottom: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   Middle — intentionally empty
+   -------------------------------------------------------------------------- */
+.ai-main {
+    display: grid;
+    place-items: center;
+    flex: 1 1 auto;
+    padding-block: var(--space-6);
+}
+
+.ai-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.ai-empty__title {
+    margin-top: var(--space-6);
+    font-size: var(--fs-brand);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+.ai-empty__status {
+    margin-top: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   The assistant, as an abstract glass orb.
+   The dotted ring is the dashboard's "no data yet" idiom, reused here.
+   -------------------------------------------------------------------------- */
+.orb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(120px, 36vw, 152px);
+    aspect-ratio: 1;
+}
+
+.orb__ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    animation: orb-rotate 72s linear infinite;
+}
+
+.orb__ring circle {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.26);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-dasharray: 0.5 9;
+}
+
+/* A light source behind the glass, not a coloured disc. Kept low-contrast
+   with a long falloff so it never bands on the dark ground. */
+.orb__glow {
+    position: absolute;
+    inset: -34%;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+        rgba(60, 158, 114, 0.16) 0%,
+        rgba(60, 158, 114, 0.08) 26%,
+        rgba(60, 158, 114, 0.02) 48%,
+        transparent 72%);
+}
+
+.orb__core {
+    position: absolute;
+    inset: 16%;
+    border-radius: 50%;
+    background: radial-gradient(120% 120% at 30% 22%,
+        rgba(255, 255, 255, 0.24) 0%,
+        rgba(255, 255, 255, 0.09) 34%,
+        rgba(255, 255, 255, 0.02) 62%,
+        rgba(255, 255, 255, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    -webkit-backdrop-filter: blur(14px) saturate(125%);
+    backdrop-filter: blur(14px) saturate(125%);
+    /* Rim light on top, depth underneath: reads as a sphere of glass. */
+    box-shadow:
+        inset 0 2px 1px rgba(255, 255, 255, 0.24),
+        inset 0 -20px 30px rgba(0, 0, 0, 0.20),
+        0 20px 42px rgba(0, 0, 0, 0.28);
+    animation: orb-breathe 7s ease-in-out infinite;
+}
+
+/* Specular sheen. */
+.orb__core::after {
+    content: "";
+    position: absolute;
+    inset: 9% 20% 54% 17%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, 0.30), transparent 72%);
+    filter: blur(3px);
+}
+
+@keyframes orb-rotate {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes orb-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
+}
+
+/* --------------------------------------------------------------------------
+   Bottom — space reserved for the future input interface.
+   Deliberately inert: no field, no caret, no send control.
+   -------------------------------------------------------------------------- */
+.ai-composer {
+    flex: none;
+    padding-bottom: max(var(--space-4), calc(var(--safe-bottom) + var(--space-4)));
+}
+
+.ai-composer__slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+    /* Outline only, never a filled field: this must not read as a usable box. */
+    border: 1px dashed rgba(255, 255, 255, 0.10);
+    border-radius: var(--radius-md);
+    background: none;
+}
+
+.ai-composer__note {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Right-edge affordance on the dashboard — the gesture, made visible.
+   -------------------------------------------------------------------------- */
+.edge-handle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    z-index: 12;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 96px;
+    transform: translateY(-50%);
+    transition: opacity var(--transition-fast);
+}
+
+.edge-handle__grip {
+    display: block;
+    width: 3px;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.22);
+    transition: background-color var(--transition-fast), height var(--transition-fast);
+}
+
+.edge-handle:active .edge-handle__grip,
+.edge-handle:focus-visible .edge-handle__grip {
+    height: 54px;
+    background: rgba(255, 255, 255, 0.42);
+}
+
+/* Out of the way once the assistant layer is in front. */
+.deck[data-state="open"] .edge-handle,
+.deck[data-state="moving"] .edge-handle {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .edge-handle:hover .edge-handle__grip {
+        height: 54px;
+        background: rgba(255, 255, 255, 0.36);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Larger screens — the layer stays a phone-sized sheet, centred like the
+   dashboard, never stretched into a desktop panel.
+   -------------------------------------------------------------------------- */
+@media (min-width: 900px) {
+    .ai-top { padding-top: var(--space-5); }
+    .ai-composer { padding-bottom: var(--space-5); }
+}

@@ -1,9 +1,10 @@
 <?php
 /**
- * Home / Overview — the only page in this version.
+ * Application shell.
  *
- * Composition only: all copy and data come from config/dashboard.php,
- * all markup from /components, all styling from /assets/css.
+ * Holds the two screens of the app side by side in one document so the swipe
+ * between them can follow the finger. Page content lives in /pages, all copy
+ * and data in config/dashboard.php.
  */
 
 declare(strict_types=1);
@@ -36,36 +37,24 @@ $focus = $data['focus'];
     <link rel="stylesheet" href="assets/css/theme.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/ai.css">
 </head>
 <body class="app">
 
     <a class="skip-link" href="#main">Naar de inhoud</a>
 
+    <!-- Shared ground behind both screens: the visual thread between them. -->
     <div class="app__backdrop" aria-hidden="true"></div>
 
-    <?php component('header', $data); ?>
-
-    <main class="app__main" id="main" tabindex="-1">
-        <div class="shell stack">
-            <?php
-            component('health-score', $data);
-            component('secondary-scores', $data);
-            component('goal-progress', $data);
-            component('insights', $data);
-            component('patterns', $data);
-            component('recommendation', $data);
-            component('leaderboard', $data);
-            ?>
-            <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>
-        </div>
-    </main>
-
-    <?php
-    component('scroll-top', $data);
-    component('bottom-navigation', $data);
-    ?>
+    <div class="deck" data-deck>
+        <?php
+        page('overview', $data);
+        page('ai', $data);
+        ?>
+    </div>
 
     <script src="assets/js/dashboard.js" defer></script>
     <script src="assets/js/interactions.js" defer></script>
+    <script src="assets/js/swipe-navigation.js" defer></script>
 </body>
 </html>

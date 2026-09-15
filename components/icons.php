@@ -53,6 +53,12 @@ if (!function_exists('icon')) {
                 // scroll to top
                 'chevron'  => '<path d="M6.8 14.4 12 9.2l5.2 5.2"/>',
 
+                // back to the previous screen
+                'chevron-left' => '<path d="M14.4 6.8 9.2 12l5.2 5.2"/>',
+
+                // edge affordance towards the assistant layer
+                'chevron-right' => '<path d="M9.6 6.8 14.8 12l-5.2 5.2"/>',
+
                 // empty-state marker
                 'lock'     => '<rect x="5" y="10.5" width="14" height="9.5" rx="2.6"/><path d="M8.4 10.5V8.2a3.6 3.6 0 0 1 7.2 0v2.3"/>',
             ];

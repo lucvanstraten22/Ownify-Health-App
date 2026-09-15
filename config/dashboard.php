@@ -218,6 +218,22 @@ return [
         ['id' => 'community',       'label' => 'Community',       'icon' => null,        'active' => false],
     ],
 
+    /* -------------------------------------------------- AI extension layer
+     * The assistant itself does not exist yet: no model, no API, no messages.
+     * Only the screen and the gesture that opens it are implemented, so the
+     * copy below describes the reserved space and nothing more.
+     */
+    'ai' => [
+        'title'   => 'Assistent',
+        'status'  => 'Binnenkort beschikbaar',
+        'open'    => ['aria' => 'Assistent openen — of veeg naar links'],
+        'back'    => ['label' => 'Overzicht', 'aria' => 'Terug naar je overzicht'],
+        'composer' => [
+            'note' => 'Hier komt je invoerveld',
+            'aria' => 'Gereserveerde ruimte voor het toekomstige invoerveld',
+        ],
+    ],
+
     /* -------------------------------------------------- footer note */
     'disclaimer' => 'Voorbeeldweergave — er zijn nog geen persoonlijke gegevens gekoppeld.',
 ];

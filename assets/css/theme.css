@@ -74,6 +74,13 @@
     --transition-slow: 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
     --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
 
+    /* Screen-to-screen transition: same family as the micro-interactions,
+       just long enough to read as a push and short enough to feel instant. */
+    --screen-duration: 280ms;
+    --screen-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    /* How far the dashboard trails behind the incoming layer (parallax). */
+    --screen-parallax: 24%;
+
     /* --- layout ---------------------------------------------------------- */
     /* One source of truth for the page column: content, header, tab bar and
        the floating control all align to --shell-w. */
@@ -100,14 +107,17 @@
 *::after { box-sizing: border-box; }
 
 html {
+    height: 100%;
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
 }
 
+/* The document itself does not scroll — each screen owns its own scroller,
+   so a whole screen can be translated as one layer during the swipe. */
 body {
     margin: 0;
-    min-height: 100svh;
-    overflow-x: clip;
+    height: 100%;
+    overflow: hidden;
     background-color: var(--bg-deep);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -156,6 +166,65 @@ button {
         radial-gradient(120% 70% at 50% 104%, rgba(120, 165, 96, 0.08), transparent 60%),
         linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
 }
+
+/* --------------------------------------------------------------------------
+   Screen deck — the two layers of the app, side by side in one document.
+   -------------------------------------------------------------------------- */
+.deck {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+}
+
+.screen {
+    position: absolute;
+    inset: 0;
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--screen-duration) var(--screen-ease);
+    /* Vertical panning and pinch-zoom stay with the browser; horizontal
+       movement is the only thing the swipe handler ever sees. */
+    touch-action: pan-y pinch-zoom;
+}
+
+.screen--overview { z-index: 1; }
+
+/* Starts parked just off the right edge; the gesture brings it in. */
+.screen--ai {
+    z-index: 2;
+    transform: translate3d(100%, 0, 0);
+}
+
+/* The sheet edge only exists while the layer is on screen. */
+.deck[data-state="moving"] .screen--ai,
+.deck[data-state="open"] .screen--ai {
+    box-shadow: -18px 0 42px rgba(0, 0, 0, 0.34), inset 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Each screen scrolls on its own. pan-y hands vertical movement straight to
+   the browser, so only horizontal gestures ever reach the swipe handler. */
+.screen__scroll {
+    position: absolute;
+    inset: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+}
+
+.screen__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--screen-duration) ease;
+}
+
+/* While a finger is on the glass, the layers follow it directly. */
+.deck.is-dragging .screen,
+.deck.is-dragging .screen__scrim { transition: none; }
 
 /* Single alignment rule for the whole page: header, content and tab bar. */
 .shell {

@@ -11,18 +11,29 @@
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    /** The overview screen scrolls inside its own container, not the window. */
+    function overviewScroller() {
+        return document.querySelector('[data-screen="overview"] [data-scroller]');
+    }
+
+    function scrollToTop(scroller) {
+        if (!scroller) { return; }
+        scroller.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+
     /* ------------------------------------------------ scroll-linked chrome */
 
     function scrollChrome() {
         var header = document.querySelector('[data-header]');
         var fab = document.querySelector('[data-scroll-top]');
+        var scroller = overviewScroller();
         var ticking = false;
 
-        if (!header && !fab) { return; }
+        if (!scroller || (!header && !fab)) { return; }
 
         function update() {
             ticking = false;
-            var y = window.scrollY || window.pageYOffset;
+            var y = scroller.scrollTop;
 
             if (header) {
                 header.classList.toggle('is-scrolled', y > 8);
@@ -42,7 +53,7 @@
             }
         }
 
-        window.addEventListener('scroll', function () {
+        scroller.addEventListener('scroll', function () {
             if (ticking) { return; }
             ticking = true;
             window.requestAnimationFrame(update);
@@ -50,7 +61,7 @@
 
         if (fab) {
             fab.addEventListener('click', function () {
-                window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+                scrollToTop(scroller);
                 var main = document.getElementById('main');
                 if (main) { main.focus({ preventScroll: true }); }
             });
@@ -72,6 +83,8 @@
             return;
         }
 
+        var root = items[0].closest('[data-scroller]') || null;
+
         var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry, index) {
                 if (!entry.isIntersecting) { return; }
@@ -81,7 +94,7 @@
                 }, delay);
                 observer.unobserve(entry.target);
             });
-        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+        }, { root: root, rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
 
         Array.prototype.forEach.call(items, function (item) { observer.observe(item); });
     }
@@ -98,7 +111,7 @@
                 // version; it returns the user to the top of the overview.
                 // Other tabs stay inert rather than faking navigation.
                 if (tab.classList.contains('is-active')) {
-                    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+                    scrollToTop(overviewScroller());
                 }
                 tab.blur();
             });

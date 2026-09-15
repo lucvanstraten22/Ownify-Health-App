@@ -115,13 +115,17 @@
             return;
         }
 
+        // Each screen scrolls inside its own container, so that container —
+        // not the viewport — is what the cards scroll into view against.
+        var scroller = blocks[0].closest('[data-scroller]') || null;
+
         var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
                 if (!entry.isIntersecting) { return; }
                 activate(entry.target);
                 observer.unobserve(entry.target);
             });
-        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.2 });
+        }, { root: scroller, rootMargin: '0px 0px -10% 0px', threshold: 0.2 });
 
         Array.prototype.forEach.call(blocks, function (block) {
             observer.observe(block);
