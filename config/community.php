@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 return [
 
-    'demo' => false,
+    'demo' => true,
 
     'title' => 'Community',
 
