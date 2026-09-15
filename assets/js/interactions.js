@@ -21,7 +21,7 @@
         var scrollers = document.querySelectorAll('[data-scroller]');
 
         Array.prototype.forEach.call(scrollers, function (scroller) {
-            var screen = scroller.closest('[data-page], [data-sheet]');
+            var screen = scroller.closest('[data-page], [data-sheet], [data-detail]');
             if (!screen) { return; }
 
             bindChrome(scroller, screen.querySelector('[data-header]'),

@@ -67,7 +67,7 @@
     /** Offscreen pages — and everything under the sheet — stay unreachable. */
     function refresh() {
         pages.forEach(function (page, n) {
-            var hidden = n !== index || nav.state.aiOpen;
+            var hidden = n !== index || nav.state.aiOpen || nav.state.detailOpen;
             page.inert = hidden;
             if (hidden) { page.setAttribute('aria-hidden', 'true'); }
             else { page.removeAttribute('aria-hidden'); }
@@ -109,7 +109,7 @@
         settleTimer = window.setTimeout(function () {
             busy = false;
             deck.dataset.pageState = 'idle';
-            refresh();
+            nav.refresh();
         }, nav.duration + 40);
     }
 
@@ -123,7 +123,7 @@
 
     nav.register('x', {
         canStart: function () {
-            return !busy && !nav.state.aiOpen && pages.length > 1;
+            return !busy && !nav.state.aiOpen && !nav.state.detailOpen && pages.length > 1;
         },
 
         begin: function () {
@@ -180,9 +180,10 @@
 
     nav.pages = {
         currentId: currentId,
-        goToId: goToId,
-        refresh: refresh
+        goToId: goToId
     };
+
+    nav.onRefresh(refresh);
 
     deck.dataset.pageState = 'idle';
     document.documentElement.dataset.activePage = currentId();

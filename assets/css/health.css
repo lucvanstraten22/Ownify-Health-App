@@ -1,0 +1,423 @@
+/* ==========================================================================
+   health.css — the Gezondheid page and its three detail pages.
+
+   No new tokens: colours, radii, spacing, type and motion all come from
+   theme.css, and the pieces reuse the existing card, meter, icon-tile and
+   score-ring components so the page reads as part of the same app.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Page intro
+   -------------------------------------------------------------------------- */
+.page-intro { padding-inline: var(--space-2); }
+
+.page-intro__title {
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.page-intro__lede {
+    margin-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   The three pillars — one component, three accents, identical in every
+   dimension. The whole card is the control.
+   -------------------------------------------------------------------------- */
+.grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.health-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+}
+
+.health-card .icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    color: var(--accent);
+}
+
+.health-card .icon-tile .icon { width: 17px; height: 17px; }
+
+.score-value--centred {
+    justify-content: center;
+    margin-top: 0;
+}
+
+.health-card .meter {
+    width: 100%;
+    margin-top: 0;
+}
+
+.health-card__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.health-card__chevron {
+    width: 13px;
+    height: 13px;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.health-card:active .health-card__chevron { transform: translateX(1px); }
+
+/* --------------------------------------------------------------------------
+   Week / month switch
+   -------------------------------------------------------------------------- */
+.card__head-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+}
+
+.range-switch {
+    display: inline-flex;
+    gap: 2px;
+    flex: none;
+    padding: 3px;
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.range-switch__option {
+    min-height: 32px;
+    padding-inline: var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.range-switch__option.is-active {
+    border-color: var(--glass-hairline);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+    box-shadow: var(--shadow-inset);
+    color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Trend chart — thin lines, three gridlines, nothing else.
+   -------------------------------------------------------------------------- */
+.chart {
+    position: relative;
+    margin-top: var(--space-5);
+}
+
+.chart__range { display: none; }
+.chart__range.is-active { display: block; }
+
+.chart__svg {
+    display: block;
+    width: 100%;
+    height: 100px;
+    overflow: visible;
+}
+
+.chart__grid {
+    stroke: rgba(255, 255, 255, 0.055);
+    stroke-width: 1;
+}
+
+.chart__area {
+    fill: var(--accent);
+    opacity: 0.10;
+}
+
+.chart__line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.chart__dot {
+    fill: var(--accent);
+    stroke: none;
+}
+
+/* Drawn on when the range becomes visible (set up by health-trend.js). */
+.chart__line.is-drawing {
+    stroke-dasharray: var(--length);
+    stroke-dashoffset: var(--length);
+}
+
+.chart__line.is-drawn {
+    stroke-dasharray: var(--length);
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 900ms var(--ease-out);
+}
+
+.chart__axis {
+    position: relative;
+    height: 1.2em;
+    margin-top: var(--space-2);
+}
+
+.chart__tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.chart__tick:first-child { transform: none; }
+.chart__tick:last-child { transform: translateX(-100%); }
+
+.chart__empty {
+    position: absolute;
+    inset-inline: 0;
+    top: 46px;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.card--trend.is-empty .chart__svg { opacity: 0.55; }
+
+/* --------------------------------------------------------------------------
+   Level 2 — the few numbers that explain the score
+   -------------------------------------------------------------------------- */
+.metric-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.metric-tile {
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.metric-tile__label {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.metric-tile__value {
+    margin-top: var(--space-1);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+}
+
+.metric-tile.is-empty .metric-tile__value {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.metric-tile__unit {
+    margin-left: 3px;
+    font-size: var(--fs-small);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Level 3 — the long tail, grouped
+   -------------------------------------------------------------------------- */
+.metric-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+    font-size: var(--fs-small);
+}
+
+.metric-row:first-child { border-top: 0; padding-top: 0; }
+
+.metric-row__label { color: var(--text-secondary); }
+
+.metric-row__value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.metric-row.is-empty .metric-row__value {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.metric-row__unit {
+    margin-left: 3px;
+    font-size: var(--fs-tiny);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.metric-row__badge {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-muted);
+}
+
+.metric-row__badge .icon { width: 14px; height: 14px; }
+
+/* A group that needs a wearable is marked, never faked and never hidden. */
+.card--group.is-locked {
+    background: var(--surface-gradient-quiet);
+    border-color: var(--glass-border-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Sleep stages
+   -------------------------------------------------------------------------- */
+.hypnogram {
+    display: flex;
+    gap: 3px;
+    height: 14px;
+    margin-top: var(--space-4);
+}
+
+.hypnogram__stage {
+    flex: var(--share, 1) 1 0;
+    border-radius: 4px;
+    background: var(--health);
+}
+
+.hypnogram__stage[data-tone="rem"] { background: color-mix(in srgb, var(--health) 62%, #ffffff); }
+.hypnogram__stage[data-tone="light"] { background: rgba(255, 255, 255, 0.26); }
+.hypnogram__stage[data-tone="awake"] { background: rgba(255, 255, 255, 0.13); }
+
+.is-empty .hypnogram {
+    height: 10px;
+    border-radius: var(--radius-pill);
+    background: repeating-linear-gradient(90deg,
+        rgba(255, 255, 255, 0.11) 0 2px,
+        transparent 2px 8px);
+}
+
+.stage-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.stage-legend__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-small);
+}
+
+.stage-legend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+    background: var(--health);
+}
+
+.stage-legend__item[data-tone="rem"] .stage-legend__dot { background: color-mix(in srgb, var(--health) 62%, #ffffff); }
+.stage-legend__item[data-tone="light"] .stage-legend__dot { background: rgba(255, 255, 255, 0.26); }
+.stage-legend__item[data-tone="awake"] .stage-legend__dot { background: rgba(255, 255, 255, 0.13); }
+
+.stage-legend__label { color: var(--text-secondary); }
+
+.stage-legend__value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.stage-legend__value.is-empty { font-weight: 500; color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   Detail layer — above the rail, below the dock, so the tab bar and the
+   assistant stay reachable from inside a detail page.
+   -------------------------------------------------------------------------- */
+.detail-stack {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.detail {
+    position: absolute;
+    inset: 0;
+    pointer-events: auto;
+    transform: translate3d(100%, 0, 0);
+    transition: transform var(--screen-duration) var(--screen-ease);
+    background: linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+    background:
+        radial-gradient(88% 46% at 82% 0%, color-mix(in srgb, var(--accent) 17%, transparent), transparent 62%),
+        radial-gradient(120% 64% at 50% 104%, rgba(120, 165, 96, 0.06), transparent 62%),
+        linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+}
+
+.deck.is-dragging .detail { transition: none; }
+
+.deck[data-detail-state="moving"] .detail,
+.deck[data-detail-state="open"] .detail {
+    box-shadow: -18px 0 42px rgba(0, 0, 0, 0.34), inset 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+.detail__bar {
+    display: flex;
+    align-items: center;
+}
+
+.pill--back { padding-inline: var(--space-2) var(--space-3); }
+
+/* The ring on a detail page takes that area's accent. */
+.detail .score-ring__value { stroke: var(--accent); }
+.detail .score-ring::before { background: radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
+.detail .is-empty .score-ring::before { background: radial-gradient(circle, rgba(255, 255, 255, 0.05), transparent 70%); }
+
+/* --------------------------------------------------------------------------
+   Narrow phones — keep three columns, tighten what is inside them
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .health-card {
+        padding: var(--space-3) var(--space-2);
+        gap: var(--space-2);
+    }
+
+    .health-card .score-value__number { font-size: 1.5rem; }
+    .health-card .score-value__max { font-size: var(--fs-tiny); }
+    .health-card__label { font-size: var(--fs-tiny); }
+    .health-card .icon-tile { width: 28px; height: 28px; }
+
+    .metric-tiles { gap: var(--space-2); }
+    .stage-legend { grid-template-columns: minmax(0, 1fr); }
+}

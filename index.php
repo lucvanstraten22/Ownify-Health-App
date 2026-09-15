@@ -14,10 +14,15 @@
 declare(strict_types=1);
 
 require __DIR__ . '/lib/render.php';
+require __DIR__ . '/lib/health.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
 $data = require __DIR__ . '/config/dashboard.php';
+
+/* Health lives in its own config; health_prepare() is what keeps the
+   review-only demo values out of the shipped page. */
+$data['health'] = health_prepare(require __DIR__ . '/config/health.php');
 
 $app   = $data['app'];
 $focus = $data['focus'];
@@ -52,6 +57,7 @@ foreach ($data['navigation'] as $position => $item) {
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="assets/css/ai.css">
+    <link rel="stylesheet" href="assets/css/health.css">
 </head>
 <body class="app">
 
@@ -75,12 +81,22 @@ foreach ($data['navigation'] as $position => $item) {
 
                     if ($item['destination'] === 'overview') {
                         page('overview', $pageData);
+                    } elseif ($item['destination'] === 'health') {
+                        page('health', $pageData);
                     } elseif (isset($data['sections'][$item['id']])) {
                         $pageData['section'] = $data['sections'][$item['id']] + ['id' => $item['id']];
                         page('section', $pageData);
                     }
                     ?>
                 </div>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Health detail pages: above the rail, below the dock, so the tab
+             bar and the assistant stay reachable from inside one. -->
+        <div class="detail-stack" data-detail-stack>
+            <?php foreach ($data['health']['areas'] as $areaId => $area): ?>
+                <?php page('health-detail', $data + ['area' => $area + ['id' => $areaId]]); ?>
             <?php endforeach; ?>
         </div>
 
@@ -99,5 +115,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="assets/js/navigation-core.js" defer></script>
     <script src="assets/js/page-navigation.js" defer></script>
     <script src="assets/js/ai-sheet.js" defer></script>
+    <script src="assets/js/health-detail.js" defer></script>
+    <script src="assets/js/health-trend.js" defer></script>
 </body>
 </html>

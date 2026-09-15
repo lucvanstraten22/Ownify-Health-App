@@ -23,19 +23,39 @@ window.AppNav = (function () {
     var deck = document.querySelector('[data-deck]');
 
     var axes = {};
+    var refreshers = [];
 
     var api = {
         deck: deck,
         reduceMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
         duration: 280,
 
-        /** Shared, so either controller can read what the other is doing. */
-        state: { aiOpen: false, returnTo: null },
+        /** Shared, so every controller can read what the others are doing. */
+        state: { aiOpen: false, detailOpen: false, returnTo: null },
+
+        /**
+         * Reachability is a property of the whole stack, not of one layer:
+         * each layer registers how to re-apply its own inert state, and any
+         * layer that changes can ask for all of them to be re-applied.
+         */
+        onRefresh: function (fn) { refreshers.push(fn); },
+        refresh: function () {
+            for (var i = 0; i < refreshers.length; i++) { refreshers[i](); }
+        },
 
         /** Filled in by page-navigation.js once the rail is wired. */
         pages: null,
 
-        register: function (axis, controller) { axes[axis] = controller; },
+        /**
+         * More than one controller can want the same axis — the rail and the
+         * detail layer both use horizontal. They are told apart by canStart:
+         * the first one that claims the gesture gets it, so their activation
+         * zones must not overlap.
+         */
+        register: function (axis, controller) {
+            if (!axes[axis]) { axes[axis] = []; }
+            axes[axis].unshift(controller);
+        },
 
         clamp: function (value, min, max) {
             return value < min ? min : (value > max ? max : value);
@@ -153,8 +173,14 @@ window.AppNav = (function () {
 
         decided = true;
 
-        var controller = axes[axis];
-        if (!controller || !controller.canStart(ctx)) {
+        var candidates = axes[axis] || [];
+        var controller = null;
+
+        for (var i = 0; i < candidates.length; i++) {
+            if (candidates[i].canStart(ctx)) { controller = candidates[i]; break; }
+        }
+
+        if (!controller) {
             // Not ours: leave the gesture to the browser for the rest of its life.
             return;
         }

@@ -36,6 +36,9 @@ if (!function_exists('icon')) {
                 // sport / energy
                 'bolt'     => '<path d="M13.2 2.8 5.6 13.2h5.3l-.9 8 7.6-10.4h-5.3l.9-8Z"/>',
 
+                // training
+                'dumbbell' => '<path d="M7 6.6v10.8M17 6.6v10.8M3.2 9.4v5.2M20.8 9.4v5.2M7 12h10"/>',
+
                 // overview — concentric rings, echoes the score ring
                 'rings'    => '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/>',
 
@@ -62,6 +65,10 @@ if (!function_exists('icon')) {
 
                 // dismiss the assistant sheet
                 'chevron-down' => '<path d="M6.8 9.6 12 14.8l5.2-5.2"/>',
+
+                // back out of a detail page / drill into one
+                'chevron-left'  => '<path d="M14.4 6.8 9.2 12l5.2 5.2"/>',
+                'chevron-right' => '<path d="M9.6 6.8 14.8 12l-5.2 5.2"/>',
 
 
                 // empty-state marker

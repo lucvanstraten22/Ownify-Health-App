@@ -221,7 +221,7 @@ return [
      *   Instellingen— app- en gebruikersinstellingen
      */
     'navigation' => [
-        ['id' => 'health',    'label' => 'Gezondheid',   'icon' => 'heart',     'destination' => null,       'active' => false],
+        ['id' => 'health',    'label' => 'Gezondheid',   'icon' => 'heart',     'destination' => 'health',   'active' => false],
         ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => null,       'active' => false],
         ['id' => 'overview',  'label' => 'Overzicht',    'icon' => 'rings',     'destination' => 'overview', 'active' => true],
         ['id' => 'community', 'label' => 'Community',    'icon' => 'community', 'destination' => null,       'active' => false],

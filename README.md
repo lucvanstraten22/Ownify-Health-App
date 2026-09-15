@@ -10,9 +10,10 @@ framework, no build step, no dependencies. Two screens live in one document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on. Overzicht is the built dashboard; the other four
-are placeholders, and the assistant is the room the future ChatGPT-based
-assistant will live in — only its screen and gestures exist today.
+whichever page you are on. Overzicht and Gezondheid are built; Doelen,
+Community and Instellingen are placeholders, and the assistant is the room the
+future ChatGPT-based assistant will live in — only its screen and gestures
+exist today.
 
 ## Run it
 
@@ -25,13 +26,17 @@ Then open <http://localhost:8000> — best viewed at phone width.
 ## Structure
 
 ```
-index.php                     app shell: the rail, the dock and the sheet
+index.php                     app shell: the rail, the dock, details and the sheet
 pages/
-    overview.php              the dashboard (the one built page)
-    section.php               a page that is not built yet, ×4
+    overview.php              the dashboard
+    health.php                Gezondheid — three scores and a trend
+    health-detail.php         one health area in full, ×3
+    section.php               a page that is not built yet, ×3
     ai.php                    the assistant sheet
-config/dashboard.php          ALL copy, data and settings (single source of truth)
+config/dashboard.php          copy, data and settings for the app
+config/health.php             the health areas, their metrics and their trends
 lib/render.php                escaping, page/component include, score formatting
+lib/health.php                demo handling, shared metrics, chart geometry
 components/
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account
@@ -47,17 +52,25 @@ components/
     app-dock.php              pull-up handle + tab bar, pinned above the rail
     ai-empty-state.php        glass orb + name + status
     ai-composer.php           reserved space for the future input interface
+    health-card.php           one of the three pillars, and the control that opens it
+    health-trend.php          week / month chart, one or three series
+    metric-tiles.php          level 2 — the few numbers that explain a score
+    metric-group.php          level 3 — the long tail, grouped
+    sleep-timeline.php        the night as one bar of stages
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
     components.css            the UI kit
     dashboard.css             overview layout, focus states, breakpoints
     ai.css                    the assistant layer (tokens only, no new values)
+    health.css                Gezondheid and its detail pages (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
     navigation-core.js        one pointer pipeline, routed by axis
     page-navigation.js        horizontal: the five-page rail
     ai-sheet.js               vertical: the assistant sheet
+    health-detail.js          drilling into a health area, and swiping back
+    health-trend.js           week / month switch and the line draw-on
 ```
 
 ## Navigation
@@ -118,6 +131,41 @@ markup as well as at runtime, so nothing offscreen is reachable by tab,
 pointer or screen reader. The rail is parked on its starting page server-side,
 so it never animates into place on load and lands correctly without
 JavaScript.
+
+## Gezondheid
+
+Overview first, detail on demand. The page itself is three scores and one
+trend; everything else lives behind a card.
+
+```
+Gezondheid ──┬── Slaap      duur · timing · fasen · onderbrekingen · nachtwaarden
+             ├── Voeding    macro's · hydratatie · eigen invoer
+             └── Training   activiteit · trainingen · conditie en herstel
+```
+
+A detail page is a layer above the rail and below the dock, so the tab bar and
+the assistant stay reachable from inside one. It opens on a tap and closes
+with a rightward swipe, the back pill or Escape — safe to use that direction
+because the rail stands down while a detail is in front of it.
+
+Each detail page runs three levels deep: the score, the handful of numbers
+that explain it, then the long tail in groups. Which metrics exist is entirely
+`config/health.php` — adding one later is a line of config, not a template
+change.
+
+**Shared metrics.** A metric is defined once in the `metrics` registry and
+referenced by key, so HRV means the same thing and looks the same in Slaap and
+in Training without being defined twice.
+
+**Missing data.** Different devices expose different measurements, so a metric
+declares its `availability`. A group whose metrics all need a wearable is
+marked with a lock and a line saying so — never hidden, never filled with
+invented numbers.
+
+**Seeing the design populated.** Every value ships as null. `config/health.php`
+has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
+into the charts and tiles so the design can be looked at with data, without a
+single invented value ever reaching the shipped page. It is false by default.
 
 ## Placeholder contract
 

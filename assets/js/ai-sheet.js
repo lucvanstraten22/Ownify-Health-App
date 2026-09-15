@@ -60,7 +60,7 @@
         if (open) { sheet.removeAttribute('aria-hidden'); }
         else { sheet.setAttribute('aria-hidden', 'true'); }
 
-        if (nav.pages) { nav.pages.refresh(); }
+        nav.refresh();
     }
 
     function focusEntry(open) {
