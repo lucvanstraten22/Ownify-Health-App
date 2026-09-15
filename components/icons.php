@@ -60,6 +60,9 @@ if (!function_exists('icon')) {
                 // leaderboard — ascending bars
                 'ranking'  => '<path d="M6 20v-4.6M12 20V7.8M18 20v-8.4"/>',
 
+                // badges and milestones
+                'award'    => '<circle cx="12" cy="9" r="5.2"/><path d="M8.6 13.4 7.4 20.6l4.6-2.5 4.6 2.5-1.2-7.2"/>',
+
                 // scroll to top
                 'chevron'  => '<path d="M6.8 14.4 12 9.2l5.2 5.2"/>',
 

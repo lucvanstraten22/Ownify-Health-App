@@ -10,8 +10,8 @@ framework, no build step, no dependencies. Two screens live in one document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on. Overzicht and Gezondheid are built; Doelen,
-Community and Instellingen are placeholders, and the assistant is the room the
+whichever page you are on. Overzicht, Gezondheid and Community are built;
+Doelen and Instellingen are placeholders, and the assistant is the room the
 future ChatGPT-based assistant will live in — only its screen and gestures
 exist today.
 
@@ -31,12 +31,15 @@ pages/
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
-    section.php               a page that is not built yet, ×3
+    community.php             the leaderboard
+    section.php               a page that is not built yet, ×2
     ai.php                    the assistant sheet
 config/dashboard.php          copy, data and settings for the app
 config/health.php             the health areas, their metrics and their trends
+config/community.php          leaderboard scopes, periods and copy
 lib/render.php                escaping, page/component include, score formatting
 lib/health.php                demo handling, shared metrics, chart geometry
+lib/community.php             board assembly, formatting, the demo roster
 components/
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account
@@ -57,12 +60,17 @@ components/
     metric-tiles.php          level 2 — the few numbers that explain a score
     metric-group.php          level 3 — the long tail, grouped
     sleep-timeline.php        the night as one bar of stages
+    segmented.php             the two-or-three-way switch, shared
+    leaderboard-board.php     one scope × period board
+    leaderboard-row.php       position · avatar · name · points
+    community-badges.php      reserved space for badges and milestones
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
     components.css            the UI kit
     dashboard.css             overview layout, focus states, breakpoints
     ai.css                    the assistant layer (tokens only, no new values)
     health.css                Gezondheid and its detail pages (tokens only)
+    community.css             the leaderboard (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
@@ -71,6 +79,7 @@ assets/js/
     ai-sheet.js               vertical: the assistant sheet
     health-detail.js          drilling into a health area, and swiping back
     health-trend.js           week / month switch and the line draw-on
+    community.js              scope and period switching
 ```
 
 ## Navigation
@@ -166,6 +175,43 @@ invented numbers.
 has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
 into the charts and tiles so the design can be looked at with data, without a
 single invented value ever reaching the shipped page. It is false by default.
+
+## Community
+
+Leaderboard-first: two controls and a board, nothing above it competing for
+attention.
+
+```
+Vrienden | Nederland          scope  — who you are ranked against
+Maand | Jaar | All-time       period — over what window
+```
+
+All six boards are rendered and one is shown, so switching is a class toggle
+and each board keeps its own scroll position. Both boards cap at 50 entries.
+
+**Always knowing where you are.** Your own row is `position: sticky` with
+*both* a top and a bottom offset. It sits in its own place while it is on
+screen and docks to whichever edge it would otherwise leave — floating at the
+bottom while you are above it, at the top once you scroll past it. That is one
+element, never a duplicate, and it needs no JavaScript. When you are outside
+the top 50 your row is appended after #50 behind a "Buiten de top 50" divider,
+so scrolling to the end shows it in place.
+
+One thing worth knowing if you touch the offsets: Chromium insets the sticky
+rectangle by the scroll container's own padding, so `.board__scroll`'s
+bottom padding already clears the tab bar and the row's `bottom` only needs to
+be the small gap on top of it.
+
+**Points are not decided.** `points` is just a number carried on an entry,
+kept out of the UI entirely, so a future scoring engine can produce the
+ranking without the leaderboard changing. Scope and period are likewise plain
+keys.
+
+**Placeholder contract.** Shipped, both boards are empty and no name appears:
+`config/community.php` has the same `demo` flag as health. Turn it on and
+`community_prepare()` builds a deterministic roster — defined in
+`lib/community.php`, belonging to nobody — so the design and the floating
+behaviour can be reviewed with a full board. It is false by default.
 
 ## Placeholder contract
 
