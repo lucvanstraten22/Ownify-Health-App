@@ -2,9 +2,13 @@
 /**
  * Application shell.
  *
- * Holds the two screens of the app side by side in one document so the swipe
- * between them can follow the finger. Page content lives in /pages, all copy
- * and data in config/dashboard.php.
+ * Two independent movements live here:
+ *
+ *   horizontal — the rail of five pages, one per primary destination
+ *   vertical   — the assistant sheet, pulled up over whichever page shows
+ *
+ * The sheet sits above the rail rather than inside it, which is what lets it
+ * return the user to the exact page and scroll position they came from.
  */
 
 declare(strict_types=1);
@@ -17,9 +21,19 @@ $data = require __DIR__ . '/config/dashboard.php';
 
 $app   = $data['app'];
 $focus = $data['focus'];
+
+/** The rail follows the navigation order, so config drives both. */
+$startPage  = 'overview';
+$startIndex = 0;
+foreach ($data['navigation'] as $position => $item) {
+    if (!empty($item['active'])) {
+        $startPage  = $item['id'];
+        $startIndex = $position;
+    }
+}
 ?>
 <!DOCTYPE html>
-<html lang="<?= e($app['locale']) ?>" data-focus="<?= e($focus) ?>">
+<html lang="<?= e($app['locale']) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -43,18 +57,47 @@ $focus = $data['focus'];
 
     <a class="skip-link" href="#main">Naar de inhoud</a>
 
-    <!-- Shared ground behind both screens: the visual thread between them. -->
+    <!-- Shared ground behind every layer: the visual thread between them. -->
     <div class="app__backdrop" aria-hidden="true"></div>
 
     <div class="deck" data-deck>
+
+        <!-- Parked on the starting page server-side, so the rail never has to
+             animate into place on load — and lands right without JavaScript. -->
+        <div class="rail" data-rail
+             style="transform: translate3d(<?= e((string) (-100 * $startIndex)) ?>%, 0, 0);">
+            <?php foreach ($data['navigation'] as $position => $item):
+                $isActive = $item['id'] === $startPage;
+                ?>
+                <div class="rail__slot" style="--page-index: <?= e((string) $position) ?>;">
+                    <?php
+                    $pageData = $data + ['page_active' => $isActive];
+
+                    if ($item['destination'] === 'overview') {
+                        page('overview', $pageData);
+                    } elseif (isset($data['sections'][$item['id']])) {
+                        $pageData['section'] = $data['sections'][$item['id']] + ['id' => $item['id']];
+                        page('section', $pageData);
+                    }
+                    ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Dims the page while the assistant is in front of it. -->
+        <div class="sheet-scrim" data-scrim aria-hidden="true"></div>
+
         <?php
-        page('overview', $data);
+        component('app-dock', $data);
         page('ai', $data);
         ?>
+
     </div>
 
     <script src="assets/js/dashboard.js" defer></script>
     <script src="assets/js/interactions.js" defer></script>
-    <script src="assets/js/swipe-navigation.js" defer></script>
+    <script src="assets/js/navigation-core.js" defer></script>
+    <script src="assets/js/page-navigation.js" defer></script>
+    <script src="assets/js/ai-sheet.js" defer></script>
 </body>
 </html>

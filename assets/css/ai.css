@@ -6,9 +6,9 @@
    will live on.
    ========================================================================== */
 
-/* Same ground as the dashboard backdrop, mirrored, so the two screens read as
-   two corners of one room rather than two documents. */
-.screen--ai {
+/* Same ground as the dashboard backdrop, mirrored, so the sheet reads as
+   another corner of the same room rather than another document. */
+.sheet--ai {
     background:
         radial-gradient(86% 48% at 80% 2%, rgba(60, 158, 114, 0.16), transparent 62%),
         radial-gradient(72% 44% at 10% 24%, rgba(191, 168, 99, 0.08), transparent 60%),
@@ -22,14 +22,33 @@
 }
 
 /* --------------------------------------------------------------------------
-   Top — the way back, and nothing else
+   Top — the dismissal area.
+
+   Vertical movement here belongs to the sheet, not to the scroller, which is
+   why `touch-action: none` sits on this header and nowhere else on the sheet:
+   a future conversation below it keeps scrolling normally.
    -------------------------------------------------------------------------- */
 .ai-top {
+    flex: none;
+    padding-top: max(var(--space-3), var(--safe-top));
+    padding-bottom: var(--space-3);
+    touch-action: none;
+}
+
+/* The grabber: says "pull me down" in the same language as the dock handle. */
+.sheet-handle {
+    display: block;
+    width: 38px;
+    height: 4px;
+    margin: var(--space-2) auto 0;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.20);
+}
+
+.ai-top__row {
     display: flex;
     align-items: center;
-    flex: none;
-    padding-top: max(var(--space-4), calc(var(--safe-top) + var(--space-3)));
-    padding-bottom: var(--space-3);
+    padding-top: var(--space-3);
 }
 
 /* --------------------------------------------------------------------------
@@ -167,51 +186,6 @@
 .ai-composer__note {
     font-size: var(--fs-tiny);
     color: var(--text-muted);
-}
-
-/* --------------------------------------------------------------------------
-   Right-edge affordance on the dashboard — the gesture, made visible.
-   -------------------------------------------------------------------------- */
-.edge-handle {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    z-index: 12;
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 96px;
-    transform: translateY(-50%);
-    transition: opacity var(--transition-fast);
-}
-
-.edge-handle__grip {
-    display: block;
-    width: 3px;
-    height: 44px;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.22);
-    transition: background-color var(--transition-fast), height var(--transition-fast);
-}
-
-.edge-handle:active .edge-handle__grip,
-.edge-handle:focus-visible .edge-handle__grip {
-    height: 54px;
-    background: rgba(255, 255, 255, 0.42);
-}
-
-/* Out of the way once the assistant layer is in front. */
-.deck[data-state="open"] .edge-handle,
-.deck[data-state="moving"] .edge-handle {
-    opacity: 0;
-    pointer-events: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    .edge-handle:hover .edge-handle__grip {
-        height: 54px;
-        background: rgba(255, 255, 255, 0.36);
-    }
 }
 
 /* --------------------------------------------------------------------------

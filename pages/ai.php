@@ -1,29 +1,37 @@
 <?php
 /**
- * Screen 2 — AI extension layer.
+ * The assistant — a sheet that pulls up over whichever page is showing.
  *
- * Intentionally empty. There is no model, no API, no conversation and no
- * input field: only the room the assistant will live in, built from the same
- * tokens and components as the dashboard.
+ * It is not a destination on the rail: the page underneath keeps its state
+ * and its scroll position, so dismissing the sheet always returns the user
+ * exactly where they were.
+ *
+ * Still intentionally empty: no model, no API, no conversation, no input.
  */
 declare(strict_types=1);
 
 $ai = $data['ai'];
 ?>
-<!-- Starts closed and unreachable; swipe-navigation.js flips this on open,
-     so the state is correct even before (or without) JavaScript. -->
-<section class="screen screen--ai" data-screen="ai" aria-label="<?= e($ai['title']) ?>"
+<!-- Starts closed and unreachable; ai-sheet.js flips this on open, so the
+     state is correct even before (or without) JavaScript. -->
+<section class="screen sheet sheet--ai" data-sheet="ai" aria-label="<?= e($ai['title']) ?>"
          aria-hidden="true" inert>
 
     <div class="screen__scroll screen__scroll--ai" data-scroller>
 
-        <header class="ai-top shell">
-            <button type="button" class="pill pill--back press"
-                    data-navigate="overview"
-                    aria-label="<?= e($ai['back']['aria']) ?>">
-                <?= icon('chevron-left', 'pill__icon') ?>
-                <span class="pill__label"><?= e($ai['back']['label']) ?></span>
-            </button>
+        <!-- The dismissal area. Vertical movement here is the sheet's, not
+             the scroller's, which leaves the rest free for a future
+             conversation to scroll normally. -->
+        <header class="ai-top" data-ai-dismiss>
+            <span class="sheet-handle" aria-hidden="true"></span>
+
+            <div class="ai-top__row shell">
+                <button type="button" class="pill pill--close press"
+                        data-ai-close aria-label="<?= e($ai['close']['aria']) ?>">
+                    <?= icon('chevron-down', 'pill__icon') ?>
+                    <span class="pill__label"><?= e($ai['close']['label']) ?></span>
+                </button>
+            </div>
         </header>
 
         <main class="ai-main shell">

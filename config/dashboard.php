@@ -228,16 +228,52 @@ return [
         ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => null,       'active' => false],
     ],
 
-    /* -------------------------------------------------- AI extension layer
+    /* -------------------------------------------------- section placeholders
+     * The four sections beside Overzicht are not built yet. They exist as
+     * pages so the horizontal navigation is real, and say plainly what will
+     * live there — nothing is invented.
+     */
+    'sections' => [
+        'health' => [
+            'title'  => 'Gezondheid',
+            'icon'   => 'heart',
+            'lede'   => 'Slaap, voeding en sport komen hier samen in één beeld.',
+            'status' => 'Binnenkort beschikbaar',
+            'topics' => ['Slaap', 'Voeding', 'Sport'],
+        ],
+        'goals' => [
+            'title'  => 'Doelen',
+            'icon'   => 'flag',
+            'lede'   => 'Je persoonlijke doelen en je voortgang daarnaartoe.',
+            'status' => 'Binnenkort beschikbaar',
+            'topics' => ['Doel kiezen', 'Voortgang', 'Mijlpalen'],
+        ],
+        'community' => [
+            'title'  => 'Community',
+            'icon'   => 'community',
+            'lede'   => 'De ranglijst en toekomstige sociale functies.',
+            'status' => 'Binnenkort beschikbaar',
+            'topics' => ['Ranglijst', 'Vergelijken'],
+        ],
+        'settings' => [
+            'title'  => 'Instellingen',
+            'icon'   => 'sliders',
+            'lede'   => 'App-, account- en privacyinstellingen.',
+            'status' => 'Binnenkort beschikbaar',
+            'topics' => ['Account', 'Apparaten', 'Privacy'],
+        ],
+    ],
+
+    /* -------------------------------------------------- AI assistant layer
      * The assistant itself does not exist yet: no model, no API, no messages.
-     * Only the screen and the gesture that opens it are implemented, so the
-     * copy below describes the reserved space and nothing more.
+     * It is a sheet that pulls up over whichever page you are on, so its copy
+     * never names a page to return to — closing returns you where you were.
      */
     'ai' => [
         'title'   => 'Assistent',
         'status'  => 'Binnenkort beschikbaar',
-        'open'    => ['aria' => 'Assistent openen — of veeg naar links'],
-        'back'    => ['label' => 'Overzicht', 'aria' => 'Terug naar je overzicht'],
+        'open'    => ['aria' => 'Assistent openen — of veeg omhoog'],
+        'close'   => ['label' => 'Sluiten', 'aria' => 'Assistent sluiten — of veeg omlaag'],
         'composer' => [
             'note' => 'Hier komt je invoerveld',
             'aria' => 'Gereserveerde ruimte voor het toekomstige invoerveld',

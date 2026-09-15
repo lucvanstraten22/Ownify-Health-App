@@ -115,17 +115,16 @@
             return;
         }
 
-        // Each screen scrolls inside its own container, so that container —
-        // not the viewport — is what the cards scroll into view against.
-        var scroller = blocks[0].closest('[data-scroller]') || null;
-
+        // The viewport is the root: intersection already accounts for the
+        // clipping of every scroller in between, and there is now more than
+        // one of them — a page each, plus the assistant sheet.
         var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
                 if (!entry.isIntersecting) { return; }
                 activate(entry.target);
                 observer.unobserve(entry.target);
             });
-        }, { root: scroller, rootMargin: '0px 0px -10% 0px', threshold: 0.2 });
+        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.2 });
 
         Array.prototype.forEach.call(blocks, function (block) {
             observer.observe(block);

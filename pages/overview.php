@@ -1,14 +1,15 @@
 <?php
 /**
- * Screen 1 — Home / Overview.
+ * Overzicht — the dashboard page on the horizontal rail.
  *
- * The screen owns its own vertical scroller so the whole layer can be
- * translated as one unit during the swipe transition. Header, tab bar and the
- * floating control sit outside that scroller and stay pinned to the screen.
+ * The page owns its own vertical scroller, so its scroll position survives
+ * both a sideways move to another page and the assistant sheet opening on
+ * top of it. The tab bar is not here: it lives in the dock, above the rail.
  */
 declare(strict_types=1);
 ?>
-<section class="screen screen--overview" data-screen="overview" aria-label="Overzicht">
+<section class="screen page" data-page="overview" aria-label="Overzicht"
+         <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
         <?php component('header', $data); ?>
@@ -29,13 +30,6 @@ declare(strict_types=1);
         </main>
     </div>
 
-    <?php
-    component('scroll-top', $data);
-    component('edge-handle', $data);
-    component('bottom-navigation', $data);
-    ?>
-
-    <!-- Depth cue: deepens as the assistant layer slides over this screen. -->
-    <div class="screen__scrim" data-scrim aria-hidden="true"></div>
+    <?php component('scroll-top', $data); ?>
 
 </section>

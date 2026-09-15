@@ -4,12 +4,15 @@ A mobile-first health app in plain PHP, HTML, CSS and JavaScript — no
 framework, no build step, no dependencies. Two screens live in one document:
 
 ```
-  HOME / OVERVIEW   ← swipe →   AI ASSISTANT
+  Gezondheid ↔ Doelen ↔ Overzicht ↔ Community ↔ Instellingen   ← horizontal
+                              ↕                                  vertical
+                        AI ASSISTANT
 ```
 
-The dashboard is the Home / Overview screen; the assistant layer is the room
-the future ChatGPT-based assistant will live in. Only the screen and the
-gesture that opens it exist today.
+Horizontal moves between the five pages. Vertical pulls the assistant up over
+whichever page you are on. Overzicht is the built dashboard; the other four
+are placeholders, and the assistant is the room the future ChatGPT-based
+assistant will live in — only its screen and gestures exist today.
 
 ## Run it
 
@@ -22,10 +25,11 @@ Then open <http://localhost:8000> — best viewed at phone width.
 ## Structure
 
 ```
-index.php                     app shell: holds both screens, loads assets
+index.php                     app shell: the rail, the dock and the sheet
 pages/
-    overview.php              screen 1 — the dashboard
-    ai.php                    screen 2 — the assistant layer
+    overview.php              the dashboard (the one built page)
+    section.php               a page that is not built yet, ×4
+    ai.php                    the assistant sheet
 config/dashboard.php          ALL copy, data and settings (single source of truth)
 lib/render.php                escaping, page/component include, score formatting
 components/
@@ -40,7 +44,7 @@ components/
     leaderboard.php           compact social layer
     scroll-top.php            floating glass control
     bottom-navigation.php     the five primary destinations (overview screen)
-    edge-handle.php           right-edge affordance towards the assistant
+    app-dock.php              pull-up handle + tab bar, pinned above the rail
     ai-empty-state.php        glass orb + name + status
     ai-composer.php           reserved space for the future input interface
 assets/css/
@@ -50,8 +54,10 @@ assets/css/
     ai.css                    the assistant layer (tokens only, no new values)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
-    interactions.js           reveal, header condense, floating control, tabs
-    swipe-navigation.js       the gesture between the two screens
+    interactions.js           reveal, header condense, floating control
+    navigation-core.js        one pointer pipeline, routed by axis
+    page-navigation.js        horizontal: the five-page rail
+    ai-sheet.js               vertical: the assistant sheet
 ```
 
 ## Navigation
@@ -72,28 +78,46 @@ Only `overview` has a `destination`; the other four are `null`, so they render
 as inert buttons rather than links to pages that do not exist yet. The
 assistant layer is deliberately not a sixth item — it is reached by the swipe.
 
-## The two screens
+## Two gestures, two axes
 
-`index.php` renders both screens into one `.deck`. Each screen is a
-viewport-sized layer with its own vertical scroller, which is what lets a whole
-screen be translated as a unit — the header stays sticky, the tab bar stays
-pinned, and neither jumps during the transition.
+`index.php` builds three things: a **rail** holding the five pages side by
+side, a **dock** pinned above it, and the assistant **sheet** above that. Each
+page is a viewport-sized layer with its own scroller, which is what preserves
+its scroll position when you leave it — sideways or under the sheet.
 
-`swipe-navigation.js` keeps a single number: `progress`, 0 for the overview and
-1 for the assistant. A gesture writes it straight to two transforms and one
-opacity, so dragging never touches layout.
+`navigation-core.js` owns the pointer events, decides which axis a gesture is
+on after 10px of travel, and hands it to the controller registered for that
+axis. A gesture is routed once and never re-routed, so a page swipe cannot
+become a sheet drag halfway through.
 
-| Behaviour | How |
-| --------- | --- |
-| Open | swipe right-to-left, or tap the right-edge handle |
-| Return | swipe left-to-right, tap "Overzicht", or press Escape |
-| Follows the finger | `progress = start - dx / screenWidth`, painted on rAF |
-| Completes | past 28% of the width, or a flick over 0.4 px/ms |
-| Cancels | snaps back to where the gesture started |
-| Never fights scrolling | `touch-action: pan-y pinch-zoom` — a vertical pan scrolls natively and cancels the gesture; no touch event is ever `preventDefault`ed |
+| Axis | Controller | Gesture | Effect |
+| ---- | ---------- | ------- | ------ |
+| horizontal | `page-navigation.js` | swipe left / right, anywhere on a page | previous / next of the five pages |
+| vertical | `ai-sheet.js` | swipe **up from the dock** | open the assistant |
+| vertical | `ai-sheet.js` | swipe **down from the sheet's header** | close it |
 
-The offscreen screen is `inert` and `aria-hidden`, in the markup as well as at
-runtime, so it is unreachable by tab, pointer or screen reader.
+Both follow the finger, complete past 25% of the screen or on a flick, and
+snap back otherwise. Taps and the keyboard do the same work: the tab bar
+navigates, the dock handle opens, "Sluiten" and Escape close.
+
+**Why scrolling still works.** Vertical movement belongs to the browser
+everywhere (`touch-action: pan-y pinch-zoom`) except two places that opt out
+with `touch-action: none`: the dock, and the sheet's header. No touch event is
+ever `preventDefault`ed. So an upward drag in the page body scrolls the page
+and never opens the assistant, and a downward drag in the middle of the sheet
+is left free for a future conversation to scroll.
+
+**Why you always come back where you were.** The sheet sits *above* the rail
+and never touches it, so the page underneath keeps its state and scroll
+position and is simply revealed again. `ai-sheet.js` also records
+`AppNav.state.returnTo` on open and restores that page on close, in case
+anything ever moves the rail while the sheet is up.
+
+Offscreen pages and the closed sheet are `inert` and `aria-hidden`, in the
+markup as well as at runtime, so nothing offscreen is reachable by tab,
+pointer or screen reader. The rail is parked on its starting page server-side,
+so it never animates into place on load and lands correctly without
+JavaScript.
 
 ## Placeholder contract
 

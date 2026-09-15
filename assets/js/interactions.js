@@ -11,25 +11,28 @@
 
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /** The overview screen scrolls inside its own container, not the window. */
-    function overviewScroller() {
-        return document.querySelector('[data-screen="overview"] [data-scroller]');
-    }
-
-    function scrollToTop(scroller) {
-        if (!scroller) { return; }
-        scroller.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
-    }
-
     /* ------------------------------------------------ scroll-linked chrome */
 
+    /**
+     * Every page scrolls inside its own container, so the condensing header
+     * and the floating control are bound per screen rather than to the window.
+     */
     function scrollChrome() {
-        var header = document.querySelector('[data-header]');
-        var fab = document.querySelector('[data-scroll-top]');
-        var scroller = overviewScroller();
+        var scrollers = document.querySelectorAll('[data-scroller]');
+
+        Array.prototype.forEach.call(scrollers, function (scroller) {
+            var screen = scroller.closest('[data-page], [data-sheet]');
+            if (!screen) { return; }
+
+            bindChrome(scroller, screen.querySelector('[data-header]'),
+                screen.querySelector('[data-scroll-top]'));
+        });
+    }
+
+    function bindChrome(scroller, header, fab) {
         var ticking = false;
 
-        if (!scroller || (!header && !fab)) { return; }
+        if (!header && !fab) { return; }
 
         function update() {
             ticking = false;
@@ -61,7 +64,7 @@
 
         if (fab) {
             fab.addEventListener('click', function () {
-                scrollToTop(scroller);
+                scroller.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
                 var main = document.getElementById('main');
                 if (main) { main.focus({ preventScroll: true }); }
             });
@@ -83,8 +86,6 @@
             return;
         }
 
-        var root = items[0].closest('[data-scroller]') || null;
-
         var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry, index) {
                 if (!entry.isIntersecting) { return; }
@@ -94,34 +95,14 @@
                 }, delay);
                 observer.unobserve(entry.target);
             });
-        }, { root: root, rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
 
         Array.prototype.forEach.call(items, function (item) { observer.observe(item); });
-    }
-
-    /* ------------------------------------------------------ bottom tab bar */
-
-    function tabbar() {
-        var tabs = document.querySelectorAll('[data-nav]');
-        if (!tabs.length) { return; }
-
-        Array.prototype.forEach.call(tabs, function (tab) {
-            tab.addEventListener('click', function () {
-                // The active tab is the only destination that exists in this
-                // version; it returns the user to the top of the overview.
-                // Other tabs stay inert rather than faking navigation.
-                if (tab.classList.contains('is-active')) {
-                    scrollToTop(overviewScroller());
-                }
-                tab.blur();
-            });
-        });
     }
 
     function init() {
         scrollChrome();
         reveal();
-        tabbar();
     }
 
     if (document.readyState === 'loading') {

@@ -11,6 +11,13 @@
     flex-direction: column;
 }
 
+/* A not-yet-built section centres its placeholder in the page. */
+.section-main {
+    display: grid;
+    place-items: center;
+    min-height: 68vh;
+}
+
 .section__title {
     margin-bottom: var(--space-3);
     padding-inline: var(--space-2);
@@ -136,11 +143,9 @@
 @media (min-width: 900px) {
     :root { --shell-w: min(70vw, 38rem); }
 
+    .app-dock { padding-bottom: var(--space-5); }
+
     .tabbar {
-        inset-inline: auto;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: var(--space-5);
         width: var(--shell-w);
         max-width: var(--page-max);
         padding-inline: var(--space-2);

@@ -60,8 +60,8 @@ if (!function_exists('icon')) {
                 // scroll to top
                 'chevron'  => '<path d="M6.8 14.4 12 9.2l5.2 5.2"/>',
 
-                // back to the previous screen
-                'chevron-left' => '<path d="M14.4 6.8 9.2 12l5.2 5.2"/>',
+                // dismiss the assistant sheet
+                'chevron-down' => '<path d="M6.8 9.6 12 14.8l5.2-5.2"/>',
 
 
                 // empty-state marker

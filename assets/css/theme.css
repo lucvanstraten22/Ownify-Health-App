@@ -78,8 +78,6 @@
        just long enough to read as a push and short enough to feel instant. */
     --screen-duration: 280ms;
     --screen-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    /* How far the dashboard trails behind the incoming layer (parallax). */
-    --screen-parallax: 24%;
 
     /* --- layout ---------------------------------------------------------- */
     /* One source of truth for the page column: content, header, tab bar and
@@ -168,7 +166,13 @@ button {
 }
 
 /* --------------------------------------------------------------------------
-   Screen deck — the two layers of the app, side by side in one document.
+   Layers.
+
+   Two movements, kept apart on purpose:
+
+     horizontal — .rail carries the five pages and slides as one element
+     vertical   — .sheet pulls up OVER the rail, so the page underneath keeps
+                  its state and scroll position while the sheet is in front
    -------------------------------------------------------------------------- */
 .deck {
     position: fixed;
@@ -176,32 +180,32 @@ button {
     overflow: hidden;
 }
 
+/* --- horizontal: the page rail ---------------------------------------- */
+.rail {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--screen-duration) var(--screen-ease);
+}
+
+/* One viewport-wide slot per page, parked at its own index. */
+.rail__slot {
+    position: absolute;
+    inset: 0;
+    transform: translate3d(calc(var(--page-index, 0) * 100%), 0, 0);
+}
+
 .screen {
     position: absolute;
     inset: 0;
-    transform: translate3d(0, 0, 0);
-    transition: transform var(--screen-duration) var(--screen-ease);
     /* Vertical panning and pinch-zoom stay with the browser; horizontal
-       movement is the only thing the swipe handler ever sees. */
+       movement is the only thing the page gesture ever sees. */
     touch-action: pan-y pinch-zoom;
 }
 
-.screen--overview { z-index: 1; }
-
-/* Starts parked just off the right edge; the gesture brings it in. */
-.screen--ai {
-    z-index: 2;
-    transform: translate3d(100%, 0, 0);
-}
-
-/* The sheet edge only exists while the layer is on screen. */
-.deck[data-state="moving"] .screen--ai,
-.deck[data-state="open"] .screen--ai {
-    box-shadow: -18px 0 42px rgba(0, 0, 0, 0.34), inset 1px 0 0 rgba(255, 255, 255, 0.07);
-}
-
-/* Each screen scrolls on its own. pan-y hands vertical movement straight to
-   the browser, so only horizontal gestures ever reach the swipe handler. */
+/* Each page scrolls on its own, which is what preserves its scroll position
+   when you move sideways or pull the assistant up over it. */
 .screen__scroll {
     position: absolute;
     inset: 0;
@@ -212,10 +216,26 @@ button {
     touch-action: pan-y pinch-zoom;
 }
 
-.screen__scrim {
+/* --- vertical: the assistant sheet ------------------------------------- */
+.sheet {
+    z-index: 40;
+    transform: translate3d(0, 100%, 0);
+    transition: transform var(--screen-duration) var(--screen-ease);
+    border-start-start-radius: var(--radius-card);
+    border-start-end-radius: var(--radius-card);
+    overflow: hidden;
+}
+
+/* The lifted edge only exists while the sheet is off its rest position. */
+.deck[data-ai-state="moving"] .sheet,
+.deck[data-ai-state="open"] .sheet {
+    box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.sheet-scrim {
     position: absolute;
     inset: 0;
-    z-index: 40;
+    z-index: 35;
     background: rgba(0, 0, 0, 0.42);
     opacity: 0;
     pointer-events: none;
@@ -223,8 +243,9 @@ button {
 }
 
 /* While a finger is on the glass, the layers follow it directly. */
-.deck.is-dragging .screen,
-.deck.is-dragging .screen__scrim { transition: none; }
+.deck.is-dragging .rail,
+.deck.is-dragging .sheet,
+.deck.is-dragging .sheet-scrim { transition: none; }
 
 /* Single alignment rule for the whole page: header, content and tab bar. */
 .shell {

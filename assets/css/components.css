@@ -209,7 +209,7 @@
     justify-content: center;
 }
 
-.pill--back { padding-inline: var(--space-2) var(--space-3); }
+.pill--close { padding-inline: var(--space-2) var(--space-3); }
 
 .pill__icon { width: 18px; height: 18px; }
 
@@ -523,6 +523,35 @@
     margin-top: var(--space-4);
 }
 
+.chips--centered { justify-content: center; }
+
+/* --------------------------------------------------------------------------
+   Section page that is not built yet — same empty-state language as the rest
+   -------------------------------------------------------------------------- */
+.section-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: var(--space-6);
+    text-align: center;
+}
+
+.section-empty__title {
+    margin-top: var(--space-4);
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.section-empty__lede {
+    margin-top: var(--space-2);
+    max-width: 30ch;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.section-empty .card__hint { align-self: stretch; }
+
 /* --------------------------------------------------------------------------
    Insights
    -------------------------------------------------------------------------- */
@@ -743,14 +772,52 @@
 /* --------------------------------------------------------------------------
    Bottom navigation
    -------------------------------------------------------------------------- */
-.tabbar {
-    /* Absolute, not fixed: it belongs to the overview screen and travels with
-       it during the swipe. The screen is viewport-sized, so it lands in the
-       same place as a fixed bar would. */
+/* The dock holds everything pinned to the bottom: above the page rail, below
+   the assistant sheet. It is also the sheet's grab area — `touch-action: none`
+   here is what makes the upward swipe possible, while everywhere else vertical
+   movement stays with the browser and ordinary scrolling is untouched.
+   The band between the handle and the tab bar stays click-through. */
+.app-dock {
     position: absolute;
     inset-inline: 0;
     bottom: 0;
     z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: none;
+    pointer-events: none;
+}
+
+.app-dock > * { pointer-events: auto; }
+
+/* Pull-up affordance, and a tap target for anyone not using the gesture. */
+.ai-handle {
+    display: grid;
+    place-items: center;
+    width: 128px;
+    height: 40px;
+    border-radius: var(--radius-pill);
+}
+
+.ai-handle__grip {
+    display: block;
+    width: 38px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.18);
+    transition: background-color var(--transition-fast), width var(--transition-fast);
+}
+
+.ai-handle:active .ai-handle__grip,
+.ai-handle:focus-visible .ai-handle__grip {
+    width: 50px;
+    background: rgba(255, 255, 255, 0.42);
+}
+
+.tabbar {
+    position: relative;
+    width: 100%;
     padding-top: var(--space-2);
     padding-bottom: calc(var(--safe-bottom) + var(--space-2));
     border-top: 1px solid var(--glass-hairline);
@@ -833,7 +900,8 @@
     position: absolute;
     left: 50%;
     bottom: calc(var(--tabbar-height) + var(--safe-bottom) + var(--space-4));
-    z-index: 25;
+    /* Above the dock, so it stays tappable where the two overlap. */
+    z-index: 36;
     display: grid;
     place-items: center;
     width: var(--fab-size);
