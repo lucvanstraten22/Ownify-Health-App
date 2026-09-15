@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 return [
 
-    'demo'  => false,
+    'demo'  => true,
 
     'title' => 'Gezondheid',
     'lede'  => 'Je drie pijlers. Tik op een onderdeel voor de details.',
