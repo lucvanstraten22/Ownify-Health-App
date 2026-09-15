@@ -94,6 +94,10 @@
 
     .grid--two { grid-template-columns: 1fr; }
 
+    /* The longest label ("Gezondheid") needs the extra width down here. */
+    .tabbar__list { width: min(98vw, var(--page-max)); }
+    .tab__label { font-size: 0.625rem; }
+
     .legend {
         grid-template-columns: 1fr;
         justify-items: start;
@@ -107,8 +111,6 @@
 
     /* The weekday is the first thing to go when space runs out. */
     .card__meta-day { display: none; }
-
-    .tabbar__list { gap: 2px; }
 }
 
 /* --------------------------------------------------------------------------

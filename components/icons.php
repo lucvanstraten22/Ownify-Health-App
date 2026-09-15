@@ -20,6 +20,13 @@ if (!function_exists('icon')) {
                 // account
                 'user'     => '<circle cx="12" cy="9" r="3.2"/><path d="M5.6 19.6a6.6 6.6 0 0 1 12.8 0"/>',
 
+                // health section — sleep, nutrition and sport together
+                'heart'    => '<path d="M20.3 4.9a5 5 0 0 0-7.1 0L12 6.1l-1.2-1.2a5 5 0 1 0-7.1 7.1l1.2 1.2L12 19.4l7.1-6.2 1.2-1.2a5 5 0 0 0 0-7.1Z"/>',
+
+                // community — two people, same proportions as the account icon
+                'community' => '<circle cx="9.2" cy="9.4" r="2.9"/><path d="M3.8 19.5a5.4 5.4 0 0 1 10.8 0"/>'
+                    . '<circle cx="16.9" cy="8" r="2.2"/><path d="M16.4 13.3a4.6 4.6 0 0 1 3.8 6.2"/>',
+
                 // sleep
                 'moon'     => '<path d="M20.2 14.4A8.4 8.4 0 0 1 9.6 3.8a8.4 8.4 0 1 0 10.6 10.6Z"/>',
 
@@ -41,8 +48,8 @@ if (!function_exists('icon')) {
                 // patterns / research
                 'chart'    => '<path d="M4 4.5v15h15.5"/><path d="M7.6 15.4 11 11.2l2.9 2.4 4.4-6"/>',
 
-                // goal
-                'target'   => '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3.9"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+                // goals — deliberately not a second ring: `rings` owns that shape
+                'flag'     => '<path d="M6 20.6V4"/><path d="M6 5c4.5-2 9 2 13.5 0v8.6c-4.5 2-9-2-13.5 0Z"/>',
 
                 // recommendation
                 'sparkle'  => '<path d="M12 3.6 13.7 9 19 10.8 13.7 12.6 12 18l-1.7-5.4L5 10.8 10.3 9 12 3.6Z"/><path d="M18.4 17.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/>',
@@ -56,8 +63,6 @@ if (!function_exists('icon')) {
                 // back to the previous screen
                 'chevron-left' => '<path d="M14.4 6.8 9.2 12l5.2 5.2"/>',
 
-                // edge affordance towards the assistant layer
-                'chevron-right' => '<path d="M9.6 6.8 14.8 12l-5.2 5.2"/>',
 
                 // empty-state marker
                 'lock'     => '<rect x="5" y="10.5" width="14" height="9.5" rx="2.6"/><path d="M8.4 10.5V8.2a3.6 3.6 0 0 1 7.2 0v2.3"/>',

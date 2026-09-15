@@ -9,7 +9,7 @@ $ratio   = score_ratio($goal['progress'], 100);
 <section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile" aria-hidden="true"><?= icon('target') ?></span>
+        <span class="icon-tile" aria-hidden="true"><?= icon('flag') ?></span>
         <h2 class="card__eyebrow" id="goal-title"><?= e($goal['title']) ?></h2>
     </div>
 

@@ -39,7 +39,7 @@ components/
     recommendation.php        one small suggestion placeholder
     leaderboard.php           compact social layer
     scroll-top.php            floating glass control
-    bottom-navigation.php     five-item tab bar (overview screen only)
+    bottom-navigation.php     the five primary destinations (overview screen)
     edge-handle.php           right-edge affordance towards the assistant
     ai-empty-state.php        glass orb + name + status
     ai-composer.php           reserved space for the future input interface
@@ -53,6 +53,24 @@ assets/js/
     interactions.js           reveal, header condense, floating control, tabs
     swipe-navigation.js       the gesture between the two screens
 ```
+
+## Navigation
+
+Five primary destinations, defined once in the `navigation` array of
+`config/dashboard.php` — label, icon, order, destination and active state all
+live there, and `components/bottom-navigation.php` only renders it.
+
+```
+Gezondheid  ──  slaap · voeding · sport, grouped into one section
+Doelen      ──  persoonlijke doelen en voortgang
+Overzicht   ──  het dagelijkse dashboard          ← the only one built
+Community   ──  ranglijst + toekomstige sociale functies
+Instellingen──  app- en gebruikersinstellingen
+```
+
+Only `overview` has a `destination`; the other four are `null`, so they render
+as inert buttons rather than links to pages that do not exist yet. The
+assistant layer is deliberately not a sixth item — it is reached by the swipe.
 
 ## The two screens
 

@@ -205,17 +205,27 @@ return [
         'footnote' => 'Vergelijken is optioneel — je eigen lijn telt.',
     ],
 
-    /* -------------------------------------------------- bottom navigation */
+    /* -------------------------------------------------- bottom navigation
+     * The app's five primary destinations, in order. This array is the only
+     * definition of the navigation: label, icon, destination, order and
+     * active state all live here.
+     *
+     * `destination` is the page that renders the section. Only 'overview'
+     * exists today; the others are null, so the component renders them as
+     * inert buttons rather than links to pages that are not there yet.
+     *
+     *   Gezondheid  — slaap, voeding en sport, samen in één sectie
+     *   Doelen      — persoonlijke doelen en voortgang
+     *   Overzicht   — het dagelijkse dashboard (hier)
+     *   Community   — ranglijst en toekomstige sociale functies
+     *   Instellingen— app- en gebruikersinstellingen
+     */
     'navigation' => [
-        /*
-         * Exactly five items. `icon => null` means: render the label only.
-         * Community deliberately has no icon yet (concept not decided).
-         */
-        ['id' => 'sleep',           'label' => 'Slaap',           'icon' => 'moon',      'active' => false],
-        ['id' => 'nutrition_sport', 'label' => 'Voeding & Sport', 'icon' => 'leaf',      'active' => false],
-        ['id' => 'overview',        'label' => 'Overzicht',       'icon' => 'rings',     'active' => true],
-        ['id' => 'settings',        'label' => 'Instellingen',    'icon' => 'sliders',   'active' => false],
-        ['id' => 'community',       'label' => 'Community',       'icon' => null,        'active' => false],
+        ['id' => 'health',    'label' => 'Gezondheid',   'icon' => 'heart',     'destination' => null,       'active' => false],
+        ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => null,       'active' => false],
+        ['id' => 'overview',  'label' => 'Overzicht',    'icon' => 'rings',     'destination' => 'overview', 'active' => true],
+        ['id' => 'community', 'label' => 'Community',    'icon' => 'community', 'destination' => null,       'active' => false],
+        ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => null,       'active' => false],
     ],
 
     /* -------------------------------------------------- AI extension layer
