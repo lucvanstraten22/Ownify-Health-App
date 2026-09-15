@@ -1,0 +1,6 @@
+# Local database credentials — never commit these.
+/config/database.local.php
+
+# Uploaded profile pictures are user content, not source.
+/uploads/avatars/*
+!/uploads/avatars/.gitkeep

@@ -1,0 +1,239 @@
+/* ==========================================================================
+   account.css — the sign-in / account panel.
+   Same tokens, same card recipe, same pills and buttons as everything else.
+   ========================================================================== */
+
+.account {
+    position: fixed;
+    inset: 0;
+    z-index: 60;              /* above the assistant sheet */
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    padding-top: calc(var(--safe-top) + var(--space-4));
+    padding-bottom: calc(var(--safe-bottom) + var(--space-4));
+}
+
+.account[hidden] { display: none; }
+
+.account__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.52);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.account__panel {
+    position: relative;
+    width: min(100%, 25rem);
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+}
+
+.account.is-open .account__scrim { opacity: 1; }
+
+.account.is-open .account__panel {
+    opacity: 1;
+    transform: none;
+}
+
+.account__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.account__close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-secondary);
+}
+
+.account__close .icon { width: 17px; height: 17px; }
+
+/* --------------------------------------------------------------- messages */
+.account__notice,
+.account__error {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.account__error {
+    border-color: rgba(191, 168, 99, 0.34);
+    background: rgba(191, 168, 99, 0.10);
+    color: var(--text-primary);
+}
+
+.account__error[hidden] { display: none; }
+
+.account__notice code {
+    font-size: 0.8em;
+    color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------- identity */
+.account__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.account__avatar {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    flex: none;
+    overflow: hidden;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-muted);
+}
+
+.account__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.account__avatar .icon { width: 22px; height: 22px; }
+
+.account__username {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.account__meta {
+    margin-top: var(--space-1);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ forms */
+.account__form { margin-top: var(--space-4); }
+
+.account__field + .account__field { margin-top: var(--space-3); }
+
+.account__label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.account__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.account__input,
+.account__file {
+    /* Full width on their own, and sharing the row when next to a button. */
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-label);
+}
+
+.account__file {
+    padding-block: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.account__input::placeholder { color: var(--text-faint); }
+
+.account__input:focus-visible,
+.account__file:focus-visible {
+    outline: none;
+    border-color: rgba(60, 158, 114, 0.5);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.account__submit,
+.account__logout {
+    width: 100%;
+    margin-top: var(--space-4);
+}
+
+.account__hint {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------- providers */
+.account__providers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.account__provider { width: 100%; }
+
+.account__divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block: var(--space-4);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.account__divider::before,
+.account__divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--glass-hairline);
+}
+
+.account__form[data-account-form="email"] { margin-top: var(--space-4); }
+
+/* The avatar slot in the header button: an icon until there is a picture. */
+.pill__avatar {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.pill__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .account__panel { transform: none; }
+}

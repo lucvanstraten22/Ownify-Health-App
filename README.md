@@ -23,10 +23,19 @@ php -S localhost:8000
 
 Then open <http://localhost:8000> — best viewed at phone width.
 
+For accounts, import `database/schema.sql` through phpMyAdmin and check
+`config/database.php`. Without a database the app still runs: signed out, on
+placeholder data. See [docs/DATABASE.md](docs/DATABASE.md).
+
 ## Structure
 
 ```
 index.php                     app shell: the rail, the dock, details and the sheet
+database/
+    schema.sql                the MySQL schema — repeatable, import and go
+    seed-dev.sql              fake development data, never production
+includes/                     the data layer: db, session, auth, repositories
+api/                          JSON endpoints for sign-in and profile edits
 pages/
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend
@@ -64,6 +73,7 @@ components/
     leaderboard-board.php     one scope × period board
     leaderboard-row.php       position · avatar · name · points
     community-badges.php      reserved space for badges and milestones
+    account-modal.php         sign-in when signed out, account when signed in
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
     components.css            the UI kit
@@ -80,6 +90,7 @@ assets/js/
     health-detail.js          drilling into a health area, and swiping back
     health-trend.js           week / month switch and the line draw-on
     community.js              scope and period switching
+    account.js                the account panel
 ```
 
 ## Navigation
@@ -212,6 +223,25 @@ keys.
 `community_prepare()` builds a deterministic roster — defined in
 `lib/community.php`, belonging to nobody — so the design and the floating
 behaviour can be reviewed with a full board. It is false by default.
+
+## Accounts and data
+
+Sign-in, profiles, health data, goals, friendships and leaderboards have a real
+MySQL schema behind them — see **[docs/DATABASE.md](docs/DATABASE.md)** for the
+tables, the privacy model and where the future integrations plug in.
+
+What works today: email/password sign-in, changing a username, uploading a
+profile picture. **Apple and Google are not implemented and are not faked** —
+their buttons render disabled and the endpoint answers 501.
+
+The pages still render placeholder data. The database is the foundation under
+them, not yet their source.
+
+**Privacy in one line:** every health query takes the authenticated user id as
+its first argument and filters on it, no endpoint accepts a user id from the
+request, and anything rendering another person goes through
+`user_public_profile()`, which returns a username and an avatar and nothing
+else.
 
 ## Placeholder contract
 
