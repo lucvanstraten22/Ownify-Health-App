@@ -904,6 +904,19 @@
     gap: 0;
     width: 100%;
     height: 100%;
+    /* Pulls the outer labels in off the capsule's ends, so the gap beside the
+       G of Gezondheid matches the gap under it.
+
+       Two things work against a fixed number. The ends are round, so at the
+       labels' height the glass edge is already ~3px inboard of the bar's own
+       edge. And the capsule grows with the screen while the labels do not, so
+       the outer cells absorb the slack and the gap drifts wider as the phone
+       gets bigger.
+
+       Solving gap = padding + (cell - label) / 2 - curve for a constant gap
+       gives a padding that falls as the viewport grows: nothing to give away
+       on a large phone, the full 8px on a small one. */
+    padding-inline: clamp(0px, calc(50px - 11.75vw), 8px);
 }
 
 /* The capsule is only as tall as an icon, a label and a little air. */

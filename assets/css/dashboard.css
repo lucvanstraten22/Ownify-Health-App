@@ -31,8 +31,9 @@
         --radius-card: 24px;
     }
 
-    /* The longest label ("Gezondheid") needs the extra width down here. */
-    .tabbar__list { width: min(98vw, var(--page-max)); }
+    /* The longest labels need the extra width down here, and the capsule is
+       what gives it to them now — the list always fills the capsule. */
+    .tabbar { width: min(97vw, 27.5rem); }
     .tab__label { font-size: 0.625rem; }
 
     .legend {
@@ -79,8 +80,6 @@
         border-radius: var(--radius-card);
         box-shadow: var(--shadow-float);
     }
-
-    .tabbar__list { width: 100%; }
 
     .fab { bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-4)); }
 
