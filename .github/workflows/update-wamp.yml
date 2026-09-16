@@ -13,5 +13,6 @@ jobs:
       - name: Update WAMP project
         shell: cmd
         run: |
+          git config --global --add safe.directory "C:/wamp64/www/JoLu"
           git -C "C:\wamp64\www\JoLu" fetch origin
           git -C "C:\wamp64\www\JoLu" reset --hard origin/main
