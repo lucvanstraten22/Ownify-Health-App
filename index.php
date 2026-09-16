@@ -13,8 +13,10 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/lib/render.php';
 require __DIR__ . '/lib/health.php';
+require __DIR__ . '/lib/community.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
@@ -23,6 +25,12 @@ $data = require __DIR__ . '/config/dashboard.php';
 /* Health lives in its own config; health_prepare() is what keeps the
    review-only demo values out of the shipped page. */
 $data['health'] = health_prepare(require __DIR__ . '/config/health.php');
+
+/* Community boards are assembled the same way: empty unless demo is on. */
+$data['community'] = community_prepare(require __DIR__ . '/config/community.php');
+
+/* Session state for the header button and the account panel. */
+$data['auth'] = app_auth();
 
 $app   = $data['app'];
 $focus = $data['focus'];
@@ -58,6 +66,8 @@ foreach ($data['navigation'] as $position => $item) {
     <link rel="stylesheet" href="assets/css/dashboard.css">
     <link rel="stylesheet" href="assets/css/ai.css">
     <link rel="stylesheet" href="assets/css/health.css">
+    <link rel="stylesheet" href="assets/css/community.css">
+    <link rel="stylesheet" href="assets/css/account.css">
 </head>
 <body class="app">
 
@@ -83,6 +93,8 @@ foreach ($data['navigation'] as $position => $item) {
                         page('overview', $pageData);
                     } elseif ($item['destination'] === 'health') {
                         page('health', $pageData);
+                    } elseif ($item['destination'] === 'community') {
+                        page('community', $pageData);
                     } elseif (isset($data['sections'][$item['id']])) {
                         $pageData['section'] = $data['sections'][$item['id']] + ['id' => $item['id']];
                         page('section', $pageData);
@@ -110,6 +122,8 @@ foreach ($data['navigation'] as $position => $item) {
 
     </div>
 
+    <?php component('account-modal', $data); ?>
+
     <script src="assets/js/dashboard.js" defer></script>
     <script src="assets/js/interactions.js" defer></script>
     <script src="assets/js/navigation-core.js" defer></script>
@@ -117,5 +131,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="assets/js/ai-sheet.js" defer></script>
     <script src="assets/js/health-detail.js" defer></script>
     <script src="assets/js/health-trend.js" defer></script>
+    <script src="assets/js/community.js" defer></script>
+    <script src="assets/js/account.js" defer></script>
 </body>
 </html>

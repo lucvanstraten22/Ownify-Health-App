@@ -1,0 +1,22 @@
+# Uploads are data, never code. Apache must serve them, never execute them.
+
+# php_flag only exists when Apache runs mod_php (the WampServer default).
+# Guarded, so a PHP-FPM setup gets the FilesMatch rule below instead of a 500.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php5.c>
+    php_flag engine off
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# The real guarantee: nothing executable is served from here at all.
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh|htaccess)$">
+    Require all denied
+</FilesMatch>

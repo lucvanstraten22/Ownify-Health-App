@@ -1,0 +1,285 @@
+/* ==========================================================================
+   community.css — the leaderboard page.
+
+   No new tokens: everything comes from theme.css, and the segmented control
+   is the one the health trend already uses.
+   ========================================================================== */
+
+.community {
+    --dock-clear: calc(var(--tabbar-height) + var(--safe-bottom) + var(--space-6) + var(--space-3));
+
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Head — header, title and the two controls. Never scrolls.
+   -------------------------------------------------------------------------- */
+.community__head { flex: none; }
+
+/* Kept deliberately shallow: every pixel here is a pixel the leaderboard
+   does not get. */
+.community__controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+}
+
+.community__title {
+    padding-inline: var(--space-2);
+    padding-bottom: var(--space-1);
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* Two options fill the width; three share it evenly. */
+.range-switch--wide {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    width: 100%;
+}
+
+.range-switch--wide .range-switch__option {
+    min-height: 34px;
+    padding-inline: var(--space-2);
+}
+
+/* --------------------------------------------------------------------------
+   Board — the only thing on the page that scrolls
+   -------------------------------------------------------------------------- */
+.community__board {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.board { display: none; }
+
+.board.is-active {
+    display: block;
+    position: absolute;
+    inset: 0;
+}
+
+.board__scroll {
+    position: absolute;
+    inset: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y pinch-zoom;
+    padding-bottom: var(--dock-clear);
+}
+
+.board-list {
+    width: var(--shell-w);
+    max-width: var(--page-max);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* --------------------------------------------------------------------------
+   Row — position, avatar, name, points
+   -------------------------------------------------------------------------- */
+.board-row {
+    display: grid;
+    grid-template-columns: 2.25rem 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 52px;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.board-row__rank {
+    font-size: var(--fs-small);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+/* The only emphasis the top of the board gets: weight, not medals. */
+.board-row:nth-child(-n + 3) .board-row__rank {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.board-row__avatar {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--accent);
+    color: color-mix(in srgb, var(--accent) 78%, #ffffff);
+}
+
+.board-row__avatar .icon { width: 16px; height: 16px; color: var(--text-muted); }
+
+.board-row__name {
+    font-size: var(--fs-label);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.board-row__points {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.board-row__points.is-empty { font-weight: 500; color: var(--text-muted); }
+
+.board-row__unit {
+    margin-left: 3px;
+    font-size: var(--fs-tiny);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Your row.
+   Sticky with BOTH offsets: it sits in place while it is on screen and docks
+   to whichever edge it would otherwise leave. One element, never a duplicate.
+   -------------------------------------------------------------------------- */
+.board-row--you {
+    border-color: rgba(60, 158, 114, 0.30);
+    background: linear-gradient(180deg, rgba(60, 158, 114, 0.10), rgba(60, 158, 114, 0.045));
+}
+
+.board-row--you .board-row__name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.board-row--you .board-row__rank { color: var(--text-primary); font-weight: 600; }
+
+.board-row--sticky {
+    position: sticky;
+    top: var(--space-2);
+    /* Small, not the full dock clearance: the scroller's own bottom padding
+       already lifts the sticky rectangle clear of the tab bar, and the offset
+       is measured from there. */
+    bottom: var(--space-2);
+    z-index: 2;
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(140%);
+    backdrop-filter: blur(var(--blur-card)) saturate(140%);
+    background: linear-gradient(180deg, rgba(46, 57, 52, 0.97), rgba(42, 52, 48, 0.96));
+    /* Lifted off the list, so rows read as passing underneath it whether it is
+       docked against an edge or sitting in its own place. */
+    box-shadow: var(--shadow-inset), 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+/* --------------------------------------------------------------------------
+   The break before a position outside the top 50
+   -------------------------------------------------------------------------- */
+.board-gap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+}
+
+.board-gap__dots {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg,
+        rgba(255, 255, 255, 0.16) 0 2px,
+        transparent 2px 8px);
+}
+
+.board-gap__label {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Empty states and the reserved badge area
+   -------------------------------------------------------------------------- */
+.board-empty,
+.board-list--single,
+.board__scroll > .card--badges,
+.board-you-label {
+    width: var(--shell-w);
+    max-width: var(--page-max);
+    margin-inline: auto;
+}
+
+.board-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: var(--space-6);
+    text-align: center;
+}
+
+.board-empty__title {
+    margin-top: var(--space-4);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.board-empty__body {
+    margin-top: var(--space-2);
+    max-width: 30ch;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.board-you-label {
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-2);
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.board-extra {
+    display: block;
+    margin-top: var(--space-5);
+}
+
+.card--badges {
+    background: var(--surface-gradient-quiet);
+    border-color: var(--glass-border-soft);
+}
+
+.card--badges .card__head--compact { margin-bottom: 0; }
+
+/* --------------------------------------------------------------------------
+   Narrow phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .board-row {
+        grid-template-columns: 1.9rem 30px minmax(0, 1fr) auto;
+        gap: var(--space-2);
+        padding-inline: var(--space-2);
+    }
+
+    .board-row__avatar { width: 30px; height: 30px; }
+    .board-row__name { font-size: var(--fs-small); }
+    .board-row__points { font-size: var(--fs-small); }
+    .range-switch--wide .range-switch__option { padding-inline: var(--space-1); }
+}

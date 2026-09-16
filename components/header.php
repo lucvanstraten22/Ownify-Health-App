@@ -20,9 +20,16 @@ $account = $data['header']['account'];
             <span class="app-header__name"><?= e($app['name']) ?></span>
         </p>
 
-        <button type="button" class="pill pill--account press"
+        <button type="button" class="pill pill--account press" data-account-open
                 aria-label="<?= e($account['aria']) ?>">
-            <?= icon('user', 'pill__icon') ?>
+            <?php $avatar = $data['auth']['user']['avatar_path'] ?? null; ?>
+            <span class="pill__avatar" data-account-avatar>
+                <?php if ($avatar !== null && $avatar !== ''): ?>
+                    <img src="<?= e($avatar) ?>" alt="">
+                <?php else: ?>
+                    <?= icon('user', 'pill__icon') ?>
+                <?php endif; ?>
+            </span>
         </button>
 
     </div>
