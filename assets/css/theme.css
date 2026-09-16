@@ -122,14 +122,37 @@
        arrives at the cut and shows. */
     --sheen-overhang: 16px;
 
-    /* The tab's interior. The icon and the label are both laid out by their
-       ink rather than their boxes, so --tab-gap is the gap the eye actually
-       sees between them, and --tab-optical is the one correction left: the
-       descender space under a label whose word usually has no descender. */
-    --tab-icon: 22px;
-    --tab-gap: 5px;
-    --tab-label: 0.6875rem;
-    --tab-optical: 0.228;
+    /* The tab's interior. Every number here applies to all five tabs alike:
+       the icons are normalised on their own grid instead, so nothing is
+       corrected tab by tab. The icon leads and the label supports, which is
+       why the icon box is well over twice the type size. */
+    --tab-icon: 24px;
+    --tab-gap: 3px;
+    --tab-label: 0.625rem;
+    --tab-glow-inset: 4px;
+
+    /* The one correction left, in label ems so it follows the type: the icon
+       box is a square frame around marks that are mostly wider than they are
+       tall, so it carries more dead space above the strokes than the label's
+       box carries under its baseline. */
+    --tab-optical: 0.124;
+
+    /* Edge padding on the row of tabs, so the gap beside the first and last
+       label stays close to the gap under all of them.
+
+       It has to fall as the screen grows. The five columns are equal and each
+       label is centred in its own, so every pixel the capsule gains is split
+       among the cells and half of the outer cells' share lands outside the
+       outer labels — the gap widens on its own at 0.1px per px of bar. Giving
+       the padding the opposite slope holds it still; the cap is where a small
+       phone would rather have the width than the symmetry. */
+    --tab-edge: clamp(0px, calc(49.5px - 10.65vw), 12px);
+
+    /* The header pair, on the same terms as the bar: one button size and one
+       icon box for the two of them, the icon box the same as a tab's so the
+       two rows read as one family. */
+    --header-btn: 46px;
+    --header-icon: 24px;
     --header-height: 56px;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);

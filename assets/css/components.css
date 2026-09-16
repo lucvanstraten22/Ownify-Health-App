@@ -212,8 +212,8 @@
 .pill--account {
     position: relative;
     isolation: isolate;
-    width: 46px;
-    height: 46px;
+    width: var(--header-btn);
+    height: var(--header-btn);
     min-height: 0;
     padding-inline: 0;
     justify-content: center;
@@ -254,8 +254,11 @@
     pointer-events: none;
 }
 
+/* One box for the pair, the same way the tab bar has one box for its five.
+   The marks inside are normalised on the grid, so this is all it takes for
+   the two to read as the same size. */
 .pill--devices .icon,
-.pill--account .icon { width: 20px; height: 20px; }
+.pill--account .icon { width: var(--header-icon); height: var(--header-icon); }
 
 /* A press settles the pane rather than shrinking the button. */
 .pill--devices:active,
@@ -913,19 +916,11 @@
     gap: 0;
     width: 100%;
     height: 100%;
-    /* Pulls the outer labels in off the capsule's ends, so the gap beside the
-       G of Gezondheid matches the gap under it.
-
-       Two things work against a fixed number. The ends are round, so at the
-       labels' height the glass edge is already ~3px inboard of the bar's own
-       edge. And the capsule grows with the screen while the labels do not, so
-       the outer cells absorb the slack and the gap drifts wider as the phone
-       gets bigger.
-
-       Solving gap = padding + (cell - label) / 2 - curve for a constant gap
-       gives a padding that falls as the viewport grows: nothing to give away
-       on a large phone, the full 8px on a small one. */
-    padding-inline: clamp(0px, calc(50px - 11.75vw), 8px);
+    /* Keeps the capsule's curve off the first letter of the outer labels.
+       One rule for every width, and it leaves the five columns equal — it
+       insets the row, not the items. The slope it needs is worked out where
+       the token is defined. */
+    padding-inline: var(--tab-edge);
 }
 
 /* The capsule is only as tall as an icon, a label and a little air. */
@@ -938,11 +933,12 @@
     gap: var(--tab-gap);
     width: 100%;
     height: 100%;
-    /* The label's box reaches below its baseline for descenders that most of
-       these words do not have, so centring on the boxes leaves the pair
-       sitting low. This pays that back, in label ems so it follows the font
-       down on small screens. */
-    padding: calc(var(--tab-label) * var(--tab-optical)) 0 0;
+    /* One correction, the same on all five tabs. The icon box is a square
+       frame around marks that are mostly wider than they are tall, so it
+       carries more dead space above the strokes than the label's box carries
+       under its baseline, and centring the boxes leaves the pair reading low.
+       Measured in label ems, so it holds if the type ever moves. */
+    padding: 0 0 calc(var(--tab-label) * var(--tab-optical));
     border-radius: var(--radius-pill);
     /* Translucent glass gives back less contrast than a solid bar, so the
        resting label carries a little more of its own. */
@@ -950,28 +946,10 @@
     transition: color var(--transition-fast);
 }
 
-/* Laid out by the strokes, not by the frame around them.
-
-   Every icon shares the same 24 grid and the same 22px box, but not the same
-   inset inside it: the heart's ink starts 2.6 units down, the sliders' 5.45.
-   Centring the boxes therefore centres five different things, and the two
-   quiet icons end up sitting visibly high with the air pooling above them.
-   Pulling each box in to its own ink makes the visible mark the thing that
-   gets centred, and the same thing on all five tabs. */
-.tab__icon {
-    display: block;
-    margin-top: calc(var(--tab-icon) * var(--ink-top, 0) / -24);
-    margin-bottom: calc(var(--tab-icon) * var(--ink-bottom, 0) / -24);
-}
-
-.tab__icon[data-icon="rings"]     { --ink-top: 2.79; --ink-bottom: 2.79; }
-.tab__icon[data-icon="heart"]     { --ink-top: 2.60; --ink-bottom: 3.75; }
-.tab__icon[data-icon="flag"]      { --ink-top: 3.21; --ink-bottom: 2.60; }
-.tab__icon[data-icon="community"] { --ink-top: 4.98; --ink-bottom: 3.69; }
-.tab__icon[data-icon="sliders"]   { --ink-top: 5.45; --ink-bottom: 5.45; }
-/* An icon not listed above falls back to 0 and is centred by its frame, the
-   way it was before — wrong by a pixel or two, never broken. */
-
+/* One box for all five. The icons used to need a per-icon correction here to
+   look centred; they are normalised on the grid instead now, so the box and
+   the eye agree and nothing is tuned tab by tab. */
+.tab__icon { display: block; }
 .tab__icon .icon { width: var(--tab-icon); height: var(--tab-icon); }
 
 /* All five labels are single words, so they never wrap: the icons stay on one
@@ -995,7 +973,7 @@
    No accent: the bar is grey and white throughout. */
 .tab__glow {
     position: absolute;
-    inset: 4px 5px;
+    inset: var(--tab-glow-inset);
     border-radius: var(--radius-pill);
     background: linear-gradient(178deg,
         rgba(255, 255, 255, 0.20) 0%,
@@ -1015,6 +993,9 @@
    lozenge does the responding, so the tab itself must not also shrink. */
 .tab.press:active { transform: none; }
 
+/* Two cues, not three. The lozenge and the brighter ink are the state; the
+   label used to bold as well, which cost the five labels their shared metrics
+   and shifted the word's width as you moved between tabs. */
 .tab.is-active { color: var(--text-primary); }
 .tab.is-active .tab__icon { color: var(--text-primary); }
 
@@ -1022,8 +1003,6 @@
     opacity: 1;
     transform: none;
 }
-
-.tab.is-active .tab__label { font-weight: 600; }
 
 /* A press lifts the glass under the finger, then lets it settle. */
 .tab:not(.is-active):active .tab__glow { opacity: 0.45; transform: none; }
