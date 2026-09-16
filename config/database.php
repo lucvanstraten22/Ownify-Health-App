@@ -11,7 +11,7 @@
  * out of the repository.
  *
  *     <?php  // config/database.local.php
- *     return ['username' => 'vitalis', 'password' => 'secret'];
+ *     return ['username' => 'jolu', 'password' => 'secret'];
  */
 
 declare(strict_types=1);
@@ -19,7 +19,7 @@ declare(strict_types=1);
 $settings = [
     'host'     => '127.0.0.1',
     'port'     => 3306,
-    'database' => 'vitalis',
+    'database' => 'jolu',
     'username' => 'root',
     'password' => '',
     'charset'  => 'utf8mb4',

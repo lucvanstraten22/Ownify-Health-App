@@ -1,5 +1,5 @@
 -- ============================================================================
---  Vitalis — DEVELOPMENT SEED DATA
+--  JoLu — DEVELOPMENT SEED DATA
 -- ----------------------------------------------------------------------------
 --  *** EVERY ROW IN THIS FILE IS FAKE. ***
 --
@@ -17,7 +17,7 @@
 --  local WampServer, never anywhere else.
 -- ============================================================================
 
-USE `vitalis`;
+USE `jolu`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM `point_events`;

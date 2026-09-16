@@ -28,7 +28,7 @@ if (!function_exists('session_boot')) {
             'secure'   => $https,        // https only once there is https
         ]);
 
-        session_name('vitalis_session');
+        session_name('jolu_session');
         session_start();
     }
 

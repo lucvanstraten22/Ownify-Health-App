@@ -7,7 +7,7 @@ layer is the ground they will stand on, plus a working sign-in.
 ## Setting it up (WampServer)
 
 1. Start Wamp, open **phpMyAdmin**.
-2. Import `database/schema.sql`. It creates the `vitalis` database and every
+2. Import `database/schema.sql`. It creates the `jolu` database and every
    table, and can be re-imported at any time to rebuild from scratch.
 3. Optional: import `database/seed-dev.sql` for fake development data.
 4. Credentials default to Wamp's `root` with no password. To change them,
@@ -16,11 +16,20 @@ layer is the ground they will stand on, plus a working sign-in.
 
    ```php
    <?php // config/database.local.php
-   return ['username' => 'vitalis', 'password' => 'secret'];
+   return ['username' => 'jolu', 'password' => 'secret'];
    ```
 
 Until the schema is imported the app still runs: it renders signed out, and
 the account panel says the database is unreachable instead of erroring.
+
+### Coming from a `vitalis` database
+
+The app used to be called Vitalis and its database was named accordingly. If
+you already imported the old schema, either re-import `schema.sql` (it now
+creates `jolu`) and drop `vitalis`, or, to keep the accounts you already have,
+rename it in phpMyAdmin: select `vitalis` → **Operations** → *Rename database
+to* → `jolu`. The session cookie is now `jolu_session`, so everyone signs in
+again once either way.
 
 ## The tables
 
