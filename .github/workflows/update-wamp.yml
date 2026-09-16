@@ -13,15 +13,20 @@ jobs:
       contents: read
 
     steps:
-      - name: Deploy exact pushed commit to WAMP
+      - name: Update WAMP project
         shell: cmd
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DEPLOY_SHA: ${{ github.sha }}
         run: |
           git config --global --add safe.directory "C:/wamp64/www/JoLu"
           set GIT_TERMINAL_PROMPT=0
+
           git -C "C:\wamp64\www\JoLu" -c http.extraheader="AUTHORIZATION: bearer %GITHUB_TOKEN%" fetch origin main --prune
-          git -C "C:\wamp64\www\JoLu" reset --hard %DEPLOY_SHA%
-          echo Deployed commit:
-          git -C "C:\wamp64\www\JoLu" rev-parse --short HEAD
+
+          echo Remote commit:
+          git -C "C:\wamp64\www\JoLu" rev-parse origin/main
+
+          git -C "C:\wamp64\www\JoLu" reset --hard origin/main
+
+          echo Local commit:
+          git -C "C:\wamp64\www\JoLu" rev-parse HEAD
