@@ -77,55 +77,17 @@ return [
             'empty_hint'  => 'Verbind een bron om je dagscore te berekenen.',
         ],
 
-        /* Ring legend — names the three pillars the score averages. The three
-         * count equally, so there are no weights to carry here; the legend
-         * renders a label and an accent and nothing else. */
+        /* Ring legend — the three pillars the score averages, each with its own
+         * score beside it. `area` points at the Gezondheid area the row reads
+         * from, which is why the Sport row can carry the Training score without
+         * either name having to change. The three count equally, so there are
+         * no weights here. Values are DERIVED, like the overall score. */
         'contributors' => [
-            ['key' => 'sleep',     'label' => 'Slaap',   'accent' => 'health'],
-            ['key' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition'],
-            ['key' => 'sport',     'label' => 'Sport',   'accent' => 'activity'],
+            ['area' => 'sleep',     'label' => 'Slaap',   'accent' => 'health',    'value' => null],
+            ['area' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'value' => null],
+            ['area' => 'training',  'label' => 'Sport',   'accent' => 'activity',  'value' => null],
         ],
 
-        /* B + C — secondary category cards (identical card system) */
-        'secondary' => [
-            [
-                'key'     => 'sleep',
-                'label'   => 'Slaap',
-                'caption' => 'Dagscore',
-                'icon'    => 'moon',
-                'accent'  => 'health',
-                'value'   => null,
-                'max'     => 100,
-                'metrics' => [
-                    ['label' => 'Duur',      'value' => null, 'accent' => 'health'],
-                    ['label' => 'Regelmaat', 'value' => null, 'accent' => 'health'],
-                ],
-                /* Shown only when the onboarding focus is 'sleep'. */
-                'focus_metrics' => [
-                    ['label' => 'Slaapduur', 'value' => null, 'accent' => 'health'],
-                    ['label' => 'Bedtijd',   'value' => null, 'accent' => 'health'],
-                    ['label' => 'Wektijd',   'value' => null, 'accent' => 'health'],
-                ],
-            ],
-            [
-                'key'     => 'nutrition_sport',
-                'label'   => 'Voeding & Sport',
-                'caption' => 'Dagscore',
-                'icon'    => 'leaf',
-                'accent'  => 'nutrition',
-                'value'   => null,
-                'max'     => 100,
-                'metrics' => [
-                    ['label' => 'Voeding', 'value' => null, 'accent' => 'nutrition'],
-                    ['label' => 'Sport',   'value' => null, 'accent' => 'activity'],
-                ],
-                'focus_metrics' => [
-                    ['label' => 'Voeding',  'value' => null, 'accent' => 'nutrition'],
-                    ['label' => 'Sport',    'value' => null, 'accent' => 'activity'],
-                    ['label' => 'Balans',   'value' => null, 'accent' => 'activity'],
-                ],
-            ],
-        ],
     ],
 
     /* -------------------------------------------------- goal progress */

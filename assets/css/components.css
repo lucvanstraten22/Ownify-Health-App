@@ -40,7 +40,7 @@
     pointer-events: none;
 }
 
-/* Quieter surfaces for the supporting sections. */
+/* Quieter surfaces for the supporting blocks. */
 .card--patterns,
 .card--recommendation,
 .card--leaderboard {
@@ -359,6 +359,18 @@
     white-space: nowrap;
 }
 
+/* The pillar's own score, in the legend's own size — a number beside the
+   name, not a second label. */
+.legend__value {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.legend__item.is-empty .legend__value { font-weight: 500; color: var(--text-muted); }
+
 /* --------------------------------------------------------------------------
    Score value + meters (shared by category cards and goal progress)
    -------------------------------------------------------------------------- */
@@ -414,47 +426,6 @@
 .meter--goal { height: 10px; }
 
 /* --------------------------------------------------------------------------
-   Metric rows
-   -------------------------------------------------------------------------- */
-.metrics {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--glass-hairline);
-}
-
-.metrics__row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--fs-small);
-}
-
-.metrics__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-}
-
-.metrics__label {
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.metrics__value {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-}
-
-.metrics__value.is-empty { color: var(--text-muted); font-weight: 500; }
-
-/* --------------------------------------------------------------------------
    Icon tile + chips
    -------------------------------------------------------------------------- */
 .icon-tile {
@@ -471,7 +442,6 @@
 
 .icon-tile .icon { width: 18px; height: 18px; }
 
-.card--score .icon-tile,
 .card--goal .icon-tile { color: var(--accent); }
 
 .icon-tile--accent { color: var(--nutrition); }

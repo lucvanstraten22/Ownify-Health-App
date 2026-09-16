@@ -29,10 +29,16 @@ $data = require __DIR__ . '/config/dashboard.php';
 $data['health'] = health_prepare(require __DIR__ . '/config/health.php');
 
 /* The dashboard's health score is the average of those three pillars, derived
-   here rather than stored, so the ring can never disagree with them. */
+   here rather than stored, so the ring can never disagree with them — and the
+   legend under it reads the same three values. */
 $data['scores']['overall']['value'] = health_overall_score(
     $data['health'],
     (int) $data['scores']['overall']['max']
+);
+
+$data['scores']['contributors'] = health_contributor_scores(
+    $data['scores']['contributors'],
+    $data['health']
 );
 
 /* Community boards are assembled the same way: empty unless demo is on. */

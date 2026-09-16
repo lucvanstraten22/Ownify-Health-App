@@ -90,6 +90,25 @@ if (!function_exists('health_overall_score')) {
     }
 }
 
+if (!function_exists('health_contributor_scores')) {
+    /**
+     * Fills each ring-legend row with the score of the area it names.
+     *
+     * Derived on every render, from the same source as the overall score, so
+     * the legend and the number in the middle of the ring can never drift
+     * apart: they read the same three values.
+     */
+    function health_contributor_scores(array $contributors, array $health): array
+    {
+        foreach ($contributors as $index => $row) {
+            $area = $health['areas'][$row['area']] ?? null;
+            $contributors[$index]['value'] = $area['score']['value'] ?? null;
+        }
+
+        return $contributors;
+    }
+}
+
 if (!function_exists('health_metric')) {
     /**
      * Resolves one metric reference against the shared registry.
