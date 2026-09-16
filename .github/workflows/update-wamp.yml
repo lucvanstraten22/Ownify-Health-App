@@ -1,0 +1,17 @@
+name: Update WAMP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    runs-on: self-hosted
+
+    steps:
+      - name: Update WAMP project
+        shell: powershell
+        run: |
+          git -C "C:\wamp64\www\JoLu" fetch origin
+          git -C "C:\wamp64\www\JoLu" reset --hard origin/main
