@@ -112,10 +112,6 @@
 
     .legend__item { justify-content: flex-start; }
 
-    .pill--devices .pill__label { display: none; }
-
-    .pill--devices { width: 42px; padding-inline: 0; justify-content: center; }
-
     /* The weekday is the first thing to go when space runs out. */
     .card__meta-day { display: none; }
 }

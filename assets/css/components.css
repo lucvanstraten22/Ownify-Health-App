@@ -203,6 +203,8 @@
     color: var(--text-secondary);
 }
 
+/* The two header buttons: one circle, mirrored left and right of the name. */
+.pill--devices,
 .pill--account {
     width: 42px;
     padding-inline: 0;
@@ -216,18 +218,6 @@
 .pill__label {
     font-size: var(--fs-small);
     font-weight: 500;
-}
-
-.pill__badge {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--text-faint);
-}
-
-.pill__badge.is-active {
-    background: var(--health);
-    box-shadow: 0 0 0 3px rgba(60, 158, 114, 0.18);
 }
 
 .btn {

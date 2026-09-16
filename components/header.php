@@ -1,5 +1,10 @@
 <?php
-/** Compact glass header: devices (left) · app name (centre) · account (right). */
+/**
+ * Compact glass header: devices (left) · app name (centre) · account (right).
+ *
+ * The two side buttons are the same circle, mirrored across the app name, so
+ * neither side pulls the title off centre.
+ */
 declare(strict_types=1);
 
 $app     = $data['app'];
@@ -12,8 +17,6 @@ $account = $data['header']['account'];
         <button type="button" class="pill pill--devices press"
                 aria-label="<?= e($devices['aria']) ?>">
             <?= icon('device', 'pill__icon') ?>
-            <span class="pill__label"><?= e($devices['label']) ?></span>
-            <span class="pill__badge<?= $devices['connected'] > 0 ? ' is-active' : '' ?>" aria-hidden="true"></span>
         </button>
 
         <p class="app-header__brand">
