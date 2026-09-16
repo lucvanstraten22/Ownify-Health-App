@@ -132,7 +132,7 @@ return [
         'unit'        => 'van je weekdoel',
         'headline'    => 'Nog geen doel ingesteld',
         'description' => 'Tijdens de onboarding kies je één doel. Je voortgang van deze week verschijnt hier.',
-        'cta'         => ['label' => 'Doel instellen', 'enabled' => false, 'note' => 'Beschikbaar na onboarding'],
+        'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => 'Opent de Doelen-pagina'],
         'milestones'  => [
             ['label' => 'Start',  'reached' => false],
             ['label' => 'Halverwege', 'reached' => false],
@@ -222,39 +222,19 @@ return [
      */
     'navigation' => [
         ['id' => 'health',    'label' => 'Gezondheid',   'icon' => 'heart',     'destination' => 'health',   'active' => false],
-        ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => null,       'active' => false],
+        ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => 'goals',    'active' => false],
         ['id' => 'overview',  'label' => 'Overzicht',    'icon' => 'rings',     'destination' => 'overview', 'active' => true],
         ['id' => 'community', 'label' => 'Community',    'icon' => 'community', 'destination' => 'community','active' => false],
         ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => null,       'active' => false],
     ],
 
     /* -------------------------------------------------- section placeholders
-     * The four sections beside Overzicht are not built yet. They exist as
-     * pages so the horizontal navigation is real, and say plainly what will
-     * live there — nothing is invented.
+     * Gezondheid, Doelen en Community have pages of their own now. Only
+     * Instellingen is still unbuilt: it exists as a page so the horizontal
+     * navigation is complete, and says plainly what will live there rather
+     * than pretending to be finished.
      */
     'sections' => [
-        'health' => [
-            'title'  => 'Gezondheid',
-            'icon'   => 'heart',
-            'lede'   => 'Slaap, voeding en sport komen hier samen in één beeld.',
-            'status' => 'Binnenkort beschikbaar',
-            'topics' => ['Slaap', 'Voeding', 'Sport'],
-        ],
-        'goals' => [
-            'title'  => 'Doelen',
-            'icon'   => 'flag',
-            'lede'   => 'Je persoonlijke doelen en je voortgang daarnaartoe.',
-            'status' => 'Binnenkort beschikbaar',
-            'topics' => ['Doel kiezen', 'Voortgang', 'Mijlpalen'],
-        ],
-        'community' => [
-            'title'  => 'Community',
-            'icon'   => 'community',
-            'lede'   => 'De ranglijst en toekomstige sociale functies.',
-            'status' => 'Binnenkort beschikbaar',
-            'topics' => ['Ranglijst', 'Vergelijken'],
-        ],
         'settings' => [
             'title'  => 'Instellingen',
             'icon'   => 'sliders',

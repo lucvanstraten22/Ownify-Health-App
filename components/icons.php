@@ -76,6 +76,20 @@ if (!function_exists('icon')) {
 
                 // empty-state marker
                 'lock'     => '<rect x="5" y="10.5" width="14" height="9.5" rx="2.6"/><path d="M8.4 10.5V8.2a3.6 3.6 0 0 1 7.2 0v2.3"/>',
+
+                // add a goal
+                'plus'     => '<path d="M12 5.4v13.2M5.4 12h13.2"/>',
+
+                // confirmed / achieved
+                'check'    => '<path d="M5 12.6 9.8 17.4 19 6.9"/>',
+
+                // pause and resume a goal
+                'pause'    => '<path d="M9.4 5.6v12.8M14.6 5.6v12.8"/>',
+                'play'     => '<path d="M8.4 5.6 18 12l-9.6 6.4V5.6Z"/>',
+
+                // delete a goal
+                'trash'    => '<path d="M4.6 7.2h14.8"/><path d="M9.4 7.2V5.4a1.4 1.4 0 0 1 1.4-1.4h2.4a1.4 1.4 0 0 1 1.4 1.4v1.8"/>'
+                    . '<path d="M6.8 7.2 7.7 19a1.6 1.6 0 0 0 1.6 1.5h5.4a1.6 1.6 0 0 0 1.6-1.5l.9-11.8"/>',
             ];
         }
 

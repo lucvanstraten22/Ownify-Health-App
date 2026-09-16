@@ -17,6 +17,7 @@ require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/lib/render.php';
 require __DIR__ . '/lib/health.php';
 require __DIR__ . '/lib/community.php';
+require __DIR__ . '/lib/goals.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
@@ -28,6 +29,9 @@ $data['health'] = health_prepare(require __DIR__ . '/config/health.php');
 
 /* Community boards are assembled the same way: empty unless demo is on. */
 $data['community'] = community_prepare(require __DIR__ . '/config/community.php');
+
+/* Goals: expanded, split into active/completed and put in priority order. */
+$data['goals'] = goals_prepare(require __DIR__ . '/config/goals.php');
 
 /* Session state for the header button and the account panel. */
 $data['auth'] = app_auth();
@@ -67,6 +71,7 @@ foreach ($data['navigation'] as $position => $item) {
     <link rel="stylesheet" href="assets/css/ai.css">
     <link rel="stylesheet" href="assets/css/health.css">
     <link rel="stylesheet" href="assets/css/community.css">
+    <link rel="stylesheet" href="assets/css/goals.css">
     <link rel="stylesheet" href="assets/css/account.css">
 </head>
 <body class="app">
@@ -93,6 +98,8 @@ foreach ($data['navigation'] as $position => $item) {
                         page('overview', $pageData);
                     } elseif ($item['destination'] === 'health') {
                         page('health', $pageData);
+                    } elseif ($item['destination'] === 'goals') {
+                        page('goals', $pageData);
                     } elseif ($item['destination'] === 'community') {
                         page('community', $pageData);
                     } elseif (isset($data['sections'][$item['id']])) {
@@ -104,11 +111,18 @@ foreach ($data['navigation'] as $position => $item) {
             <?php endforeach; ?>
         </div>
 
-        <!-- Health detail pages: above the rail, below the dock, so the tab
-             bar and the assistant stay reachable from inside one. -->
+        <!-- Detail pages: above the rail, below the dock, so the tab bar and
+             the assistant stay reachable from inside one. Gezondheid and Doelen
+             share this layer because drilling in is the same movement on both. -->
         <div class="detail-stack" data-detail-stack>
             <?php foreach ($data['health']['areas'] as $areaId => $area): ?>
                 <?php page('health-detail', $data + ['area' => $area + ['id' => $areaId]]); ?>
+            <?php endforeach; ?>
+
+            <?php foreach ($data['goals']['all'] as $goal): ?>
+                <?php /* The new key goes first: `+` keeps the left side, and the
+                         dashboard config already owns a 'goal' of its own. */ ?>
+                <?php page('goal-detail', ['goal' => $goal] + $data); ?>
             <?php endforeach; ?>
         </div>
 
@@ -122,16 +136,23 @@ foreach ($data['navigation'] as $position => $item) {
 
     </div>
 
-    <?php component('account-modal', $data); ?>
+    <?php
+    /* Both live outside the deck, so the deck's pointer pipeline never sees
+       them and neither can be mistaken for a swipe. */
+    component('goal-wizard', $data);
+    component('account-modal', $data);
+    ?>
 
     <script src="assets/js/dashboard.js" defer></script>
     <script src="assets/js/interactions.js" defer></script>
     <script src="assets/js/navigation-core.js" defer></script>
     <script src="assets/js/page-navigation.js" defer></script>
     <script src="assets/js/ai-sheet.js" defer></script>
-    <script src="assets/js/health-detail.js" defer></script>
+    <script src="assets/js/detail-layer.js" defer></script>
     <script src="assets/js/health-trend.js" defer></script>
     <script src="assets/js/community.js" defer></script>
+    <script src="assets/js/goals.js" defer></script>
+    <script src="assets/js/goal-wizard.js" defer></script>
     <script src="assets/js/account.js" defer></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ $ratio = score_ratio($score['value'], $score['max']);
 <button type="button"
         class="card health-card press <?= state_class($score['value']) ?>"
         data-accent="<?= e($area['accent']) ?>"
-        data-health-open="<?= e($area['id']) ?>"
+        data-detail-open="<?= e($area['id']) ?>"
         aria-label="<?= e($area['label']) ?> — <?= has_value($score['value'])
             ? e((string) $score['value']) . ' van ' . e((string) $score['max'])
             : 'nog geen gegevens' ?>. Open details.">

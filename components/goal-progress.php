@@ -38,7 +38,9 @@ $ratio   = score_ratio($goal['progress'], 100);
 
     <?php if (!$isSet): ?>
         <div class="goal__action">
-            <button type="button" class="btn btn--ghost" disabled><?= e($goal['cta']['label']) ?></button>
+            <?php /* Doelen is a real page now, so the button goes there. */ ?>
+            <button type="button" class="btn btn--ghost press"
+                    <?= empty($goal['cta']['enabled']) ? 'disabled' : 'data-nav="goals"' ?>><?= e($goal['cta']['label']) ?></button>
             <span class="goal__note"><?= e($goal['cta']['note']) ?></span>
         </div>
     <?php endif; ?>
