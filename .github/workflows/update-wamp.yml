@@ -13,20 +13,20 @@ jobs:
       contents: read
 
     steps:
-      - name: Update WAMP project
+      - name: Checkout latest main
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Copy files to WAMP
         shell: cmd
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global --add safe.directory "C:/wamp64/www/JoLu"
-          set GIT_TERMINAL_PROMPT=0
+          robocopy "%GITHUB_WORKSPACE%" "C:\wamp64\www\JoLu" /MIR /XD ".git"
+          if %ERRORLEVEL% LEQ 7 exit /b 0
+          exit /b %ERRORLEVEL%
 
-          git -C "C:\wamp64\www\JoLu" -c http.extraheader="AUTHORIZATION: bearer %GITHUB_TOKEN%" fetch origin main --prune
-
-          echo Remote commit:
-          git -C "C:\wamp64\www\JoLu" rev-parse origin/main
-
-          git -C "C:\wamp64\www\JoLu" reset --hard origin/main
-
-          echo Local commit:
-          git -C "C:\wamp64\www\JoLu" rev-parse HEAD
+      - name: Verify deployed commit
+        shell: cmd
+        run: |
+          echo GitHub commit:
+          echo %GITHUB_SHA%
