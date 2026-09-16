@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Update WAMP project
-        shell: powershell
+        shell: cmd
         run: |
           git -C "C:\wamp64\www\JoLu" fetch origin
           git -C "C:\wamp64\www\JoLu" reset --hard origin/main
