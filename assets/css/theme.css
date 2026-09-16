@@ -115,6 +115,21 @@
     --tabbar-height: 54px;
     --dock-gap: 12px;
     --dock-clearance: calc(var(--tabbar-height) + var(--dock-gap) + var(--safe-bottom));
+
+    /* How far the bar's reflection is drawn past its own edge before being
+       clipped back to the capsule. Must clear the displacement in
+       #glass-refraction (scale 19, so ±9.5px) or that layer's own edge
+       arrives at the cut and shows. */
+    --sheen-overhang: 16px;
+
+    /* The tab's interior. The icon and the label are both laid out by their
+       ink rather than their boxes, so --tab-gap is the gap the eye actually
+       sees between them, and --tab-optical is the one correction left: the
+       descender space under a label whose word usually has no descender. */
+    --tab-icon: 22px;
+    --tab-gap: 5px;
+    --tab-label: 0.6875rem;
+    --tab-optical: 0.228;
     --header-height: 56px;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);

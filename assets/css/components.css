@@ -855,22 +855,31 @@
 }
 
 /* The reflection. A static layer, rasterised once, so the turbulence that
-   keeps it from looking like a plain gradient costs nothing per frame. */
+   keeps it from looking like a plain gradient costs nothing per frame.
+
+   It is drawn oversized and clipped back, which is not decoration. A filter
+   paints wherever its region reaches and `border-radius` does not clip what
+   comes out of one, so at inset: 0 the displacement carried this layer's own
+   edge across the rim — measured at 10.8px proud of the glass near the top of
+   the curve, with the matching bite taken out of it further round. clip-path
+   is the one that runs after the filter. Overhanging by more than the
+   displacement can travel (scale 19, so ±9.5px) keeps a real edge from ever
+   reaching the cut. */
 .tabbar::before {
     content: "";
     position: absolute;
-    inset: 0;
+    inset: calc(-1 * var(--sheen-overhang));
     z-index: -1;
-    border-radius: inherit;
     background:
-        radial-gradient(62% 150% at 22% -30%,
+        radial-gradient(57% 94% at 24.2% 0%,
             rgba(255, 255, 255, 0.20) 0%,
             rgba(255, 255, 255, 0.06) 40%,
             transparent 68%),
-        radial-gradient(48% 130% at 88% 128%,
+        radial-gradient(44% 82% at 85% 99%,
             rgba(255, 255, 255, 0.10) 0%,
             transparent 62%);
     filter: url(#glass-refraction);
+    clip-path: inset(var(--sheen-overhang) round var(--radius-pill));
     pointer-events: none;
 }
 
@@ -926,10 +935,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: var(--tab-gap);
     width: 100%;
     height: 100%;
-    padding: 0;
+    /* The label's box reaches below its baseline for descenders that most of
+       these words do not have, so centring on the boxes leaves the pair
+       sitting low. This pays that back, in label ems so it follows the font
+       down on small screens. */
+    padding: calc(var(--tab-label) * var(--tab-optical)) 0 0;
     border-radius: var(--radius-pill);
     /* Translucent glass gives back less contrast than a solid bar, so the
        resting label carries a little more of its own. */
@@ -937,16 +950,40 @@
     transition: color var(--transition-fast);
 }
 
-.tab__icon { display: block; }
-.tab__icon .icon { width: 22px; height: 22px; }
+/* Laid out by the strokes, not by the frame around them.
+
+   Every icon shares the same 24 grid and the same 22px box, but not the same
+   inset inside it: the heart's ink starts 2.6 units down, the sliders' 5.45.
+   Centring the boxes therefore centres five different things, and the two
+   quiet icons end up sitting visibly high with the air pooling above them.
+   Pulling each box in to its own ink makes the visible mark the thing that
+   gets centred, and the same thing on all five tabs. */
+.tab__icon {
+    display: block;
+    margin-top: calc(var(--tab-icon) * var(--ink-top, 0) / -24);
+    margin-bottom: calc(var(--tab-icon) * var(--ink-bottom, 0) / -24);
+}
+
+.tab__icon[data-icon="rings"]     { --ink-top: 2.79; --ink-bottom: 2.79; }
+.tab__icon[data-icon="heart"]     { --ink-top: 2.60; --ink-bottom: 3.75; }
+.tab__icon[data-icon="flag"]      { --ink-top: 3.21; --ink-bottom: 2.60; }
+.tab__icon[data-icon="community"] { --ink-top: 4.98; --ink-bottom: 3.69; }
+.tab__icon[data-icon="sliders"]   { --ink-top: 5.45; --ink-bottom: 5.45; }
+/* An icon not listed above falls back to 0 and is centred by its frame, the
+   way it was before — wrong by a pixel or two, never broken. */
+
+.tab__icon .icon { width: var(--tab-icon); height: var(--tab-icon); }
 
 /* All five labels are single words, so they never wrap: the icons stay on one
    baseline and the bar keeps its height at every width. */
 .tab__label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--tab-label);
     font-weight: 500;
-    line-height: 1.2;
+    /* No leading. The icon above is already trimmed to its ink, so the label
+       is measured the same way and the gap between them is the gap, not the
+       gap plus two half-leadings. */
+    line-height: 1;
     letter-spacing: -0.012em;
     text-align: center;
     white-space: nowrap;

@@ -34,7 +34,8 @@
     /* The longest labels need the extra width down here, and the capsule is
        what gives it to them now — the list always fills the capsule. */
     .tabbar { width: min(97vw, 27.5rem); }
-    .tab__label { font-size: 0.625rem; }
+    /* The token, not the property: the optical padding is measured in these. */
+    :root { --tab-label: 0.625rem; }
 
     .legend {
         grid-template-columns: 1fr;
