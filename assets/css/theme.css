@@ -48,6 +48,29 @@
     /* --- glass recipe --------------------------------------------------- */
     --blur-card: 24px;
     --blur-bar: 30px;
+
+    /* --- floating glass ---------------------------------------------------
+       The material the tab bar and the two header buttons are cut from. Grey
+       and white only — nothing here takes an accent.
+
+       The blur is 10px, not the forty-odd a heavy frosted panel suggests:
+       measured through the glass, text-scale detail from the page bottoms out
+       around 8-10px and climbs again above it, because the engine downsamples
+       the backdrop at large radii and the resampling puts the detail back. It
+       is also the cheaper number on a phone. */
+    --pane-blur: 10px;
+    --pane-saturate: 190%;
+    --pane-brightness: 108%;
+
+    /* The rim: one hairline that catches light at the top-left, gives a little
+       back at the bottom-right, and nearly vanishes across the face — an edge
+       with thickness rather than an outline drawn around a box. */
+    --pane-rim: linear-gradient(152deg,
+        rgba(255, 255, 255, 0.46) 0%,
+        rgba(255, 255, 255, 0.13) 22%,
+        rgba(255, 255, 255, 0.045) 52%,
+        rgba(255, 255, 255, 0.10) 78%,
+        rgba(255, 255, 255, 0.26) 100%);
     --surface-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
     --surface-gradient-quiet: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
     --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -85,7 +108,13 @@
     --shell-w: min(92vw, 33.5rem);
     --content-width: var(--shell-w);
     --page-max: 1080px;
-    --tabbar-height: 62px;
+    /* The tab bar floats: it is a capsule with air under it and at its sides,
+       not a slab welded to the bottom of the screen. Its own height is small
+       — just enough margin around an icon and a label — and everything that
+       has to clear it uses --dock-clearance rather than doing the sum again. */
+    --tabbar-height: 54px;
+    --dock-gap: 12px;
+    --dock-clearance: calc(var(--tabbar-height) + var(--dock-gap) + var(--safe-bottom));
     --header-height: 56px;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -258,7 +287,7 @@ button {
     padding-top: var(--space-5);
     /* Reserves room for the tab bar, the home indicator and the floating
        control, so the last block is never hidden behind fixed chrome. */
-    padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + var(--space-6) + var(--space-6) + var(--space-5));
+    padding-bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-6) + var(--space-5));
 }
 
 .stack {

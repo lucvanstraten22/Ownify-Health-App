@@ -99,6 +99,29 @@ foreach ($data['navigation'] as $position => $item) {
     <!-- Shared ground behind every layer: the visual thread between them. -->
     <div class="app__backdrop" aria-hidden="true"></div>
 
+    <!--
+        The unevenness in the glass reflections.
+
+        Turbulence displaces the highlight, not the backdrop. Displacing the
+        backdrop is the obvious way to do refraction and it was measurably the
+        wrong one: it re-runs the filter every frame the page scrolls behind
+        the bar, and `backdrop-filter: url()` is Chromium-only, so iOS would
+        pay nothing and gain nothing. Displacing a static gradient is
+        rasterised once, costs nothing per frame and works everywhere — and an
+        imperfect reflection is what reads as glass, more than a warped
+        background does.
+    -->
+    <svg class="sr-only" aria-hidden="true" focusable="false" width="0" height="0">
+        <filter id="glass-refraction" x="-15%" y="-15%" width="130%" height="130%"
+                color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02"
+                          numOctaves="2" seed="5" result="grain"/>
+            <feGaussianBlur in="grain" stdDeviation="1.8" result="softGrain"/>
+            <feDisplacementMap in="SourceGraphic" in2="softGrain" scale="19"
+                               xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </svg>
+
     <div class="deck" data-deck>
 
         <!-- Parked on the starting page server-side, so the rail never has to

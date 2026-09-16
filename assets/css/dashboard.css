@@ -82,10 +82,10 @@
 
     .tabbar__list { width: 100%; }
 
-    .fab { bottom: calc(var(--tabbar-height) + var(--space-6) + var(--space-4)); }
+    .fab { bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-4)); }
 
     .app__main {
-        padding-bottom: calc(var(--tabbar-height) + var(--space-6) + var(--space-6) + var(--space-5));
+        padding-bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-6) + var(--space-5));
     }
 }
 
