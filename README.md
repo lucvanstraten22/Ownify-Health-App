@@ -10,8 +10,8 @@ framework, no build step, no dependencies. Two screens live in one document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on. Overzicht, Gezondheid and Community are built;
-Doelen and Instellingen are placeholders, and the assistant is the room the
+whichever page you are on. Overzicht, Gezondheid, Doelen and Community are
+built; Instellingen is still a placeholder, and the assistant is the room the
 future ChatGPT-based assistant will live in — only its screen and gestures
 exist today.
 
@@ -40,15 +40,19 @@ pages/
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
+    goals.php                 Doelen — one primary goal and up to two others
+    goal-detail.php           one goal in full, one per goal
     community.php             the leaderboard
-    section.php               a page that is not built yet, ×2
+    section.php               a page that is not built yet, ×1
     ai.php                    the assistant sheet
 config/dashboard.php          copy, data and settings for the app
 config/health.php             the health areas, their metrics and their trends
 config/community.php          leaderboard scopes, periods and copy
+config/goals.php              goal vocabulary, copy and the example goals
 lib/render.php                escaping, page/component include, score formatting
 lib/health.php                demo handling, shared metrics, chart geometry
 lib/community.php             board assembly, formatting, the demo roster
+lib/goals.php                 goal expansion, dates and priority ordering
 components/
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account
@@ -73,6 +77,8 @@ components/
     leaderboard-board.php     one scope × period board
     leaderboard-row.php       position · avatar · name · points
     community-badges.php      reserved space for badges and milestones
+    goal-card.php             one goal: name · percentage · bar · target · deadline
+    goal-wizard.php           the five-step create-a-goal flow
     account-modal.php         sign-in when signed out, account when signed in
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
@@ -81,15 +87,18 @@ assets/css/
     ai.css                    the assistant layer (tokens only, no new values)
     health.css                Gezondheid and its detail pages (tokens only)
     community.css             the leaderboard (tokens only)
+    goals.css                 Doelen, goal details and the wizard (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
     navigation-core.js        one pointer pipeline, routed by axis
     page-navigation.js        horizontal: the five-page rail
     ai-sheet.js               vertical: the assistant sheet
-    health-detail.js          drilling into a health area, and swiping back
+    detail-layer.js           drilling into an item, and swiping back
     health-trend.js           week / month switch and the line draw-on
     community.js              scope and period switching
+    goals.js                  view switching, priority, pause and delete
+    goal-wizard.js            the five-step create-a-goal flow
     account.js                the account panel
 ```
 
@@ -102,14 +111,15 @@ live there, and `components/bottom-navigation.php` only renders it.
 ```
 Gezondheid  ──  slaap · voeding · sport, grouped into one section
 Doelen      ──  persoonlijke doelen en voortgang
-Overzicht   ──  het dagelijkse dashboard          ← the only one built
+Overzicht   ──  het dagelijkse dashboard
 Community   ──  ranglijst + toekomstige sociale functies
-Instellingen──  app- en gebruikersinstellingen
+Instellingen──  app- en gebruikersinstellingen    ← the only placeholder left
 ```
 
-Only `overview` has a `destination`; the other four are `null`, so they render
-as inert buttons rather than links to pages that do not exist yet. The
-assistant layer is deliberately not a sixth item — it is reached by the swipe.
+Four of the five have a `destination` and a page of their own; `settings` is
+still `null` and falls through to `pages/section.php`, which says what will
+live there rather than pretending to be finished. The assistant layer is
+deliberately not a sixth item — it is reached by the swipe.
 
 ## Two gestures, two axes
 
@@ -126,6 +136,7 @@ become a sheet drag halfway through.
 | Axis | Controller | Gesture | Effect |
 | ---- | ---------- | ------- | ------ |
 | horizontal | `page-navigation.js` | swipe left / right, anywhere on a page | previous / next of the five pages |
+| horizontal | `detail-layer.js` | swipe **right, while a detail is open** | back to the page behind it |
 | vertical | `ai-sheet.js` | swipe **up from the dock** | open the assistant |
 | vertical | `ai-sheet.js` | swipe **down from the sheet's header** | close it |
 
@@ -166,7 +177,10 @@ Gezondheid ──┬── Slaap      duur · timing · fasen · onderbrekingen 
 A detail page is a layer above the rail and below the dock, so the tab bar and
 the assistant stay reachable from inside one. It opens on a tap and closes
 with a rightward swipe, the back pill or Escape — safe to use that direction
-because the rail stands down while a detail is in front of it.
+because the rail stands down while a detail is in front of it. Doelen uses the
+same layer and the same controller (`detail-layer.js`, opened by anything
+carrying `data-detail-open`), because drilling in is the same movement on both
+pages.
 
 Each detail page runs three levels deep: the score, the handful of numbers
 that explain it, then the long tail in groups. Which metrics exist is entirely
@@ -186,6 +200,71 @@ invented numbers.
 has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
 into the charts and tiles so the design can be looked at with data, without a
 single invented value ever reaching the shipped page. It is false by default.
+
+## Doelen
+
+One question, answered in one screen: **what am I working toward, and how far
+am I?** One primary goal, up to two secondary ones, their progress, and when
+each one ends. Everything deeper is one tap away.
+
+```
+[ Actief ] [ Behaald ]
+
+PRIMAIR DOEL
+┌──────────────────────────────────┐
+│ KRACHT                           │
+│ Bench press 100 kg               │
+│ 72%                       100 kg │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
+│ Nog 18 dagen · t/m 4 okt      ›  │
+└──────────────────────────────────┘
+
+OVERIGE DOELEN   ×2
+```
+
+**Three goals, one primary.** The limit is enforced in one place and shown in
+two: the `+` disables itself and the line under the board says why. A paused
+goal keeps its slot; only completing or deleting one frees it. There is always
+exactly one primary goal — promoting a secondary demotes the current primary in
+the same move, and deleting the primary hands the flag to the next goal, so the
+headline slot can never end up empty.
+
+**Priority is an ordering, not a second kind of goal.** `goal-card.php` renders
+the primary, the secondaries and the completed ones; `--primary` is more room,
+a stronger surface and a three-pixel accent edge, and nothing else. That is
+what lets a promotion be a class change rather than a different card.
+
+**Not every goal is a number.** A goal carries a `type` — `value`, `habit`,
+`streak` or `milestone` — and its current and target readings are *text*, so
+"86 kg / 100 kg" and "19 van 30 dagen / 30 dagen" render through the same
+component without the UI knowing the difference. The create flow asks a
+different question at step 3 for each type rather than forcing one number
+field on all of them.
+
+**Creating a goal is five steps, not one form:** category → definition →
+target → duration (week / maand / half jaar / jaar) → confirmation. It lives
+outside the deck, next to the account panel, so the deck's pointer pipeline
+never sees it and nothing in it can be mistaken for a swipe. Every step is in
+the document from the start and switched with a class, so stepping back still
+has your answers. The button to continue stays disabled until the step has an
+answer — that is the whole of the validation.
+
+**Progress is designed to arrive on its own.** Each goal names the health data
+that would keep it current (`sleep`, `nutrition`, `training`, `activity`,
+`body`, `manual`), and the detail page lists them under *Wat telt mee*. Goals
+that no sensor can see get a once-a-day confirmation instead, deliberately
+low-friction. None of it is wired: this version is the design and the shape the
+data has to arrive in.
+
+**Placeholder contract.** `config/goals.php` has the same `demo` flag as health
+and community — with one difference: it ships **true**, because a goal board is
+its progress and an empty one cannot be judged. The example goals belong to
+nobody, the page says so above the first card, and priority, pause and delete
+change them for one page view only, which is also stated on screen. Set `demo`
+to false and fill `goals` when real ones arrive; the page needs no change.
+
+**No gamification.** No badges, streak counters, XP, points, leaderboards or
+challenges live here. Progress toward the thing you chose is the motivation.
 
 ## Community
 
@@ -245,9 +324,10 @@ else.
 
 ## Placeholder contract
 
-There is no database, no authentication and no device integration yet, so every
-metric in `config/dashboard.php` is `null` and the UI renders an honest empty
-state. Nothing on the page is an invented user measurement.
+No device integration exists yet and nothing reads health data from the
+database, so every metric in `config/dashboard.php` is `null` and the UI
+renders an honest empty state. Nothing on the page is an invented user
+measurement.
 
 | Value in config | What the UI renders                            |
 | --------------- | ---------------------------------------------- |
@@ -284,8 +364,8 @@ working field).
 ## Not in this version
 
 A working chatbot of any kind, ChatGPT or other API calls, AI responses,
-message history, an input field, prompt suggestions, other pages, a database,
-Apple Health / wearable integrations, authentication, real leaderboard data,
-real medical analysis and real personal recommendations. The data layer, focus
-system, screen deck and component boundaries are prepared for them; none of
-them are implemented.
+message history, an input field, prompt suggestions, the Instellingen page,
+persistent goal storage, automatic goal progress, Apple Health / wearable
+integrations, real leaderboard data, real medical analysis and real personal
+recommendations. The data layer, focus system, screen deck and component
+boundaries are prepared for them; none of them are implemented.

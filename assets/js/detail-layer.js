@@ -1,11 +1,16 @@
 /**
- * health-detail.js — drilling from Gezondheid into one health area.
+ * detail-layer.js — drilling from a page into one of its items.
+ *
+ * Two pages use this: Gezondheid drills into a health area, Doelen drills into
+ * a goal. They share one layer and one gesture because they are the same
+ * movement — nothing about it is specific to what is being opened.
  *
  * A detail page is a layer above the rail and below the dock, so the tab bar
- * and the assistant stay reachable from inside it. It opens on a tap and
- * closes with a rightward swipe, the back pill or Escape — the same direction
- * you would swipe to go back anywhere else, and safe to use here because the
- * rail stands down while a detail is in front of it.
+ * and the assistant stay reachable from inside it. It opens on a tap of
+ * anything carrying [data-detail-open] and closes with a rightward swipe, the
+ * back pill or Escape — the same direction you would swipe to go back anywhere
+ * else, and safe to use here because the rail stands down while a detail is in
+ * front of it.
  */
 
 (function () {
@@ -148,10 +153,10 @@
     /* ------------------------------------------------- taps and keyboard */
 
     deck.addEventListener('click', function (event) {
-        var card = event.target.closest('[data-health-open]');
+        var card = event.target.closest('[data-detail-open]');
         if (card) {
             event.preventDefault();
-            open(card.getAttribute('data-health-open'), card);
+            open(card.getAttribute('data-detail-open'), card);
             return;
         }
 
@@ -170,6 +175,19 @@
     });
 
     /* --------------------------------------------------------------- init */
+
+    /* Doelen deletes goals, and a deleted goal's detail page has to leave with
+       it. Nothing else here is public. */
+    nav.details = {
+        open: open,
+        close: close,
+        currentId: function () { return current ? current.dataset.detail : null; },
+        forget: function (detail) {
+            var at = details.indexOf(detail);
+            if (at !== -1) { details.splice(at, 1); }
+            if (current === detail) { current = null; progress = 0; }
+        }
+    };
 
     deck.dataset.detailState = 'closed';
     refresh();

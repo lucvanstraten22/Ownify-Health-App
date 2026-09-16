@@ -1,0 +1,1047 @@
+/* ==========================================================================
+   goals.css — the Doelen page, the goal detail layer and the create flow.
+
+   No new tokens. Colours, radii, spacing, type and motion all come from
+   theme.css, and the card, meter, chip, icon-tile, metric-row, chart and
+   segmented-control components are the ones the rest of the app already uses.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Page head — title, the add button and the Actief / Behaald switch
+
+   The page runs a little tighter to the header than the others do: three
+   goals, two labels and a note have to land on one screen, and every pixel
+   above the first card is one the third card does not get.
+   -------------------------------------------------------------------------- */
+[data-page="goals"] .app__main { padding-top: var(--space-3); }
+
+.goals-intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.goals-intro__row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-inline: var(--space-2);
+}
+
+.goals-intro__text { min-width: 0; }
+
+/* The one affordance that adds a goal. Round, quiet, unmistakable. */
+.goals-add {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border: 1px solid color-mix(in srgb, var(--health) 30%, var(--glass-border));
+    border-radius: 50%;
+    background: linear-gradient(180deg,
+        rgba(60, 158, 114, 0.22),
+        rgba(60, 158, 114, 0.10));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-inset), 0 6px 16px rgba(0, 0, 0, 0.22);
+    color: var(--text-primary);
+    transition: transform var(--transition-fast), background-color var(--transition-fast),
+        opacity var(--transition-fast);
+}
+
+.goals-add__icon { width: 22px; height: 22px; }
+
+.goals-add:active { transform: scale(0.94); }
+
+/* At three goals the button is genuinely unavailable, and says so below. */
+.goals-add:disabled {
+    border-color: var(--glass-border-soft);
+    background: var(--glass-soft);
+    box-shadow: none;
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+.goals-notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.goals-notice__icon { width: 13px; height: 13px; flex: none; }
+
+/* --------------------------------------------------------------------------
+   The two views. Both are in the document; switching is a class.
+   -------------------------------------------------------------------------- */
+.goals-view { display: none; }
+
+/* Tight on purpose: three goals, two labels and a note should land on one
+   screen, which is the whole promise of the overview. */
+.goals-view.is-active {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.goals-eyebrow {
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.goals-eyebrow[hidden] { display: none; }
+
+/* A touch of air above the second group, and none above the first. */
+.goals-eyebrow[data-goal-eyebrow="secondary"] { margin-top: var(--space-1); }
+
+.goals-slot,
+.goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.goals-slots {
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Goal card.
+
+   One component for every goal. Priority and status are modifiers, so a
+   secondary goal that becomes primary keeps its shape and only changes
+   weight — which is what makes the promotion read as a promotion.
+   -------------------------------------------------------------------------- */
+.goal-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    text-align: left;
+    /* The transform is the priority change; opacity is pause and delete. */
+    transition: transform var(--transition-fast), opacity var(--transition-slow),
+        border-color var(--transition-slow), background-color var(--transition-slow);
+}
+
+.goal-card:active { transform: scale(0.985); }
+
+.goal-card__top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.goal-card .icon-tile { color: var(--accent); }
+
+.goal-card__heads { min-width: 0; }
+
+.goal-card__category {
+    display: block;
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.goal-card__name {
+    display: block;
+    margin-top: 2px;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Percentage left, target right, directly above the bar they describe. */
+.goal-card__figures {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.goal-card__percent {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.goal-card__percent-value {
+    font-size: var(--fs-score-sm);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+}
+
+.is-empty .goal-card__percent-value { color: var(--text-secondary); }
+
+.goal-card__percent-sign {
+    margin-left: 2px;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.goal-card__target {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.goal-card .meter { margin-top: 0; }
+
+.goal-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.goal-card__deadline {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.goal-card__chevron {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.goal-card:active .goal-card__chevron { transform: translateX(2px); }
+
+/* --- primary: more room, more light, one accent edge ------------------- */
+.goal-card--primary {
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+}
+
+/* The whole of the priority signal, and it costs three pixels. */
+.goal-card--primary::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 3px;
+    background: linear-gradient(180deg,
+        var(--accent),
+        color-mix(in srgb, var(--accent) 35%, transparent));
+    pointer-events: none;
+}
+
+.goal-card--primary .goal-card__name { font-size: 1.1875rem; }
+.goal-card--primary .meter--goal { height: 10px; }
+
+/* --- secondary: the same card, a little quieter ------------------------ */
+.goal-card--secondary,
+.goal-card--completed {
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-gradient-quiet);
+    border-color: var(--glass-border-soft);
+}
+
+.goal-card--secondary .icon-tile,
+.goal-card--completed .icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+}
+
+.goal-card--secondary .icon-tile .icon,
+.goal-card--completed .icon-tile .icon { width: 17px; height: 17px; }
+
+.goal-card--secondary .meter--goal { height: 8px; }
+.goal-card--secondary .goal-card__percent-value { font-size: 1.5rem; }
+
+/* --- completed: finished, not faded out -------------------------------- */
+.goal-card--completed .meter--goal { height: 8px; }
+.goal-card--completed .goal-card__percent-value { font-size: 1.5rem; }
+
+.goal-card__done {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
+}
+
+.goal-card__done .icon { width: 16px; height: 16px; }
+
+/* --- paused: unmistakably not counting --------------------------------- */
+.goal-card.is-paused {
+    background: var(--surface-gradient-quiet);
+    border-color: var(--glass-border-soft);
+}
+
+/* The bar loses its colour, so a paused goal can never read as progress
+   that is still being made. */
+.goal-card.is-paused .meter__fill {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.goal-card.is-paused .goal-card__percent-value,
+.goal-card.is-paused .goal-card__name { color: var(--text-secondary); }
+
+.goal-card.is-paused::after { opacity: 0.35; }
+
+/* --- leaving, on delete ------------------------------------------------ */
+.goal-card.is-leaving {
+    opacity: 0;
+    transform: scale(0.97);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+/* --------------------------------------------------------------------------
+   Chips used by the goal pages
+   -------------------------------------------------------------------------- */
+.chip--accent {
+    border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: color-mix(in srgb, var(--accent) 40%, #ffffff);
+}
+
+.chip--quiet {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.chip[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   Empty states
+   -------------------------------------------------------------------------- */
+.goals-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: var(--space-6);
+    text-align: center;
+}
+
+/* A class that sets display beats the [hidden] UA rule, so say it again. */
+.goals-empty[hidden] { display: none; }
+
+.goals-empty__title {
+    margin-top: var(--space-4);
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.goals-empty__body {
+    margin-top: var(--space-2);
+    max-width: 32ch;
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.goals-empty__cta {
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+
+.goals-empty__cta-icon { width: 16px; height: 16px; }
+
+/* ==========================================================================
+   Detail layer
+   ========================================================================== */
+
+.card--goal-hero { padding-block: var(--space-5); }
+
+.goal-hero__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.card--goal-hero .icon-tile { color: var(--accent); }
+
+.goal-hero__heads { min-width: 0; }
+
+.goal-hero__category {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.goal-hero__name {
+    margin-top: var(--space-1);
+    font-size: 1.375rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.goal-hero__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.goal-hero__figures {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+}
+
+.goal-hero__percent {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.goal-hero__percent-value {
+    font-size: var(--fs-score);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.045em;
+    font-variant-numeric: tabular-nums;
+}
+
+.is-empty .goal-hero__percent-value { color: var(--text-secondary); }
+
+.goal-hero__percent-sign {
+    margin-left: 3px;
+    font-size: 1.0625rem;
+    color: var(--text-muted);
+}
+
+.goal-hero__target {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+.goal-hero__target strong {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-transform: none;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The bar is this page's main signal, so on the detail it gets real presence. */
+.meter--hero {
+    height: 12px;
+    margin-top: var(--space-3);
+}
+
+.goal-hero__deadline {
+    margin-top: var(--space-3);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.goal-hero__facts {
+    margin-top: var(--space-4);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+/* --------------------------------------------------------------------------
+   What feeds the goal
+   -------------------------------------------------------------------------- */
+.goal-source__badge {
+    margin-right: var(--space-3);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.metric-row .goal-source__label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.goal-source__label strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.goal-source__note {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Daily confirmation, for goals a sensor cannot see
+   -------------------------------------------------------------------------- */
+.goal-check__button {
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.goal-check__icon { width: 17px; height: 17px; }
+
+/* --------------------------------------------------------------------------
+   Manage — priority, pause, delete
+   -------------------------------------------------------------------------- */
+.goal-manage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.goal-manage__button {
+    justify-content: flex-start;
+    gap: var(--space-3);
+    width: 100%;
+    padding-inline: var(--space-4);
+}
+
+.goal-manage__button[hidden] { display: none; }
+
+.goal-manage__icon { width: 17px; height: 17px; flex: none; color: var(--text-muted); }
+
+.goal-manage__button--danger { color: var(--text-secondary); }
+
+.goal-manage__state {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.goal-manage__state[hidden] { display: none; }
+
+.goal-manage__state-icon { width: 17px; height: 17px; flex: none; color: var(--accent); }
+
+/* --text-secondary, not --text-muted: this sits on an accent-tinted panel,
+   where muted falls just under 4.5:1 for the warmer two accents. */
+.goal-manage__hint {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--fs-tiny);
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Deliberately a step, not a tap: deletion takes progress with it. */
+.goal-confirm {
+    margin-top: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid rgba(191, 168, 99, 0.34);
+    border-radius: var(--radius-md);
+    background: rgba(191, 168, 99, 0.10);
+}
+
+.goal-confirm[hidden] { display: none; }
+
+.goal-confirm__text {
+    font-size: var(--fs-small);
+    color: var(--text-primary);
+}
+
+.goal-confirm__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.goal-confirm__yes {
+    border-color: rgba(191, 168, 99, 0.45);
+    background: rgba(191, 168, 99, 0.18);
+}
+
+/* ==========================================================================
+   Create flow
+   ========================================================================== */
+
+.wizard {
+    position: fixed;
+    inset: 0;
+    z-index: 55;              /* above the assistant sheet, below the account */
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    padding-top: calc(var(--safe-top) + var(--space-4));
+    padding-bottom: calc(var(--safe-bottom) + var(--space-4));
+}
+
+.wizard[hidden] { display: none; }
+
+.wizard__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.52);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.wizard__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 27rem);
+    max-height: 100%;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+}
+
+.wizard.is-open .wizard__scrim { opacity: 1; }
+
+.wizard.is-open .wizard__panel {
+    opacity: 1;
+    transform: none;
+}
+
+.wizard__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex: none;
+}
+
+/* --------------------------------------------------------------- progress */
+.wizard__progress {
+    flex: none;
+    margin-top: var(--space-4);
+}
+
+.wizard__bars {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+}
+
+.wizard__bar {
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.10);
+    transition: background-color var(--transition-slow);
+}
+
+.wizard__bar.is-done { background: var(--health); }
+
+.wizard__count {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ steps */
+.wizard__body {
+    flex: 1 1 auto;
+    min-height: 17rem;
+    margin-top: var(--space-4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.wizard__step[hidden] { display: none; }
+
+.wizard__step.is-active { animation: wizard-in var(--screen-duration) var(--screen-ease) both; }
+
+.wizard__body[data-dir="back"] .wizard__step.is-active {
+    animation-name: wizard-in-back;
+}
+
+@keyframes wizard-in {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes wizard-in-back {
+    from { opacity: 0; transform: translateX(-14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.wizard__title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.wizard__lede {
+    margin-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.wizard__label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.wizard__label--spaced { margin-top: var(--space-5); }
+
+.wizard__input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-label);
+}
+
+.wizard__input::placeholder { color: var(--text-faint); }
+
+.wizard__input:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--health) 50%, transparent);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.wizard__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.wizard__input--number {
+    flex: 1 1 8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.wizard__input--unit { flex: 1 1 7rem; }
+
+.wizard__suffix {
+    flex: none;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.wizard__field[hidden] { display: none; }
+
+/* Suggestions fill the field; they never decide anything by themselves. */
+.wizard__suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.wizard__suggestions:empty { display: none; }
+
+.wizard-suggestion {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.05);
+    font-size: var(--fs-tiny);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.wizard-suggestion:active { background: rgba(255, 255, 255, 0.10); }
+
+.wizard__note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.wizard__note[hidden] { display: none; }
+
+.wizard__note--quiet {
+    border: 0;
+    padding: 0;
+    background: none;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.wizard__note-icon { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+
+/* --------------------------------------------------------- 1 · categories */
+.wizard__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.wizard-tile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    text-align: left;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.wizard-tile:active { transform: scale(0.97); }
+
+.wizard-tile .icon-tile {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    color: var(--accent);
+}
+
+.wizard-tile .icon-tile .icon { width: 16px; height: 16px; }
+
+.wizard-tile__label {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wizard-tile[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* -------------------------------------------------------------- 2 · types */
+.wizard__types {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.wizard-type {
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    text-align: left;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.wizard-type__label {
+    display: block;
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.wizard-type__hint {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.wizard-type[aria-pressed="true"] {
+    border-color: rgba(60, 158, 114, 0.40);
+    background: rgba(60, 158, 114, 0.12);
+}
+
+/* ---------------------------------------------------------- 4 · durations */
+.wizard__durations {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.wizard-duration {
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    text-align: left;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.wizard-duration:active { transform: scale(0.97); }
+
+.wizard-duration__label {
+    display: block;
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.wizard-duration__meta {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.wizard-duration[aria-pressed="true"] {
+    border-color: rgba(60, 158, 114, 0.40);
+    background: rgba(60, 158, 114, 0.12);
+}
+
+/* ------------------------------------------------------------ 5 · summary */
+.wizard__summary {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+}
+
+.wizard__summary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.wizard__summary-row:first-child { border-top: 0; padding-top: 0; }
+
+.wizard__summary-row dt {
+    flex: none;
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.wizard__summary-row dd {
+    margin: 0;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    text-align: right;
+    min-width: 0;
+}
+
+/* ------------------------------------------------------------- 5 · closing */
+.wizard__step--done { text-align: center; }
+
+.wizard__step--done .wizard__title { margin-top: var(--space-3); }
+
+.wizard__done-mark {
+    margin-inline: auto;
+    color: var(--health);
+    background: rgba(60, 158, 114, 0.14);
+}
+
+.wizard__preview { margin-top: var(--space-4); }
+
+.wizard__preview .goal-card {
+    cursor: default;
+    pointer-events: none;
+}
+
+.wizard__step--done .wizard__note { text-align: left; }
+
+/* ----------------------------------------------------------------- footer */
+.wizard__foot {
+    display: flex;
+    gap: var(--space-2);
+    flex: none;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.wizard__back { flex: 0 0 auto; }
+.wizard__back[hidden] { display: none; }
+
+.wizard__next {
+    flex: 1;
+    border-color: rgba(60, 158, 114, 0.38);
+    background: rgba(60, 158, 114, 0.16);
+}
+
+.wizard__next[hidden] { display: none; }
+
+.wizard__next:disabled {
+    border-color: var(--glass-border-soft);
+    background: var(--glass-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Narrow phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .goal-card--primary { padding: var(--space-4); }
+    .goal-card--secondary,
+    .goal-card--completed { padding: var(--space-3); }
+
+    .goal-card--primary .goal-card__name { font-size: 1.0625rem; }
+    .goal-card__percent-value { font-size: 1.5rem; }
+    .goal-card__target { font-size: var(--fs-small); }
+
+    .goal-hero__percent-value { font-size: 2.4rem; }
+    .goal-hero__name { font-size: 1.1875rem; }
+
+    .wizard__grid { grid-template-columns: minmax(0, 1fr); }
+    .wizard__durations { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wizard__panel { transform: none; }
+    .wizard__step.is-active { animation: none; }
+}
+
+/* Two glyphs live in the pause button; only one is ever shown. */
+.goal-manage__swap { display: inline-flex; }
+.goal-manage__swap[hidden] { display: none; }
+
+/* The paused marker sits on the foot line, where it costs the goal's own
+   name nothing. */
+.goal-card__flag { flex: none; }
+.goal-card__flag[hidden] { display: none; }
+
+.goal-card__foot { justify-content: flex-start; }
+.goal-card__deadline { flex: 1; }
