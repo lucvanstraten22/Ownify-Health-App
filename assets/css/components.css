@@ -203,39 +203,13 @@
     color: var(--text-secondary);
 }
 
-/* The two header buttons: one circle, mirrored left and right of the name,
-   and the same glass as the tab bar at a smaller size. The material comes
-   from .glass, so only what is specific to them lives here. */
+/* The two header buttons: one circle, mirrored left and right of the name. */
 .pill--devices,
 .pill--account {
-    width: 46px;
-    height: 46px;
-    min-height: 0;
+    width: 42px;
     padding-inline: 0;
     justify-content: center;
-    background:
-        var(--glass-body),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018));
-    /* .glass draws the rim; a second border would double it. */
-    border: 0;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
-    color: var(--text-primary);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-
-.pill--devices .icon,
-.pill--account .icon { width: 20px; height: 20px; }
-
-/* A press sinks the pane a little rather than shrinking the button. */
-.pill--devices:active,
-.pill--account:active {
-    transform: scale(0.96);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.26);
-}
-
-/* The content sits above the material's own layers. */
-.pill--devices > *,
-.pill--account > * { position: relative; }
 
 .pill--close { padding-inline: var(--space-2) var(--space-3); }
 
@@ -774,36 +748,18 @@
     background: rgba(255, 255, 255, 0.42);
 }
 
-/* The tab bar is the largest pane of the same glass. Its own background sits
-   under .glass's body: enough density for the labels to stay legible over a
-   bright card, not so much that the page stops showing through. */
 .tabbar {
+    position: relative;
     width: 100%;
     padding-top: var(--space-2);
     padding-bottom: calc(var(--safe-bottom) + var(--space-2));
-    background:
-        var(--glass-body),
-        linear-gradient(180deg, rgba(33, 30, 32, 0.90), rgba(26, 24, 25, 0.96));
-    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.26);
-}
-
-/* Only the top edge of the bar is a rim: the sides and foot run off-screen. */
-.tabbar::after {
-    inset: 0 0 auto;
-    height: 1px;
-    padding: 0;
-    background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.22) 14%,
-        rgba(255, 255, 255, 0.34) 50%,
-        rgba(255, 255, 255, 0.22) 86%,
-        transparent);
-    -webkit-mask: none;
-    mask: none;
+    border-top: 1px solid var(--glass-hairline);
+    background: linear-gradient(180deg, rgba(41, 38, 40, 0.72), rgba(37, 34, 35, 0.94));
+    -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(150%);
+    backdrop-filter: blur(var(--blur-bar)) saturate(150%);
 }
 
 .tabbar__list {
-    position: relative;
     display: grid;
     /* Five equal columns: a longer label never claims more space. */
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -826,16 +782,8 @@
     transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
-.tab__icon {
-    display: block;
-    transition: transform var(--transition-fast);
-}
-
+.tab__icon { display: block; }
 .tab__icon .icon { width: 22px; height: 22px; }
-
-/* The active icon sits a hair higher and larger — read as focus, not as a
-   size change. */
-.tab.is-active .tab__icon { transform: translateY(-0.5px) scale(1.04); }
 
 /* All five labels are single words, so they never wrap: the icons stay on one
    baseline and the bar keeps its height at every width. */
@@ -849,45 +797,30 @@
     white-space: nowrap;
 }
 
-/* The active state is light gathering inside the pane, not a chip laid on top
-   of it: a pool falling from the top edge and the faintest accent warmth under
-   it. No border, so nothing outlines a second surface over the glass. */
 .tab__glow {
     position: absolute;
-    inset: 2px 4px;
-    border-radius: 16px;
-    /* An ellipse of light with no hard stop, so the highlight fades into the
-       pane at every edge instead of ending on a rounded rectangle. */
-    background:
-        radial-gradient(74% 116% at 50% 6%,
-            rgba(255, 255, 255, 0.115) 0%,
-            rgba(255, 255, 255, 0.055) 34%,
-            rgba(255, 255, 255, 0.016) 62%,
-            transparent 86%),
-        radial-gradient(60% 90% at 50% 34%,
-            color-mix(in srgb, var(--health) 15%, transparent) 0%,
-            transparent 82%);
+    inset: 4px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.025));
     opacity: 0;
-    transform: scaleY(0.9);
-    transform-origin: top;
-    transition: opacity var(--transition-slow), transform var(--transition-slow);
+    transition: opacity var(--transition-fast);
     pointer-events: none;
 }
 
-.tab.is-active { color: var(--text-primary); }
+.tab.is-active {
+    color: var(--text-primary);
+}
 
 .tab.is-active .tab__icon { color: var(--health); }
 
 .tab.is-active .tab__glow {
     opacity: 1;
-    transform: none;
+    border-color: var(--glass-hairline);
+    box-shadow: var(--shadow-inset);
 }
 
 .tab.is-active .tab__label { font-weight: 600; }
-
-/* A press dims the pane under the finger rather than moving the label. */
-.tab:active .tab__glow { opacity: 1; }
-.tab:not(.is-active):active .tab__glow { opacity: 0.5; }
 
 /* --------------------------------------------------------------------------
    Floating control
@@ -936,78 +869,4 @@
     font-size: var(--fs-tiny);
     color: var(--text-muted);
     text-align: center;
-}
-
-/* --------------------------------------------------------------------------
-   Liquid glass — one material, three users
-
-   The tab bar and the two header buttons are the same pane of glass at three
-   sizes. Everything that makes it read as glass is here, so they cannot drift
-   apart, and it is built in layers the way the material behaves:
-
-     backdrop-filter   blurs, saturates and lifts what is behind it
-     background        the glass body — its own faint tint, denser at the foot
-     ::before          refraction, and the light pooling under the top edge
-     ::after           the rim, a hairline that is brightest where light lands
-
-   Nothing is an opaque slab: the page still shows through every layer.
-
-   It sits at the end of this file on purpose. .glass is a material laid over
-   whatever a component already is, and .pill carries a blur of its own at the
-   same specificity — so the material has to come last to win it.
-   -------------------------------------------------------------------------- */
-.glass {
-    position: relative;
-    /* Keeps the layers below their own content without a z-index on each. */
-    isolation: isolate;
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(var(--glass-brightness));
-}
-
-/* .glass deliberately does not set `background`. Each pane composes its own,
-   layering --glass-body over a tint chosen for what it has to stay readable
-   over — and a background here, from a rule that has to come last, would
-   silently replace theirs. */
-
-/* The specular pool, pushed out of true by the turbulence filter.
-   This is a static layer: the browser rasterises it once and reuses it, so
-   the irregularity costs nothing while the page scrolls behind the glass. */
-.glass::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: var(--glass-sheen);
-    filter: url(#glass-refraction);
-    pointer-events: none;
-}
-
-/* The rim. A gradient behind a 1px ring cut out of itself, so the edge picks
-   up light along its top and fades underneath — thickness, not an outline. */
-.glass::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--glass-rim);
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-}
-
-/* Small panes carry less of everything: the same material, less of it. With
-   no text of their own to protect they can take the brightness the bar cannot. */
-.glass--compact {
-    --glass-blur: 20px;
-    --glass-saturate: 160%;
-    --glass-brightness: 108%;
 }

@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 $items = $data['navigation'];
 ?>
-<nav class="tabbar glass" aria-label="Hoofdnavigatie">
+<nav class="tabbar" aria-label="Hoofdnavigatie">
     <ul class="tabbar__list shell" role="list">
         <?php foreach ($items as $item):
             $isActive = !empty($item['active']);
