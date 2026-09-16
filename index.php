@@ -18,6 +18,7 @@ require __DIR__ . '/lib/render.php';
 require __DIR__ . '/lib/health.php';
 require __DIR__ . '/lib/community.php';
 require __DIR__ . '/lib/goals.php';
+require __DIR__ . '/lib/settings.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
@@ -35,6 +36,9 @@ $data['goals'] = goals_prepare(require __DIR__ . '/config/goals.php');
 
 /* Session state for the header button and the account panel. */
 $data['auth'] = app_auth();
+
+/* Settings: integrations resolved, profile read off the signed-in record. */
+$data['settings'] = settings_prepare(require __DIR__ . '/config/settings.php', $data['auth']);
 
 $app   = $data['app'];
 $focus = $data['focus'];
@@ -72,6 +76,7 @@ foreach ($data['navigation'] as $position => $item) {
     <link rel="stylesheet" href="assets/css/health.css">
     <link rel="stylesheet" href="assets/css/community.css">
     <link rel="stylesheet" href="assets/css/goals.css">
+    <link rel="stylesheet" href="assets/css/settings.css">
     <link rel="stylesheet" href="assets/css/account.css">
 </head>
 <body class="app">
@@ -102,9 +107,8 @@ foreach ($data['navigation'] as $position => $item) {
                         page('goals', $pageData);
                     } elseif ($item['destination'] === 'community') {
                         page('community', $pageData);
-                    } elseif (isset($data['sections'][$item['id']])) {
-                        $pageData['section'] = $data['sections'][$item['id']] + ['id' => $item['id']];
-                        page('section', $pageData);
+                    } elseif ($item['destination'] === 'settings') {
+                        page('settings', $pageData);
                     }
                     ?>
                 </div>
@@ -124,6 +128,13 @@ foreach ($data['navigation'] as $position => $item) {
                          dashboard config already owns a 'goal' of its own. */ ?>
                 <?php page('goal-detail', ['goal' => $goal] + $data); ?>
             <?php endforeach; ?>
+
+            <?php foreach ($data['settings']['pages'] as $pageId => $settingsPage): ?>
+                <?php page('settings-detail', $data + [
+                    'settings_page'    => $settingsPage,
+                    'settings_page_id' => $pageId,
+                ]); ?>
+            <?php endforeach; ?>
         </div>
 
         <!-- Dims the page while the assistant is in front of it. -->
@@ -140,6 +151,7 @@ foreach ($data['navigation'] as $position => $item) {
     /* Both live outside the deck, so the deck's pointer pipeline never sees
        them and neither can be mistaken for a swipe. */
     component('goal-wizard', $data);
+    component('settings-confirm', $data);
     component('account-modal', $data);
     ?>
 
@@ -153,6 +165,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="assets/js/community.js" defer></script>
     <script src="assets/js/goals.js" defer></script>
     <script src="assets/js/goal-wizard.js" defer></script>
+    <script src="assets/js/settings.js" defer></script>
     <script src="assets/js/account.js" defer></script>
 </body>
 </html>

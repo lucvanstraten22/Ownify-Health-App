@@ -12,7 +12,7 @@ $user      = $auth['user'];
 $signedIn  = $auth['signed_in'];
 $providers = $auth['providers'];
 ?>
-<div class="account" data-account data-csrf="<?= e($auth['csrf']) ?>" hidden>
+<div class="account" data-overlay data-account data-csrf="<?= e($auth['csrf']) ?>" hidden>
 
     <div class="account__scrim" data-account-close></div>
 

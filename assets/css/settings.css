@@ -1,0 +1,718 @@
+/* ==========================================================================
+   settings.css — Instellingen and its ten detail screens.
+
+   No new tokens. One rule governs the whole page: a group is a card, a
+   setting is a row inside it. Forty glass panels would be noise; five cards
+   with hairlines between their rows is hierarchy.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Group label
+   -------------------------------------------------------------------------- */
+.settings-eyebrow {
+    padding-inline: var(--space-2);
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.settings-block__lede {
+    margin-top: calc(-1 * var(--space-1));
+    margin-bottom: var(--space-3);
+    padding-inline: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Group card — rows share one surface, separated by hairlines
+   -------------------------------------------------------------------------- */
+.settings-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Every direct child of a settings card is a row, whatever it is. */
+.settings-card > * + * {
+    border-top: 1px solid var(--glass-hairline);
+}
+
+/* --------------------------------------------------------------------------
+   Settings row
+   -------------------------------------------------------------------------- */
+.settings-row,
+.settings-field,
+.settings-option,
+.settings-state,
+.settings-toggle {
+    display: grid;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    /* A comfortable one-handed target on every row in the app. */
+    min-height: 56px;
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+}
+
+.settings-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    transition: background-color var(--transition-fast);
+}
+
+.settings-row:active { background: rgba(255, 255, 255, 0.05); }
+
+.settings-row__mark {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--text-secondary);
+}
+
+.settings-row__mark .icon { width: 16px; height: 16px; }
+
+.settings-row__text { min-width: 0; }
+
+.settings-row__label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* The current value, under the label: a long category name keeps its own
+   line and never has to share the width with its value. */
+.settings-row__value {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.settings-row__chevron {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    color: var(--text-faint);
+    transition: transform var(--transition-fast);
+}
+
+.settings-row:active .settings-row__chevron,
+.settings-identity:active .settings-row__chevron { transform: translateX(2px); }
+
+/* --------------------------------------------------------------------------
+   Identity card — who this account is, above everything about the app
+   -------------------------------------------------------------------------- */
+.settings-identity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-4);
+    width: 100%;
+    padding: var(--space-4) var(--space-5);
+    text-align: left;
+    transition: transform var(--transition-fast);
+}
+
+.settings-identity:active { transform: scale(0.99); }
+
+.settings-identity__avatar,
+.settings-hero__avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    overflow: hidden;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-muted);
+}
+
+.settings-identity__avatar { width: 48px; height: 48px; }
+.settings-identity__avatar .icon { width: 22px; height: 22px; }
+
+.settings-identity__avatar img,
+.settings-hero__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.settings-identity__text { min-width: 0; }
+
+.settings-identity__name {
+    display: block;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-identity__meta {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Account actions — not preferences, so not in a group
+   -------------------------------------------------------------------------- */
+.settings-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.settings-logout {
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.settings-logout__icon { width: 17px; height: 17px; }
+
+.settings-actions__note {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* Present, reachable, and deliberately quiet. Deleting an account is not a
+   thing to invite. */
+.settings-delete {
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, 0.22);
+    transition: color var(--transition-fast);
+}
+
+.settings-delete:active { color: var(--text-secondary); }
+
+/* --------------------------------------------------------------------------
+   Detail screens
+   -------------------------------------------------------------------------- */
+.settings-block { display: block; }
+
+/* --- profile fields ---------------------------------------------------- */
+.settings-field {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.settings-field.is-editable { transition: background-color var(--transition-fast); }
+.settings-field.is-editable:active:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
+
+.settings-field__text { min-width: 0; }
+
+.settings-field__label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+}
+
+.settings-field__note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.settings-field__value {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: right;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-field.is-empty .settings-field__value {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.settings-field__avatar {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    overflow: hidden;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-muted);
+}
+
+.settings-field__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.settings-field__avatar .icon { width: 17px; height: 17px; }
+
+.settings-field__mark {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    color: var(--text-faint);
+}
+
+/* A locked field is not a broken one: the lock says it was answered once. */
+.settings-field.is-locked,
+.settings-field.is-derived { background: rgba(255, 255, 255, 0.022); }
+
+.settings-field.is-locked .settings-field__mark { color: var(--text-muted); }
+
+.settings-field:disabled { opacity: 1; cursor: default; }
+
+/* --- hero on the account screen ---------------------------------------- */
+.settings-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-block: var(--space-5);
+    text-align: center;
+}
+
+.settings-hero__avatar { width: 68px; height: 68px; }
+.settings-hero__avatar .icon { width: 28px; height: 28px; }
+
+.settings-hero__name {
+    margin-top: var(--space-3);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.settings-hero__meta {
+    margin-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* --- choice ------------------------------------------------------------- */
+.settings-option {
+    grid-template-columns: minmax(0, 1fr) auto;
+    transition: background-color var(--transition-fast);
+}
+
+.settings-option:active:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
+
+.settings-option__text { min-width: 0; }
+
+.settings-option__label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+}
+
+.settings-option__note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* The tick fades in rather than appearing, so switching reads as a move. */
+.settings-option__mark {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    color: var(--health);
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.settings-option__mark .icon { width: 18px; height: 18px; }
+
+.settings-option.is-selected .settings-option__mark {
+    opacity: 1;
+    transform: none;
+}
+
+.settings-option.is-selected .settings-option__label { font-weight: 600; }
+
+.settings-option:disabled { cursor: not-allowed; }
+.settings-option:disabled .settings-option__label { color: var(--text-secondary); }
+
+/* --- read-only state rows ---------------------------------------------- */
+.settings-state {
+    display: block;
+    align-items: stretch;
+}
+
+.settings-state__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.settings-state__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    min-width: 0;
+}
+
+.settings-state__value {
+    flex: none;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--health);
+    color: color-mix(in srgb, var(--health) 34%, #ffffff);
+    text-align: right;
+}
+
+.settings-state.is-empty .settings-state__value {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.settings-state__note {
+    display: block;
+    margin-top: var(--space-1);
+    max-width: 44ch;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --- toggles ------------------------------------------------------------ */
+.settings-toggle {
+    grid-template-columns: minmax(0, 1fr) auto;
+    cursor: not-allowed;
+}
+
+.settings-toggle__text { min-width: 0; }
+
+.settings-toggle__label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.settings-toggle__note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.switch {
+    display: block;
+    position: relative;
+    width: 42px;
+    height: 25px;
+    flex: none;
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.07);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.switch__knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.switch.is-on {
+    border-color: color-mix(in srgb, var(--health) 34%, transparent);
+    background: color-mix(in srgb, var(--health) 34%, transparent);
+}
+
+.switch.is-on .switch__knob {
+    transform: translateX(17px);
+    background: #ffffff;
+}
+
+/* Off and unavailable are different things, and look it. */
+.settings-toggle:disabled .switch { opacity: 0.55; }
+
+/* --------------------------------------------------------------------------
+   Health integrations — a source, with its settings folded inside it
+   -------------------------------------------------------------------------- */
+.settings-integrations {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.integration {
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-card);
+    background: var(--surface-gradient-quiet);
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    box-shadow: var(--shadow-inset), 0 10px 24px rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+    transition: border-color var(--transition-slow);
+}
+
+.integration.is-connected { border-color: color-mix(in srgb, var(--health) 28%, transparent); }
+
+.integration__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    transition: background-color var(--transition-fast);
+}
+
+.integration__head:active { background: rgba(255, 255, 255, 0.04); }
+
+.integration .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
+.integration .icon-tile .icon { width: 17px; height: 17px; }
+.integration.is-connected .icon-tile { color: var(--health); }
+
+.integration__text { min-width: 0; }
+
+.integration__label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.integration__note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.integration__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.integration__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-faint);
+}
+
+.integration.is-connected .integration__status { color: color-mix(in srgb, var(--health) 34%, #ffffff); }
+
+.integration.is-connected .integration__dot {
+    background: var(--health);
+    box-shadow: 0 0 0 3px rgba(60, 158, 114, 0.18);
+}
+
+.integration__chevron {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--text-faint);
+    transition: transform var(--transition-fast);
+}
+
+.integration__head[aria-expanded="true"] .integration__chevron { transform: rotate(180deg); }
+
+.integration__body {
+    padding: 0 var(--space-4) var(--space-4);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.integration__body[hidden] { display: none; }
+
+.integration__body .metric-rows { margin-top: var(--space-2); }
+
+.integration__caption {
+    margin-top: var(--space-4);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.integration__body .chips { margin-top: var(--space-2); }
+
+.integration__actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.integration__actions .btn { flex: 1; }
+
+.integration__hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Framed explanation
+   -------------------------------------------------------------------------- */
+.settings-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.035);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.settings-note__icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    margin-top: 2px;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Delete confirmation — a step, never a tap
+   -------------------------------------------------------------------------- */
+.confirm {
+    position: fixed;
+    inset: 0;
+    z-index: 58;              /* above the sheet and the wizard, below account */
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    padding-bottom: calc(var(--safe-bottom) + var(--space-4));
+}
+
+.confirm[hidden] { display: none; }
+
+.confirm__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.confirm__panel {
+    position: relative;
+    width: min(100%, 23rem);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+}
+
+.confirm.is-open .confirm__scrim { opacity: 1; }
+
+.confirm.is-open .confirm__panel {
+    opacity: 1;
+    transform: none;
+}
+
+.confirm__mark {
+    margin-inline: auto;
+    color: var(--nutrition);
+    background: rgba(191, 168, 99, 0.16);
+}
+
+.confirm__title {
+    margin-top: var(--space-3);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+
+.confirm__body {
+    margin-top: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.confirm__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+
+.confirm__yes {
+    border-color: rgba(191, 168, 99, 0.45);
+    background: rgba(191, 168, 99, 0.18);
+}
+
+.confirm__note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--glass-hairline);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.confirm__note-icon { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+
+/* --------------------------------------------------------------------------
+   Narrow phones — the long labels have to survive
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .settings-row,
+    .settings-field,
+    .settings-option,
+    .settings-state,
+    .settings-toggle { padding-inline: var(--space-3); }
+
+    .settings-row { gap: var(--space-2); }
+
+    .settings-identity { padding-inline: var(--space-4); gap: var(--space-3); }
+    .settings-identity__avatar { width: 42px; height: 42px; }
+
+    .integration__head {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "tile text chevron" ". status status";
+        row-gap: var(--space-1);
+        padding-inline: var(--space-3);
+    }
+
+    .integration .icon-tile { grid-area: tile; }
+    .integration__text { grid-area: text; }
+    .integration__chevron { grid-area: chevron; }
+    .integration__status { grid-area: status; }
+
+    .integration__actions { flex-direction: column; }
+}

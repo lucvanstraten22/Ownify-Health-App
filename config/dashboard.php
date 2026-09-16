@@ -210,9 +210,8 @@ return [
      * definition of the navigation: label, icon, destination, order and
      * active state all live here.
      *
-     * `destination` is the page that renders the section. Only 'overview'
-     * exists today; the others are null, so the component renders them as
-     * inert buttons rather than links to pages that are not there yet.
+     * `destination` is the page that renders it. All five are built now, so
+     * every entry names one.
      *
      *   Gezondheid  — slaap, voeding en sport, samen in één sectie
      *   Doelen      — persoonlijke doelen en voortgang
@@ -225,23 +224,7 @@ return [
         ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => 'goals',    'active' => false],
         ['id' => 'overview',  'label' => 'Overzicht',    'icon' => 'rings',     'destination' => 'overview', 'active' => true],
         ['id' => 'community', 'label' => 'Community',    'icon' => 'community', 'destination' => 'community','active' => false],
-        ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => null,       'active' => false],
-    ],
-
-    /* -------------------------------------------------- section placeholders
-     * Gezondheid, Doelen en Community have pages of their own now. Only
-     * Instellingen is still unbuilt: it exists as a page so the horizontal
-     * navigation is complete, and says plainly what will live there rather
-     * than pretending to be finished.
-     */
-    'sections' => [
-        'settings' => [
-            'title'  => 'Instellingen',
-            'icon'   => 'sliders',
-            'lede'   => 'App-, account- en privacyinstellingen.',
-            'status' => 'Binnenkort beschikbaar',
-            'topics' => ['Account', 'Apparaten', 'Privacy'],
-        ],
+        ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => 'settings', 'active' => false],
     ],
 
     /* -------------------------------------------------- AI assistant layer

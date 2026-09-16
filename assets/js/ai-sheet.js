@@ -175,7 +175,10 @@
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && nav.state.aiOpen) { close(true); }
+        if (event.key !== 'Escape' || !nav.state.aiOpen) { return; }
+        // A panel in front of the sheet owns the keypress.
+        if (nav.overlayOpen()) { return; }
+        close(true);
     });
 
     /* --------------------------------------------------------------- init */

@@ -57,6 +57,18 @@ window.AppNav = (function () {
             axes[axis].unshift(controller);
         },
 
+        /**
+         * True while a panel outside the deck is in front of everything —
+         * the account panel, the goal wizard, a confirmation.
+         *
+         * Every layer listens for Escape on the document, so without this one
+         * keypress closes the panel AND the layer behind it. The layers inside
+         * the deck stand down while a panel is up.
+         */
+        overlayOpen: function () {
+            return document.querySelector('[data-overlay]:not([hidden])') !== null;
+        },
+
         clamp: function (value, min, max) {
             return value < min ? min : (value > max ? max : value);
         },

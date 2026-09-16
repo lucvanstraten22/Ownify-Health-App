@@ -90,6 +90,43 @@ if (!function_exists('icon')) {
                 // delete a goal
                 'trash'    => '<path d="M4.6 7.2h14.8"/><path d="M9.4 7.2V5.4a1.4 1.4 0 0 1 1.4-1.4h2.4a1.4 1.4 0 0 1 1.4 1.4v1.8"/>'
                     . '<path d="M6.8 7.2 7.7 19a1.6 1.6 0 0 0 1.6 1.5h5.4a1.6 1.6 0 0 0 1.6-1.5l.9-11.8"/>',
+
+                // --- settings categories ---------------------------------
+
+                // privacy
+                'shield'   => '<path d="M12 3.4 19.4 6.1v5.8c0 4.2-3 7.4-7.4 8.7-4.4-1.3-7.4-4.5-7.4-8.7V6.1L12 3.4Z"/>',
+
+                // notifications
+                'bell'     => '<path d="M18 9.8a6 6 0 1 0-12 0c0 4.8-1.7 6.2-1.7 6.2h15.4S18 14.6 18 9.8Z"/>'
+                    . '<path d="M13.9 19.2a2.1 2.1 0 0 1-3.8 0"/>',
+
+                // language
+                'globe'    => '<circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8"/>'
+                    . '<path d="M12 3.6a13.2 13.2 0 0 1 0 16.8 13.2 13.2 0 0 1 0-16.8Z"/>',
+
+                // units
+                'ruler'    => '<rect x="2.8" y="8.8" width="18.4" height="6.4" rx="1.8"/>'
+                    . '<path d="M7.4 8.8v2.8M11 8.8v4M14.6 8.8v2.8M18.2 8.8v4"/>',
+
+                // first day of the week
+                'calendar' => '<rect x="4" y="5.6" width="16" height="14.8" rx="2.6"/>'
+                    . '<path d="M8.4 3.6v3.8M15.6 3.6v3.8M4 10.6h16"/>',
+
+                // accessibility — the standard figure, in this icon family
+                'accessibility' => '<circle cx="12" cy="4.8" r="1.9"/><path d="M4.8 8.6h14.4"/>'
+                    . '<path d="M12 8.6v5M12 13.6 9.2 20.4M12 13.6l2.8 6.8"/>',
+
+                // about
+                'info'     => '<circle cx="12" cy="12" r="8.4"/><path d="M12 11.2v5.1"/><path d="M12 7.9v.1"/>',
+
+                // sign out
+                'logout'   => '<path d="M9.8 20.4H5.8a1.8 1.8 0 0 1-1.8-1.8V5.4a1.8 1.8 0 0 1 1.8-1.8h4"/>'
+                    . '<path d="M15.4 16.4 19.8 12l-4.4-4.4"/><path d="M19.8 12H9.4"/>',
+
+                // synchronisation
+                'sync'     => '<path d="M20.2 11.2a8.2 8.2 0 0 0-14-4.5L4 8.9"/>'
+                    . '<path d="M3.8 12.8a8.2 8.2 0 0 0 14 4.5l2.2-2.2"/>'
+                    . '<path d="M4 4.6v4.3h4.3M20 19.4v-4.3h-4.3"/>',
             ];
         }
 

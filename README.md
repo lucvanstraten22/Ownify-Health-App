@@ -10,9 +10,8 @@ framework, no build step, no dependencies. Two screens live in one document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on. Overzicht, Gezondheid, Doelen and Community are
-built; Instellingen is still a placeholder, and the assistant is the room the
-future ChatGPT-based assistant will live in — only its screen and gestures
+whichever page you are on. All five pages are built; the assistant is the room
+the future ChatGPT-based assistant will live in — only its screen and gestures
 exist today.
 
 ## Run it
@@ -43,16 +42,19 @@ pages/
     goals.php                 Doelen — one primary goal and up to two others
     goal-detail.php           one goal in full, one per goal
     community.php             the leaderboard
-    section.php               a page that is not built yet, ×1
+    settings.php              Instellingen — categories, not settings
+    settings-detail.php       one settings screen, built from its blocks
     ai.php                    the assistant sheet
 config/dashboard.php          copy, data and settings for the app
 config/health.php             the health areas, their metrics and their trends
 config/community.php          leaderboard scopes, periods and copy
 config/goals.php              goal vocabulary, copy and the example goals
+config/settings.php           the settings tree, its screens and their copy
 lib/render.php                escaping, page/component include, score formatting
 lib/health.php                demo handling, shared metrics, chart geometry
 lib/community.php             board assembly, formatting, the demo roster
 lib/goals.php                 goal expansion, dates and priority ordering
+lib/settings.php              integration status, profile values, row summaries
 components/
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account
@@ -79,6 +81,11 @@ components/
     community-badges.php      reserved space for badges and milestones
     goal-card.php             one goal: name · percentage · bar · target · deadline
     goal-wizard.php           the five-step create-a-goal flow
+    settings-group.php        one label, one card, hairline-separated rows
+    settings-row.php          icon · label · current value · chevron
+    settings-field.php        a profile field: editable, locked or derived
+    settings-integration.php  a health source, expandable in place
+    settings-confirm.php      the delete-account confirmation
     account-modal.php         sign-in when signed out, account when signed in
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
@@ -88,6 +95,7 @@ assets/css/
     health.css                Gezondheid and its detail pages (tokens only)
     community.css             the leaderboard (tokens only)
     goals.css                 Doelen, goal details and the wizard (tokens only)
+    settings.css              Instellingen and its ten screens (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
@@ -99,6 +107,7 @@ assets/js/
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
     goal-wizard.js            the five-step create-a-goal flow
+    settings.js               choices, integrations, sign-out, delete confirm
     account.js                the account panel
 ```
 
@@ -113,13 +122,11 @@ Gezondheid  ──  slaap · voeding · sport, grouped into one section
 Doelen      ──  persoonlijke doelen en voortgang
 Overzicht   ──  het dagelijkse dashboard
 Community   ──  ranglijst + toekomstige sociale functies
-Instellingen──  app- en gebruikersinstellingen    ← the only placeholder left
+Instellingen──  account, koppelingen, privacy en voorkeuren
 ```
 
-Four of the five have a `destination` and a page of their own; `settings` is
-still `null` and falls through to `pages/section.php`, which says what will
-live there rather than pretending to be finished. The assistant layer is
-deliberately not a sixth item — it is reached by the swipe.
+Every entry names a `destination` and has a page of its own. The assistant
+layer is deliberately not a sixth item — it is reached by the swipe.
 
 ## Two gestures, two axes
 
@@ -303,6 +310,69 @@ keys.
 `lib/community.php`, belonging to nobody — so the design and the floating
 behaviour can be reviewed with a full board. It is false by default.
 
+## Instellingen
+
+Categories, not settings. Nine rows over five groups, each opening a screen of
+its own, so the overview stays a short scan.
+
+```
+[ avatar ]  Username                         >
+
+GEZONDHEID   Apparaten & Gezondheid          >
+             Geen verbonden
+PRIVACY      Privacy · Gezondheidsdata privé >
+APP          Meldingen · Thema · Taal ·
+             Eenheden · Eerste dag · Toegankelijkheid
+OVER         Over de app · Versie 0.7
+
+             [ Uitloggen ]
+               Account verwijderen
+```
+
+**A group is a card; a setting is a row inside it.** Forty glass panels would
+be noise. The current value sits *under* the label rather than beside it,
+which is what lets "Apparaten & Gezondheid" and "Eerste dag van de week" keep
+their full names on a 320px phone.
+
+**One template, ten screens.** `pages/settings-detail.php` renders a screen
+from a list of blocks and knows eight kinds — `identity`, `fields`,
+`integrations`, `choice`, `states`, `toggles`, `rows`, `note`. Adding a
+settings screen is config, not another file. They use the same detail layer
+Gezondheid and Doelen use, so back is the same swipe everywhere.
+
+**Three kinds of value, never mixed up.** A *fact* is how the app genuinely
+behaves — the theme is dark, the interface is Dutch, measurements are metric,
+health data never leaves the owner's account. *Not set* is exactly that:
+nothing is connected and no profile data is entered, so the row says so rather
+than showing a number. A *preference* is a choice you will make later —
+selectable now so the design can be judged, with every such screen saying at
+its foot that it is not yet saved.
+
+**Profile fields carry their own behaviour.** `edit` is `true`, `'locked'` or
+`'derived'`, and the row shows which without needing a legend: an editable
+field gets a chevron, a field set once at onboarding gets a lock, and a
+calculated one says where it comes from. Gender and date of birth are locked.
+Age is derived, not editable — the schema stores a date of birth and computes
+age from it, so an age you could type would be a second, contradictory fact
+about the same person.
+
+**Only what can really save is live.** Profielfoto and Gebruikersnaam open the
+account panel, which has a working endpoint behind it. Every other field
+carries the same affordance and is plainly disabled, rather than moving and
+quietly discarding what you typed. Uitloggen really signs you out. Deleting an
+account confirms and then stops, and says so.
+
+**Health sources expand in place.** The app has one detail layer, so a
+source's settings — status, last sync, permissions, categories, connect and
+disconnect — open inside its card rather than pushing a third screen onto a
+stack that does not exist. `config/settings.php` has the same `demo` flag as
+the rest of the app: it fills in a connected state so that design can be
+reviewed, and ships false, because nothing is connected.
+
+**The header's device button is not this.** That button is a status glance;
+this is where the configuration lives. They are deliberately not the same
+thing.
+
 ## Accounts and data
 
 Sign-in, profiles, health data, goals, friendships and leaderboards have a real
@@ -364,8 +434,9 @@ working field).
 ## Not in this version
 
 A working chatbot of any kind, ChatGPT or other API calls, AI responses,
-message history, an input field, prompt suggestions, the Instellingen page,
-persistent goal storage, automatic goal progress, Apple Health / wearable
-integrations, real leaderboard data, real medical analysis and real personal
-recommendations. The data layer, focus system, screen deck and component
-boundaries are prepared for them; none of them are implemented.
+message history, an input field, prompt suggestions, persistent goal storage,
+automatic goal progress, stored settings, Apple Health / Health Connect
+integrations, notifications, a light theme, English, imperial units, real
+leaderboard data, real medical analysis and real personal recommendations.
+The data layer, focus system, screen deck and component boundaries are
+prepared for them; none of them are implemented.

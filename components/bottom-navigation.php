@@ -2,9 +2,6 @@
 /**
  * Primary navigation — exactly five destinations, driven entirely by the
  * `navigation` array in config/dashboard.php (label, icon, order, state).
- *
- * Only the 'overview' destination is built, so the other four render as inert
- * buttons rather than links to pages that do not exist yet.
  */
 declare(strict_types=1);
 

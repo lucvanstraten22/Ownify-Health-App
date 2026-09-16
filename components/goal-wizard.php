@@ -21,7 +21,7 @@ $copy   = $goals['wizard'];
 $steps  = $copy['steps'];
 $total  = count($steps);
 ?>
-<div class="wizard" data-goal-wizard hidden>
+<div class="wizard" data-overlay data-goal-wizard hidden>
 
     <div class="wizard__scrim" data-wizard-close></div>
 

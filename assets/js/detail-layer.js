@@ -171,7 +171,10 @@
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && current && !nav.state.aiOpen) { close(true); }
+        if (event.key !== 'Escape' || !current || nav.state.aiOpen) { return; }
+        // A panel in front of this one owns the keypress.
+        if (nav.overlayOpen()) { return; }
+        close(true);
     });
 
     /* --------------------------------------------------------------- init */
