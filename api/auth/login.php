@@ -7,8 +7,10 @@ api_require_post();
 api_require_csrf();
 api_require_database();
 
-$result = auth_login_email(
-    (string) ($_POST['email'] ?? ''),
+/* The field is labelled Gebruikersnaam; an e-mail address works too, so
+   nobody is locked out for having forgotten which one they registered with. */
+$result = auth_login_password(
+    (string) ($_POST['username'] ?? $_POST['email'] ?? ''),
     (string) ($_POST['password'] ?? '')
 );
 

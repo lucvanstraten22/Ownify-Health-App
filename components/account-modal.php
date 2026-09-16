@@ -2,8 +2,12 @@
 /**
  * The account panel behind the header's account button.
  *
- * Two states, one dialog: signed out shows the sign-in options, signed in
- * shows the account and what can be changed. Deliberately not a profile page.
+ * Two states, one dialog: signed out shows the sign-in form, signed in shows
+ * the account and what can be changed. Deliberately not a profile page.
+ *
+ * Signing in takes a username and a password. Apple and Google are two small
+ * marks under the form rather than two full-width buttons above it — they are
+ * secondary, and they are not implemented, so they render disabled.
  */
 declare(strict_types=1);
 
@@ -19,9 +23,10 @@ $providers = $auth['providers'];
     <div class="account__panel card" role="dialog" aria-modal="true" aria-labelledby="account-title">
 
         <div class="account__head">
-            <h2 class="card__eyebrow" id="account-title">
-                <?= $signedIn ? 'Account' : 'Inloggen' ?>
-            </h2>
+            <?php /* Neutral in both states: the switch below carries Inloggen
+                     vs Account aanmaken, so a second heading would only
+                     contradict it. */ ?>
+            <h2 class="card__eyebrow" id="account-title">Account</h2>
             <button type="button" class="account__close press" data-account-close aria-label="Sluiten">
                 <?= icon('chevron-down') ?>
             </button>
@@ -78,37 +83,26 @@ $providers = $auth['providers'];
 
         <?php else: ?>
 
-            <div class="account__providers">
-                <?php foreach (['apple' => 'Apple', 'google' => 'Google'] as $key => $label): ?>
-                    <button type="button" class="btn account__provider press"
-                            data-account-provider="<?= e($key) ?>"
-                            <?= $providers[$key] ? '' : 'disabled' ?>>
-                        Doorgaan met <?= e($label) ?>
-                    </button>
-                <?php endforeach; ?>
-                <?php if (!$providers['apple'] && !$providers['google']): ?>
-                    <p class="account__hint">Apple en Google zijn nog niet gekoppeld.</p>
-                <?php endif; ?>
-            </div>
-
-            <div class="account__divider"><span>of met e-mail</span></div>
-
+            <?php /* The switch is the heading: one control, two states. */ ?>
             <div class="range-switch range-switch--wide" role="group" aria-label="Kies inloggen of registreren">
                 <button type="button" class="range-switch__option is-active" data-account-mode="login" aria-pressed="true">Inloggen</button>
-                <button type="button" class="range-switch__option" data-account-mode="register" aria-pressed="false">Account maken</button>
+                <button type="button" class="range-switch__option" data-account-mode="register" aria-pressed="false">Account aanmaken</button>
             </div>
 
             <form class="account__form" data-account-form="email" novalidate>
-                <div class="account__field" data-account-only="register" hidden>
-                    <label class="account__label" for="account-new-username">Gebruikersnaam</label>
-                    <input class="account__input" type="text" id="account-new-username" name="username"
-                           minlength="3" maxlength="30" autocomplete="username" spellcheck="false">
-                </div>
 
                 <div class="account__field">
+                    <label class="account__label" for="account-username">Gebruikersnaam</label>
+                    <input class="account__input" type="text" id="account-username" name="username"
+                           maxlength="30" autocomplete="username" spellcheck="false" required>
+                </div>
+
+                <?php /* Only registration needs an address; signing in resolves
+                         the username itself. */ ?>
+                <div class="account__field" data-account-only="register" hidden>
                     <label class="account__label" for="account-email">E-mailadres</label>
                     <input class="account__input" type="email" id="account-email" name="email"
-                           autocomplete="email" required>
+                           autocomplete="email">
                 </div>
 
                 <div class="account__field">
@@ -119,6 +113,34 @@ $providers = $auth['providers'];
 
                 <button type="submit" class="btn account__submit press" data-account-submit>Inloggen</button>
             </form>
+
+            <?php /* Apple and Google are secondary: two small marks, no labels.
+                     They are brand marks rather than icons — filled, and in
+                     Google's case four-colour — so they cannot come from
+                     icons.php, which is one stroked family by design. */ ?>
+            <div class="account__socials">
+                <button type="button" class="social press" data-account-provider="apple"
+                        aria-label="Doorgaan met Apple" <?= $providers['apple'] ? '' : 'disabled' ?>>
+                    <svg class="social__mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                        <path d="M16.36 12.73c-.02-2.4 1.96-3.55 2.05-3.61-1.12-1.63-2.86-1.86-3.48-1.88-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.91-.43 7.22 1.2 9.58.8 1.16 1.75 2.45 3 2.4 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.13.75 1.29-.02 2.11-1.17 2.9-2.34.91-1.34 1.29-2.64 1.31-2.71-.03-.01-2.51-.96-2.53-3.83Z"/>
+                        <path d="M14.13 5.63c.66-.8 1.11-1.92.99-3.03-.95.04-2.11.63-2.79 1.43-.61.71-1.15 1.85-1.01 2.94 1.06.08 2.15-.54 2.81-1.34Z"/>
+                    </svg>
+                </button>
+
+                <button type="button" class="social press" data-account-provider="google"
+                        aria-label="Doorgaan met Google" <?= $providers['google'] ? '' : 'disabled' ?>>
+                    <svg class="social__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23Z"/>
+                        <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18A10.99 10.99 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l3.66-2.83Z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38Z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <?php if (!$providers['apple'] && !$providers['google']): ?>
+                <p class="account__hint account__hint--centred">Apple en Google zijn nog niet gekoppeld.</p>
+            <?php endif; ?>
 
         <?php endif; ?>
 

@@ -190,30 +190,53 @@
     color: var(--text-muted);
 }
 
-/* -------------------------------------------------------------- providers */
-.account__providers {
+/* ------------------------------------------------------- social sign-in
+   Apple and Google are secondary here: two small marks under the form, not
+   two full-width buttons above it. Same glass recipe as the header pills, so
+   they read as part of the same kit rather than as borrowed brand chrome. */
+.account__socials {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.account__provider { width: 100%; }
-
-.account__divider {
-    display: flex;
-    align-items: center;
+    justify-content: center;
     gap: var(--space-3);
-    margin-block: var(--space-4);
-    font-size: var(--fs-tiny);
-    color: var(--text-muted);
+    margin-top: var(--space-4);
 }
 
-.account__divider::before,
-.account__divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--glass-hairline);
+.social {
+    display: grid;
+    place-items: center;
+    /* Small, but never below a comfortable thumb. */
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--glass-border-soft);
+    border-radius: 50%;
+    background: var(--glass-soft);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    color: var(--text-primary);
+    transition: transform var(--transition-fast), background-color var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.social:active:not(:disabled) {
+    transform: scale(0.94);
+    background: var(--glass);
+}
+
+.social:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* One box for both marks, so the Apple silhouette and the Google G sit on
+   the same optical baseline despite different shapes. */
+.social__mark {
+    width: 21px;
+    height: 21px;
+}
+
+.account__hint--centred {
+    margin-top: var(--space-3);
+    text-align: center;
 }
 
 .account__form[data-account-form="email"] { margin-top: var(--space-4); }

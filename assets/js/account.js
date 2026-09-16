@@ -115,7 +115,7 @@
             });
 
             var submit = panel.querySelector('[data-account-submit]');
-            if (submit) { submit.textContent = mode === 'register' ? 'Account maken' : 'Inloggen'; }
+            if (submit) { submit.textContent = mode === 'register' ? 'Account aanmaken' : 'Inloggen'; }
 
             var password = panel.querySelector('#account-password');
             if (password) {

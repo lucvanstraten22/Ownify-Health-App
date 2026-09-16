@@ -134,23 +134,34 @@ if (!function_exists('auth_provider_available')) {
      * The same message is returned for an unknown address and a wrong password,
      * so the response never reveals which addresses have accounts.
      */
-    function auth_login_email(string $email, string $password): array
+    /**
+     * Signs in with a password.
+     *
+     * The identifier is a username or the e-mail the account was created with:
+     * a username is `^[A-Za-z0-9._-]+$` and an e-mail always has an `@`, so the
+     * two can never collide and one lookup covers both. Everything else about
+     * this function is unchanged — same hash, same generic error whether the
+     * account is unknown or the password is wrong, same rehash on the way out.
+     */
+    function auth_login_password(string $identifier, string $password): array
     {
         if (!db_available()) {
             return ['ok' => false, 'error' => 'Geen databaseverbinding.'];
         }
 
-        $email = auth_normalise_email($email);
+        $identifier = trim($identifier);
 
         $identity = db_one(
             'SELECT i.id, i.user_id, i.password_hash, u.status
                FROM user_auth_identities i
                JOIN users u ON u.id = i.user_id
-              WHERE i.provider = ? AND i.provider_subject = ?',
-            ['email', $email]
+              WHERE i.provider = ?
+                AND (i.provider_subject = ? OR u.username = ?)
+              LIMIT 1',
+            ['email', auth_normalise_email($identifier), $identifier]
         );
 
-        $generic = ['ok' => false, 'error' => 'E-mailadres of wachtwoord klopt niet.'];
+        $generic = ['ok' => false, 'error' => 'Gebruikersnaam of wachtwoord klopt niet.'];
 
         if ($identity === null || empty($identity['password_hash'])) {
             // Spend comparable time so the response cannot be used to probe.
