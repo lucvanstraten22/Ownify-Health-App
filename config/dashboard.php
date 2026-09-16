@@ -64,7 +64,10 @@ return [
 
     'scores' => [
 
-        /* A — primary score, visually dominant */
+        /* A — primary score, visually dominant.
+         * `value` is DERIVED, never configured: index.php overwrites it with
+         * health_overall_score(), the average of the three Gezondheid pillars.
+         * Setting a number here would only be overwritten on the next render. */
         'overall' => [
             'label'       => 'Gezondheidsscore',
             'value'       => null,
@@ -74,11 +77,13 @@ return [
             'empty_hint'  => 'Verbind een bron om je dagscore te berekenen.',
         ],
 
-        /* Ring segments — explains *why* the primary score is what it is */
+        /* Ring legend — names the three pillars the score averages. The three
+         * count equally, so there are no weights to carry here; the legend
+         * renders a label and an accent and nothing else. */
         'contributors' => [
-            ['key' => 'sleep',     'label' => 'Slaap',   'accent' => 'health',    'weight' => 0.4, 'value' => null],
-            ['key' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'weight' => 0.3, 'value' => null],
-            ['key' => 'sport',     'label' => 'Sport',   'accent' => 'activity',  'weight' => 0.3, 'value' => null],
+            ['key' => 'sleep',     'label' => 'Slaap',   'accent' => 'health'],
+            ['key' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition'],
+            ['key' => 'sport',     'label' => 'Sport',   'accent' => 'activity'],
         ],
 
         /* B + C — secondary category cards (identical card system) */

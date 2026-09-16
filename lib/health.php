@@ -47,6 +47,49 @@ if (!function_exists('health_fill_demo')) {
     }
 }
 
+if (!function_exists('health_overall_score')) {
+    /**
+     * The dashboard's health score: the plain average of the three Gezondheid
+     * pillars, Slaap + Voeding + Training, divided by three.
+     *
+     * Derived on every render rather than stored anywhere, which is what makes
+     * it follow its inputs: change an area's score — in config now, from the
+     * database later — and the ring moves with it. There is no second copy to
+     * keep in step and no way for the two to disagree.
+     *
+     * All three are required. Dividing a two-pillar total by three would read
+     * a missing score as a zero and quietly understate the day, so until every
+     * pillar has a value the card keeps its empty state.
+     *
+     * Each area is taken as a share of its own max before averaging, so the
+     * result stays correct if a pillar is ever scored out of something other
+     * than 100.
+     */
+    function health_overall_score(array $health, int $max = 100): ?int
+    {
+        $areas = $health['areas'] ?? [];
+
+        if ($areas === []) {
+            return null;
+        }
+
+        $total = 0.0;
+
+        foreach ($areas as $area) {
+            $value   = $area['score']['value'] ?? null;
+            $areaMax = (float) ($area['score']['max'] ?? 100);
+
+            if (!has_value($value) || $areaMax <= 0) {
+                return null;
+            }
+
+            $total += (float) $value / $areaMax;
+        }
+
+        return (int) round($total / count($areas) * $max);
+    }
+}
+
 if (!function_exists('health_metric')) {
     /**
      * Resolves one metric reference against the shared registry.
