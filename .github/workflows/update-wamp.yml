@@ -21,7 +21,7 @@ jobs:
       - name: Copy files to WAMP
         shell: cmd
         run: |
-          robocopy "%GITHUB_WORKSPACE%" "C:\wamp64\www\JoLu" /MIR /XD ".git"
+          robocopy "%GITHUB_WORKSPACE%" "C:\wamp64\www\JoLu" /MIR /XD ".git" "uploads"
           if %ERRORLEVEL% LEQ 7 exit /b 0
           exit /b %ERRORLEVEL%
 
