@@ -20,12 +20,16 @@ if (!function_exists('icon')) {
                 // account
                 'user'     => '<circle cx="12" cy="9" r="3.2"/><path d="M5.6 19.6a6.6 6.6 0 0 1 12.8 0"/>',
 
-                // health section — sleep, nutrition and sport together
-                'heart'    => '<path d="M20.3 4.9a5 5 0 0 0-7.1 0L12 6.1l-1.2-1.2a5 5 0 1 0-7.1 7.1l1.2 1.2L12 19.4l7.1-6.2 1.2-1.2a5 5 0 0 0 0-7.1Z"/>',
+                // health section — sleep, nutrition and sport together.
+                // Two equal lobes meeting in a clean V, closing to a soft point:
+                // symmetric about x=12, so it never leans in a row of five.
+                'heart'    => '<path d="M12 19.9 4.9 13.1a4.7 4.7 0 0 1 0-6.8 4.9 4.9 0 0 1 6.7-.1l.4.4.4-.4a4.9 4.9 0 0 1 6.7.1 4.7 4.7 0 0 1 0 6.8Z"/>',
 
-                // community — two people, same proportions as the account icon
-                'community' => '<circle cx="9.2" cy="9.4" r="2.9"/><path d="M3.8 19.5a5.4 5.4 0 0 1 10.8 0"/>'
-                    . '<circle cx="16.9" cy="8" r="2.2"/><path d="M16.4 13.3a4.6 4.6 0 0 1 3.8 6.2"/>',
+                // community — the person in front drawn whole, the one behind
+                // cut off where the front figure covers them, so the two read
+                // as depth rather than as two overlapping outlines.
+                'community' => '<circle cx="9.5" cy="8.8" r="3.1"/><path d="M3.9 19.4a5.6 5.6 0 0 1 11.2 0"/>'
+                    . '<path d="M15.9 6.1a2.6 2.6 0 0 1 0 5.2"/><path d="M17.4 13.9a4.8 4.8 0 0 1 2.7 4.3"/>',
 
                 // sleep
                 'moon'     => '<path d="M20.2 14.4A8.4 8.4 0 0 1 9.6 3.8a8.4 8.4 0 1 0 10.6 10.6Z"/>',
@@ -39,11 +43,15 @@ if (!function_exists('icon')) {
                 // training
                 'dumbbell' => '<path d="M7 6.6v10.8M17 6.6v10.8M3.2 9.4v5.2M20.8 9.4v5.2M7 12h10"/>',
 
-                // overview — concentric rings, echoes the score ring
-                'rings'    => '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/>',
+                // overview — concentric rings, echoes the score ring. The gap
+                // between them reads even at 22px when the inner circle is a
+                // little under half the outer.
+                'rings'    => '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/>',
 
-                // settings
-                'sliders'  => '<path d="M4 8.5h8.5M17.5 8.5H20M4 15.5h3.5M12.5 15.5H20"/><circle cx="15" cy="8.5" r="2.2"/><circle cx="10" cy="15.5" r="2.2"/>',
+                // settings — two tracks, each with its knob at the opposite
+                // third, so the glyph balances around its own centre.
+                'sliders'  => '<path d="M4 8.6h8.7M17.4 8.6H20M4 15.4h3.2M12.2 15.4H20"/>'
+                    . '<circle cx="15.1" cy="8.6" r="2.3"/><circle cx="9.7" cy="15.4" r="2.3"/>',
 
                 // insights — heartbeat
                 'pulse'    => '<path d="M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21"/>',
@@ -51,8 +59,11 @@ if (!function_exists('icon')) {
                 // patterns / research
                 'chart'    => '<path d="M4 4.5v15h15.5"/><path d="M7.6 15.4 11 11.2l2.9 2.4 4.4-6"/>',
 
-                // goals — deliberately not a second ring: `rings` owns that shape
-                'flag'     => '<path d="M6 20.6V4"/><path d="M6 5c4.5-2 9 2 13.5 0v8.6c-4.5 2-9-2-13.5 0Z"/>',
+                // goals — deliberately not a second ring: `rings` owns that
+                // shape. The pole runs the full height and the banner hangs
+                // from the top of it, so the glyph sits on the same baseline
+                // as the other four.
+                'flag'     => '<path d="M6.3 20.6V4.2"/><path d="M6.3 5.2c4.3-1.8 8.6 1.8 12.9 0v8.3c-4.3 1.8-8.6-1.8-12.9 0Z"/>',
 
                 // recommendation
                 'sparkle'  => '<path d="M12 3.6 13.7 9 19 10.8 13.7 12.6 12 18l-1.7-5.4L5 10.8 10.3 9 12 3.6Z"/><path d="M18.4 17.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/>',

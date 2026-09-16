@@ -14,7 +14,7 @@ $account = $data['header']['account'];
 <header class="app-header" data-header>
     <div class="app-header__inner shell">
 
-        <button type="button" class="pill pill--devices press"
+        <button type="button" class="pill pill--devices glass glass--compact press"
                 aria-label="<?= e($devices['aria']) ?>">
             <?= icon('device', 'pill__icon') ?>
         </button>
@@ -23,7 +23,7 @@ $account = $data['header']['account'];
             <span class="app-header__name"><?= e($app['name']) ?></span>
         </p>
 
-        <button type="button" class="pill pill--account press" data-account-open
+        <button type="button" class="pill pill--account glass glass--compact press" data-account-open
                 aria-label="<?= e($account['aria']) ?>">
             <?php $avatar = $data['auth']['user']['avatar_path'] ?? null; ?>
             <span class="pill__avatar" data-account-avatar>
