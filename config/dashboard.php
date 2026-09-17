@@ -24,7 +24,7 @@ return [
 
     /* -------------------------------------------------- app + shell */
     'app' => [
-        'name'        => 'AppName',
+        'name'        => 'FFTESTEN',
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',
