@@ -1,89 +1,21 @@
 /* ==========================================================================
    dashboard.css — Home / Overview page layout.
-   Section rhythm, the two-up card grid, focus states and screen sizes.
+   The card grid, focus states and screen sizes.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Section rhythm — every block shares the same left/right alignment (.shell)
+   Grid — the health cards on Gezondheid are the only users left
    -------------------------------------------------------------------------- */
-.section {
-    display: flex;
-    flex-direction: column;
-}
-
-/* A not-yet-built section centres its placeholder in the page. */
-.section-main {
-    display: grid;
-    place-items: center;
-    min-height: 68vh;
-}
-
-.section__title {
-    margin-bottom: var(--space-3);
-    padding-inline: var(--space-2);
-    font-size: var(--fs-section);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-}
-
 .grid {
     display: grid;
     gap: var(--space-3);
 }
 
-.grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-/* A focused category takes the full width, so its sibling stacks below it
-   at the same width instead of leaving a half-empty row. */
-.grid--stacked { grid-template-columns: minmax(0, 1fr); }
-
-/* --------------------------------------------------------------------------
-   Category cards — one component, identical in every dimension
-   -------------------------------------------------------------------------- */
-.card--score {
-    display: flex;
-    flex-direction: column;
-    padding: var(--space-4);
-}
-
-.card--score .card__head--compact { margin-bottom: var(--space-3); }
-
-/* Pushes the metric block to the bottom so both cards align on every row. */
-.card--score .metrics { margin-top: auto; }
-
 /* --------------------------------------------------------------------------
    Onboarding focus
-   'general' keeps the broad overview; a specific focus promotes one category
-   card to full width and shows its extra detail rows. No layout rewrite needed
-   when real focus data arrives — only config/dashboard.php changes.
+   The score card is what focus shapes now: the two category cards it used to
+   promote have gone, and their scores live in the ring's own legend.
    -------------------------------------------------------------------------- */
-.card--score.is-focused {
-    grid-column: 1 / -1;
-    order: -1;
-    padding: var(--space-5);
-    background: var(--surface-gradient);
-    border-color: var(--glass-border);
-}
-
-.card--score.is-focused .score-value__number { font-size: var(--fs-score); }
-
-.card--score.is-focused .metrics {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-3);
-}
-
-.card--score.is-focused .metrics__row {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
-}
-
-.card--score.is-focused .metrics__value {
-    grid-column: 2 / -1;
-    margin-top: var(--space-1);
-    font-size: var(--fs-label);
-    justify-self: start;
-}
 
 /* A sleep-focused dashboard keeps the general score, but tightens it. */
 [data-focus="sleep"] .card--hero .score-ring { width: min(48vw, 168px); }
@@ -99,11 +31,10 @@
         --radius-card: 24px;
     }
 
-    .grid--two { grid-template-columns: 1fr; }
-
-    /* The longest label ("Gezondheid") needs the extra width down here. */
-    .tabbar__list { width: min(98vw, var(--page-max)); }
-    .tab__label { font-size: 0.625rem; }
+    /* The longest labels need the extra width down here, and the capsule is
+       what gives it to them — the container adapts, the type does not, so the
+       icon/label/spacing relationships are the same on every phone. */
+    .tabbar { width: min(97vw, 27.5rem); }
 
     .legend {
         grid-template-columns: 1fr;
@@ -150,12 +81,10 @@
         box-shadow: var(--shadow-float);
     }
 
-    .tabbar__list { width: 100%; }
-
-    .fab { bottom: calc(var(--tabbar-height) + var(--space-6) + var(--space-4)); }
+    .fab { bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-4)); }
 
     .app__main {
-        padding-bottom: calc(var(--tabbar-height) + var(--space-6) + var(--space-6) + var(--space-5));
+        padding-bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-6) + var(--space-5));
     }
 }
 

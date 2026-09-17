@@ -266,11 +266,14 @@
 
         if (action === 'promote') {
             promote(id);
+            save('api/goals/update.php', { goal_id: id, action: 'primary' });
             return;
         }
 
         if (action === 'pause') {
-            applyPaused(id, detail.dataset.goalStatus !== 'paused');
+            var pausing = detail.dataset.goalStatus !== 'paused';
+            applyPaused(id, pausing);
+            save('api/goals/update.php', { goal_id: id, action: pausing ? 'pause' : 'resume' });
             return;
         }
 
@@ -290,8 +293,46 @@
         if (action === 'delete-confirm') {
             if (confirm) { confirm.hidden = true; }
             remove(id);
+            save('api/goals/delete.php', { goal_id: id });
         }
     });
+
+    /* ------------------------------------------------------ persistence ---
+
+       The board keeps its optimistic behaviour: a tap moves the card straight
+       away, because waiting on a round trip for a pause would feel broken.
+       What changes is that the change is also sent, and a server that refuses
+       it is not quietly ignored — the page reloads so what is on screen is
+       what is actually stored.
+       ---------------------------------------------------------------------- */
+
+    function csrf() {
+        var panel = document.querySelector('[data-account]');
+        return panel ? (panel.getAttribute('data-csrf') || '') : '';
+    }
+
+    function save(url, fields) {
+        var body = new FormData();
+        body.append('csrf', csrf());
+
+        Object.keys(fields).forEach(function (key) {
+            body.append(key, fields[key]);
+        });
+
+        return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false }; });
+            })
+            .catch(function () { return { ok: false }; })
+            .then(function (result) {
+                if (!result || !result.ok) {
+                    // The optimistic change did not stick: show the truth.
+                    window.location.reload();
+                }
+
+                return result;
+            });
+    }
 
     /* ------------------------------------------------------- new goal ---- */
 

@@ -56,11 +56,13 @@ $state  = state_class($overall['value']);
     <h2 class="score-ring__label"><?= e($overall['label']) ?></h2>
     <p class="card__lede"><?= e($overall['description']) ?></p>
 
+    <?php /* The three pillars the score averages, each with its own score. */ ?>
     <ul class="legend" role="list">
         <?php foreach ($contributors as $item): ?>
-            <li class="legend__item" data-accent="<?= e($item['accent']) ?>">
+            <li class="legend__item <?= state_class($item['value']) ?>" data-accent="<?= e($item['accent']) ?>">
                 <span class="legend__dot" aria-hidden="true"></span>
                 <span class="legend__label"><?= e($item['label']) ?></span>
+                <span class="legend__value"><?= e(score_text($item['value'])) ?></span>
             </li>
         <?php endforeach; ?>
     </ul>

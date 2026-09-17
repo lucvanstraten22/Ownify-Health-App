@@ -1,6 +1,6 @@
 <?php
 /**
- * Health helpers — demo handling, shared-metric resolution and chart geometry.
+ * Health helpers — shared-metric resolution and chart geometry.
  *
  * The chart maths lives here rather than in JavaScript so the markup is
  * complete on arrival: the lines are drawn server-side and JavaScript only
@@ -9,41 +9,58 @@
 
 declare(strict_types=1);
 
-if (!function_exists('health_prepare')) {
+if (!function_exists('health_overall_score')) {
     /**
-     * Applies the review-only demo values when config/health.php has demo on.
-     * With demo off — the shipped state — this returns the config untouched
-     * and every value stays null.
+     * The dashboard's health score, from whichever pillars the day actually
+     * has.
+     *
+     * The arithmetic is not here. It is score_combine() in
+     * includes/scoring.php, which is the one place in the application that
+     * decides what a score is — so a missing pillar is skipped rather than
+     * counted as a zero, and moving to a weighted average later is a change
+     * there and nowhere else.
+     *
+     * Each pillar is taken as a share of its own max before combining, so the
+     * result stays correct if one is ever scored out of something other than
+     * 100.
      */
-    function health_prepare(array $health): array
+    function health_overall_score(array $health, int $max = 100): ?int
     {
-        if (empty($health['demo'])) {
-            return $health;
+        require_once dirname(__DIR__) . '/includes/scoring.php';
+
+        $scores = [];
+
+        foreach ($health['areas'] ?? [] as $key => $area) {
+            $value   = $area['score']['value'] ?? null;
+            $areaMax = (float) ($area['score']['max'] ?? 100);
+
+            /* null stays null: score_combine() must be able to tell a pillar
+               with no data from one that scored zero. */
+            $scores[$key] = (!has_value($value) || $areaMax <= 0)
+                ? null
+                : (float) $value / $areaMax * $max;
         }
 
-        return health_fill_demo($health);
+        return score_combine($scores);
     }
 }
 
-if (!function_exists('health_fill_demo')) {
-    /** Walks the tree and copies `demo` over `value` / `values` / `share`. */
-    function health_fill_demo(array $node): array
+if (!function_exists('health_contributor_scores')) {
+    /**
+     * Fills each ring-legend row with the score of the area it names.
+     *
+     * Derived on every render, from the same source as the overall score, so
+     * the legend and the number in the middle of the ring can never drift
+     * apart: they read the same three values.
+     */
+    function health_contributor_scores(array $contributors, array $health): array
     {
-        if (array_key_exists('demo', $node)) {
-            foreach (['value', 'values', 'share'] as $slot) {
-                if (array_key_exists($slot, $node)) {
-                    $node[$slot] = $node['demo'];
-                }
-            }
+        foreach ($contributors as $index => $row) {
+            $area = $health['areas'][$row['area']] ?? null;
+            $contributors[$index]['value'] = $area['score']['value'] ?? null;
         }
 
-        foreach ($node as $key => $child) {
-            if (is_array($child)) {
-                $node[$key] = health_fill_demo($child);
-            }
-        }
-
-        return $node;
+        return $contributors;
     }
 }
 
@@ -60,7 +77,7 @@ if (!function_exists('health_metric')) {
         return array_merge(
             ['unit' => '', 'availability' => null, 'value' => null],
             $definition,
-            array_diff_key($entry, ['demo' => null])
+            $entry
         );
     }
 }

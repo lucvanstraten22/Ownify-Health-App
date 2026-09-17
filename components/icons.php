@@ -40,7 +40,9 @@ if (!function_exists('icon')) {
                 'dumbbell' => '<path d="M7 6.6v10.8M17 6.6v10.8M3.2 9.4v5.2M20.8 9.4v5.2M7 12h10"/>',
 
                 // overview — concentric rings, echoes the score ring
-                'rings'    => '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.4"/>',
+                // the inner ring is a marker, not a second ring: at 3.4 the two
+                // circles carried a third more ink than any other tab icon
+                'rings'    => '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="2.4"/>',
 
                 // settings
                 'sliders'  => '<path d="M4 8.5h8.5M17.5 8.5H20M4 15.5h3.5M12.5 15.5H20"/><circle cx="15" cy="8.5" r="2.2"/><circle cx="10" cy="15.5" r="2.2"/>',
@@ -134,12 +136,61 @@ if (!function_exists('icon')) {
             return '';
         }
 
+        /**
+         * Optical normalisation, for the icons that have to hold a row
+         * together: the five in the tab bar, and the pair in the header.
+         *
+         * They are all drawn on the same 24 grid, which makes them the same
+         * size on paper and not on screen. Measured off the rendered ink, the
+         * tab set ran from 13.0 units tall to 21.2 wide, so five icons in five
+         * identical boxes still read as five different sizes — and the marks
+         * were not centred on the grid either, which is what made the boxes
+         * and the eye disagree about where an icon sat.
+         *
+         * Each entry is [scale, cx, cy], measured rather than judged: cx/cy is
+         * where that icon's ink actually centres, and scale brings it to the
+         * group's common optical size: a weighted blend of three readings of
+         * "same size" — equal ink area, equal largest dimension and equal
+         * height — because no one of them is right for shapes this different
+         * in aspect. Area carries most of the weight, since equal size is the
+         * point; height carries a fifth, because it is what decides how much
+         * air falls under an icon and so how even the row of labels reads.
+         *
+         * The stroke is divided back out by the same scale, so line weight
+         * stays 1.6 grid units whatever the shape does. An icon that is not
+         * listed is drawn exactly as before: the chevrons and the small
+         * in-page marks are deliberately not this size.
+         */
+        static $optical = [
+            'rings'     => [0.9336, 12.00, 12.00],
+            'heart'     => [0.8878, 12.00, 11.42],
+            'flag'      => [1.0027, 12.75, 12.29],
+            'community' => [1.0370, 12.15, 12.67],
+            'sliders'   => [1.1601, 12.00, 12.00],
+            'device'    => [0.9680, 12.00, 12.00],
+            'user'      => [1.0331, 12.00, 12.71],
+        ];
+
+        $body = $icons[$name];
+
+        if (isset($optical[$name])) {
+            [$scale, $cx, $cy] = $optical[$name];
+            $body = sprintf(
+                '<g transform="translate(12 12) scale(%s) translate(%s %s)" stroke-width="%s">%s</g>',
+                $scale,
+                -$cx,
+                -$cy,
+                round(1.6 / $scale, 4),
+                $body
+            );
+        }
+
         return sprintf(
             '<svg class="icon%s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"'
             . ' stroke-linecap="round" stroke-linejoin="round" focusable="false"%s>%s</svg>',
             $class !== '' ? ' ' . e($class) : '',
             $decorative ? ' aria-hidden="true"' : '',
-            $icons[$name]
+            $body
         );
     }
 }

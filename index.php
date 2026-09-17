@@ -19,23 +19,60 @@ require __DIR__ . '/lib/health.php';
 require __DIR__ . '/lib/community.php';
 require __DIR__ . '/lib/goals.php';
 require __DIR__ . '/lib/settings.php';
+require __DIR__ . '/lib/hydrate-health.php';
+require __DIR__ . '/lib/hydrate-goals.php';
+require __DIR__ . '/lib/hydrate-community.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
 $data = require __DIR__ . '/config/dashboard.php';
 
-/* Health lives in its own config; health_prepare() is what keeps the
-   review-only demo values out of the shipped page. */
-$data['health'] = health_prepare(require __DIR__ . '/config/health.php');
-
-/* Community boards are assembled the same way: empty unless demo is on. */
-$data['community'] = community_prepare(require __DIR__ . '/config/community.php');
-
-/* Goals: expanded, split into active/completed and put in priority order. */
-$data['goals'] = goals_prepare(require __DIR__ . '/config/goals.php');
-
-/* Session state for the header button and the account panel. */
+/* Session state for the header button and the account panel. It has to come
+   first now: who is asking decides what every page below is filled with. */
 $data['auth'] = app_auth();
+
+/* The id comes from the SESSION, never from the request. Everything private
+   below is read with it, so no query can be pointed at another account by
+   changing something a browser can reach. Signed out it is null, and each
+   page renders the empty state it already had. */
+$userId = current_user_id();
+
+/* The config files describe the shape of each page — which areas exist, what
+   they are called, in what unit. The values come from the signed-in user's own
+   records; anything they have not recorded stays null and renders empty. */
+$data['health'] = hydrate_health(require __DIR__ . '/config/health.php', $userId);
+
+/* The ring is the average of whichever pillars have a score, derived on every
+   render rather than stored, so it can never disagree with them — and the
+   legend under it reads the same three values. */
+$data['scores']['overall']['value'] = health_overall_score(
+    $data['health'],
+    (int) $data['scores']['overall']['max']
+);
+
+$data['scores']['contributors'] = health_contributor_scores(
+    $data['scores']['contributors'],
+    $data['health']
+);
+
+/* Real accounts and real points, or an empty board. */
+$data['community'] = hydrate_community(require __DIR__ . '/config/community.php', $userId);
+
+/* Goals: read for this user, then expanded, split by view and ordered. */
+$data['goals'] = goals_prepare(hydrate_goals(require __DIR__ . '/config/goals.php', $userId));
+
+/* The line under each page says which of three situations the reader is in.
+   An account with data gets no line at all: there is nothing to disclaim. */
+$data['disclaimer'] = match (true) {
+    !$data['auth']['database'] => $data['disclaimers']['no_database'],
+    $userId === null           => $data['disclaimers']['signed_out'],
+    $data['scores']['overall']['value'] === null
+        && ($data['goals']['used'] ?? 0) === 0 => $data['disclaimers']['no_data'],
+    default                    => '',
+};
+
+/* The Overzicht page's goal card follows whichever goal is primary. */
+$data['goal'] = hydrate_dashboard_goal($data['goal'], $data['goals']['primary'] ?? null);
 
 /* Settings: integrations resolved, profile read off the signed-in record. */
 $data['settings'] = settings_prepare(require __DIR__ . '/config/settings.php', $data['auth']);
@@ -85,6 +122,29 @@ foreach ($data['navigation'] as $position => $item) {
 
     <!-- Shared ground behind every layer: the visual thread between them. -->
     <div class="app__backdrop" aria-hidden="true"></div>
+
+    <!--
+        The unevenness in the glass reflections.
+
+        Turbulence displaces the highlight, not the backdrop. Displacing the
+        backdrop is the obvious way to do refraction and it was measurably the
+        wrong one: it re-runs the filter every frame the page scrolls behind
+        the bar, and `backdrop-filter: url()` is Chromium-only, so iOS would
+        pay nothing and gain nothing. Displacing a static gradient is
+        rasterised once, costs nothing per frame and works everywhere — and an
+        imperfect reflection is what reads as glass, more than a warped
+        background does.
+    -->
+    <svg class="sr-only" aria-hidden="true" focusable="false" width="0" height="0">
+        <filter id="glass-refraction" x="-15%" y="-15%" width="130%" height="130%"
+                color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.011 0.02"
+                          numOctaves="2" seed="5" result="grain"/>
+            <feGaussianBlur in="grain" stdDeviation="1.8" result="softGrain"/>
+            <feDisplacementMap in="SourceGraphic" in2="softGrain" scale="19"
+                               xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    </svg>
 
     <div class="deck" data-deck>
 

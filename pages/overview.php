@@ -18,14 +18,15 @@ declare(strict_types=1);
             <div class="shell stack">
                 <?php
                 component('health-score', $data);
-                component('secondary-scores', $data);
                 component('goal-progress', $data);
                 component('insights', $data);
                 component('patterns', $data);
                 component('recommendation', $data);
                 component('leaderboard', $data);
                 ?>
+                <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>
+                <?php endif; ?>
             </div>
         </main>
     </div>

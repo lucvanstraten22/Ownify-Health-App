@@ -1,19 +1,20 @@
 <?php
 /**
- * Central dashboard configuration + placeholder data.
+ * Central dashboard configuration — the shape of the Overzicht page.
  *
  * ------------------------------------------------------------------
- * IMPORTANT — PLACEHOLDER CONTRACT
+ * SHAPE HERE, VALUES FROM THE DATABASE
  * ------------------------------------------------------------------
- * There is no database, no authentication and no device integration in
- * this version. Every metric below is therefore intentionally `null`.
+ * Every metric below is `null`, and stays null: this file says what the page
+ * is made of, not what any particular person's day looked like.
  *
  *   null  => the UI renders an honest empty state ("—" + caption)
  *   int   => the UI renders a real score, ring, bar and colour state
  *
- * No value in this file is an invented user measurement. To go live,
- * replace this array with the output of a repository/service layer that
- * returns the exact same shape — the UI does not need to change.
+ * index.php fills these in for the signed-in user — the ring from
+ * includes/scoring.php, the goal card from the user's primary goal. A user
+ * with no records keeps the empty state, which is the truthful answer rather
+ * than a placeholder one.
  * ------------------------------------------------------------------
  */
 
@@ -23,7 +24,7 @@ return [
 
     /* -------------------------------------------------- app + shell */
     'app' => [
-        'name'        => 'JoLu',
+        'name'        => 'AppName',
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',
@@ -64,7 +65,10 @@ return [
 
     'scores' => [
 
-        /* A — primary score, visually dominant */
+        /* A — primary score, visually dominant.
+         * `value` is DERIVED, never configured: index.php overwrites it with
+         * health_overall_score(), the average of the three Gezondheid pillars.
+         * Setting a number here would only be overwritten on the next render. */
         'overall' => [
             'label'       => 'Gezondheidsscore',
             'value'       => null,
@@ -74,53 +78,17 @@ return [
             'empty_hint'  => 'Verbind een bron om je dagscore te berekenen.',
         ],
 
-        /* Ring segments — explains *why* the primary score is what it is */
+        /* Ring legend — the three pillars the score averages, each with its own
+         * score beside it. `area` points at the Gezondheid area the row reads
+         * from, which is why the Sport row can carry the Training score without
+         * either name having to change. The three count equally, so there are
+         * no weights here. Values are DERIVED, like the overall score. */
         'contributors' => [
-            ['key' => 'sleep',     'label' => 'Slaap',   'accent' => 'health',    'weight' => 0.4, 'value' => null],
-            ['key' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'weight' => 0.3, 'value' => null],
-            ['key' => 'sport',     'label' => 'Sport',   'accent' => 'activity',  'weight' => 0.3, 'value' => null],
+            ['area' => 'sleep',     'label' => 'Slaap',   'accent' => 'health',    'value' => null],
+            ['area' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'value' => null],
+            ['area' => 'training',  'label' => 'Sport',   'accent' => 'activity',  'value' => null],
         ],
 
-        /* B + C — secondary category cards (identical card system) */
-        'secondary' => [
-            [
-                'key'     => 'sleep',
-                'label'   => 'Slaap',
-                'caption' => 'Dagscore',
-                'icon'    => 'moon',
-                'accent'  => 'health',
-                'value'   => null,
-                'max'     => 100,
-                'metrics' => [
-                    ['label' => 'Duur',      'value' => null, 'accent' => 'health'],
-                    ['label' => 'Regelmaat', 'value' => null, 'accent' => 'health'],
-                ],
-                /* Shown only when the onboarding focus is 'sleep'. */
-                'focus_metrics' => [
-                    ['label' => 'Slaapduur', 'value' => null, 'accent' => 'health'],
-                    ['label' => 'Bedtijd',   'value' => null, 'accent' => 'health'],
-                    ['label' => 'Wektijd',   'value' => null, 'accent' => 'health'],
-                ],
-            ],
-            [
-                'key'     => 'nutrition_sport',
-                'label'   => 'Voeding & Sport',
-                'caption' => 'Dagscore',
-                'icon'    => 'leaf',
-                'accent'  => 'nutrition',
-                'value'   => null,
-                'max'     => 100,
-                'metrics' => [
-                    ['label' => 'Voeding', 'value' => null, 'accent' => 'nutrition'],
-                    ['label' => 'Sport',   'value' => null, 'accent' => 'activity'],
-                ],
-                'focus_metrics' => [
-                    ['label' => 'Voeding',  'value' => null, 'accent' => 'nutrition'],
-                    ['label' => 'Sport',    'value' => null, 'accent' => 'activity'],
-                    ['label' => 'Balans',   'value' => null, 'accent' => 'activity'],
-                ],
-            ],
-        ],
     ],
 
     /* -------------------------------------------------- goal progress */
@@ -132,6 +100,9 @@ return [
         'unit'        => 'van je weekdoel',
         'headline'    => 'Nog geen doel ingesteld',
         'description' => 'Tijdens de onboarding kies je één doel. Je voortgang van deze week verschijnt hier.',
+        /* A goal exists but has nothing measured against it yet — true the
+           moment one is created, and until something is recorded. */
+        'pending'     => 'Je voortgang verschijnt zodra je iets vastlegt voor dit doel.',
         'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => 'Opent de Doelen-pagina'],
         'milestones'  => [
             ['label' => 'Start',  'reached' => false],
@@ -244,5 +215,16 @@ return [
     ],
 
     /* -------------------------------------------------- footer note */
-    'disclaimer' => 'Voorbeeldweergave — er zijn nog geen persoonlijke gegevens gekoppeld.',
+    /**
+     * The line under each page. It used to say "example view", which was true
+     * while the pages were filled from this file. Now it depends on who is
+     * asking, so index.php picks one of these; a signed-in account with data
+     * gets none of them, because there is nothing left to disclaim.
+     */
+    'disclaimers' => [
+        'signed_out' => 'Log in om je eigen gegevens te zien.',
+        'no_data'    => 'Je gegevens verschijnen hier zodra je ze vastlegt of een bron koppelt.',
+        'no_database'=> 'Geen databaseverbinding — er kan nu niets worden opgeslagen of geladen.',
+    ],
+    'disclaimer' => '',
 ];

@@ -410,7 +410,7 @@ return [
                     'type'  => 'rows',
                     'title' => 'App',
                     'items' => [
-                        ['label' => 'Naam',    'value' => 'JoLu'],
+                        ['label' => 'Naam',    'value' => 'AppName'],
                         ['label' => 'Versie',  'value' => '0.7'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
@@ -435,7 +435,7 @@ return [
                 ],
 
                 ['type' => 'note', 'icon' => 'info',
-                 'text' => 'JoLu is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
+                 'text' => 'AppName is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
             ],
         ],
     ],

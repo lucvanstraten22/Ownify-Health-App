@@ -79,7 +79,7 @@ if (!function_exists('user_validate_username')) {
         $row = db_one(
             'SELECT u.id, u.username, u.status, u.created_at, u.last_seen_at,
                     p.first_name, p.last_name, p.date_of_birth, p.gender,
-                    p.avatar_path, p.locale
+                    p.activity_level, p.avatar_path, p.locale
                FROM users u
           LEFT JOIN user_profiles p ON p.user_id = u.id
               WHERE u.id = ? AND u.status <> ?',
@@ -162,6 +162,125 @@ if (!function_exists('user_validate_username')) {
         }
 
         return (int) $born->diff(new DateTimeImmutable('today'))->y;
+    }
+
+    /* -------------------------------------------------------- profile */
+
+    /** What a person may change about themselves after onboarding. */
+    function user_update_profile(int $userId, array $fields): array
+    {
+        $set    = [];
+        $params = [];
+
+        /* The column name is taken from this map, never from the caller's
+           array key. The loop is over literals either way, but an identifier
+           cannot be a bound parameter, so the one place a name reaches SQL is
+           worth pinning down rather than trusting the next edit. */
+        $columns = ['first_name' => '`first_name`', 'last_name' => '`last_name`'];
+
+        foreach ($columns as $key => $column) {
+            if (!array_key_exists($key, $fields)) {
+                continue;
+            }
+
+            $value = trim((string) $fields[$key]);
+
+            if (mb_strlen($value) > 60) {
+                return ['ok' => false, 'error' => 'Die naam is te lang.'];
+            }
+
+            $set[]    = $column . ' = ?';
+            $params[] = $value === '' ? null : $value;
+        }
+
+        if (array_key_exists('activity_level', $fields)) {
+            $level = (string) $fields['activity_level'];
+            $allowed = ['sedentary', 'light', 'moderate', 'active', 'athlete'];
+
+            if ($level !== '' && !in_array($level, $allowed, true)) {
+                return ['ok' => false, 'error' => 'Onbekend activiteitsniveau.'];
+            }
+
+            $set[]    = '`activity_level` = ?';
+            $params[] = $level === '' ? null : $level;
+        }
+
+        if ($set === []) {
+            return ['ok' => false, 'error' => 'Niets om op te slaan.'];
+        }
+
+        /* The profile row is created with the account, but an account made
+           before that was guaranteed still has to be able to save. */
+        db_run('INSERT IGNORE INTO user_profiles (user_id) VALUES (?)', [$userId]);
+
+        $params[] = $userId;
+        db_run('UPDATE user_profiles SET ' . implode(', ', $set) . ' WHERE user_id = ?', $params);
+
+        return ['ok' => true, 'error' => null];
+    }
+
+    /**
+     * Gender and date of birth, which onboarding sets and nothing else changes.
+     *
+     * The product rule is that these are not editable afterwards, so this
+     * refuses rather than overwrites once a value is in place. Enforcing it
+     * here rather than by hiding the field is what makes it true: a hidden
+     * field is a request away from being sent anyway.
+     */
+    function user_set_onboarding_facts(int $userId, ?string $dateOfBirth, ?string $gender): array
+    {
+        db_run('INSERT IGNORE INTO user_profiles (user_id) VALUES (?)', [$userId]);
+
+        $current = db_one(
+            'SELECT date_of_birth, gender FROM user_profiles WHERE user_id = ?',
+            [$userId]
+        ) ?? ['date_of_birth' => null, 'gender' => 'undisclosed'];
+
+        $set    = [];
+        $params = [];
+
+        if ($dateOfBirth !== null && $dateOfBirth !== '') {
+            if ($current['date_of_birth'] !== null) {
+                return ['ok' => false, 'error' => 'Je geboortedatum staat al vast.'];
+            }
+
+            $date = DateTimeImmutable::createFromFormat('Y-m-d', $dateOfBirth);
+
+            if ($date === false || $date->format('Y-m-d') !== $dateOfBirth) {
+                return ['ok' => false, 'error' => 'Vul een geldige geboortedatum in.'];
+            }
+
+            $age = (int) $date->diff(new DateTimeImmutable('today'))->y;
+
+            if ($date > new DateTimeImmutable('today') || $age > 120) {
+                return ['ok' => false, 'error' => 'Vul een geldige geboortedatum in.'];
+            }
+
+            $set[]    = '`date_of_birth` = ?';
+            $params[] = $dateOfBirth;
+        }
+
+        if ($gender !== null && $gender !== '') {
+            if (($current['gender'] ?? 'undisclosed') !== 'undisclosed') {
+                return ['ok' => false, 'error' => 'Je geslacht staat al vast.'];
+            }
+
+            if (!in_array($gender, ['female', 'male', 'non_binary', 'other', 'undisclosed'], true)) {
+                return ['ok' => false, 'error' => 'Onbekende waarde.'];
+            }
+
+            $set[]    = '`gender` = ?';
+            $params[] = $gender;
+        }
+
+        if ($set === []) {
+            return ['ok' => false, 'error' => 'Niets om op te slaan.'];
+        }
+
+        $params[] = $userId;
+        db_run('UPDATE user_profiles SET ' . implode(', ', $set) . ' WHERE user_id = ?', $params);
+
+        return ['ok' => true, 'error' => null];
     }
 
     /* ------------------------------------------------------- measurements */

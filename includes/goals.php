@@ -12,6 +12,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 
+/** Three active goals: one primary and two secondaries. */
+if (!defined('GOAL_MAX_ACTIVE')) {
+    define('GOAL_MAX_ACTIVE', 3);
+}
+
 if (!function_exists('goals_for_user')) {
 
     function goals_for_user(int $userId, ?string $status = 'active'): array
@@ -31,13 +36,23 @@ if (!function_exists('goals_for_user')) {
         return db_one('SELECT * FROM goals WHERE id = ? AND user_id = ?', [$goalId, $userId]);
     }
 
+    /**
+     * Creates a goal, subject to the board's limits.
+     * Returns the new id, or null when the board is full.
+     */
     function goal_create(int $userId, array $goal): ?int
     {
+        if (!goal_has_room($userId)) {
+            return null;
+        }
+
+        $wantsPrimary = ($goal['priority'] ?? 'secondary') === 'primary';
+
         db_run(
             'INSERT INTO goals
                 (user_id, name, category, goal_type, metric_type_id, target_value,
-                 target_unit, direction, start_date, end_date, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                 target_unit, direction, start_date, end_date, status, priority)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $userId,
                 $goal['name'],
@@ -50,10 +65,25 @@ if (!function_exists('goals_for_user')) {
                 $goal['start_date'] ?? date('Y-m-d'),
                 $goal['end_date'] ?? null,
                 $goal['status'] ?? 'active',
+                'secondary',
             ]
         );
 
-        return db_insert_id();
+        $goalId = db_insert_id();
+
+        if ($goalId === null) {
+            return null;
+        }
+
+        /* Promotion is a swap, so it runs through the one function that knows
+           how to do it. A first goal becomes primary either way. */
+        if ($wantsPrimary) {
+            goal_set_primary($userId, $goalId);
+        } else {
+            goal_ensure_primary($userId);
+        }
+
+        return $goalId;
     }
 
     /** History for the progress chart, and the value for goals without a metric. */
@@ -86,6 +116,131 @@ if (!function_exists('goals_for_user')) {
               LIMIT 1',
             [$goalId, $userId]
         );
+    }
+
+    /* ====================================================================
+       THE BOARD'S RULES
+       --------------------------------------------------------------------
+       Three active goals, exactly one of them primary. These are enforced
+       here, on write, because a rule that only the interface knows is not a
+       rule: the endpoints and any future import both come through this file.
+       ==================================================================== */
+
+    /** Active means it counts against the limit; paused still does. */
+    function goal_active_count(int $userId): int
+    {
+        return (int) db_value(
+            "SELECT COUNT(*) FROM goals WHERE user_id = ? AND status IN ('active','paused')",
+            [$userId]
+        );
+    }
+
+    function goal_has_room(int $userId): bool
+    {
+        return goal_active_count($userId) < GOAL_MAX_ACTIVE;
+    }
+
+    /**
+     * Makes one goal the primary, in a transaction with demoting the old one.
+     *
+     * Promotion is a swap rather than an addition: the board has exactly one
+     * headline slot, so the goal that held it becomes secondary in the same
+     * breath. Doing it in two statements outside a transaction is how a board
+     * ends up with two primaries or none.
+     */
+    function goal_set_primary(int $userId, int $goalId): bool
+    {
+        if (goal_get($userId, $goalId) === null) {
+            return false;
+        }
+
+        $pdo = db();
+        if ($pdo === null) {
+            return false;
+        }
+
+        try {
+            $pdo->beginTransaction();
+            db_run("UPDATE goals SET priority = 'secondary' WHERE user_id = ? AND priority = 'primary'", [$userId]);
+            db_run("UPDATE goals SET priority = 'primary' WHERE id = ? AND user_id = ?", [$goalId, $userId]);
+            $pdo->commit();
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Keeps the promise that there is always exactly one primary.
+     *
+     * Called after anything that can remove the primary — a delete, a
+     * completion — so the headline slot never stands empty while active goals
+     * exist. The oldest active goal inherits it.
+     */
+    function goal_ensure_primary(int $userId): void
+    {
+        $hasPrimary = db_value(
+            "SELECT id FROM goals WHERE user_id = ? AND priority = 'primary' AND status IN ('active','paused')",
+            [$userId]
+        );
+
+        if ($hasPrimary !== null) {
+            return;
+        }
+
+        $next = db_value(
+            "SELECT id FROM goals WHERE user_id = ? AND status IN ('active','paused')
+              ORDER BY start_date, id LIMIT 1",
+            [$userId]
+        );
+
+        if ($next !== null) {
+            db_run("UPDATE goals SET priority = 'primary' WHERE id = ? AND user_id = ?", [(int) $next, $userId]);
+        }
+    }
+
+    /**
+     * Moves a goal between statuses.
+     *
+     * The user id is part of the WHERE clause, not a check before it: a goal
+     * id that belongs to someone else simply matches no row.
+     */
+    function goal_set_status(int $userId, int $goalId, string $status): bool
+    {
+        if (!in_array($status, ['active', 'paused', 'completed', 'abandoned'], true)) {
+            return false;
+        }
+
+        $statement = db_run(
+            'UPDATE goals SET status = ? WHERE id = ? AND user_id = ?',
+            [$status, $goalId, $userId]
+        );
+
+        if ($statement === null || $statement->rowCount() === 0) {
+            return false;
+        }
+
+        goal_ensure_primary($userId);
+
+        return true;
+    }
+
+    /** Deleting is real: the progress history goes with it, by cascade. */
+    function goal_delete(int $userId, int $goalId): bool
+    {
+        $statement = db_run('DELETE FROM goals WHERE id = ? AND user_id = ?', [$goalId, $userId]);
+
+        if ($statement === null || $statement->rowCount() === 0) {
+            return false;
+        }
+
+        goal_ensure_primary($userId);
+
+        return true;
     }
 
     /**

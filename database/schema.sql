@@ -1,5 +1,5 @@
 -- ============================================================================
---  JoLu — database schema
+--  AppName — database schema
 -- ----------------------------------------------------------------------------
 --  Target:  MySQL 5.7+ / 8.x and MariaDB 10.4+ (WampServer, XAMPP, phpMyAdmin)
 --  Engine:  InnoDB throughout, utf8mb4 / utf8mb4_unicode_ci
@@ -98,6 +98,10 @@ CREATE TABLE `user_profiles` (
     `date_of_birth` DATE         NULL,
     `gender`        ENUM('female','male','non_binary','other','undisclosed')
                     NOT NULL DEFAULT 'undisclosed',
+    -- Self-declared, so it belongs to the person rather than to
+    -- user_measurements: it is a setting that drives targets, not a reading.
+    `activity_level` ENUM('sedentary','light','moderate','active','athlete')
+                    NULL COMMENT 'Self-declared; drives targets, not a measurement',
     `avatar_path`   VARCHAR(255) NULL COMMENT 'Relative path under uploads/, never a client filename',
     `locale`        VARCHAR(10)  NOT NULL DEFAULT 'nl',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -349,8 +353,16 @@ CREATE TABLE `goals` (
     `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`        BIGINT UNSIGNED NOT NULL,
     `name`           VARCHAR(120) NOT NULL,
-    `category`       ENUM('sleep','nutrition','training','body','general') NOT NULL DEFAULT 'general',
+    -- The eight the interface offers, each with its own icon and accent in
+    -- config/goals.php, plus the four this column originally held so a
+    -- database created before migration 002 stays readable.
+    `category`       ENUM('health','weight','strength','activity','nutrition','habit','performance','other',
+                          'sleep','training','body','general') NOT NULL DEFAULT 'other',
     `goal_type`      ENUM('target_value','habit','streak','event') NOT NULL DEFAULT 'target_value',
+    -- The board allows one primary and two secondaries. That limit is a rule
+    -- the application enforces on write; this column only records which a
+    -- goal is, so the ordering survives a reload.
+    `priority`       ENUM('primary','secondary') NOT NULL DEFAULT 'secondary',
     `metric_type_id` SMALLINT UNSIGNED NULL COMMENT 'Set when progress can be read from health data',
     `target_value`   DECIMAL(14,4) NULL,
     `target_unit`    VARCHAR(20) NULL,
@@ -362,6 +374,7 @@ CREATE TABLE `goals` (
     `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_goals_user_status` (`user_id`, `status`),
+    KEY `idx_goals_user_priority` (`user_id`, `status`, `priority`),
     CONSTRAINT `fk_goals_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_goals_metric` FOREIGN KEY (`metric_type_id`)
@@ -550,7 +563,7 @@ INSERT INTO `health_metric_types` (`code`, `label`, `unit`, `domain`, `aggregati
     ('fibre',             'Vezels',               'g',    'nutrition', 'sum'),
     ('sugar',             'Suikers',              'g',    'nutrition', 'sum'),
     ('sodium',            'Natrium',              'mg',   'nutrition', 'sum'),
-    ('nutrition_rating',  'Eigen beoordeling',    '/5',   'nutrition', 'last'),
+    ('nutrition_rating',  'Eigen beoordeling',    '/10',  'nutrition', 'avg'),
     ('steps',             'Stappen',              '',     'training',  'sum'),
     ('distance',          'Afstand',              'km',   'training',  'sum'),
     ('active_energy',     'Actieve calorieën',    'kcal', 'training',  'sum'),

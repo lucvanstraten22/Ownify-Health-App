@@ -31,7 +31,9 @@ $health = $data['health'];
 
                 <?php component('health-trend', $data); ?>
 
+                <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>
+                <?php endif; ?>
 
             </div>
         </main>

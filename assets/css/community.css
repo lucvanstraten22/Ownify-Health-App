@@ -6,7 +6,7 @@
    ========================================================================== */
 
 .community {
-    --dock-clear: calc(var(--tabbar-height) + var(--safe-bottom) + var(--space-6) + var(--space-3));
+    --dock-clear: calc(var(--dock-clearance) + var(--space-6) + var(--space-3));
 
     position: absolute;
     inset: 0;

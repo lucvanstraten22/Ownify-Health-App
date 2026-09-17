@@ -40,7 +40,7 @@
     pointer-events: none;
 }
 
-/* Quieter surfaces for the supporting sections. */
+/* Quieter surfaces for the supporting blocks. */
 .card--patterns,
 .card--recommendation,
 .card--leaderboard {
@@ -203,13 +203,72 @@
     color: var(--text-secondary);
 }
 
-/* The two header buttons: one circle, mirrored left and right of the name. */
+/* The two header buttons: one circle, mirrored left and right of the name,
+   cut from the same pane as the tab bar. They read the same tokens, so the
+   three cannot drift apart, and each composes its own background — a shared
+   rule that set one would have to come last and would silently replace the
+   bar's. */
 .pill--devices,
 .pill--account {
-    width: 42px;
+    position: relative;
+    isolation: isolate;
+    width: var(--header-btn);
+    height: var(--header-btn);
+    min-height: 0;
     padding-inline: 0;
     justify-content: center;
+    border: 0;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, 0.115) 0%,
+            rgba(255, 255, 255, 0.042) 46%,
+            rgba(255, 255, 255, 0.06) 100%),
+        rgba(30, 28, 29, 0.46);
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.13);
+    color: var(--text-primary);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
+
+/* The same rim as the bar, on a circle. */
+.pill--devices::after,
+.pill--account::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* One box for the pair, the same way the tab bar has one box for its five.
+   The marks inside are normalised on the grid, so this is all it takes for
+   the two to read as the same size. */
+.pill--devices .icon,
+.pill--account .icon { width: var(--header-icon); height: var(--header-icon); }
+
+/* A press settles the pane rather than shrinking the button. */
+.pill--devices:active,
+.pill--account:active {
+    transform: scale(0.96);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.pill--devices > *,
+.pill--account > * { position: relative; }
 
 .pill--close { padding-inline: var(--space-2) var(--space-3); }
 
@@ -359,6 +418,18 @@
     white-space: nowrap;
 }
 
+/* The pillar's own score, in the legend's own size — a number beside the
+   name, not a second label. */
+.legend__value {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.legend__item.is-empty .legend__value { font-weight: 500; color: var(--text-muted); }
+
 /* --------------------------------------------------------------------------
    Score value + meters (shared by category cards and goal progress)
    -------------------------------------------------------------------------- */
@@ -414,47 +485,6 @@
 .meter--goal { height: 10px; }
 
 /* --------------------------------------------------------------------------
-   Metric rows
-   -------------------------------------------------------------------------- */
-.metrics {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--glass-hairline);
-}
-
-.metrics__row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--fs-small);
-}
-
-.metrics__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-}
-
-.metrics__label {
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.metrics__value {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-}
-
-.metrics__value.is-empty { color: var(--text-muted); font-weight: 500; }
-
-/* --------------------------------------------------------------------------
    Icon tile + chips
    -------------------------------------------------------------------------- */
 .icon-tile {
@@ -471,7 +501,6 @@
 
 .icon-tile .icon { width: 18px; height: 18px; }
 
-.card--score .icon-tile,
 .card--goal .icon-tile { color: var(--accent); }
 
 .icon-tile--accent { color: var(--nutrition); }
@@ -778,79 +807,206 @@
     background: rgba(255, 255, 255, 0.42);
 }
 
+/* --------------------------------------------------------------------------
+   The tab bar — a pane of glass floating over the page
+
+   Not a slab across the bottom of the screen: a capsule with air at its sides
+   and underneath, so the page runs past it on every edge and you can see it
+   doing so. The material is grey and white only; nothing in here takes an
+   accent colour.
+
+   It is built from four things, in the order light meets them:
+
+     backdrop-filter   blurs and saturates the page behind the capsule
+     background        the glass body — its own faint tint over that
+     ::before          a reflection, pushed out of true by the turbulence
+                       filter so it is never a perfect gradient
+     ::after           the rim, a hairline that catches light at the top-left
+                       and gives it back at the bottom-right
+   -------------------------------------------------------------------------- */
 .tabbar {
     position: relative;
-    width: 100%;
-    padding-top: var(--space-2);
-    padding-bottom: calc(var(--safe-bottom) + var(--space-2));
-    border-top: 1px solid var(--glass-hairline);
-    background: linear-gradient(180deg, rgba(41, 38, 40, 0.72), rgba(37, 34, 35, 0.94));
-    -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(150%);
-    backdrop-filter: blur(var(--blur-bar)) saturate(150%);
+    isolation: isolate;
+    width: min(94vw, 27.5rem);
+    height: var(--tabbar-height);
+    margin-bottom: calc(var(--safe-bottom) + var(--dock-gap));
+    border-radius: var(--radius-pill);
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, 0.115) 0%,
+            rgba(255, 255, 255, 0.042) 44%,
+            rgba(255, 255, 255, 0.06) 100%),
+        rgba(30, 28, 29, 0.62);
+    /* The blur is what makes it translucent rather than see-through: the
+       page's colour and brightness still move under the glass, its words do
+       not survive the trip.
+
+       10px, not the 40-odd you might reach for. Measured through the glass,
+       text-scale detail bottoms out around 8-10px and then climbs again —
+       Chromium downsamples the backdrop at large radii and the resampling
+       puts the detail back. At 48px more of the page reads through than at
+       10px. It is also the cheaper number on a phone. */
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    /* It floats, so it casts: a wide soft shadow for the height and a tight
+       one directly under it for the contact. */
+    box-shadow:
+        0 18px 44px rgba(0, 0, 0, 0.46),
+        0 5px 14px rgba(0, 0, 0, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* The reflection. A static layer, rasterised once, so the turbulence that
+   keeps it from looking like a plain gradient costs nothing per frame.
+
+   It is drawn oversized and clipped back, which is not decoration. A filter
+   paints wherever its region reaches and `border-radius` does not clip what
+   comes out of one, so at inset: 0 the displacement carried this layer's own
+   edge across the rim — measured at 10.8px proud of the glass near the top of
+   the curve, with the matching bite taken out of it further round. clip-path
+   is the one that runs after the filter. Overhanging by more than the
+   displacement can travel (scale 19, so ±9.5px) keeps a real edge from ever
+   reaching the cut. */
+.tabbar::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--sheen-overhang));
+    z-index: -1;
+    background:
+        radial-gradient(57% 94% at 24.2% 0%,
+            rgba(255, 255, 255, 0.20) 0%,
+            rgba(255, 255, 255, 0.06) 40%,
+            transparent 68%),
+        radial-gradient(44% 82% at 85% 99%,
+            rgba(255, 255, 255, 0.10) 0%,
+            transparent 62%);
+    filter: url(#glass-refraction);
+    clip-path: inset(var(--sheen-overhang) round var(--radius-pill));
+    pointer-events: none;
+}
+
+/* The rim. One hairline, drawn as a gradient behind a ring cut out of itself,
+   brightest where light lands and nearly gone across the face — an edge with
+   thickness rather than an outline around a box. */
+.tabbar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
 }
 
 .tabbar__list {
+    position: relative;
     display: grid;
     /* Five equal columns: a longer label never claims more space. */
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0;
-    width: min(96vw, var(--page-max));
+    width: 100%;
+    height: 100%;
+    /* Keeps the capsule's curve off the first letter of the outer labels.
+       One rule for every width, and it leaves the five columns equal — it
+       insets the row, not the items. The slope it needs is worked out where
+       the token is defined. */
+    padding-inline: var(--tab-edge);
 }
 
+/* The capsule is only as tall as an icon, a label and a little air. */
 .tab {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-1);
+    gap: var(--tab-gap);
     width: 100%;
-    min-height: var(--tabbar-height);
-    padding: var(--space-2) 0;
-    border-radius: var(--radius-md);
-    color: var(--text-muted);
-    transition: color var(--transition-fast), transform var(--transition-fast);
+    height: 100%;
+    /* One correction, the same on all five tabs. The icon box is a square
+       frame around marks that are mostly wider than they are tall, so it
+       carries more dead space above the strokes than the label's box carries
+       under its baseline, and centring the boxes leaves the pair reading low.
+       Measured in label ems, so it holds if the type ever moves. */
+    padding: 0 0 calc(var(--tab-label) * var(--tab-optical));
+    border-radius: var(--radius-pill);
+    /* Translucent glass gives back less contrast than a solid bar, so the
+       resting label carries a little more of its own. */
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
 }
 
+/* One box for all five. The icons used to need a per-icon correction here to
+   look centred; they are normalised on the grid instead now, so the box and
+   the eye agree and nothing is tuned tab by tab. */
 .tab__icon { display: block; }
-.tab__icon .icon { width: 22px; height: 22px; }
+.tab__icon .icon { width: var(--tab-icon); height: var(--tab-icon); }
 
 /* All five labels are single words, so they never wrap: the icons stay on one
    baseline and the bar keeps its height at every width. */
 .tab__label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--tab-label);
     font-weight: 500;
-    line-height: 1.2;
+    /* No leading. The icon above is already trimmed to its ink, so the label
+       is measured the same way and the gap between them is the gap, not the
+       gap plus two half-leadings. */
+    line-height: 1;
     letter-spacing: -0.012em;
     text-align: center;
     white-space: nowrap;
 }
 
+/* The selected item is a second, brighter pane of the same glass sitting
+   inside the first — lighter, with its own lit top edge and its own small
+   shadow, so it reads as a piece of the material and not as a coloured chip.
+   No accent: the bar is grey and white throughout. */
 .tab__glow {
     position: absolute;
-    inset: 4px;
-    border-radius: var(--radius-md);
-    border: 1px solid transparent;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.025));
+    inset: var(--tab-glow-inset);
+    border-radius: var(--radius-pill);
+    background: linear-gradient(178deg,
+        rgba(255, 255, 255, 0.20) 0%,
+        rgba(255, 255, 255, 0.115) 48%,
+        rgba(255, 255, 255, 0.085) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+        0 2px 7px rgba(0, 0, 0, 0.20);
     opacity: 0;
-    transition: opacity var(--transition-fast);
+    transform: scale(0.94);
+    transition: opacity var(--transition-slow), transform var(--transition-slow);
     pointer-events: none;
 }
 
-.tab.is-active {
-    color: var(--text-primary);
-}
+/* The whole tab is a .press elsewhere in the app; inside the capsule the
+   lozenge does the responding, so the tab itself must not also shrink. */
+.tab.press:active { transform: none; }
 
-.tab.is-active .tab__icon { color: var(--health); }
+/* Two cues, not three. The lozenge and the brighter ink are the state; the
+   label used to bold as well, which cost the five labels their shared metrics
+   and shifted the word's width as you moved between tabs. */
+.tab.is-active { color: var(--text-primary); }
+.tab.is-active .tab__icon { color: var(--text-primary); }
 
 .tab.is-active .tab__glow {
     opacity: 1;
-    border-color: var(--glass-hairline);
-    box-shadow: var(--shadow-inset);
+    transform: none;
 }
 
-.tab.is-active .tab__label { font-weight: 600; }
+/* A press lifts the glass under the finger, then lets it settle. */
+.tab:not(.is-active):active .tab__glow { opacity: 0.45; transform: none; }
+.tab:not(.is-active):active { color: var(--text-primary); }
 
 /* --------------------------------------------------------------------------
    Floating control
@@ -862,7 +1018,7 @@
 
     position: absolute;
     left: 50%;
-    bottom: calc(var(--tabbar-height) + var(--safe-bottom) + var(--space-4));
+    bottom: calc(var(--dock-clearance) + var(--space-4));
     /* Above the dock, so it stays tappable where the two overlap. */
     z-index: 36;
     display: grid;

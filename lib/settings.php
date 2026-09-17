@@ -98,7 +98,7 @@ if (!function_exists('settings_profile')) {
         $empty = [
             'avatar' => null, 'username' => null, 'first_name' => null, 'last_name' => null,
             'date_of_birth' => null, 'gender' => null, 'age' => null,
-            'height' => null, 'weight' => null,
+            'height' => null, 'weight' => null, 'activity_level' => null, 'member_since' => null,
         ];
 
         if (empty($auth['signed_in']) || !is_array($auth['user'])) {
@@ -117,6 +117,8 @@ if (!function_exists('settings_profile')) {
             'age'           => isset($user['age']) && $user['age'] !== null ? $user['age'] . ' jaar' : null,
             'height'        => settings_measurement($user['height'] ?? null),
             'weight'        => settings_measurement($user['weight'] ?? null),
+            'activity_level' => settings_activity_level($user['activity_level'] ?? null),
+            'member_since'   => settings_member_since($user['created_at'] ?? null),
         ];
     }
 }
@@ -203,5 +205,41 @@ if (!function_exists('settings_field_blank')) {
             'derived' => 'Nog onbekend',
             default   => 'Nog niet ingesteld',
         };
+    }
+}
+
+if (!function_exists('settings_activity_level')) {
+    /** The self-declared level, in the words the settings screen uses. */
+    function settings_activity_level(?string $level): ?string
+    {
+        return match ($level) {
+            'sedentary' => 'Weinig beweging',
+            'light'     => 'Licht actief',
+            'moderate'  => 'Gemiddeld actief',
+            'active'    => 'Actief',
+            'athlete'   => 'Sporter',
+            default     => null,
+        };
+    }
+}
+
+if (!function_exists('settings_member_since')) {
+    /** Since when the account exists — the one date that is not private. */
+    function settings_member_since(?string $createdAt): ?string
+    {
+        if ($createdAt === null) {
+            return null;
+        }
+
+        try {
+            $date = new DateTimeImmutable($createdAt);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $months = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
+                   'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+
+        return $months[(int) $date->format('n') - 1] . ' ' . $date->format('Y');
     }
 }

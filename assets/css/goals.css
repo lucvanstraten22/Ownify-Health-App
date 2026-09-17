@@ -1045,3 +1045,15 @@
 
 .goal-card__foot { justify-content: flex-start; }
 .goal-card__deadline { flex: 1; }
+
+/* The one thing the wizard can now fail at: saving. Uses the same muted red
+   the delete confirmation already uses, so nothing new is introduced. */
+.wizard__error {
+    margin: 0 0 var(--space-3);
+    color: #ff8b8b;
+    font-size: var(--fs-small);
+    line-height: 1.4;
+    text-align: center;
+}
+
+.wizard__error[hidden] { display: none; }

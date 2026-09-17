@@ -1,8 +1,22 @@
 # Database and accounts
 
 MySQL foundation for the app: accounts, profiles, health data, goals,
-friendships and leaderboards. The pages still render placeholder data — this
-layer is the ground they will stand on, plus a working sign-in.
+friendships and leaderboards. The pages read from it — there is no placeholder
+data left anywhere in the application, and an account with no records renders
+its empty state rather than an example.
+
+**How a page gets its data.** The files in `config/` describe the *shape* of a
+page — which areas exist, what they are called, in what unit. The values come
+from the signed-in user's own rows, filled in by `lib/hydrate-health.php`,
+`lib/hydrate-goals.php` and `lib/hydrate-community.php`, which `index.php`
+calls with the id from the session. A key nothing fills stays `null`, and
+`null` is what the components already draw as an empty state.
+
+**Scores.** Every score in the app comes out of `includes/scoring.php`. The
+overall score is the average of whichever of sleep, nutrition and training
+that day actually has: a missing pillar is skipped, never counted as a zero,
+and when all three are missing there is no score rather than a `0`. Moving to
+a weighted average is a change to `score_combine()` and nothing else.
 
 ## Setting it up (WampServer)
 
@@ -181,9 +195,15 @@ qualifying event. Then call `leaderboard_rebuild($periodType)` to roll the
 ledger up. Nothing in the UI or the leaderboard functions changes — they read
 points, they never compute them.
 
-**Scores.** `daily_scores` is where a sleep/nutrition/training/overall score
-lands once the formula exists. `algorithm_version` lets the formula change
-without invalidating what is already stored.
+**Scores.** `daily_scores` holds a recorded per-domain score, and a recorded
+score always wins over a derived one — that is where an importer or a future
+scoring engine writes. When nothing is stored, `includes/scoring.php` derives
+the day's score from the readings the user actually has (v1: sleep against
+eight hours tempered by efficiency, nutrition from the 1-10 rating, training
+from active minutes with steps as a fallback). Those three targets are the
+only judgement in the file and they are constants at the top of their
+functions. The overall score is never stored: it is the average of the
+pillars that exist, computed on every render so it cannot disagree with them.
 
 **The assistant.** It should read a user's own data through the same
 `includes/health-data.php` functions, with the id from the session. It must
@@ -222,3 +242,54 @@ is a cache: losing it costs nothing.
 addresses use the reserved `example.invalid` domain, and the numbers exist only
 to exercise the tables. It is never loaded automatically and must never reach a
 production database.
+
+
+## What writes to the database
+
+Every one of these takes the user id from the **session**, never from the
+request, and every statement behind them carries `user_id = ?`. An id in a
+request only ever names *another* person (a friend, a block) — never whose
+private data is returned.
+
+| Endpoint | Writes |
+| --- | --- |
+| `api/auth/register.php` | `users`, `user_profiles`, `user_auth_identities` |
+| `api/auth/login.php` / `logout.php` | session only; touches `last_login_at` |
+| `api/profile/username.php` | `users.username` |
+| `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
+| `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |
+| `api/profile/onboarding.php` | `date_of_birth`, `gender` — once, then it refuses |
+| `api/health/sleep.php` | `sleep_sessions` |
+| `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics` |
+| `api/health/training.php` | `workouts` |
+| `api/goals/create.php` | `goals`, subject to three active and one primary |
+| `api/goals/update.php` | pause, resume, complete, re-prioritise |
+| `api/goals/delete.php` | deletes the goal and its history |
+| `api/goals/progress.php` | `goal_progress`, and completes a goal that reaches its target |
+| `api/friends/search.php` | reads only, and only public fields |
+| `api/friends/request.php` | `friendships` |
+| `api/friends/block.php` | `user_blocks` |
+
+Height and weight are not columns on the profile. Saving either **adds a row**
+to `user_measurements`, so last month's weight is still there; the current
+value is simply the newest row.
+
+## What is not connected yet
+
+Honest list, so nobody goes looking for wiring that is not there.
+
+- **Apple and Google sign-in.** No OAuth flow exists and none is faked.
+  `api/auth/oauth.php` answers `501`, the buttons render disabled, and
+  `auth_link_identity()` is ready for a verified `sub` when someone implements
+  the flow. See *Where the future work goes*.
+- **Points, and therefore both leaderboards.** `point_rules` ships empty
+  because the rules are a product decision nobody has made. Until something
+  awards points, the boards show their empty state. The plumbing either side
+  of that decision is finished.
+- **App preferences** — theme, language, units, first day of the week,
+  accessibility, notifications. These have no columns and no endpoints; the
+  settings screens say so rather than pretending. Profile data on those same
+  screens *is* persisted.
+- **Entry screens for sleep and training, and the nutrition slider.** The
+  endpoints and the tables are complete and tested, but the app has no UI that
+  posts to them yet — building those screens is design work, not wiring.
