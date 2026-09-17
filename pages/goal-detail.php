@@ -278,7 +278,6 @@ $height = 96.0;
 
                         </div>
 
-                        <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e($labels['session_note']) ?></p>
                     </section>
                 <?php endif; ?>
 

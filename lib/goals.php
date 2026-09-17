@@ -7,9 +7,9 @@
  * to. That is what lets the same card render a weight goal, a habit and a
  * milestone without a single branch in the markup.
  *
- * Nothing here invents progress. A percentage arrives on the goal; where it
- * came from — a health metric, a daily confirmation, a manual entry — is the
- * data layer's problem, not the page's.
+ * Nothing here invents progress. A percentage arrives on the goal already
+ * read from the database by lib/hydrate-goals.php; where it came from — a
+ * health metric, a daily confirmation — is the data layer's problem.
  */
 
 declare(strict_types=1);
@@ -22,7 +22,7 @@ if (!function_exists('goals_prepare')) {
     function goals_prepare(array $config, ?DateTimeImmutable $today = null): array
     {
         $today  = $today ?? new DateTimeImmutable('today');
-        $source = !empty($config['demo']) ? $config['demo_goals'] : $config['goals'];
+        $source = $config['goals'];
 
         $active    = [];
         $completed = [];

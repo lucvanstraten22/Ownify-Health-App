@@ -46,6 +46,7 @@
 
     var step = 1;
     var lastFocus = null;
+    var saved = false;
 
     var draft = {
         category: null,
@@ -388,7 +389,79 @@
         preview.appendChild(card);
     }
 
+    /* The token is minted server-side and rendered on the account panel; the
+       endpoints reject anything without it. */
+    function csrf() {
+        var panel = document.querySelector('[data-account]');
+        return panel ? (panel.getAttribute('data-csrf') || '') : '';
+    }
+
+    /** What the wizard collected, in the fields api/goals/create.php expects. */
+    function payload() {
+        var body = new FormData();
+
+        body.append('csrf', csrf());
+        body.append('name', draft.name);
+        body.append('category', draft.category || 'other');
+        body.append('type', draft.type || 'value');
+        body.append('duration', draft.duration || '');
+        body.append('priority', draft.priority || 'secondary');
+
+        if (draft.type === 'value') {
+            body.append('target_value', draft.value || '');
+            body.append('target_unit', draft.unit || '');
+        } else if (draft.type === 'habit') {
+            body.append('target_value', draft.days || '');
+            body.append('target_unit', 'dagen');
+        } else if (draft.type === 'streak') {
+            body.append('target_value', draft.streak || '');
+            body.append('target_unit', 'dagen');
+        }
+
+        return body;
+    }
+
+    function showError(message) {
+        var slot = root.querySelector('[data-wizard-error]');
+        if (!slot) { return; }
+        slot.textContent = message || '';
+        slot.hidden = !message;
+    }
+
+    /**
+     * Saves the goal, then shows the confirmation.
+     *
+     * The order matters: the last screen says the goal is on the board, so it
+     * must not appear until the row exists. A failure keeps the user on step
+     * five with their answers intact rather than claiming a goal was made.
+     */
     function finish() {
+        nextBtn.disabled = true;
+        showError('');
+
+        fetch('api/goals/create.php', { method: 'POST', body: payload(), credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                });
+            })
+            .catch(function () {
+                return { ok: false, error: 'De server is niet bereikbaar.' };
+            })
+            .then(function (result) {
+                nextBtn.disabled = false;
+
+                if (!result || !result.ok) {
+                    showError((result && result.error) || 'Dit doel kon niet worden opgeslagen.');
+                    return;
+                }
+
+                saved = true;
+                showDone();
+            });
+    }
+
+    function showDone() {
         buildPreview();
 
         Array.prototype.forEach.call(root.querySelectorAll('[data-wizard-step]'), function (section) {
@@ -458,6 +531,13 @@
         window.setTimeout(function () { root.hidden = true; }, 200);
 
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
+
+        /* The board is rendered server-side, so the new goal appears by asking
+           the server again. Only after a save — closing a wizard the user
+           abandoned should cost them nothing. */
+        if (saved) {
+            window.location.reload();
+        }
     }
 
     /* ------------------------------------------------------------- events */

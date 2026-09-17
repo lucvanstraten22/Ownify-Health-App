@@ -16,7 +16,6 @@ declare(strict_types=1);
 $goals   = $data['goals'];
 $labels  = $goals['labels'];
 $view    = $goals['default_view'];
-$isDemo  = !empty($goals['demo']);
 $hasAny  = $goals['active'] !== [];
 
 /* Everything the two scripts need to build a sentence, in one place, so no
@@ -77,9 +76,6 @@ $copy = [
                     ]);
                     ?>
 
-                    <?php if ($isDemo): ?>
-                        <p class="goals-notice"><?= icon('lock', 'goals-notice__icon') ?><?= e($labels['demo_note']) ?></p>
-                    <?php endif; ?>
                 </header>
 
                 <!-- ------------------------------------------------ actief -->
@@ -143,7 +139,9 @@ $copy = [
 
                 </div>
 
-                <p class="disclaimer"><?= e($isDemo ? $labels['session_note'] : $data['disclaimer']) ?></p>
+                <?php if ($data['disclaimer'] !== ''): ?>
+                <p class="disclaimer"><?= e($data['disclaimer']) ?></p>
+                <?php endif; ?>
 
             </div>
         </main>

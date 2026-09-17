@@ -3,18 +3,14 @@
  * Doelen — goal definitions, the vocabulary a goal is built from, and copy.
  *
  * ------------------------------------------------------------------
- * PLACEHOLDER CONTRACT
+ * WHERE THE GOALS COME FROM
  * ------------------------------------------------------------------
- * There is no goal storage yet: nothing on this page is read from or written
- * to a database, and no health integration feeds it.
+ * This file holds the vocabulary a goal is built from — the categories, the
+ * ways of measuring one, the durations and the copy. It holds no goals.
  *
- *   'goals'      the shipped list — empty, so the page renders its empty state
- *   'demo_goals' controlled example goals, used ONLY while 'demo' is true
- *
- * The example goals exist because this screen cannot be judged empty: a goal
- * board is its progress. They belong to nobody, they are marked as examples on
- * the page itself, and every change made to them lives for one page view. The
- * moment goals come from a database, set 'demo' to false and fill 'goals'.
+ * The goals themselves are rows in the `goals` table, read for the signed-in
+ * user by lib/hydrate-goals.php and written by api/goals/*.php. A user with
+ * none gets the empty state below, never an example.
  *
  * ------------------------------------------------------------------
  * SHAPE
@@ -38,9 +34,6 @@
 declare(strict_types=1);
 
 return [
-
-    /* Flip to false the moment real goals arrive; the page needs no change. */
-    'demo' => true,
 
     'title' => 'Doelen',
     'lede'  => 'Waar je aan werkt, en hoe ver je bent.',
@@ -138,8 +131,6 @@ return [
         'slots_full'     => 'Je drie doelplekken zijn bezet. Rond een doel af of verwijder er een om ruimte te maken.',
         'paused_counts'  => 'Een gepauzeerd doel houdt zijn plek.',
         'paused_line'    => 'Telt nu niet mee',
-        'demo_note'      => 'Voorbeelddoelen — dit zijn nog niet je eigen gegevens.',
-        'session_note'   => 'Wijzigingen blijven in dit voorbeeld niet bewaard.',
         'open_aria'      => 'Open details van %s',
         'target'         => 'Doel',
         'current'        => 'Nu',
@@ -171,7 +162,7 @@ return [
         'activity'   => 'Recent',
         'manage'     => 'Beheer',
         'manual'     => 'Vandaag afvinken',
-        'manual_note'=> 'Opslaan komt met de database. Eén bevestiging per dag is genoeg.',
+        'manual_note'=> 'Eén bevestiging per dag is genoeg.',
         'make_primary'   => 'Maak primair',
         'is_primary'     => 'Dit is je primaire doel',
         'make_secondary' => 'Maak secundair',
@@ -214,7 +205,7 @@ return [
         'summary_duration' => 'Periode',
         'summary_priority' => 'Prioriteit',
         'done_title' => 'Zo ziet je doel eruit',
-        'done_body'  => 'Doelen worden nog niet opgeslagen — dat komt zodra de database gekoppeld is. Je keuzes hierboven laten wel precies zien wat er straks wordt bewaard.',
+        'done_body'  => 'Je doel wordt opgeslagen zodra je op aanmaken tikt, en staat daarna op je doelenbord.',
         'done_close' => 'Terug naar doelen',
         /* Suggestions per category: they fill the name field, nothing more. */
         'suggestions' => [
@@ -232,121 +223,4 @@ return [
     /* ------------------------------------------------------- shipped goals */
     'goals' => [],
 
-    /* --------------------------------------------------------- demo goals */
-    'demo_goals' => [
-
-        [
-            'id'            => 'bench',
-            'name'          => 'Bench press 100 kg',
-            'category'      => 'strength',
-            'type'          => 'value',
-            'priority'      => 'primary',
-            'status'        => 'active',
-            'percent'       => 72,
-            'current_label' => '86 kg',
-            'target_label'  => '100 kg',
-            'started_days_ago' => 100,
-            'ends_in_days'     => 18,
-            'duration'      => 'halfyear',
-            'sources'       => ['training'],
-            'history'       => [40, 44, 48, 51, 55, 58, 60, 63, 66, 68, 70, 72],
-            'history_step'  => 'week',
-            'activity'      => [
-                ['label' => 'Bankdrukken 4×5',  'meta' => '2 dagen geleden', 'value' => '86 kg'],
-                ['label' => 'Bankdrukken 5×5',  'meta' => '6 dagen geleden', 'value' => '82,5 kg'],
-                ['label' => 'Bankdrukken 4×6',  'meta' => '9 dagen geleden', 'value' => '82,5 kg'],
-            ],
-            'note' => 'Voortgang komt uit je zwaarste set per trainingsweek.',
-        ],
-
-        [
-            'id'            => 'steps',
-            'name'          => '10.000 stappen per dag',
-            'category'      => 'activity',
-            'type'          => 'habit',
-            'priority'      => 'secondary',
-            'status'        => 'active',
-            'percent'       => 64,
-            'current_label' => '19 van 30 dagen',
-            'target_label'  => '30 dagen',
-            'started_days_ago' => 18,
-            'ends_in_days'     => 12,
-            'duration'      => 'month',
-            'sources'       => ['activity', 'training'],
-            'history'       => [6, 11, 17, 22, 28, 33, 39, 39, 44, 50, 56, 61, 64],
-            'history_step'  => 'day',
-            'activity'      => [
-                ['label' => 'Gisteren',        'meta' => 'Doel gehaald',      'value' => '11.240'],
-                ['label' => 'Eergisteren',     'meta' => 'Doel gehaald',      'value' => '10.610'],
-                ['label' => '3 dagen geleden', 'meta' => 'Net niet',          'value' => '9.480'],
-            ],
-            'note' => 'Elke dag boven de 10.000 telt als één dag.',
-        ],
-
-        [
-            'id'            => 'eating',
-            'name'          => 'Gezond eten',
-            'category'      => 'nutrition',
-            'type'          => 'streak',
-            'priority'      => 'secondary',
-            'status'        => 'active',
-            'percent'       => 43,
-            'current_label' => '13 van 30 dagen',
-            'target_label'  => '30 dagen',
-            'started_days_ago' => 13,
-            'ends_in_days'     => 17,
-            'duration'      => 'month',
-            'sources'       => ['nutrition', 'manual'],
-            'history'       => [3, 7, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40, 43],
-            'history_step'  => 'day',
-            'activity'      => [
-                ['label' => 'Gisteren',        'meta' => 'Bevestigd', 'value' => 'Ja'],
-                ['label' => 'Eergisteren',     'meta' => 'Bevestigd', 'value' => 'Ja'],
-                ['label' => '3 dagen geleden', 'meta' => 'Bevestigd', 'value' => 'Ja'],
-            ],
-            'note' => 'Deze reeks vraagt één bevestiging per dag.',
-        ],
-
-        [
-            'id'            => 'water',
-            'name'          => 'Elke dag 2 liter water',
-            'category'      => 'nutrition',
-            'type'          => 'habit',
-            'priority'      => 'secondary',
-            'status'        => 'completed',
-            'percent'       => 100,
-            'current_label' => '30 van 30 dagen',
-            'target_label'  => '30 dagen',
-            'started_days_ago'   => 42,
-            'completed_days_ago' => 12,
-            'took_days'     => 30,
-            'duration'      => 'month',
-            'sources'       => ['nutrition'],
-            'history'       => [10, 20, 30, 43, 53, 63, 73, 83, 93, 100],
-            'history_step'  => 'day',
-            'activity'      => [],
-            'note' => 'Afgerond zonder een dag te missen.',
-        ],
-
-        [
-            'id'            => 'sleep-rhythm',
-            'name'          => 'Rustiger slaapritme',
-            'category'      => 'health',
-            'type'          => 'value',
-            'priority'      => 'primary',
-            'status'        => 'completed',
-            'percent'       => 100,
-            'current_label' => '82 punten',
-            'target_label'  => '80 punten',
-            'started_days_ago'   => 138,
-            'completed_days_ago' => 48,
-            'took_days'     => 90,
-            'duration'      => 'halfyear',
-            'sources'       => ['sleep'],
-            'history'       => [52, 55, 58, 57, 62, 66, 69, 72, 74, 79, 84, 100],
-            'history_step'  => 'week',
-            'activity'      => [],
-            'note' => 'Doel bereikt met een slaapscore van 82.',
-        ],
-    ],
 ];

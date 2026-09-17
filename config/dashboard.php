@@ -1,19 +1,20 @@
 <?php
 /**
- * Central dashboard configuration + placeholder data.
+ * Central dashboard configuration — the shape of the Overzicht page.
  *
  * ------------------------------------------------------------------
- * IMPORTANT — PLACEHOLDER CONTRACT
+ * SHAPE HERE, VALUES FROM THE DATABASE
  * ------------------------------------------------------------------
- * There is no database, no authentication and no device integration in
- * this version. Every metric below is therefore intentionally `null`.
+ * Every metric below is `null`, and stays null: this file says what the page
+ * is made of, not what any particular person's day looked like.
  *
  *   null  => the UI renders an honest empty state ("—" + caption)
  *   int   => the UI renders a real score, ring, bar and colour state
  *
- * No value in this file is an invented user measurement. To go live,
- * replace this array with the output of a repository/service layer that
- * returns the exact same shape — the UI does not need to change.
+ * index.php fills these in for the signed-in user — the ring from
+ * includes/scoring.php, the goal card from the user's primary goal. A user
+ * with no records keeps the empty state, which is the truthful answer rather
+ * than a placeholder one.
  * ------------------------------------------------------------------
  */
 
@@ -99,6 +100,9 @@ return [
         'unit'        => 'van je weekdoel',
         'headline'    => 'Nog geen doel ingesteld',
         'description' => 'Tijdens de onboarding kies je één doel. Je voortgang van deze week verschijnt hier.',
+        /* A goal exists but has nothing measured against it yet — true the
+           moment one is created, and until something is recorded. */
+        'pending'     => 'Je voortgang verschijnt zodra je iets vastlegt voor dit doel.',
         'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => 'Opent de Doelen-pagina'],
         'milestones'  => [
             ['label' => 'Start',  'reached' => false],
@@ -211,5 +215,16 @@ return [
     ],
 
     /* -------------------------------------------------- footer note */
-    'disclaimer' => 'Voorbeeldweergave — er zijn nog geen persoonlijke gegevens gekoppeld.',
+    /**
+     * The line under each page. It used to say "example view", which was true
+     * while the pages were filled from this file. Now it depends on who is
+     * asking, so index.php picks one of these; a signed-in account with data
+     * gets none of them, because there is nothing left to disclaim.
+     */
+    'disclaimers' => [
+        'signed_out' => 'Log in om je eigen gegevens te zien.',
+        'no_data'    => 'Je gegevens verschijnen hier zodra je ze vastlegt of een bron koppelt.',
+        'no_database'=> 'Geen databaseverbinding — er kan nu niets worden opgeslagen of geladen.',
+    ],
+    'disclaimer' => '',
 ];

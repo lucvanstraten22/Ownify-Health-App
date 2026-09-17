@@ -5,25 +5,22 @@
  * ------------------------------------------------------------------
  * POINTS ARE NOT DECIDED YET
  * ------------------------------------------------------------------
- * Nothing here awards points. `points` is just a number carried on an entry,
- * kept entirely separate from the UI, so a future scoring engine can produce
- * the ranking without the leaderboard changing at all.
+ * Nothing awards points. point_rules ships empty because the scoring rules
+ * are a product decision nobody has made, so both boards render their empty
+ * state until something fills user_period_points.
  *
  * ------------------------------------------------------------------
- * PLACEHOLDER CONTRACT (same as the rest of the app)
+ * WHO IS ON A BOARD
  * ------------------------------------------------------------------
- * Shipped, there are no entries and no names: `demo` is false and both boards
- * render their empty state. Turning `demo` on generates a controlled roster —
- * deterministic, defined in lib/community.php, never a real person — so the
- * design and the floating-position behaviour can be reviewed with a full
- * board. No invented social claim ever reaches the shipped page.
+ * Real accounts, and only ever their public fields — a handle and a picture.
+ * lib/hydrate-community.php assembles the boards; this file holds the scopes,
+ * the periods and the copy. There is no generated roster any more: an empty
+ * board is the honest answer, an invented one never was.
  */
 
 declare(strict_types=1);
 
 return [
-
-    'demo' => true,
 
     'title' => 'Community',
 
@@ -73,27 +70,4 @@ return [
         'body'  => 'Mijlpalen en persoonlijke records krijgen hier een plek.',
     ],
 
-    /**
-     * Demo roster settings. Used only when `demo` is true.
-     * `you` is where the signed-in user sits in each board — inside the top 50
-     * among friends, well outside it nationally, which is what exercises the
-     * floating-position behaviour in both directions.
-     */
-    'demo_settings' => [
-        'names' => [
-            'Lisa', 'Noah', 'Sam', 'Emma', 'Daan', 'Tess', 'Luuk', 'Fenna', 'Bram', 'Sanne',
-            'Jesse', 'Nora', 'Thijs', 'Yara', 'Milan', 'Julia', 'Ruben', 'Anne', 'Sven', 'Maud',
-            'Kian', 'Roos', 'Timo', 'Lotte', 'Jurre', 'Iris', 'Cas', 'Elin', 'Stijn', 'Mila',
-            'Joep', 'Vera', 'Rens', 'Saar', 'Gijs', 'Lynn', 'Teun', 'Amber', 'Mees', 'Fleur',
-            'Bas', 'Nina', 'Hugo', 'Isa', 'Jorn', 'Livia', 'Pim', 'Merel', 'Koen', 'Britt',
-        ],
-        'you' => [
-            'friends'     => ['month' => 7,   'year' => 5,   'alltime' => 6],
-            'netherlands' => ['month' => 235, 'year' => 412, 'alltime' => 1180],
-        ],
-        'top' => [
-            'friends'     => ['month' => 5320, 'year' => 38400, 'alltime' => 96200],
-            'netherlands' => ['month' => 8940, 'year' => 71200, 'alltime' => 184500],
-        ],
-    ],
 ];

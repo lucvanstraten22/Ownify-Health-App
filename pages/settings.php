@@ -83,7 +83,9 @@ $profile  = $settings['profile'];
 
                 </section>
 
+                <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer"><?= e($data['disclaimer']) ?></p>
+                <?php endif; ?>
 
             </div>
         </main>

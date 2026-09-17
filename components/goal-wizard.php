@@ -202,6 +202,7 @@ $total  = count($steps);
 
         <div class="wizard__foot" data-wizard-foot>
             <button type="button" class="btn press wizard__back" data-wizard-back hidden><?= e($copy['back']) ?></button>
+            <p class="wizard__error" data-wizard-error role="alert" hidden></p>
             <button type="button" class="btn press wizard__next" data-wizard-next disabled><?= e($copy['next']) ?></button>
             <button type="button" class="btn press wizard__next" data-wizard-done hidden><?= e($copy['done_close']) ?></button>
         </div>

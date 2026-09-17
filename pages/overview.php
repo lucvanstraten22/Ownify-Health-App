@@ -24,7 +24,9 @@ declare(strict_types=1);
                 component('recommendation', $data);
                 component('leaderboard', $data);
                 ?>
+                <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>
+                <?php endif; ?>
             </div>
         </main>
     </div>

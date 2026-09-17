@@ -3,25 +3,19 @@
  * Gezondheid — the three health areas, their metrics and their trends.
  *
  * ------------------------------------------------------------------
- * PLACEHOLDER CONTRACT (same as the rest of the app)
+ * WHERE THE VALUES COME FROM
  * ------------------------------------------------------------------
- * Nothing here is a real measurement. Every `value` is null, so the UI
- * renders honest empty states.
+ * This file is the page's shape: which areas exist, which metrics belong to
+ * which group, what each is called and in what unit. Every value is null
+ * here and is filled for the signed-in user by lib/hydrate-health.php, from
+ * that user's own records.
  *
- * `demo` holds review-only numbers. They are used ONLY when 'demo' below is
- * true, which lets the design be looked at with the charts populated without
- * ever shipping invented health results. Leave it false.
+ * A metric nobody has recorded stays null and renders as an empty state. No
+ * number in this file is a measurement, and none is a stand-in for one.
  *
  * ------------------------------------------------------------------
- * SHARED METRICS
+ * AVAILABILITY
  * ------------------------------------------------------------------
- * A metric is defined once in `metrics` and referenced by key from any area,
- * so HRV means the same thing — and looks the same — in Slaap and in Training
- * without being defined twice.
- *
- * `availability`:
- *   null      always shown; renders "—" until there is data
- *   'device'  needs a connected wearable; grouped and dimmed until then
  *   'input'   comes from the user, not a sensor
  * ------------------------------------------------------------------
  */
@@ -29,8 +23,6 @@
 declare(strict_types=1);
 
 return [
-
-    'demo'  => true,
 
     'title' => 'Gezondheid',
     'lede'  => 'Je drie pijlers. Tik op een onderdeel voor de details.',
@@ -101,25 +93,25 @@ return [
             'label'   => 'Slaap',
             'icon'    => 'moon',
             'accent'  => 'health',
-            'score'   => ['value' => null, 'demo' => 84, 'max' => 100],
+            'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Hoe je nacht is verlopen: duur, ritme en herstel.',
             'empty'   => 'Koppel een bron om je slaapscore te berekenen.',
 
             'highlights' => [
-                ['key' => 'sleep_duration',   'value' => null, 'demo' => '7:24'],
-                ['key' => 'bedtime',          'value' => null, 'demo' => '23:10'],
-                ['key' => 'wake_time',        'value' => null, 'demo' => '06:42'],
-                ['key' => 'sleep_efficiency', 'value' => null, 'demo' => 91],
+                ['key' => 'sleep_duration',   'value' => null],
+                ['key' => 'bedtime',          'value' => null],
+                ['key' => 'wake_time',        'value' => null],
+                ['key' => 'sleep_efficiency', 'value' => null],
             ],
 
             'timeline' => [
                 'title'  => 'Slaapverloop',
                 'hint'   => 'De nacht van slaapfase tot slaapfase.',
                 'stages' => [
-                    ['key' => 'stage_deep',  'label' => 'Diep',   'tone' => 'deep',  'share' => null, 'demo' => 22],
-                    ['key' => 'stage_rem',   'label' => 'REM',    'tone' => 'rem',   'share' => null, 'demo' => 22],
-                    ['key' => 'stage_light', 'label' => 'Licht',  'tone' => 'light', 'share' => null, 'demo' => 52],
-                    ['key' => 'stage_awake', 'label' => 'Wakker', 'tone' => 'awake', 'share' => null, 'demo' => 4],
+                    ['key' => 'stage_deep',  'label' => 'Diep',   'tone' => 'deep',  'share' => null],
+                    ['key' => 'stage_rem',   'label' => 'REM',    'tone' => 'rem',   'share' => null],
+                    ['key' => 'stage_light', 'label' => 'Licht',  'tone' => 'light', 'share' => null],
+                    ['key' => 'stage_awake', 'label' => 'Wakker', 'tone' => 'awake', 'share' => null],
                 ],
             ],
 
@@ -127,28 +119,28 @@ return [
                 [
                     'title'   => 'Duur en timing',
                     'metrics' => [
-                        ['key' => 'time_in_bed',      'value' => null, 'demo' => '8:05'],
-                        ['key' => 'sleep_regularity', 'value' => null, 'demo' => 78],
+                        ['key' => 'time_in_bed',      'value' => null],
+                        ['key' => 'sleep_regularity', 'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Onderbrekingen',
                     'metrics' => [
-                        ['key' => 'awakenings', 'value' => null, 'demo' => 2],
-                        ['key' => 'awake_time', 'value' => null, 'demo' => 14],
-                        ['key' => 'movement',   'value' => null, 'demo' => 'Laag'],
+                        ['key' => 'awakenings', 'value' => null],
+                        ['key' => 'awake_time', 'value' => null],
+                        ['key' => 'movement',   'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Nachtelijke waarden',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
-                        ['key' => 'sleeping_hr',      'value' => null, 'demo' => 52],
-                        ['key' => 'resting_hr',       'value' => null, 'demo' => 49],
-                        ['key' => 'hrv',              'value' => null, 'demo' => 58],
-                        ['key' => 'respiratory_rate', 'value' => null, 'demo' => 14.2],
-                        ['key' => 'skin_temp',        'value' => null, 'demo' => 36.4],
-                        ['key' => 'spo2',             'value' => null, 'demo' => 97],
+                        ['key' => 'sleeping_hr',      'value' => null],
+                        ['key' => 'resting_hr',       'value' => null],
+                        ['key' => 'hrv',              'value' => null],
+                        ['key' => 'respiratory_rate', 'value' => null],
+                        ['key' => 'skin_temp',        'value' => null],
+                        ['key' => 'spo2',             'value' => null],
                     ],
                 ],
             ],
@@ -158,44 +150,44 @@ return [
             'label'   => 'Voeding',
             'icon'    => 'leaf',
             'accent'  => 'nutrition',
-            'score'   => ['value' => null, 'demo' => 76, 'max' => 100],
+            'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je eet en drinkt, en hoe regelmatig je dat doet.',
             'empty'   => 'Voeg maaltijden toe of koppel een bron voor je voedingsscore.',
 
             'highlights' => [
-                ['key' => 'meals',       'value' => null, 'demo' => 3],
-                ['key' => 'water',       'value' => null, 'demo' => 1.8],
-                ['key' => 'protein',     'value' => null, 'demo' => 96],
-                ['key' => 'self_rating', 'value' => null, 'demo' => 4],
+                ['key' => 'meals',       'value' => null],
+                ['key' => 'water',       'value' => null],
+                ['key' => 'protein',     'value' => null],
+                ['key' => 'self_rating', 'value' => null],
             ],
 
             'groups' => [
                 [
                     'title'   => 'Energie en macro\'s',
                     'metrics' => [
-                        ['key' => 'energy',        'value' => null, 'demo' => 2140],
-                        ['key' => 'protein',       'value' => null, 'demo' => 96],
-                        ['key' => 'carbs',         'value' => null, 'demo' => 221],
-                        ['key' => 'fat',           'value' => null, 'demo' => 78],
-                        ['key' => 'saturated_fat', 'value' => null, 'demo' => 21],
-                        ['key' => 'fibre',         'value' => null, 'demo' => 28],
-                        ['key' => 'sugar',         'value' => null, 'demo' => 54],
-                        ['key' => 'sodium',        'value' => null, 'demo' => 2300],
+                        ['key' => 'energy',        'value' => null],
+                        ['key' => 'protein',       'value' => null],
+                        ['key' => 'carbs',         'value' => null],
+                        ['key' => 'fat',           'value' => null],
+                        ['key' => 'saturated_fat', 'value' => null],
+                        ['key' => 'fibre',         'value' => null],
+                        ['key' => 'sugar',         'value' => null],
+                        ['key' => 'sodium',        'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Hydratatie',
                     'metrics' => [
-                        ['key' => 'water',          'value' => null, 'demo' => 1.8],
-                        ['key' => 'hydration_goal', 'value' => null, 'demo' => 72],
+                        ['key' => 'water',          'value' => null],
+                        ['key' => 'hydration_goal', 'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Eigen invoer',
                     'hint'    => 'Jij bepaalt dit zelf — er komt geen sensor aan te pas.',
                     'metrics' => [
-                        ['key' => 'self_rating', 'value' => null, 'demo' => 4],
-                        ['key' => 'meal_window', 'value' => null, 'demo' => '08:10 – 20:35'],
+                        ['key' => 'self_rating', 'value' => null],
+                        ['key' => 'meal_window', 'value' => null],
                     ],
                 ],
             ],
@@ -205,50 +197,50 @@ return [
             'label'   => 'Training',
             'icon'    => 'dumbbell',
             'accent'  => 'activity',
-            'score'   => ['value' => null, 'demo' => 91, 'max' => 100],
+            'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je hebt bewogen, hoe zwaar het was en hoe je herstelt.',
             'empty'   => 'Koppel een bron om je trainingsscore te berekenen.',
 
             'highlights' => [
-                ['key' => 'steps',            'value' => null, 'demo' => 9420],
-                ['key' => 'active_energy',    'value' => null, 'demo' => 612],
-                ['key' => 'session_duration', 'value' => null, 'demo' => 48],
-                ['key' => 'distance',         'value' => null, 'demo' => 7.1],
+                ['key' => 'steps',            'value' => null],
+                ['key' => 'active_energy',    'value' => null],
+                ['key' => 'session_duration', 'value' => null],
+                ['key' => 'distance',         'value' => null],
             ],
 
             'groups' => [
                 [
                     'title'   => 'Activiteit',
                     'metrics' => [
-                        ['key' => 'steps',          'value' => null, 'demo' => 9420],
-                        ['key' => 'distance',       'value' => null, 'demo' => 7.1],
-                        ['key' => 'active_energy',  'value' => null, 'demo' => 612],
-                        ['key' => 'total_energy',   'value' => null, 'demo' => 2480],
-                        ['key' => 'active_minutes', 'value' => null, 'demo' => 74],
-                        ['key' => 'floors',         'value' => null, 'demo' => 12],
+                        ['key' => 'steps',          'value' => null],
+                        ['key' => 'distance',       'value' => null],
+                        ['key' => 'active_energy',  'value' => null],
+                        ['key' => 'total_energy',   'value' => null],
+                        ['key' => 'active_minutes', 'value' => null],
+                        ['key' => 'floors',         'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Trainingen',
                     'metrics' => [
-                        ['key' => 'sessions',         'value' => null, 'demo' => 1],
-                        ['key' => 'session_duration', 'value' => null, 'demo' => 48],
-                        ['key' => 'avg_hr',           'value' => null, 'demo' => 138],
-                        ['key' => 'max_hr',           'value' => null, 'demo' => 171],
-                        ['key' => 'hr_zones',         'value' => null, 'demo' => 'Z2 · Z3'],
+                        ['key' => 'sessions',         'value' => null],
+                        ['key' => 'session_duration', 'value' => null],
+                        ['key' => 'avg_hr',           'value' => null],
+                        ['key' => 'max_hr',           'value' => null],
+                        ['key' => 'hr_zones',         'value' => null],
                     ],
                 ],
                 [
                     'title'   => 'Conditie en herstel',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
-                        ['key' => 'vo2max',        'value' => null, 'demo' => 48],
-                        ['key' => 'resting_hr',    'value' => null, 'demo' => 49],
-                        ['key' => 'hrv',           'value' => null, 'demo' => 58],
-                        ['key' => 'readiness',     'value' => null, 'demo' => 82],
-                        ['key' => 'training_load', 'value' => null, 'demo' => 'In balans'],
-                        ['key' => 'cadence',       'value' => null, 'demo' => 168],
-                        ['key' => 'elevation',     'value' => null, 'demo' => 96],
+                        ['key' => 'vo2max',        'value' => null],
+                        ['key' => 'resting_hr',    'value' => null],
+                        ['key' => 'hrv',           'value' => null],
+                        ['key' => 'readiness',     'value' => null],
+                        ['key' => 'training_load', 'value' => null],
+                        ['key' => 'cadence',       'value' => null],
+                        ['key' => 'elevation',     'value' => null],
                     ],
                 ],
             ],
@@ -265,16 +257,16 @@ return [
         ],
         'series' => [
             'sleep' => [
-                'week'  => ['values' => [null, null, null, null, null, null, null], 'demo' => [72, 78, 74, 81, 79, 88, 84]],
-                'month' => ['values' => [null, null, null, null], 'demo' => [74, 78, 81, 84]],
+                'week'  => ['values' => [null, null, null, null, null, null, null]],
+                'month' => ['values' => [null, null, null, null]],
             ],
             'nutrition' => [
-                'week'  => ['values' => [null, null, null, null, null, null, null], 'demo' => [68, 71, 80, 66, 73, 62, 76]],
-                'month' => ['values' => [null, null, null, null], 'demo' => [70, 68, 74, 76]],
+                'week'  => ['values' => [null, null, null, null, null, null, null]],
+                'month' => ['values' => [null, null, null, null]],
             ],
             'training' => [
-                'week'  => ['values' => [null, null, null, null, null, null, null], 'demo' => [84, 62, 90, 88, 70, 94, 91]],
-                'month' => ['values' => [null, null, null, null], 'demo' => [79, 83, 86, 91]],
+                'week'  => ['values' => [null, null, null, null, null, null, null]],
+                'month' => ['values' => [null, null, null, null]],
             ],
         ],
     ],

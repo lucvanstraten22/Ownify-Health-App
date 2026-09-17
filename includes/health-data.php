@@ -104,6 +104,171 @@ if (!function_exists('health_source_id')) {
         return db_insert_id();
     }
 
+    /**
+     * Records a night's sleep.
+     *
+     * The unique key is (user_id, started_at), so re-importing the same night
+     * updates it rather than adding a second copy — which is what makes a
+     * repeated sync from a watch safe.
+     */
+    function health_record_sleep(int $userId, array $session, string $sourceCode = 'manual'): ?int
+    {
+        if (empty($session['started_at']) || empty($session['ended_at'])) {
+            return null;
+        }
+
+        try {
+            $start = new DateTimeImmutable((string) $session['started_at']);
+            $end   = new DateTimeImmutable((string) $session['ended_at']);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        if ($end <= $start) {
+            return null;
+        }
+
+        /* A night is filed under the day you woke up. */
+        $nightOf  = $session['night_of'] ?? $end->format('Y-m-d');
+        $duration = $session['duration_minutes'] ?? (int) round(($end->getTimestamp() - $start->getTimestamp()) / 60);
+
+        db_run(
+            'INSERT INTO sleep_sessions
+                (user_id, source_id, night_of, started_at, ended_at, duration_minutes,
+                 time_in_bed_minutes, efficiency_pct, awakenings, awake_minutes,
+                 light_minutes, deep_minutes, rem_minutes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                night_of = VALUES(night_of), ended_at = VALUES(ended_at),
+                duration_minutes = VALUES(duration_minutes),
+                time_in_bed_minutes = VALUES(time_in_bed_minutes),
+                efficiency_pct = VALUES(efficiency_pct), awakenings = VALUES(awakenings),
+                awake_minutes = VALUES(awake_minutes), light_minutes = VALUES(light_minutes),
+                deep_minutes = VALUES(deep_minutes), rem_minutes = VALUES(rem_minutes)',
+            [
+                $userId, health_source_id($sourceCode), $nightOf,
+                $start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s'), $duration,
+                $session['time_in_bed_minutes'] ?? null, $session['efficiency_pct'] ?? null,
+                $session['awakenings'] ?? null, $session['awake_minutes'] ?? null,
+                $session['light_minutes'] ?? null, $session['deep_minutes'] ?? null,
+                $session['rem_minutes'] ?? null,
+            ]
+        );
+
+        return db_insert_id();
+    }
+
+    /**
+     * Records a meal or a drink, with its rating.
+     *
+     * Several entries a day are expected and each is its own row: the rating
+     * is what the day is scored on, and averaging two honest ratings is more
+     * truthful than making the second overwrite the first.
+     */
+    function health_record_nutrition(int $userId, array $entry, string $sourceCode = 'manual'): ?int
+    {
+        $consumedAt = $entry['consumed_at'] ?? date('Y-m-d H:i:s');
+
+        try {
+            $when = new DateTimeImmutable((string) $consumedAt);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $mealType = $entry['meal_type'] ?? 'other';
+        if (!in_array($mealType, ['breakfast', 'lunch', 'dinner', 'snack', 'drink', 'other'], true)) {
+            $mealType = 'other';
+        }
+
+        db_run(
+            'INSERT INTO nutrition_entries (user_id, source_id, meal_type, label, consumed_at, notes)
+                  VALUES (?, ?, ?, ?, ?, ?)',
+            [
+                $userId, health_source_id($sourceCode), $mealType,
+                $entry['label'] ?? null, $when->format('Y-m-d H:i:s'), $entry['notes'] ?? null,
+            ]
+        );
+
+        $entryId = db_insert_id();
+
+        if ($entryId === null) {
+            return null;
+        }
+
+        /* The rating and any nutrients hang off the entry as metric rows, so
+           adding a nutrient later needs no change to the table. */
+        if (isset($entry['rating']) && $entry['rating'] !== null && $entry['rating'] !== '') {
+            $rating = max(1.0, min(10.0, (float) $entry['rating']));
+            health_record_metric($userId, 'nutrition_rating', $rating,
+                $when->format('Y-m-d H:i:s'), $sourceCode, ['nutrition_entry_id' => $entryId]);
+        }
+
+        foreach (['water', 'energy', 'protein', 'carbs', 'fat', 'saturated_fat',
+                  'fibre', 'sugar', 'sodium'] as $nutrient) {
+            if (isset($entry[$nutrient]) && $entry[$nutrient] !== null && $entry[$nutrient] !== '') {
+                health_record_metric($userId, $nutrient, (float) $entry[$nutrient],
+                    $when->format('Y-m-d H:i:s'), $sourceCode, ['nutrition_entry_id' => $entryId]);
+            }
+        }
+
+        return $entryId;
+    }
+
+    /** Records one training session. Re-syncing the same start updates it. */
+    function health_record_workout(int $userId, array $workout, string $sourceCode = 'manual'): ?int
+    {
+        $startedAt = $workout['started_at'] ?? date('Y-m-d H:i:s');
+
+        try {
+            $start = new DateTimeImmutable((string) $startedAt);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $seconds = $workout['duration_seconds'] ?? null;
+        $end     = null;
+
+        if (!empty($workout['ended_at'])) {
+            try {
+                $end = new DateTimeImmutable((string) $workout['ended_at']);
+                $seconds ??= $end->getTimestamp() - $start->getTimestamp();
+            } catch (Exception $e) {
+                $end = null;
+            }
+        }
+
+        if ($seconds !== null && (int) $seconds <= 0) {
+            return null;
+        }
+
+        db_run(
+            'INSERT INTO workouts
+                (user_id, source_id, activity_type, started_at, ended_at, duration_seconds,
+                 distance_m, active_kcal, total_kcal, avg_hr, max_hr, avg_speed_kmh,
+                 avg_cadence, elevation_gain_m, perceived_effort, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                activity_type = VALUES(activity_type), ended_at = VALUES(ended_at),
+                duration_seconds = VALUES(duration_seconds), distance_m = VALUES(distance_m),
+                active_kcal = VALUES(active_kcal), total_kcal = VALUES(total_kcal),
+                avg_hr = VALUES(avg_hr), max_hr = VALUES(max_hr),
+                avg_speed_kmh = VALUES(avg_speed_kmh), avg_cadence = VALUES(avg_cadence),
+                elevation_gain_m = VALUES(elevation_gain_m),
+                perceived_effort = VALUES(perceived_effort), notes = VALUES(notes)',
+            [
+                $userId, health_source_id($sourceCode), $workout['activity_type'] ?? 'other',
+                $start->format('Y-m-d H:i:s'), $end?->format('Y-m-d H:i:s'), $seconds,
+                $workout['distance_m'] ?? null, $workout['active_kcal'] ?? null,
+                $workout['total_kcal'] ?? null, $workout['avg_hr'] ?? null,
+                $workout['max_hr'] ?? null, $workout['avg_speed_kmh'] ?? null,
+                $workout['avg_cadence'] ?? null, $workout['elevation_gain_m'] ?? null,
+                $workout['perceived_effort'] ?? null, $workout['notes'] ?? null,
+            ]
+        );
+
+        return db_insert_id();
+    }
+
     /* ---------------------------------------------------------- reading */
 
     /**

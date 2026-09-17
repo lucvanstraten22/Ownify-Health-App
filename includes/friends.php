@@ -15,6 +15,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
+/** The most friends one account may hold. */
+if (!defined('FRIEND_LIMIT')) {
+    define('FRIEND_LIMIT', 50);
+}
+
 if (!function_exists('friend_pair')) {
 
     /** The canonical [low, high] ordering the unique key depends on. */
@@ -54,6 +59,18 @@ if (!function_exists('friend_pair')) {
         if (block_exists($fromUserId, $toUserId)) {
             // Deliberately vague: a block should not be announced.
             return ['ok' => false, 'error' => 'Dit verzoek kan niet worden verstuurd.'];
+        }
+
+        /* Fifty friends, both ways. Checked here rather than at the endpoint
+           so the limit holds however the request arrives, and checked for the
+           recipient too — otherwise a full account could be pushed past the
+           limit by other people asking. */
+        if (count(friend_ids($fromUserId)) >= FRIEND_LIMIT) {
+            return ['ok' => false, 'error' => 'Je hebt het maximum van ' . FRIEND_LIMIT . ' vrienden bereikt.'];
+        }
+
+        if (count(friend_ids($toUserId)) >= FRIEND_LIMIT) {
+            return ['ok' => false, 'error' => 'Dit account heeft het maximum aantal vrienden bereikt.'];
         }
 
         [$low, $high] = friend_pair($fromUserId, $toUserId);
