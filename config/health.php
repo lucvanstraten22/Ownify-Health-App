@@ -55,7 +55,7 @@ return [
         /* --- nutrition -------------------------------------------------- */
         'meals'            => ['label' => 'Maaltijden',      'unit' => '',     'availability' => 'input'],
         'meal_window'      => ['label' => 'Eetvenster',      'unit' => '',     'availability' => 'input'],
-        'self_rating'      => ['label' => 'Eigen beoordeling', 'unit' => '/5', 'availability' => 'input'],
+        'self_rating'      => ['label' => 'Eigen beoordeling', 'unit' => '/10', 'availability' => 'input'],
         'water'            => ['label' => 'Water',           'unit' => 'l'],
         'hydration_goal'   => ['label' => 'Van je doel',     'unit' => '%'],
         'energy'           => ['label' => 'Energie',         'unit' => 'kcal'],
