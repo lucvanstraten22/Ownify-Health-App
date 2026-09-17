@@ -99,6 +99,14 @@ if (!function_exists('settings_profile')) {
             'avatar' => null, 'username' => null, 'first_name' => null, 'last_name' => null,
             'date_of_birth' => null, 'gender' => null, 'age' => null,
             'height' => null, 'weight' => null, 'activity_level' => null, 'member_since' => null,
+            /* The same values unformatted. The rows show "178 cm" and "12 april
+               1998"; the editor has to put 178 and 1998-04-12 back into an
+               input, so both forms travel together rather than the editor
+               trying to parse the display text back. */
+            'raw' => [
+                'first_name' => null, 'last_name' => null, 'date_of_birth' => null,
+                'gender' => null, 'height' => null, 'weight' => null,
+            ],
         ];
 
         if (empty($auth['signed_in']) || !is_array($auth['user'])) {
@@ -119,6 +127,19 @@ if (!function_exists('settings_profile')) {
             'weight'        => settings_measurement($user['weight'] ?? null),
             'activity_level' => settings_activity_level($user['activity_level'] ?? null),
             'member_since'   => settings_member_since($user['created_at'] ?? null),
+
+            'raw' => [
+                'first_name'    => $user['first_name'] ?? null,
+                'last_name'     => $user['last_name'] ?? null,
+                'date_of_birth' => $user['date_of_birth'] ?? null,
+                /* 'undisclosed' is the column's default, which means nobody has
+                   answered yet — not that somebody chose it. */
+                'gender'        => ($user['gender'] ?? 'undisclosed') === 'undisclosed'
+                    ? null
+                    : $user['gender'],
+                'height'        => isset($user['height']['value']) ? (float) $user['height']['value'] : null,
+                'weight'        => isset($user['weight']['value']) ? (float) $user['weight']['value'] : null,
+            ],
         ];
     }
 }
@@ -198,9 +219,12 @@ if (!function_exists('settings_field_value')) {
 
 if (!function_exists('settings_field_blank')) {
     /** The empty state a field gets, which depends on how it is filled in. */
-    function settings_field_blank(array $field): string
+    function settings_field_blank(array $field, string|bool|null $state = null): string
     {
-        return match ($field['edit'] ?? true) {
+        /* An unanswered one-time field used to read "Bij onboarding", which
+           was true when there was nowhere else to answer it. It is answered
+           here now, so it says the same thing every other empty field says. */
+        return match ($state ?? $field['edit'] ?? true) {
             'locked'  => 'Bij onboarding',
             'derived' => 'Nog onbekend',
             default   => 'Nog niet ingesteld',
@@ -241,5 +265,74 @@ if (!function_exists('settings_member_since')) {
                    'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 
         return $months[(int) $date->format('n') - 1] . ' ' . $date->format('Y');
+    }
+}
+
+if (!function_exists('settings_field_state')) {
+    /**
+     * How a field behaves right now.
+     *
+     * The three one-time fields are not permanently locked — they are locked
+     * once answered. Before that they have to be fillable, or an account
+     * created today could never set a birth date at all. So 'locked' in the
+     * config means "locked after the first answer", and this resolves it
+     * against what the user has actually stored:
+     *
+     *   true      editable, as often as you like
+     *   'once'    not answered yet: fillable, and permanent once saved
+     *   'locked'  answered: shown with a lock, no way in
+     *   'derived' calculated from something else, never entered
+     */
+    function settings_field_state(array $field, array $profile): string|bool
+    {
+        $edit = $field['edit'] ?? true;
+
+        if ($edit !== 'locked') {
+            return $edit;
+        }
+
+        $raw = $profile['raw'][$field['key']] ?? null;
+
+        return ($raw === null || $raw === '') ? 'once' : 'locked';
+    }
+}
+
+if (!function_exists('settings_field_input')) {
+    /**
+     * What the editor needs to put this field on screen: the kind of input,
+     * the value to start from, and the bounds the endpoint will enforce
+     * anyway. Nothing here is trusted server-side — it is only so the user
+     * meets the limit before the request does.
+     */
+    function settings_field_input(array $field, array $profile): array
+    {
+        $key = $field['key'];
+        $raw = $profile['raw'][$key] ?? null;
+
+        $input = match ($key) {
+            'first_name', 'last_name' => ['type' => 'text', 'maxlength' => 60],
+            'date_of_birth'           => ['type' => 'date', 'max' => date('Y-m-d'),
+                                          'min' => date('Y-m-d', strtotime('-120 years'))],
+            'gender'                  => ['type' => 'choice', 'options' => [
+                                             'female'     => 'Vrouw',
+                                             'male'       => 'Man',
+                                             'non_binary' => 'Non-binair',
+                                             'other'      => 'Anders',
+                                          ]],
+            'height'                  => ['type' => 'number', 'min' => 50, 'max' => 260, 'step' => '0.1'],
+            'weight'                  => ['type' => 'number', 'min' => 20, 'max' => 400, 'step' => '0.1'],
+            default                   => ['type' => 'text', 'maxlength' => 120],
+        };
+
+        $input['value'] = $raw === null ? '' : (string) $raw;
+        $input['unit']  = $field['unit'] ?? '';
+
+        /* Which endpoint saves it. The one-time fields go to their own, which
+           is the one that refuses a second write. */
+        $input['endpoint'] = in_array($key, ['date_of_birth', 'gender'], true)
+            ? 'api/profile/onboarding.php'
+            : 'api/profile/update.php';
+
+        return $input;
     }
 }

@@ -212,6 +212,7 @@ foreach ($data['navigation'] as $position => $item) {
        them and neither can be mistaken for a swipe. */
     component('goal-wizard', $data);
     component('settings-confirm', $data);
+    component('settings-editor', $data);
     component('account-modal', $data);
     ?>
 
