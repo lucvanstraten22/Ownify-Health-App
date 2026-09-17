@@ -161,8 +161,8 @@ return [
 
                 [
                     'type'  => 'fields',
-                    'title' => 'Bij onboarding ingesteld',
-                    'lede'  => 'Deze gegevens kies je één keer. Ze bepalen hoe je scores worden berekend.',
+                    'title' => 'Eenmalig in te vullen',
+                    'lede'  => 'Deze gegevens vul je één keer in. Daarna staan ze vast, omdat je scores erop gebaseerd zijn.',
                     'fields' => [
                         ['key' => 'date_of_birth', 'label' => 'Geboortedatum', 'edit' => 'locked'],
                         ['key' => 'gender',        'label' => 'Geslacht',      'edit' => 'locked'],
@@ -182,7 +182,7 @@ return [
                 ],
 
                 ['type' => 'note', 'icon' => 'lock',
-                 'text' => 'Gebruikersnaam en profielfoto kun je nu al wijzigen. De overige velden worden opgeslagen zodra het profielscherm gekoppeld is.'],
+                 'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar. Lengte en gewicht bewaren hun verloop: elke wijziging komt erbij, de vorige verdwijnt niet.'],
             ],
         ],
 

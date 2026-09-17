@@ -716,3 +716,89 @@
 
     .integration__actions { flex-direction: column; }
 }
+
+/* --------------------------------------------------------------------------
+   Profile field editor
+   Reuses the confirmation panel wholesale — scrim, card, buttons — so only
+   the parts that differ are described here.
+   -------------------------------------------------------------------------- */
+.field-editor { text-align: left; }
+
+.field-editor .confirm__title { margin-top: 0; }
+
+.field-editor__once {
+    margin-top: var(--space-2);
+    color: var(--nutrition);
+}
+
+.field-editor__once[hidden] { display: none; }
+
+.field-editor__control { margin-top: var(--space-4); }
+
+/* Matches the account panel's inputs rather than introducing a second kind. */
+.field-editor__input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-label);
+}
+
+.field-editor__input:focus-visible {
+    outline: none;
+    border-color: rgba(60, 158, 114, 0.5);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* A number field that carries its unit, so the unit is not left to a label. */
+.field-editor__measure {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.field-editor__unit {
+    flex: none;
+    font-size: var(--fs-label);
+    color: var(--text-secondary);
+}
+
+/* The choice list is the settings page's own option row, stacked. */
+.field-editor__options {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.field-editor__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    font-size: var(--fs-label);
+    text-align: left;
+}
+
+.field-editor__option.is-active {
+    border-color: rgba(60, 158, 114, 0.5);
+    background: rgba(60, 158, 114, 0.14);
+    color: var(--text-primary);
+}
+
+.field-editor__error {
+    margin-top: var(--space-3);
+    color: #ff8b8b;
+    font-size: var(--fs-small);
+    line-height: 1.4;
+}
+
+.field-editor__error[hidden] { display: none; }
