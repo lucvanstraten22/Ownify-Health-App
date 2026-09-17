@@ -23,7 +23,7 @@ return [
 
     /* -------------------------------------------------- app + shell */
     'app' => [
-        'name'        => 'JoLu',
+        'name'        => 'AppName',
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',

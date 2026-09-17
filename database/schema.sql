@@ -1,5 +1,5 @@
 -- ============================================================================
---  JoLu — database schema
+--  AppName — database schema
 -- ----------------------------------------------------------------------------
 --  Target:  MySQL 5.7+ / 8.x and MariaDB 10.4+ (WampServer, XAMPP, phpMyAdmin)
 --  Engine:  InnoDB throughout, utf8mb4 / utf8mb4_unicode_ci
