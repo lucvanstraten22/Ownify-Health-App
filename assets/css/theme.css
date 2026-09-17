@@ -78,8 +78,31 @@
     --shadow-float: 0 12px 28px rgba(0, 0, 0, 0.3);
 
     /* --- typography ------------------------------------------------------ */
-    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-        "Inter", "Manrope", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* SF Pro, by the route Apple actually ships it.
+
+       -apple-system and BlinkMacSystemFont come first on purpose. On Apple
+       platforms they resolve to San Francisco and pick the optical size for
+       you — SF Pro Text below about 20px, SF Pro Display above it. Naming a
+       cut first instead would pin every size to that one cut, and the Display
+       cut's tighter fit is the wrong thing under a 10px tab label.
+
+       The named families behind them are for browsers that ignore
+       -apple-system but do have SF Pro available, and are where a self-hosted
+       @font-face would attach: a browser only downloads a face it actually
+       uses, so Apple devices would keep using the system copy and download
+       nothing. Text precedes Display because most type in this app is UI-sized.
+
+       Nothing after that is a design choice, it is what is left when SF Pro is
+       absent: Helvetica Neue is the nearest grotesque most non-Apple machines
+       have, then whatever the system calls sans-serif. */
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+        "Helvetica Neue", sans-serif;
+
+    /* The same idea for the two file paths in the setup notice: SF Mono is the
+       monospace member of this family, and ui-monospace is how you ask for it
+       without naming it. */
+    --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
     --fs-brand: 1.4rem;    /* app name            ~22px */
     --fs-section: 1.3rem;  /* section titles      ~21px */
@@ -197,6 +220,20 @@ body {
 h1, h2, h3, h4, p, ul, ol, figure { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
 img, svg { display: block; max-width: 100%; }
+
+/* Form controls do not inherit the page font on their own — every browser
+   substitutes its own for them — so they are named once here rather than left
+   to each component to remember. Family only: the sizes belong to the
+   components that set them and must not be disturbed from here. */
+button,
+input,
+textarea,
+select,
+optgroup {
+    font-family: var(--font-sans);
+}
+
+code, kbd, samp, pre { font-family: var(--font-mono); }
 
 button {
     font: inherit;
