@@ -31,11 +31,11 @@ if (is_file($local)) {
 }
 
 foreach ([
-    'DB_HOST' => 'host',
-    'DB_PORT' => 'port',
-    'DB_NAME' => 'database',
-    'DB_USER' => 'username',
-    'DB_PASSWORD' => 'password',
+    'DB_HOST' => 'localhost',
+    'DB_PORT' => '3306',
+    'DB_NAME' => 'luc_healthapp',
+    'DB_USER' => 'luc_healthapp',
+    'DB_PASSWORD' => 'KaasKaas2!',
 ] as $variable => $key) {
     $value = getenv($variable);
     if ($value !== false && $value !== '') {

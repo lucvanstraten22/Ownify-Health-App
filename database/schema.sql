@@ -33,11 +33,6 @@
 --  Do not add an admin feature that selects from a PRIVATE table across users.
 -- ============================================================================
 
-CREATE DATABASE IF NOT EXISTS `jolu`
-    DEFAULT CHARACTER SET utf8mb4
-    DEFAULT COLLATE utf8mb4_unicode_ci;
-
-USE `jolu`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
