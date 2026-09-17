@@ -24,7 +24,7 @@ return [
 
     /* -------------------------------------------------- app + shell */
     'app' => [
-        'name'        => 'NaamKomtNog1',
+        'name'        => 'NaamKomtNog!!',
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',
