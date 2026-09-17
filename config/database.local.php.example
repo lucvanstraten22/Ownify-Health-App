@@ -1,0 +1,26 @@
+<?php
+/**
+ * Copy this to config/database.local.php and fill in the real values.
+ *
+ *     cp config/database.local.php.example config/database.local.php
+ *
+ * The copy is git-ignored, so it never reaches GitHub and never travels in a
+ * deploy — which means it has to be created once on each machine that runs
+ * the app, including the server. It survives deployments because it is not
+ * part of the checkout that gets uploaded.
+ *
+ * Only name the keys you want to change; anything absent keeps the default in
+ * config/database.php.
+ */
+
+declare(strict_types=1);
+
+return [
+    // Hestia creates the database with your account as a prefix, so the name
+    // and the user usually look like 'youraccount_appname'.
+    'host'     => 'localhost',
+    'port'     => 3306,
+    'database' => 'luc_healthapp',
+    'username' => 'luc_healthapp',
+    'password' => 'PUT-THE-REAL-PASSWORD-HERE',
+];

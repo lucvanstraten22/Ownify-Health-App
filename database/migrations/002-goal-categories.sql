@@ -8,11 +8,20 @@
 --
 --  The five original values are kept alongside the new ones so existing rows
 --  stay valid and nothing has to be rewritten; 'general' remains the default.
---
---      mysql -u root -p jolu < database/migrations/002-goal-categories.sql
 -- ============================================================================
+-- ----------------------------------------------------------------------------
+--  NO `USE` STATEMENT, ON PURPOSE
+-- ----------------------------------------------------------------------------
+--  The database is whichever one you have selected. On shared hosting the
+--  name is not ours to choose — Hestia prefixes it with the account, so it is
+--  `luc_healthapp` there and something else on the next server. Naming one
+--  here would make this file work in exactly one place.
+--
+--  phpMyAdmin:  select the database in the sidebar FIRST, then Import.
+--  Command line: name it as an argument, e.g.
+--      mysql -u USER -p DATABASE < database/migrations/002-goal-categories.sql
+-- ----------------------------------------------------------------------------
 
-USE `jolu`;
 
 ALTER TABLE `goals`
     MODIFY COLUMN `category` ENUM(

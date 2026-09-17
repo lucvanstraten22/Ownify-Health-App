@@ -5,13 +5,22 @@
 --  import of database/schema.sql already contains them, so this file is only
 --  for upgrading in place.
 --
---      mysql -u root -p jolu < database/migrations/001-priority-and-activity-level.sql
---
 --  Both statements are safe to run twice: each checks for its own column
 --  first, so re-running does nothing rather than failing.
 -- ============================================================================
+-- ----------------------------------------------------------------------------
+--  NO `USE` STATEMENT, ON PURPOSE
+-- ----------------------------------------------------------------------------
+--  The database is whichever one you have selected. On shared hosting the
+--  name is not ours to choose — Hestia prefixes it with the account, so it is
+--  `luc_healthapp` there and something else on the next server. Naming one
+--  here would make this file work in exactly one place.
+--
+--  phpMyAdmin:  select the database in the sidebar FIRST, then Import.
+--  Command line: name it as an argument, e.g.
+--      mysql -u USER -p DATABASE < database/migrations/001-priority-and-activity-level.sql
+-- ----------------------------------------------------------------------------
 
-USE `jolu`;
 
 -- Goals carry a priority. The board allows one primary and two secondaries,
 -- which is a rule the application enforces on write; the column only records

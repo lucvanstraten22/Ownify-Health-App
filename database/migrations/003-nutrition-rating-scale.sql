@@ -8,13 +8,22 @@
 --  A fresh import of database/schema.sql already has this. Run this file only
 --  when upgrading a database created before it.
 --
---      mysql -u root -p jolu < database/migrations/003-nutrition-rating-scale.sql
---
 --  Any ratings already stored were on the 1-5 scale, so they are rescaled to
 --  match. Doing it in the same statement keeps old and new entries comparable.
 -- ============================================================================
+-- ----------------------------------------------------------------------------
+--  NO `USE` STATEMENT, ON PURPOSE
+-- ----------------------------------------------------------------------------
+--  The database is whichever one you have selected. On shared hosting the
+--  name is not ours to choose — Hestia prefixes it with the account, so it is
+--  `luc_healthapp` there and something else on the next server. Naming one
+--  here would make this file work in exactly one place.
+--
+--  phpMyAdmin:  select the database in the sidebar FIRST, then Import.
+--  Command line: name it as an argument, e.g.
+--      mysql -u USER -p DATABASE < database/migrations/003-nutrition-rating-scale.sql
+-- ----------------------------------------------------------------------------
 
-USE `jolu`;
 
 -- Rescale what is already there, but only if the row still says /5 — so
 -- running this twice cannot double the values.

@@ -11,13 +11,13 @@
 --  loaded on a production database.
 --
 --  Import AFTER schema.sql:
---      mysql -u root -p < database/seed-dev.sql
+--      mysql -u USER -p DATABASE < database/seed-dev.sql
 --
 --  Passwords: every dev account uses "devpassword" (hash below). Fine for a
 --  local WampServer, never anywhere else.
 -- ============================================================================
 
-USE `jolu`;
+-- No USE: run this against whichever database you have selected.
 
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM `point_events`;

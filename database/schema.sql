@@ -4,8 +4,14 @@
 --  Target:  MySQL 5.7+ / 8.x and MariaDB 10.4+ (WampServer, XAMPP, phpMyAdmin)
 --  Engine:  InnoDB throughout, utf8mb4 / utf8mb4_unicode_ci
 --
---  Import:  phpMyAdmin → Import → this file
---     or:   mysql -u root -p < database/schema.sql
+--  Import:  phpMyAdmin → SELECT THE DATABASE IN THE SIDEBAR FIRST → Import
+--     or:   mysql -u USER -p DATABASE < database/schema.sql
+--
+--  There is deliberately no CREATE DATABASE and no USE here. On shared
+--  hosting the database already exists and its name is not ours to pick —
+--  Hestia prefixes it with the account name — so this file works against
+--  whichever database you point it at. Importing it with none selected is the
+--  one way to get "No database selected".
 --
 --  The file is repeatable: it drops the tables it owns before creating them,
 --  so re-importing rebuilds a clean database.
