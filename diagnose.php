@@ -148,6 +148,52 @@ try {
     echo "\n  This is what the browser is seeing as a 500.\n";
 }
 
+/* ---------------------------------------------------------------------------
+ * THE SCHEMA
+ * ---------------------------------------------------------------------------
+ * A table the code reads and the database does not have is invisible from a
+ * browser until it takes a page down — which is how 18 September went. The
+ * expected list is read out of database/schema.sql rather than written here,
+ * so it cannot drift from the schema it is checking.
+ * ------------------------------------------------------------------------ */
+
+echo "\nDATABASE SCHEMA\n";
+
+$sql = @file_get_contents($root . '/database/schema.sql');
+
+if (!is_string($sql) || $sql === '') {
+    row('schema.sql', 'not readable — cannot compare');
+} elseif (!function_exists('db_available') || !db_available()) {
+    row('comparison', 'no database connection');
+} else {
+    preg_match_all('/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+`?([a-z0-9_]+)`?/i', $sql, $found);
+
+    $expected = array_unique($found[1] ?? []);
+    sort($expected);
+
+    $present = [];
+    foreach (db_all('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = DATABASE()') as $r) {
+        $present[strtolower((string) reset($r))] = true;
+    }
+
+    $missing = [];
+    foreach ($expected as $table) {
+        if (!isset($present[strtolower($table)])) {
+            $missing[] = $table;
+        }
+    }
+
+    row('tables expected', (string) count($expected));
+    row('tables present', (string) count($present));
+
+    if ($missing === []) {
+        row('missing', 'none — the schema is complete');
+    } else {
+        row('MISSING', implode(', ', $missing));
+        echo "\n  Import the migration that adds these, in database/migrations/.\n";
+    }
+}
+
 echo "\nWHERE PHP WRITES ERRORS\n";
 row('error_log', (string) (ini_get('error_log') ?: 'the SAPI default (Apache/FPM log)'));
 row('display_errors', ini_get('display_errors') ? 'on' : 'off  (so a fatal is a blank 500)');
