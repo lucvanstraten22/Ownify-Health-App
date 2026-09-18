@@ -18,6 +18,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Writes which commit is being uploaded, so the live site can say what
+      # it is running. Without it, "did my change reach the server?" can only
+      # be answered by guessing, and a stale deploy looks exactly like a bug.
+      - name: Stamp the build
+        run: |
+          printf '%s' "${GITHUB_SHA}" > VERSION
+          echo "Stamped VERSION with ${GITHUB_SHA}"
+
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:

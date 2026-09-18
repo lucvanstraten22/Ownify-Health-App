@@ -116,3 +116,39 @@ if (!function_exists('today_label')) {
         return $parts['weekday'] . ' ' . $parts['date'];
     }
 }
+
+if (!function_exists('asset')) {
+    /**
+     * An asset URL that changes when the file does.
+     *
+     * A browser told nothing about a stylesheet will keep the copy it already
+     * has, which on a live site means a deploy lands on the server and the
+     * person looking at it still sees last week's CSS. The query string makes
+     * the URL itself change, so the old copy is never the one asked for.
+     *
+     * The stamp is the file's own modification time, which is exact and needs
+     * nothing to maintain it. If the file cannot be read — it should always be
+     * there, but a missing asset must not take the page down — the deployed
+     * commit stands in, and failing that the URL goes out unversioned.
+     */
+    function asset(string $path): string
+    {
+        static $fallback = null;
+
+        $full = dirname(__DIR__) . '/' . ltrim($path, '/');
+        $time = @filemtime($full);
+
+        if ($time !== false) {
+            return $path . '?v=' . $time;
+        }
+
+        if ($fallback === null) {
+            $deployed = @file_get_contents(dirname(__DIR__) . '/VERSION');
+            $fallback = (is_string($deployed) && trim($deployed) !== '')
+                ? substr(trim($deployed), 0, 7)
+                : '';
+        }
+
+        return $fallback === '' ? $path : $path . '?v=' . $fallback;
+    }
+}

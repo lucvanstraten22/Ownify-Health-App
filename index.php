@@ -104,17 +104,28 @@ foreach ($data['navigation'] as $position => $item) {
 
     <title><?= e($app['name']) ?> — <?= e($app['tagline']) ?></title>
 
+    <?php
+    /* Which commit this server is running. The deploy writes VERSION; locally
+       there is no such file and nothing is emitted. It is only ever a commit
+       hash — no path, no version number anything could be probed with — and it
+       turns "is my change live?" from a guess into view-source. */
+    $deployed = @file_get_contents(__DIR__ . '/VERSION');
+    if (is_string($deployed) && preg_match('/^[0-9a-f]{7,40}$/', trim($deployed))):
+        ?>
+        <meta name="app-version" content="<?= e(substr(trim($deployed), 0, 7)) ?>">
+    <?php endif; ?>
+
     <script>document.documentElement.classList.add('js');</script>
 
-    <link rel="stylesheet" href="assets/css/theme.css">
-    <link rel="stylesheet" href="assets/css/components.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
-    <link rel="stylesheet" href="assets/css/ai.css">
-    <link rel="stylesheet" href="assets/css/health.css">
-    <link rel="stylesheet" href="assets/css/community.css">
-    <link rel="stylesheet" href="assets/css/goals.css">
-    <link rel="stylesheet" href="assets/css/settings.css">
-    <link rel="stylesheet" href="assets/css/account.css">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/theme.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/components.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/dashboard.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/ai.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/health.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/community.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/goals.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/settings.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/account.css')) ?>">
 </head>
 <body class="app">
 
@@ -216,17 +227,17 @@ foreach ($data['navigation'] as $position => $item) {
     component('account-modal', $data);
     ?>
 
-    <script src="assets/js/dashboard.js" defer></script>
-    <script src="assets/js/interactions.js" defer></script>
-    <script src="assets/js/navigation-core.js" defer></script>
-    <script src="assets/js/page-navigation.js" defer></script>
-    <script src="assets/js/ai-sheet.js" defer></script>
-    <script src="assets/js/detail-layer.js" defer></script>
-    <script src="assets/js/health-trend.js" defer></script>
-    <script src="assets/js/community.js" defer></script>
-    <script src="assets/js/goals.js" defer></script>
-    <script src="assets/js/goal-wizard.js" defer></script>
-    <script src="assets/js/settings.js" defer></script>
-    <script src="assets/js/account.js" defer></script>
+    <script src="<?= e(asset('assets/js/dashboard.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/interactions.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/navigation-core.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/page-navigation.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/ai-sheet.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/detail-layer.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/health-trend.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/community.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/goals.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/settings.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
 </body>
 </html>

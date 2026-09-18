@@ -4,3 +4,4 @@
 # Uploaded profile pictures are user content, not source.
 /uploads/avatars/*
 !/uploads/avatars/.gitkeep
+VERSION
