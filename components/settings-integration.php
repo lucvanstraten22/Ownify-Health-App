@@ -92,19 +92,27 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
                     <?= e($labels['sync_now']) ?>
                 </button>
                 <button type="button" class="btn press"
-                        data-integration-disconnect="<?= e($item['provider']) ?>">
+                        data-integration-disconnect="<?= e($item['provider'] ?? '') ?>">
                     <?= e($labels['disconnect']) ?>
                 </button>
             <?php else: ?>
                 <?php
                 /* A phone source is paired with a code; a cloud source is
-                   connected with OAuth. Different verbs, different buttons. */
-                $hook = ($item['transport'] ?? 'cloud') === 'device'
-                    ? 'data-integration-pair="' . e($item['provider']) . '"'
-                    : 'data-integration-connect="' . e($item['provider']) . '"';
+                   connected with OAuth. Different verbs, different buttons.
+                   Built only when it will be used: the Smartwatch row is a
+                   category, not a provider, and reaching for a provider it
+                   has never had warned on every single page render — which is
+                   how you bury the log lines that matter. */
+                $hook = '';
+
+                if ($canConnect && ($item['provider'] ?? '') !== '') {
+                    $hook = ($item['transport'] ?? 'cloud') === 'device'
+                        ? 'data-integration-pair="' . e($item['provider']) . '"'
+                        : 'data-integration-connect="' . e($item['provider']) . '"';
+                }
                 ?>
                 <button type="button" class="btn press"
-                        <?= $canConnect ? $hook : 'disabled aria-disabled="true"' ?>>
+                        <?= $hook !== '' ? $hook : 'disabled aria-disabled="true"' ?>>
                     <?= e($needsRedo ? $labels['reconnect'] : $labels['connect']) ?>
                 </button>
             <?php endif; ?>
