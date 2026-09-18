@@ -27,8 +27,28 @@ session_boot();
  * on demand.
  *
  * Nothing about the key reaches the page: the browser is told, at most, that
- * a source cannot be connected yet. */
-crypto_check();
+ * a source cannot be connected yet.
+ *
+ * GUARDED, AND THAT IS NOT PARANOIA
+ * ---------------------------------
+ * A deploy copies files one at a time, and a PHP opcode cache can go on
+ * serving an old one after a new one lands. So there is a window in which this
+ * file is the new version and crypto.php is still the old one — and an
+ * unguarded call to a function added in the same commit is then a fatal on
+ * every page of the site, which is exactly what happened on 18 September.
+ *
+ * A check whose whole job is to report a misconfiguration must never be able
+ * to become one. If the function is not there, that is itself worth saying,
+ * and the site keeps serving while somebody reads it. */
+if (function_exists('crypto_check')) {
+    crypto_check();
+} else {
+    error_log(
+        '[jolu] configuration: includes/crypto.php is out of date on this server — '
+        . 'crypto_check() is missing, so the startup check is being skipped. The site '
+        . 'is serving normally. Clear the PHP opcode cache or re-deploy to fix it.'
+    );
+}
 
 if (!function_exists('app_auth')) {
 
