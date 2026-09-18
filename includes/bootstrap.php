@@ -13,8 +13,22 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/user.php';
+require_once __DIR__ . '/crypto.php';
 
 session_boot();
+
+/* The configuration check, on the way in.
+ *
+ * A missing JOLU_APP_KEY does not stop the app: signing in, the health data
+ * and the Health Connect pairing flow all work without it, because none of
+ * them stores an encrypted token. It stops the things that do — and it does so
+ * silently unless somebody is told, which is what this writes to the server
+ * log, once per process. `php tools/check-config.php` asks the same question
+ * on demand.
+ *
+ * Nothing about the key reaches the page: the browser is told, at most, that
+ * a source cannot be connected yet. */
+crypto_check();
 
 if (!function_exists('app_auth')) {
 

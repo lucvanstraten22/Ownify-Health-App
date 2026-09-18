@@ -26,6 +26,14 @@ For accounts, import `database/schema.sql` through phpMyAdmin and check
 `config/database.php`. Without a database the app still runs: signed out, on
 placeholder data. See [docs/DATABASE.md](docs/DATABASE.md).
 
+To see what a machine is actually configured with — which database credentials
+are in force, whether they connect, whether `JOLU_APP_KEY` is set and where it
+came from — without printing any of it:
+
+```bash
+php tools/check-config.php
+```
+
 ## Structure
 
 ```
@@ -35,6 +43,10 @@ database/
     seed-dev.sql              fake development data, never production
 includes/                     the data layer: db, session, auth, repositories
 api/                          JSON endpoints for sign-in and profile edits
+tools/
+    check-config.php          what this machine is configured with; prints no secrets
+    health-connect-test.sh    the whole phone-sync flow over curl, no phone needed
+    hc-verify.php             that test's batch, and what each record must become
 pages/
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend

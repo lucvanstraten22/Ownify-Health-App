@@ -45,6 +45,111 @@ rename it in phpMyAdmin: select `vitalis` → **Operations** → *Rename databas
 to* → `jolu`. The session cookie is now `jolu_session`, so everyone signs in
 again once either way.
 
+## Secrets on the server
+
+Three things must exist on a machine running the app and must never exist in
+the repository: the database password, any OAuth client secret, and
+`JOLU_APP_KEY`. All three follow the same pattern — a git-ignored file next to
+a tracked `.example` that shows the shape, or an environment variable that
+wins over the file.
+
+| Secret | File | Environment | Needed for |
+| --- | --- | --- | --- |
+| Database | `config/database.local.php` | `DB_HOST` `DB_NAME` `DB_USER` `DB_PASSWORD` | everything |
+| App key | `config/app.local.php` | `JOLU_APP_KEY` | storing OAuth tokens |
+| Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
+
+Check what a machine actually has, without printing any of it:
+
+```bash
+php tools/check-config.php
+```
+
+It reports the PHP extensions, the database settings in force and whether they
+connect, the state of the key and where it came from, and which sources are
+configured. It prints no passwords and no keys — not even a prefix — so its
+output is safe to paste somewhere when asking for help. It exits non-zero when
+something essential is missing, so a deploy step can fail on it.
+
+### `JOLU_APP_KEY`
+
+32 bytes of randomness, base64-encoded, used by `includes/crypto.php` to
+encrypt OAuth tokens before they go in the database. The key lives outside the
+database, which is the entire point: a stolen dump is then worth nothing.
+
+```bash
+php tools/check-config.php --generate-key
+```
+
+The app looks in three places, first one wins:
+
+1. `getenv('JOLU_APP_KEY')` — the process environment
+2. `$_SERVER['JOLU_APP_KEY']` — Apache `SetEnv`, and several FastCGI setups
+3. `config/app.local.php`, returning `['app_key' => '...']`
+
+A request header could never be mistaken for the key: headers reach PHP with an
+`HTTP_` prefix, so the most a caller can set is `HTTP_JOLU_APP_KEY`, which
+nothing reads.
+
+**Without it the app still runs.** Signing in, health data, goals, and the whole
+Health Connect pairing and sync flow need no key at all — a device token is
+hashed, not encrypted. What refuses is anything that would have to *store* an
+OAuth token: it declines to connect rather than writing the token in the clear,
+and the devices screen says the server cannot store tokens safely yet. Every
+request also writes one line to the server's error log saying the key is
+missing, once per PHP worker.
+
+**Losing or changing it** makes every token encrypted with the old key
+unreadable, and everyone affected has to reconnect their source. There is no
+recovery, by design. Rotating it is a deliberate job — decrypt with the old key
+and re-encrypt with the new one, or accept that everyone reconnects.
+
+### Where to put it on Hestia
+
+**The recommended way — `config/app.local.php`.** It is the same mechanism as
+`config/database.local.php`, which already works on this server, and it needs
+no Hestia configuration at all. It is git-ignored, so it is not in the
+checkout the deploy uploads; and the deploy only adds and overwrites files, so
+a file the deploy does not carry is left alone. Create it once over SSH or in
+Hestia's File Manager, in the web root beside `index.php`:
+
+```bash
+cd /home/<hestia-user>/web/<your-domain>/public_html
+cp config/app.local.php.example config/app.local.php
+php tools/check-config.php --generate-key        # copy the line it prints
+nano config/app.local.php                        # paste it as 'app_key'
+php tools/check-config.php                       # must say: set and usable
+chmod 600 config/app.local.php                   # only the site's user reads it
+chown <hestia-user>:<hestia-user> config/app.local.php
+```
+
+`config/` is under the document root, so also confirm the file cannot be
+fetched — a `.php` file returns nothing useful when executed, but check anyway:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://<your-domain>/config/app.local.php
+```
+
+**The alternative — a PHP-FPM environment variable.** Hestia gives each web
+domain its own PHP-FPM pool, at
+`/etc/php/<version>/fpm/pool.d/<your-domain>.conf`. Adding a line there works:
+
+```ini
+env[JOLU_APP_KEY] = "the-base64-key"
+```
+
+followed by `systemctl reload php<version>-fpm`. Know what you are taking on:
+**Hestia regenerates that pool file from its template**, so the line is lost
+whenever the domain is rebuilt or its backend template is changed, and the site
+silently goes back to having no key. If you want the environment route to
+survive that, put it in a *custom* Hestia PHP-FPM template under
+`/usr/local/hestia/data/templates/web/php-fpm/` and assign the domain to it.
+Otherwise use the file — it is one less thing that can be quietly undone.
+
+Do **not** put the key in `.htaccess` with `SetEnv`: `.htaccess` is in the
+document root and is exactly the sort of file that ends up copied into a
+backup, a screenshot or a repository.
+
 ## The tables
 
 **Identity**

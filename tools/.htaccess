@@ -1,0 +1,13 @@
+# These are operator tools, run from a shell. They are in the deploy because
+# the deploy is the whole checkout, not because anything here should answer a
+# request — a configuration report is a map of the server, and a test script
+# is a thing that creates accounts.
+#
+# Each file refuses a non-CLI caller on its own as well. This is the second
+# lock, for the day somebody adds a file here and forgets the first.
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+Require all denied

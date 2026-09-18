@@ -214,6 +214,74 @@ val json = sessions.map { r ->
 // POST { "records": json } with Authorization: Bearer <token>
 ```
 
+## Testing the server without a phone
+
+The whole flow can be driven with curl, and is:
+
+```bash
+tools/health-connect-test.sh                             # against localhost
+BASE_URL=https://your-domain.tld tools/health-connect-test.sh
+```
+
+Run it from a checkout — on the Hestia server, over SSH, in the web root. It
+makes the same requests the Android app will make, in the same order, through
+the same endpoints with the same authentication. Nothing is stubbed and there
+is no test mode in the server: the account is created through the public
+registration endpoint, the pairing code through the signed-in one, and the
+device token is whatever the server issues.
+
+What it walks through:
+
+| | |
+| --- | --- |
+| 1 | a test account signs up |
+| 2 | the website mints a pairing code — 8 characters, ten minutes |
+| 3 | the phone exchanges it with no session and no CSRF token |
+| 4 | it receives a 64-character device token |
+| 5 | it posts a realistic batch with `Authorization: Bearer` |
+| 6 | the records are checked in the tables they landed in |
+| 7 | the identical batch is posted again |
+| 8 | nothing is duplicated — rows are counted, not just read |
+| 9 | an empty batch is posted |
+| 10 | it succeeds, having written nothing |
+| 11 | the owner disconnects in Settings |
+| 12 | the old token is refused with `401` |
+| 13 | the health data it already sent is still there |
+
+Along the way it also checks that a used code cannot be used twice, that a
+guessed code is refused in the same words as an expired one, that a missing,
+unknown or malformed token all get `401`, and that a cloud source refuses to
+issue a pairing code at all.
+
+It leaves behind a real account named `hctest_<timestamp>`, and removes it
+again at the end — one `DELETE FROM users`, which cascades. `KEEP=1` keeps it
+to look at in phpMyAdmin; remove it later with:
+
+```bash
+php tools/hc-verify.php --user=hctest_… --cleanup
+```
+
+`tools/hc-verify.php` is the other half: it holds the test batch *and* what
+each record must have become, so a fixture and its expectations cannot drift
+apart. `--fixture` prints the batch the shell script posts. It refuses to touch
+an account whose name does not start with `hctest`.
+
+Running it across the network against somebody else's server, where this
+checkout's database credentials are no use, set `NO_DB=1`: the HTTP contract is
+still checked in full, the table-level assertions are skipped, and the test
+account is left for you to remove on the server.
+
+Both tools are CLI-only — they answer `404` to a browser, and `tools/.htaccess`
+denies the directory as well, because a configuration report is a map of the
+server.
+
+**One thing worth knowing:** `pairing-code.php` issues a code even while
+`app_available` is `false`. That is deliberate, not a gap. The flag decides
+whether the *devices screen* offers pairing; the endpoint behind it is
+session-authenticated and CSRF-checked, and a code only ever grants access to
+the account that asked for it. It is what lets the flow be tested without
+flipping a production switch.
+
 ## Turning it on
 
 The devices screen says Health Connect needs an app that does not exist yet,
@@ -235,9 +303,12 @@ The server half is finished and tested; nothing else needs to change.
   declaration form about which data types you read and why, and health data has
   its own Play Store policy. Check the current requirements when you submit —
   they change, and they are stricter than for an ordinary app.
-- **Set `JOLU_APP_KEY`** on the server (see `docs/DATABASE.md`). Pairing works
-  without it, but any future OAuth source refuses to store tokens rather than
-  keeping them in the clear.
+- **Set `JOLU_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
+  on Hestia*, has the exact commands. None of this flow needs it: a device
+  token is hashed, not encrypted, and the test above passes on a server with no
+  key at all. What needs it is any future OAuth source, which refuses to store
+  a token rather than keeping it in the clear. `php tools/check-config.php`
+  says whether a machine has one.
 - **Serve over HTTPS.** A bearer token over plain HTTP is a token anyone on the
   network has.
 

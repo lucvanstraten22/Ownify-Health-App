@@ -1,0 +1,46 @@
+<?php
+/**
+ * Copy to config/app.local.php and put a real key in it.
+ *
+ *     cp config/app.local.php.example config/app.local.php
+ *     php tools/check-config.php --generate-key      # prints one to paste in
+ *
+ * The copy is git-ignored, so it never reaches GitHub and never travels in a
+ * deploy — which means it has to be created once on each machine that runs the
+ * app, including the server. It survives deployments precisely because it is
+ * not part of the checkout that gets uploaded.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT THE KEY IS FOR
+ * ---------------------------------------------------------------------------
+ * Encrypting OAuth tokens before they go in the database (includes/crypto.php).
+ * Without it, anything that would have to store such a token refuses to
+ * connect rather than storing it in the clear.
+ *
+ * The Health Connect flow does not need it: a device token is hashed, not
+ * encrypted, so pairing and syncing work with no key at all.
+ *
+ * ---------------------------------------------------------------------------
+ * TWO THINGS WORTH KNOWING BEFORE YOU CHANGE IT
+ * ---------------------------------------------------------------------------
+ * Losing the key means losing every token encrypted with it. There is no
+ * recovery by design — that is what makes a stolen database worthless — and
+ * every affected user has to connect their source again.
+ *
+ * Changing the key has the same effect. Rotating it is therefore a deliberate
+ * job, not a tidy-up: decrypt with the old key, re-encrypt with the new one,
+ * or accept that everyone reconnects.
+ *
+ * The environment wins over this file, so a host that injects secrets rather
+ * than storing them in one needs no copy of it at all. See docs/DATABASE.md.
+ */
+
+declare(strict_types=1);
+
+return [
+    /**
+     * 32 bytes, base64-encoded. This example value is deliberately not a
+     * usable key — generate your own, and never commit it.
+     */
+    'app_key' => 'PUT-32-BYTES-OF-BASE64-HERE',
+];
