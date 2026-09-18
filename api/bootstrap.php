@@ -124,6 +124,58 @@ if (!function_exists('api_json')) {
         return $userId;
     }
 
+    /**
+     * The request body as an array, whether it arrived as JSON or as a form.
+     *
+     * The phone app speaks JSON; curl and a browser form speak the other. Both
+     * work, so the contract can be tried by hand before any app exists.
+     */
+    function api_json_body(): array
+    {
+        if ($_POST !== []) {
+            return $_POST;
+        }
+
+        $raw = file_get_contents('php://input');
+
+        if (!is_string($raw) || $raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * The bearer token, or null.
+     *
+     * Some Apache and FastCGI setups drop the Authorization header before PHP
+     * sees it, so the redirected copy is checked too — a sync that silently
+     * never authenticates is a miserable thing to debug.
+     */
+    function api_bearer_token(): ?string
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION']
+            ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+            ?? null;
+
+        if ($header === null && function_exists('apache_request_headers')) {
+            foreach (apache_request_headers() as $name => $value) {
+                if (strcasecmp($name, 'Authorization') === 0) {
+                    $header = $value;
+                    break;
+                }
+            }
+        }
+
+        if (!is_string($header) || !preg_match('/^Bearer\s+(\S+)$/i', $header, $m)) {
+            return null;
+        }
+
+        return $m[1];
+    }
+
     /** The account summary the panel renders. Owner-only fields. */
     function api_account_payload(int $userId): array
     {

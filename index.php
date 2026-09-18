@@ -224,6 +224,7 @@ foreach ($data['navigation'] as $position => $item) {
     component('goal-wizard', $data);
     component('settings-confirm', $data);
     component('settings-editor', $data);
+    component('settings-pairing', $data);
     component('account-modal', $data);
     ?>
 

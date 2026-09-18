@@ -807,3 +807,23 @@
    the nutrition accent the confirmation dialog already uses for caution,
    rather than introducing a colour. */
 .integration__hint--warn { color: var(--nutrition); }
+
+/* The pairing code. Large, spaced and monospaced, because it is read off one
+   screen and typed into another — the one place in the app where telling
+   characters apart matters more than the type looking like the rest. */
+.pairing__code {
+    margin-top: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.pairing__expiry {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    text-align: center;
+}

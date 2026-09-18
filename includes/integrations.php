@@ -92,8 +92,15 @@ if (!function_exists('integration_providers')) {
     {
         $meta = integration_providers()[$provider] ?? null;
 
-        if ($meta === null || $meta['transport'] !== 'cloud') {
+        if ($meta === null) {
             return false;
+        }
+
+        /* A phone source is ready when the app that reads it exists. There is
+           nothing to configure on this side — the server half is done — so the
+           only question is whether there is anything to pair with. */
+        if ($meta['transport'] === 'device') {
+            return !empty(integration_config($provider)['app_available']);
         }
 
         $config = integration_config($provider);
@@ -118,7 +125,9 @@ if (!function_exists('integration_providers')) {
         }
 
         if ($meta['transport'] === 'device') {
-            return 'Deze gegevens staan op je telefoon. Koppelen kan zodra de JoLu-app er is.';
+            return empty(integration_config($provider)['app_available'])
+                ? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de JoLu-app er is.'
+                : null;
         }
 
         $config = integration_config($provider);

@@ -96,8 +96,15 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
                     <?= e($labels['disconnect']) ?>
                 </button>
             <?php else: ?>
+                <?php
+                /* A phone source is paired with a code; a cloud source is
+                   connected with OAuth. Different verbs, different buttons. */
+                $hook = ($item['transport'] ?? 'cloud') === 'device'
+                    ? 'data-integration-pair="' . e($item['provider']) . '"'
+                    : 'data-integration-connect="' . e($item['provider']) . '"';
+                ?>
                 <button type="button" class="btn press"
-                        <?= $canConnect ? 'data-integration-connect="' . e($item['provider']) . '"' : 'disabled aria-disabled="true"' ?>>
+                        <?= $canConnect ? $hook : 'disabled aria-disabled="true"' ?>>
                     <?= e($needsRedo ? $labels['reconnect'] : $labels['connect']) ?>
                 </button>
             <?php endif; ?>

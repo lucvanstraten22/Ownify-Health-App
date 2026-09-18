@@ -101,6 +101,12 @@
             return;
         }
 
+        var pair = event.target.closest('[data-integration-pair]');
+        if (pair) {
+            openPairing(pair.getAttribute('data-integration-pair'));
+            return;
+        }
+
         var disconnect = event.target.closest('[data-integration-disconnect]');
         if (!disconnect) { return; }
 
@@ -126,6 +132,84 @@
                 }
             });
     });
+
+    /* ------------------------------------------------------ koppelcode */
+
+    /**
+     * Shows a pairing code for a source that lives on a phone.
+     *
+     * Fetched when the panel opens, never rendered into the page: a code in
+     * the HTML would be minted on every visit to settings, whether or not
+     * anybody wanted one, and each one expires in ten minutes.
+     */
+    var pairing = document.querySelector('[data-settings-pairing]');
+    var pairingProvider = null;
+
+    function openPairing(provider) {
+        if (!pairing) { return; }
+
+        pairingProvider = provider;
+        pairing.hidden = false;
+        window.requestAnimationFrame(function () { pairing.classList.add('is-open'); });
+        requestPairingCode();
+    }
+
+    function closePairing() {
+        if (!pairing) { return; }
+        pairing.classList.remove('is-open');
+        window.setTimeout(function () { pairing.hidden = true; }, 200);
+        pairingProvider = null;
+        // A closed panel must not leave the last code on screen behind it.
+        pairing.querySelector('[data-pairing-code]').textContent = '••••••••';
+        pairing.querySelector('[data-pairing-expiry]').textContent = '';
+    }
+
+    function requestPairingCode() {
+        if (!pairing || !pairingProvider) { return; }
+
+        var codeEl   = pairing.querySelector('[data-pairing-code]');
+        var expiryEl = pairing.querySelector('[data-pairing-expiry]');
+        var errorEl  = pairing.querySelector('[data-pairing-error]');
+
+        codeEl.textContent = '••••••••';
+        expiryEl.textContent = '';
+        errorEl.hidden = true;
+
+        var panel = document.querySelector('[data-account]');
+        var body = new FormData();
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append('provider', pairingProvider);
+
+        fetch('api/integrations/pairing-code.php', {
+            method: 'POST', body: body, credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+            .catch(function () { return { ok: false }; })
+            .then(function (result) {
+                if (!result || !result.ok) {
+                    errorEl.textContent = (result && result.error) || 'Er kon geen code worden gemaakt.';
+                    errorEl.hidden = false;
+                    return;
+                }
+
+                codeEl.textContent = result.code;
+                expiryEl.textContent = 'Geldig voor ' + Math.round((result.expires_in || 600) / 60) + ' minuten.';
+            });
+    }
+
+    if (pairing) {
+        pairing.addEventListener('click', function (event) {
+            if (event.target.closest('[data-pairing-refresh]')) { requestPairingCode(); return; }
+            if (event.target.closest('[data-pairing-close]')) { closePairing(); }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !pairing.hidden) {
+                event.stopPropagation();
+                closePairing();
+            }
+        });
+    }
 
     /* ------------------------------------------------------- field editor */
 

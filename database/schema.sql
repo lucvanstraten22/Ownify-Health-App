@@ -48,6 +48,8 @@ DROP TABLE IF EXISTS `point_events`;
 DROP TABLE IF EXISTS `point_rules`;
 DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `friendships`;
+DROP TABLE IF EXISTS `user_devices`;
+DROP TABLE IF EXISTS `device_pairing_codes`;
 DROP TABLE IF EXISTS `user_integrations`;
 DROP TABLE IF EXISTS `goal_progress`;
 DROP TABLE IF EXISTS `goals`;
@@ -383,6 +385,52 @@ CREATE TABLE `user_integrations` (
     UNIQUE KEY `uq_integration_user_provider` (`user_id`, `provider`),
     KEY `idx_integration_status` (`status`),
     CONSTRAINT `fk_integration_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================================
+--  3c. PAIRED DEVICES  — PRIVATE
+-- ============================================================================
+--  Health Connect and Apple Health cannot be read from a server; an app on the
+--  phone reads them and posts here, so that app needs to prove which account
+--  it sends for. It cannot use the session cookie and must not hold the
+--  password, so it holds a token of its own, minted by exchanging a short
+--  pairing code the website shows once. One token per device, so losing a
+--  phone costs you that phone rather than every phone.
+
+CREATE TABLE `device_pairing_codes` (
+    `code_hash`   CHAR(64) NOT NULL COMMENT 'sha256 of the code; the code itself is shown once',
+    `user_id`     BIGINT UNSIGNED NOT NULL,
+    `provider`    VARCHAR(40) NOT NULL,
+    `expires_at`  DATETIME NOT NULL,
+    `consumed_at` DATETIME NULL COMMENT 'A code works once',
+    `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`code_hash`),
+    KEY `idx_pairing_user` (`user_id`, `provider`),
+    KEY `idx_pairing_expiry` (`expires_at`),
+    CONSTRAINT `fk_pairing_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Hashed rather than encrypted: the token is never needed back, only
+-- recognised, so a dump yields nothing replayable.
+CREATE TABLE `user_devices` (
+    `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`      BIGINT UNSIGNED NOT NULL,
+    `provider`     VARCHAR(40) NOT NULL COMMENT 'Matches data_sources.code',
+    `token_hash`   CHAR(64) NOT NULL COMMENT 'sha256 of the device token',
+    `label`        VARCHAR(80) NULL COMMENT 'What to call it on screen',
+    `platform`     VARCHAR(40) NULL COMMENT 'android, ios',
+    `app_version`  VARCHAR(40) NULL,
+    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_seen_at` DATETIME NULL,
+    `last_sync_at` DATETIME NULL,
+    `revoked_at`   DATETIME NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_device_token` (`token_hash`),
+    KEY `idx_device_user` (`user_id`, `provider`, `revoked_at`),
+    CONSTRAINT `fk_device_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

@@ -43,6 +43,30 @@ $settings = [
             'https://www.googleapis.com/auth/googlehealth.nutrition.readonly',
         ],
     ],
+
+    /**
+     * Health Connect — the phone one.
+     *
+     * Nothing to configure, because there is nothing on our side to configure:
+     * the data is read by an app on the phone and posted to
+     * api/integrations/ingest.php with a device token. No Google Cloud project,
+     * no OAuth client, no API key.
+     *
+     * `app_available` is the one switch. While it is false the devices screen
+     * says Health Connect needs an app that does not exist yet, rather than
+     * handing out a pairing code with nothing to type it into. Flip it the day
+     * the Android app is published; the server side is already finished and
+     * tested.
+     */
+    'google_health_connect' => [
+        'app_available' => false,
+        'store_url'     => '',
+    ],
+
+    'apple_health' => [
+        'app_available' => false,
+        'store_url'     => '',
+    ],
 ];
 
 $local = __DIR__ . '/integrations.local.php';
