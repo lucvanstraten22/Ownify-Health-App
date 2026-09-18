@@ -17,6 +17,69 @@ require_once __DIR__ . '/crypto.php';
 
 session_boot();
 
+/* ---------------------------------------------------------------------------
+ * WHEN A PAGE DIES, SAY SO SOMEWHERE
+ * ---------------------------------------------------------------------------
+ * The JSON endpoints have handled this since bb0d29a: an uncaught throwable
+ * leaves as one sentence and a 500, with the detail in the error log. A PAGE
+ * had nothing. display_errors is off on any sane server, so a fatal in
+ * index.php or anything it pulls in arrives at the browser as a blank 500 —
+ * no message, no file, no line, and nothing written down unless PHP's own
+ * logging happens to be configured the way you hoped.
+ *
+ * That is precisely how this server spent an afternoon offline with no clue
+ * as to why. So: log it properly, always, with the URL that caused it, and
+ * show the visitor a plain page rather than a blank one.
+ *
+ * api/bootstrap.php installs its own exception handler AFTER requiring this
+ * file, so an endpoint still answers JSON. This is the page's fallback.
+ * ------------------------------------------------------------------------ */
+if (!function_exists('app_log_fatal')) {
+
+    function app_log_fatal(string $kind, string $message, string $file, int $line): void
+    {
+        error_log(sprintf(
+            '[jolu] %s: %s in %s:%d  (request: %s %s)',
+            $kind,
+            $message,
+            $file,
+            $line,
+            $_SERVER['REQUEST_METHOD'] ?? 'CLI',
+            $_SERVER['REQUEST_URI'] ?? '-'
+        ));
+    }
+
+    set_exception_handler(static function (Throwable $e): void {
+        app_log_fatal($e::class, $e->getMessage(), $e->getFile(), $e->getLine());
+
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: text/html; charset=utf-8');
+            header('Cache-Control: no-store');
+        }
+
+        /* Nothing about the failure reaches the visitor — a message here is a
+           message to whoever is probing the site. It goes in the log. */
+        echo '<!doctype html><meta charset="utf-8"><title>Even niet beschikbaar</title>'
+            . '<p style="font:16px/1.5 system-ui;margin:3rem auto;max-width:28rem;text-align:center">'
+            . 'Er ging iets mis op de server. Probeer het zo opnieuw.</p>';
+    });
+
+    /* A fatal that is not a throwable — memory, a timeout, a parse error in an
+       included file — never reaches the handler above. */
+    register_shutdown_function(static function (): void {
+        $fatal = error_get_last();
+
+        if ($fatal === null
+            || !in_array($fatal['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+            return;
+        }
+
+        app_log_fatal('FATAL', $fatal['message'], $fatal['file'], (int) $fatal['line']);
+    });
+}
+
+
 /* The configuration check, on the way in.
  *
  * A missing JOLU_APP_KEY does not stop the app: signing in, the health data

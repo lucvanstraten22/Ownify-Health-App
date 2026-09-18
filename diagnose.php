@@ -168,6 +168,11 @@ row('display_errors', ini_get('display_errors') ? 'on' : 'off  (so a fatal is a 
 
 echo "\nDOES THE PAGE RENDER\n";
 
+row('output_buffering (ini)', (string) (ini_get('output_buffering') ?: '0'));
+row('buffer level here', (string) ob_get_level());
+row('memory_limit', (string) ini_get('memory_limit'));
+row('max_execution_time', (string) ini_get('max_execution_time'));
+
 $finished = false;
 
 register_shutdown_function(static function () use (&$finished, $root): void {
@@ -192,16 +197,35 @@ register_shutdown_function(static function () use (&$finished, $root): void {
     echo "\n" . str_repeat('=', 72) . "\n";
 });
 
+$before = ob_get_level();
 ob_start();
 
 try {
     require $root . '/index.php';
 
-    $html     = (string) ob_get_clean();
+    /* Read the buffer BEFORE closing it, and say how many levels are open, so
+       that "0 bytes" can be told apart from "something ate the buffer". The
+       first time this ran against the live server it reported 0 bytes and no
+       error at all, which is not a thing a 232 KB page does. */
+    $after = ob_get_level();
+    $html  = $after > $before ? (string) ob_get_contents() : '';
+
+    while (ob_get_level() > $before) {
+        ob_end_clean();
+    }
+
     $finished = true;
 
-    row('index.php', 'renders — ' . strlen($html) . ' bytes');
-    row('  has the app shell', str_contains($html, 'data-deck') || str_contains($html, '<main') ? 'yes' : 'no');
+    row('index.php', 'ran without throwing');
+    row('  buffer levels', $before . ' before, ' . $after . ' after');
+    row('  output captured', strlen($html) . ' bytes');
+    row('  has the app shell', str_contains($html, '<html') || str_contains($html, '<main') ? 'yes' : 'NO');
+
+    if ($html !== '' && !str_contains($html, '</html>')) {
+        echo "\n  The page is TRUNCATED — it stopped part way through.\n";
+        echo "  last 300 characters it managed:\n\n";
+        echo '  ' . scrub(substr($html, -300)) . "\n";
+    }
 } catch (Throwable $e) {
     while (ob_get_level() > $level) {
         ob_end_clean();
