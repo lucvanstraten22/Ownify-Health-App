@@ -11,6 +11,22 @@ declare(strict_types=1);
 $item   = $data['integration'];
 $labels = $data['settings']['integration_labels'];
 $id     = 'integration-' . $item['key'];
+
+/* Four states, not two. Revoked and failed are different from never having
+   connected, and a row that called them all "Niet verbonden" would be hiding
+   the one thing the user needs to act on. */
+$statusText = match ($item['status'] ?? 'disconnected') {
+    'connected' => $labels['connected'],
+    'revoked'   => $labels['revoked'],
+    'error'     => $labels['error'],
+    default     => $labels['disconnected'],
+};
+
+/* Connecting is offered only when it could actually complete. Where it
+   cannot, the row says why instead — a button that fails on the far side
+   teaches the user nothing. */
+$canConnect = !empty($item['available']);
+$needsRedo  = ($item['status'] ?? null) === 'revoked';
 ?>
 <div class="integration<?= $item['connected'] ? ' is-connected' : '' ?>" data-integration>
 
@@ -27,7 +43,7 @@ $id     = 'integration-' . $item['key'];
 
         <span class="integration__status">
             <span class="integration__dot" aria-hidden="true"></span>
-            <?= e($item['connected'] ? $labels['connected'] : $labels['disconnected']) ?>
+            <?= e($statusText) ?>
         </span>
 
         <?= icon('chevron-down', 'integration__chevron') ?>
@@ -38,8 +54,14 @@ $id     = 'integration-' . $item['key'];
         <div class="metric-rows">
             <div class="metric-row">
                 <span class="metric-row__label"><?= e($labels['status']) ?></span>
-                <span class="metric-row__value"><?= e($item['connected'] ? $labels['connected'] : $labels['disconnected']) ?></span>
+                <span class="metric-row__value"><?= e($statusText) ?></span>
             </div>
+            <?php if (!empty($item['account'])): ?>
+                <div class="metric-row">
+                    <span class="metric-row__label"><?= e($labels['account']) ?></span>
+                    <span class="metric-row__value"><?= e($item['account']) ?></span>
+                </div>
+            <?php endif; ?>
             <div class="metric-row <?= $item['last_sync'] === null ? 'is-empty' : '' ?>">
                 <span class="metric-row__label"><?= e($labels['last_sync']) ?></span>
                 <span class="metric-row__value"><?= e($item['last_sync'] ?? $labels['never']) ?></span>
@@ -57,16 +79,39 @@ $id     = 'integration-' . $item['key'];
             <?php endforeach; ?>
         </ul>
 
+        <?php if (!empty($item['error'])): ?>
+            <p class="integration__hint integration__hint--warn">
+                <?= icon('info', 'card__hint-icon') ?><?= e($item['error']) ?>
+            </p>
+        <?php endif; ?>
+
         <div class="integration__actions">
-            <button type="button" class="btn press" disabled>
-                <?= e($item['connected'] ? $labels['sync_now'] : $labels['connect']) ?>
-            </button>
             <?php if ($item['connected']): ?>
-                <button type="button" class="btn press" disabled><?= e($labels['disconnect']) ?></button>
+                <button type="button" class="btn press"
+                        data-integration-sync="<?= e($item['provider']) ?>" disabled>
+                    <?= e($labels['sync_now']) ?>
+                </button>
+                <button type="button" class="btn press"
+                        data-integration-disconnect="<?= e($item['provider']) ?>">
+                    <?= e($labels['disconnect']) ?>
+                </button>
+            <?php else: ?>
+                <button type="button" class="btn press"
+                        <?= $canConnect ? 'data-integration-connect="' . e($item['provider']) . '"' : 'disabled aria-disabled="true"' ?>>
+                    <?= e($needsRedo ? $labels['reconnect'] : $labels['connect']) ?>
+                </button>
             <?php endif; ?>
         </div>
 
-        <p class="integration__hint"><?= icon('lock', 'card__hint-icon') ?><?= e($labels['unavailable']) ?></p>
+        <?php if (!$canConnect && !$item['connected'] && !empty($item['blocked'])): ?>
+            <p class="integration__hint">
+                <?= icon('lock', 'card__hint-icon') ?><?= e($item['blocked']) ?>
+            </p>
+        <?php elseif ($item['connected']): ?>
+            <p class="integration__hint">
+                <?= icon('lock', 'card__hint-icon') ?><?= e($labels['disconnect_confirm']) ?>
+            </p>
+        <?php endif; ?>
     </div>
 
 </div>

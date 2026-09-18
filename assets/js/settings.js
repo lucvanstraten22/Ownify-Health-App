@@ -78,6 +78,55 @@
         });
     }
 
+    /* --------------------------------------------------------- koppelingen */
+
+    /**
+     * Connecting and disconnecting an outside health source.
+     *
+     * Connecting is a redirect, not a fetch: the provider's consent screen has
+     * to be the top-level page the user is looking at, so they can see whose
+     * it is and what it is asking for. A consent screen inside a fetch would
+     * be a phishing pattern, and every provider blocks it.
+     *
+     * Disconnecting is a normal request, then a reload — the row, the count on
+     * the settings page and the sync summary all follow from stored state, so
+     * re-reading is both simpler and more truthful than patching three places.
+     */
+    document.addEventListener('click', function (event) {
+        var connect = event.target.closest('[data-integration-connect]');
+        if (connect) {
+            window.location.href = 'api/integrations/'
+                + encodeURIComponent(connect.getAttribute('data-integration-connect'))
+                + '/start.php';
+            return;
+        }
+
+        var disconnect = event.target.closest('[data-integration-disconnect]');
+        if (!disconnect) { return; }
+
+        var panel = document.querySelector('[data-account]');
+        var body = new FormData();
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append('provider', disconnect.getAttribute('data-integration-disconnect'));
+
+        disconnect.disabled = true;
+
+        fetch('api/integrations/disconnect.php', {
+            method: 'POST', body: body, credentials: 'same-origin'
+        })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false }; });
+            })
+            .catch(function () { return { ok: false }; })
+            .then(function (result) {
+                if (result && result.ok) {
+                    window.location.reload();
+                } else {
+                    disconnect.disabled = false;
+                }
+            });
+    });
+
     /* ------------------------------------------------------- field editor */
 
     /**

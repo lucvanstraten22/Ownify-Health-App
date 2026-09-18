@@ -1,0 +1,25 @@
+<?php
+/**
+ * Copy to config/integrations.local.php and fill in.
+ *
+ *     cp config/integrations.local.php.example config/integrations.local.php
+ *
+ * Git-ignored, and not part of a deploy, so it has to be created once on each
+ * machine that runs the app — including the server.
+ */
+
+declare(strict_types=1);
+
+return [
+    'google_health' => [
+        // Google Cloud Console -> APIs & Services -> Credentials
+        // -> Create credentials -> OAuth client ID -> Web application
+        'client_id'     => '000000000000-xxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com',
+        'client_secret' => 'GOCSPX-xxxxxxxxxxxxxxxxxxxx',
+
+        // Must be registered on that OAuth client EXACTLY as written here.
+        // Local:  http://localhost:8000/api/integrations/google/callback.php
+        // Live:   https://your-domain.tld/api/integrations/google/callback.php
+        'redirect_uri'  => 'https://your-domain.tld/api/integrations/google/callback.php',
+    ],
+];

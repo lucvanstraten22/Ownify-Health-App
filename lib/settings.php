@@ -22,17 +22,33 @@ if (!function_exists('settings_prepare')) {
      */
     function settings_prepare(array $settings, array $auth): array
     {
-        $demo = !empty($settings['demo']);
+        require_once dirname(__DIR__) . '/includes/integrations.php';
+
+        /* Real connection state for whoever is asking, or all-disconnected
+           when nobody is. Nothing on this screen is a stand-in any more: a
+           source says connected because there is a row saying so. */
+        $userId = ($auth['signed_in'] ?? false) ? (int) $auth['user']['id'] : null;
+        $live   = integrations_for_user($userId);
 
         $connected = 0;
         foreach ($settings['integrations'] as $index => $integration) {
-            $state = ($demo && isset($integration['demo']))
-                ? $integration['demo']
-                : ['status' => 'disconnected', 'last_sync' => null];
+            $provider = $integration['provider'] ?? null;
+            $state    = $provider === null ? null : ($live[$provider] ?? null);
 
-            $integration['status']    = $state['status'];
-            $integration['last_sync'] = $state['last_sync'] ?? null;
+            $integration['status']    = $state['status'] ?? 'disconnected';
             $integration['connected'] = $integration['status'] === 'connected';
+            $integration['account']   = $state['account'] ?? null;
+            $integration['last_sync'] = settings_sync_label($state['last_sync_at'] ?? null);
+            $integration['error']     = $state['last_error'] ?? null;
+            $integration['transport'] = $state['transport'] ?? 'cloud';
+
+            /* Whether connecting is possible at all, and if not, why. A
+               source whose data lives on a phone cannot be reached from a
+               browser however it is configured; one that simply has no
+               credentials yet is a different problem with a different answer,
+               and the row says which. */
+            $integration['available'] = $state['available'] ?? false;
+            $integration['blocked']   = $state['blocked'] ?? null;
 
             if ($integration['connected']) {
                 $connected++;
@@ -47,6 +63,14 @@ if (!function_exists('settings_prepare')) {
         /* The devices row on the main page counts what the devices screen
            shows, rather than stating it a second time. */
         $settings = settings_set_row_value($settings, 'devices', settings_device_summary($connected));
+
+        /* The synchronisation block reports the newest sync across sources. */
+        $settings = settings_set_state_value(
+            $settings,
+            'devices',
+            'Laatste sync',
+            settings_last_sync_across($live)
+        );
 
         /* The account row names the person it belongs to. */
         $settings = settings_set_row_value(
@@ -331,5 +355,69 @@ if (!function_exists('settings_field_input')) {
             : 'api/profile/update.php';
 
         return $input;
+    }
+}
+
+if (!function_exists('settings_sync_label')) {
+    /** A sync time as the app says times: "Vandaag, 14:32". */
+    function settings_sync_label(?string $timestamp): ?string
+    {
+        if ($timestamp === null) {
+            return null;
+        }
+
+        try {
+            $when = new DateTimeImmutable($timestamp);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $days = (int) $when->setTime(0, 0)->diff(new DateTimeImmutable('today'))->days;
+
+        $day = match (true) {
+            $days === 0 => 'Vandaag',
+            $days === 1 => 'Gisteren',
+            default     => $when->format('j-n-Y'),
+        };
+
+        return $day . ', ' . $when->format('H:i');
+    }
+}
+
+if (!function_exists('settings_last_sync_across')) {
+    /** The most recent sync of any source, for the summary row. */
+    function settings_last_sync_across(array $live): ?string
+    {
+        $newest = null;
+
+        foreach ($live as $state) {
+            $at = $state['last_sync_at'] ?? null;
+
+            if ($at !== null && ($newest === null || $at > $newest)) {
+                $newest = $at;
+            }
+        }
+
+        return settings_sync_label($newest);
+    }
+}
+
+if (!function_exists('settings_set_state_value')) {
+    /** Writes a computed value onto one `states` item of one detail page. */
+    function settings_set_state_value(array $settings, string $pageId, string $label, ?string $value): array
+    {
+        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? null) !== 'states') {
+                continue;
+            }
+
+            foreach ($block['items'] as $i => $item) {
+                if (($item['label'] ?? null) === $label) {
+                    $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['value'] = $value;
+                }
+            }
+        }
+
+        return $settings;
     }
 }

@@ -48,6 +48,7 @@ DROP TABLE IF EXISTS `point_events`;
 DROP TABLE IF EXISTS `point_rules`;
 DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `friendships`;
+DROP TABLE IF EXISTS `user_integrations`;
 DROP TABLE IF EXISTS `goal_progress`;
 DROP TABLE IF EXISTS `goals`;
 DROP TABLE IF EXISTS `daily_scores`;
@@ -187,10 +188,12 @@ CREATE TABLE `user_measurements` (
     `value`            DECIMAL(8,3) NOT NULL,
     `unit`             VARCHAR(12)  NOT NULL,
     `source_id`        SMALLINT UNSIGNED NULL,
+    `external_id`      VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `measured_at`      DATETIME     NOT NULL,
     `created_at`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_meas_current` (`user_id`, `measurement_type`, `measured_at`),
+    UNIQUE KEY `uq_measurement_external` (`user_id`, `source_id`, `external_id`),
     CONSTRAINT `fk_meas_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_meas_source` FOREIGN KEY (`source_id`)
@@ -205,6 +208,7 @@ CREATE TABLE `sleep_sessions` (
     `id`                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`             BIGINT UNSIGNED NOT NULL,
     `source_id`           SMALLINT UNSIGNED NULL,
+    `external_id`         VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `night_of`            DATE     NOT NULL COMMENT 'The date the night is filed under',
     `started_at`          DATETIME NOT NULL,
     `ended_at`            DATETIME NOT NULL,
@@ -219,6 +223,7 @@ CREATE TABLE `sleep_sessions` (
     `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_sleep_session` (`user_id`, `started_at`),
+    UNIQUE KEY `uq_sleep_external` (`user_id`, `source_id`, `external_id`),
     KEY `idx_sleep_user_night` (`user_id`, `night_of`),
     CONSTRAINT `fk_sleep_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
@@ -233,6 +238,7 @@ CREATE TABLE `nutrition_entries` (
     `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`     BIGINT UNSIGNED NOT NULL,
     `source_id`   SMALLINT UNSIGNED NULL,
+    `external_id` VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `meal_type`   ENUM('breakfast','lunch','dinner','snack','drink','other') NOT NULL DEFAULT 'other',
     `label`       VARCHAR(120) NULL,
     `consumed_at` DATETIME NOT NULL,
@@ -240,6 +246,7 @@ CREATE TABLE `nutrition_entries` (
     `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_nutrition_user_time` (`user_id`, `consumed_at`),
+    UNIQUE KEY `uq_nutrition_external` (`user_id`, `source_id`, `external_id`),
     CONSTRAINT `fk_nutrition_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_nutrition_source` FOREIGN KEY (`source_id`)
@@ -253,6 +260,7 @@ CREATE TABLE `workouts` (
     `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`          BIGINT UNSIGNED NOT NULL,
     `source_id`        SMALLINT UNSIGNED NULL,
+    `external_id`      VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `activity_type`    VARCHAR(40) NOT NULL DEFAULT 'other',
     `started_at`       DATETIME NOT NULL,
     `ended_at`         DATETIME NULL,
@@ -270,6 +278,7 @@ CREATE TABLE `workouts` (
     `created_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_workout_session` (`user_id`, `started_at`),
+    UNIQUE KEY `uq_workout_external` (`user_id`, `source_id`, `external_id`),
     KEY `idx_workout_user_time` (`user_id`, `started_at`),
     CONSTRAINT `fk_workout_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
@@ -298,6 +307,7 @@ CREATE TABLE `health_metrics` (
     `user_id`            BIGINT UNSIGNED NOT NULL,
     `metric_type_id`     SMALLINT UNSIGNED NOT NULL,
     `source_id`          SMALLINT UNSIGNED NULL,
+    `external_id`        VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `value`              DECIMAL(14,4) NOT NULL,
     `recorded_at`        DATETIME NOT NULL,
     -- Stored generated column so "everything on this day" stays an index hit.
@@ -309,6 +319,7 @@ CREATE TABLE `health_metrics` (
     PRIMARY KEY (`id`),
     KEY `idx_hm_user_type_time` (`user_id`, `metric_type_id`, `recorded_at`),
     KEY `idx_hm_user_day` (`user_id`, `recorded_on`),
+    UNIQUE KEY `uq_metric_external` (`user_id`, `source_id`, `external_id`),
     KEY `idx_hm_sleep` (`sleep_session_id`),
     KEY `idx_hm_workout` (`workout_id`),
     KEY `idx_hm_meal` (`nutrition_entry_id`),
@@ -340,6 +351,38 @@ CREATE TABLE `daily_scores` (
     PRIMARY KEY (`user_id`, `score_date`, `domain`),
     KEY `idx_scores_domain_date` (`domain`, `score_date`),
     CONSTRAINT `fk_scores_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================================
+--  3b. OUTSIDE CONNECTIONS  — PRIVATE
+-- ============================================================================
+
+-- One row per user per external health platform. Tokens are stored as
+-- ciphertext by the application (includes/crypto.php), so a database dump does
+-- not hand over anybody's health account, and nothing here reaches a browser.
+CREATE TABLE `user_integrations` (
+    `id`                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`             BIGINT UNSIGNED NOT NULL,
+    `provider`            VARCHAR(40) NOT NULL COMMENT 'Matches data_sources.code',
+    `status`              ENUM('connected','disconnected','revoked','error') NOT NULL DEFAULT 'disconnected',
+    `external_account_id` VARCHAR(191) NULL,
+    `external_account_label` VARCHAR(191) NULL COMMENT 'What to show the owner, e.g. an e-mail',
+    `scopes`              TEXT NULL COMMENT 'What was actually granted, which may be less than was asked',
+    `access_token`        BLOB NULL COMMENT 'Ciphertext, never a readable token',
+    `refresh_token`       BLOB NULL COMMENT 'Ciphertext, never a readable token',
+    `token_expires_at`    DATETIME NULL,
+    `connected_at`        DATETIME NULL,
+    `last_sync_at`        DATETIME NULL COMMENT 'Last run that finished without error',
+    `last_sync_status`    ENUM('never','ok','partial','failed') NOT NULL DEFAULT 'never',
+    `last_error`          VARCHAR(255) NULL COMMENT 'For the owner, never a raw API body',
+    `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_integration_user_provider` (`user_id`, `provider`),
+    KEY `idx_integration_status` (`status`),
+    CONSTRAINT `fk_integration_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -540,6 +583,7 @@ INSERT INTO `data_sources` (`code`, `label`, `kind`) VALUES
     ('manual',               'Handmatig ingevoerd',   'manual'),
     ('apple_health',         'Apple Health',          'platform'),
     ('google_health_connect','Google Health Connect', 'platform'),
+    ('google_health',        'Google Health',         'platform'),
     ('wearable',             'Wearable',              'wearable'),
     ('derived',              'Berekend',              'derived');
 

@@ -802,3 +802,8 @@
 }
 
 .field-editor__error[hidden] { display: none; }
+
+/* A connection that needs attention — revoked, or a sync that failed. Uses
+   the nutrition accent the confirmation dialog already uses for caution,
+   rather than introducing a colour. */
+.integration__hint--warn { color: var(--nutrition); }

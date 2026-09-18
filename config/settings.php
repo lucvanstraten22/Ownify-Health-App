@@ -205,7 +205,7 @@ return [
                 ],
 
                 ['type' => 'note', 'icon' => 'lock',
-                 'text' => 'Er is nog geen koppeling geïmplementeerd. Apple Health en Health Connect vragen elk om toestemming per categorie; die toestemmingen komen hier te staan.'],
+                 'text' => 'Een koppeling leest alleen de categorieën die je goedkeurt, en alleen voor jouw account. Je kunt hem hier altijd weer verbreken; daarna wordt er niets meer opgehaald.'],
             ],
         ],
 
@@ -444,17 +444,38 @@ return [
      * Every entry ships disconnected, because none of them is implemented.
      * `demo` fills in a connected state so that design can be reviewed.
      */
+    /**
+     * The sources JoLu can take data from.
+     *
+     * `provider` is the key in includes/integrations.php and the code in
+     * data_sources — the same string all the way down, so a row on this screen
+     * and a row in the database cannot drift apart.
+     *
+     * `transport` is stated because it decides what is possible, not just how
+     * it looks. A cloud source the server can read on its own is a button
+     * here; one whose data lives on a phone needs something on that phone,
+     * and saying so is more use than a button that cannot work.
+     */
     'integrations' => [
         [
-            'key'   => 'apple_health',
+            'key'      => 'google_health',
+            'provider' => 'google_health',
+            'label' => 'Google Health',
+            'icon'  => 'rings',
+            'note'  => 'Fitbit en Pixel Watch, via je Google-account',
+            'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag', 'Voeding', 'Lichaamsmaten'],
+        ],
+        [
+            'key'      => 'apple_health',
+            'provider' => 'apple_health',
             'label' => 'Apple Health',
             'icon'  => 'heart',
             'note'  => 'iPhone en Apple Watch',
             'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag', 'Lichaamsmaten'],
-            'demo'  => ['status' => 'connected', 'last_sync' => 'Vandaag, 14:32'],
         ],
         [
-            'key'   => 'health_connect',
+            'key'      => 'health_connect',
+            'provider' => 'google_health_connect',
             'label' => 'Health Connect',
             'icon'  => 'pulse',
             'note'  => 'Android — Google Health Connect',
@@ -489,6 +510,11 @@ return [
         'disconnect'   => 'Ontkoppelen',
         'sync_now'     => 'Nu synchroniseren',
         'unavailable'  => 'Koppelen kan nog niet',
+        'account'      => 'Account',
+        'revoked'      => 'Toegang ingetrokken',
+        'error'        => 'Synchroniseren mislukt',
+        'reconnect'    => 'Opnieuw koppelen',
+        'disconnect_confirm' => 'Ontkoppelen stopt het ophalen van nieuwe gegevens. Wat al binnen is blijft staan.',
         'expand'       => 'Instellingen van %s tonen',
     ],
 ];

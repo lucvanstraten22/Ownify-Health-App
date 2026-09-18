@@ -5,3 +5,7 @@
 /uploads/avatars/*
 !/uploads/avatars/.gitkeep
 VERSION
+
+# Credentials for outside platforms — never commit these.
+/config/integrations.local.php
+/config/app.local.php
