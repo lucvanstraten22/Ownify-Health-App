@@ -148,6 +148,83 @@ try {
     echo "\n  This is what the browser is seeing as a 500.\n";
 }
 
+echo "\nWHERE PHP WRITES ERRORS\n";
+row('error_log', (string) (ini_get('error_log') ?: 'the SAPI default (Apache/FPM log)'));
+row('display_errors', ini_get('display_errors') ? 'on' : 'off  (so a fatal is a blank 500)');
+
+/* ---------------------------------------------------------------------------
+ * The page itself.
+ *
+ * bootstrap.php loading does not mean index.php renders — everything the page
+ * pulls in afterwards (the config files, the hydrators, lib/, the components)
+ * can fatal just as well, and from a browser that looks identical. So render it
+ * into a buffer and throw the output away; only the failure is interesting.
+ *
+ * Two nets, because there are two kinds of fatal: a throwable, which the catch
+ * takes, and the kind that cannot be caught at all — memory exhaustion, a
+ * timeout, a parse error in an included file — which only the shutdown handler
+ * sees.
+ * ------------------------------------------------------------------------ */
+
+echo "\nDOES THE PAGE RENDER\n";
+
+$finished = false;
+
+register_shutdown_function(static function () use (&$finished, $root): void {
+    if ($finished) {
+        return;
+    }
+
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    $fatal = error_get_last();
+
+    if ($fatal !== null && in_array($fatal['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        echo "index.php                  FATAL — this is the 500\n\n";
+        echo '  ' . scrub($fatal['message']) . "\n";
+        echo '  at ' . scrub($fatal['file']) . ':' . $fatal['line'] . "\n";
+    } else {
+        echo "index.php                  stopped early (exit or redirect), no error recorded\n";
+    }
+
+    echo "\n" . str_repeat('=', 72) . "\n";
+});
+
+ob_start();
+
+try {
+    require $root . '/index.php';
+
+    $html     = (string) ob_get_clean();
+    $finished = true;
+
+    row('index.php', 'renders — ' . strlen($html) . ' bytes');
+    row('  has the app shell', str_contains($html, 'data-deck') || str_contains($html, '<main') ? 'yes' : 'no');
+} catch (Throwable $e) {
+    while (ob_get_level() > $level) {
+        ob_end_clean();
+    }
+
+    $finished = true;
+
+    echo "index.php                  FAILS — this is the 500\n\n";
+    echo '  ' . $e::class . ': ' . scrub($e->getMessage()) . "\n";
+    echo '  at ' . scrub($e->getFile()) . ':' . $e->getLine() . "\n\n";
+    echo "  how it got there:\n";
+
+    foreach (array_slice($e->getTrace(), 0, 6) as $depth => $frame) {
+        printf(
+            "    #%d %s:%s  %s()\n",
+            $depth,
+            scrub((string) ($frame['file'] ?? '?')),
+            (string) ($frame['line'] ?? '?'),
+            (string) ($frame['function'] ?? '?')
+        );
+    }
+}
+
 $last = error_get_last();
 
 if ($last !== null) {
