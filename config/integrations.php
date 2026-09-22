@@ -59,12 +59,12 @@ $settings = [
      * tested.
      */
     'google_health_connect' => [
-        'app_available' => false,
+        'app_available' => true,
         'store_url'     => '',
     ],
 
     'apple_health' => [
-        'app_available' => false,
+        'app_available' => true,
         'store_url'     => '',
     ],
 ];
