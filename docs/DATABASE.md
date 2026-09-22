@@ -371,7 +371,6 @@ private data is returned.
 | `api/goals/update.php` | pause, resume, complete, re-prioritise |
 | `api/goals/delete.php` | deletes the goal and its history |
 | `api/goals/progress.php` | `goal_progress`, and completes a goal that reaches its target |
-| `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal |
 | `api/friends/search.php` | reads only, and only public fields |
 | `api/friends/request.php` | `friendships` |
 | `api/friends/block.php` | `user_blocks` |
@@ -379,35 +378,6 @@ private data is returned.
 Height and weight are not columns on the profile. Saving either **adds a row**
 to `user_measurements`, so last month's weight is still there; the current
 value is simply the newest row.
-
-## How a goal knows where it stands
-
-Every goal says where its progress comes from, and the person picks it when
-they make the goal — `tracking_mode`, `source_kind` and `source_key` on
-`goals`. A source is not always a metric: weight is a row in
-`user_measurements`, training is rows in `workouts`, steps are readings in
-`health_metrics`, so the column that names one has to say which kind it is.
-"Geen data mogelijk" is a real answer, stored as `manual`, and those goals are
-the only ones with an entry box.
-
-`includes/goal-progress.php` is the only thing that calculates a percentage.
-The bar, the figure, the day blocks and the completion check all read it, so
-they cannot disagree. It runs on every render of the Doelen page and again
-after every import, which is what makes an automatic goal move on its own.
-
-Three things it will not do:
-
-- **Invent a number.** No data means no percentage and the empty state the
-  cards already draw, not a zero.
-- **Treat a missing day as a failure.** A day with no step count is drawn as an
-  outline and counted as neither met nor missed.
-- **Rewrite a finished goal.** A completed goal keeps the figure it finished
-  on; losing more weight afterwards does not change the goal you achieved.
-
-`start_value` is the baseline, captured when the goal is made or on the first
-reading after it. Without it a decreasing goal cannot be measured at all —
-75 / 82 is 91%, which would read as nearly finished to somebody who has lost
-nothing.
 
 ## What is not connected yet
 

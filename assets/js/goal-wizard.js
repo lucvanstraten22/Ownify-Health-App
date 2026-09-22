@@ -29,7 +29,7 @@
     }
 
     var words     = copy.wizard;
-    var TOTAL     = 6;
+    var TOTAL     = 5;
     var MONTHS    = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
     var body      = root.querySelector('.wizard__body');
@@ -57,15 +57,7 @@
         days: '',
         streak: '',
         duration: null,
-        priority: 'secondary',
-
-        /* Where progress comes from. null means nobody has said yet, which is
-           different from 'manual' — that is an answer. */
-        sourceKind: null,
-        sourceKey: '',
-        sourceLabel: '',
-        sourceDaily: false,
-        dailyTarget: ''
+        priority: 'secondary'
     };
 
     /* ------------------------------------------------------------ helpers */
@@ -117,52 +109,11 @@
 
     /* ------------------------------------------------------- step control */
 
-    /**
-     * Records the chosen source and reveals the daily-target box for the ones
-     * where "every day" means something.
-     *
-     * A source that resets each day (steps, water, active minutes) can carry a
-     * per-day target; a standing value (weight, VO2max) cannot, and offering
-     * the box for those would invite a goal nobody can measure.
-     */
-    function chooseSource(button) {
-        draft.sourceKind  = button.getAttribute('data-source-kind');
-        draft.sourceKey   = button.getAttribute('data-source-key') || '';
-        draft.sourceDaily = button.getAttribute('data-source-daily') === '1';
-
-        var label = button.querySelector('.wizard-type__label');
-        draft.sourceLabel = label ? label.textContent.trim() : '';
-
-        Array.prototype.forEach.call(root.querySelectorAll('[data-wizard-source]'), function (other) {
-            other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
-            other.classList.toggle('is-chosen', other === button);
-        });
-
-        var daily = root.querySelector('[data-wizard-daily]');
-        if (daily) {
-            daily.hidden = !draft.sourceDaily;
-            if (!draft.sourceDaily) { draft.dailyTarget = ''; }
-        }
-
-        nextBtn.disabled = !isComplete(step);
-    }
-
     function isComplete(which) {
         if (which === 1) { return draft.category !== null; }
         if (which === 2) { return draft.name.trim().length > 1 && draft.type !== null; }
         if (which === 3) { return targetText() !== null; }
-
-        /* A source has to be chosen, and "Geen data mogelijk" counts as
-           choosing one. What is not allowed is arriving at a finished goal
-           without anybody having said where its progress comes from, which is
-           how every goal ended up with an empty bar. */
-        if (which === 4) {
-            if (draft.sourceKind === null) { return false; }
-            if (draft.sourceDaily && String(draft.dailyTarget || '').trim() === '') { return false; }
-            return true;
-        }
-
-        if (which === 5) { return draft.duration !== null; }
+        if (which === 4) { return draft.duration !== null; }
         return true;
     }
 
@@ -324,9 +275,6 @@
             ? category.label + ' · ' + (copy.types[draft.type] ? copy.types[draft.type].label : '')
             : '—');
         set('target', targetText() || '—');
-        set('source', draft.sourceKind === 'manual'
-            ? (words.source_manual || 'Geen data mogelijk')
-            : (draft.sourceLabel || '—') + (draft.dailyTarget ? ' · elke dag ' + draft.dailyTarget : ''));
         set('duration', duration
             ? duration.label + ' · t/m ' + dutchDate(endDate(duration.days))
             : '—');
@@ -458,15 +406,6 @@
         body.append('type', draft.type || 'value');
         body.append('duration', draft.duration || '');
         body.append('priority', draft.priority || 'secondary');
-
-        /* The chosen source, verbatim. The server checks it against the same
-           catalogue this list was built from and refuses anything else. */
-        body.append('source_kind', draft.sourceKind || 'manual');
-        body.append('source_key', draft.sourceKey || '');
-
-        if (draft.sourceDaily && draft.dailyTarget) {
-            body.append('daily_target', draft.dailyTarget);
-        }
 
         if (draft.type === 'value') {
             body.append('target_value', draft.value || '');
@@ -615,9 +554,6 @@
         var type = event.target.closest('[data-wizard-type]');
         if (type) { chooseType(type.getAttribute('data-wizard-type')); return; }
 
-        var source = event.target.closest('[data-wizard-source]');
-        if (source) { chooseSource(source); return; }
-
         var duration = event.target.closest('[data-wizard-duration]');
         if (duration) { chooseDuration(duration.getAttribute('data-wizard-duration')); return; }
 
@@ -632,7 +568,7 @@
             if (step === TOTAL) { finish(); return; }
 
             go(step + 1, 1);
-            if (step === TOTAL) { fillSummary(); }
+            if (step === 5) { fillSummary(); }
         }
     });
 
@@ -644,7 +580,6 @@
         else if (field.hasAttribute('data-wizard-unit')) { draft.unit = field.value.trim(); }
         else if (field.hasAttribute('data-wizard-days')) { draft.days = field.value.trim(); }
         else if (field.hasAttribute('data-wizard-streak')) { draft.streak = field.value.trim(); }
-        else if (field.hasAttribute('data-wizard-daily-input')) { draft.dailyTarget = field.value.trim(); }
         else { return; }
 
         nextBtn.disabled = !isComplete(step);

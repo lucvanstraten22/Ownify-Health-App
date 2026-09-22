@@ -22,13 +22,6 @@
     --activity: #78A560;
     --accent: var(--health);
 
-    /* A day that did not make it. The palette had no such colour, because
-       until now nothing in the app had to say "this went wrong" — scores go
-       quiet rather than red. Desaturated to the same degree as the three
-       above, so a month of day blocks reads as part of this app and not as an
-       error state borrowed from somewhere else. Used for graphics only. */
-    --miss: #A8625C;
-
     /* --- text ----------------------------------------------------------- */
     /* Tuned so every text tier clears WCAG AA (4.5:1) on the glass surfaces,
        including the nested rows inside cards. --text-faint is for graphics
