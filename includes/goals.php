@@ -48,26 +48,82 @@ if (!function_exists('goals_for_user')) {
 
         $wantsPrimary = ($goal['priority'] ?? 'secondary') === 'primary';
 
-        db_run(
-            'INSERT INTO goals
-                (user_id, name, category, goal_type, metric_type_id, target_value,
-                 target_unit, direction, start_date, end_date, status, priority)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-                $userId,
-                $goal['name'],
-                $goal['category'] ?? 'general',
-                $goal['goal_type'] ?? 'target_value',
-                isset($goal['metric_code']) ? health_metric_type_id($goal['metric_code']) : null,
-                $goal['target_value'] ?? null,
-                $goal['target_unit'] ?? null,
-                $goal['direction'] ?? 'increase',
-                $goal['start_date'] ?? date('Y-m-d'),
-                $goal['end_date'] ?? null,
-                $goal['status'] ?? 'active',
-                'secondary',
-            ]
-        );
+        require_once __DIR__ . '/goal-progress.php';
+
+        $sourceKind = $goal['source_kind'] ?? 'manual';
+        $sourceKey  = $goal['source_key'] ?? null;
+        $isAuto     = $sourceKind !== 'manual' && goal_source_find($sourceKind, $sourceKey) !== null;
+
+        /* A metric source also fills metric_type_id, so everything written
+           before source_kind existed keeps reading the column it expects. */
+        $metricTypeId = $isAuto && $sourceKind === 'metric'
+            ? health_metric_type_id((string) $sourceKey)
+            : (isset($goal['metric_code']) ? health_metric_type_id($goal['metric_code']) : null);
+
+        /* The baseline, read now rather than later.
+           A goal to lose weight cannot be measured against where you started
+           unless somebody wrote down where you started, and the only moment
+           that is knowable is this one. Captured for rising goals too, so a
+           bench press going 60 -> 100 counts from 60 rather than from zero.
+           Null when there is no reading yet, and null stays null: a baseline
+           we invent is a percentage we invent. */
+        $startValue = $goal['start_value'] ?? null;
+
+        if ($isAuto && $startValue === null) {
+            $startValue = goal_source_latest($userId, (string) $sourceKind, (string) $sourceKey);
+        }
+
+        if (!goal_sources_available()) {
+            /* Migration 006 is not in yet. Write what the old schema holds, so
+               creating a goal keeps working exactly as it did. */
+            db_run(
+                'INSERT INTO goals
+                    (user_id, name, category, goal_type, metric_type_id, target_value,
+                     target_unit, direction, start_date, end_date, status, priority)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $userId,
+                    $goal['name'],
+                    $goal['category'] ?? 'general',
+                    $goal['goal_type'] ?? 'target_value',
+                    $metricTypeId,
+                    $goal['target_value'] ?? null,
+                    $goal['target_unit'] ?? null,
+                    $goal['direction'] ?? 'increase',
+                    $goal['start_date'] ?? date('Y-m-d'),
+                    $goal['end_date'] ?? null,
+                    $goal['status'] ?? 'active',
+                    'secondary',
+                ]
+            );
+        } else {
+            db_run(
+                'INSERT INTO goals
+                    (user_id, name, category, goal_type, tracking_mode, source_kind, source_key,
+                     metric_type_id, target_value, start_value, daily_target,
+                     target_unit, direction, start_date, end_date, status, priority)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $userId,
+                    $goal['name'],
+                    $goal['category'] ?? 'general',
+                    $goal['goal_type'] ?? 'target_value',
+                    $isAuto ? 'auto' : 'manual',
+                    $isAuto ? $sourceKind : 'manual',
+                    $isAuto ? $sourceKey : null,
+                    $metricTypeId,
+                    $goal['target_value'] ?? null,
+                    $startValue,
+                    $goal['daily_target'] ?? null,
+                    $goal['target_unit'] ?? null,
+                    $goal['direction'] ?? 'increase',
+                    $goal['start_date'] ?? date('Y-m-d'),
+                    $goal['end_date'] ?? null,
+                    $goal['status'] ?? 'active',
+                    'secondary',
+                ]
+            );
+        }
 
         $goalId = db_insert_id();
 

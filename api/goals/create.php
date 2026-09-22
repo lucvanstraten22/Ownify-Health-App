@@ -62,12 +62,40 @@ if (mb_strlen($targetUnit) > 20) {
     api_fail('Die eenheid is te lang.', 422);
 }
 
+/* How progress is tracked. The person chooses this; it is never inferred
+   from the category, because a weight goal read from a scale and a weight goal
+   somebody keeps on paper are the same category and different things. */
+require_once dirname(__DIR__, 2) . '/includes/goal-progress.php';
+
+$sourceKind = (string) ($_POST['source_kind'] ?? 'manual');
+$sourceKey  = trim((string) ($_POST['source_key'] ?? ''));
+
+if ($sourceKind !== 'manual' && goal_source_find($sourceKind, $sourceKey) === null) {
+    api_fail('Deze gegevensbron bestaat niet.', 422);
+}
+
+/* A per-day target, for goals that repeat rather than accumulate. Only
+   meaningful for a source that resets each day, which the catalogue knows. */
+$dailyTarget = $_POST['daily_target'] ?? null;
+$dailyTarget = ($dailyTarget === null || $dailyTarget === '') ? null : (float) $dailyTarget;
+
+if ($dailyTarget !== null && ($dailyTarget <= 0 || $dailyTarget > 1e9)) {
+    api_fail('Vul een geldig dagdoel in.', 422);
+}
+
+if ($dailyTarget !== null && !(goal_source_find($sourceKind, $sourceKey)['daily'] ?? false)) {
+    api_fail('Voor deze bron kun je geen dagdoel instellen.', 422);
+}
+
 $goalId = goal_create($userId, [
     'name'         => $name,
     'category'     => $category,
     'goal_type'    => goal_type_to_db($type),
     'target_value' => $targetValue,
     'target_unit'  => $targetUnit === '' ? null : $targetUnit,
+    'source_kind'  => $sourceKind,
+    'source_key'   => $sourceKey === '' ? null : $sourceKey,
+    'daily_target' => $dailyTarget,
     'direction'    => ($_POST['direction'] ?? 'increase') === 'decrease' ? 'decrease' : 'increase',
     'start_date'   => $start->format('Y-m-d'),
     'end_date'     => $end?->format('Y-m-d'),
@@ -78,5 +106,9 @@ $goalId = goal_create($userId, [
 if ($goalId === null) {
     api_fail('Dit doel kon niet worden opgeslagen.', 500);
 }
+
+/* Compute it once now, so a goal made against data that already exists opens
+   showing where it stands rather than at zero until something else happens. */
+goal_refresh($userId, $goalId);
 
 api_ok(['goal_id' => $goalId]);
