@@ -159,37 +159,14 @@ if (!function_exists('goals_expand')) {
             : null;
 
         /* --- sources ---------------------------------------------------- */
-        /* What the person chose when they made the goal, not what its category
-           suggests. The old code inferred a source from the category, which
-           meant every weight goal claimed to be fed by manual entry and every
-           sleep goal claimed to read sleep — whether or not either was true,
-           and with nothing behind the claim.
-
-           A goal reading real data names the metric it reads. One the person
-           keeps by hand says so. */
         $resolved = [];
-
-        if (($goal['tracking'] ?? 'manual') === 'auto' && !empty($goal['source_label'])) {
-            $domain = goals_source_domain($goal['source_kind'] ?? '', $goal['source_key'] ?? '');
-            $shape  = $config['sources'][$domain] ?? $config['sources']['manual'];
-
-            $resolved[] = $shape + [
-                'key'   => $domain,
-                'label' => $goal['source_label'],
-                'note'  => $goal['daily_label'] !== null
-                    ? 'Elke dag ' . $goal['daily_label']
-                    : ($shape['note'] ?? ''),
-            ];
-        } elseif (!empty($goal['is_manual'])) {
-            $resolved[] = $config['sources']['manual'] + ['key' => 'manual'];
+        foreach ($goal['sources'] as $key) {
+            if (isset($config['sources'][$key])) {
+                $resolved[] = $config['sources'][$key] + ['key' => $key];
+            }
         }
-
         $goal['source_list'] = $resolved;
-
-        /* Only a goal the person keeps themselves asks them for anything. An
-           automatic one updating itself must never show an entry box, or the
-           two numbers would start disagreeing. */
-        $goal['needs_input'] = !empty($goal['is_manual']);
+        $goal['needs_input'] = in_array('manual', $goal['sources'], true);
 
         /* --- history ---------------------------------------------------- */
         $goal['has_history'] = count($goal['history']) > 1;
@@ -298,30 +275,6 @@ if (!function_exists('goals_deadline_line')) {
 
 if (!function_exists('goals_date_short')) {
     /** "4 okt" — short enough to sit on one line beside the time remaining. */
-    /**
-     * Which of the page's five source shapes a chosen source looks like.
-     *
-     * Only for the icon and the accent — the label is the real metric's own.
-     */
-    function goals_source_domain(string $kind, string $key): string
-    {
-        if ($kind === 'measurement') {
-            return 'body';
-        }
-
-        if ($kind === 'workout') {
-            return 'training';
-        }
-
-        return match (true) {
-            str_starts_with($key, 'sleep'), $key === 'sleeping_hr'     => 'sleep',
-            in_array($key, ['steps', 'distance', 'floors', 'active_minutes', 'active_energy'], true) => 'activity',
-            in_array($key, ['water', 'energy', 'protein', 'carbs', 'fat', 'fibre', 'sugar',
-                            'sodium', 'saturated_fat', 'nutrition_rating'], true) => 'nutrition',
-            default => 'training',
-        };
-    }
-
     function goals_date_short(DateTimeInterface $date): string
     {
         $months = [
