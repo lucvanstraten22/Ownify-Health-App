@@ -72,6 +72,43 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
             </div>
         </div>
 
+        <?php if (!empty($item['devices'])): ?>
+            <?php
+            /* The phones paired to this source. Only ever the owner's own —
+               lib/settings.php reads them with the id from the session — and
+               never a token, because only a hash of one is stored.
+
+               Each gets its own revoke button: losing a phone should cost you
+               that phone, not every phone. Disconnecting the source entirely
+               is still the button at the bottom. */
+            ?>
+            <p class="integration__caption"><?= e($labels['devices']) ?></p>
+
+            <div class="metric-rows">
+                <?php foreach ($item['devices'] as $device): ?>
+                    <div class="metric-row metric-row--device">
+                        <span class="metric-row__label device__id">
+                            <strong><?= e($device['label']) ?></strong>
+                            <span><?= e($device['last_sync'] ?? $labels['never']) ?></span>
+                        </span>
+                        <?php
+                        /* Quiet on purpose. The button at the bottom of this
+                           panel disconnects the whole source; this one drops a
+                           single phone. Two buttons with the same word and the
+                           same weight, a few rows apart, doing different-sized
+                           things, is how somebody unpairs everything by
+                           mistake — so this one reads as a link. */
+                        ?>
+                        <button type="button" class="btn--link press"
+                                data-device-revoke="<?= e((string) $device['id']) ?>"
+                                aria-label="<?= e(sprintf($labels['revoke_device'], $device['label'])) ?>">
+                            <?= e($labels['revoke']) ?>
+                        </button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
         <p class="integration__caption"><?= e($labels['categories']) ?></p>
         <ul class="chips" role="list">
             <?php foreach ($item['categories'] as $category): ?>

@@ -42,7 +42,8 @@ website                          phone app
    |  <---- 3. POST /pair.php {code} |
    |  ----> device token (once) ---->|
    |                                 |
-   |  <---- 4. POST /ingest.php  ----|
+   |  <---- 4. POST /status.php -----|   still paired?
+   |  <---- 5. POST /ingest.php  ----|
    |         Authorization: Bearer   |
 ```
 
@@ -57,7 +58,7 @@ Revoking a device kills that token and nothing else, so losing a phone costs
 you that phone rather than every phone. Disconnecting in Settings revokes every
 phone for that source.
 
-## The three endpoints
+## The endpoints
 
 ### 1. Exchange a pairing code — `POST /api/integrations/pair.php`
 
@@ -104,9 +105,51 @@ they surface instead of vanishing.
 `401` means the token is unknown or revoked. The app's answer to both is the
 same: stop syncing and ask the user to pair again.
 
-### 3. Disconnect
+### 3. Am I still paired? — `POST /api/integrations/status.php`
 
-Handled on the website. The app simply starts getting `401`.
+```
+Authorization: Bearer <device token>
+```
+
+```json
+{ "ok": true, "provider": "google_health_connect", "label": "Pixel 8",
+  "last_sync_at": "2026-09-22T08:14:00Z", "last_sync": "ok", "max_records": 2000 }
+```
+
+Call it at startup, before gathering anything. Without it the only way to learn
+the token is dead is to read the records, build the batch, upload it and get a
+`401` — the whole job done to find out it was pointless, on every sync, for as
+long as the user never re-pairs.
+
+`401` means the same as it does on ingest: stop syncing, ask the user to pair
+again.
+
+It says nothing about the account behind the token — no e-mail, no username, no
+user id. A stolen token should reveal no more than the upload endpoint it was
+stolen for already allows.
+
+`POST`, not `GET`, because a cached "you are fine" is the one answer that must
+never be stale.
+
+### 4. Disconnect
+
+Handled on the website, two ways, and the app cannot tell them apart — both
+just start answering `401`:
+
+- **Ontkoppelen on one phone.** The settings screen lists every phone paired to
+  a source, with the last time each one sent anything, and revokes them one at
+  a time. Losing a phone costs you that phone.
+- **Disconnecting the source.** Revokes every phone on it at once.
+
+## What the owner sees
+
+Everything the server knows about a phone, the person it belongs to can see:
+its name, the platform it reported, and when it last sent anything. Never the
+token — only a SHA-256 hash of that is stored, so there is nothing to show.
+
+That list is the answer to "what has access to my health data", and it has to
+be answerable per phone rather than per source, which is why each row revokes
+on its own.
 
 ## The record format
 
@@ -183,7 +226,9 @@ Stage numbers are Health Connect's own: 1 awake, 2 sleeping, 3 out of bed,
    each run sends what changed rather than everything; overlap the last window
    by a day or two, because data arrives late and gets corrected. Re-sending is
    safe by design.
-4. On `401`, clear the stored token and prompt to pair again.
+4. Check `status.php` before each sync, and skip the work when it answers
+   `401`.
+5. On `401`, clear the stored token and prompt to pair again.
 
 A thin Kotlin sketch of the sync:
 

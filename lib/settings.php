@@ -23,6 +23,7 @@ if (!function_exists('settings_prepare')) {
     function settings_prepare(array $settings, array $auth): array
     {
         require_once dirname(__DIR__) . '/includes/integrations.php';
+        require_once dirname(__DIR__) . '/includes/devices.php';
 
         /* Real connection state for whoever is asking, or all-disconnected
            when nobody is. Nothing on this screen is a stand-in any more: a
@@ -49,6 +50,29 @@ if (!function_exists('settings_prepare')) {
                and the row says which. */
             $integration['available'] = $state['available'] ?? false;
             $integration['blocked']   = $state['blocked'] ?? null;
+
+            /* The phones paired to this source, for the owner only.
+               Until now a paired phone was invisible: you could pair one and
+               then never see it again, never learn when it last sent anything,
+               and never revoke it without disconnecting the source entirely.
+               "What has access to my health data" has to be answerable, and
+               the answer has to be per phone — losing one should cost you that
+               phone and not every phone.
+
+               Never a token: user_devices stores only a SHA-256 hash, and
+               there is nothing to show even if this wanted to. */
+            $integration['devices'] = ($userId !== null && $provider !== null && db_available())
+                ? array_map(
+                    static fn (array $device): array => [
+                        'id'        => (int) $device['id'],
+                        'label'     => $device['label'] ?: 'Naamloos apparaat',
+                        'platform'  => $device['platform'],
+                        'paired'    => settings_sync_label($device['created_at']),
+                        'last_sync' => settings_sync_label($device['last_sync_at']),
+                    ],
+                    devices_for_user($userId, $provider)
+                )
+                : [];
 
             if ($integration['connected']) {
                 $connected++;

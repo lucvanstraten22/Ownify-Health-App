@@ -244,7 +244,12 @@ function hc_disconnect_checks(): array
 {
     return [
         ['every phone revoked',      'SELECT COUNT(*) FROM user_devices WHERE user_id = ? AND revoked_at IS NULL', '0'],
-        ['  the row itself is kept', 'SELECT COUNT(*) FROM user_devices WHERE user_id = ?', '1'],
+        /* Two phones are paired over the course of the test, one of them
+           revoked on its own beforehand. Both rows must survive: a revoked
+           device is kept so the account can still show that the phone was
+           once paired, and so a token turning up later is a known revoked
+           one rather than an unknown. */
+        ['  both rows are kept, not deleted', 'SELECT COUNT(*) FROM user_devices WHERE user_id = ?', '2'],
         ['the source is disconnected', "SELECT status FROM user_integrations WHERE user_id = ? AND provider = 'google_health_connect'", 'disconnected'],
     ];
 }

@@ -561,6 +561,59 @@
 
 .integration__body .chips { margin-top: var(--space-2); }
 
+/* A paired phone, one per row: its name, when it last sent anything, and a
+   way to remove just this one.
+
+   It reuses .metric-row unchanged — same hairline, same rhythm, same type —
+   because it is the same kind of row as the ones above it, and inventing a
+   second one would only make the panel look assembled from parts. The only
+   difference is a third child, so the value takes the slack and the button
+   sits on the right edge, level with the values above it. */
+.device__id {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.device__id strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* When it last sent anything, under the name rather than beside it. Beside it
+   would put a third column in a two-column row, and the values above would
+   stop lining up with each other. */
+.device__id span {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* Quiet by design: the pill at the bottom of the panel disconnects the whole
+   source, this drops one phone, and two pills reading "Ontkoppelen" a few rows
+   apart is how somebody unpairs everything by accident.
+
+   No border and no background, but a full-height tap target, pulled back by
+   its own padding so the text still ends on the right edge with the values
+   above it. */
+.btn--link {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-inline: var(--space-2);
+    margin-right: calc(-1 * var(--space-2));
+    border: 0;
+    background: transparent;
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    transition: color var(--transition-fast);
+}
+
+.btn--link:hover,
+.btn--link:focus-visible { color: var(--text-primary); }
+
 .integration__actions {
     display: flex;
     gap: var(--space-2);

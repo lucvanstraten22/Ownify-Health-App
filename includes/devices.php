@@ -84,6 +84,14 @@ if (!function_exists('device_hash')) {
             [$userId, $provider]
         );
 
+        /* Opportunistic housekeeping. Codes nobody used are worthless after a
+           day, and without this they accumulate for the life of the database.
+           Done here rather than on a schedule because it costs one indexed
+           DELETE on the one occasion somebody is already writing to this
+           table, and a cron job is a thing to install, forget, and discover
+           missing years later. */
+        device_purge_expired_codes();
+
         $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
         $code     = '';
 

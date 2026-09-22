@@ -107,19 +107,44 @@
             return;
         }
 
+        /* One phone, not the whole source. Same shape of request as
+           disconnecting, deliberately — it is the same kind of decision at a
+           smaller scale, and the page already teaches what that looks like. */
+        var revoke = event.target.closest('[data-device-revoke]');
+        if (revoke) {
+            postAndReload(revoke, 'api/integrations/device-revoke.php',
+                'device', revoke.getAttribute('data-device-revoke'));
+            return;
+        }
+
         var disconnect = event.target.closest('[data-integration-disconnect]');
         if (!disconnect) { return; }
 
+        postAndReload(disconnect, 'api/integrations/disconnect.php',
+            'provider', disconnect.getAttribute('data-integration-disconnect'));
+    });
+
+    /**
+     * Posts one named field with the CSRF token, then reloads on success.
+     *
+     * Both buttons here change what the server holds and then need the page to
+     * say so, and the page is rendered server-side — so a reload is the honest
+     * way to show the result rather than patching the DOM into a shape the
+     * next render might disagree with.
+     *
+     * The button is re-enabled on failure. Leaving it disabled would mean a
+     * network blip costs the user the ability to try again without reloading.
+     */
+    function postAndReload(button, url, field, value) {
         var panel = document.querySelector('[data-account]');
         var body = new FormData();
+
         body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
-        body.append('provider', disconnect.getAttribute('data-integration-disconnect'));
+        body.append(field, value || '');
 
-        disconnect.disabled = true;
+        button.disabled = true;
 
-        fetch('api/integrations/disconnect.php', {
-            method: 'POST', body: body, credentials: 'same-origin'
-        })
+        fetch(url, { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () { return { ok: false }; });
             })
@@ -128,10 +153,10 @@
                 if (result && result.ok) {
                     window.location.reload();
                 } else {
-                    disconnect.disabled = false;
+                    button.disabled = false;
                 }
             });
-    });
+    }
 
     /* ------------------------------------------------------ koppelcode */
 

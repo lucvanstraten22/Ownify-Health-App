@@ -516,5 +516,11 @@ return [
         'reconnect'    => 'Opnieuw koppelen',
         'disconnect_confirm' => 'Ontkoppelen stopt het ophalen van nieuwe gegevens. Wat al binnen is blijft staan.',
         'expand'       => 'Instellingen van %s tonen',
+
+        /* The phones paired to a source. One line each, revocable one at a
+           time — losing a phone costs you that phone, not every phone. */
+        'devices'       => 'Gekoppelde apparaten',
+        'revoke'        => 'Ontkoppelen',
+        'revoke_device' => '%s ontkoppelen',
     ],
 ];

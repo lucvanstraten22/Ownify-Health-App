@@ -172,6 +172,19 @@ same "  7 of the 8 records written" "$(echo "$BODY" | field written)" "7"
 same "  none skipped" "$(echo "$BODY" | field skipped)" "0"
 has "  the 8th is reported, not dropped" "$BODY" 'MenstruationFlow'
 
+# --------------------------------------------- the app checks its token
+
+echo "== the app asks whether it is still paired, without sending anything =="
+BODY="$(curl -s -X POST "$BASE_URL/api/integrations/status.php" \
+    -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{}')"
+has "it is" "$BODY" '"ok":true'
+same "  for the right provider" "$(echo "$BODY" | field provider)" "google_health_connect"
+same "  and it knows the phone" "$(echo "$BODY" | field label)" "JoLu test client"
+has "  it says nothing about the account" "$(echo "$BODY" | grep -c 'email\|username\|user_id' || true)" "0"
+same "no token -> 401" \
+    "$(status_of -X POST "$BASE_URL/api/integrations/status.php" \
+        -H 'Content-Type: application/json' -d '{}')" "401"
+
 # ------------------------------------------------- 6. the right tables
 
 echo "== 6. the records became JoLu rows =="
@@ -211,6 +224,52 @@ same "a token that is not even the right shape -> 401" \
     "$(status_of -X POST "$BASE_URL/api/integrations/ingest.php" \
         -H 'Authorization: Bearer not-a-token' \
         -H 'Content-Type: application/json' -d '{"records":[]}')" "401"
+
+# ------------------------------------------- one phone, not every phone
+
+echo "== the owner can see the phone on the settings page =="
+PAGE="$(curl -s -b "$JAR" -c "$JAR" "$BASE_URL/?page=settings")"
+has "it is listed by name" "$PAGE" 'JoLu test client'
+has "  with its own revoke button" "$PAGE" 'data-device-revoke'
+has "  and never a token" "$(echo "$PAGE" | grep -c "$TOKEN" || true)" "0"
+
+DEVICE_ID="$(echo "$PAGE" | grep -o 'data-device-revoke="[0-9]*"' | head -1 | tr -dc '0-9')"
+
+echo "== somebody else's device id revokes nothing =="
+same "an id that is not yours -> 404" \
+    "$(curl -s -o /dev/null -w '%{http_code}' -b "$JAR" -c "$JAR" \
+        -X POST "$BASE_URL/api/integrations/device-revoke.php" \
+        --data-urlencode "csrf=$(csrf)" --data-urlencode "device=999999")" "404"
+same "  and the phone still works" \
+    "$(status_of -X POST "$BASE_URL/api/integrations/status.php" \
+        -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{}')" "200"
+
+echo "== a second phone is paired, then only that one is revoked =="
+CODE2="$(curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/integrations/pairing-code.php" \
+    --data-urlencode "csrf=$(csrf)" --data-urlencode "provider=google_health_connect" | field code)"
+TOKEN2="$(curl -s -X POST "$BASE_URL/api/integrations/pair.php" -H 'Content-Type: application/json' \
+    -d "{\"code\":\"$CODE2\",\"label\":\"Second test phone\",\"platform\":\"curl\"}" | field token)"
+same "the second phone paired" "${#TOKEN2}" "64"
+
+PAGE="$(curl -s -b "$JAR" -c "$JAR" "$BASE_URL/?page=settings")"
+same "both phones are listed" "$(echo "$PAGE" | grep -c 'data-device-revoke')" "2"
+
+ID2="$(echo "$PAGE" | grep -o 'data-device-revoke="[0-9]*"' | tail -1 | tr -dc '0-9')"
+has "revoking the second one" \
+    "$(curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/integrations/device-revoke.php" \
+        --data-urlencode "csrf=$(csrf)" --data-urlencode "device=$ID2")" '"ok":true'
+
+# The whole point of a token per device: losing a phone costs you that phone.
+same "  the second phone is refused" \
+    "$(status_of -X POST "$BASE_URL/api/integrations/status.php" \
+        -H "Authorization: Bearer $TOKEN2" -H 'Content-Type: application/json' -d '{}')" "401"
+same "  the FIRST phone still syncs" \
+    "$(status_of -X POST "$BASE_URL/api/integrations/status.php" \
+        -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{}')" "200"
+same "  and revoking it twice changes nothing" \
+    "$(curl -s -o /dev/null -w '%{http_code}' -b "$JAR" -c "$JAR" \
+        -X POST "$BASE_URL/api/integrations/device-revoke.php" \
+        --data-urlencode "csrf=$(csrf)" --data-urlencode "device=$ID2")" "404"
 
 # ---------------------------------------------------- 11,12,13. disconnect
 
