@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
+require_once __DIR__ . '/goal-progress.php';
 require_once __DIR__ . '/scoring.php';
 
 if (!function_exists('health_import_records')) {
@@ -88,13 +89,20 @@ if (!function_exists('health_import_records')) {
             health_import_invalidate_scores($userId, (string) $date);
         }
 
+        /* And the goals that read this data are recomputed in the same breath.
+           This is what makes "new steps arrive, the steps goal moves" true
+           rather than something the user has to trigger by opening the goal
+           and pressing something. A sync that finishes a goal says so. */
+        $goalsCompleted = $written > 0 ? goal_refresh_all($userId) : 0;
+
         return [
-            'ok'       => true,
-            'error'    => null,
-            'written'  => $written,
-            'skipped'  => $skipped,
-            'days'     => array_keys($days),
-            'problems' => array_slice($problems, 0, 20),
+            'ok'              => true,
+            'error'           => null,
+            'written'         => $written,
+            'skipped'         => $skipped,
+            'days'            => array_keys($days),
+            'problems'        => array_slice($problems, 0, 20),
+            'goals_completed' => $goalsCompleted,
         ];
     }
 

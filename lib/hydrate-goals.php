@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/includes/goals.php';
 require_once dirname(__DIR__) . '/includes/health-data.php';
+require_once dirname(__DIR__) . '/includes/goal-progress.php';
 
 if (!function_exists('hydrate_goals')) {
 
@@ -85,16 +86,35 @@ if (!function_exists('hydrate_goals')) {
         $goalId  = (int) $row['id'];
         $start   = hydrate_goal_date($row['start_date']);
         $end     = hydrate_goal_date($row['end_date']);
-        $current = hydrate_goal_current($userId, $row);
 
-        $percent = goal_percent($row, $current);
+        /* Recomputed from the user's own rows on every render, and snapshotted
+           and completed as a side effect. That is what makes an automatic goal
+           feel immediate: import some steps and the bar has already moved by
+           the time the page is drawn, with nobody pressing anything.
 
-        /* A goal with no target and no snapshot has no percentage. The latest
-           snapshot is used when the target cannot produce one. */
+           It also means the figure on the card cannot disagree with the
+           figure on the detail screen, because there is only one of them. */
+        $progress = goal_refresh_row($userId, $row, $today);
+
+        /* The refresh may have just finished this goal, so the row is re-read
+           rather than reporting a status that is one render out of date. */
+        if ($row['status'] === 'active') {
+            $row = goal_get($userId, $goalId) ?? $row;
+        }
+
+        $current = $progress['current'];
+        $percent = $progress['percent'];
+
+        /* A goal with no target and no computable value falls back to the last
+           thing the person entered by hand, which is the whole story for a
+           milestone or a habit. */
         if ($percent === null) {
             $latest = goal_latest_progress($userId, $goalId);
             if ($latest !== null && $latest['percent_complete'] !== null) {
                 $percent = (float) $latest['percent_complete'];
+            }
+            if ($current === null && $latest !== null && $latest['current_value'] !== null) {
+                $current = (float) $latest['current_value'];
             }
         }
 
@@ -119,14 +139,36 @@ if (!function_exists('hydrate_goals')) {
             'ends_in_days'     => $end === null ? null : (int) $today->diff($end)->days * ($end < $today ? -1 : 1),
             'duration'         => hydrate_goal_duration($start, $end, $config),
 
+            /* What the person chose, not what the category implies. A goal
+               with no source says so; it does not borrow one. */
             'sources'      => hydrate_goal_sources($row['category']),
+            'tracking'     => $row['tracking_mode'] ?? 'manual',
+            'source_kind'  => $row['source_kind'] ?? 'manual',
+            'source_key'   => $row['source_key'] ?? null,
+            'source_label' => (goal_source_find($row['source_kind'] ?? null, $row['source_key'] ?? null)['label'] ?? null),
+            'daily_target' => $row['daily_target'] === null ? null : (float) $row['daily_target'],
+            'daily_label'  => hydrate_goal_label(
+                ($row['daily_target'] ?? null) === null ? null : (float) $row['daily_target'],
+                $row['target_unit']
+            ),
+
+            /* Per-day results for a repeated goal, each one met, missed, or
+               simply not known. Empty for every other kind of goal. */
+            'days'       => $progress['days'],
+            'days_met'   => $progress['met'],
+            'days_total' => $progress['total'],
+            'mode'       => $progress['mode'],
+
+            /* Whether this goal is the person's to fill in by hand. */
+            'is_manual'  => ($row['tracking_mode'] ?? 'manual') !== 'auto',
+
             'history'      => $history,
             'history_step' => 'day',
             'activity'     => hydrate_goal_activity($userId, $goalId, $row['target_unit']),
 
             /* Completed goals are sorted by how recently they finished. */
             'completed_days_ago' => $row['status'] === 'completed'
-                ? (int) (new DateTimeImmutable((string) $row['updated_at']))->diff($today)->days
+                ? (int) (new DateTimeImmutable((string) ($row['completed_at'] ?? $row['updated_at'])))->diff($today)->days
                 : null,
 
             'note' => null,

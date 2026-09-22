@@ -118,19 +118,86 @@ $height = 96.0;
                     </p>
                 </section>
 
-                <!-- ----------------------- manual confirmation, when needed -->
+                <!-- ---------------------------------- per-day results -->
+                <?php if ($goal['days'] !== []): ?>
+                    <?php
+                    /* One block per day, for a goal that has to be met again
+                       every day rather than reached once.
+
+                       Three states, not two. A day with no data is not a day
+                       that failed — a phone that was not syncing yet says
+                       nothing about whether somebody walked — so it is drawn
+                       as an empty outline and counted as neither. Turning it
+                       red would be inventing a failure. */
+                    ?>
+                    <section class="card reveal" aria-labelledby="goal-days-<?= e($id) ?>">
+                        <div class="card__head">
+                            <div class="card__head-group">
+                                <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
+                                <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? 'Per dag') ?></h2>
+                            </div>
+                            <span class="chip chip--muted">
+                                <?= e($goal['days_met'] . ' van ' . $goal['days_total']) ?>
+                            </span>
+                        </div>
+
+                        <ol class="day-blocks" role="list"
+                            aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
+                            <?php foreach ($goal['days'] as $day): ?>
+                                <li class="day-block is-<?= e($day['state']) ?>"
+                                    title="<?= e(goals_date_short(new DateTimeImmutable($day['date']))
+                                        . ' · ' . match ($day['state']) {
+                                            'met'     => 'gehaald',
+                                            'missed'  => 'niet gehaald',
+                                            'unknown' => 'geen gegevens',
+                                            default   => 'nog niet geweest',
+                                        }) ?>"></li>
+                            <?php endforeach; ?>
+                        </ol>
+
+                        <p class="card__hint card__hint--plain">
+                            <?= e($copy['days_note'] ?? 'Dagen zonder gegevens tellen niet mee als gemist.') ?>
+                        </p>
+                    </section>
+                <?php endif; ?>
+
+                <!-- ----------------------- manual entry, when it is theirs -->
                 <?php if ($goal['needs_input'] && !$goal['is_completed']): ?>
-                    <section class="card card--check reveal" aria-labelledby="goal-check-<?= e($id) ?>">
+                    <?php
+                    /* Only ever shown for a goal the person keeps themselves.
+                       An automatic goal reads itself, and an entry box beside
+                       a self-updating figure is two numbers claiming to be the
+                       same thing. */
+                    $ticks = in_array($goal['type'], ['habit', 'streak'], true);
+                    ?>
+                    <section class="card card--check reveal" data-goal-manual="<?= e($id) ?>"
+                             aria-labelledby="goal-check-<?= e($id) ?>">
                         <div class="card__head card__head--compact">
                             <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
                             <h2 class="card__eyebrow" id="goal-check-<?= e($id) ?>"><?= e($copy['manual']) ?></h2>
                         </div>
 
-                        <button type="button" class="btn goal-check__button" disabled>
-                            <?= icon('check', 'goal-check__icon') ?>
-                            Vandaag gelukt
-                        </button>
+                        <?php if ($ticks): ?>
+                            <button type="button" class="btn goal-check__button press" data-goal-tick="<?= e($id) ?>">
+                                <?= icon('check', 'goal-check__icon') ?>
+                                Vandaag gelukt
+                            </button>
+                        <?php else: ?>
+                            <div class="goal-entry">
+                                <label class="sr-only" for="goal-value-<?= e($id) ?>">
+                                    <?= e($copy['manual_value'] ?? 'Huidige waarde') ?>
+                                </label>
+                                <input class="wizard__input goal-entry__input" type="number" step="any"
+                                       inputmode="decimal" id="goal-value-<?= e($id) ?>"
+                                       data-goal-value="<?= e($id) ?>"
+                                       placeholder="<?= e((string) ($goal['current_label'] ?? $copy['manual_value'] ?? 'Huidige waarde')) ?>">
+                                <button type="button" class="btn press" data-goal-save="<?= e($id) ?>">
+                                    <?= e($copy['manual_save'] ?? 'Opslaan') ?>
+                                </button>
+                            </div>
+                        <?php endif; ?>
 
+                        <p class="field-editor__error" role="alert" data-goal-error hidden></p>
                         <p class="card__hint card__hint--plain"><?= e($copy['manual_note']) ?></p>
                     </section>
                 <?php endif; ?>

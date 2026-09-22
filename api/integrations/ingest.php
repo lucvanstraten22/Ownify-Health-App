@@ -75,4 +75,9 @@ api_ok([
     'days'     => $result['days'],
     'unmapped' => $mapped['unmapped'],
     'problems' => $result['problems'],
+
+    /* Goals this batch finished. The app has no use for it, but it makes the
+       link between a sync and a goal moving visible in one response rather
+       than something you have to go and check. */
+    'goals_completed' => $result['goals_completed'] ?? 0,
 ]);

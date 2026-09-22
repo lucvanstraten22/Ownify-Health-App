@@ -16,6 +16,8 @@
  */
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/goal-progress.php';
+
 $goals  = $data['goals'];
 $copy   = $goals['wizard'];
 $steps  = $copy['steps'];
@@ -33,7 +35,7 @@ $total  = count($steps);
                     aria-label="<?= e($copy['close']) ?>"><?= icon('chevron-down') ?></button>
         </div>
 
-        <!-- Progress: five segments and one line of text, nothing more. -->
+        <!-- Progress: one segment per step and one line of text, nothing more. -->
         <div class="wizard__progress">
             <ol class="wizard__bars" role="list" aria-hidden="true">
                 <?php for ($n = 1; $n <= $total; $n++): ?>
@@ -134,9 +136,74 @@ $total  = count($steps);
             </section>
 
             <!-- -------------------------------------------- 4 · duration -->
+            <!-- ------------------------------------------ 4 · bijhouden -->
+            <?php
+            /* The one question the wizard never asked.
+               Every goal used to be created with no source at all, so the bar
+               had nothing to read and nothing to fill it in with either. The
+               list comes from the metric catalogue, so nothing is offered that
+               the app cannot actually read back.
+
+               "Geen data mogelijk" sits at the top rather than buried at the
+               bottom: plenty of worthwhile goals have no health data behind
+               them, and it is a real answer rather than a failure to find
+               something. */
+            $sourceGroups = [];
+            foreach (goal_source_catalogue() as $source) {
+                $sourceGroups[$source['domain']][] = $source;
+            }
+            $domainLabels = [
+                'body'      => 'Lichaam',
+                'training'  => 'Beweging en training',
+                'sleep'     => 'Slaap',
+                'nutrition' => 'Voeding',
+                'vital'     => 'Vitale waarden',
+            ];
+            ?>
             <section class="wizard__step" data-wizard-step="4" aria-label="<?= e($steps[4]['label']) ?>" hidden>
                 <h3 class="wizard__title"><?= e($steps[4]['title']) ?></h3>
                 <p class="wizard__lede"><?= e($steps[4]['lede']) ?></p>
+
+                <p class="wizard__label"><?= e($copy['source_label']) ?></p>
+
+                <div class="wizard__types wizard__types--sources">
+                    <button type="button" class="wizard-type press" data-wizard-source="manual"
+                            data-source-kind="manual" data-source-key="" aria-pressed="false">
+                        <span class="wizard-type__label"><?= e($copy['source_manual']) ?></span>
+                        <span class="wizard-type__hint"><?= e($copy['source_manual_hint']) ?></span>
+                    </button>
+
+                    <?php foreach ($domainLabels as $domain => $domainLabel): ?>
+                        <?php if (empty($sourceGroups[$domain])) { continue; } ?>
+                        <p class="wizard__label wizard__label--spaced"><?= e($domainLabel) ?></p>
+                        <?php foreach ($sourceGroups[$domain] as $source): ?>
+                            <button type="button" class="wizard-type press"
+                                    data-wizard-source="<?= e($source['kind'] . ':' . $source['key']) ?>"
+                                    data-source-kind="<?= e($source['kind']) ?>"
+                                    data-source-key="<?= e($source['key']) ?>"
+                                    data-source-daily="<?= $source['daily'] ? '1' : '0' ?>"
+                                    aria-pressed="false">
+                                <span class="wizard-type__label"><?= e($source['label']) ?></span>
+                                <span class="wizard-type__hint"><?= e($source['unit'] === '' ? 'Uit je eigen gegevens' : 'In ' . $source['unit']) ?></span>
+                            </button>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Only for sources that reset each day, which the catalogue
+                     already knows. Nobody sets a daily target for VO2max. -->
+                <div data-wizard-daily hidden>
+                    <p class="wizard__label wizard__label--spaced"><?= e($copy['source_daily']) ?></p>
+                    <input class="wizard__input" type="number" inputmode="numeric" min="1" step="any"
+                           data-wizard-daily-input
+                           placeholder="<?= e($copy['source_daily_placeholder']) ?>">
+                    <p class="wizard__hint"><?= e($copy['source_daily_hint']) ?></p>
+                </div>
+            </section>
+
+            <section class="wizard__step" data-wizard-step="5" aria-label="<?= e($steps[5]['label']) ?>" hidden>
+                <h3 class="wizard__title"><?= e($steps[5]['title']) ?></h3>
+                <p class="wizard__lede"><?= e($steps[5]['lede']) ?></p>
 
                 <div class="wizard__durations">
                     <?php foreach ($goals['durations'] as $key => $duration): ?>
@@ -152,9 +219,9 @@ $total  = count($steps);
             </section>
 
             <!-- ---------------------------------------- 5 · confirmation -->
-            <section class="wizard__step" data-wizard-step="5" aria-label="<?= e($steps[5]['label']) ?>" hidden>
-                <h3 class="wizard__title"><?= e($steps[5]['title']) ?></h3>
-                <p class="wizard__lede"><?= e($steps[5]['lede']) ?></p>
+            <section class="wizard__step" data-wizard-step="6" aria-label="<?= e($steps[6]['label']) ?>" hidden>
+                <h3 class="wizard__title"><?= e($steps[6]['title']) ?></h3>
+                <p class="wizard__lede"><?= e($steps[6]['lede']) ?></p>
 
                 <dl class="wizard__summary">
                     <div class="wizard__summary-row">
@@ -168,6 +235,10 @@ $total  = count($steps);
                     <div class="wizard__summary-row">
                         <dt><?= e($copy['summary_target']) ?></dt>
                         <dd data-summary="target">—</dd>
+                    </div>
+                    <div class="wizard__summary-row">
+                        <dt><?= e($copy['summary_source']) ?></dt>
+                        <dd data-summary="source">—</dd>
                     </div>
                     <div class="wizard__summary-row">
                         <dt><?= e($copy['summary_duration']) ?></dt>
