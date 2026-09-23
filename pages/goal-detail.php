@@ -219,6 +219,19 @@ $height = 96.0;
                 <?php endif; ?>
 
                 <!-- ------------------------------------------------- 3 -->
+                <?php
+                /* Verloop: the goal's real values against real dates.
+                   lib/goal-chart.php explains the geometry; what matters here
+                   is that every dot is a stored value and nothing else is.
+
+                   Points for the scrubbing layer ride on a data attribute as
+                   pre-formatted Dutch strings, so the script never has to
+                   know how to write "10.425 stappen" or "12 september". */
+                $chartPoints = array_map(
+                    static fn (array $p): array => ['x' => $p['x'], 'y' => $p['y'], 'd' => $p['d'], 'v' => $p['v']],
+                    $chart['points']
+                );
+                ?>
                 <section class="card card--trend reveal <?= $goal['has_history'] ? 'is-filled' : 'is-empty' ?>"
                          aria-labelledby="goal-history-<?= e($id) ?>">
 
@@ -227,44 +240,149 @@ $height = 96.0;
                             <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
                             <h2 class="card__eyebrow" id="goal-history-<?= e($id) ?>"><?= e($copy['history']) ?></h2>
                         </div>
-                        <span class="chip chip--muted"><?= $goal['history_step'] === 'week' ? 'Per week' : 'Per dag' ?></span>
-                    </div>
-
-                    <div class="chart" data-chart>
-                        <div class="chart__range is-active" data-range="goal">
-                            <svg class="chart__svg" viewBox="0 0 <?= (int) $width ?> <?= (int) $height ?>"
-                                 preserveAspectRatio="none" role="img"
-                                 aria-label="<?= e($copy['history']) ?><?= $goal['has_history'] ? '' : ': nog geen verloop' ?>">
-
-                                <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
-                                    <line class="chart__grid" x1="0" x2="<?= (int) $width ?>"
-                                          y1="<?= round(12 + $line * ($height - 24), 1) ?>"
-                                          y2="<?= round(12 + $line * ($height - 24), 1) ?>"/>
-                                <?php endforeach; ?>
-
-                                <g class="chart__series">
-                                    <?php foreach ($chart['area'] as $path): ?>
-                                        <path class="chart__area" d="<?= e($path) ?>"/>
-                                    <?php endforeach; ?>
-                                    <?php foreach ($chart['line'] as $path): ?>
-                                        <path class="chart__line" d="<?= e($path) ?>" data-draw/>
-                                    <?php endforeach; ?>
-                                    <?php foreach ($chart['dots'] as $dot): ?>
-                                        <circle class="chart__dot" cx="<?= e((string) $dot[0]) ?>" cy="<?= e((string) $dot[1]) ?>" r="2.5"/>
-                                    <?php endforeach; ?>
-                                </g>
-                            </svg>
-
-                            <ul class="chart__axis" role="list">
-                                <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? 'Start')) ?></li>
-                                <li class="chart__tick" style="left: 100%;"><?= $goal['is_completed'] ? 'Behaald' : 'Nu' ?></li>
-                            </ul>
-                        </div>
-
-                        <?php if (!$goal['has_history']): ?>
-                            <p class="chart__empty"><?= e($copy['history_empty']) ?></p>
+                        <?php if ($goal['has_history'] && $chart['target'] !== null): ?>
+                            <?php /* The target line's key: a short stroke of the same
+                                     line, so the chip explains the line without a legend box. */ ?>
+                            <span class="chip chip--muted goal-chart__key">
+                                <span class="goal-chart__key-line" aria-hidden="true"></span><?= e($chart['target']['label']) ?>
+                            </span>
                         <?php endif; ?>
                     </div>
+
+                    <?php if ($goal['has_history']): ?>
+                        <div class="chart chart--goal" data-chart>
+                            <div class="chart__range is-active" data-range="goal">
+                                <div class="goal-chart" data-goal-chart
+                                     data-points="<?= e((string) json_encode($chartPoints, JSON_UNESCAPED_UNICODE)) ?>">
+
+                                    <?php if ($chart['axis_unit'] !== ''): ?>
+                                        <p class="goal-chart__unit" aria-hidden="true"><?= e($chart['axis_unit']) ?></p>
+                                    <?php endif; ?>
+
+                                    <div class="goal-chart__frame">
+                                        <div class="goal-chart__plot" data-goal-plot data-gesture-own tabindex="0"
+                                             role="group" aria-roledescription="grafiek"
+                                             aria-label="<?= e($copy['history'] . ' van ' . $goal['name'] . '. ' . $chart['summary']) ?>"
+                                             aria-describedby="goal-chart-hint-<?= e($id) ?>">
+
+                                            <svg class="chart__svg goal-chart__svg"
+                                                 viewBox="0 0 <?= (int) $chart['width'] ?> <?= (int) $chart['height'] ?>"
+                                                 preserveAspectRatio="none" aria-hidden="true" focusable="false">
+
+                                                <?php foreach ($chart['y_ticks'] as $tick): ?>
+                                                    <?php $gy = round($tick['top'] / 100 * $chart['height'], 2); ?>
+                                                    <line class="chart__grid goal-chart__grid" x1="0" x2="<?= (int) $chart['width'] ?>"
+                                                          y1="<?= e((string) $gy) ?>" y2="<?= e((string) $gy) ?>"/>
+                                                <?php endforeach; ?>
+
+                                                <?php if ($chart['target'] !== null): ?>
+                                                    <?php $ty = round($chart['target']['top'] / 100 * $chart['height'], 2); ?>
+                                                    <line class="goal-chart__target" x1="0" x2="<?= (int) $chart['width'] ?>"
+                                                          y1="<?= e((string) $ty) ?>" y2="<?= e((string) $ty) ?>"/>
+                                                <?php endif; ?>
+
+                                                <?php /* The wash fades to nothing on its way down. A flat
+                                                         fill to the bottom of a 74-82 kg axis reads as a
+                                                         quantity from zero, which it is not; a fade keeps
+                                                         the app's look without claiming anything. */ ?>
+                                                <defs>
+                                                    <linearGradient id="goal-wash-<?= e($id) ?>" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="0" class="goal-chart__wash-top"/>
+                                                        <stop offset="1" class="goal-chart__wash-bottom"/>
+                                                    </linearGradient>
+                                                </defs>
+
+                                                <g class="chart__series">
+                                                    <?php foreach ($chart['area'] as $path): ?>
+                                                        <?php /* Inline, because the shared .chart__area rule sets
+                                                                 fill in CSS, and CSS beats an SVG fill attribute. */ ?>
+                                                        <path class="chart__area goal-chart__area" d="<?= e($path) ?>"
+                                                              style="fill: url(#goal-wash-<?= e($id) ?>);"/>
+                                                    <?php endforeach; ?>
+                                                    <?php foreach ($chart['line'] as $path): ?>
+                                                        <path class="chart__line" d="<?= e($path) ?>" data-draw/>
+                                                    <?php endforeach; ?>
+                                                </g>
+                                            </svg>
+
+                                            <?php /* Dots are HTML, not SVG circles: the SVG stretches to
+                                                     the card, and a stretched circle is an ellipse. */ ?>
+                                            <?php foreach ($chart['points'] as $point): ?>
+                                                <?php if ($point['dot']): ?>
+                                                    <span class="goal-chart__dot" aria-hidden="true"
+                                                          style="left: <?= e((string) $point['x']) ?>%; top: <?= e((string) $point['y']) ?>%;"></span>
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+
+                                            <span class="goal-chart__end<?= $chart['end']['below'] ? ' is-below' : '' ?>" aria-hidden="true"
+                                                  style="left: <?= e((string) $chart['end']['x']) ?>%; top: <?= e((string) $chart['end']['y']) ?>%;"><?= e($chart['end']['label']) ?></span>
+
+                                            <span class="goal-chart__cross" data-goal-cross aria-hidden="true" hidden></span>
+                                            <span class="goal-chart__focus" data-goal-focus aria-hidden="true" hidden></span>
+
+                                            <div class="goal-chart__tip" data-goal-tip aria-hidden="true" hidden>
+                                                <span class="goal-chart__tip-date" data-tip-date></span>
+                                                <strong class="goal-chart__tip-value" data-tip-value></strong>
+                                            </div>
+                                        </div>
+
+                                        <ol class="goal-chart__y" role="list" aria-hidden="true">
+                                            <?php foreach ($chart['y_ticks'] as $tick): ?>
+                                                <li style="top: <?= e((string) $tick['top']) ?>%;"><?= e($tick['label']) ?></li>
+                                            <?php endforeach; ?>
+                                        </ol>
+                                    </div>
+
+                                    <ul class="chart__axis goal-chart__x" role="list" aria-hidden="true">
+                                        <?php foreach ($chart['x_ticks'] as $tick): ?>
+                                            <li class="chart__tick is-<?= e($tick['align']) ?>"
+                                                style="left: <?= e((string) $tick['left']) ?>%;"><?= e($tick['label']) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+
+                                    <p class="sr-only" id="goal-chart-hint-<?= e($id) ?>">
+                                        Gebruik de pijltjestoetsen om door de metingen te lopen.
+                                    </p>
+                                    <p class="sr-only" aria-live="polite" data-goal-live></p>
+
+                                    <?php /* The table view: every value reachable without
+                                             hovering, which is what a screen reader reads. */ ?>
+                                    <table class="sr-only">
+                                        <caption><?= e($copy['history'] . ' van ' . $goal['name']) ?></caption>
+                                        <thead><tr><th scope="col">Datum</th><th scope="col">Waarde</th></tr></thead>
+                                        <tbody>
+                                            <?php foreach ($chart['points'] as $point): ?>
+                                                <tr><td><?= e($point['d']) ?></td><td><?= e($point['v']) ?></td></tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <?php /* Nothing recorded yet: the existing empty state, unchanged.
+                                 A faint grid and one sentence, never an invented line. */ ?>
+                        <div class="chart" data-chart>
+                            <div class="chart__range is-active" data-range="goal">
+                                <svg class="chart__svg" viewBox="0 0 <?= (int) $width ?> <?= (int) $height ?>"
+                                     preserveAspectRatio="none" role="img"
+                                     aria-label="<?= e($copy['history']) ?>: nog geen verloop">
+                                    <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
+                                        <line class="chart__grid" x1="0" x2="<?= (int) $width ?>"
+                                              y1="<?= round(12 + $line * ($height - 24), 1) ?>"
+                                              y2="<?= round(12 + $line * ($height - 24), 1) ?>"/>
+                                    <?php endforeach; ?>
+                                </svg>
+
+                                <ul class="chart__axis" role="list">
+                                    <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? 'Start')) ?></li>
+                                    <li class="chart__tick" style="left: 100%;"><?= $goal['is_completed'] ? 'Behaald' : 'Nu' ?></li>
+                                </ul>
+                            </div>
+
+                            <p class="chart__empty"><?= e($copy['history_empty']) ?></p>
+                        </div>
+                    <?php endif; ?>
                 </section>
 
                 <!-- ------------------------------------------------- 4 -->

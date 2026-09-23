@@ -168,6 +168,17 @@ if (!function_exists('goal_sources_available')) {
     {
         switch ($kind) {
             case 'metric':
+                /* Sleep is offered as a metric but stored as sessions, so a
+                   sleep goal read only from health_metrics never saw a single
+                   night. Sessions first, readings as the fallback. */
+                if (goal_is_sleep_key($key)) {
+                    $value = goal_sleep_by_day($userId, $key, $date, $date)[$date] ?? null;
+
+                    if ($value !== null) {
+                        return $value;
+                    }
+                }
+
                 return health_daily_metric($userId, $key, $date);
 
             case 'measurement':
@@ -206,6 +217,17 @@ if (!function_exists('goal_sources_available')) {
     /** The newest figure of any date, for goals that track a standing value. */
     function goal_source_latest(int $userId, string $kind, string $key): ?float
     {
+        if ($kind === 'metric' && goal_is_sleep_key($key)) {
+            $night = db_value(
+                'SELECT MAX(night_of) FROM sleep_sessions WHERE user_id = ?',
+                [$userId]
+            );
+
+            if ($night !== null) {
+                return goal_sleep_by_day($userId, $key, (string) $night, (string) $night)[(string) $night] ?? null;
+            }
+        }
+
         switch ($kind) {
             case 'measurement':
                 /* id breaks the tie. Two readings can share a timestamp —
@@ -678,5 +700,253 @@ if (!function_exists('goal_sources_available')) {
         }
 
         return $completed;
+    }
+
+    /* ==================================================================
+       SLEEP, WHICH IS STORED AS NIGHTS
+       ================================================================== */
+
+    /** The two sleep codes that live in sleep_sessions rather than readings. */
+    function goal_is_sleep_key(string $key): bool
+    {
+        return $key === 'sleep_duration' || $key === 'sleep_efficiency';
+    }
+
+    /**
+     * Sleep per night, from the sessions themselves.
+     *
+     * A night is filed under the morning it ended, which is what night_of
+     * already means everywhere else in the app. Two sessions on one night —
+     * a nap, a broken night — add up for duration and average for efficiency.
+     *
+     * @return array<string, float>  night => value, only nights with a session
+     */
+    function goal_sleep_by_day(int $userId, string $key, string $from, string $to): array
+    {
+        $column = $key === 'sleep_efficiency' ? 'AVG(efficiency_pct)' : 'SUM(duration_minutes)';
+
+        $out = [];
+
+        foreach (db_all(
+            'SELECT night_of AS d, ' . $column . ' AS v FROM sleep_sessions
+              WHERE user_id = ? AND night_of BETWEEN ? AND ?
+           GROUP BY night_of',
+            [$userId, $from, $to]
+        ) as $row) {
+            if ($row['v'] !== null) {
+                $out[(string) $row['d']] = (float) $row['v'];
+            }
+        }
+
+        return $out;
+    }
+
+    /* ==================================================================
+       A SOURCE, DAY BY DAY
+       ================================================================== */
+
+    /**
+     * One figure per day between two dates, in one query rather than one per
+     * day — a month of steps is thirty readings, and the chart draws on every
+     * render of the detail screen.
+     *
+     * Only days with data come back. A missing key is a day nothing was
+     * recorded, never a zero; the one exception is a count of workouts, where
+     * a day without one really is zero, and that is the caller's to fill in.
+     *
+     * @return array<string, float>  date => value, oldest first
+     */
+    function goal_source_by_day(int $userId, string $kind, string $key, string $from, string $to): array
+    {
+        $out = [];
+
+        switch ($kind) {
+            case 'metric':
+                $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$key]);
+
+                if ($type !== null) {
+                    /* The catalogue decides how a day rolls up, exactly as
+                       health_daily_metric() does, so the chart and the day
+                       calendar can never disagree about what a day was. */
+                    $aggregate = match ($type['aggregation']) {
+                        'sum'   => 'SUM(value)',
+                        'avg'   => 'AVG(value)',
+                        'min'   => 'MIN(value)',
+                        'max'   => 'MAX(value)',
+                        default => 'SUBSTRING_INDEX(GROUP_CONCAT(value ORDER BY recorded_at DESC, id DESC), ",", 1)',
+                    };
+
+                    foreach (db_all(
+                        'SELECT recorded_on AS d, ' . $aggregate . ' AS v FROM health_metrics
+                          WHERE user_id = ? AND metric_type_id = ? AND recorded_on BETWEEN ? AND ?
+                       GROUP BY recorded_on',
+                        [$userId, (int) $type['id'], $from, $to]
+                    ) as $row) {
+                        if ($row['v'] !== null) {
+                            $out[(string) $row['d']] = (float) $row['v'];
+                        }
+                    }
+                }
+
+                /* Sleep nights win over readings for the same date. */
+                if (goal_is_sleep_key($key)) {
+                    $out = goal_sleep_by_day($userId, $key, $from, $to) + $out;
+                }
+                break;
+
+            case 'measurement':
+                foreach (db_all(
+                    'SELECT DATE(measured_at) AS d,
+                            SUBSTRING_INDEX(GROUP_CONCAT(value ORDER BY measured_at DESC, id DESC), ",", 1) AS v
+                       FROM user_measurements
+                      WHERE user_id = ? AND measurement_type = ? AND DATE(measured_at) BETWEEN ? AND ?
+                   GROUP BY DATE(measured_at)',
+                    [$userId, $key, $from, $to]
+                ) as $row) {
+                    $out[(string) $row['d']] = (float) $row['v'];
+                }
+                break;
+
+            case 'workout':
+                $column = $key === 'sessions' ? 'COUNT(*)' : 'SUM(duration_seconds) / 60';
+
+                foreach (db_all(
+                    'SELECT DATE(started_at) AS d, ' . $column . ' AS v FROM workouts
+                      WHERE user_id = ? AND DATE(started_at) BETWEEN ? AND ?
+                   GROUP BY DATE(started_at)',
+                    [$userId, $from, $to]
+                ) as $row) {
+                    if ($row['v'] !== null) {
+                        $out[(string) $row['d']] = (float) $row['v'];
+                    }
+                }
+                break;
+        }
+
+        ksort($out);
+
+        return $out;
+    }
+
+    /* ==================================================================
+       THE SERIES THE CHART DRAWS
+       ================================================================== */
+
+    /**
+     * Every real value behind a goal, dated, oldest first.
+     *
+     * What the chart plots is the thing the goal is actually about — the kilos,
+     * the steps, the hours — not the percentage, which is what it used to plot.
+     * A line of percentages cannot say "80 kg on the 12th"; this can.
+     *
+     * No point is ever made up. A day without data is absent, not zero, and
+     * not interpolated: in a daily goal the line breaks there rather than
+     * sweeping across a day nobody recorded. With no data at all the series is
+     * empty and the card shows its existing empty state.
+     *
+     *   value   a standing figure — the latest reading of each day
+     *   total   an accumulating figure — the running total since the start
+     *   daily   a figure to clear each day — that day's value
+     *   manual  whatever the person entered, on the day they entered it
+     *
+     * @return array{points: list<array{date: string, value: float}>, mode: string, target: ?float, breaks: bool}
+     */
+    function goal_series(int $userId, array $goal, ?DateTimeImmutable $today = null): array
+    {
+        $today = $today ?? new DateTimeImmutable('today');
+        $from  = (string) $goal['start_date'];
+        $to    = $today->format('Y-m-d');
+
+        /* A finished goal stops where it finished, so its line is the story of
+           how it got there and not of whatever the data did afterwards. */
+        if ($goal['status'] === 'completed' && !empty($goal['completed_at'])) {
+            $to = min($to, substr((string) $goal['completed_at'], 0, 10));
+        }
+
+        if (!empty($goal['end_date'])) {
+            $to = min($to, (string) $goal['end_date']);
+        }
+
+        if ($to < $from) {
+            $to = $from;
+        }
+
+        $target = $goal['target_value'] === null ? null : (float) $goal['target_value'];
+        $blank  = ['points' => [], 'mode' => 'manual', 'target' => $target, 'breaks' => false];
+
+        /* Manual: the values the person entered, on the days they entered them. */
+        if (!goal_sources_available() || ($goal['tracking_mode'] ?? 'manual') !== 'auto') {
+            $points = [];
+
+            foreach (db_all(
+                'SELECT p.recorded_on, p.current_value
+                   FROM goal_progress p
+                   JOIN goals g ON g.id = p.goal_id
+                  WHERE p.goal_id = ? AND g.user_id = ? AND p.current_value IS NOT NULL
+                    AND p.recorded_on <= ?
+               ORDER BY p.recorded_on',
+                [(int) $goal['id'], $userId, $to]
+            ) as $row) {
+                $points[] = ['date' => (string) $row['recorded_on'], 'value' => (float) $row['current_value']];
+            }
+
+            return ['points' => $points] + $blank;
+        }
+
+        $kind = (string) ($goal['source_kind'] ?? 'manual');
+        $key  = (string) ($goal['source_key'] ?? '');
+
+        if (goal_source_find($kind, $key) === null) {
+            return $blank;
+        }
+
+        $days = goal_source_by_day($userId, $kind, $key, $from, $to);
+
+        /* A day with no workout is a day with zero workouts — a fact rather
+           than a gap, and the day calendar already counts it that way. */
+        if ($kind === 'workout' && $key === 'sessions' && $goal['daily_target'] !== null) {
+            for ($d = new DateTimeImmutable($from); $d->format('Y-m-d') <= $to; $d = $d->modify('+1 day')) {
+                $days[$d->format('Y-m-d')] ??= 0.0;
+            }
+            ksort($days);
+        }
+
+        $points = [];
+
+        if ($goal['daily_target'] !== null) {
+            foreach ($days as $date => $value) {
+                $points[] = ['date' => $date, 'value' => $value];
+            }
+
+            return [
+                'points' => $points,
+                'mode'   => 'daily',
+                'target' => (float) $goal['daily_target'],
+                'breaks' => true,
+            ];
+        }
+
+        $source     = goal_source_find($kind, $key);
+        $cumulative = $kind === 'workout' || ($source['daily'] ?? false);
+
+        if ($cumulative) {
+            /* A running total, as the goal itself counts it. The line starts
+               at the first day with anything in it — not at an invented zero
+               on the goal's first day. */
+            $running = 0.0;
+
+            foreach ($days as $date => $value) {
+                $running += $value;
+                $points[] = ['date' => $date, 'value' => $running];
+            }
+
+            return ['points' => $points, 'mode' => 'total', 'target' => $target, 'breaks' => false];
+        }
+
+        foreach ($days as $date => $value) {
+            $points[] = ['date' => $date, 'value' => $value];
+        }
+
+        return ['points' => $points, 'mode' => 'value', 'target' => $target, 'breaks' => false];
     }
 }

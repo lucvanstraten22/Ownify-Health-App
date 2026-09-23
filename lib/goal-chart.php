@@ -1,0 +1,552 @@
+<?php
+/**
+ * The "Verloop" chart on a goal's detail screen — geometry and words.
+ *
+ * ---------------------------------------------------------------------------
+ * WHAT CHANGED, AND WHY
+ * ---------------------------------------------------------------------------
+ * The chart used to plot the stored percentage, spaced by position in the
+ * list rather than by date. So it could not say "80 kg on the 12th", a week
+ * with no readings looked exactly like a day, and the scale was always 0-100
+ * whatever the goal was about.
+ *
+ * It now plots the thing the goal is about — kilos, steps, hours — against
+ * real dates, from goal_series(), with axes that adapt to the data: days for a
+ * short stretch, weeks for a month or two, months beyond that, and a Y range
+ * rounded to clean numbers around the actual values and the target.
+ *
+ * ---------------------------------------------------------------------------
+ * NOTHING IS MADE UP
+ * ---------------------------------------------------------------------------
+ * Every point is a stored value on its own date. Three points means three
+ * dots. A day nobody recorded in a daily goal breaks the line rather than
+ * being bridged. And the curve is monotone between points, so it can never
+ * swing above the best day or below the lowest reading on its way from one to
+ * the next — the shared Catmull-Rom smoothing can, which is fine for a score
+ * trend and wrong for "you weighed 79.6 kg" when nobody ever did.
+ */
+
+declare(strict_types=1);
+
+if (!defined('GOAL_CHART_W')) {
+    define('GOAL_CHART_W', 1000.0);   // viewBox width; the SVG stretches to the card
+    define('GOAL_CHART_H', 132.0);    // viewBox height = CSS height, so strokes stay 1:1
+    define('GOAL_CHART_PAD', 0.03);   // keeps the end dots off the very edge
+}
+
+if (!function_exists('goal_chart_build')) {
+
+    /* ==================================================================
+       WORDS: units, numbers, dates
+       ================================================================== */
+
+    /**
+     * How this goal's values are written.
+     *
+     * Most sources say their own unit. A few are stored in a form nobody
+     * thinks in: sleep is kept in minutes and read in hours, steps have no
+     * unit symbol at all and are simply "stappen".
+     *
+     * @return array{word: string, one: string, axis: string, scale: float, decimals: int, attached: bool}
+     */
+    function goal_chart_unit(array $goal): array
+    {
+        $make = static fn (string $word, int $decimals = 0, float $scale = 1.0, ?string $one = null, bool $attached = false): array => [
+            'word'     => $word,
+            'one'      => $one ?? $word,
+            'axis'     => $word,
+            'scale'    => $scale,
+            'decimals' => $decimals,
+            'attached' => $attached,   // "85%" rather than "85 %"
+        ];
+
+        if (($goal['tracking'] ?? 'manual') !== 'auto') {
+            /* Whatever the person called it when they made the goal. */
+            return $make(trim((string) ($goal['target_unit'] ?? '')), 1);
+        }
+
+        $kind = (string) ($goal['source_kind'] ?? '');
+        $key  = (string) ($goal['source_key'] ?? '');
+
+        if ($kind === 'measurement') {
+            return match ($key) {
+                'body_fat_pct' => $make('%', 1, 1.0, null, true),
+                'waist_cm'     => $make('cm'),
+                default        => $make('kg', 1),
+            };
+        }
+
+        if ($kind === 'workout') {
+            return $key === 'sessions'
+                ? $make('trainingen', 0, 1.0, 'training')
+                : $make('min');
+        }
+
+        return match ($key) {
+            'steps'            => $make('stappen', 0, 1.0, 'stap'),
+            'floors'           => $make('verdiepingen', 0, 1.0, 'verdieping'),
+            'sleep_duration'   => $make('uur', 1, 1 / 60),
+            'sleep_efficiency', 'sleep_regularity', 'spo2' => $make('%', 0, 1.0, null, true),
+            'distance'         => $make('km', 1),
+            'water'            => $make('l', 1),
+            'energy', 'active_energy', 'total_energy' => $make('kcal'),
+            'protein', 'carbs', 'fat', 'fibre', 'sugar', 'saturated_fat' => $make('g'),
+            'sodium'           => $make('mg'),
+            'sleeping_hr', 'resting_hr' => $make('bpm'),
+            'hrv'              => $make('ms'),
+            'respiratory_rate' => $make('/min', 0, 1.0, null, true),
+            'skin_temp'        => $make('°C', 1),
+            'active_minutes'   => $make('min'),
+            'vo2max'           => $make('ml/kg/min', 1),
+            'nutrition_rating' => $make('/10', 1, 1.0, null, true),
+            'readiness'        => $make('/100', 0, 1.0, null, true),
+            default            => $make(''),
+        };
+    }
+
+    /** Dutch digits: a point for thousands, a comma for decimals, no trailing zeroes. */
+    function goal_chart_number(float $value, int $decimals): string
+    {
+        $text = number_format($value, $decimals, ',', '.');
+
+        if ($decimals > 0) {
+            $text = rtrim(rtrim($text, '0'), ',');
+        }
+
+        return $text === '-0' ? '0' : $text;
+    }
+
+    /** A value with its unit, the way the tooltip and the end label say it. */
+    function goal_chart_value(float $raw, array $unit): string
+    {
+        $shown = $raw * $unit['scale'];
+        $text  = goal_chart_number($shown, $unit['decimals']);
+
+        if ($unit['word'] === '') {
+            return $text;
+        }
+
+        $word = round($shown, $unit['decimals']) == 1.0 ? $unit['one'] : $unit['word'];
+
+        return $unit['attached'] ? $text . $word : $text . ' ' . $word;
+    }
+
+    function goal_chart_month(int $month, bool $long): string
+    {
+        static $names = [
+            1 => ['jan', 'januari'], 2 => ['feb', 'februari'], 3 => ['mrt', 'maart'],
+            4 => ['apr', 'april'], 5 => ['mei', 'mei'], 6 => ['jun', 'juni'],
+            7 => ['jul', 'juli'], 8 => ['aug', 'augustus'], 9 => ['sep', 'september'],
+            10 => ['okt', 'oktober'], 11 => ['nov', 'november'], 12 => ['dec', 'december'],
+        ];
+
+        return $names[$month][$long ? 1 : 0];
+    }
+
+    /**
+     * "12 september". The year only when it is not this one — every value
+     * here is a day, so a time of day would be precision the data does not
+     * have.
+     */
+    function goal_chart_date_long(DateTimeImmutable $day, DateTimeImmutable $today): string
+    {
+        $text = (int) $day->format('j') . ' ' . goal_chart_month((int) $day->format('n'), true);
+
+        return $day->format('Y') === $today->format('Y') ? $text : $text . ' ' . $day->format('Y');
+    }
+
+    /* ==================================================================
+       SCALES
+       ================================================================== */
+
+    /**
+     * A clean step between Y ticks — 1, 2 or 5 times a power of ten — so the
+     * axis reads 76 / 78 / 80 and never 76.4 / 78.1 / 79.8.
+     */
+    function goal_chart_step(float $low, float $high, int $count): float
+    {
+        $raw = ($high - $low) / max(1, $count);
+
+        if ($raw <= 0) {
+            return 1.0;
+        }
+
+        $step  = 10 ** floor(log10($raw));
+        $error = $raw / $step;
+
+        if ($error >= 7.07) {
+            $step *= 10;
+        } elseif ($error >= 3.16) {
+            $step *= 5;
+        } elseif ($error >= 1.41) {
+            $step *= 2;
+        }
+
+        return $step;
+    }
+
+    /** How many decimals a step needs to be written exactly. */
+    function goal_chart_step_decimals(float $step): int
+    {
+        for ($d = 0; $d <= 3; $d++) {
+            if (abs(round($step, $d) - $step) < 1e-9) {
+                return $d;
+            }
+        }
+
+        return 3;
+    }
+
+    /**
+     * A monotone cubic through the points (Fritsch–Carlson).
+     *
+     * Smooth like the rest of the app's lines, but it never overshoots: between
+     * two points the curve stays between their two values. The shared helper
+     * does not promise that, and on a chart of real measurements an overshoot
+     * is a value that was never measured.
+     *
+     * @param list<array{0: float, 1: float}> $points
+     */
+    function goal_chart_monotone(array $points): string
+    {
+        $n = count($points);
+
+        if ($n === 0) {
+            return '';
+        }
+
+        $fmt = static fn (float $v): string => rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
+
+        if ($n === 1) {
+            return 'M ' . $fmt($points[0][0]) . ' ' . $fmt($points[0][1]);
+        }
+
+        $dx = $dy = $m = [];
+        for ($i = 0; $i < $n - 1; $i++) {
+            $dx[$i] = $points[$i + 1][0] - $points[$i][0];
+            $dy[$i] = $points[$i + 1][1] - $points[$i][1];
+            $m[$i]  = $dx[$i] == 0.0 ? 0.0 : $dy[$i] / $dx[$i];
+        }
+
+        $t = array_fill(0, $n, 0.0);
+        $t[0]      = $m[0];
+        $t[$n - 1] = $m[$n - 2];
+
+        for ($i = 1; $i < $n - 1; $i++) {
+            $t[$i] = ($m[$i - 1] * $m[$i] <= 0) ? 0.0 : ($m[$i - 1] + $m[$i]) / 2;
+        }
+
+        for ($i = 0; $i < $n - 1; $i++) {
+            if ($m[$i] == 0.0) {
+                $t[$i] = $t[$i + 1] = 0.0;
+                continue;
+            }
+
+            $a = $t[$i] / $m[$i];
+            $b = $t[$i + 1] / $m[$i];
+            $h = $a * $a + $b * $b;
+
+            if ($h > 9) {
+                $k = 3 / sqrt($h);
+                $t[$i]     = $k * $a * $m[$i];
+                $t[$i + 1] = $k * $b * $m[$i];
+            }
+        }
+
+        $path = 'M ' . $fmt($points[0][0]) . ' ' . $fmt($points[0][1]);
+
+        for ($i = 0; $i < $n - 1; $i++) {
+            $third = $dx[$i] / 3;
+            $path .= ' C ' . $fmt($points[$i][0] + $third) . ' ' . $fmt($points[$i][1] + $t[$i] * $third)
+                . ', ' . $fmt($points[$i + 1][0] - $third) . ' ' . $fmt($points[$i + 1][1] - $t[$i + 1] * $third)
+                . ', ' . $fmt($points[$i + 1][0]) . ' ' . $fmt($points[$i + 1][1]);
+        }
+
+        return $path;
+    }
+
+    /* ==================================================================
+       THE CHART
+       ================================================================== */
+
+    /**
+     * Everything the template needs to draw one goal's Verloop.
+     *
+     * Positions come back as percentages of the plot box, so the dots, the
+     * crosshair and the tooltip — which are HTML, not SVG — land exactly on
+     * the line at any width without being stretched into ellipses.
+     */
+    function goal_chart_build(array $goal, array $series, ?DateTimeImmutable $today = null): array
+    {
+        $today  = $today ?? new DateTimeImmutable('today');
+        $unit   = goal_chart_unit($goal);
+        $points = $series['points'] ?? [];
+
+        $empty = [
+            'has_data' => false, 'points' => [], 'line' => [], 'area' => [],
+            'x_ticks' => [], 'y_ticks' => [], 'target' => null, 'end' => null,
+            'axis_unit' => $unit['axis'], 'width' => GOAL_CHART_W, 'height' => GOAL_CHART_H,
+            'all_dots' => false, 'summary' => '', 'mode' => $series['mode'] ?? 'manual',
+        ];
+
+        if ($points === []) {
+            return $empty;
+        }
+
+        /* ------------------------------------------------------- X domain */
+        $dates = array_map(static fn (array $p): DateTimeImmutable => new DateTimeImmutable($p['date']), $points);
+        $first = $dates[0];
+        $last  = $dates[count($dates) - 1];
+
+        /* A week at least, so a single reading is a dot on a timeline rather
+           than a dot filling the card. Widened backwards: the latest value
+           stays at the right edge, where the eye expects "now". */
+        $start = $first;
+        if ((int) $first->diff($last)->days < 6) {
+            $start = $last->modify('-6 day');
+        }
+        $end  = $last;
+        $span = max(1, (int) $start->diff($end)->days);
+
+        $xOf = static function (DateTimeImmutable $d) use ($start, $span): float {
+            $f = (int) $start->diff($d)->days / $span;
+            return GOAL_CHART_PAD + $f * (1 - 2 * GOAL_CHART_PAD);
+        };
+
+        /* ------------------------------------------------------- Y domain */
+        $values = array_map(static fn (array $p): float => (float) $p['value'] * $unit['scale'], $points);
+        $target = $series['target'] === null ? null : (float) $series['target'] * $unit['scale'];
+
+        $low  = min($values);
+        $high = max($values);
+
+        /* The target is part of the picture: how far the line is from where
+           it is going is most of what the chart is for. */
+        if ($target !== null) {
+            $low  = min($low, $target);
+            $high = max($high, $target);
+        }
+
+        /* A count is read from zero; a body weight is not. Zero comes in for
+           daily and running totals, and for anything whose values already
+           reach down near it — never for 74-82 kg, where it would flatten the
+           only movement that matters. */
+        $mode = (string) ($series['mode'] ?? 'value');
+        if ($low >= 0 && ($mode === 'daily' || $mode === 'total' || ($high > 0 && $low / $high < 0.5))) {
+            $low = 0.0;
+        }
+
+        if ($high - $low < 1e-9) {
+            $pad   = max(1.0, abs($high) * 0.1);
+            $low  -= $pad;
+            $high += $pad;
+            if ($low < 0 && min($values) >= 0) {
+                $low = 0.0;
+            }
+        }
+
+        $step  = goal_chart_step($low, $high, 4);
+        $yMin  = floor($low / $step) * $step;
+        $yMax  = ceil($high / $step) * $step;
+        if ($yMax - $yMin < 1e-9) {
+            $yMax = $yMin + $step;
+        }
+
+        $yOf = static fn (float $v): float => ($yMax - $v) / ($yMax - $yMin);
+
+        $tickDecimals = goal_chart_step_decimals($step);
+        $yTicks = [];
+        for ($v = $yMin; $v <= $yMax + $step / 2; $v += $step) {
+            $yTicks[] = [
+                'top'   => round($yOf($v) * 100, 3),
+                'label' => goal_chart_number($v, $tickDecimals),
+            ];
+        }
+
+        /* ------------------------------------------------------- X ticks */
+        $xTicks = goal_chart_x_ticks($start, $end, $span, $xOf);
+
+        /* ------------------------------------------------------- points */
+        $out = [];
+        foreach ($points as $i => $p) {
+            $out[] = [
+                'x'     => round($xOf($dates[$i]) * 100, 3),
+                'y'     => round($yOf($values[$i]) * 100, 3),
+                'date'  => $p['date'],
+                'd'     => goal_chart_date_long($dates[$i], $today),
+                'v'     => goal_chart_value((float) $p['value'], $unit),
+            ];
+        }
+
+        /* ------------------------------------------------------- line runs */
+        /* In a daily goal a missing day is a break, not a bridge: joining
+           Monday to Thursday would draw Tuesday and Wednesday, and nobody
+           recorded those. */
+        $runs = [];
+        $run  = [];
+        foreach ($out as $i => $p) {
+            if ($run !== [] && !empty($series['breaks'])
+                && (int) $dates[$i - 1]->diff($dates[$i])->days > 1) {
+                $runs[] = $run;
+                $run = [];
+            }
+            $run[] = [$p['x'] / 100 * GOAL_CHART_W, $p['y'] / 100 * GOAL_CHART_H];
+        }
+        if ($run !== []) {
+            $runs[] = $run;
+        }
+
+        $lines = $areas = [];
+        foreach ($runs as $segment) {
+            if (count($segment) < 2) {
+                continue;               // a lone day is a dot, drawn below
+            }
+
+            $path    = goal_chart_monotone($segment);
+            $lines[] = $path;
+            $areas[] = $path
+                . ' L ' . round($segment[count($segment) - 1][0], 2) . ' ' . GOAL_CHART_H
+                . ' L ' . round($segment[0][0], 2) . ' ' . GOAL_CHART_H . ' Z';
+        }
+
+        /* Every point gets a dot while there are few enough to tell apart; past
+           that, the line carries the shape and only the latest keeps its dot.
+           A lone day in a broken daily line always keeps one, or it would not
+           be visible at all. */
+        $allDots = count($out) <= 16;
+        $lone    = [];
+        $offset  = 0;
+        foreach ($runs as $segment) {
+            if (count($segment) === 1) {
+                $lone[] = $offset;
+            }
+            $offset += count($segment);
+        }
+
+        foreach ($out as $i => &$p) {
+            $p['dot'] = $allDots || in_array($i, $lone, true) || $i === count($out) - 1;
+        }
+        unset($p);
+
+        /* ------------------------------------------------------- labels */
+        $lastPoint = $out[count($out) - 1];
+        $endLabel  = [
+            'x'     => $lastPoint['x'],
+            'y'     => $lastPoint['y'],
+            'label' => $lastPoint['v'],
+            'below' => $lastPoint['y'] < 22,   // no room above a point at the top
+        ];
+
+        $targetOut = null;
+        if ($target !== null) {
+            $targetOut = [
+                'top'   => round($yOf($target) * 100, 3),
+                'label' => ($mode === 'daily' ? 'Dagdoel ' : 'Doel ')
+                    . goal_chart_value((float) $series['target'], $unit),
+            ];
+
+            /* If the end label would sit on the target line, drop it to the
+               other side of its point rather than print one over the other. */
+            if (abs($targetOut['top'] - $lastPoint['y']) < 12) {
+                $endLabel['below'] = $targetOut['top'] < $lastPoint['y'];
+            }
+        }
+
+        $summary = sprintf(
+            '%d %s tussen %s en %s, van %s naar %s.%s',
+            count($out),
+            count($out) === 1 ? 'meting' : 'metingen',
+            $out[0]['d'],
+            $lastPoint['d'],
+            $out[0]['v'],
+            $lastPoint['v'],
+            $targetOut === null ? '' : ' ' . $targetOut['label'] . '.'
+        );
+
+        return [
+            'has_data'  => true,
+            'points'    => $out,
+            'line'      => $lines,
+            'area'      => $areas,
+            'x_ticks'   => $xTicks,
+            'y_ticks'   => $yTicks,
+            'target'    => $targetOut,
+            'end'       => $endLabel,
+            'axis_unit' => $unit['axis'],
+            'width'     => GOAL_CHART_W,
+            'height'    => GOAL_CHART_H,
+            'all_dots'  => $allDots,
+            'summary'   => $summary,
+            'mode'      => $mode,
+        ];
+    }
+
+    /**
+     * Date ticks at a grain that suits the span.
+     *
+     *   up to 16 days    days      "12 sep"
+     *   up to 10 weeks   Mondays   "7 sep"
+     *   longer           months    "sep", with the year on January
+     *
+     * At most five labels, because that is what fits across a phone without
+     * two dates touching; the tooltip carries the exact day of every point.
+     *
+     * @return list<array{left: float, label: string, align: string}>
+     */
+    function goal_chart_x_ticks(DateTimeImmutable $start, DateTimeImmutable $end, int $span, callable $xOf): array
+    {
+        $candidates = [];
+
+        if ($span <= 16) {
+            $step = max(1, (int) ceil($span / 4));
+            for ($d = $start; $d <= $end; $d = $d->modify('+' . $step . ' day')) {
+                $candidates[] = [$d, (int) $d->format('j') . ' ' . goal_chart_month((int) $d->format('n'), false)];
+            }
+        } elseif ($span <= 70) {
+            $step   = $span > 35 ? 14 : 7;
+            $monday = $start->modify('monday this week');
+            if ($monday < $start) {
+                $monday = $monday->modify('+7 day');
+            }
+            for ($d = $monday; $d <= $end; $d = $d->modify('+' . $step . ' day')) {
+                $candidates[] = [$d, (int) $d->format('j') . ' ' . goal_chart_month((int) $d->format('n'), false)];
+            }
+        } else {
+            $months = (int) ceil($span / 30.4);
+            $every  = max(1, (int) ceil($months / 5));
+            $crosses = $start->format('Y') !== $end->format('Y');
+            $d = $start->modify('first day of next month');
+            if ($start->format('j') === '1') {
+                $d = $start;
+            }
+            for (; $d <= $end; $d = $d->modify('+' . $every . ' month')) {
+                $label = goal_chart_month((int) $d->format('n'), false);
+                if ($crosses && $d->format('n') === '1') {
+                    $label .= " '" . $d->format('y');
+                }
+                $candidates[] = [$d, $label];
+            }
+        }
+
+        $ticks = [];
+        $last  = -1.0;
+
+        foreach ($candidates as [$day, $label]) {
+            $f = $xOf($day);
+
+            /* Two labels closer than this overlap on a phone. */
+            if ($last >= 0 && $f - $last < 0.16) {
+                continue;
+            }
+
+            $ticks[] = [
+                'left'  => round($f * 100, 3),
+                'label' => $label,
+                'align' => $f < 0.08 ? 'start' : ($f > 0.92 ? 'end' : 'center'),
+            ];
+            $last = $f;
+        }
+
+        return $ticks;
+    }
+}

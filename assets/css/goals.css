@@ -1159,3 +1159,233 @@
 .goal-entry .btn {
     flex: 0 0 auto;
 }
+
+/* --------------------------------------------------------------------------
+   Verloop — the goal's real values against real dates
+   --------------------------------------------------------------------------
+   The same card, the same line, the same 10% wash as every other trend in the
+   app; what changed is what it plots (kilos, steps, hours — not a percentage)
+   and that it now answers "what was it on the 12th?" under a finger.
+
+   Only the goal chart is touched. The Gezondheid trends share .chart__*, so
+   everything new lives under .goal-chart.
+   -------------------------------------------------------------------------- */
+/* The same gap below the head as every other trend card. It is also the band
+   the reading appears in, so it must never be tightened: any less and the
+   reading lands on the chip in the head. */
+.chart--goal { margin-top: var(--space-5); }
+
+.goal-chart {
+    --plot-h: 132px;      /* = the viewBox height, so hairlines stay 1:1 */
+    --gutter: 38px;
+    position: relative;
+}
+
+/* The Y axis says what it measures once, above its numbers, rather than
+   repeating "kg" on every tick. */
+.goal-chart__unit {
+    margin: 0 0 6px;
+    text-align: right;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.goal-chart__frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--gutter);
+    column-gap: var(--space-2);
+}
+
+.goal-chart__plot {
+    position: relative;
+    height: var(--plot-h);
+    border-radius: 6px;
+
+    /* Vertical drags still scroll the page; horizontal ones scrub the chart.
+       The deck's own swipe gesture is kept off it by data-gesture-own. */
+    touch-action: pan-y;
+    cursor: crosshair;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.goal-chart__plot:focus { outline: none; }
+.goal-chart__plot:focus-visible {
+    outline: 2px solid var(--glass-border);
+    outline-offset: 6px;
+}
+
+.goal-chart__svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.goal-chart__grid { vector-effect: non-scaling-stroke; }
+
+/* The shared .chart__area is a flat 10% fill; here the same hue fades out. */
+.goal-chart__area { opacity: 1; }
+.goal-chart__wash-top    { stop-color: var(--accent); stop-opacity: 0.16; }
+.goal-chart__wash-bottom { stop-color: var(--accent); stop-opacity: 0; }
+
+/* The target: one step brighter than the grid so it reads as a reference and
+   not a gridline, solid rather than dashed — a dash reads as a projection. */
+.goal-chart__target {
+    stroke: var(--text-faint);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+/* Every real value gets a dot while there are few enough to tell apart. The
+   ring is the card's own colour, so a dot stays legible where it sits on the
+   line. HTML rather than SVG, because the SVG stretches and a stretched
+   circle is an ellipse. */
+.goal-chart__dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--bg-secondary);
+    pointer-events: none;
+}
+
+/* The latest value, written at the end of the line — the one direct label. */
+.goal-chart__end {
+    position: absolute;
+    transform: translate(-100%, calc(-100% - 9px));
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+}
+
+.goal-chart__end.is-below { transform: translate(-100%, 9px); }
+
+/* While a finger is on the chart the tooltip says it better. */
+.goal-chart.is-reading .goal-chart__end { opacity: 0; }
+
+/* --- the reading layer ------------------------------------------------ */
+
+.goal-chart__cross {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    margin-left: -0.5px;
+    background: rgba(255, 255, 255, 0.28);
+    pointer-events: none;
+}
+
+.goal-chart__focus {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent);
+    pointer-events: none;
+}
+
+/* Above the plot, never on it: the reading sits where no data can be, and a
+   finger on the line cannot cover it. Positioned from script, clamped so it
+   never leaves the card. */
+.goal-chart__tip {
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 4px 11px 5px;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    /* Near-opaque: whatever it passes over — the unit, the edge of the head —
+       must not show through the number being read. */
+    background: rgba(46, 42, 44, 0.97);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* display: flex above would otherwise beat the hidden attribute and leave an
+   empty glass pill sitting on the chart. The same guard for the other two,
+   in case they are ever given a display of their own. */
+.goal-chart__tip[hidden],
+.goal-chart__cross[hidden],
+.goal-chart__focus[hidden] { display: none; }
+
+/* Date then value, as in "12 september / 80 kg" — but the value is the bold
+   one, because it is what the finger went looking for. */
+.goal-chart__tip-date {
+    font-size: var(--fs-tiny);
+    line-height: 1.25;
+    color: var(--text-muted);
+}
+
+.goal-chart__tip-value {
+    font-size: var(--fs-small);
+    line-height: 1.25;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+/* --- axes ------------------------------------------------------------- */
+
+.goal-chart__y {
+    position: relative;
+    height: var(--plot-h);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.goal-chart__y li {
+    position: absolute;
+    right: 0;
+    transform: translateY(-50%);
+    font-size: var(--fs-tiny);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* The X axis spans the plot only, not the gutter beside it. */
+.goal-chart__x {
+    margin-right: calc(var(--gutter) + var(--space-2));
+}
+
+.goal-chart__x .chart__tick.is-center { transform: translateX(-50%); }
+.goal-chart__x .chart__tick.is-start  { transform: none; }
+.goal-chart__x .chart__tick.is-end    { transform: translateX(-100%); }
+
+/* The chip under the card head keys the target line with a short stroke of
+   that same line, instead of a legend box for a single reference. */
+.goal-chart__key {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+.goal-chart__key-line {
+    display: inline-block;
+    width: 12px;
+    border-top: 1px solid var(--text-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .goal-chart__end { transition: none; }
+}

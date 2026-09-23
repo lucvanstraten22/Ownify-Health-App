@@ -120,6 +120,10 @@ if (!function_exists('hydrate_goals')) {
 
         $history = hydrate_goal_history($userId, $goalId);
 
+        /* The real values behind the goal, dated, for the Verloop chart — the
+           kilos or the steps themselves, not the percentage. */
+        $series = goal_series($userId, $row, $today);
+
         return [
             'id'       => (string) $goalId,
             'name'     => $row['name'],
@@ -163,6 +167,8 @@ if (!function_exists('hydrate_goals')) {
             'is_manual'  => ($row['tracking_mode'] ?? 'manual') !== 'auto',
 
             'history'      => $history,
+            'series'       => $series,
+            'target_unit'  => $row['target_unit'],
             'history_step' => 'day',
             'activity'     => hydrate_goal_activity($userId, $goalId, $row['target_unit']),
 

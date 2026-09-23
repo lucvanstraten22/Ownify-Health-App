@@ -192,13 +192,17 @@ if (!function_exists('goals_expand')) {
         $goal['needs_input'] = !empty($goal['is_manual']);
 
         /* --- history ---------------------------------------------------- */
-        $goal['has_history'] = count($goal['history']) > 1;
-        /* Same geometry helper the health trends use, so the two pages draw
-           their lines identically. padX 0 lets the line span the full card,
-           which is what the trend card already does. */
-        $goal['chart'] = ($goal['has_history'] && function_exists('health_chart'))
-            ? health_chart($goal['history'], 300.0, 96.0, 100.0, 0.0)
-            : ['line' => [], 'area' => [], 'dots' => [], 'points' => []];
+        /* The Verloop chart plots the goal's real values against real dates —
+           see lib/goal-chart.php for why it no longer draws the percentage.
+           One real point is enough to draw: a single weigh-in is a dot on a
+           timeline, not "no history". */
+        require_once __DIR__ . '/goal-chart.php';
+
+        $goal['chart'] = goal_chart_build(
+            $goal,
+            $goal['series'] ?? ['points' => [], 'mode' => 'manual', 'target' => null, 'breaks' => false]
+        );
+        $goal['has_history'] = $goal['chart']['has_data'];
 
         return $goal;
     }

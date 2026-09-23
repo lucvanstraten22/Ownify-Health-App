@@ -140,6 +140,12 @@ window.AppNav = (function () {
         if (pointerId !== null) { return; }
         if (event.pointerType === 'mouse' && event.button !== 0) { return; }
 
+        /* An element that reads horizontal drags itself — the goal chart,
+           which is scrubbed with a finger — is not the deck's to route. Without
+           this, dragging right across the chart would start the detail
+           layer's swipe-to-close, which claims any rightward drag. */
+        if (event.target && event.target.closest && event.target.closest('[data-gesture-own]')) { return; }
+
         pointerId = event.pointerId;
         startTarget = event.target;
         startX = lastX = event.clientX;

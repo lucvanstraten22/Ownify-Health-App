@@ -93,6 +93,16 @@ curl -s -b "$A" -c "$A" "$BASE_URL/?page=goals" > /dev/null      # a render reco
 same "2 of 7 kg lost reads 29%" "$(q "percent:$GOAL_W" "$USER_A")" "28.57"
 same "  and the current value is the newest reading" "$(q "current:$GOAL_W" "$USER_A")" "80"
 
+# ------------------------------------------------- the Verloop chart
+
+echo "== the Verloop chart plots the real value, not a percentage =="
+PAGE="$(curl -s -b "$A" -c "$A" "$BASE_URL/?page=goals")"
+has "the weight goal has a chart" "$PAGE" 'data-goal-chart'
+has "  its axis says kg" "$PAGE" 'goal-chart__unit" aria-hidden="true">kg<'
+has "  and the point reads 80 kg, as a reading does" "$PAGE" '&quot;v&quot;:&quot;80 kg&quot;'
+has "  with a date, not a time" "$PAGE" '&quot;d&quot;:&quot;'"$(date +%-d)"' '
+has "  and the target keyed in the head" "$PAGE" 'Doel 75 kg'
+
 # ------------------------------------------------------- 7. the day blocks
 
 echo "== 7. a daily goal, evaluated day by day =="
