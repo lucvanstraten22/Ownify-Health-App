@@ -1071,28 +1071,60 @@
    is not the same as having failed, and colouring it as a failure would be the
    app inventing a bad day.
    -------------------------------------------------------------------------- */
+/* Seven to a row, starting on Monday, so a column is a weekday all the way
+   down. That is the part a wrapping strip could not do: "I always miss
+   Sundays" is a shape in a calendar and invisible in a queue of blocks. */
+.day-calendar { margin-top: var(--space-3); }
+
+.day-calendar__head,
 .day-blocks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-top: var(--space-3);
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.day-calendar__head {
+    margin-bottom: 6px;
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    color: var(--text-faint);
+    text-align: center;
 }
 
 .day-block {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
     border: 1px solid transparent;
     background: var(--glass-soft);
+    font-size: var(--fs-tiny);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-faint);
+}
+
+/* The date, quiet enough that the colour still reads first. */
+.day-block span { opacity: 0.55; }
+
+/* The run-up to the first Monday. It holds a column open and says nothing. */
+.day-block.is-before {
+    background: none;
+    border-color: transparent;
 }
 
 .day-block.is-met {
     background: var(--health);
+    color: var(--bg);
 }
 
 .day-block.is-missed {
     background: var(--miss);
+    color: var(--bg);
 }
+
+.day-block.is-met span,
+.day-block.is-missed span { opacity: 0.75; }
 
 /* Recorded nothing. An outline holds the day's place without claiming
    anything about it. */

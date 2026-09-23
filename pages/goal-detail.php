@@ -141,22 +141,38 @@ $height = 96.0;
                             </span>
                         </div>
 
-                        <ol class="day-blocks" role="list"
-                            aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
-                            <?php foreach ($goal['days'] as $day): ?>
-                                <li class="day-block is-<?= e($day['state']) ?>"
-                                    title="<?= e(goals_date_short(new DateTimeImmutable($day['date']))
-                                        . ' · ' . match ($day['state']) {
-                                            'met'     => 'gehaald',
-                                            'missed'  => 'niet gehaald',
-                                            'unknown' => 'geen gegevens',
-                                            default   => 'nog niet geweest',
-                                        }) ?>"></li>
-                            <?php endforeach; ?>
-                        </ol>
+                        <div class="day-calendar">
+                            <ol class="day-calendar__head" role="list" aria-hidden="true">
+                                <?php foreach (['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
+                                    <li><?= e($initial) ?></li>
+                                <?php endforeach; ?>
+                            </ol>
+
+                            <ol class="day-blocks" role="list"
+                                aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
+                                <?php foreach ($goal['days'] as $day): ?>
+                                    <?php if ($day['state'] === 'before'): ?>
+                                        <li class="day-block is-before" aria-hidden="true"></li>
+                                    <?php else: ?>
+                                        <?php $when = new DateTimeImmutable($day['date']); ?>
+                                        <li class="day-block is-<?= e($day['state']) ?>"
+                                            title="<?= e(goals_date_short($when) . ' · ' . match ($day['state']) {
+                                                'met'     => 'gehaald',
+                                                'missed'  => 'niet gehaald',
+                                                'unknown' => 'geen gegevens',
+                                                default   => 'nog niet geweest',
+                                            }) ?>"><span><?= e($when->format('j')) ?></span></li>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </ol>
+                        </div>
 
                         <p class="card__hint card__hint--plain">
-                            <?= e($copy['days_note'] ?? 'Dagen zonder gegevens tellen niet mee als gemist.') ?>
+                            <?= e($copy['days_note']) ?>
+                            <?php /* Only when the calendar is showing less than the whole goal. */ ?>
+                            <?php if ($goal['days_total'] > count($goal['days'])): ?>
+                                <?= e($copy['days_window']) ?>
+                            <?php endif; ?>
                         </p>
                     </section>
                 <?php endif; ?>

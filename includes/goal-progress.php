@@ -36,6 +36,11 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 require_once __DIR__ . '/goals.php';
 
+/** Six weeks of calendar. Longer goals show their most recent six. */
+if (!defined('GOAL_CALENDAR_DAYS')) {
+    define('GOAL_CALENDAR_DAYS', 42);
+}
+
 if (!function_exists('goal_sources_available')) {
 
     /**
@@ -297,18 +302,38 @@ if (!function_exists('goal_sources_available')) {
         $start = new DateTimeImmutable((string) $goal['start_date']);
         $end   = $goal['end_date'] === null ? $today : new DateTimeImmutable((string) $goal['end_date']);
 
-        /* A year of blocks is not a visual, it is a wall. Long goals show the
-           last stretch; the percentage still counts the whole period. */
-        if ((int) $start->diff($end)->days > 120) {
-            $start = $end->modify('-119 day');
+        /* Six weeks, drawn as a calendar. A year of blocks is not a visual, it
+           is a wall — and at seven to a row a half-year would be twenty-six
+           rows of it. A longer goal shows its most recent six weeks; the
+           percentage underneath still counts every day of the period, so the
+           figure and the picture are answering slightly different questions
+           and the card says which.
+
+           Squared off to whole weeks so the grid starts on a Monday and the
+           columns mean something: the same weekday all the way down a column
+           is what makes "I always miss Sundays" visible at a glance. */
+        if ((int) $start->diff($end)->days >= GOAL_CALENDAR_DAYS) {
+            $start = $end->modify('-' . (GOAL_CALENDAR_DAYS - 1) . ' day');
         }
+
+        /* Back up to that week's Monday. The days before the goal began are
+           not invented — they come back as 'before' and are drawn as a gap. */
+        $lead  = (int) $start->format('N') - 1;
+        $first = $start->modify('-' . $lead . ' day');
 
         $days = [];
         $kind = (string) $goal['source_kind'];
         $key  = (string) $goal['source_key'];
 
-        for ($day = $start; $day <= $end; $day = $day->modify('+1 day')) {
+        for ($day = $first; $day <= $end; $day = $day->modify('+1 day')) {
             $date = $day->format('Y-m-d');
+
+            /* Padding, so the first real day lands under its own weekday.
+               Not a day of the goal, so it is never counted as anything. */
+            if ($day < $start) {
+                $days[] = ['date' => $date, 'value' => null, 'state' => 'before'];
+                continue;
+            }
 
             if ($day > $today) {
                 $days[] = ['date' => $date, 'value' => null, 'state' => 'future'];

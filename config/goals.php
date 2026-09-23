@@ -167,6 +167,7 @@ return [
         'manual_save'  => 'Opslaan',
         'days'       => 'Per dag',
         'days_note'  => 'Dagen zonder gegevens tellen niet mee als gemist.',
+        'days_window'=> 'De kalender toont de laatste zes weken. Het percentage telt de hele periode.',
         'make_primary'   => 'Maak primair',
         'is_primary'     => 'Dit is je primaire doel',
         'make_secondary' => 'Maak secundair',
