@@ -1,10 +1,18 @@
 <?php
 /**
- * Records where a goal stands today.
+ * Records what the person did today, for a goal they keep by hand.
  *
- * One row per goal per day: confirming twice corrects the day rather than
- * adding a second entry, which is what the unique key on (goal_id,
- * recorded_on) is for.
+ * One row per goal per day, and the goal's type decides what a second entry
+ * on the same day does (goal_record_entry):
+ *
+ *   Mijlpaal   a new result. The better of the day's results is kept, and a
+ *              worse one never lowers the goal — its progress is the best.
+ *   Optellen   an amount to add ("3 km erbij"), or, counted in days, today
+ *              ticked off.
+ *   Streak     today ticked off. Ticking twice is still one day.
+ *
+ * The answer is worked out afterwards by the same engine that draws the page,
+ * so what this returns is what the page will show.
  */
 declare(strict_types=1);
 
@@ -28,44 +36,44 @@ if ($goal === null) {
 /* An automatic goal reads itself. Letting somebody type over it would leave
    two numbers claiming to be the same thing, and the next render would throw
    the typed one away — so it is refused here rather than silently lost. */
-if (($goal['tracking_mode'] ?? 'manual') === 'auto') {
+if (!goal_is_manual($goal)) {
     api_fail('Dit doel leest zijn voortgang zelf uit je gegevens.', 409);
 }
 
-$value = $_POST['value'] ?? null;
-$value = ($value === null || $value === '') ? null : (float) $value;
-
-/* A habit or a streak is confirmed rather than measured: one tick today is
-   one more day, so the value is counted rather than supplied. */
-if ($value === null && in_array($goal['goal_type'], ['habit', 'streak'], true)) {
-    $days = (int) db_value(
-        'SELECT COUNT(*) FROM goal_progress WHERE goal_id = ? AND recorded_on < CURDATE()',
-        [$goalId]
-    );
-    $value = (float) ($days + 1);
+if ($goal['status'] === 'completed') {
+    api_fail('Dit doel is al behaald.', 409);
 }
 
-if ($value === null) {
-    api_fail('Vul een waarde in.', 422);
+$raw   = $_POST['value'] ?? null;
+$raw   = $raw === null ? '' : str_replace(',', '.', trim((string) $raw));
+$value = null;
+
+if ($raw !== '') {
+    if (!is_numeric($raw) || (float) $raw < 0 || (float) $raw > 1e9) {
+        api_fail('Vul een geldig getal in.', 422);
+    }
+
+    $value = (float) $raw;
 }
 
-/* The same calculation the automatic goals use, so a manual goal and an
-   automatic one at the same point read the same. */
-$percent = goal_percent_from($goal, $value);
+$written = goal_record_entry($userId, $goal, $value);
 
-if (!goal_record_progress($userId, $goalId, $value, $percent)) {
-    api_fail('Dit kon niet worden opgeslagen.', 500);
+if (!$written['ok']) {
+    api_fail((string) $written['error'], 422);
 }
 
-/* Reaching the target finishes the goal, rather than leaving it at 100%. */
-$completed = false;
-
-if ($percent !== null && $percent >= 100.0 && $goal['status'] === 'active') {
-    $completed = goal_complete($userId, $goalId);
-}
+/* Recomputed, stored and — at 100% — completed, exactly as a page render
+   would do it. */
+$progress = goal_refresh_row($userId, $goal);
+$after    = goal_get($userId, $goalId);
 
 api_ok([
-    'value'     => $value,
-    'percent'   => $percent,
-    'completed' => $completed,
+    'kind'      => $progress['kind'],
+    'current'   => $progress['current'],
+    'percent'   => $progress['percent'],
+    'best'      => $progress['best'],
+    'total'     => $progress['total'],
+    'streak'    => $progress['streak'],
+    'longest'   => $progress['longest'],
+    'completed' => ($after['status'] ?? '') === 'completed',
 ]);

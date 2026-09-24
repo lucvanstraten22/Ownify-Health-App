@@ -30,7 +30,7 @@ $copy = [
         $goals['categories']
     ),
     'types'     => array_map(
-        static fn (array $t): array => ['label' => $t['label'], 'target' => $t['target']],
+        static fn (array $t): array => ['label' => $t['label'], 'hint' => $t['hint']],
         $goals['types']
     ),
     'durations' => array_map(

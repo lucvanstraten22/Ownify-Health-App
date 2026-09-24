@@ -19,7 +19,7 @@
  *
  *   name       what the user is working toward, in their own words
  *   category   which part of life it belongs to        (drives icon + accent)
- *   type       how success is measured                 (value/habit/streak/…)
+ *   type       how progress is worked out              (milestone/streak/accumulate)
  *   priority   primary | secondary — an ordering, not a separate kind of goal
  *   status     active | paused | completed
  *   percent    0–100, however that percentage is arrived at
@@ -70,29 +70,27 @@ return [
     ],
 
     /**
-     * How success is measured. This is what keeps the page from assuming every
-     * goal is a number: the target step asks a different question per type.
+     * How progress is worked out — three types, and the type decides the
+     * arithmetic (includes/goal-progress.php), not just the label:
+     *
+     *   milestone    the best result so far         60, 75, 85, 70 kg -> 85 kg
+     *   streak       successful days in a row       a day that does not count breaks it
+     *   accumulate   everything added together      8.000 + 11.000 + 9.000 steps
+     *
+     * The keys are the ones stored in goals.goal_type.
      */
     'types' => [
-        'value' => [
-            'label'  => 'Doelwaarde',
-            'hint'   => 'Eén getal om te bereiken, zoals 100 kg of 80 kg.',
-            'target' => 'number',
-        ],
-        'habit' => [
-            'label'  => 'Gewoonte',
-            'hint'   => 'Iets wat je regelmatig doet, geteld in dagen.',
-            'target' => 'frequency',
+        'milestone' => [
+            'label' => 'Mijlpaal',
+            'hint'  => 'Eén concreet resultaat om te behalen. Je voortgang is gebaseerd op je beste resultaat.',
         ],
         'streak' => [
-            'label'  => 'Reeks',
-            'hint'   => 'Zoveel dagen achter elkaar volhouden.',
-            'target' => 'days',
+            'label' => 'Streak',
+            'hint'  => 'Iets een bepaald aantal dagen achter elkaar volhouden.',
         ],
-        'milestone' => [
-            'label'  => 'Mijlpaal',
-            'hint'   => 'Eén moment: gehaald of nog niet.',
-            'target' => 'none',
+        'accumulate' => [
+            'label' => 'Optellen',
+            'hint'  => 'Bouw een totaal op door meerdere activiteiten of metingen over tijd bij elkaar op te tellen.',
         ],
     ],
 
@@ -115,7 +113,7 @@ return [
         'training'  => ['label' => 'Training',  'icon' => 'dumbbell', 'accent' => 'activity',  'note' => 'Workouts en belasting'],
         'activity'  => ['label' => 'Beweging',  'icon' => 'bolt',     'accent' => 'activity',  'note' => 'Stappen en dagelijkse beweging'],
         'body'      => ['label' => 'Metingen',  'icon' => 'chart',    'accent' => 'nutrition', 'note' => 'Gewicht en lichaamssamenstelling'],
-        'manual'    => ['label' => 'Handmatig', 'icon' => 'user',     'accent' => 'health',    'note' => 'Eén bevestiging per dag'],
+        'manual'    => ['label' => 'Handmatig', 'icon' => 'user',     'accent' => 'health',    'note' => 'Je vult je voortgang zelf in'],
     ],
 
     /* --------------------------------------------------------------- copy */
@@ -162,8 +160,6 @@ return [
         'activity'   => 'Recent',
         'manage'     => 'Beheer',
         'manual'     => 'Zelf bijhouden',
-        'manual_note'=> 'Eén invoer per dag. De laatste telt.',
-        'manual_value' => 'Huidige waarde',
         'manual_save'  => 'Opslaan',
         'days'       => 'Per dag',
         'days_note'  => 'Dagen zonder gegevens tellen niet mee als gemist.',
@@ -186,23 +182,44 @@ return [
         'steps' => [
             1 => ['label' => 'Categorie', 'title' => 'Waar gaat je doel over?',   'lede' => 'Kies het gebied waar dit doel bij hoort.'],
             2 => ['label' => 'Doel',      'title' => 'Wat wil je bereiken?',       'lede' => 'Schrijf het op zoals jij het zegt.'],
-            3 => ['label' => 'Streven',   'title' => 'Wanneer is het gelukt?',     'lede' => 'Dit bepaalt hoe je voortgang wordt gemeten.'],
-            4 => ['label' => 'Bijhouden', 'title' => 'Hoe houd je dit bij?',       'lede' => 'Kies zelf waar je voortgang vandaan komt.'],
+            3 => ['label' => 'Bijhouden', 'title' => 'Hoe houd je dit bij?',       'lede' => 'Kies zelf waar je voortgang vandaan komt.'],
+            4 => ['label' => 'Streven',   'title' => 'Wanneer is het gelukt?',     'lede' => 'Dit bepaalt hoe je voortgang wordt gemeten.'],
             5 => ['label' => 'Periode',   'title' => 'Hoe lang geef je jezelf?',   'lede' => 'Je kunt dit later nog aanpassen.'],
             6 => ['label' => 'Klaar',     'title' => 'Klopt dit?',                 'lede' => 'Nog één blik voordat je begint.'],
         ],
 
-        /* Step four's copy. The manual option is not a fallback for when we
+        /* Step three's copy. The manual option is not a fallback for when we
            could not work something out — it is a real answer, and plenty of
            worthwhile goals have no health data behind them at all. */
         'source_label'   => 'Waar komt je voortgang vandaan?',
         'source_manual'  => 'Geen data mogelijk',
         'source_manual_hint' => 'Handmatig bijhouden — jij vult de voortgang zelf in.',
         'source_none'    => 'Nog geen bron gekozen',
-        'source_daily'   => 'Elke dag halen?',
-        'source_daily_hint' => 'Vul een dagdoel in als dit doel elke dag opnieuw gehaald moet worden, zoals 10.000 stappen per dag.',
-        'source_daily_placeholder' => 'Bijv. 10000',
         'summary_source' => 'Bijhouden',
+
+        /* Step four asks what the chosen type needs, in the source's own unit. */
+        'target_lede' => [
+            'milestone'  => 'Het resultaat dat je wilt halen. Je beste resultaat telt, ook als een latere poging minder is.',
+            'streak'     => 'Hoeveel dagen achter elkaar. Eén dag die niet telt, en je begint opnieuw.',
+            'accumulate' => 'Waar je naartoe telt. Alles wat je doet komt erbij.',
+        ],
+        'target_best'    => 'Welk resultaat wil je halen?',
+        'target_total'   => 'Welk totaal wil je halen?',
+        'target_better'  => 'Wat is beter?',
+        'better_up'      => 'Hoger is beter',
+        'better_down'    => 'Lager is beter',
+        'target_measure' => 'Wat tel je op?',
+        'measure_amount' => 'Een totaal',
+        'measure_days'   => 'Dagen',
+        'target_streak'  => 'Hoeveel dagen achter elkaar?',
+        'target_days'    => 'Hoeveel dagen?',
+        'daily_label'    => 'Wanneer telt een dag als gelukt?',
+        'daily_floor'    => 'Minstens',
+        'daily_ceiling'  => 'Hoogstens',
+        'daily_hint'     => 'Wat één dag moet halen om mee te tellen, zoals minstens 10.000 stappen.',
+        'tick_streak'    => 'Je vinkt elke dag af die gelukt is. Alleen dagen achter elkaar tellen: een dag zonder vinkje breekt je streak.',
+        'tick_days'      => 'Je vinkt elke dag af die gelukt is. De dagen hoeven niet achter elkaar te liggen.',
+        'too_short'      => 'Te kort voor %s',
         'back'    => 'Terug',
         'next'    => 'Volgende',
         'create'  => 'Doel aanmaken',
@@ -210,11 +227,7 @@ return [
         'name_label'     => 'Naam van je doel',
         'name_hint'      => 'Bijvoorbeeld: bench press 100 kg',
         'type_label'     => 'Hoe meet je dit?',
-        'target_number'  => 'Doelwaarde',
         'target_unit'    => 'Eenheid',
-        'target_days'    => 'Aantal dagen achter elkaar',
-        'target_freq'    => 'Hoeveel dagen wil je dit doen?',
-        'target_none'    => 'Een mijlpaal heeft geen getal: je vinkt hem af zodra het gelukt is.',
         'priority_label' => 'Prioriteit',
         'priority_swap'  => 'Je huidige primaire doel wordt dan secundair.',
         'summary_goal'     => 'Doel',

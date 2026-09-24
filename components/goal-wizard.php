@@ -1,6 +1,6 @@
 <?php
 /**
- * The five-step create-a-goal flow.
+ * The six-step create-a-goal flow.
  *
  * It lives outside the deck, next to the account panel, which keeps it clear
  * of the two swipe gestures entirely: the deck's pointer pipeline never sees
@@ -11,8 +11,10 @@
  * moving between them is a transform rather than a re-render and the answers
  * you already gave are still there when you step back.
  *
- * Nothing is saved: there is no goal storage yet. The flow is honest about
- * that on the final screen rather than pretending to have created something.
+ * The source comes before the target. What the target means depends on both
+ * the type and where progress comes from — 8 is hours of sleep, 10.000 is
+ * steps, 30 is days — so the target step is asked in the source's own unit
+ * rather than in a unit typed before anybody said what was being measured.
  */
 declare(strict_types=1);
 
@@ -89,60 +91,14 @@ $total  = count($steps);
                 </div>
             </section>
 
-            <!-- ---------------------------------------------- 3 · target -->
-            <section class="wizard__step" data-wizard-step="3" aria-label="<?= e($steps[3]['label']) ?>" hidden>
-                <h3 class="wizard__title"><?= e($steps[3]['title']) ?></h3>
-                <p class="wizard__lede" data-wizard-target-lede><?= e($steps[3]['lede']) ?></p>
-
-                <!-- A number and a unit: weight, reps, distance. -->
-                <div class="wizard__field" data-wizard-target="number" hidden>
-                    <label class="wizard__label" for="wizard-target-value"><?= e($copy['target_number']) ?></label>
-                    <div class="wizard__row">
-                        <input class="wizard__input wizard__input--number" type="number" id="wizard-target-value"
-                               data-wizard-value inputmode="decimal" step="any" min="0" placeholder="100">
-                        <input class="wizard__input wizard__input--unit" type="text" id="wizard-target-unit"
-                               data-wizard-unit maxlength="12" autocomplete="off" spellcheck="false"
-                               placeholder="<?= e($copy['target_unit']) ?>"
-                               aria-label="<?= e($copy['target_unit']) ?>">
-                    </div>
-
-                    <ul class="wizard__suggestions" role="list" data-wizard-units></ul>
-                </div>
-
-                <!-- How many days you want to manage it. -->
-                <div class="wizard__field" data-wizard-target="frequency" hidden>
-                    <label class="wizard__label" for="wizard-target-days"><?= e($copy['target_freq']) ?></label>
-                    <div class="wizard__row">
-                        <input class="wizard__input wizard__input--number" type="number" id="wizard-target-days"
-                               data-wizard-days inputmode="numeric" step="1" min="1" max="365" placeholder="30">
-                        <span class="wizard__suffix">dagen</span>
-                    </div>
-                </div>
-
-                <!-- Days in a row, which is a different promise entirely. -->
-                <div class="wizard__field" data-wizard-target="days" hidden>
-                    <label class="wizard__label" for="wizard-target-streak"><?= e($copy['target_days']) ?></label>
-                    <div class="wizard__row">
-                        <input class="wizard__input wizard__input--number" type="number" id="wizard-target-streak"
-                               data-wizard-streak inputmode="numeric" step="1" min="1" max="365" placeholder="30">
-                        <span class="wizard__suffix">dagen op rij</span>
-                    </div>
-                </div>
-
-                <!-- Nothing to count: it is done or it is not. -->
-                <div class="wizard__field" data-wizard-target="none" hidden>
-                    <p class="wizard__note"><?= icon('check', 'wizard__note-icon') ?><?= e($copy['target_none']) ?></p>
-                </div>
-            </section>
-
-            <!-- -------------------------------------------- 4 · duration -->
-            <!-- ------------------------------------------ 4 · bijhouden -->
+            <!-- ------------------------------------------ 3 · bijhouden -->
             <?php
-            /* The one question the wizard never asked.
-               Every goal used to be created with no source at all, so the bar
-               had nothing to read and nothing to fill it in with either. The
-               list comes from the metric catalogue, so nothing is offered that
-               the app cannot actually read back.
+            /* The one question the wizard used to never ask.
+               The list comes from the metric catalogue, so nothing is offered
+               that the app cannot actually read back. Each source says which
+               types can use it, and the list shows only those once a type is
+               chosen: a weight can be a Mijlpaal but not a Streak, and only
+               what builds up over a day can be added up.
 
                "Geen data mogelijk" sits at the top rather than buried at the
                bottom: plenty of worthwhile goals have no health data behind
@@ -160,45 +116,138 @@ $total  = count($steps);
                 'vital'     => 'Vitale waarden',
             ];
             ?>
-            <section class="wizard__step" data-wizard-step="4" aria-label="<?= e($steps[4]['label']) ?>" hidden>
-                <h3 class="wizard__title"><?= e($steps[4]['title']) ?></h3>
-                <p class="wizard__lede"><?= e($steps[4]['lede']) ?></p>
+            <section class="wizard__step" data-wizard-step="3" aria-label="<?= e($steps[3]['label']) ?>" hidden>
+                <h3 class="wizard__title"><?= e($steps[3]['title']) ?></h3>
+                <p class="wizard__lede"><?= e($steps[3]['lede']) ?></p>
 
                 <p class="wizard__label"><?= e($copy['source_label']) ?></p>
 
                 <div class="wizard__types wizard__types--sources">
                     <button type="button" class="wizard-type press" data-wizard-source="manual"
-                            data-source-kind="manual" data-source-key="" aria-pressed="false">
+                            data-source-kind="manual" data-source-key="" data-source-unit=""
+                            data-source-types="milestone streak accumulate" aria-pressed="false">
                         <span class="wizard-type__label"><?= e($copy['source_manual']) ?></span>
                         <span class="wizard-type__hint"><?= e($copy['source_manual_hint']) ?></span>
                     </button>
 
                     <?php foreach ($domainLabels as $domain => $domainLabel): ?>
                         <?php if (empty($sourceGroups[$domain])) { continue; } ?>
-                        <p class="wizard__label wizard__label--spaced"><?= e($domainLabel) ?></p>
+                        <p class="wizard__label wizard__label--spaced" data-source-group="<?= e($domain) ?>"><?= e($domainLabel) ?></p>
                         <?php foreach ($sourceGroups[$domain] as $source): ?>
+                            <?php
+                            $unit  = goal_source_unit($source['kind'], $source['key']);
+                            $types = ['milestone'];
+                            if ($source['kind'] !== 'measurement') {
+                                $types[] = 'streak';
+                            }
+                            if ($source['kind'] === 'workout' || $source['daily']) {
+                                $types[] = 'accumulate';
+                            }
+                            ?>
                             <button type="button" class="wizard-type press"
                                     data-wizard-source="<?= e($source['kind'] . ':' . $source['key']) ?>"
                                     data-source-kind="<?= e($source['kind']) ?>"
                                     data-source-key="<?= e($source['key']) ?>"
-                                    data-source-daily="<?= $source['daily'] ? '1' : '0' ?>"
+                                    data-source-unit="<?= e($unit['word']) ?>"
+                                    data-source-group="<?= e($domain) ?>"
+                                    data-source-types="<?= e(implode(' ', $types)) ?>"
                                     aria-pressed="false">
                                 <span class="wizard-type__label"><?= e($source['label']) ?></span>
-                                <span class="wizard-type__hint"><?= e($source['unit'] === '' ? 'Uit je eigen gegevens' : 'In ' . $source['unit']) ?></span>
+                                <span class="wizard-type__hint"><?= e($unit['word'] === '' ? 'Uit je eigen gegevens' : 'In ' . $unit['word']) ?></span>
                             </button>
                         <?php endforeach; ?>
                     <?php endforeach; ?>
                 </div>
+            </section>
 
-                <!-- Only for sources that reset each day, which the catalogue
-                     already knows. Nobody sets a daily target for VO2max. -->
-                <div data-wizard-daily hidden>
-                    <p class="wizard__label wizard__label--spaced"><?= e($copy['source_daily']) ?></p>
-                    <input class="wizard__input" type="number" inputmode="numeric" min="1" step="any"
-                           data-wizard-daily-input
-                           placeholder="<?= e($copy['source_daily_placeholder']) ?>">
-                    <p class="wizard__hint"><?= e($copy['source_daily_hint']) ?></p>
+            <!-- --------------------------------------------- 4 · streven -->
+            <?php
+            /* One step, five small blocks, and the chosen type and source
+               decide which of them show:
+
+                 Mijlpaal   amount + which way is better
+                 Streak     days in a row (+ what makes a day count, from data)
+                 Optellen   a total, or a number of days (+ what makes a day
+                            count, from data)
+
+               Read from health data, the unit is the source's and cannot be
+               typed over; kept by hand, it is whatever the person calls it. */
+            ?>
+            <section class="wizard__step" data-wizard-step="4" aria-label="<?= e($steps[4]['label']) ?>" hidden>
+                <h3 class="wizard__title"><?= e($steps[4]['title']) ?></h3>
+                <p class="wizard__lede" data-wizard-target-lede><?= e($steps[4]['lede']) ?></p>
+
+                <!-- Optellen: an amount, or days. -->
+                <div class="wizard__field" data-wizard-block="measure" hidden>
+                    <p class="wizard__label"><?= e($copy['target_measure']) ?></p>
+                    <div class="range-switch range-switch--wide" role="group" aria-label="<?= e($copy['target_measure']) ?>">
+                        <button type="button" class="range-switch__option" data-wizard-measure="amount"
+                                aria-pressed="false"><?= e($copy['measure_amount']) ?></button>
+                        <button type="button" class="range-switch__option" data-wizard-measure="days"
+                                aria-pressed="false"><?= e($copy['measure_days']) ?></button>
+                    </div>
                 </div>
+
+                <!-- A result to reach, or a total to build. -->
+                <div class="wizard__field" data-wizard-block="amount" hidden>
+                    <label class="wizard__label" for="wizard-target-value" data-wizard-amount-label><?= e($copy['target_best']) ?></label>
+                    <div class="wizard__row">
+                        <input class="wizard__input wizard__input--number" type="number" id="wizard-target-value"
+                               data-wizard-value inputmode="decimal" step="any" min="0" placeholder="100">
+                        <input class="wizard__input wizard__input--unit" type="text" id="wizard-target-unit"
+                               data-wizard-unit maxlength="12" autocomplete="off" spellcheck="false"
+                               placeholder="<?= e($copy['target_unit']) ?>"
+                               aria-label="<?= e($copy['target_unit']) ?>">
+                        <span class="wizard__suffix" data-wizard-unit-fixed hidden></span>
+                    </div>
+
+                    <ul class="wizard__suggestions" role="list" data-wizard-units></ul>
+                </div>
+
+                <!-- Days: in a row for a Streak, in total for Optellen. -->
+                <div class="wizard__field" data-wizard-block="days" hidden>
+                    <label class="wizard__label" for="wizard-target-days" data-wizard-days-label><?= e($copy['target_streak']) ?></label>
+                    <div class="wizard__row">
+                        <input class="wizard__input wizard__input--number" type="number" id="wizard-target-days"
+                               data-wizard-days inputmode="numeric" step="1" min="1" max="365" placeholder="30">
+                        <span class="wizard__suffix" data-wizard-days-suffix>dagen op rij</span>
+                    </div>
+                </div>
+
+                <!-- Mijlpaal: asked outright, because 80 kg is reached from
+                     above and from below alike. -->
+                <div class="wizard__field" data-wizard-block="direction" hidden>
+                    <p class="wizard__label wizard__label--spaced"><?= e($copy['target_better']) ?></p>
+                    <div class="range-switch range-switch--wide" role="group" aria-label="<?= e($copy['target_better']) ?>">
+                        <button type="button" class="range-switch__option" data-wizard-better="increase"
+                                aria-pressed="false"><?= e($copy['better_up']) ?></button>
+                        <button type="button" class="range-switch__option" data-wizard-better="decrease"
+                                aria-pressed="false"><?= e($copy['better_down']) ?></button>
+                    </div>
+                </div>
+
+                <!-- A day read from health data: what it has to reach. -->
+                <div class="wizard__field" data-wizard-block="daily" hidden>
+                    <p class="wizard__label wizard__label--spaced"><?= e($copy['daily_label']) ?></p>
+                    <div class="range-switch range-switch--wide" role="group" aria-label="<?= e($copy['daily_label']) ?>">
+                        <button type="button" class="range-switch__option is-active" data-wizard-floor="increase"
+                                aria-pressed="true"><?= e($copy['daily_floor']) ?></button>
+                        <button type="button" class="range-switch__option" data-wizard-floor="decrease"
+                                aria-pressed="false"><?= e($copy['daily_ceiling']) ?></button>
+                    </div>
+                    <div class="wizard__row wizard__row--spaced">
+                        <input class="wizard__input wizard__input--number" type="number" inputmode="decimal"
+                               min="0" step="any" id="wizard-daily" data-wizard-daily-input placeholder="10000"
+                               aria-label="<?= e($copy['daily_label']) ?>">
+                        <span class="wizard__suffix" data-wizard-daily-unit></span>
+                    </div>
+                    <p class="wizard__hint"><?= e($copy['daily_hint']) ?></p>
+                </div>
+
+                <!-- A day kept by hand: ticked off, nothing to set. -->
+                <p class="wizard__note" data-wizard-block="tick" hidden>
+                    <?= icon('check', 'wizard__note-icon') ?><span data-wizard-tick-note></span>
+                </p>
             </section>
 
             <section class="wizard__step" data-wizard-step="5" aria-label="<?= e($steps[5]['label']) ?>" hidden>

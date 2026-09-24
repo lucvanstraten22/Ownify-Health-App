@@ -18,6 +18,17 @@ that day actually has: a missing pillar is skipped, never counted as a zero,
 and when all three are missing there is no score rather than a `0`. Moving to
 a weighted average is a change to `score_combine()` and nothing else.
 
+**Goals.** Where a goal stands comes out of `includes/goal-progress.php`, and
+its type decides the arithmetic: a **Mijlpaal** is its best result (60, 75,
+85, 70 kg against 100 kg is 85%), a **Streak** is its run of consecutive
+successful days (a missed day, or a day with no data, starts it again), and
+**Optellen** adds everything up (8.000 + 11.000 + 9.000 steps against 100.000
+is 28%). Missing data is never a zero. The result is stored on the goal row —
+`best_value`, `total_value`, `streak_current`, `streak_best`, `progress_pct`,
+`completed_at` — and always recalculated from the rows underneath it. An
+existing database gets the three types and those columns from
+`database/migrations/007-goal-types.sql`; `schema.sql` already has them.
+
 ## Setting it up (WampServer)
 
 1. Start Wamp, open **phpMyAdmin**.
@@ -183,8 +194,8 @@ backup, a screenshot or a repository.
 
 | Table | Holds |
 | --- | --- |
-| `goals` | name, category, type, target, direction, dates, status |
-| `goal_progress` | dated snapshots, for the chart and for manual goals |
+| `goals` | name, category, type (Mijlpaal, Streak, Optellen), source, target, direction, dates, status, and where it stands |
+| `goal_progress` | one row per goal per day: a Mijlpaal's best result that day, an Optellen amount, a Streak day ticked off — or, for a goal read from health data, that day's snapshot |
 
 **Community**
 
@@ -370,7 +381,7 @@ private data is returned.
 | `api/goals/create.php` | `goals`, subject to three active and one primary |
 | `api/goals/update.php` | pause, resume, complete, re-prioritise |
 | `api/goals/delete.php` | deletes the goal and its history |
-| `api/goals/progress.php` | `goal_progress`, and completes a goal that reaches its target |
+| `api/goals/progress.php` | `goal_progress` the way the goal's type needs it, and completes a goal that reaches its target |
 | `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal |
 | `api/friends/search.php` | reads only, and only public fields |
 | `api/friends/request.php` | `friendships` |

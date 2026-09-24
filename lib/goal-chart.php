@@ -18,9 +18,10 @@
  * ---------------------------------------------------------------------------
  * NOTHING IS MADE UP
  * ---------------------------------------------------------------------------
- * Every point is a stored value on its own date. Three points means three
- * dots. A day nobody recorded in a daily goal breaks the line rather than
- * being bridged. And the curve is monotone between points, so it can never
+ * Every point is a stored value on its own date, in the terms of the goal's
+ * type (goal_series): a Mijlpaal's results with its best one named, a
+ * Streak's length day by day, an Optellen total as it grew. Three points
+ * means three dots. And the curve is monotone between points, so it can never
  * swing above the best day or below the lowest reading on its way from one to
  * the next — the shared Catmull-Rom smoothing can, which is fine for a score
  * trend and wrong for "you weighed 79.6 kg" when nobody ever did.
@@ -43,65 +44,31 @@ if (!function_exists('goal_chart_build')) {
     /**
      * How this goal's values are written.
      *
-     * Most sources say their own unit. A few are stored in a form nobody
-     * thinks in: sleep is kept in minutes and read in hours, steps have no
-     * unit symbol at all and are simply "stappen".
+     * A day-counting goal plots days, whatever it reads them from: a streak's
+     * line is its length, not the steps behind it. Otherwise an automatic
+     * goal speaks its source's unit (includes/goal-progress.php keeps that
+     * list, so the wizard, the labels and this chart agree), and a hand-kept
+     * one uses whatever the person called it.
      *
      * @return array{word: string, one: string, axis: string, scale: float, decimals: int, attached: bool}
      */
-    function goal_chart_unit(array $goal): array
+    function goal_chart_unit(array $goal, ?string $mode = null): array
     {
-        $make = static fn (string $word, int $decimals = 0, float $scale = 1.0, ?string $one = null, bool $attached = false): array => [
-            'word'     => $word,
-            'one'      => $one ?? $word,
-            'axis'     => $word,
-            'scale'    => $scale,
-            'decimals' => $decimals,
-            'attached' => $attached,   // "85%" rather than "85 %"
-        ];
+        require_once dirname(__DIR__) . '/includes/goal-progress.php';
+
+        if ($mode === 'streak' || $mode === 'count') {
+            return ['word' => 'dagen', 'one' => 'dag', 'axis' => 'dagen', 'scale' => 1.0, 'decimals' => 0, 'attached' => false];
+        }
 
         if (($goal['tracking'] ?? 'manual') !== 'auto') {
-            /* Whatever the person called it when they made the goal. */
-            return $make(trim((string) ($goal['target_unit'] ?? '')), 1);
+            $word = trim((string) ($goal['target_unit'] ?? ''));
+
+            return ['word' => $word, 'one' => $word, 'axis' => $word, 'scale' => 1.0, 'decimals' => 1, 'attached' => false];
         }
 
-        $kind = (string) ($goal['source_kind'] ?? '');
-        $key  = (string) ($goal['source_key'] ?? '');
+        $unit = goal_source_unit($goal['source_kind'] ?? null, $goal['source_key'] ?? null);
 
-        if ($kind === 'measurement') {
-            return match ($key) {
-                'body_fat_pct' => $make('%', 1, 1.0, null, true),
-                'waist_cm'     => $make('cm'),
-                default        => $make('kg', 1),
-            };
-        }
-
-        if ($kind === 'workout') {
-            return $key === 'sessions'
-                ? $make('trainingen', 0, 1.0, 'training')
-                : $make('min');
-        }
-
-        return match ($key) {
-            'steps'            => $make('stappen', 0, 1.0, 'stap'),
-            'floors'           => $make('verdiepingen', 0, 1.0, 'verdieping'),
-            'sleep_duration'   => $make('uur', 1, 1 / 60),
-            'sleep_efficiency', 'sleep_regularity', 'spo2' => $make('%', 0, 1.0, null, true),
-            'distance'         => $make('km', 1),
-            'water'            => $make('l', 1),
-            'energy', 'active_energy', 'total_energy' => $make('kcal'),
-            'protein', 'carbs', 'fat', 'fibre', 'sugar', 'saturated_fat' => $make('g'),
-            'sodium'           => $make('mg'),
-            'sleeping_hr', 'resting_hr' => $make('bpm'),
-            'hrv'              => $make('ms'),
-            'respiratory_rate' => $make('/min', 0, 1.0, null, true),
-            'skin_temp'        => $make('°C', 1),
-            'active_minutes'   => $make('min'),
-            'vo2max'           => $make('ml/kg/min', 1),
-            'nutrition_rating' => $make('/10', 1, 1.0, null, true),
-            'readiness'        => $make('/100', 0, 1.0, null, true),
-            default            => $make(''),
-        };
+        return $unit + ['axis' => $unit['word']];
     }
 
     /** Dutch digits: a point for thousands, a comma for decimals, no trailing zeroes. */
@@ -279,14 +246,15 @@ if (!function_exists('goal_chart_build')) {
     function goal_chart_build(array $goal, array $series, ?DateTimeImmutable $today = null): array
     {
         $today  = $today ?? new DateTimeImmutable('today');
-        $unit   = goal_chart_unit($goal);
+        $mode   = (string) ($series['mode'] ?? 'best');
+        $unit   = goal_chart_unit($goal, $mode);
         $points = $series['points'] ?? [];
 
         $empty = [
             'has_data' => false, 'points' => [], 'line' => [], 'area' => [],
             'x_ticks' => [], 'y_ticks' => [], 'target' => null, 'end' => null,
             'axis_unit' => $unit['axis'], 'width' => GOAL_CHART_W, 'height' => GOAL_CHART_H,
-            'all_dots' => false, 'summary' => '', 'mode' => $series['mode'] ?? 'manual',
+            'all_dots' => false, 'summary' => '', 'mode' => $mode,
         ];
 
         if ($points === []) {
@@ -328,11 +296,11 @@ if (!function_exists('goal_chart_build')) {
         }
 
         /* A count is read from zero; a body weight is not. Zero comes in for
-           daily and running totals, and for anything whose values already
-           reach down near it — never for 74-82 kg, where it would flatten the
-           only movement that matters. */
-        $mode = (string) ($series['mode'] ?? 'value');
-        if ($low >= 0 && ($mode === 'daily' || $mode === 'total' || ($high > 0 && $low / $high < 0.5))) {
+           a running total, a streak and a count of days, and for anything whose
+           values already reach down near it — never for 74-82 kg, where it
+           would flatten the only movement that matters. */
+        $counts = in_array($mode, ['total', 'streak', 'count'], true);
+        if ($low >= 0 && ($counts || ($high > 0 && $low / $high < 0.5))) {
             $low = 0.0;
         }
 
@@ -379,9 +347,12 @@ if (!function_exists('goal_chart_build')) {
         }
 
         /* ------------------------------------------------------- line runs */
-        /* In a daily goal a missing day is a break, not a bridge: joining
-           Monday to Thursday would draw Tuesday and Wednesday, and nobody
-           recorded those. */
+        /* A series that asks for breaks gets them: a missing day is then a
+           gap, not a bridge, because joining Monday to Thursday would draw
+           Tuesday and Wednesday and nobody recorded those. None of the three
+           types asks today — a streak's line is its length, which is known on
+           every day, and a total or a best result only moves on days with
+           data — but the geometry keeps the option. */
         $runs = [];
         $run  = [];
         foreach ($out as $i => $p) {
@@ -423,45 +394,68 @@ if (!function_exists('goal_chart_build')) {
             $offset += count($segment);
         }
 
+        /* A Mijlpaal is measured by its best result, so that is the point
+           the label names — not the latest, which may well be worse and
+           changes nothing. */
+        $bestIndex = null;
+        if ($mode === 'best' && !empty($series['best'])) {
+            foreach ($out as $i => $p) {
+                if ($p['date'] === $series['best']) {
+                    $bestIndex = $i;
+                    break;
+                }
+            }
+        }
+
         foreach ($out as $i => &$p) {
-            $p['dot'] = $allDots || in_array($i, $lone, true) || $i === count($out) - 1;
+            $p['dot'] = $allDots || in_array($i, $lone, true) || $i === count($out) - 1 || $i === $bestIndex;
         }
         unset($p);
 
         /* ------------------------------------------------------- labels */
         $lastPoint = $out[count($out) - 1];
+        $named     = $bestIndex === null ? $lastPoint : $out[$bestIndex];
         $endLabel  = [
-            'x'     => $lastPoint['x'],
-            'y'     => $lastPoint['y'],
-            'label' => $lastPoint['v'],
-            'below' => $lastPoint['y'] < 22,   // no room above a point at the top
+            'x'     => $named['x'],
+            'y'     => $named['y'],
+            'label' => $bestIndex === null ? $named['v'] : 'Beste ' . $named['v'],
+            'below' => $named['y'] < 22,   // no room above a point at the top
+            /* Ends at its point near the right edge, starts at it near the
+               left, and sits over it in between — never off the plot. */
+            'align' => $named['x'] > 70 ? 'end' : ($named['x'] < 30 ? 'start' : 'center'),
         ];
 
         $targetOut = null;
         if ($target !== null) {
             $targetOut = [
                 'top'   => round($yOf($target) * 100, 3),
-                'label' => ($mode === 'daily' ? 'Dagdoel ' : 'Doel ')
-                    . goal_chart_value((float) $series['target'], $unit),
+                'label' => 'Doel ' . goal_chart_value((float) $series['target'], $unit),
             ];
 
             /* If the end label would sit on the target line, drop it to the
                other side of its point rather than print one over the other. */
-            if (abs($targetOut['top'] - $lastPoint['y']) < 12) {
-                $endLabel['below'] = $targetOut['top'] < $lastPoint['y'];
+            if (abs($targetOut['top'] - $named['y']) < 12) {
+                $endLabel['below'] = $targetOut['top'] < $named['y'];
             }
         }
 
-        $summary = sprintf(
-            '%d %s tussen %s en %s, van %s naar %s.%s',
-            count($out),
-            count($out) === 1 ? 'meting' : 'metingen',
-            $out[0]['d'],
-            $lastPoint['d'],
-            $out[0]['v'],
-            $lastPoint['v'],
-            $targetOut === null ? '' : ' ' . $targetOut['label'] . '.'
-        );
+        $span = $out[0]['d'] === $lastPoint['d'] ? $out[0]['d'] : $out[0]['d'] . ' tot ' . $lastPoint['d'];
+        $summary = match ($mode) {
+            'streak' => sprintf('Streak per dag, %s: nu %s.', $span, $lastPoint['v']),
+            'count'  => sprintf('Gehaalde dagen, %s: %s.', $span, $lastPoint['v']),
+            'total'  => sprintf('Totaal, %s: %s.', $span, $lastPoint['v']),
+            default  => sprintf(
+                '%d %s, %s. Beste resultaat %s op %s.',
+                count($out),
+                count($out) === 1 ? 'resultaat' : 'resultaten',
+                $span,
+                $named['v'],
+                $named['d']
+            ),
+        };
+        if ($targetOut !== null) {
+            $summary .= ' ' . $targetOut['label'] . '.';
+        }
 
         return [
             'has_data'  => true,

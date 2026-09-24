@@ -721,6 +721,9 @@
 
 .wizard__label--spaced { margin-top: var(--space-5); }
 
+/* A group heading whose sources do not fit the chosen type. */
+.wizard__label[hidden] { display: none; }
+
 .wizard__input {
     width: 100%;
     min-width: 0;
@@ -763,6 +766,20 @@
 
 .wizard__field[hidden] { display: none; }
 
+.wizard__row--spaced { margin-top: var(--space-3); }
+
+/* Under Optellen's "a total or days" switch, the question that follows gets
+   the same breathing room as every other second question in a step. */
+.wizard__field[data-wizard-block="measure"]:not([hidden]) ~ .wizard__field:not([hidden]) > .wizard__label:first-child {
+    margin-top: var(--space-5);
+}
+
+.wizard__hint {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
 /* Suggestions fill the field; they never decide anything by themselves. */
 .wizard__suggestions {
     display: flex;
@@ -771,7 +788,8 @@
     margin-top: var(--space-3);
 }
 
-.wizard__suggestions:empty { display: none; }
+.wizard__suggestions:empty,
+.wizard__suggestions[hidden] { display: none; }
 
 .wizard-suggestion {
     padding: var(--space-1) var(--space-3);
@@ -909,6 +927,13 @@
 }
 
 .wizard-duration:active { transform: scale(0.97); }
+
+/* Too short for the days asked for: still shown, with the reason, so the
+   choice is visibly unavailable rather than mysteriously missing. */
+.wizard-duration:disabled {
+    opacity: 0.45;
+    transform: none;
+}
 
 .wizard-duration__label {
     display: block;
@@ -1138,6 +1163,13 @@
     background: var(--glass-hairline);
 }
 
+/* Today, not yet counted. Still open, so it is neither a miss nor a gap:
+   drawn like a day to come, with an outline to say it is this one. */
+.day-block.is-pending {
+    background: var(--glass-hairline);
+    border-color: color-mix(in srgb, var(--health) 55%, transparent);
+}
+
 /* --------------------------------------------------------------------------
    Manual entry
    --------------------------------------------------------------------------
@@ -1267,6 +1299,12 @@
 }
 
 .goal-chart__end.is-below { transform: translate(-100%, 9px); }
+
+/* A Mijlpaal's label names its best point, which need not be the last. */
+.goal-chart__end.is-center          { transform: translate(-50%, calc(-100% - 9px)); }
+.goal-chart__end.is-center.is-below { transform: translate(-50%, 9px); }
+.goal-chart__end.is-start           { transform: translate(0, calc(-100% - 9px)); }
+.goal-chart__end.is-start.is-below  { transform: translate(0, 9px); }
 
 /* While a finger is on the chart the tooltip says it better. */
 .goal-chart.is-reading .goal-chart__end { opacity: 0; }

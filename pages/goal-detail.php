@@ -97,10 +97,18 @@ $height = 96.0;
                     <p class="goal-hero__deadline" data-goal-deadline><?= e($heroLine) ?></p>
 
                     <div class="metric-rows goal-hero__facts">
+                        <?php /* What the percentage is made of, named for the goal's
+                                 type: the best result, the streak, the total. */ ?>
                         <div class="metric-row <?= state_class($goal['current_label']) ?>">
-                            <span class="metric-row__label"><?= e($labels['current']) ?></span>
+                            <span class="metric-row__label"><?= e($goal['current_title'] ?? $labels['current']) ?></span>
                             <span class="metric-row__value"><?= e((string) ($goal['current_label'] ?? '—')) ?></span>
                         </div>
+                        <?php foreach ($goal['extra_facts'] ?? [] as $fact): ?>
+                            <div class="metric-row">
+                                <span class="metric-row__label"><?= e($fact['label']) ?></span>
+                                <span class="metric-row__value"><?= e($fact['value']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
                         <div class="metric-row <?= state_class($goal['start_label']) ?>">
                             <span class="metric-row__label">Gestart</span>
                             <span class="metric-row__value"><?= e((string) ($goal['start_label'] ?? '—')) ?></span>
@@ -121,14 +129,16 @@ $height = 96.0;
                 <!-- ---------------------------------- per-day results -->
                 <?php if ($goal['days'] !== []): ?>
                     <?php
-                    /* One block per day, for a goal that has to be met again
-                       every day rather than reached once.
+                    /* One block per day, for a goal that counts days — a
+                       Streak, or Optellen in days.
 
-                       Three states, not two. A day with no data is not a day
-                       that failed — a phone that was not syncing yet says
-                       nothing about whether somebody walked — so it is drawn
-                       as an empty outline and counted as neither. Turning it
-                       red would be inventing a failure. */
+                       Not two states. A day with no data is not a day that
+                       failed — a phone that was not syncing yet says nothing
+                       about whether somebody walked — so it is drawn as an
+                       empty outline, never red. (For a Streak it still ends
+                       the run, because it is not a success either; the note
+                       under the calendar says so.) Today, until it counts, is
+                       open rather than missed. */
                     ?>
                     <section class="card reveal" aria-labelledby="goal-days-<?= e($id) ?>">
                         <div class="card__head">
@@ -137,7 +147,7 @@ $height = 96.0;
                                 <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? 'Per dag') ?></h2>
                             </div>
                             <span class="chip chip--muted">
-                                <?= e($goal['days_met'] . ' van ' . $goal['days_total']) ?>
+                                <?= e($goal['days_chip'] ?? ($goal['days_met'] . ' van ' . $goal['days_total'])) ?>
                             </span>
                         </div>
 
@@ -160,6 +170,7 @@ $height = 96.0;
                                                 'met'     => 'gehaald',
                                                 'missed'  => 'niet gehaald',
                                                 'unknown' => 'geen gegevens',
+                                                'pending' => 'vandaag, nog open',
                                                 default   => 'nog niet geweest',
                                             }) ?>"><span><?= e($when->format('j')) ?></span></li>
                                     <?php endif; ?>
@@ -168,7 +179,7 @@ $height = 96.0;
                         </div>
 
                         <p class="card__hint card__hint--plain">
-                            <?= e($copy['days_note']) ?>
+                            <?= e($goal['days_note'] ?? $copy['days_note']) ?>
                             <?php /* Only when the calendar is showing less than the whole goal. */ ?>
                             <?php if ($goal['days_total'] > count($goal['days'])): ?>
                                 <?= e($copy['days_window']) ?>
@@ -178,13 +189,17 @@ $height = 96.0;
                 <?php endif; ?>
 
                 <!-- ----------------------- manual entry, when it is theirs -->
-                <?php if ($goal['needs_input'] && !$goal['is_completed']): ?>
+                <?php if ($goal['needs_input'] && !$goal['is_completed'] && !empty($goal['entry'])): ?>
                     <?php
                     /* Only ever shown for a goal the person keeps themselves.
                        An automatic goal reads itself, and an entry box beside
                        a self-updating figure is two numbers claiming to be the
-                       same thing. */
-                    $ticks = in_array($goal['type'], ['habit', 'streak'], true);
+                       same thing.
+
+                       What it asks follows the type: a Mijlpaal takes a new
+                       result (the best one counts), Optellen an amount to add,
+                       and a day-counting goal a tick for today. */
+                    $entry = $goal['entry'];
                     ?>
                     <section class="card card--check reveal" data-goal-manual="<?= e($id) ?>"
                              aria-labelledby="goal-check-<?= e($id) ?>">
@@ -193,28 +208,27 @@ $height = 96.0;
                             <h2 class="card__eyebrow" id="goal-check-<?= e($id) ?>"><?= e($copy['manual']) ?></h2>
                         </div>
 
-                        <?php if ($ticks): ?>
-                            <button type="button" class="btn goal-check__button press" data-goal-tick="<?= e($id) ?>">
+                        <?php if ($entry['kind'] === 'tick'): ?>
+                            <button type="button" class="btn goal-check__button press" data-goal-tick="<?= e($id) ?>"
+                                    <?= !empty($entry['done']) ? 'disabled' : '' ?>>
                                 <?= icon('check', 'goal-check__icon') ?>
-                                Vandaag gelukt
+                                <?= e(!empty($entry['done']) ? 'Vandaag afgevinkt' : $entry['label']) ?>
                             </button>
                         <?php else: ?>
                             <div class="goal-entry">
-                                <label class="sr-only" for="goal-value-<?= e($id) ?>">
-                                    <?= e($copy['manual_value'] ?? 'Huidige waarde') ?>
-                                </label>
-                                <input class="wizard__input goal-entry__input" type="number" step="any"
+                                <label class="sr-only" for="goal-value-<?= e($id) ?>"><?= e($entry['label']) ?></label>
+                                <input class="wizard__input goal-entry__input" type="number" step="any" min="0"
                                        inputmode="decimal" id="goal-value-<?= e($id) ?>"
                                        data-goal-value="<?= e($id) ?>"
-                                       placeholder="<?= e((string) ($goal['current_label'] ?? $copy['manual_value'] ?? 'Huidige waarde')) ?>">
+                                       placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>">
                                 <button type="button" class="btn press" data-goal-save="<?= e($id) ?>">
-                                    <?= e($copy['manual_save'] ?? 'Opslaan') ?>
+                                    <?= e($entry['button'] ?? $copy['manual_save'] ?? 'Opslaan') ?>
                                 </button>
                             </div>
                         <?php endif; ?>
 
                         <p class="field-editor__error" role="alert" data-goal-error hidden></p>
-                        <p class="card__hint card__hint--plain"><?= e($copy['manual_note']) ?></p>
+                        <p class="card__hint card__hint--plain"><?= e((string) ($entry['note'] ?? '')) ?></p>
                     </section>
                 <?php endif; ?>
 
@@ -314,7 +328,7 @@ $height = 96.0;
                                                 <?php endif; ?>
                                             <?php endforeach; ?>
 
-                                            <span class="goal-chart__end<?= $chart['end']['below'] ? ' is-below' : '' ?>" aria-hidden="true"
+                                            <span class="goal-chart__end<?= $chart['end']['below'] ? ' is-below' : '' ?><?= ($chart['end']['align'] ?? 'end') !== 'end' ? ' is-' . e($chart['end']['align']) : '' ?>" aria-hidden="true"
                                                   style="left: <?= e((string) $chart['end']['x']) ?>%; top: <?= e((string) $chart['end']['y']) ?>%;"><?= e($chart['end']['label']) ?></span>
 
                                             <span class="goal-chart__cross" data-goal-cross aria-hidden="true" hidden></span>
@@ -408,7 +422,12 @@ $height = 96.0;
                         </div>
                     <?php endif; ?>
 
-                    <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?>Voortgang werkt straks automatisch bij zodra deze bronnen gegevens leveren.</p>
+                    <?php /* Said as it is now: a goal read from health data moves by
+                             itself, and one kept by hand only moves when you enter
+                             something. */ ?>
+                    <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e(!empty($goal['is_manual'])
+                        ? 'Je voortgang verandert alleen door wat je zelf invult.'
+                        : 'Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.') ?></p>
                 </section>
 
                 <!-- -------------------------------------- recent activity -->

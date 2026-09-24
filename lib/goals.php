@@ -4,8 +4,8 @@
  *
  * The templates never calculate: they are handed a goal that already knows its
  * percentage, its ratio, how much time is left and which category it belongs
- * to. That is what lets the same card render a weight goal, a habit and a
- * milestone without a single branch in the markup.
+ * to. That is what lets the same card render a Mijlpaal, a Streak and an
+ * Optellen goal without a single branch in the markup.
  *
  * Nothing here invents progress. A percentage arrives on the goal already
  * read from the database by lib/hydrate-goals.php; where it came from — a
@@ -90,7 +90,7 @@ if (!function_exists('goals_expand')) {
     function goals_expand(array $goal, array $config, DateTimeImmutable $today): array
     {
         $goal += [
-            'type'          => 'value',
+            'type'          => 'milestone',
             'priority'      => 'secondary',
             'status'        => 'active',
             'percent'       => null,
@@ -173,13 +173,17 @@ if (!function_exists('goals_expand')) {
             $domain = goals_source_domain($goal['source_kind'] ?? '', $goal['source_key'] ?? '');
             $shape  = $config['sources'][$domain] ?? $config['sources']['manual'];
 
-            $resolved[] = $shape + [
+            /* The chosen source's own name and rule win over the domain's
+               generic ones — "Stappen, elke dag minstens 10.000 stappen",
+               not "Beweging, stappen en dagelijkse beweging". The domain
+               only lends its icon and accent. */
+            $resolved[] = [
                 'key'   => $domain,
                 'label' => $goal['source_label'],
                 'note'  => $goal['daily_label'] !== null
                     ? 'Elke dag ' . $goal['daily_label']
-                    : ($shape['note'] ?? ''),
-            ];
+                    : ($shape['label'] ?? '') . ' · uit je eigen gegevens',
+            ] + $shape;
         } elseif (!empty($goal['is_manual'])) {
             $resolved[] = $config['sources']['manual'] + ['key' => 'manual'];
         }
@@ -200,7 +204,7 @@ if (!function_exists('goals_expand')) {
 
         $goal['chart'] = goal_chart_build(
             $goal,
-            $goal['series'] ?? ['points' => [], 'mode' => 'manual', 'target' => null, 'breaks' => false]
+            $goal['series'] ?? ['points' => [], 'mode' => 'best', 'target' => null, 'breaks' => false, 'best' => null]
         );
         $goal['has_history'] = $goal['chart']['has_data'];
 

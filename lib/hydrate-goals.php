@@ -6,10 +6,11 @@
  * durations, the copy. The goals themselves come from the `goals` table, and
  * a user with none gets the page's existing empty state rather than examples.
  *
- * Progress is never invented. A goal that names a metric has its current value
- * read from that metric; one that does not uses the dated snapshots in
- * goal_progress; a goal with neither reports no percentage at all, and the
- * card already knows how to draw that.
+ * Progress is never invented. Where a goal stands comes from one place,
+ * includes/goal-progress.php, which works it out from the user's own rows the
+ * way the goal's type says to — the best result, the streak, the total. A
+ * goal with nothing recorded reports no percentage at all, and the card
+ * already knows how to draw that.
  */
 
 declare(strict_types=1);
@@ -19,35 +20,6 @@ require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/goal-progress.php';
 
 if (!function_exists('hydrate_goals')) {
-
-    /**
-     * The interface calls a goal's measurement 'value' and 'milestone'; the
-     * column has always called the same two 'target_value' and 'event'. Both
-     * vocabularies are complete and they map one-to-one, so this is a
-     * translation rather than a loss — unlike category, which was widened in
-     * migration 002 because five values could not hold eight.
-     */
-    function goal_type_to_db(string $type): string
-    {
-        return match ($type) {
-            'value'     => 'target_value',
-            'milestone' => 'event',
-            'habit'     => 'habit',
-            'streak'    => 'streak',
-            default     => 'target_value',
-        };
-    }
-
-    function goal_type_from_db(string $type): string
-    {
-        return match ($type) {
-            'target_value' => 'value',
-            'event'        => 'milestone',
-            'habit'        => 'habit',
-            'streak'       => 'streak',
-            default        => 'value',
-        };
-    }
 
     /**
      * @param int|null $userId the authenticated user, or null when signed out
@@ -87,13 +59,15 @@ if (!function_exists('hydrate_goals')) {
         $start   = hydrate_goal_date($row['start_date']);
         $end     = hydrate_goal_date($row['end_date']);
 
-        /* Recomputed from the user's own rows on every render, and snapshotted
-           and completed as a side effect. That is what makes an automatic goal
+        /* Recomputed from the user's own rows on every render, and stored and
+           completed as a side effect. That is what makes an automatic goal
            feel immediate: import some steps and the bar has already moved by
            the time the page is drawn, with nobody pressing anything.
 
            It also means the figure on the card cannot disagree with the
-           figure on the detail screen, because there is only one of them. */
+           figure on the detail screen, because there is only one of them —
+           and there is no fallback to an older stored figure when it has no
+           answer. No answer is shown as no answer. */
         $progress = goal_refresh_row($userId, $row, $today);
 
         /* The refresh may have just finished this goal, so the row is re-read
@@ -102,23 +76,15 @@ if (!function_exists('hydrate_goals')) {
             $row = goal_get($userId, $goalId) ?? $row;
         }
 
-        $current = $progress['current'];
-        $percent = $progress['percent'];
+        $kind    = $progress['kind'];
+        $isAuto  = !goal_is_manual($row);
+        $words   = hydrate_goal_words($row, $progress);
 
-        /* A goal with no target and no computable value falls back to the last
-           thing the person entered by hand, which is the whole story for a
-           milestone or a habit. */
-        if ($percent === null) {
-            $latest = goal_latest_progress($userId, $goalId);
-            if ($latest !== null && $latest['percent_complete'] !== null) {
-                $percent = (float) $latest['percent_complete'];
-            }
-            if ($current === null && $latest !== null && $latest['current_value'] !== null) {
-                $current = (float) $latest['current_value'];
-            }
+        /* A day ticked off once is ticked off; the button says so rather than
+           inviting a second tick that would change nothing. */
+        if (($words['entry']['kind'] ?? null) === 'tick') {
+            $words['entry']['done'] = ($progress['states'][$today->format('Y-m-d')] ?? null) === 'met';
         }
-
-        $history = hydrate_goal_history($userId, $goalId);
 
         /* The real values behind the goal, dated, for the Verloop chart — the
            kilos or the steps themselves, not the percentage. */
@@ -128,16 +94,15 @@ if (!function_exists('hydrate_goals')) {
             'id'       => (string) $goalId,
             'name'     => $row['name'],
             'category' => hydrate_goal_category($row['category'], $config),
-            'type'     => goal_type_from_db((string) $row['goal_type']),
+            'type'     => $kind,
             'priority' => $row['priority'] === 'primary' ? 'primary' : 'secondary',
             'status'   => $row['status'],
 
-            'percent'       => $percent === null ? null : (int) round($percent),
-            'current_label' => hydrate_goal_label($current, $row['target_unit']),
-            'target_label'  => hydrate_goal_label(
-                $row['target_value'] === null ? null : (float) $row['target_value'],
-                $row['target_unit']
-            ),
+            'percent'       => $progress['percent'] === null ? null : (int) floor($progress['percent']),
+            'current_label' => $words['current'],
+            'current_title' => $words['current_title'],
+            'target_label'  => $words['target'],
+            'extra_facts'   => $words['facts'],
 
             'started_days_ago' => $start === null ? null : (int) $start->diff($today)->days,
             'ends_in_days'     => $end === null ? null : (int) $today->diff($end)->days * ($end < $today ? -1 : 1),
@@ -146,86 +111,190 @@ if (!function_exists('hydrate_goals')) {
             /* What the person chose, not what the category implies. A goal
                with no source says so; it does not borrow one. */
             'sources'      => hydrate_goal_sources($row['category']),
-            'tracking'     => $row['tracking_mode'] ?? 'manual',
+            'tracking'     => $isAuto ? 'auto' : 'manual',
             'source_kind'  => $row['source_kind'] ?? 'manual',
             'source_key'   => $row['source_key'] ?? null,
             'source_label' => (goal_source_find($row['source_kind'] ?? null, $row['source_key'] ?? null)['label'] ?? null),
-            'daily_target' => $row['daily_target'] === null ? null : (float) $row['daily_target'],
-            'daily_label'  => hydrate_goal_label(
-                ($row['daily_target'] ?? null) === null ? null : (float) $row['daily_target'],
-                $row['target_unit']
-            ),
+            'direction'    => $row['direction'] ?? 'increase',
+            'daily_target' => ($row['daily_target'] ?? null) === null ? null : (float) $row['daily_target'],
+            'daily_label'  => $words['daily'],
 
-            /* Per-day results for a repeated goal, each one met, missed, or
-               simply not known. Empty for every other kind of goal. */
-            'days'       => $progress['days'],
-            'days_met'   => $progress['met'],
-            'days_total' => $progress['total'],
-            'mode'       => $progress['mode'],
+            /* Per-day results for a goal that counts days, each one met,
+               missed, not known, or — today — still open. Empty for every
+               other kind of goal. */
+            'counts_days' => $progress['counts_days'],
+            'days'        => $progress['days'],
+            'days_met'    => $progress['met'],
+            'days_total'  => $progress['days_total'],
+            'days_chip'   => $words['days_chip'],
+            'days_note'   => $words['days_note'],
+            'mode'        => $progress['mode'],
 
-            /* Whether this goal is the person's to fill in by hand. */
-            'is_manual'  => ($row['tracking_mode'] ?? 'manual') !== 'auto',
+            /* Whether this goal is the person's to fill in by hand, and how. */
+            'is_manual'   => !$isAuto,
+            'entry'       => $words['entry'],
 
-            'history'      => $history,
             'series'       => $series,
             'target_unit'  => $row['target_unit'],
             'history_step' => 'day',
-            'activity'     => hydrate_goal_activity($userId, $goalId, $row['target_unit']),
+            'activity'     => hydrate_goal_activity($userId, $row, $kind, $progress['counts_days']),
 
             /* Completed goals are sorted by how recently they finished. */
             'completed_days_ago' => $row['status'] === 'completed'
                 ? (int) (new DateTimeImmutable((string) ($row['completed_at'] ?? $row['updated_at'])))->diff($today)->days
                 : null,
 
-            'note' => null,
+            'note' => $words['note'],
         ];
     }
 
     /**
-     * The goal's current value.
-     *
-     * A metric-backed goal reads today's figure from the health data, which is
-     * what makes such a goal keep itself up to date. Everything else uses the
-     * newest snapshot the user recorded.
+     * A figure from this goal, written the way the goal counts it: days for
+     * a goal that counts days, the source's own unit for one read from health
+     * data ("7,5 uur", not "450 min"), and whatever the person called it for
+     * one they keep themselves.
      */
-    function hydrate_goal_current(int $userId, array $row): ?float
+    function hydrate_goal_figure(array $row, ?float $value, bool $days): ?string
     {
-        if ($row['metric_type_id'] !== null) {
-            $code = db_value('SELECT code FROM health_metric_types WHERE id = ?', [(int) $row['metric_type_id']]);
-
-            if ($code !== null) {
-                $value = health_daily_metric($userId, (string) $code, date('Y-m-d'));
-                if ($value !== null) {
-                    return $value;
-                }
-            }
+        if ($value === null) {
+            return null;
         }
 
-        $latest = goal_latest_progress($userId, (int) $row['id']);
+        if ($days) {
+            return goal_days_text($value);
+        }
 
-        return $latest === null || $latest['current_value'] === null
-            ? null
-            : (float) $latest['current_value'];
+        if (!goal_is_manual($row)) {
+            return goal_unit_text($value, goal_source_unit($row['source_kind'] ?? null, $row['source_key'] ?? null));
+        }
+
+        return hydrate_goal_label($value, $row['target_unit']);
     }
 
-    /** The percentage over time, oldest first, for the detail page's sparkline. */
-    function hydrate_goal_history(int $userId, int $goalId): array
+    /**
+     * Every sentence the card and the detail page say about a goal that
+     * depends on its type — so the three types read as three different
+     * things, because they are.
+     *
+     * @return array{current: ?string, current_title: string, target: ?string, daily: ?string,
+     *               facts: list<array{label: string, value: string}>, note: ?string,
+     *               days_chip: ?string, days_note: ?string, entry: ?array}
+     */
+    function hydrate_goal_words(array $row, array $progress): array
     {
-        $rows = db_all(
-            'SELECT p.percent_complete
-               FROM goal_progress p
-               JOIN goals g ON g.id = p.goal_id
-              WHERE p.goal_id = ? AND g.user_id = ? AND p.percent_complete IS NOT NULL
-           ORDER BY p.recorded_on
-              LIMIT 60',
-            [$goalId, $userId]
-        );
+        $kind     = $progress['kind'];
+        $days     = $progress['counts_days'];
+        $manual   = goal_is_manual($row);
+        $decrease = ($row['direction'] ?? 'increase') === 'decrease';
+        $target   = $row['target_value'] === null ? null : (float) $row['target_value'];
 
-        return array_map(static fn (array $r): int => (int) round((float) $r['percent_complete']), $rows);
+        /* "minstens 10.000 stappen": what one day has to reach to count. */
+        $daily = null;
+        if (!$manual && ($row['daily_target'] ?? null) !== null) {
+            $daily = ($decrease ? 'hoogstens ' : 'minstens ')
+                . goal_unit_text((float) $row['daily_target'], goal_source_unit($row['source_kind'], $row['source_key']));
+        }
+
+        $out = [
+            'current' => null, 'current_title' => 'Nu', 'target' => null, 'daily' => $daily,
+            'facts' => [], 'note' => null, 'days_chip' => null, 'days_note' => null, 'entry' => null,
+        ];
+
+        switch ($kind) {
+            case 'streak':
+                $out['current_title'] = 'Huidige streak';
+                $out['current']       = $progress['streak'] === null ? null : goal_days_text($progress['streak']);
+                $out['target']        = $target === null ? null : goal_days_text($target) . ' op rij';
+
+                if ($progress['longest'] !== null) {
+                    $out['facts'][] = ['label' => 'Langste streak', 'value' => goal_days_text($progress['longest'])];
+                }
+
+                $out['note'] = $manual
+                    ? 'Vink elke dag af die gelukt is. Alleen dagen achter elkaar tellen: een dag zonder vinkje breekt je streak.'
+                    : 'Elke dag met ' . $daily . ' telt. Alleen dagen achter elkaar tellen: een dag die dat niet haalt, of zonder gegevens, breekt je streak.';
+
+                $out['days_chip'] = $progress['streak'] === null ? null : 'Nu ' . $progress['streak'] . ' op rij';
+                $out['days_note'] = $manual
+                    ? 'Vandaag telt zodra je hem afvinkt, en breekt je streak pas als de dag voorbij is.'
+                    : 'Een dag zonder gegevens is niet gemist, maar ook niet gehaald: daarna begint je streak opnieuw. Vandaag telt pas als hij gehaald is.';
+                $out['entry'] = [
+                    'kind'  => 'tick',
+                    'label' => 'Vandaag gelukt',
+                    'note'  => 'Eén vinkje per dag. Een dag zonder vinkje breekt je streak.',
+                ];
+                break;
+
+            case 'accumulate':
+                $out['current_title'] = 'Totaal';
+                $out['current']       = hydrate_goal_figure($row, $progress['total'], $days);
+                $out['target']        = hydrate_goal_figure($row, $target, $days);
+
+                if ($days) {
+                    $out['note'] = $manual
+                        ? 'Vink elke dag af die gelukt is. Elke dag telt op, ook als ze niet achter elkaar liggen.'
+                        : 'Elke dag met ' . $daily . ' telt als één dag. Ze hoeven niet achter elkaar te liggen.';
+                    $out['days_chip'] = $progress['met'] . ' van ' . ($target === null ? '—' : (int) $target) . ' dagen';
+                    $out['days_note'] = 'Dagen zonder gegevens tellen niet mee als gemist, en ook niet als gehaald.';
+                    $out['entry']     = [
+                        'kind'  => 'tick',
+                        'label' => 'Vandaag gelukt',
+                        'note'  => 'Eén vinkje per dag. Elke gelukte dag telt op.',
+                    ];
+                } else {
+                    $out['note']  = 'Alles telt op tot één totaal. Een dag zonder gegevens voegt niets toe, maar haalt ook niets af.';
+                    $out['entry'] = [
+                        'kind'        => 'add',
+                        'label'       => 'Hoeveel komt erbij?',
+                        'button'      => 'Toevoegen',
+                        'placeholder' => 'Hoeveel' . (trim((string) $row['target_unit']) === '' ? '' : ' ' . trim((string) $row['target_unit'])),
+                        'note'        => 'Elke invoer telt op bij je totaal, ook twee keer op één dag.',
+                    ];
+                }
+                break;
+
+            default:
+                $out['current_title'] = 'Beste resultaat';
+                $out['current']       = hydrate_goal_figure($row, $progress['best'], false);
+                $out['target']        = hydrate_goal_figure($row, $target, false);
+
+                if ($progress['latest'] !== null && $progress['latest'] != $progress['best']) {
+                    $out['facts'][] = ['label' => 'Laatste resultaat', 'value' => (string) hydrate_goal_figure($row, $progress['latest'], false)];
+                }
+
+                if ($decrease && $progress['start'] !== null) {
+                    $out['facts'][] = ['label' => 'Startpunt', 'value' => (string) hydrate_goal_figure($row, $progress['start'], false)];
+                }
+
+                $out['note'] = $decrease
+                    ? 'Je laagste resultaat telt, gemeten vanaf je startpunt. Een hoger resultaat later verlaagt je voortgang niet.'
+                    : 'Je beste resultaat telt. Een minder goed resultaat later verlaagt je voortgang niet.';
+
+                if ($target === null) {
+                    $out['note'] = 'Dit doel heeft geen doelwaarde, dus er is geen percentage. Je beste resultaat wordt wel bijgehouden.';
+                }
+
+                $out['entry'] = [
+                    'kind'        => 'result',
+                    'label'       => 'Nieuw resultaat',
+                    'button'      => 'Opslaan',
+                    'placeholder' => 'Resultaat' . (trim((string) $row['target_unit']) === '' ? '' : ' in ' . trim((string) $row['target_unit'])),
+                    'note'        => 'Vul elk resultaat in dat je haalt. Het beste telt; een minder resultaat verlaagt niets.',
+                ];
+                break;
+        }
+
+        return $out;
     }
 
-    /** The last few snapshots, as the detail page's "Recent" list. */
-    function hydrate_goal_activity(int $userId, int $goalId, ?string $unit): array
+    /**
+     * The last few days, as the detail page's "Recent" list.
+     *
+     * For a goal kept by hand these are the person's own entries — the day's
+     * best result, the amount added, or the day ticked off. For one read from
+     * health data they are the figure the goal stood at on each day.
+     */
+    function hydrate_goal_activity(int $userId, array $goal, string $kind, bool $countsDays): array
     {
         $rows = db_all(
             'SELECT p.recorded_on, p.current_value, p.percent_complete
@@ -234,14 +303,24 @@ if (!function_exists('hydrate_goals')) {
               WHERE p.goal_id = ? AND g.user_id = ?
            ORDER BY p.recorded_on DESC
               LIMIT 3',
-            [$goalId, $userId]
+            [(int) $goal['id'], $userId]
         );
 
-        $today = new DateTimeImmutable('today');
+        $today  = new DateTimeImmutable('today');
+        $manual = goal_is_manual($goal);
 
-        return array_map(static function (array $r) use ($unit, $today): array {
-            $day  = new DateTimeImmutable((string) $r['recorded_on']);
-            $days = (int) $day->diff($today)->days;
+        return array_map(static function (array $r) use ($goal, $kind, $countsDays, $manual, $today): array {
+            $day   = new DateTimeImmutable((string) $r['recorded_on']);
+            $days  = (int) $day->diff($today)->days;
+            $value = $r['current_value'] === null ? null : (float) $r['current_value'];
+
+            $text = match (true) {
+                $value === null                        => '',
+                $manual && $countsDays                 => 'Gelukt',
+                $manual && $kind === 'accumulate'      => '+ ' . hydrate_goal_figure($goal, $value, false),
+                !$manual && $kind === 'streak'         => goal_days_text($value) . ' op rij',
+                default                                => (string) hydrate_goal_figure($goal, $value, $countsDays),
+            };
 
             return [
                 'label' => match (true) {
@@ -251,11 +330,8 @@ if (!function_exists('hydrate_goals')) {
                 },
                 'meta'  => $r['percent_complete'] === null
                     ? ''
-                    : round((float) $r['percent_complete']) . '%',
-                'value' => hydrate_goal_label(
-                    $r['current_value'] === null ? null : (float) $r['current_value'],
-                    $unit
-                ) ?? '',
+                    : floor((float) $r['percent_complete']) . '%',
+                'value' => $text,
             ];
         }, $rows);
     }

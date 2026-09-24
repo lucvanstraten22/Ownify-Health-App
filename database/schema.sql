@@ -450,18 +450,43 @@ CREATE TABLE `goals` (
     -- database created before migration 002 stays readable.
     `category`       ENUM('health','weight','strength','activity','nutrition','habit','performance','other',
                           'sleep','training','body','general') NOT NULL DEFAULT 'other',
-    `goal_type`      ENUM('target_value','habit','streak','event') NOT NULL DEFAULT 'target_value',
+    -- How progress is worked out, and the one thing that decides it
+    -- (migration 007):
+    --   milestone   Mijlpaal — the best result so far, never a sum
+    --   streak      Streak   — consecutive successful days; a miss breaks it
+    --   accumulate  Optellen — every contribution added to a total
+    `goal_type`      ENUM('milestone','streak','accumulate') NOT NULL DEFAULT 'milestone'
+                     COMMENT 'milestone = best result; streak = consecutive days; accumulate = running total',
+    -- Where progress comes from, chosen by the person (migration 006). A
+    -- source is not always a metric, so the kind names the table.
+    `tracking_mode`  ENUM('auto','manual') NOT NULL DEFAULT 'manual'
+                     COMMENT 'auto = read from the user''s own health data; manual = they keep it',
+    `source_kind`    ENUM('metric','measurement','workout','manual') NOT NULL DEFAULT 'manual'
+                     COMMENT 'which table the value comes from',
+    `source_key`     VARCHAR(60) NULL COMMENT 'metric code, measurement type, or workout aspect',
     -- The board allows one primary and two secondaries. That limit is a rule
     -- the application enforces on write; this column only records which a
     -- goal is, so the ordering survives a reload.
     `priority`       ENUM('primary','secondary') NOT NULL DEFAULT 'secondary',
     `metric_type_id` SMALLINT UNSIGNED NULL COMMENT 'Set when progress can be read from health data',
     `target_value`   DECIMAL(14,4) NULL,
+    `start_value`    DECIMAL(14,4) NULL COMMENT 'the baseline when the goal was made',
+    `daily_target`   DECIMAL(14,4) NULL COMMENT 'what a single day has to reach to count',
+    -- Where the goal stands, recalculated from the underlying rows and stored
+    -- with it (migration 007). Only the column for the goal's own type is
+    -- filled; NULL means nothing recorded yet, which is not zero.
+    `best_value`     DECIMAL(14,4)     NULL,
+    `total_value`    DECIMAL(14,4)     NULL,
+    `streak_current` SMALLINT UNSIGNED NULL,
+    `streak_best`    SMALLINT UNSIGNED NULL,
+    `progress_pct`   DECIMAL(5,2)      NULL,
+    `progress_at`    DATETIME          NULL,
     `target_unit`    VARCHAR(20) NULL,
     `direction`      ENUM('increase','decrease','maintain') NOT NULL DEFAULT 'increase',
     `start_date`     DATE NOT NULL,
     `end_date`       DATE NULL,
     `status`         ENUM('active','completed','paused','abandoned') NOT NULL DEFAULT 'active',
+    `completed_at`   DATETIME NULL,
     `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
@@ -474,9 +499,18 @@ CREATE TABLE `goals` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- Dated snapshots, for the progress chart and for goals that cannot be derived
--- from a metric. The live percentage for a metric-backed goal is calculated,
--- not read from here — this is history, not a second source of truth.
+-- One row per goal per day.
+--
+-- For a goal read from health data it is a snapshot: where the goal stood that
+-- day. The live figure is always recalculated from the data itself.
+--
+-- For a goal the person keeps by hand it IS the data, and each type writes its
+-- day its own way (migration 007):
+--   milestone   the day's best result — a worse one later that day never
+--               replaces a better one
+--   accumulate  the day's contributions added together
+--   streak      the day was done; the value is not read, only that it exists
+-- An Optellen goal counted in days works like a streak row: one per day done.
 CREATE TABLE `goal_progress` (
     `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `goal_id`          BIGINT UNSIGNED NOT NULL,
@@ -486,6 +520,7 @@ CREATE TABLE `goal_progress` (
     `computed_at`      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_goal_day` (`goal_id`, `recorded_on`),
+    KEY `idx_progress_goal_day` (`goal_id`, `recorded_on`),
     CONSTRAINT `fk_progress_goal` FOREIGN KEY (`goal_id`)
         REFERENCES `goals` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

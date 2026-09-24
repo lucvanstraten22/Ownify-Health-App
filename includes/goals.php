@@ -2,9 +2,10 @@
 /**
  * Goals — PRIVATE, scoped to the owner like health data.
  *
- * A goal that names a metric_type can have its progress read from health data;
- * one that does not keeps dated snapshots in goal_progress. The percentage is
- * calculated here rather than stored twice.
+ * The rows and the board's rules: creating, the three-goal limit, the one
+ * primary, pausing, deleting. Where a goal stands — its best result, its
+ * streak, its total, its percentage — is worked out in one place only,
+ * includes/goal-progress.php, so nothing here calculates a percentage.
  */
 
 declare(strict_types=1);
@@ -54,22 +55,27 @@ if (!function_exists('goals_for_user')) {
         $sourceKey  = $goal['source_key'] ?? null;
         $isAuto     = $sourceKind !== 'manual' && goal_source_find($sourceKind, $sourceKey) !== null;
 
+        /* Mijlpaal, Streak or Optellen, written in whichever vocabulary the
+           column has — before migration 007 it only knows the old four. */
+        $kind     = $goal['kind'] ?? 'milestone';
+        $goalType = goal_kind_to_db($kind);
+
         /* A metric source also fills metric_type_id, so everything written
            before source_kind existed keeps reading the column it expects. */
         $metricTypeId = $isAuto && $sourceKind === 'metric'
             ? health_metric_type_id((string) $sourceKey)
             : (isset($goal['metric_code']) ? health_metric_type_id($goal['metric_code']) : null);
 
-        /* The baseline, read now rather than later.
-           A goal to lose weight cannot be measured against where you started
-           unless somebody wrote down where you started, and the only moment
-           that is knowable is this one. Captured for rising goals too, so a
-           bench press going 60 -> 100 counts from 60 rather than from zero.
+        /* The baseline, read now rather than later — for a Mijlpaal, the one
+           type measured from somewhere. A goal to get down to 80 kg cannot be
+           measured against where you started unless somebody wrote down where
+           you started, and the only moment that is knowable is this one.
            Null when there is no reading yet, and null stays null: a baseline
-           we invent is a percentage we invent. */
-        $startValue = $goal['start_value'] ?? null;
+           we invent is a percentage we invent. A Streak and an Optellen goal
+           start from nothing by definition, so they have none. */
+        $startValue = $kind === 'milestone' ? ($goal['start_value'] ?? null) : null;
 
-        if ($isAuto && $startValue === null) {
+        if ($isAuto && $kind === 'milestone' && $startValue === null) {
             $startValue = goal_source_latest($userId, (string) $sourceKind, (string) $sourceKey);
         }
 
@@ -85,7 +91,7 @@ if (!function_exists('goals_for_user')) {
                     $userId,
                     $goal['name'],
                     $goal['category'] ?? 'general',
-                    $goal['goal_type'] ?? 'target_value',
+                    $goalType,
                     $metricTypeId,
                     $goal['target_value'] ?? null,
                     $goal['target_unit'] ?? null,
@@ -107,7 +113,7 @@ if (!function_exists('goals_for_user')) {
                     $userId,
                     $goal['name'],
                     $goal['category'] ?? 'general',
-                    $goal['goal_type'] ?? 'target_value',
+                    $goalType,
                     $isAuto ? 'auto' : 'manual',
                     $isAuto ? $sourceKind : 'manual',
                     $isAuto ? $sourceKey : null,
@@ -297,25 +303,5 @@ if (!function_exists('goals_for_user')) {
         goal_ensure_primary($userId);
 
         return true;
-    }
-
-    /**
-     * Percentage towards the target. Calculated, not stored, so it can never
-     * disagree with the underlying value.
-     */
-    function goal_percent(array $goal, ?float $currentValue): ?float
-    {
-        $target = $goal['target_value'] === null ? null : (float) $goal['target_value'];
-
-        if ($target === null || $currentValue === null || $target == 0.0) {
-            return null;
-        }
-
-        $percent = match ($goal['direction']) {
-            'decrease' => $target / max($currentValue, 0.0001) * 100,
-            default    => $currentValue / $target * 100,
-        };
-
-        return round(max(0.0, min(100.0, $percent)), 2);
     }
 }

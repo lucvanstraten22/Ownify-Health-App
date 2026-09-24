@@ -380,8 +380,8 @@
 
         if (slot) { slot.hidden = true; slot.textContent = ''; }
 
-        /* A habit is confirmed rather than measured, so it sends no value and
-           the server counts the day. Anything else needs a number. */
+        /* A day is ticked off rather than measured, so a tick sends no value
+           and the server marks the day. A result or an amount needs a number. */
         if (save && (!input || input.value.trim() === '')) {
             if (slot) { slot.textContent = 'Vul een waarde in.'; slot.hidden = false; }
             if (input) { input.focus(); }
