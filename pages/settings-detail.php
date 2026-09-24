@@ -8,6 +8,7 @@
  *
  *   identity      avatar and username
  *   fields        profile fields, each with its own edit behaviour
+ *   signin        the ways into this account, and linking Google
  *   integrations  the health sources, expandable in place
  *   choice        pick one of several options
  *   states        read-only facts: label, value, one line of explanation
@@ -87,6 +88,94 @@ foreach ($page['blocks'] as $block) {
                                 <?php foreach ($block['fields'] as $field): ?>
                                     <?php component('settings-field', $data + ['field' => $field]); ?>
                                 <?php endforeach; ?>
+                            </div>
+                        </section>
+
+                    <?php elseif ($block['type'] === 'signin'):
+                        /* Rows in the same shape as the profile fields. The
+                           Google row is the only live one: a button while
+                           Google can be linked and is not, a fact once it is. */
+                        $auth       = $data['auth'];
+                        $identities = [];
+                        foreach ($auth['identities'] ?? [] as $identity) {
+                            $identities[$identity['provider']] = $identity;
+                        }
+                        $email      = $identities['email'] ?? null;
+                        $google     = $identities['google'] ?? null;
+                        $canLink    = !empty($auth['providers']['google']);
+                        $flash      = $auth['flash'] ?? null;
+                        $flash      = ($flash !== null && $flash['target'] === 'settings-account') ? $flash : null;
+                        ?>
+
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>" data-signin>
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <?php if ($flash !== null): ?>
+                                <p class="settings-note settings-note--flash" data-signin-flash
+                                   role="<?= $flash['tone'] === 'error' ? 'alert' : 'status' ?>">
+                                    <?= icon($flash['tone'] === 'ok' ? 'check' : 'info', 'settings-note__icon') ?>
+                                    <span><?= e($flash['message']) ?></span>
+                                </p>
+                            <?php endif; ?>
+
+                            <p class="settings-note settings-note--flash" data-signin-error role="alert" hidden></p>
+
+                            <div class="card settings-card">
+                                <?php if (empty($auth['signed_in'])): ?>
+
+                                    <div class="settings-field is-empty">
+                                        <span class="settings-field__text">
+                                            <span class="settings-field__label">Niet ingelogd</span>
+                                        </span>
+                                        <span class="settings-field__value">—</span>
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <div class="settings-field <?= $email !== null ? 'is-filled' : 'is-empty' ?>">
+                                        <span class="settings-field__text">
+                                            <span class="settings-field__label">E-mail en wachtwoord</span>
+                                            <span class="settings-field__note">
+                                                <?= e($email !== null ? 'Inloggen met je gebruikersnaam of e-mailadres' : 'Je logt in met Google') ?>
+                                            </span>
+                                        </span>
+                                        <span class="settings-field__value"><?= e($email['email'] ?? 'Niet ingesteld') ?></span>
+                                    </div>
+
+                                    <?php if ($google !== null): ?>
+
+                                        <div class="settings-field is-filled">
+                                            <span class="settings-field__text">
+                                                <span class="settings-field__label">Google</span>
+                                                <span class="settings-field__note">Gekoppeld — je kunt ook met Google inloggen</span>
+                                            </span>
+                                            <span class="settings-field__value"><?= e($google['email'] ?? 'Gekoppeld') ?></span>
+                                            <?= icon('check', 'settings-field__mark') ?>
+                                        </div>
+
+                                    <?php elseif ($canLink): ?>
+
+                                        <button type="button" class="settings-field press is-editable is-empty" data-google-link>
+                                            <span class="settings-field__text">
+                                                <span class="settings-field__label">Google</span>
+                                                <span class="settings-field__note">Koppel Google om daarmee in te loggen</span>
+                                            </span>
+                                            <span class="settings-field__value">Koppel Google</span>
+                                            <?= icon('chevron-right', 'settings-field__mark') ?>
+                                        </button>
+
+                                    <?php else: ?>
+
+                                        <div class="settings-field is-empty">
+                                            <span class="settings-field__text">
+                                                <span class="settings-field__label">Google</span>
+                                            </span>
+                                            <span class="settings-field__value">Nog niet beschikbaar</span>
+                                        </div>
+
+                                    <?php endif; ?>
+
+                                <?php endif; ?>
                             </div>
                         </section>
 

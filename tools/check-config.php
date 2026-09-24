@@ -174,6 +174,52 @@ foreach ($integrations as $provider => $config) {
     );
 }
 
+/* ------------------------------------------------------- google sign-in */
+
+/* Present or absent, and where the redirect goes — never the id or secret. */
+require_once dirname(__DIR__) . '/includes/google-signin.php';
+
+$google = google_signin_config();
+
+if ($google['client_id'] === '' && $google['client_secret'] === '') {
+    line('warn', 'Google sign-in', 'not configured — the button stays disabled (see config/auth.local.php.example)');
+} else {
+    foreach (['client_id' => 'client id', 'client_secret' => 'client secret', 'redirect_uri' => 'redirect URI'] as $key => $label) {
+        if ($google[$key] === '') {
+            line('fail', 'Google sign-in', $label . ' missing');
+            $problems++;
+        }
+    }
+
+    if ($google['redirect_uri'] !== '') {
+        $secure = str_starts_with($google['redirect_uri'], 'https://')
+            || preg_match('#^http://(localhost|127\.0\.0\.1)(:\d+)?/#', $google['redirect_uri']);
+
+        line(
+            $secure ? 'ok' : 'fail',
+            'Google redirect URI',
+            $google['redirect_uri'] . ($secure ? '' : '  — Google only accepts https (or localhost)')
+        );
+
+        if (!$secure) {
+            $problems++;
+        }
+    }
+
+    if (!function_exists('curl_init') && !ini_get('allow_url_fopen')) {
+        line('fail', 'Google sign-in', 'neither curl nor allow_url_fopen — the server cannot reach Google');
+        $problems++;
+    }
+
+    if (google_signin_configured()) {
+        line('ok', 'Google sign-in', 'configured — the button is offered');
+    }
+}
+
+if (is_file(dirname(__DIR__) . '/config/auth.local.php')) {
+    line('ok', 'auth.local.php', 'present');
+}
+
 /* ------------------------------------------------------------- version */
 
 $version = dirname(__DIR__) . '/VERSION';

@@ -1,17 +1,21 @@
 <?php
 /**
- * Apple and Google sign-in are NOT implemented.
+ * Starts signing in with a provider. Answers with the address to send the
+ * browser to; the browser goes there itself.
  *
- * This endpoint exists so the buttons have somewhere honest to point. It never
- * signs anyone in. Implementing a provider means: redirect to the provider,
- * receive the callback, VERIFY the ID token server-side (signature, issuer,
- * audience, nonce, expiry), and only then call auth_link_identity() with the
- * verified 'sub'. Until that exists, this answers 501.
+ *   provider=google  mode=login   from the account panel, signed out
+ *   provider=google  mode=link    from Settings > Account, signed in
+ *
+ * POST with the CSRF token, like every other endpoint, so no other site can
+ * start a sign-in — and in particular a link — in somebody's session.
+ *
+ * Apple is not implemented and says so: it answers 501, and signs nobody in.
  */
 
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
+require_once dirname(__DIR__, 2) . '/includes/google-signin.php';
 
 api_require_post();
 api_require_csrf();
@@ -22,4 +26,35 @@ if (!in_array($provider, ['apple', 'google'], true)) {
     api_fail('Onbekende aanbieder.', 400);
 }
 
-api_fail('Inloggen met ' . ucfirst($provider) . ' is nog niet gekoppeld.', 501);
+if ($provider === 'apple') {
+    api_fail('Inloggen met Apple is nog niet gekoppeld.', 501);
+}
+
+api_require_database();
+
+if (!google_signin_configured()) {
+    api_fail('Inloggen met Google is nog niet gekoppeld.', 501);
+}
+
+$mode   = (string) ($_POST['mode'] ?? 'login');
+$userId = current_user_id();
+
+if ($mode === 'link') {
+    if ($userId === null) {
+        api_fail('Log eerst in om Google aan je account te koppelen.', 401);
+    }
+} elseif ($mode === 'login') {
+    if ($userId !== null) {
+        api_fail('Je bent al ingelogd.', 409);
+    }
+} else {
+    api_fail('Onbekende actie.', 400);
+}
+
+$url = google_signin_begin($mode, $userId);
+
+if ($url === null) {
+    api_fail('Inloggen met Google kon niet worden gestart.', 500);
+}
+
+api_ok(['redirect' => $url]);

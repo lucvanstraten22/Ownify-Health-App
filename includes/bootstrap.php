@@ -143,6 +143,18 @@ if (!function_exists('app_auth')) {
             }
         }
 
+        /* Somebody Google has just vouched for who has no account yet: the
+           panel asks them for a username. Only the address is passed on —
+           the Google id stays in the session. */
+        $pending = null;
+        if ($user === null && auth_provider_available('google')) {
+            $waiting = google_signin_pending();
+            $pending = $waiting === null ? null : [
+                'email'   => $waiting['email'],
+                'minutes' => max(1, (int) ceil(($waiting['expires'] - time()) / 60)),
+            ];
+        }
+
         $state = [
             'signed_in' => $user !== null,
             'user'      => $user,
@@ -153,6 +165,9 @@ if (!function_exists('app_auth')) {
                 'apple'  => auth_provider_available('apple'),
                 'google' => auth_provider_available('google'),
             ],
+            'google_pending' => $pending,
+            'identities'     => $user === null ? [] : auth_identities_for_user((int) $user['id']),
+            'flash'          => auth_flash_take(),
         ];
 
         return $state;

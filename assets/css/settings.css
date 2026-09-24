@@ -646,6 +646,11 @@
     color: var(--text-secondary);
 }
 
+.settings-note[hidden] { display: none; }
+
+/* What happened when you came back from Google: said once, above the rows. */
+.settings-note--flash { margin-bottom: var(--space-3); }
+
 .settings-note__icon {
     width: 16px;
     height: 16px;

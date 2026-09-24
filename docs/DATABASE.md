@@ -68,6 +68,7 @@ wins over the file.
 | --- | --- | --- | --- |
 | Database | `config/database.local.php` | `DB_HOST` `DB_NAME` `DB_USER` `DB_PASSWORD` | everything |
 | App key | `config/app.local.php` | `JOLU_APP_KEY` | storing OAuth tokens |
+| Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` | signing in with Google |
 | Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
 
 Check what a machine actually has, without printing any of it:
@@ -160,6 +161,53 @@ Otherwise use the file — it is one less thing that can be quietly undone.
 Do **not** put the key in `.htaccess` with `SetEnv`: `.htaccess` is in the
 document root and is exactly the sort of file that ends up copied into a
 backup, a screenshot or a repository.
+
+### Google sign-in
+
+Until this is configured the Google button stays disabled and nothing about
+signing in changes. It needs an OAuth client in a Google Cloud project — the
+same project as the Google Health source is fine, and so is a new one.
+
+**In Google Cloud Console** (console.cloud.google.com). Google has renamed
+these menus: in current consoles they are under **Google Auth Platform**, in
+older ones under **APIs & Services → OAuth consent screen / Credentials**.
+
+1. **Branding** (older: *OAuth consent screen*). Audience *External*. App name
+   — what people see on Google's screen — a support e-mail, and your e-mail as
+   developer contact. Under **Data access** (older: *Scopes*) add only
+   `openid`, `.../auth/userinfo.email` and `.../auth/userinfo.profile`. These
+   are not sensitive scopes, so there is no verification review.
+2. **Audience.** While the app is in *Testing*, only the Google accounts listed
+   as *Test users* can sign in: add yourself and anyone testing. When it should
+   be open to everyone, press **Publish app** there.
+3. **Clients → Create client** (older: *Credentials → Create credentials →
+   OAuth client ID*). Application type *Web application*. Under **Authorised
+   redirect URIs** add exactly:
+
+   ```
+   https://healthpreview.acits.nl/api/auth/google-callback.php
+   ```
+
+   No JavaScript origins are needed. Create it, and copy the **Client ID** and
+   **Client secret** straight away — newer consoles show the secret only once
+   (a lost one can be replaced with a new secret on the same client).
+
+**On the server**, the same way as the app key — a git-ignored file the deploy
+never touches, in the web root:
+
+```bash
+cd /home/<hestia-user>/web/<your-domain>/public_html
+cp config/auth.local.php.example config/auth.local.php
+nano config/auth.local.php          # paste the client id and secret
+php tools/check-config.php          # must say: Google sign-in configured
+chmod 600 config/auth.local.php
+```
+
+The redirect URI in that file is already the live one; it must match the one
+registered in step 3 character for character, or Google answers
+`redirect_uri_mismatch`. Without SSH, Hestia's File Manager can create the file:
+copy `config/auth.local.php.example`, rename the copy to `auth.local.php`, and
+edit the two values.
 
 ## The tables
 
@@ -283,18 +331,43 @@ error for both an unknown address and a wrong password, and
 `session_regenerate_id(true)` on login. No provider password or token is
 stored, ever.
 
-**Apple and Google are not implemented, and nothing pretends they are.**
-`auth_provider_available()` returns false for both, the buttons render
-disabled, and `api/auth/oauth.php` answers 501. To implement one:
+**Google is implemented** in `includes/google-signin.php`, as OpenID Connect
+with the authorization code flow and PKCE:
 
-1. Redirect to the provider and handle the callback.
-2. **Verify the ID token server-side** — signature against the provider's
-   public keys, plus issuer, audience, nonce and expiry.
-3. Only then call `auth_link_identity($userId, $provider, $verifiedSub)`.
-4. Flip `auth_provider_available()` for that provider.
+1. `api/auth/oauth.php` (POST, CSRF-checked) puts a random state, nonce and
+   PKCE verifier in the server session and answers with Google's address.
+2. Google sends the browser back to `api/auth/google-callback.php`. The state
+   must be the one in this session; the flow is consumed either way, so a
+   callback works once.
+3. The code is exchanged server to server, with the client secret and the
+   PKCE verifier, and **the ID token is verified here**: RS256 against
+   Google's published keys (no other algorithm is accepted), issuer, audience
+   and authorised party, expiry and issue time, and the nonce. Only its `sub`
+   identifies the person; the e-mail address is used only if Google says it is
+   verified.
+4. Then:
+   - `sub` already linked → signed in (`session_regenerate_id` included).
+   - the verified address belongs to an e-mail/password account → **refused**.
+     Nobody is signed in and nothing is created; the panel says to sign in with
+     the password and link Google under Instellingen → Account.
+   - otherwise the verified `sub` and address wait **in the server session
+     only**, for ten minutes, while the person chooses a username
+     (`api/auth/google-username.php`, same rules as e-mail sign-up). Only then
+     is the account created, already linked, in one transaction. Walking away
+     saves nothing.
+5. Linking from Instellingen → Account runs the same flow with `mode=link`: the
+   verified `sub` is attached to the account that started it, if that account
+   is still the one signed in, has no Google account yet, and the Google
+   account is not already someone else's.
 
-Step 2 is the whole security of the flow. `auth_link_identity()` trusts its
-arguments, so calling it with an unverified `sub` hands out accounts.
+Codes and tokens are never stored or logged. Test the verification offline
+with `php tools/google-signin-test.php`.
+
+**Apple is not implemented, and nothing pretends it is.**
+`auth_provider_available('apple')` returns false, its button renders disabled,
+and `api/auth/oauth.php` answers 501. `auth_link_identity()` is ready for it:
+it trusts its arguments, so it must only ever be called with a `sub` from a
+verified ID token.
 
 ## Where the future work goes
 
@@ -371,6 +444,8 @@ private data is returned.
 | --- | --- |
 | `api/auth/register.php` | `users`, `user_profiles`, `user_auth_identities` |
 | `api/auth/login.php` / `logout.php` | session only; touches `last_login_at` |
+| `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise session only |
+| `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities` — the Google identity waiting in the session |
 | `api/profile/username.php` | `users.username` |
 | `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
 | `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |
@@ -424,10 +499,9 @@ nothing.
 
 Honest list, so nobody goes looking for wiring that is not there.
 
-- **Apple and Google sign-in.** No OAuth flow exists and none is faked.
-  `api/auth/oauth.php` answers `501`, the buttons render disabled, and
-  `auth_link_identity()` is ready for a verified `sub` when someone implements
-  the flow. See *Where the future work goes*.
+- **Apple sign-in.** No flow exists and none is faked. `api/auth/oauth.php`
+  answers `501` for it and its button renders disabled. Google sign-in works
+  once it is configured — see *Secrets on the server*.
 - **Points, and therefore both leaderboards.** `point_rules` ships empty
   because the rules are a product decision nobody has made. Until something
   awards points, the boards show their empty state. The plumbing either side

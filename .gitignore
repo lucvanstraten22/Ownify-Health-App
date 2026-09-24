@@ -9,3 +9,4 @@ VERSION
 # Credentials for outside platforms — never commit these.
 /config/integrations.local.php
 /config/app.local.php
+/config/auth.local.php

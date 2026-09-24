@@ -7,14 +7,16 @@
  * INSERT, not a migration.
  *
  * ---------------------------------------------------------------------------
- * APPLE AND GOOGLE ARE NOT WIRED UP
+ * GOOGLE IS WIRED UP, APPLE IS NOT
  * ---------------------------------------------------------------------------
- * The schema and the linking code below are ready for them, but no OAuth flow
- * is implemented and none is faked: auth_provider_available() returns false
- * for both, the buttons render disabled, and the endpoint answers with an
- * explicit "not configured". Implementing them means verifying the provider's
- * ID token server-side and calling auth_link_identity() with the verified
- * 'sub' claim — see docs/DATABASE.md.
+ * Google sign-in lives in includes/google-signin.php: an OpenID Connect flow
+ * whose ID token is verified on this server before its 'sub' is believed. It
+ * is offered only once config/auth.php has credentials; until then its button
+ * renders disabled, exactly as before.
+ *
+ * Apple has no flow and none is faked: auth_provider_available() returns
+ * false, its button renders disabled, and the endpoint answers with an
+ * explicit "not configured".
  */
 
 declare(strict_types=1);
@@ -24,10 +26,50 @@ require_once __DIR__ . '/session.php';
 
 if (!function_exists('auth_provider_available')) {
 
-    /** Only email/password is implemented. Nothing here pretends otherwise. */
+    /**
+     * Whether a way of signing in can be offered right now. Google only once
+     * it has credentials; Apple not at all. Nothing here pretends otherwise.
+     */
     function auth_provider_available(string $provider): bool
     {
-        return $provider === 'email' && db_available();
+        if ($provider === 'email') {
+            return db_available();
+        }
+
+        if ($provider === 'google') {
+            require_once __DIR__ . '/google-signin.php';
+
+            return db_available() && google_signin_configured();
+        }
+
+        return false;
+    }
+
+    /* -------------------------------------------------- one-time messages */
+
+    /**
+     * A message for the next page render, and where it belongs: the account
+     * panel ('account') or Settings > Account ('settings-account').
+     *
+     * For the moments a result arrives by redirect rather than as a JSON
+     * answer — coming back from Google — so there is no script waiting to
+     * show it.
+     */
+    function auth_flash(string $message, string $tone, string $target): void
+    {
+        session_boot();
+        $_SESSION['auth_flash'] = ['message' => $message, 'tone' => $tone, 'target' => $target];
+    }
+
+    /** The waiting message, once. @return array{message: string, tone: string, target: string}|null */
+    function auth_flash_take(): ?array
+    {
+        session_boot();
+
+        $flash = $_SESSION['auth_flash'] ?? null;
+        unset($_SESSION['auth_flash']);
+
+        return is_array($flash) && is_string($flash['message'] ?? null) ? $flash : null;
     }
 
     /* --------------------------------------------------------- validation */
@@ -193,9 +235,11 @@ if (!function_exists('auth_provider_available')) {
     /**
      * Attaches a verified provider identity to an account.
      *
-     * NOT called by anything yet. The caller must have verified the provider's
-     * ID token server-side first — this function trusts its arguments, so
-     * handing it an unverified 'sub' would be handing out accounts.
+     * Kept for Apple. Google links through google_signin_link(), which also
+     * refuses a second Google account on the same JoLu account. The caller
+     * must have verified the provider's ID token server-side first — this
+     * function trusts its arguments, so handing it an unverified 'sub' would be
+     * handing out accounts.
      */
     function auth_link_identity(int $userId, string $provider, string $subject, ?string $email = null): array
     {

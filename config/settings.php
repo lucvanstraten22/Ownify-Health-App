@@ -127,6 +127,7 @@ return [
      *
      *   identity      avatar and username
      *   fields        profile fields, each with its own `edit` behaviour
+     *   signin        the ways into this account, and linking Google
      *   integrations  a health source, expandable in place
      *   choice        pick one of several options
      *   states        read-only facts: label, value, one line of explanation
@@ -158,6 +159,9 @@ return [
                         ['key' => 'last_name',  'label' => 'Achternaam',      'edit' => true],
                     ],
                 ],
+
+                /* How this account can be signed in to, and linking Google. */
+                ['type' => 'signin', 'title' => 'Inloggen'],
 
                 [
                     'type'  => 'fields',

@@ -1,0 +1,31 @@
+<?php
+/**
+ * Copy to config/auth.local.php and fill in the two values from Google.
+ *
+ *     cp config/auth.local.php.example config/auth.local.php
+ *
+ * Git-ignored, and not part of a deploy, so it has to be created once on each
+ * machine that runs the app — including the server, next to the
+ * app.local.php and database.local.php that are already there.
+ *
+ * Where the values come from:
+ *   Google Cloud Console -> APIs & Services -> Credentials
+ *   -> Create credentials -> OAuth client ID -> Application type: Web application
+ *   -> Authorised redirect URIs: the redirect_uri below, exactly
+ *
+ * Check it afterwards with:  php tools/check-config.php
+ */
+
+declare(strict_types=1);
+
+return [
+    'google' => [
+        'client_id'     => '000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com',
+        'client_secret' => 'GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+
+        // Must be registered on that OAuth client EXACTLY as written here.
+        // Live:   https://healthpreview.acits.nl/api/auth/google-callback.php
+        // Local:  http://localhost:8000/api/auth/google-callback.php
+        'redirect_uri'  => 'https://healthpreview.acits.nl/api/auth/google-callback.php',
+    ],
+];

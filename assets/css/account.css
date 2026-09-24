@@ -241,6 +241,9 @@
 
 .account__form[data-account-form="email"] { margin-top: var(--space-4); }
 
+/* Annuleren sits under Account aanmaken as one pair, not a second section. */
+.account__form[data-account-form="google-cancel"] { margin-top: 0; }
+
 /* The avatar slot in the header button: an icon until there is a picture. */
 .pill__avatar {
     display: grid;

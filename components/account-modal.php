@@ -7,7 +7,12 @@
  *
  * Signing in takes a username and a password. Apple and Google are two small
  * marks under the form rather than two full-width buttons above it — they are
- * secondary, and they are not implemented, so they render disabled.
+ * secondary. Google works once it is configured (includes/google-signin.php);
+ * Apple is not implemented. Whichever is not available renders disabled.
+ *
+ * Coming back from Google the panel opens by itself: with the one step a new
+ * Google user still has — choosing a username — or with a message saying why
+ * signing in did not happen.
  */
 declare(strict_types=1);
 
@@ -15,8 +20,15 @@ $auth      = $data['auth'];
 $user      = $auth['user'];
 $signedIn  = $auth['signed_in'];
 $providers = $auth['providers'];
+$pending   = $signedIn ? null : ($auth['google_pending'] ?? null);
+
+/* A message left by the Google callback, if it is this panel's to show. */
+$flash     = $auth['flash'] ?? null;
+$flash     = ($flash !== null && $flash['target'] === 'account') ? $flash : null;
+$autoOpen  = $flash !== null || $pending !== null;
 ?>
-<div class="account" data-overlay data-account data-csrf="<?= e($auth['csrf']) ?>" hidden>
+<div class="account" data-overlay data-account data-csrf="<?= e($auth['csrf']) ?>"
+     <?= $autoOpen ? 'data-account-autoopen' : '' ?> hidden>
 
     <div class="account__scrim" data-account-close></div>
 
@@ -39,7 +51,12 @@ $providers = $auth['providers'];
             </p>
         <?php endif; ?>
 
-        <p class="account__error" data-account-error role="alert" hidden></p>
+        <?php $flashIsError = $flash !== null && $flash['tone'] === 'error'; ?>
+        <p class="account__error" data-account-error role="alert" <?= $flashIsError ? '' : 'hidden' ?>><?= $flashIsError ? e($flash['message']) : '' ?></p>
+
+        <?php if ($flash !== null && !$flashIsError): ?>
+            <p class="account__notice" data-account-flash role="status"><?= e($flash['message']) ?></p>
+        <?php endif; ?>
 
         <?php if ($signedIn): ?>
 
@@ -80,6 +97,41 @@ $providers = $auth['providers'];
             <form class="account__form" data-account-form="logout">
                 <button type="submit" class="btn btn--ghost press account__logout">Uitloggen</button>
             </form>
+
+        <?php elseif ($pending !== null): ?>
+
+            <?php /* The one step between Google and an account. Google has
+                     already vouched for who this is; the identity waits in the
+                     server session, and the account only exists once this
+                     form is accepted. */ ?>
+            <div class="account__step" data-account-step="google-username">
+                <p class="account__username">Kies je gebruikersnaam</p>
+                <p class="account__meta">
+                    Google heeft <?= e($pending['email']) ?> bevestigd. Kies nog een
+                    gebruikersnaam; daarna is je account klaar.
+                </p>
+
+                <form class="account__form" data-account-form="google-username" novalidate>
+                    <div class="account__field">
+                        <label class="account__label" for="account-google-username">Gebruikersnaam</label>
+                        <input class="account__input" type="text" id="account-google-username" name="username"
+                               minlength="3" maxlength="30" autocomplete="username" spellcheck="false"
+                               autocapitalize="none" required>
+                        <p class="account__hint">3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.</p>
+                    </div>
+
+                    <button type="submit" class="btn account__submit press">Account aanmaken</button>
+                </form>
+
+                <form class="account__form" data-account-form="google-cancel">
+                    <button type="submit" class="btn btn--ghost press account__logout">Annuleren</button>
+                </form>
+
+                <p class="account__hint account__hint--centred">
+                    Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap
+                    verloopt over <?= e((string) $pending['minutes']) ?> <?= $pending['minutes'] === 1 ? 'minuut' : 'minuten' ?>.
+                </p>
+            </div>
 
         <?php else: ?>
 
