@@ -114,7 +114,7 @@ assets/css/
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
-    navigation-core.js        one pointer pipeline, routed by axis
+    navigation-core.js        one gesture pipeline, routed by axis
     page-navigation.js        horizontal: the five-page rail
     ai-sheet.js               vertical: the assistant sheet
     detail-layer.js           drilling into an item, and swiping back
@@ -158,10 +158,11 @@ starts where it always did and scrolls up under it; the header condenses for
 whichever page is showing. Detail pages keep a header of their own and cover
 the shared one.
 
-`navigation-core.js` owns the pointer events, decides which axis a gesture is
-on after 10px of travel, and hands it to the controller registered for that
-axis. A gesture is routed once and never re-routed, so a page swipe cannot
-become a sheet drag halfway through.
+`navigation-core.js` owns the input, decides which axis a gesture is on after
+8px of travel (the clearly larger direction wins), and hands it to the
+controller registered for that axis. A gesture is routed once and never
+re-routed, so a page swipe cannot become a sheet drag halfway through. Touch is
+read as touch events and mouse or pen as pointer events.
 
 | Axis | Controller | Gesture | Effect |
 | ---- | ---------- | ------- | ------ |
@@ -170,22 +171,37 @@ become a sheet drag halfway through.
 | vertical | `ai-sheet.js` | swipe **up from the dock** | open the assistant |
 | vertical | `ai-sheet.js` | swipe **down from the sheet's header** | close it |
 
-Both follow the finger, complete past 25% of the screen or on a flick, and
-snap back otherwise. Taps and the keyboard do the same work: the tab bar
+All of them follow the finger while it is down, so a drag can be held
+anywhere in between. Once it lifts, one rule (`AppNav.resolve`) decides for
+every layer, and the layer always lands on a real position — one page, fully
+open, fully closed, never in between:
+
+- a flick (0.3 px/ms or faster at the lift) completes in its own direction;
+- a quick swipe (under 300 ms, at least 32 px) completes, however short;
+- anything slower completes past 25% of the screen;
+- a drag held still before letting go goes to whichever end is nearer.
+
+A swipe moves at most one page. Nothing waits for an animation: a finger can
+catch a layer mid-way and carry on from where it is, and a tab can redirect the
+rail mid-way. A gesture interrupted by the browser or the system (a cancelled
+touch, switching apps, the page being frozen) returns what it was moving to
+where it belongs, and a gesture whose end never arrives is abandoned the moment
+the next one starts. Taps and the keyboard do the same work: the tab bar
 navigates, the dock handle opens, "Sluiten" and Escape close.
 
 **Why scrolling still works.** Vertical movement belongs to the browser
 everywhere (`touch-action: pan-y pinch-zoom`) except two places that opt out
-with `touch-action: none`: the dock, and the sheet's header. No touch event is
-ever `preventDefault`ed. So an upward drag in the page body scrolls the page
-and never opens the assistant, and a downward drag in the middle of the sheet
-is left free for a future conversation to scroll.
+with `touch-action: none`: the dock, and the sheet's header. A touch is only
+ever `preventDefault`ed once it is a gesture of ours — a swipe between pages,
+or the sheet being dragged — which stops the browser from starting to scroll
+halfway through it and a click from firing when it ends. So an upward drag in
+the page body scrolls the page and never opens the assistant, and a downward
+drag in the middle of the sheet is left free for a future conversation to
+scroll.
 
 **Why you always come back where you were.** The sheet sits *above* the rail
 and never touches it, so the page underneath keeps its state and scroll
-position and is simply revealed again. `ai-sheet.js` also records
-`AppNav.state.returnTo` on open and restores that page on close, in case
-anything ever moves the rail while the sheet is up.
+position and is simply revealed again.
 
 Offscreen pages and the closed sheet are `inert` and `aria-hidden`, in the
 markup as well as at runtime, so nothing offscreen is reachable by tab,

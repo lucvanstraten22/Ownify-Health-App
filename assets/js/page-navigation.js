@@ -5,7 +5,13 @@
  *
  * The rail holds every page side by side and moves as a single element, so a
  * swipe costs one transform. Each page keeps its own scroller, which is what
- * preserves its scroll position when you leave and come back.
+ * preserves its scroll position when you leave it and come back.
+ *
+ * The rail is always either on a page, on its way to one, or held by a
+ * finger. Nothing ever makes the next swipe or tap wait: a finger can catch
+ * the rail mid-way and carry on from where it is, and a tab can redirect it
+ * mid-way. A swipe moves at most one page, and a released one always ends on
+ * a page — never between two.
  *
  * It knows nothing about the assistant beyond one flag: while the sheet is
  * open, the rail refuses to start a gesture.
@@ -26,29 +32,27 @@
     var pages = Array.prototype.slice.call(rail.querySelectorAll('[data-page]'));
     if (!pages.length) { return; }
 
-    /* ----------------------------------------------------------- settings */
-
-    var DISTANCE_THRESHOLD = 0.25;  // share of the screen width to change page
-    var VELOCITY_THRESHOLD = 0.4;   // px/ms — a flick changes page too
-
     /* -------------------------------------------------------------- state */
 
-    var index = 0;
-    var startIndex = 0;
-    var position = 0;
-    var busy = false;
-    var settleTimer = null;
+    var index = 0;           // the page shown, or being moved to
+    var drag = null;         // { from, base, position } while a finger holds the rail
+    var settleTimer = null;  // the move under way, until it has landed
 
     for (var i = 0; i < pages.length; i++) {
         if (pages[i].dataset.page === document.documentElement.dataset.activePage) { index = i; }
     }
-    position = index;
-
-    var paint = nav.painter(function (pos) {
-        rail.style.transform = 'translate3d(' + (-pos * 100) + '%, 0, 0)';
-    });
 
     /* ------------------------------------------------------------ helpers */
+
+    function place(position) {
+        rail.style.transform = 'translate3d(' + (-position * 100) + '%, 0, 0)';
+    }
+
+    /** Where the rail is right now, in pages: mid-way to one included. */
+    function shownPosition() {
+        var width = rail.offsetWidth || window.innerWidth;
+        return width ? -nav.translation(rail).x / width : index;
+    }
 
     function currentId() {
         return pages[index].dataset.page;
@@ -103,21 +107,28 @@
 
     /* ------------------------------------------------------------- motion */
 
+    /**
+     * Sends the rail to a page from wherever it is — resting, under a finger,
+     * or on its way somewhere else. Everything about arriving happens now:
+     * the page is named, its tab lit, and it can be tapped and scrolled while
+     * it slides in. Only the idle mark waits for the slide to finish.
+     */
     function settle(target) {
+        target = nav.clamp(target, 0, pages.length - 1);
+        drag = null;
         index = target;
-        position = target;
-        busy = true;
 
-        deck.classList.remove('is-dragging');
+        rail.classList.remove('is-dragging');
         deck.dataset.pageState = 'moving';
-        rail.style.transform = 'translate3d(' + (-target * 100) + '%, 0, 0)';
+        place(target);
 
         document.documentElement.dataset.activePage = currentId();
         syncTabs();
+        refresh();
 
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(function () {
-            busy = false;
+            settleTimer = null;
             deck.dataset.pageState = 'idle';
             nav.refresh();
         }, nav.duration + 40);
@@ -125,7 +136,8 @@
 
     function goToId(id) {
         var target = indexOfId(id);
-        if (target < 0 || busy || target === index) { return; }
+        // A finger on the rail has the say until it lifts.
+        if (target < 0 || target === index || drag) { return; }
         settle(target);
     }
 
@@ -133,36 +145,49 @@
 
     nav.register('x', {
         canStart: function () {
-            return !busy && !nav.state.aiOpen && !nav.state.detailOpen && pages.length > 1;
+            return !nav.state.aiOpen && !nav.state.detailOpen && pages.length > 1;
         },
 
         begin: function () {
-            startIndex = index;
+            // Caught on its way to a page, the rail stays where it is and the
+            // swipe carries on from there — no jump, no waiting.
+            var from = settleTimer ? shownPosition() : index;
+
+            window.clearTimeout(settleTimer);
+            settleTimer = null;
+
+            rail.classList.add('is-dragging');
+            place(from);
+
+            drag = {
+                from: from,
+                // The page the swipe belongs to: the one the rail was on or
+                // heading to, unless a tab had sent it further than that.
+                base: Math.abs(from - index) < 1 ? index : Math.round(from),
+                position: from
+            };
             deck.dataset.pageState = 'moving';
         },
 
         move: function (ctx) {
-            position = nav.clamp(startIndex - ctx.dx / ctx.width, 0, pages.length - 1);
-            paint(position);
+            if (!drag) { return; }
+
+            // One page either way, and not past the ends.
+            var lowest = Math.max(0, drag.base - 1);
+            var highest = Math.min(pages.length - 1, drag.base + 1);
+
+            drag.position = nav.clamp(drag.from - ctx.dx / ctx.width, lowest, highest);
+            place(drag.position);
         },
 
         end: function (ctx) {
-            var travelled = position - startIndex;
-            var flicked = Math.abs(ctx.vx) > VELOCITY_THRESHOLD;
-            var target = startIndex;
-
-            if (flicked || Math.abs(travelled) > DISTANCE_THRESHOLD) {
-                var direction = flicked
-                    ? (ctx.vx < 0 ? 1 : -1)
-                    : (travelled > 0 ? 1 : -1);
-                target = nav.clamp(startIndex + direction, 0, pages.length - 1);
-            }
-
-            settle(target);
+            if (!drag) { settle(index); return; }
+            settle(nav.resolve(ctx, drag.base, drag.position, ctx.dx, ctx.vx, ctx.width));
         },
 
         cancel: function () {
-            settle(startIndex);
+            // Interrupted: back to the page it belongs to.
+            settle(drag ? drag.base : index);
         }
     });
 

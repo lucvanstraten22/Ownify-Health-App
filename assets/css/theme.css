@@ -353,10 +353,17 @@ button {
     transition: opacity var(--screen-duration) ease;
 }
 
-/* While a finger is on the glass, the layers follow it directly. */
-.deck.is-dragging .rail,
-.deck.is-dragging .sheet,
-.deck.is-dragging .sheet-scrim { transition: none; }
+/* While a finger holds a layer, that layer follows it directly. Only that
+   one: another layer still on its way somewhere keeps its animation. */
+.rail.is-dragging,
+.sheet.is-dragging,
+.sheet-scrim.is-dragging { transition: none; }
+
+/* A mouse drag moves the page; it does not select text on the way. */
+.deck.is-pointer-drag {
+    -webkit-user-select: none;
+    user-select: none;
+}
 
 /* Single alignment rule for the whole page: header, content and tab bar. */
 .shell {

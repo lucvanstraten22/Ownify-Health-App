@@ -385,7 +385,7 @@
         linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
 }
 
-.deck.is-dragging .detail { transition: none; }
+.detail.is-dragging { transition: none; }
 
 .deck[data-detail-state="moving"] .detail,
 .deck[data-detail-state="open"] .detail {

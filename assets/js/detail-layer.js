@@ -11,6 +11,9 @@
  * back pill or Escape — the same direction you would swipe to go back anywhere
  * else, and safe to use here because the rail stands down while a detail is in
  * front of it.
+ *
+ * A detail is always open, closed, on its way to one of them, or held by a
+ * finger; a released swipe always ends fully open or fully closed.
  */
 
 (function () {
@@ -26,32 +29,39 @@
     var details = Array.prototype.slice.call(stack.querySelectorAll('[data-detail]'));
     if (!details.length) { return; }
 
-    /* ----------------------------------------------------------- settings */
-
-    var DISTANCE_THRESHOLD = 0.25;  // share of the screen width to dismiss
-    var VELOCITY_THRESHOLD = 0.4;   // px/ms — a flick dismisses too
-
     /* -------------------------------------------------------------- state */
 
-    var current = null;       // the open detail element, or null
-    var progress = 0;         // 1 = fully open, 0 = parked off-screen right
-    var startProgress = 0;
-    var busy = false;
-    var settleTimer = null;
+    var current = null;       // the detail in front, or on its way in or out
+    var shown = false;        // whether current is open, or opening
+    var drag = null;          // { from, base, progress } while a finger holds it
+    var settleTimer = null;   // the move under way, until it has landed
     var opener = null;        // the card to hand focus back to
 
-    function paint(value) {
+    /* ------------------------------------------------------------ helpers */
+
+    /** 1 = open, 0 = parked off-screen right. */
+    function place(value) {
         if (!current) { return; }
         current.style.transform = 'translate3d(' + ((1 - value) * 100) + '%, 0, 0)';
     }
 
-    var paintFramed = nav.painter(paint);
+    /** Where the current detail is right now: mid-way included. */
+    function shownProgress() {
+        var width = current.offsetWidth || window.innerWidth;
+        return width ? 1 - nav.translation(current).x / width : (shown ? 1 : 0);
+    }
+
+    /** Back to the stylesheet's parking spot, off-screen right. */
+    function park(detail) {
+        detail.classList.remove('is-dragging');
+        detail.style.transform = '';
+    }
 
     /* ------------------------------------------------------ reachability */
 
     function refresh() {
         details.forEach(function (detail) {
-            var live = detail === current && progress === 1 && !nav.state.aiOpen;
+            var live = detail === current && shown && !nav.state.aiOpen;
             detail.inert = !live;
             if (live) { detail.removeAttribute('aria-hidden'); }
             else { detail.setAttribute('aria-hidden', 'true'); }
@@ -62,24 +72,31 @@
 
     /* ------------------------------------------------------------- motion */
 
+    /**
+     * Sends the current detail fully open or fully closed from wherever it
+     * is. What can be reached changes at once; a closed detail is parked, and
+     * focus moves, once it has arrived.
+     */
     function settle(target, moveFocus) {
         var opening = target === 1;
+        var detail = current;
 
-        progress = target;
-        busy = true;
+        drag = null;
+        shown = opening;
         nav.state.detailOpen = opening;
 
-        deck.classList.remove('is-dragging');
+        if (detail) { detail.classList.remove('is-dragging'); }
         deck.dataset.detailState = 'moving';
-        paint(target);
+        place(opening ? 1 : 0);
+        nav.refresh();
 
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(function () {
-            busy = false;
+            settleTimer = null;
             deck.dataset.detailState = opening ? 'open' : 'closed';
 
-            if (!opening && current) {
-                current.style.transform = '';
+            if (!opening && detail && current === detail) {
+                park(detail);
                 current = null;
             }
 
@@ -95,7 +112,7 @@
     }
 
     function open(id, trigger) {
-        if (busy || current) { return; }
+        if (drag) { return; }
 
         var detail = null;
         details.forEach(function (candidate) {
@@ -103,20 +120,29 @@
         });
         if (!detail) { return; }
 
+        if (current === detail && shown) { return; }   // already open, or opening
+
+        if (current && current !== detail) {
+            if (shown) { return; }   // another one is in front; its own way out comes first
+            park(current);           // one still sliding out finishes at once
+        }
+
+        var returning = current === detail;   // caught on its way out: carry on from there
+
         current = detail;
         opener = trigger || null;
 
         // Every detail starts at the top, never where it was left.
-        var scroller = detail.querySelector('[data-scroller]');
-        if (scroller) { scroller.scrollTop = 0; }
+        if (!returning) {
+            var scroller = detail.querySelector('[data-scroller]');
+            if (scroller) { scroller.scrollTop = 0; }
+        }
 
-        detail.inert = false;
-        detail.removeAttribute('aria-hidden');
         settle(1, true);
     }
 
     function close(moveFocus) {
-        if (busy || !current) { return; }
+        if (drag || !current || !shown) { return; }
         settle(0, moveFocus !== false);
     }
 
@@ -126,27 +152,37 @@
         canStart: function (ctx) {
             // Only a rightward drag, only while a detail is in front, and
             // never while the assistant covers it.
-            return !busy && !!current && !nav.state.aiOpen && ctx.dx > 0;
+            return !!current && shown && !nav.state.aiOpen && ctx.dx > 0;
         },
 
         begin: function () {
-            startProgress = progress;
+            var from = settleTimer ? shownProgress() : 1;
+
+            window.clearTimeout(settleTimer);
+            settleTimer = null;
+
+            current.classList.add('is-dragging');
+            place(from);
+
+            drag = { from: from, base: 1, progress: from };
             deck.dataset.detailState = 'moving';
         },
 
         move: function (ctx) {
-            progress = nav.clamp(startProgress - ctx.dx / ctx.width, 0, 1);
-            paintFramed(progress);
+            if (!drag || !current) { return; }
+            drag.progress = nav.clamp(drag.from - ctx.dx / ctx.width, 0, 1);
+            place(drag.progress);
         },
 
         end: function (ctx) {
-            var travelled = startProgress - progress;
-            var flicked = ctx.vx > VELOCITY_THRESHOLD;
-            settle(travelled > DISTANCE_THRESHOLD || flicked ? 0 : 1, false);
+            if (!drag || !current) { settle(shown ? 1 : 0, false); return; }
+            var target = nav.resolve(ctx, drag.base, drag.progress, ctx.dx, ctx.vx, ctx.width);
+            settle(nav.clamp(target, 0, 1), false);
         },
 
         cancel: function () {
-            settle(startProgress, false);
+            // Interrupted: it stays open — unless it was taken away meanwhile.
+            settle(current ? 1 : 0, false);
         }
     });
 
@@ -167,11 +203,11 @@
         }
 
         // Leaving for another section closes the detail behind you.
-        if (current && event.target.closest('[data-nav]')) { close(false); }
+        if (current && shown && event.target.closest('[data-nav]')) { close(false); }
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key !== 'Escape' || !current || nav.state.aiOpen) { return; }
+        if (event.key !== 'Escape' || !current || !shown || nav.state.aiOpen) { return; }
         // A panel in front of this one owns the keypress.
         if (nav.overlayOpen()) { return; }
         close(true);
@@ -189,7 +225,17 @@
         forget: function (detail) {
             var at = details.indexOf(detail);
             if (at !== -1) { details.splice(at, 1); }
-            if (current === detail) { current = null; progress = 0; }
+
+            if (current === detail) {
+                window.clearTimeout(settleTimer);
+                settleTimer = null;
+                current = null;
+                shown = false;
+                drag = null;
+                nav.state.detailOpen = false;
+                deck.dataset.detailState = 'closed';
+                nav.refresh();
+            }
         },
         adopt: function (detail) {
             if (details.indexOf(detail) === -1) { details.push(detail); }
