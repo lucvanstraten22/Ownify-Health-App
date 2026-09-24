@@ -22,11 +22,14 @@
     'use strict';
 
     var charts = document.querySelectorAll('[data-goal-chart]');
-    if (!charts.length) { return; }
 
     var LINGER = 1600;      // ms a touch reading stays after the finger lifts
 
     Array.prototype.forEach.call(charts, setup);
+
+    /* A goal saved without a reload brings its chart in as new markup
+       (goals.js), which needs the same setup the page-load charts had. */
+    window.GoalChart = { setup: setup };
 
     function setup(root) {
         var points;

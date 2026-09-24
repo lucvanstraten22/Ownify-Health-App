@@ -29,6 +29,17 @@
         });
     }
 
+    /* For a screen added after load — a new goal's detail page. */
+    window.AppChrome = {
+        bind: function (scroller) {
+            var screen = scroller.closest('[data-page], [data-sheet], [data-detail]');
+            if (screen) {
+                bindChrome(scroller, screen.querySelector('[data-header]'),
+                    screen.querySelector('[data-scroll-top]'));
+            }
+        }
+    };
+
     function bindChrome(scroller, header, fab) {
         var ticking = false;
 

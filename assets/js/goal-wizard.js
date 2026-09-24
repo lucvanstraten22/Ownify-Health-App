@@ -48,6 +48,7 @@
     var step = 1;
     var lastFocus = null;
     var saved = false;
+    var createdId = null;
     var draft = blank();
 
     function blank() {
@@ -693,6 +694,7 @@
                 }
 
                 saved = true;
+                createdId = result.goal_id ? String(result.goal_id) : null;
                 showDone();
             });
     }
@@ -753,6 +755,7 @@
     function open(trigger) {
         lastFocus = trigger || document.activeElement;
         saved = false;
+        createdId = null;
         reset();
 
         root.hidden = false;
@@ -769,11 +772,30 @@
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
 
         /* The board is rendered server-side, so the new goal appears by asking
-           the server again. Only after a save — closing a wizard the user
-           abandoned should cost them nothing. */
+           the server again — in the background, with the goal parts swapped
+           in (goals.js), not with a reload: the shell starts on Overzicht, so
+           a reload used to land there instead of on Doelen. Only after a
+           save; closing a wizard the user abandoned should cost them nothing. */
         if (saved) {
-            window.location.reload();
+            saved = false;
+            showNewGoal(createdId);
         }
+    }
+
+    /** Puts the board on Actief and brings the new goal's card into view. */
+    function showNewGoal(id) {
+        if (!window.GoalBoard) { return; }
+
+        window.GoalBoard.refresh().then(function (shown) {
+            if (!shown) { return; }
+
+            window.GoalBoard.show('active');
+
+            var card = id ? document.querySelector('[data-goals] [data-goal-card="' + id + '"]') : null;
+            if (card && card.scrollIntoView) {
+                card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        });
     }
 
     /* ------------------------------------------------------------- events */

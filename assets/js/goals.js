@@ -32,11 +32,19 @@
     }
     window.GoalCopy = copy;
 
-    var primarySlot   = page.querySelector('[data-goal-slot="primary"]');
-    var secondarySlot = page.querySelector('[data-goal-slot="secondary"]');
-    var emptyState    = page.querySelector('[data-goals-empty]');
-    var slotsNote     = page.querySelector('[data-goal-slots]');
-    var addButtons    = document.querySelectorAll('[data-goal-add]');
+    var primarySlot, secondarySlot, emptyState, slotsNote, addButtons;
+
+    /* Looked up again after the board is refreshed in place (see refresh()),
+       because the elements they point at are then new ones. */
+    function bind() {
+        primarySlot   = page.querySelector('[data-goal-slot="primary"]');
+        secondarySlot = page.querySelector('[data-goal-slot="secondary"]');
+        emptyState    = page.querySelector('[data-goals-empty]');
+        slotsNote     = page.querySelector('[data-goal-slots]');
+        addButtons    = document.querySelectorAll('[data-goal-add]');
+    }
+
+    bind();
 
     /* ----------------------------------------------------- view switching */
 
@@ -327,11 +335,176 @@
             .then(function (result) {
                 if (!result || !result.ok) {
                     // The optimistic change did not stick: show the truth.
-                    window.location.reload();
+                    refresh();
                 }
 
                 return result;
             });
+    }
+
+    /* ------------------------------------------------ refresh in place ---
+
+       Saving used to end in window.location.reload(). The shell always starts
+       on Overzicht, so every save threw the person out of the goal they were
+       in and back to the first page.
+
+       Instead the page is asked for again in the background and only the goal
+       parts of it are exchanged: the two board panels, each goal's detail
+       page, and the Overzicht goal card. Every figure is still rendered by
+       the server — nothing is recalculated here — but the rail stays on
+       Doelen, an open goal stays open at its scroll position, and the view
+       (Actief or Behaald) stays as it was.
+       ---------------------------------------------------------------------- */
+
+    function each(root, selector, fn) {
+        Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
+    }
+
+    /** Where every bar in a region stands now, so a new one can grow from it. */
+    function barWidths(root) {
+        var widths = {};
+        each(root, '[data-bar]', function (bar, index) {
+            var card = bar.closest('[data-goal-card]');
+            widths[card ? 'card-' + card.dataset.goalCard : 'bar-' + index] = bar.style.width || '';
+        });
+        return widths;
+    }
+
+    /**
+     * Brings freshly inserted markup to the state the page-load scripts would
+     * have left it in: revealed, bars filled (from where they were, so a
+     * changed bar moves rather than restarting), charts wired up.
+     */
+    function settle(root, widths) {
+        if (root.classList.contains('reveal')) { root.classList.add('is-visible'); }
+        each(root, '.reveal', function (item) { item.classList.add('is-visible'); });
+        each(root, '.card', function (card) { card.dataset.animated = 'true'; });
+
+        each(root, '[data-bar]', function (bar, index) {
+            var card = bar.closest('[data-goal-card]');
+            var from = widths ? widths[card ? 'card-' + card.dataset.goalCard : 'bar-' + index] : '';
+            var to = Math.max(0, Math.min(1, parseFloat(bar.getAttribute('data-progress')) || 0));
+
+            if (from) { bar.style.width = from; }
+            window.requestAnimationFrame(function () {
+                window.requestAnimationFrame(function () { bar.style.width = (to * 100) + '%'; });
+            });
+        });
+
+        if (window.GoalChart) {
+            each(root, '[data-goal-chart]', function (chart) { window.GoalChart.setup(chart); });
+        }
+    }
+
+    function swapBoard(fresh) {
+        ['active', 'completed'].forEach(function (key) {
+            var panel = page.querySelector('[data-goal-panel="' + key + '"]');
+            var next = fresh.querySelector('[data-goals] [data-goal-panel="' + key + '"]');
+            if (!panel || !next) { return; }
+
+            var widths = barWidths(panel);
+            panel.innerHTML = next.innerHTML;     // the panel keeps its own view state
+            settle(panel, widths);
+        });
+
+        /* The + in the page header sits outside both panels. */
+        var add = page.querySelector('.goals-add[data-goal-add]');
+        var nextAdd = fresh.querySelector('[data-goals] .goals-add[data-goal-add]');
+        if (add && nextAdd) { add.disabled = nextAdd.disabled; }
+    }
+
+    function swapDetails(fresh) {
+        var stack = document.querySelector('[data-detail-stack]');
+        if (!stack) { return; }
+
+        var seen = {};
+
+        each(fresh, '[data-goal-detail]', function (next) {
+            var id = next.dataset.goalDetail;
+            var detail = detailOf(id);
+            seen[id] = true;
+
+            if (!detail) {
+                /* A goal that did not exist when the page loaded. */
+                detail = document.importNode(next, true);
+                var goals = stack.querySelectorAll('[data-goal-detail]');
+                var after = goals.length ? goals[goals.length - 1] : null;
+                stack.insertBefore(detail, after ? after.nextSibling : null);
+
+                settle(detail, null);
+                if (nav && nav.details && nav.details.adopt) { nav.details.adopt(detail); }
+
+                var scroller = detail.querySelector('[data-scroller]');
+                if (scroller && window.AppChrome) { window.AppChrome.bind(scroller); }
+                return;
+            }
+
+            /* The layer itself stays — its open state, its position, its
+               scroller and so its scroll position. What it says is replaced. */
+            Array.prototype.forEach.call(next.attributes, function (attribute) {
+                if (/^data-/.test(attribute.name) && attribute.name !== 'data-detail') {
+                    detail.setAttribute(attribute.name, attribute.value);
+                }
+            });
+
+            var main = detail.querySelector('.app__main');
+            var nextMain = next.querySelector('.app__main');
+            if (main && nextMain) {
+                var widths = barWidths(main);
+                main.innerHTML = nextMain.innerHTML;
+                settle(main, widths);
+            }
+        });
+
+        /* A goal that is gone on the server leaves here too. */
+        each(stack, '[data-goal-detail]', function (detail) {
+            if (seen[detail.dataset.goalDetail]) { return; }
+            if (nav && nav.details && nav.details.currentId() === detail.dataset.detail) { return; }
+            if (nav && nav.details) { nav.details.forget(detail); }
+            detail.parentNode.removeChild(detail);
+        });
+    }
+
+    /* The Overzicht card follows the primary goal. */
+    function swapOverview(fresh) {
+        var card = document.querySelector('[data-page="overview"] .card--goal');
+        var next = fresh.querySelector('[data-page="overview"] .card--goal');
+        if (!card || !next) { return; }
+
+        var replacement = document.importNode(next, true);
+        var widths = barWidths(card);
+        card.parentNode.replaceChild(replacement, card);
+        settle(replacement, widths);
+    }
+
+    /**
+     * Fetches the page as the server now renders it and swaps the goal parts
+     * in. Resolves true when the page shows what is stored, false when the
+     * page could not be fetched (the save itself has already happened).
+     */
+    function refresh() {
+        return fetch(window.location.href.split('#')[0], {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Accept': 'text/html' }
+        })
+            .then(function (response) {
+                if (!response.ok) { throw new Error('HTTP ' + response.status); }
+                return response.text();
+            })
+            .then(function (html) {
+                var fresh = new DOMParser().parseFromString(html, 'text/html');
+                if (!fresh.querySelector('[data-goals]')) { throw new Error('no board'); }
+
+                swapBoard(fresh);
+                swapDetails(fresh);
+                swapOverview(fresh);
+
+                bind();
+                sync();
+                return true;
+            })
+            .catch(function () { return false; });
     }
 
     /* ------------------------------------------------------- new goal ---- */
@@ -359,10 +532,11 @@
      * Only manual goals get here — an automatic one has no entry control, and
      * the endpoint refuses it anyway, so the two numbers can never disagree.
      *
-     * The page reloads on success rather than patching the bar in place. The
-     * percentage, the bar, the deadline line and whether the goal has just
-     * moved to Behaald are all rendered server-side from one calculation;
-     * re-deriving any of that here is how the two start disagreeing.
+     * On success the goal's parts are fetched again and swapped in (see
+     * refresh()), rather than patching the bar here. The percentage, the bar,
+     * the deadline line and whether the goal has just moved to Behaald are
+     * all rendered server-side from one calculation; re-deriving any of that
+     * here is how the two start disagreeing.
      */
     document.addEventListener('click', function (event) {
         var tick = event.target.closest('[data-goal-tick]');
@@ -404,21 +578,47 @@
             })
             .catch(function () { return { ok: false }; })
             .then(function (result) {
-                if (result && result.ok) {
-                    window.location.reload();
+                if (!result || !result.ok) {
+                    button.disabled = false;
+
+                    if (slot) {
+                        slot.textContent = (result && result.error) || 'Dit kon niet worden opgeslagen.';
+                        slot.hidden = false;
+                    }
                     return;
                 }
 
-                button.disabled = false;
+                /* Saved. The goal stays open and its detail page is redrawn
+                   in place with the new figures — no reload, which would land
+                   on Overzicht. */
+                refresh().then(function (shown) {
+                    var detail = detailOf(goalId);
 
-                if (slot) {
-                    slot.textContent = (result && result.error) || 'Dit kon niet worden opgeslagen.';
-                    slot.hidden = false;
-                }
+                    if (!shown) {
+                        button.disabled = false;
+                        if (input) { input.value = ''; }
+                        if (slot) {
+                            slot.textContent = 'Opgeslagen. Je nieuwe voortgang verschijnt zodra de pagina ververst.';
+                            slot.hidden = false;
+                        }
+                        return;
+                    }
+
+                    /* The button that was pressed has been replaced; focus
+                       goes to its successor so the keyboard stays in the goal. */
+                    var next = null;
+                    ['[data-goal-value]', '[data-goal-tick]:not([disabled])', '[data-detail-close]'].some(function (selector) {
+                        next = detail ? detail.querySelector(selector) : null;
+                        return !!next;
+                    });
+                    if (next && next.focus) { next.focus({ preventScroll: true }); }
+                });
             });
     });
 
     /* --------------------------------------------------------------- init */
+
+    window.GoalBoard = { refresh: refresh, show: showView };
 
     sync();
 }());

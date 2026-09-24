@@ -180,7 +180,8 @@
     /* --------------------------------------------------------------- init */
 
     /* Doelen deletes goals, and a deleted goal's detail page has to leave with
-       it. Nothing else here is public. */
+       it; a goal created without a reload brings a new one, which has to be
+       known here before it can be opened. Nothing else here is public. */
     nav.details = {
         open: open,
         close: close,
@@ -189,6 +190,10 @@
             var at = details.indexOf(detail);
             if (at !== -1) { details.splice(at, 1); }
             if (current === detail) { current = null; progress = 0; }
+        },
+        adopt: function (detail) {
+            if (details.indexOf(detail) === -1) { details.push(detail); }
+            refresh();
         }
     };
 
