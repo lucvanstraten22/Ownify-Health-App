@@ -62,6 +62,7 @@ DROP TABLE IF EXISTS `health_metrics`;
 DROP TABLE IF EXISTS `health_metric_types`;
 DROP TABLE IF EXISTS `user_measurements`;
 DROP TABLE IF EXISTS `data_sources`;
+DROP TABLE IF EXISTS `user_login_tokens`;
 DROP TABLE IF EXISTS `user_auth_identities`;
 DROP TABLE IF EXISTS `user_profiles`;
 DROP TABLE IF EXISTS `users`;
@@ -140,6 +141,32 @@ CREATE TABLE `user_auth_identities` (
     UNIQUE KEY `uq_auth_provider_subject` (`provider`, `provider_subject`),
     KEY `idx_auth_user` (`user_id`),
     CONSTRAINT `fk_auth_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Staying signed in: one row per browser that signed in and has not signed
+-- out. The PHP session does not outlive the browser or a short idle spell on
+-- the server; this does, and puts the session back when it is gone. The
+-- cookie is `selector.validator` and only the validator's SHA-256 is kept, so
+-- a dump signs nobody in. It is rotated on every use; signing out deletes the
+-- row. See includes/persistent-login.php.
+CREATE TABLE `user_login_tokens` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`       BIGINT UNSIGNED NOT NULL,
+    `selector`      CHAR(24) NOT NULL COMMENT 'Public half of the cookie: finds the row, proves nothing',
+    `token_hash`    CHAR(64) NOT NULL COMMENT 'sha256 of the secret half; the secret is only ever in the cookie',
+    `previous_hash` CHAR(64) NULL COMMENT 'The secret before the last rotation, until the browser shows it has the new one',
+    `csrf_token`    CHAR(64) NOT NULL COMMENT 'The form token of this sign-in, so a session put back keeps it',
+    `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `rotated_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_used_at`  DATETIME NULL COMMENT 'Last time it put a session back',
+    `expires_at`    DATETIME NOT NULL COMMENT 'Moves forward every time it is used',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_login_selector` (`selector`),
+    KEY `idx_login_user` (`user_id`),
+    KEY `idx_login_expiry` (`expires_at`),
+    CONSTRAINT `fk_login_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

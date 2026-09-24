@@ -116,6 +116,20 @@ if (db_available()) {
 
     if ($tables > 0) {
         line('ok', 'schema', $tables . ' tables');
+
+        /* Not fatal either: without it a sign-in lasts as long as its session,
+           as it always did — which is exactly what it is there to fix. */
+        $logins = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'user_login_tokens'"
+        );
+
+        if ($logins > 0) {
+            line('ok', 'staying signed in', 'user_login_tokens is there');
+        } else {
+            line('warn', 'staying signed in', 'user_login_tokens is missing, so a sign-in ends with its session — '
+                . 'import database/migrations/008-persistent-login.sql');
+        }
     } else {
         line('fail', 'schema', 'the database is empty — import database/schema.sql');
         $problems++;

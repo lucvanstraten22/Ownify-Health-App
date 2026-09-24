@@ -9,8 +9,10 @@
  *
  * The same test index.php applies — a session naming an account that still
  * exists — without app_auth(), which would take the one-time message meant
- * for the next page. No id, no name: a yes or a no about the caller's own
- * session, which is nothing the caller does not already know.
+ * for the next page. A session that ran out has been put back by then, from
+ * the sign-in that outlives it (includes/persistent-login.php), so asking is
+ * itself enough to carry on. No id, no name: a yes or a no about the caller's
+ * own session, which is nothing the caller does not already know.
  */
 declare(strict_types=1);
 

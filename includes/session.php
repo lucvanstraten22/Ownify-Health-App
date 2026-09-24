@@ -2,9 +2,11 @@
 /**
  * Server-side session state.
  *
- * The browser only ever receives a session cookie. The user id lives in the
- * session on the server and is never sent to the client, so no request can
- * claim to be another user by editing something.
+ * The browser receives a session cookie and, once signed in, a second cookie
+ * that keeps it signed in after the session is gone
+ * (includes/persistent-login.php). Neither carries the user id: that lives on
+ * the server and is never sent to the client, so no request can claim to be
+ * another user by editing something.
  */
 
 declare(strict_types=1);
@@ -46,11 +48,25 @@ if (!function_exists('session_boot')) {
         session_regenerate_id(true);
         $_SESSION['user_id'] = $userId;
         $_SESSION['logged_in_at'] = time();
+
+        /* And stays signed in, past the end of this session, until signing
+           out. Guarded because a deploy lands one file at a time: this file
+           may be new while the one defining it is not yet there. */
+        if (function_exists('persistent_login_issue')) {
+            persistent_login_issue($userId);
+        }
     }
 
     function session_logout(): void
     {
         session_boot();
+
+        /* Signing out is for good: the sign-in that outlives the session goes
+           with it, row and cookie. Guarded for the same reason as above. */
+        if (function_exists('persistent_login_revoke')) {
+            persistent_login_revoke();
+        }
+
         $_SESSION = [];
 
         if (ini_get('session.use_cookies')) {

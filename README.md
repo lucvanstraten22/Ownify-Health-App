@@ -137,13 +137,13 @@ Whether somebody is signed in decides which screen they get, and only the
 session decides it: `index.php` asks `app_auth()` — the session, checked
 against the database — before anything else.
 
-- **Not signed in** (a first visit, an account that logged out, a session that
-  expired, one whose account was deleted): the opening screen,
-  `pages/welcome.php`. Nothing of the app is built or sent. Any address that
-  reaches `index.php` gets it, and a page or component template requested on
-  its own is sent back to the front door (`pages/.htaccess`,
-  `components/.htaccess`).
-- **Signed in**: the app, on Overzicht.
+- **Not signed in** (a first visit, a browser that signed out, an account that
+  was deleted): the opening screen, `pages/welcome.php`. Nothing of the app is
+  built or sent. Any address that reaches `index.php` gets it, and a page or
+  component template requested on its own is sent back to the front door
+  (`pages/.htaccess`, `components/.htaccess`).
+- **Signed in**: the app, on Overzicht. That includes coming back after
+  closing the browser or after a long time away — see *Staying signed in*.
 
 The opening screen shows the app's name, one line under it
 (`config/dashboard.php` → `welcome.subtitle`, the only place it is written),
@@ -159,9 +159,41 @@ opening screen.
 The page is sent `Cache-Control: no-store`, so no cache hands out a screen
 meant for a session that has since changed. A page that may be showing the
 wrong one anyway — restored from the back/forward cache, looked at again after
-its session ran out or was ended in another tab, or an app whose request is
-refused for want of a session (401/419) — asks `api/auth/session.php`, which
-answers only yes or no, and re-renders if the answer changed.
+it was signed out in another tab, or an app whose request is refused for want
+of a session (401/419) — asks `api/auth/session.php`, which answers only yes
+or no, and re-renders if the answer changed.
+
+### Staying signed in
+
+Signing in once lasts until you sign out. The PHP session alone could not do
+that: its cookie is gone when the browser closes, and the server throws the
+session away after a short idle spell (24 minutes by default), and either one
+used to send somebody back to the opening screen. So every sign-in — password,
+registration, Google — also gets a second cookie, `jolu_login`
+(`__Host-jolu_login` on https), and a row in `user_login_tokens`. When the
+session is gone, `includes/persistent-login.php` puts it back from that
+cookie before anything else runs, so the person lands on Overzicht as if they
+had never left, and an app left open in a tab keeps working.
+
+- The cookie is `selector.validator`, HttpOnly (no script can read it — it is
+  not in localStorage or anywhere else a page can reach), Secure on https,
+  SameSite=Lax, and lasts a year from the last time it was used.
+- The database keeps only the SHA-256 of the validator, so a copy of the table
+  signs nobody in.
+- The validator is replaced every time it puts a session back. A copy that
+  turns up after the real browser has moved on revokes that sign-in. Tabs that
+  reopen together, and an answer lost on the way back, are allowed for, so
+  none of this ever signs anybody out by mistake.
+- The session gets back the form (CSRF) token it always had, so a page that
+  stayed open while its session expired can still save.
+- **Uitloggen** — from the account panel or from Instellingen — deletes this
+  browser's row and expires the cookie; other browsers stay signed in.
+  Deleting the account deletes every row it had.
+
+An existing database needs `database/migrations/008-persistent-login.sql`
+(`schema.sql` already has the table). Until it is imported, signing in works
+as it always did — for as long as the session lasts — and the server log says
+why; `php tools/check-config.php` reports it too.
 
 ## Navigation
 

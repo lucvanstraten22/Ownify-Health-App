@@ -15,7 +15,22 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/crypto.php';
 
+/* Guarded for the reason crypto_check() is, below: a deploy lands one file at
+   a time, and this file can arrive before the one it would require. Until it
+   does, sign-ins work as they always did, for as long as the session lasts. */
+if (is_file(__DIR__ . '/persistent-login.php')) {
+    require_once __DIR__ . '/persistent-login.php';
+}
+
 session_boot();
+
+/* ...and the sign-in that outlives it. A browser that signed in and never
+   signed out gets its session back here, before anything asks who is signed
+   in — whether the last one ended with the browser or was cleared away on
+   the server (includes/persistent-login.php). */
+if (function_exists('persistent_login_resume')) {
+    persistent_login_resume();
+}
 
 /* ---------------------------------------------------------------------------
  * WHEN A PAGE DIES, SAY SO SOMEWHERE

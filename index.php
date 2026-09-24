@@ -39,10 +39,12 @@ header('Cache-Control: no-store, private');
 
 /* Who is asking also decides which screen this is, and only that decides it:
    the session, checked against the database by app_auth() — never anything
-   the browser says or remembers. Not signed in (a first visit, an account
-   that logged out, a session that expired, one whose account is gone) is the
-   opening screen, and nothing of the app is built or sent. Signed in is the
-   app, which opens on Overzicht. */
+   the browser says or remembers. Not signed in (a first visit, a browser that
+   signed out, one whose account is gone) is the opening screen, and nothing
+   of the app is built or sent. A session that merely ran out is not that: it
+   was put back before this line, from the sign-in that outlives it
+   (includes/persistent-login.php). Signed in is the app, which opens on
+   Overzicht. */
 if (!$data['auth']['signed_in']) {
     page('welcome', $data);
     exit;

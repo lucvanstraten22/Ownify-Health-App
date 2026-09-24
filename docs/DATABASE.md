@@ -218,6 +218,7 @@ edit the two values.
 | `users` | the account: id, unique username, status, timestamps |
 | `user_profiles` | the person: name, date of birth, gender, avatar, locale |
 | `user_auth_identities` | one row per way of signing in |
+| `user_login_tokens` | one row per browser that signed in and has not signed out: a selector and the SHA-256 of a validator |
 
 **Reference**
 
@@ -309,7 +310,8 @@ The rules:
 **Deleting an account deletes it.** `api/profile/delete.php` removes the
 signed-in account with one `DELETE FROM users`: every table holding something
 of a user's references `users` with `ON DELETE CASCADE`, so the profile, both
-ways of signing in (the password and the Google link), health data, goals and
+ways of signing in (the password and the Google link), every browser it stays
+signed in on, health data, goals and
 their history, measurements, paired phones and their tokens, pairing codes,
 integrations, friendships in both directions, blocks, points and leaderboard
 positions all go in the same statement — rows removed, not marked. The profile
@@ -350,6 +352,19 @@ Email/password is implemented: `password_hash()` on the way in,
 error for both an unknown address and a wrong password, and
 `session_regenerate_id(true)` on login. No provider password or token is
 stored, ever.
+
+**Staying signed in** is `user_login_tokens` and `includes/persistent-login.php`.
+Every sign-in — password, registration, Google — adds a row for this browser
+and sets a cookie holding `selector.validator`; the row keeps the selector and
+only the SHA-256 of the validator, so a copy of the table signs nobody in.
+When a request arrives with no session (the browser was closed, or the server
+cleared the session away), the cookie puts one back, on a new session id, with
+the CSRF token that sign-in always had. The validator is replaced every time
+that happens; the one before it keeps working only until the browser shows it
+has the new one, and presenting it after that revokes the row. Signing out
+deletes this browser's row, and a year without use lets it expire. An existing
+database gets the table from `database/migrations/008-persistent-login.sql`;
+until then a sign-in lasts as long as its session.
 
 **Google is implemented** in `includes/google-signin.php`, as OpenID Connect
 with the authorization code flow and PKCE:
@@ -464,10 +479,10 @@ private data is returned.
 
 | Endpoint | Writes |
 | --- | --- |
-| `api/auth/register.php` | `users`, `user_profiles`, `user_auth_identities` |
-| `api/auth/login.php` / `logout.php` | session only; touches `last_login_at` |
-| `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise session only |
-| `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities` — the Google identity waiting in the session |
+| `api/auth/register.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` |
+| `api/auth/login.php` / `logout.php` | this browser's `user_login_tokens` row, added or deleted; login touches `last_login_at` |
+| `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise this browser's `user_login_tokens` row |
+| `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` — the Google identity waiting in the session |
 | `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file |
 | `api/profile/username.php` | `users.username` |
 | `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
@@ -484,6 +499,10 @@ private data is returned.
 | `api/friends/search.php` | reads only, and only public fields |
 | `api/friends/request.php` | `friendships` |
 | `api/friends/block.php` | `user_blocks` |
+
+Any request can also replace the validator on this browser's
+`user_login_tokens` row, or delete a row that has run out: that is how a
+sign-in outlives its session (see *Authentication*).
 
 Height and weight are not columns on the profile. Saving either **adds a row**
 to `user_measurements`, so last month's weight is still there; the current
