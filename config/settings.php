@@ -108,13 +108,23 @@ return [
             'label'     => 'Uitloggen',
             'signed_out'=> 'Je bent niet ingelogd',
         ],
+        /* Two steps before anything happens: what goes, then "are you sure".
+           On the second the buttons swap sides, so a double tap on the first
+           confirmation lands on "Nee, toch niet" rather than deleting. */
         'delete' => [
             'label'   => 'Account verwijderen',
             'title'   => 'Account verwijderen?',
-            'body'    => 'Je profiel, je gezondheidsgegevens, je doelen en je plek op de ranglijst worden verwijderd. Dit kan niet ongedaan worden gemaakt.',
+            'body'    => 'Je profiel, je gezondheidsgegevens, je doelen, je gekoppelde apparaten en je plek op de ranglijst worden verwijderd.',
+            'google'  => 'Ook je koppeling met Google wordt verwijderd.',
             'confirm' => 'Ja, verwijderen',
             'cancel'  => 'Annuleren',
-            'note'    => 'Verwijderen is nog niet geïmplementeerd — deze bevestiging laat alleen zien hoe het gaat werken.',
+            'note'    => 'Je wordt daarna overal uitgelogd.',
+
+            'final_title'  => 'Weet je het zeker?',
+            'final_body'   => 'Dit is de laatste stap. Je account en alles wat erbij hoort worden direct en voorgoed verwijderd. Dit kun je niet ongedaan maken.',
+            'final_google' => 'Daarna ga je heel even langs Google, zodat JoLu ook uit je Google-account verdwijnt.',
+            'final_yes'    => 'Definitief verwijderen',
+            'final_no'     => 'Nee, toch niet',
         ],
     ],
 

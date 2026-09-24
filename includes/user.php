@@ -403,4 +403,61 @@ if (!function_exists('user_validate_username')) {
 
         return ['ok' => true, 'error' => null, 'avatar' => $path];
     }
+
+    /* ---------------------------------------------------------- deleting */
+
+    /**
+     * Deletes an account and everything that belongs to it. For good.
+     *
+     * One statement: every table that holds something of a user's references
+     * users with ON DELETE CASCADE — the profile, every way of signing in
+     * (the password and the Google link alike), health data, goals and their
+     * history, measurements, paired phones and their tokens, pairing codes,
+     * integrations, friendships in both directions, blocks, points and
+     * leaderboard positions. Nothing is kept aside, and nothing is marked
+     * deleted instead: the rows are gone.
+     *
+     * The profile picture is a file rather than a row, so it is removed by
+     * hand — the current one, and any older one a failed tidy-up left behind.
+     *
+     * Returns the Google account id that was linked, if any, so the caller can
+     * also ask Google to forget JoLu. It is not stored anywhere any more.
+     *
+     * @return array{ok: bool, error: ?string, google_sub: ?string}
+     */
+    function user_delete_account(int $userId, string $uploadRoot): array
+    {
+        if (!db_available()) {
+            return ['ok' => false, 'error' => 'Geen databaseverbinding.', 'google_sub' => null];
+        }
+
+        $googleSub = db_value(
+            'SELECT provider_subject FROM user_auth_identities WHERE user_id = ? AND provider = ?',
+            [$userId, 'google']
+        );
+        $avatar = db_value('SELECT avatar_path FROM user_profiles WHERE user_id = ?', [$userId]);
+
+        $statement = db_run('DELETE FROM users WHERE id = ?', [$userId]);
+
+        if ($statement === null || $statement->rowCount() !== 1) {
+            return ['ok' => false, 'error' => 'Dit account kon niet worden verwijderd.', 'google_sub' => null];
+        }
+
+        /* Files: only ever inside our own avatar directory, and only this
+           user's — u12- never matches u123-. */
+        $directory = rtrim($uploadRoot, '/') . '/avatars';
+        $files     = glob($directory . '/u' . $userId . '-*') ?: [];
+
+        if (is_string($avatar) && str_starts_with($avatar, 'uploads/avatars/')) {
+            $files[] = dirname(__DIR__) . '/' . $avatar;
+        }
+
+        foreach (array_unique($files) as $file) {
+            if (is_file($file) && str_starts_with(basename($file), 'u' . $userId . '-')) {
+                @unlink($file);
+            }
+        }
+
+        return ['ok' => true, 'error' => null, 'google_sub' => is_string($googleSub) ? $googleSub : null];
+    }
 }

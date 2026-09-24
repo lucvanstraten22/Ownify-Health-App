@@ -34,6 +34,12 @@
  *                                        until they do.
  *   link    signed in, from Settings  -> the verified `sub` is attached to the
  *                                        signed-in account.
+ *   revoke  right after an account     -> a silent round trip (no screen at
+ *           with Google was deleted       Google when the person is signed in
+ *                                        there) for one short-lived access
+ *                                        token, used once to tell Google to
+ *                                        forget JoLu for that Google account,
+ *                                        and then discarded.
  *
  * ---------------------------------------------------------------------------
  * WHAT THE BROWSER CAN AND CANNOT DO
@@ -77,6 +83,21 @@ if (!defined('GOOGLE_SIGNIN_JWKS_URL')) {
 }
 if (!defined('GOOGLE_SIGNIN_ISSUERS')) {
     define('GOOGLE_SIGNIN_ISSUERS', ['https://accounts.google.com', 'accounts.google.com']);
+}
+if (!defined('GOOGLE_SIGNIN_REVOKE_URL')) {
+    define('GOOGLE_SIGNIN_REVOKE_URL', 'https://oauth2.googleapis.com/revoke');
+}
+
+/** Where somebody removes an app from their Google account by hand. */
+if (!defined('GOOGLE_ACCOUNT_CONNECTIONS_URL')) {
+    define('GOOGLE_ACCOUNT_CONNECTIONS_URL', 'https://myaccount.google.com/connections');
+}
+
+/* Said whenever an account with Google was deleted but Google could not be
+   told automatically: the account is gone either way, and this says what is
+   left to do. The page adds the link to Google's own list. */
+if (!defined('GOOGLE_SIGNIN_NOT_REVOKED')) {
+    define('GOOGLE_SIGNIN_NOT_REVOKED', 'Je account is verwijderd, ook je koppeling met Google. JoLu kon zichzelf niet automatisch uit je Google-account halen; dat doe je in je Google-account bij apps met toegang.');
 }
 
 /** How long a started sign-in may take, and how long a chosen-but-unnamed identity waits. */
@@ -406,17 +427,19 @@ if (!function_exists('google_signin_config')) {
        ================================================================== */
 
     /**
-     * Starts a sign-in (mode 'login') or a link from Settings (mode 'link',
-     * for the signed-in user). Returns the URL to send the browser to, or null
-     * when Google sign-in is not configured.
+     * Starts a sign-in (mode 'login'), a link from Settings (mode 'link', for
+     * the signed-in user) or, after an account was deleted, the request to
+     * Google to forget JoLu (mode 'revoke', for the Google account `$sub`).
+     * Returns the URL to send the browser to, or null when Google sign-in is
+     * not configured.
      */
-    function google_signin_begin(string $mode, ?int $userId = null): ?string
+    function google_signin_begin(string $mode, ?int $userId = null, ?string $sub = null): ?string
     {
-        if (!google_signin_configured() || !in_array($mode, ['login', 'link'], true)) {
+        if (!google_signin_configured() || !in_array($mode, ['login', 'link', 'revoke'], true)) {
             return null;
         }
 
-        if ($mode === 'link' && $userId === null) {
+        if (($mode === 'link' && $userId === null) || ($mode === 'revoke' && ($sub === null || $sub === ''))) {
             return null;
         }
 
@@ -434,9 +457,18 @@ if (!function_exists('google_signin_config')) {
             'verifier'     => $verifier,
             'mode'         => $mode,
             'user_id'      => $mode === 'link' ? $userId : null,
+            'sub'          => $mode === 'revoke' ? $sub : null,
             'redirect_uri' => $config['redirect_uri'],
             'started'      => time(),
         ];
+
+        /* Revoking asks for no screen at all: prompt=none, and the account
+           named, so a person signed in to Google in this browser is sent
+           straight back. If Google would have to ask anything, it answers with
+           an error instead — and the page says how to finish it by hand. */
+        $prompt = $mode === 'revoke'
+            ? ['prompt' => 'none', 'login_hint' => $sub]
+            : ['prompt' => 'select_account'];
 
         return GOOGLE_SIGNIN_AUTHORIZE_URL . '?' . http_build_query([
             'client_id'             => $config['client_id'],
@@ -447,12 +479,17 @@ if (!function_exists('google_signin_config')) {
             'nonce'                 => $nonce,
             'code_challenge'        => google_signin_b64url_encode(hash('sha256', $verifier, true)),
             'code_challenge_method' => 'S256',
-            'prompt'                => 'select_account',
-        ], '', '&', PHP_QUERY_RFC3986);
+        ] + $prompt, '', '&', PHP_QUERY_RFC3986);
     }
 
-    /** The code, exchanged for an ID token. Null when Google refused. */
-    function google_signin_exchange(string $code, array $flow): ?string
+    /**
+     * The code, exchanged for an ID token — and the access token that comes
+     * with it, which is only ever used to revoke and is never stored. Null
+     * when Google refused.
+     *
+     * @return array{id_token: string, access_token: ?string}|null
+     */
+    function google_signin_exchange(string $code, array $flow): ?array
     {
         $config = google_signin_config();
 
@@ -483,7 +520,27 @@ if (!function_exists('google_signin_config')) {
             return null;
         }
 
-        return $data['id_token'];
+        return [
+            'id_token'     => $data['id_token'],
+            'access_token' => is_string($data['access_token'] ?? null) ? $data['access_token'] : null,
+        ];
+    }
+
+    /**
+     * Asks Google to forget JoLu for the account this token belongs to: the
+     * grant is withdrawn, and JoLu leaves that account's list of apps with
+     * access. Google answers 200 when it has done so.
+     */
+    function google_signin_revoke(string $token): bool
+    {
+        $response = google_signin_http(GOOGLE_SIGNIN_REVOKE_URL, ['token' => $token]);
+
+        if ($response === null || $response['status'] !== 200) {
+            error_log('[google-signin] revoke refused: HTTP ' . ($response['status'] ?? 0));
+            return false;
+        }
+
+        return true;
     }
 
     /** Google's current signing keys. */
@@ -515,13 +572,15 @@ if (!function_exists('google_signin_config')) {
         $flow = $_SESSION['google_signin_flow'] ?? null;
         unset($_SESSION['google_signin_flow']);        // single use, whatever happens next
 
-        $mode = is_array($flow) && ($flow['mode'] ?? null) === 'link' ? 'link' : 'login';
+        $mode = is_array($flow) && in_array($flow['mode'] ?? null, ['link', 'revoke'], true) ? $flow['mode'] : 'login';
         $out  = static fn (string $outcome, ?string $message = null): array
             => ['outcome' => $outcome, 'mode' => $mode, 'message' => $message];
 
-        $failed = $mode === 'link'
-            ? 'Google koppelen is niet gelukt. Probeer het opnieuw.'
-            : 'Inloggen met Google is niet gelukt. Probeer het opnieuw.';
+        $failed = match ($mode) {
+            'link'   => 'Google koppelen is niet gelukt. Probeer het opnieuw.',
+            'revoke' => GOOGLE_SIGNIN_NOT_REVOKED,
+            default  => 'Inloggen met Google is niet gelukt. Probeer het opnieuw.',
+        };
 
         if (!is_array($flow) || !is_string($flow['state'] ?? null) || !is_int($flow['started'] ?? null)) {
             return $out('error', 'Deze aanmelding is verlopen of al gebruikt. Begin opnieuw.');
@@ -537,11 +596,14 @@ if (!function_exists('google_signin_config')) {
             return $out('error', $failed);
         }
 
-        /* The person pressed Cancel at Google, or Google refused. */
+        /* The person pressed Cancel at Google, or Google refused — which for
+           a silent revoke means Google wanted to ask something first. */
         if (isset($query['error'])) {
-            return $out('cancelled', $mode === 'link'
-                ? 'Google koppelen is geannuleerd.'
-                : 'Inloggen met Google is geannuleerd.');
+            return match ($mode) {
+                'revoke' => $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED),
+                'link'   => $out('cancelled', 'Google koppelen is geannuleerd.'),
+                default  => $out('cancelled', 'Inloggen met Google is geannuleerd.'),
+            };
         }
 
         $code = $query['code'] ?? null;
@@ -549,26 +611,30 @@ if (!function_exists('google_signin_config')) {
             return $out('error', $failed);
         }
 
-        $token = google_signin_exchange($code, $flow);
-        $keys  = $token === null ? null : google_signin_keys();
+        $tokens = google_signin_exchange($code, $flow);
+        $keys   = $tokens === null ? null : google_signin_keys();
 
-        if ($token === null || $keys === null) {
-            return $out('error', 'Google kon je aanmelding niet bevestigen. Probeer het opnieuw.');
+        if ($tokens === null || $keys === null) {
+            return $mode === 'revoke'
+                ? $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED)
+                : $out('error', 'Google kon je aanmelding niet bevestigen. Probeer het opnieuw.');
         }
 
-        $verified = google_signin_verify($token, $keys, google_signin_config()['client_id'], (string) $flow['nonce']);
+        $verified = google_signin_verify($tokens['id_token'], $keys, google_signin_config()['client_id'], (string) $flow['nonce']);
 
         if (!$verified['ok']) {
             error_log('[google-signin] ID token refused: ' . $verified['error']);
-            return $out('error', $failed);
+            return $mode === 'revoke' ? $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED) : $out('error', $failed);
         }
 
         $sub   = (string) $verified['claims']['sub'];
         $email = google_signin_verified_email($verified['claims']);
 
-        return $mode === 'link'
-            ? google_signin_link($sub, $email, $flow, $out)
-            : google_signin_login($sub, $email, $out);
+        return match ($mode) {
+            'link'   => google_signin_link($sub, $email, $flow, $out),
+            'revoke' => google_signin_forget($sub, $tokens['access_token'], $flow, $out),
+            default  => google_signin_login($sub, $email, $out),
+        };
     }
 
     /** @param callable(string, ?string): array $out */
@@ -613,6 +679,35 @@ if (!function_exists('google_signin_config')) {
         }
 
         return $out('linked', 'Google is gekoppeld. Je kunt voortaan ook met Google inloggen.');
+    }
+
+    /**
+     * The last step of deleting an account that had Google: the access token
+     * from this round trip is used once, to withdraw JoLu's access, and then
+     * dropped. The account itself is already gone by now.
+     *
+     * Only for the Google account that was linked: a token for any other one
+     * is withdrawn too — JoLu has no business holding it — but the page then
+     * says the linked account still has to be done by hand.
+     *
+     * @param callable(string, ?string): array $out
+     */
+    function google_signin_forget(string $sub, ?string $accessToken, array $flow, callable $out): array
+    {
+        if ($accessToken === null) {
+            return $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
+        }
+
+        $revoked = google_signin_revoke($accessToken);
+
+        if (!hash_equals((string) ($flow['sub'] ?? ''), $sub)) {
+            error_log('[google-signin] revoke came back for a different Google account');
+            return $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
+        }
+
+        return $revoked
+            ? $out('revoked', 'Je account is verwijderd, en JoLu is ook uit je Google-account gehaald.')
+            : $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
     }
 
     /** @param callable(string, ?string): array $out */

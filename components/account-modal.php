@@ -51,11 +51,18 @@ $autoOpen  = $flash !== null || $pending !== null;
             </p>
         <?php endif; ?>
 
-        <?php $flashIsError = $flash !== null && $flash['tone'] === 'error'; ?>
-        <p class="account__error" data-account-error role="alert" <?= $flashIsError ? '' : 'hidden' ?>><?= $flashIsError ? e($flash['message']) : '' ?></p>
+        <?php
+        $flashIsError = $flash !== null && $flash['tone'] === 'error';
+        /* A fixed address from the code (auth_flash), opened beside the app. */
+        $flashLink = $flash !== null && !empty($flash['link'])
+            ? ' <a class="account__link" href="' . e($flash['link']['href']) . '" target="_blank" rel="noopener noreferrer">'
+                . e($flash['link']['label']) . '</a>'
+            : '';
+        ?>
+        <p class="account__error" data-account-error role="alert" <?= $flashIsError ? '' : 'hidden' ?>><?= $flashIsError ? e($flash['message']) . $flashLink : '' ?></p>
 
         <?php if ($flash !== null && !$flashIsError): ?>
-            <p class="account__notice" data-account-flash role="status"><?= e($flash['message']) ?></p>
+            <p class="account__notice" data-account-flash role="status"><?= e($flash['message']) . $flashLink ?></p>
         <?php endif; ?>
 
         <?php if ($signedIn): ?>

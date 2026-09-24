@@ -97,7 +97,7 @@ components/
     settings-row.php          icon · label · current value · chevron
     settings-field.php        a profile field: editable, locked or derived
     settings-integration.php  a health source, expandable in place
-    settings-confirm.php      the delete-account confirmation
+    settings-confirm.php      the two-step delete-account confirmation
     account-modal.php         sign-in when signed out, account when signed in
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
@@ -119,7 +119,7 @@ assets/js/
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
     goal-wizard.js            the five-step create-a-goal flow
-    settings.js               choices, integrations, sign-out, delete confirm
+    settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
 ```
 
@@ -371,8 +371,11 @@ about the same person.
 **Only what can really save is live.** Profielfoto and Gebruikersnaam open the
 account panel, which has a working endpoint behind it. Every other field
 carries the same affordance and is plainly disabled, rather than moving and
-quietly discarding what you typed. Uitloggen really signs you out. Deleting an
-account confirms and then stops, and says so.
+quietly discarding what you typed. Uitloggen really signs you out. Account
+verwijderen really deletes: two confirmations — what goes, then "Weet je het
+zeker?" — and then every row of the account, its picture, its paired phones
+and its Google link are gone. An account that had Google also asks Google to
+forget JoLu.
 
 **Health sources expand in place.** The app has one detail layer, so a
 source's settings — status, last sync, permissions, categories, connect and

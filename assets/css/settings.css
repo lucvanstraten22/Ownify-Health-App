@@ -200,6 +200,13 @@
 
 .settings-delete:active { color: var(--text-secondary); }
 
+/* Signed out there is no account to delete. */
+.settings-delete:disabled {
+    opacity: 0.45;
+    text-decoration: none;
+    cursor: default;
+}
+
 /* --------------------------------------------------------------------------
    Detail screens
    -------------------------------------------------------------------------- */
@@ -744,6 +751,35 @@
 }
 
 .confirm__note-icon { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+
+/* Two steps in one sheet; only one is ever shown. */
+.confirm__panel[hidden] { display: none; }
+
+/* The last step is the only red thing on the page, and it is meant to be. */
+.confirm__mark--final {
+    color: var(--miss);
+    background: color-mix(in srgb, var(--miss) 18%, transparent);
+}
+
+.confirm__yes--final {
+    border-color: color-mix(in srgb, var(--miss) 60%, transparent);
+    background: color-mix(in srgb, var(--miss) 24%, transparent);
+}
+
+.confirm__yes--final:disabled { opacity: 0.6; }
+
+.confirm__error {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid rgba(191, 168, 99, 0.34);
+    border-radius: var(--radius-sm);
+    background: rgba(191, 168, 99, 0.10);
+    font-size: var(--fs-small);
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.confirm__error[hidden] { display: none; }
 
 /* --------------------------------------------------------------------------
    Narrow phones — the long labels have to survive

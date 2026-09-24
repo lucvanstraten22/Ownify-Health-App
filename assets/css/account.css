@@ -85,6 +85,17 @@
 
 .account__error[hidden] { display: none; }
 
+/* A way onward from a message — Google's own page, for instance. */
+.account__link {
+    display: inline-block;
+    margin-top: var(--space-1);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, 0.35);
+}
+
 .account__notice code {
     font-size: 0.8em;
     color: var(--text-primary);

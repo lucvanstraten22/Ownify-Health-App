@@ -306,6 +306,26 @@ The rules:
   from the session, so a crafted request cannot ask for someone else's records.
 - The frontend enforces nothing. It is the server functions above that do.
 
+**Deleting an account deletes it.** `api/profile/delete.php` removes the
+signed-in account with one `DELETE FROM users`: every table holding something
+of a user's references `users` with `ON DELETE CASCADE`, so the profile, both
+ways of signing in (the password and the Google link), health data, goals and
+their history, measurements, paired phones and their tokens, pairing codes,
+integrations, friendships in both directions, blocks, points and leaderboard
+positions all go in the same statement — rows removed, not marked. The profile
+picture is a file and is removed from `uploads/avatars/` separately. The
+browser is signed out; a session still open on another device is turned away on
+its next request, and a paired phone's token stops working. The endpoint only
+acts on `confirm=verwijderen`, which only the second confirmation step sends.
+
+If Google was linked, the answer carries one silent round trip past Google
+(`prompt=none`, hinted to that Google account): the access token it yields is
+used once to revoke JoLu's access and then dropped, so JoLu also disappears
+from the person's Google account. The account is already deleted before that
+trip starts, so nothing about Google can stop or undo the deletion; if Google
+needs to ask something first, the page says so and links to Google's own list
+of connected apps.
+
 **What this does not claim.** MySQL grants are per connection, not per end
 user: the application's database account can read every table, and so can a
 database administrator. Privacy here is an *application* boundary, not an
@@ -359,6 +379,8 @@ with the authorization code flow and PKCE:
    verified `sub` is attached to the account that started it, if that account
    is still the one signed in, has no Google account yet, and the Google
    account is not already someone else's.
+6. Deleting an account with Google runs it once more with `mode=revoke`,
+   silently, to withdraw JoLu's access at Google — see *Privacy*.
 
 Codes and tokens are never stored or logged. Test the verification offline
 with `php tools/google-signin-test.php`.
@@ -446,6 +468,7 @@ private data is returned.
 | `api/auth/login.php` / `logout.php` | session only; touches `last_login_at` |
 | `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise session only |
 | `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities` — the Google identity waiting in the session |
+| `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file |
 | `api/profile/username.php` | `users.username` |
 | `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
 | `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |

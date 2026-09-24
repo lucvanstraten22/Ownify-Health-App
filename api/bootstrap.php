@@ -121,6 +121,15 @@ if (!function_exists('api_json')) {
             api_fail('Je bent niet ingelogd.', 401);
         }
 
+        /* A session can outlive its account: deleted from another phone, the
+           session here still names it. It is signed out rather than left to
+           write rows for somebody who no longer exists. */
+        if (db_available()
+            && db_value('SELECT id FROM users WHERE id = ? AND status <> ?', [$userId, 'deleted']) === null) {
+            session_logout();
+            api_fail('Je bent niet ingelogd.', 401);
+        }
+
         return $userId;
     }
 

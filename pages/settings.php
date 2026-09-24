@@ -77,7 +77,10 @@ $profile  = $settings['profile'];
                         <p class="settings-actions__note"><?= e($actions['logout']['signed_out']) ?></p>
                     <?php endif; ?>
 
-                    <button type="button" class="settings-delete press" data-settings-delete>
+                    <?php /* Only an account can be deleted: signed out there is nothing
+                             to delete, so the button is as inert as sign-out. */ ?>
+                    <button type="button" class="settings-delete press" data-settings-delete
+                            <?= $auth['signed_in'] ? '' : 'disabled' ?>>
                         <?= e($actions['delete']['label']) ?>
                     </button>
 

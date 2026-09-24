@@ -55,13 +55,19 @@ if (!function_exists('auth_provider_available')) {
      * answer — coming back from Google — so there is no script waiting to
      * show it.
      */
-    function auth_flash(string $message, string $tone, string $target): void
+    function auth_flash(string $message, string $tone, string $target, ?array $link = null): void
     {
         session_boot();
-        $_SESSION['auth_flash'] = ['message' => $message, 'tone' => $tone, 'target' => $target];
+        $_SESSION['auth_flash'] = [
+            'message' => $message,
+            'tone'    => $tone,
+            'target'  => $target,
+            /* A fixed address chosen here in the code, never from a request. */
+            'link'    => $link === null ? null : ['href' => (string) $link['href'], 'label' => (string) $link['label']],
+        ];
     }
 
-    /** The waiting message, once. @return array{message: string, tone: string, target: string}|null */
+    /** The waiting message, once. @return array{message: string, tone: string, target: string, link: ?array}|null */
     function auth_flash_take(): ?array
     {
         session_boot();

@@ -5,8 +5,8 @@
  *
  *   choices        pick one option; the tick moves, nothing is stored
  *   integrations   expand a health source in place
- *   account        sign out (the endpoint is real), and the delete
- *                  confirmation (which confirms and then stops)
+ *   account        sign out, and deleting the account — two confirmations,
+ *                  then api/profile/delete.php, which really deletes it
  *
  * Every screen that offers a choice says at its foot that the choice is not
  * kept, so the interaction can be judged without the page claiming otherwise.
@@ -439,8 +439,31 @@
 
     /* ------------------------------------------------------------- delete */
 
+    /**
+     * Deleting the account: two steps in one sheet, and nothing leaves the
+     * browser until the second.
+     *
+     *   1  what goes — "Ja, verwijderen" only moves to step 2
+     *   2  "Weet je het zeker?" — "Definitief verwijderen" calls the endpoint
+     *
+     * Closing the sheet, from either step, always starts over at step 1.
+     */
     var confirmPanel = document.querySelector('[data-settings-confirm]');
     var lastFocus = null;
+
+    function showStep(step) {
+        Array.prototype.forEach.call(confirmPanel.querySelectorAll('[data-confirm-step]'), function (panel) {
+            panel.hidden = panel.getAttribute('data-confirm-step') !== String(step);
+        });
+
+        var error = confirmPanel.querySelector('[data-confirm-error]');
+        if (error) { error.hidden = true; error.textContent = ''; }
+
+        /* Focus the safe answer of whichever step is showing. */
+        var current = confirmPanel.querySelector('[data-confirm-step="' + step + '"]');
+        var safe = current ? current.querySelector('button[data-confirm-close]') : null;
+        if (safe) { safe.focus({ preventScroll: true }); }
+    }
 
     function openConfirm(trigger) {
         if (!confirmPanel) { return; }
@@ -450,27 +473,74 @@
         // One frame before the class, so the transition has a start state.
         window.requestAnimationFrame(function () { confirmPanel.classList.add('is-open'); });
 
-        var cancel = confirmPanel.querySelector('[data-confirm-close]:not(.confirm__scrim)');
-        if (cancel) { cancel.focus({ preventScroll: true }); }
+        showStep(1);
     }
 
     function closeConfirm() {
         if (!confirmPanel) { return; }
 
         confirmPanel.classList.remove('is-open');
-        window.setTimeout(function () { confirmPanel.hidden = true; }, 200);
+        window.setTimeout(function () {
+            confirmPanel.hidden = true;
+            showStep(1);
+        }, 200);
 
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
     }
 
+    /** Step 2's one real action. The account comes from the session. */
+    function deleteAccount(button) {
+        var panel = document.querySelector('[data-account]');
+        var body = new FormData();
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append('confirm', 'verwijderen');
+
+        button.disabled = true;
+
+        fetch('api/profile/delete.php', { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false }; });
+            })
+            .catch(function () {
+                return { ok: false, error: 'De server is niet bereikbaar. Er is niets verwijderd.' };
+            })
+            .then(function (result) {
+                if (result && result.ok) {
+                    /* Gone. An account with Google makes one short trip past
+                       Google so it can forget JoLu too; otherwise the page
+                       reloads, signed out, and says what happened. */
+                    if (result.redirect) {
+                        window.location.assign(result.redirect);
+                    } else {
+                        window.location.reload();
+                    }
+                    return;
+                }
+
+                button.disabled = false;
+
+                var error = confirmPanel.querySelector('[data-confirm-error]');
+                if (error) {
+                    error.textContent = (result && result.error) || 'Je account kon niet worden verwijderd.';
+                    error.hidden = false;
+                }
+            });
+    }
+
     var deleteButton = page.querySelector('[data-settings-delete]');
     if (deleteButton) {
-        deleteButton.addEventListener('click', function () { openConfirm(deleteButton); });
+        deleteButton.addEventListener('click', function () {
+            if (!deleteButton.disabled) { openConfirm(deleteButton); }
+        });
     }
 
     if (confirmPanel) {
         confirmPanel.addEventListener('click', function (event) {
-            if (event.target.closest('[data-confirm-close]')) { closeConfirm(); }
+            if (event.target.closest('[data-confirm-close]')) { closeConfirm(); return; }
+            if (event.target.closest('[data-confirm-next]')) { showStep(2); return; }
+
+            var final = event.target.closest('[data-confirm-delete]');
+            if (final && !final.disabled) { deleteAccount(final); }
         });
     }
 

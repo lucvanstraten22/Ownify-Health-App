@@ -135,9 +135,14 @@ if (!function_exists('app_auth')) {
             $user = user_account($userId);
 
             if ($user === null) {
-                // The account is gone or suspended: the session is stale.
+                /* The account is gone — deleted, from here or from another
+                   phone — so the session is stale. A new one, with a cookie
+                   of its own, so the page this renders can act straight
+                   away instead of failing once on a token for a session
+                   the browser has just been told to drop. */
                 session_logout();
                 session_boot();
+                session_regenerate_id(true);
             } else {
                 auth_touch_last_seen($userId);
             }
