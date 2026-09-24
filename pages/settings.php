@@ -20,8 +20,6 @@ $profile  = $settings['profile'];
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
-        <?php component('header', $data); ?>
-
         <main class="app__main">
             <div class="shell stack" data-settings>
 

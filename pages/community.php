@@ -17,8 +17,6 @@ $period    = $community['default_period'];
     <div class="community" data-community>
 
         <div class="community__head">
-            <?php component('header', $data); ?>
-
             <div class="shell community__controls">
                 <h1 class="community__title"><?= e($community['title']) ?></h1>
 

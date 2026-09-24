@@ -27,6 +27,70 @@
             bindChrome(scroller, screen.querySelector('[data-header]'),
                 screen.querySelector('[data-scroll-top]'));
         });
+
+        sharedHeader();
+    }
+
+    /**
+     * The five main pages share one header, above the rail rather than inside
+     * any of them. It condenses for whichever page is showing: every page
+     * reports its scroll, only the showing page's counts, and arriving on
+     * another page re-reads that one. Community's head never scrolls, so on
+     * Community the header stays clear, as it always has.
+     */
+    function sharedHeader() {
+        var header = document.querySelector('[data-header-shared]');
+        if (!header) { return; }
+
+        var root = document.documentElement;
+        var pages = document.querySelectorAll('[data-page]');
+        var ticking = false;
+
+        function showingScroller() {
+            for (var i = 0; i < pages.length; i++) {
+                if (pages[i].getAttribute('data-page') === root.getAttribute('data-active-page')) {
+                    return pages[i].querySelector('[data-scroller]');
+                }
+            }
+            return null;
+        }
+
+        function update() {
+            ticking = false;
+            var scroller = showingScroller();
+            header.classList.toggle('is-scrolled', !!scroller && scroller.scrollTop > 8);
+        }
+
+        function schedule() {
+            if (ticking) { return; }
+            ticking = true;
+            window.requestAnimationFrame(update);
+        }
+
+        Array.prototype.forEach.call(pages, function (page) {
+            var scroller = page.querySelector('[data-scroller]');
+            if (scroller) { scroller.addEventListener('scroll', schedule, { passive: true }); }
+        });
+
+        /* page-navigation.js names the page being moved to on <html>. */
+        if ('MutationObserver' in window) {
+            new MutationObserver(update).observe(root, {
+                attributes: true,
+                attributeFilter: ['data-active-page']
+            });
+        }
+
+        /* While it was part of the page, a wheel over the header scrolled the
+           page. It no longer is, so the wheel is handed to the showing page. */
+        header.addEventListener('wheel', function (event) {
+            var scroller = showingScroller();
+            if (!scroller || event.ctrlKey || !event.deltaY) { return; }
+
+            var unit = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? scroller.clientHeight : 1);
+            scroller.scrollBy(0, event.deltaY * unit);
+        }, { passive: true });
+
+        update();
     }
 
     /* For a screen added after load — a new goal's detail page. */

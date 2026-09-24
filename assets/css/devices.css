@@ -1,0 +1,135 @@
+/* ==========================================================================
+   devices.css — the quick look behind the header's devices button.
+   Same tokens, same card recipe, same icon tiles and status dots as the
+   devices screen it leads to.
+   ========================================================================== */
+
+.devices {
+    position: fixed;
+    inset: 0;
+    z-index: 56;              /* above the assistant sheet, below the panels */
+}
+
+.devices[hidden] { display: none; }
+
+/* On its way out it no longer catches taps. */
+.devices:not(.is-open) { pointer-events: none; }
+
+/* The account panel's scrim: glass over busy content needs the content
+   dimmed and softened first, or the content reads through it. */
+.devices__scrim {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.52);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    cursor: default;
+    transition: opacity var(--transition-fast);
+}
+
+/* Hangs from the button: the header's column, just under its row, so the
+   panel's edge lines up with the button it came from. */
+.devices__frame {
+    position: relative;
+    padding-top: calc(var(--safe-top) + var(--space-3) + var(--header-btn) + var(--space-2));
+    pointer-events: none;
+}
+
+.devices__panel {
+    width: min(100%, 18.5rem);
+    padding: var(--space-4);
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+    transform-origin: top left;
+    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+}
+
+.devices.is-open .devices__scrim { opacity: 1; }
+
+.devices.is-open .devices__panel {
+    opacity: 1;
+    transform: none;
+}
+
+/* ------------------------------------------------------------------ list */
+.devices__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.devices__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.devices__item .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
+.devices__item .icon-tile .icon { width: 17px; height: 17px; }
+.devices__item.is-connected .icon-tile { color: var(--health); }
+
+.devices__text { min-width: 0; }
+
+.devices__name {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.devices__source {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.devices__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.devices__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-faint);
+}
+
+.devices__item.is-connected .devices__status { color: color-mix(in srgb, var(--health) 34%, #ffffff); }
+
+.devices__item.is-connected .devices__dot {
+    background: var(--health);
+    box-shadow: 0 0 0 3px rgba(60, 158, 114, 0.18);
+}
+
+/* ---------------------------------------------------------- empty + add */
+.devices__empty {
+    margin-bottom: var(--space-4);
+    padding-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.devices__add {
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.devices__add-icon { width: 16px; height: 16px; }

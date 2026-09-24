@@ -47,9 +47,12 @@ return [
     /* -------------------------------------------------- header */
     'header' => [
         'devices' => [
-            'label'      => 'Apparaten',
-            'aria'       => 'Verbonden apparaten beheren',
-            'connected'  => 0,      // no integrations in this version
+            'label' => 'Apparaten',
+            'aria'  => 'Verbonden apparaten beheren',
+            /* The quick look behind the button: what is linked, and the way
+               to the devices screen (components/devices-popup.php). */
+            'empty' => 'Geen apparaten gekoppeld',
+            'add'   => 'Apparaat koppelen',
         ],
         'account' => [
             'label' => 'Account',

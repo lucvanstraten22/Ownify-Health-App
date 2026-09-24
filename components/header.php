@@ -4,6 +4,11 @@
  *
  * The two side buttons are the same circle, mirrored across the app name, so
  * neither side pulls the title off centre.
+ *
+ * One header for the five main pages, rendered once by index.php above the
+ * rail rather than inside each page: the pages slide underneath it and it
+ * stays exactly where it is. Detail pages carry their own header and cover
+ * this one.
  */
 declare(strict_types=1);
 
@@ -11,10 +16,11 @@ $app     = $data['app'];
 $devices = $data['header']['devices'];
 $account = $data['header']['account'];
 ?>
-<header class="app-header" data-header>
+<header class="app-header app-header--shared" data-header data-header-shared>
     <div class="app-header__inner shell">
 
-        <button type="button" class="pill pill--devices press"
+        <button type="button" class="pill pill--devices press" data-devices-open
+                aria-haspopup="dialog" aria-controls="devices-popup" aria-expanded="false"
                 aria-label="<?= e($devices['aria']) ?>">
             <?= icon('device', 'pill__icon') ?>
         </button>

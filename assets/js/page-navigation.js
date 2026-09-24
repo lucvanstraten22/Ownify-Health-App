@@ -20,6 +20,7 @@
     var deck = nav.deck;
     var rail = deck.querySelector('[data-rail]');
     var dock = deck.querySelector('[data-ai-grab]');
+    var header = deck.querySelector('[data-header-shared]');
     if (!rail) { return; }
 
     var pages = Array.prototype.slice.call(rail.querySelectorAll('[data-page]'));
@@ -77,6 +78,15 @@
             dock.inert = nav.state.aiOpen;
             if (nav.state.aiOpen) { dock.setAttribute('aria-hidden', 'true'); }
             else { dock.removeAttribute('aria-hidden'); }
+        }
+
+        /* The pages' shared header is theirs: covered, and out of reach, by
+           whatever covers them. */
+        if (header) {
+            var covered = nav.state.aiOpen || nav.state.detailOpen;
+            header.inert = covered;
+            if (covered) { header.setAttribute('aria-hidden', 'true'); }
+            else { header.removeAttribute('aria-hidden'); }
         }
     }
 

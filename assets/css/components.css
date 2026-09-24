@@ -167,6 +167,31 @@
     backdrop-filter: blur(var(--blur-bar)) saturate(140%);
 }
 
+/* The five main pages share one header (index.php). It is laid over the rail
+   instead of scrolling inside a page, so it stays exactly where it is while
+   the pages slide under it, and it sits below the detail layer (20), whose
+   pages cover it with a header of their own. Horizontal drags pass through
+   to the page swipe, as they did when it was part of the page. */
+.app-header--shared {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 10;
+    touch-action: pan-y pinch-zoom;
+}
+
+/* Its height, from what it is built of: the padding above and below the
+   row, the row of buttons, and the hairline under it. */
+:root {
+    --app-header-space: calc(var(--safe-top) + var(--space-3) + var(--header-btn) + var(--space-3) + 1px);
+}
+
+/* Each page keeps that room free at its top, so its content starts exactly
+   where it did with the header inside it and scrolls up under the header.
+   Community's head does not scroll, so its room goes above the title. */
+.page > .screen__scroll,
+.community__head { padding-top: var(--app-header-space); }
+
 .app-header__inner {
     display: grid;
     grid-template-columns: 1fr auto 1fr;

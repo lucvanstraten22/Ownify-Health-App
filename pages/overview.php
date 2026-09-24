@@ -5,6 +5,7 @@
  * The page owns its own vertical scroller, so its scroll position survives
  * both a sideways move to another page and the assistant sheet opening on
  * top of it. The tab bar is not here: it lives in the dock, above the rail.
+ * Neither is the header, which all five pages share (index.php).
  */
 declare(strict_types=1);
 ?>
@@ -12,8 +13,6 @@ declare(strict_types=1);
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
-        <?php component('header', $data); ?>
-
         <main class="app__main" id="main" tabindex="-1">
             <div class="shell stack">
                 <?php

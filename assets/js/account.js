@@ -47,8 +47,7 @@
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
     }
 
-    /* The header renders on every page of the rail, so there is an account
-       button per page. Delegate rather than bind one of them. */
+    /* The account button, in the header the five pages share. */
     document.addEventListener('click', function (event) {
         var trigger = event.target.closest('[data-account-open]');
         if (!trigger) { return; }

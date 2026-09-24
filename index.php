@@ -126,6 +126,7 @@ foreach ($data['navigation'] as $position => $item) {
     <link rel="stylesheet" href="<?= e(asset('assets/css/goals.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('assets/css/settings.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('assets/css/account.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('assets/css/devices.css')) ?>">
 </head>
 <body class="app">
 
@@ -158,6 +159,12 @@ foreach ($data['navigation'] as $position => $item) {
     </svg>
 
     <div class="deck" data-deck>
+
+        <!-- The one header of the five pages. It sits above the rail, not in
+             it, so it stays exactly where it is while the pages slide under
+             it — and below the detail layer, whose pages bring their own.
+             First in the markup, so it is still first to tab to. -->
+        <?php component('header', $data); ?>
 
         <!-- Parked on the starting page server-side, so the rail never has to
              animate into place on load — and lands right without JavaScript. -->
@@ -226,6 +233,7 @@ foreach ($data['navigation'] as $position => $item) {
     component('settings-editor', $data);
     component('settings-pairing', $data);
     component('account-modal', $data);
+    component('devices-popup', $data);
     ?>
 
     <script src="<?= e(asset('assets/js/dashboard.js')) ?>" defer></script>
@@ -241,5 +249,6 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/settings.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/devices.js')) ?>" defer></script>
 </body>
 </html>

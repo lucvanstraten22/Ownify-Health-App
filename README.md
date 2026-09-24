@@ -69,7 +69,7 @@ lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
 components/
     icons.php                 one icon family (24px grid, 1.6 stroke)
-    header.php                devices · app name · account
+    header.php                devices · app name · account — one, shared by the five pages
     health-score.php          primary score ring + composition legend
     secondary-scores.php      Slaap and Voeding & Sport (one card system)
     goal-progress.php         personal goal progress
@@ -99,6 +99,7 @@ components/
     settings-integration.php  a health source, expandable in place
     settings-confirm.php      the two-step delete-account confirmation
     account-modal.php         sign-in when signed out, account when signed in
+    devices-popup.php         what is linked, behind the header's devices button
 assets/css/
     theme.css                 tokens, reset, typography, screen deck
     components.css            the UI kit
@@ -108,6 +109,8 @@ assets/css/
     community.css             the leaderboard (tokens only)
     goals.css                 Doelen, goal details and the wizard (tokens only)
     settings.css              Instellingen and its ten screens (tokens only)
+    account.css               the account panel
+    devices.css               the devices quick look (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
@@ -121,6 +124,7 @@ assets/js/
     goal-wizard.js            the five-step create-a-goal flow
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
+    devices.js                the devices quick look, and its way to the devices screen
 ```
 
 ## Navigation
@@ -146,6 +150,13 @@ layer is deliberately not a sixth item — it is reached by the swipe.
 side, a **dock** pinned above it, and the assistant **sheet** above that. Each
 page is a viewport-sized layer with its own scroller, which is what preserves
 its scroll position when you leave it — sideways or under the sheet.
+
+The five pages share **one header**, laid over the rail rather than inside
+any page: the pages slide underneath it and the app name and both buttons
+never move. Each page keeps the header's height free at its top, so content
+starts where it always did and scrolls up under it; the header condenses for
+whichever page is showing. Detail pages keep a header of their own and cover
+the shared one.
 
 `navigation-core.js` owns the pointer events, decides which axis a gesture is
 on after 10px of travel, and hands it to the controller registered for that
@@ -386,7 +397,11 @@ reviewed, and ships false, because nothing is connected.
 
 **The header's device button is not this.** That button is a status glance;
 this is where the configuration lives. They are deliberately not the same
-thing.
+thing. It opens a small popup listing what is linked right now — each paired
+phone by its own name, each connected source without one by the source's —
+read from the same resolved integrations as this screen, so the two always
+agree, or "Geen apparaten gekoppeld". Its one button, "Apparaat koppelen",
+opens this screen.
 
 ## Accounts and data
 
