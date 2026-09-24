@@ -21,7 +21,6 @@ declare(strict_types=1);
                 component('insights', $data);
                 component('patterns', $data);
                 component('recommendation', $data);
-                component('leaderboard', $data);
                 ?>
                 <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>

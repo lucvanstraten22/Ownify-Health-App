@@ -59,10 +59,6 @@ $hasEntries = $entries !== [];
                         'entry_sticky' => true,
                     ]); ?>
                 <?php endif; ?>
-
-                <li class="board-extra">
-                    <?php component('community-badges', $data); ?>
-                </li>
             </ol>
 
         <?php else: ?>
@@ -85,8 +81,6 @@ $hasEntries = $entries !== [];
                     'entry_sticky' => false,
                 ]); ?>
             </ol>
-
-            <?php component('community-badges', $data); ?>
 
         <?php endif; ?>
 
