@@ -30,6 +30,15 @@ return [
         'theme_color' => '#302D2F',
     ],
 
+    /* -------------------------------------------------- opening screen */
+    /* What everyone who is not signed in sees (pages/welcome.php). The title
+       is the app name above; the rest is here and only here. */
+    'welcome' => [
+        'subtitle' => 'Je slaap, voeding en sport in één helder overzicht.',
+        'login'    => 'Inloggen',
+        'register' => 'Registreren',
+    ],
+
     /**
      * Onboarding focus. Drives which block gets visual priority.
      * general | sleep | nutrition | mobility | mental

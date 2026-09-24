@@ -1,0 +1,10 @@
+# Components are pieces of pages, rendered by index.php with the session and
+# data they show. Requested on their own they would run with neither. Anybody
+# who asks for one directly is sent to the front door instead: the opening
+# screen when not signed in, the app when signed in.
+<IfModule mod_alias.c>
+    RedirectMatch 302 ^(.*/)components/ $1
+</IfModule>
+<IfModule !mod_alias.c>
+    Require all denied
+</IfModule>

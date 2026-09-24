@@ -31,10 +31,26 @@ $data = require __DIR__ . '/config/dashboard.php';
    first now: who is asking decides what every page below is filled with. */
 $data['auth'] = app_auth();
 
+/* The page is only right for the session it was rendered for, so no cache —
+   the browser's or its back/forward cache — may hand it out again later: not
+   the app to somebody who has since logged out, and not the opening screen to
+   somebody who has since logged in. */
+header('Cache-Control: no-store, private');
+
+/* Who is asking also decides which screen this is, and only that decides it:
+   the session, checked against the database by app_auth() — never anything
+   the browser says or remembers. Not signed in (a first visit, an account
+   that logged out, a session that expired, one whose account is gone) is the
+   opening screen, and nothing of the app is built or sent. Signed in is the
+   app, which opens on Overzicht. */
+if (!$data['auth']['signed_in']) {
+    page('welcome', $data);
+    exit;
+}
+
 /* The id comes from the SESSION, never from the request. Everything private
    below is read with it, so no query can be pointed at another account by
-   changing something a browser can reach. Signed out it is null, and each
-   page renders the empty state it already had. */
+   changing something a browser can reach. */
 $userId = current_user_id();
 
 /* The config files describe the shape of each page — which areas exist, what
@@ -93,40 +109,10 @@ foreach ($data['navigation'] as $position => $item) {
 <!DOCTYPE html>
 <html lang="<?= e($app['locale']) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="<?= e($app['theme_color']) ?>">
-    <meta name="color-scheme" content="dark">
-    <meta name="description" content="<?= e($app['name']) ?> — dagelijks overzicht van slaap, voeding en sport.">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <title><?= e($app['name']) ?> — <?= e($app['tagline']) ?></title>
-
-    <?php
-    /* Which commit this server is running. The deploy writes VERSION; locally
-       there is no such file and nothing is emitted. It is only ever a commit
-       hash — no path, no version number anything could be probed with — and it
-       turns "is my change live?" from a guess into view-source. */
-    $deployed = @file_get_contents(__DIR__ . '/VERSION');
-    if (is_string($deployed) && preg_match('/^[0-9a-f]{7,40}$/', trim($deployed))):
-        ?>
-        <meta name="app-version" content="<?= e(substr(trim($deployed), 0, 7)) ?>">
-    <?php endif; ?>
-
-    <script>document.documentElement.classList.add('js');</script>
-
-    <link rel="stylesheet" href="<?= e(asset('assets/css/theme.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/components.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/dashboard.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/ai.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/health.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/community.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/goals.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/settings.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/account.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('assets/css/devices.css')) ?>">
+    <?php component('document-head', $data + ['styles' => [
+        'theme', 'components', 'dashboard', 'ai', 'health', 'community',
+        'goals', 'settings', 'account', 'devices',
+    ]]); ?>
 </head>
 <body class="app">
 

@@ -2,9 +2,13 @@
  * account.js — the sign-in / account panel.
  *
  * Every request goes to an endpoint under api/, carries the CSRF token, and
- * never sends a user id: the server takes that from the session. Signing in or
- * out reloads the page so the whole app picks up the new state; changing a
- * username or picture updates in place.
+ * never sends a user id: the server takes that from the session. Signing in,
+ * registering or signing out reloads the page, and the server renders what the
+ * session now calls for: the app, on Overzicht, or the opening screen.
+ * Changing a username or picture updates in place.
+ *
+ * On the opening screen the panel is one flow at a time — Inloggen or
+ * Registreren, whichever button opened it.
  *
  * Google is a round trip through Google's own pages, so it is started here
  * and finished by a redirect back (api/auth/google-callback.php). The page
@@ -26,6 +30,10 @@
     /* --------------------------------------------------------- open/close */
 
     function open(trigger) {
+        // The opening screen's two buttons say which flow the panel is on.
+        var flow = trigger && trigger.getAttribute ? trigger.getAttribute('data-account-open') : '';
+        if (flow === 'login' || flow === 'register') { setMode(flow); }
+
         lastFocus = trigger || document.activeElement;
         panel.hidden = false;
         // One frame before the class, so the transition has a start state.
@@ -47,7 +55,8 @@
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
     }
 
-    /* The account button, in the header the five pages share. */
+    /* The account button in the app's header, and the opening screen's
+       Inloggen and Registreren. */
     document.addEventListener('click', function (event) {
         var trigger = event.target.closest('[data-account-open]');
         if (!trigger) { return; }
@@ -103,36 +112,37 @@
             });
     }
 
-    /* -------------------------------------------------- signed-out: mode */
+    /* -------------------------------------------------- signed-out: flow */
 
-    Array.prototype.forEach.call(panel.querySelectorAll('[data-account-mode]'), function (option) {
-        option.addEventListener('click', function () {
-            mode = option.getAttribute('data-account-mode');
+    /**
+     * Signed out, the panel is on one flow at a time — logging in or
+     * registering, never both, with no way across from inside it. The form,
+     * the fields and the endpoints are the same ones either way: registering
+     * adds the e-mail address and asks for a new password rather than the
+     * current one.
+     */
+    function setMode(next) {
+        mode = next === 'register' ? 'register' : 'login';
 
-            Array.prototype.forEach.call(panel.querySelectorAll('[data-account-mode]'), function (other) {
-                var isActive = other === option;
-                other.classList.toggle('is-active', isActive);
-                other.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-
-            Array.prototype.forEach.call(panel.querySelectorAll('[data-account-only]'), function (field) {
-                var wanted = field.getAttribute('data-account-only');
-                field.hidden = wanted !== mode;
-                var input = field.querySelector('input');
-                if (input) { input.required = !field.hidden; }
-            });
-
-            var submit = panel.querySelector('[data-account-submit]');
-            if (submit) { submit.textContent = mode === 'register' ? 'Account aanmaken' : 'Inloggen'; }
-
-            var password = panel.querySelector('#account-password');
-            if (password) {
-                password.setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
-            }
-
-            showError(null);
+        Array.prototype.forEach.call(panel.querySelectorAll('[data-account-only]'), function (field) {
+            field.hidden = field.getAttribute('data-account-only') !== mode;
+            var input = field.querySelector('input');
+            if (input) { input.required = !field.hidden; }
         });
-    });
+
+        var title = panel.querySelector('[data-account-title]');
+        if (title) { title.textContent = title.getAttribute('data-title-' + mode); }
+
+        var submit = panel.querySelector('[data-account-submit]');
+        if (submit) { submit.textContent = mode === 'register' ? 'Account aanmaken' : 'Inloggen'; }
+
+        var password = panel.querySelector('#account-password');
+        if (password) {
+            password.setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
+        }
+
+        showError(null);
+    }
 
     /* ------------------------------------------------------------ providers */
 
@@ -272,6 +282,57 @@
             linkResult.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }, (nav.duration || 280) + 120);
     }
+
+    /* ---------------------------------------------------- the right screen */
+
+    /**
+     * Which screen this page is — the app or the opening screen — was decided
+     * by the server from the session the page was rendered for. A page
+     * brought back from the back/forward cache, or looked at again after its
+     * session ran out or was ended in another tab, may no longer match; it
+     * asks, and if the answer has changed it is rendered anew, which puts the
+     * right screen up. Only the session decides, never this page's memory.
+     */
+    var renderedFor = panel.getAttribute('data-account-session');
+    var askedAt = 0;
+
+    function recheck(force) {
+        var now = Date.now();
+        if (!force && now - askedAt < 10000) { return; }
+        askedAt = now;
+
+        fetch('api/auth/session.php', { credentials: 'same-origin', cache: 'no-store' })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (state) {
+                if (!state || !state.ok) { return; }
+                if ((state.signed_in ? 'signed-in' : 'signed-out') !== renderedFor) {
+                    window.location.reload();
+                }
+            })
+            .catch(function () { /* offline: nothing to decide on */ });
+    }
+
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted) { recheck(true); }
+    });
+
+    /* An API call from the app that finds no session — not signed in (401),
+       or a token from a session that is gone (419) — means the app is on
+       screen for nobody: ask, and let the answer put the right screen up.
+       The response itself is passed on untouched. */
+    if (renderedFor === 'signed-in' && typeof window.fetch === 'function') {
+        var nativeFetch = window.fetch;
+        window.fetch = function () {
+            return nativeFetch.apply(this, arguments).then(function (response) {
+                if (response.status === 401 || response.status === 419) { recheck(true); }
+                return response;
+            });
+        };
+    }
+
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') { recheck(false); }
+    });
 
     /** Swaps the picture in the panel and in the header button. */
     function applyAvatar(path) {

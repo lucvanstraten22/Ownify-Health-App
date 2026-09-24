@@ -37,7 +37,8 @@ php tools/check-config.php
 ## Structure
 
 ```
-index.php                     app shell: the rail, the dock, details and the sheet
+index.php                     front door: the opening screen when signed out, else the
+                              app shell — the rail, the dock, details and the sheet
 database/
     schema.sql                the MySQL schema — repeatable, import and go
     seed-dev.sql              fake development data, never production
@@ -48,6 +49,7 @@ tools/
     health-connect-test.sh    the whole phone-sync flow over curl, no phone needed
     hc-verify.php             that test's batch, and what each record must become
 pages/
+    welcome.php               the opening screen, for everyone not signed in
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
@@ -68,6 +70,7 @@ lib/community.php             board assembly, formatting, the demo roster
 lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
 components/
+    document-head.php         the <head> the app and the opening screen share
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account — one, shared by the five pages
     health-score.php          primary score ring + composition legend
@@ -111,6 +114,7 @@ assets/css/
     settings.css              Instellingen and its ten screens (tokens only)
     account.css               the account panel
     devices.css               the devices quick look (tokens only)
+    welcome.css               the opening screen (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
@@ -126,6 +130,38 @@ assets/js/
     account.js                the account panel
     devices.js                the devices quick look, and its way to the devices screen
 ```
+
+## The opening screen
+
+Whether somebody is signed in decides which screen they get, and only the
+session decides it: `index.php` asks `app_auth()` — the session, checked
+against the database — before anything else.
+
+- **Not signed in** (a first visit, an account that logged out, a session that
+  expired, one whose account was deleted): the opening screen,
+  `pages/welcome.php`. Nothing of the app is built or sent. Any address that
+  reaches `index.php` gets it, and a page or component template requested on
+  its own is sent back to the front door (`pages/.htaccess`,
+  `components/.htaccess`).
+- **Signed in**: the app, on Overzicht.
+
+The opening screen shows the app's name, one line under it
+(`config/dashboard.php` → `welcome.subtitle`, the only place it is written),
+and two buttons where the tab bar will be. **Inloggen** and **Registreren**
+open the same account panel as the app's account button, with the same forms
+and endpoints, each on its own flow only: logging in shows username and
+password, registering adds the e-mail address, and neither offers the other.
+Google and Apple stay under both. Signing in, registering, or finishing a
+Google sign-in reloads the page, which the server now renders as the app.
+Signing out — from the account panel or from Instellingen — reloads onto the
+opening screen.
+
+The page is sent `Cache-Control: no-store`, so no cache hands out a screen
+meant for a session that has since changed. A page that may be showing the
+wrong one anyway — restored from the back/forward cache, looked at again after
+its session ran out or was ended in another tab, or an app whose request is
+refused for want of a session (401/419) — asks `api/auth/session.php`, which
+answers only yes or no, and re-renders if the answer changed.
 
 ## Navigation
 

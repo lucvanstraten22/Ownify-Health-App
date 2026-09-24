@@ -1,9 +1,15 @@
 <?php
 /**
- * The account panel behind the header's account button.
+ * The account panel: behind the header's account button in the app, and
+ * behind the opening screen's two buttons for everyone not signed in.
  *
- * Two states, one dialog: signed out shows the sign-in form, signed in shows
- * the account and what can be changed. Deliberately not a profile page.
+ * Signed in, it shows the account and what can be changed. Deliberately not
+ * a profile page.
+ *
+ * Signed out, it is one of two flows and never both: Inloggen or
+ * Registreren, whichever button opened it (account.js). The same form serves
+ * both — the one field only registering needs is hidden while logging in —
+ * and says which it is in its title.
  *
  * Signing in takes a username and a password. Apple and Google are two small
  * marks under the form rather than two full-width buttons above it — they are
@@ -26,8 +32,13 @@ $pending   = $signedIn ? null : ($auth['google_pending'] ?? null);
 $flash     = $auth['flash'] ?? null;
 $flash     = ($flash !== null && $flash['target'] === 'account') ? $flash : null;
 $autoOpen  = $flash !== null || $pending !== null;
+
+/* The two flows, and what the panel is called in each. */
+$flows     = !$signedIn && $pending === null;
+$titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome']['register']];
 ?>
 <div class="account" data-overlay data-account data-csrf="<?= e($auth['csrf']) ?>"
+     data-account-session="<?= $signedIn ? 'signed-in' : 'signed-out' ?>"
      <?= $autoOpen ? 'data-account-autoopen' : '' ?> hidden>
 
     <div class="account__scrim" data-account-close></div>
@@ -35,10 +46,12 @@ $autoOpen  = $flash !== null || $pending !== null;
     <div class="account__panel card" role="dialog" aria-modal="true" aria-labelledby="account-title">
 
         <div class="account__head">
-            <?php /* Neutral in both states: the switch below carries Inloggen
-                     vs Account aanmaken, so a second heading would only
-                     contradict it. */ ?>
-            <h2 class="card__eyebrow" id="account-title">Account</h2>
+            <?php /* Signed in, or choosing a Google username, this is the
+                     account. Otherwise it names the one flow it is on. */ ?>
+            <h2 class="card__eyebrow" id="account-title"
+                <?php if ($flows): ?>data-account-title data-title-login="<?= e($titles['login']) ?>" data-title-register="<?= e($titles['register']) ?>"<?php endif; ?>>
+                <?= e($flows ? $titles['login'] : 'Account') ?>
+            </h2>
             <button type="button" class="account__close press" data-account-close aria-label="Sluiten">
                 <?= icon('chevron-down') ?>
             </button>
@@ -141,12 +154,6 @@ $autoOpen  = $flash !== null || $pending !== null;
             </div>
 
         <?php else: ?>
-
-            <?php /* The switch is the heading: one control, two states. */ ?>
-            <div class="range-switch range-switch--wide" role="group" aria-label="Kies inloggen of registreren">
-                <button type="button" class="range-switch__option is-active" data-account-mode="login" aria-pressed="true">Inloggen</button>
-                <button type="button" class="range-switch__option" data-account-mode="register" aria-pressed="false">Account aanmaken</button>
-            </div>
 
             <form class="account__form" data-account-form="email" novalidate>
 
