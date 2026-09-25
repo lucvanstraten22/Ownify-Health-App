@@ -295,6 +295,25 @@
 .pill--devices > *,
 .pill--account > * { position: relative; }
 
+/* A friend request waiting for an answer: a small dot on the account button,
+   in the app's own green, set off from the glass by a ring of the page
+   colour. Sits on the rim, where a notification is looked for. */
+.pill--account > .pill__dot {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    z-index: 1;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--bg-deep);
+    border-radius: 50%;
+    background: var(--health);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--health) 55%, transparent);
+    pointer-events: none;
+}
+
+.pill--account > .pill__dot[hidden] { display: none; }
+
 .pill--close { padding-inline: var(--space-2) var(--space-3); }
 
 .pill__icon { width: 18px; height: 18px; }

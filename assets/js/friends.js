@@ -415,6 +415,18 @@
                 var nextSummary = fresh.querySelector('[data-friends-summary]');
                 if (summary && nextSummary) { summary.innerHTML = nextSummary.innerHTML; }
 
+                /* The dot on the account button, and what it says aloud. */
+                var dot = document.querySelector('[data-friends-dot]');
+                var nextDot = fresh.querySelector('[data-friends-dot]');
+                if (dot && nextDot) {
+                    dot.hidden = nextDot.hidden;
+                    var button = dot.closest('[data-account-open]');
+                    var nextButton = nextDot.closest('[data-account-open]');
+                    if (button && nextButton) {
+                        button.setAttribute('aria-label', nextButton.getAttribute('aria-label'));
+                    }
+                }
+
                 /* The boards keep their own elements — community.js holds on
                    to them to switch scope and period — so only their rows
                    change. */

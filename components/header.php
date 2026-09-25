@@ -29,8 +29,15 @@ $account = $data['header']['account'];
             <span class="app-header__name"><?= e($app['name']) ?></span>
         </p>
 
+        <?php
+        /* Friend requests waiting for an answer put a dot on the account
+           button, so they are seen from every page — not only once the
+           account panel is opened. friends.js keeps it in step. */
+        $requests = count($data['community']['pending'] ?? []);
+        $requestsLabel = $requests === 1 ? '1 nieuw vriendverzoek' : $requests . ' nieuwe vriendverzoeken';
+        ?>
         <button type="button" class="pill pill--account press" data-account-open
-                aria-label="<?= e($account['aria']) ?>">
+                aria-label="<?= e($account['aria'] . ($requests > 0 ? ', ' . $requestsLabel : '')) ?>">
             <?php $avatar = $data['auth']['user']['avatar_path'] ?? null; ?>
             <span class="pill__avatar" data-account-avatar>
                 <?php if ($avatar !== null && $avatar !== ''): ?>
@@ -39,6 +46,7 @@ $account = $data['header']['account'];
                     <?= icon('user', 'pill__icon') ?>
                 <?php endif; ?>
             </span>
+            <span class="pill__dot" data-friends-dot aria-hidden="true" <?= $requests > 0 ? '' : 'hidden' ?>></span>
         </button>
 
     </div>

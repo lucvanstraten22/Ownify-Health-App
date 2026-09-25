@@ -426,7 +426,8 @@ while you type) and shows that account's picture, name and where the two of you
 stand, with a request button when one can be sent; *Vriendverzoeken* lists
 requests waiting for you (Accepteren, Weigeren) and the ones you sent;
 *Vriendverzoeken toestaan* switches new requests off; *Vrienden (n)* lists your
-friends, each with Verwijderen, which asks first. The Friends board is you and
+friends, each with Verwijderen, which asks first. While a request is waiting,
+a small green dot sits on the account button, on every page. The Friends board is you and
 your friends — accepting a request puts the friend on it, with the points they
 have in that period, and removing one takes them off, both without a reload.
 Everything is stored in MySQL (`friendships`, and
