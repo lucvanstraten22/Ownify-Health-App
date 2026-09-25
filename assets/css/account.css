@@ -270,6 +270,236 @@
     object-fit: cover;
 }
 
+/* ==========================================================================
+   Vrienden — the panel's second page, behind the Vrienden button.
+   The same fields, labels, pills and switch as the rest of the app; the only
+   new shapes are a row per person and the button that leads here.
+   ========================================================================== */
+
+/* Signed in, the panel has two pages and shows one. */
+.account__view[hidden] { display: none; }
+
+/* Back sits where the title starts, and the title follows it. */
+.account__back[hidden] { display: none; }
+.account__back + .card__eyebrow { margin-right: auto; }
+
+/* The way in: a field-shaped button that says where things stand. */
+.account__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-label);
+    text-align: left;
+    transition: background-color var(--transition-fast);
+}
+
+.account__nav:active { background: rgba(255, 255, 255, 0.08); }
+
+.account__nav-text {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.account__nav-icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: var(--text-muted);
+}
+
+.account__badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    margin-left: auto;
+    padding: 0 var(--space-2);
+    border: 1px solid color-mix(in srgb, var(--health) 42%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--health) 22%, transparent);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- sections */
+.friends__section + .friends__section,
+.friends__section + .account__toggle,
+.account__toggle + .friends__section { margin-top: var(--space-5); }
+
+.friends__add {
+    width: 100%;
+    gap: var(--space-2);
+}
+
+.friends__add-icon { width: 16px; height: 16px; }
+
+.friends__search { margin-top: var(--space-4); }
+
+.friends__error { margin: var(--space-3) 0 0; }
+
+.friends__sublabel { margin-top: var(--space-4); }
+
+.friends__empty { margin-top: 0; }
+
+.friends__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.friends__list[hidden] { display: none; }
+
+/* The one account a search found, set apart from the lists below it. */
+.friends__result {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ---------------------------------------------------------------- person */
+.friend {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-3);
+    row-gap: var(--space-2);
+}
+
+.friend__avatar {
+    width: 40px;
+    height: 40px;
+}
+
+.friend__avatar .icon { width: 18px; height: 18px; }
+
+.friend__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.friend__name {
+    overflow: hidden;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.friend__status {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.friend__status[hidden] { display: none; }
+
+/* A refusal reads in the panel's own message colour, not as a status. */
+.friend__status.is-error,
+.account__toggle-note.is-error { color: var(--nutrition); }
+
+.friend__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.friend__actions[hidden] { display: none; }
+
+/* Two answers side by side, under the name rather than squeezed beside it. */
+.friend__actions--wide {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.friend__actions--single { grid-template-columns: minmax(0, 1fr); }
+
+/* "Verzoek verstuurd" once it is: a state, not a button. */
+.friend__done {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 42px;
+    padding-inline: var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--health) 42%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--health) 18%, transparent);
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.friend__done .icon { width: 15px; height: 15px; }
+
+/* Verwijderen asks first, in place. */
+.friend__confirm {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.friend__confirm[hidden] { display: none; }
+
+.friend__confirm .friend__actions--wide { grid-column: auto; }
+
+.friend__confirm-text {
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------- switch
+   The switch itself is the one from Instellingen (.switch in settings.css). */
+.account__toggle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 56px;
+    padding: var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.account__toggle:disabled { opacity: 0.7; }
+
+.account__toggle-text { min-width: 0; }
+
+.account__toggle-label {
+    display: block;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.account__toggle-note {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .account__panel { transform: none; }
 }

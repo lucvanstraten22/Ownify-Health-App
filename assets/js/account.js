@@ -39,7 +39,12 @@
         // One frame before the class, so the transition has a start state.
         window.requestAnimationFrame(function () { panel.classList.add('is-open'); });
 
-        var first = panel.querySelector('input, button:not([data-account-close])');
+        // The first control that is on screen: signed in, the Vrienden page
+        // and its back button are hidden until they are asked for.
+        var first = Array.prototype.filter.call(
+            panel.querySelectorAll('input, button:not([data-account-close])'),
+            function (control) { return control.getClientRects().length > 0; }
+        )[0];
         if (first) { first.focus({ preventScroll: true }); }
     }
 

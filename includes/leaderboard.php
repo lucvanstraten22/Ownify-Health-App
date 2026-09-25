@@ -128,24 +128,52 @@ if (!function_exists('leaderboard_period_key')) {
      */
     function leaderboard_friends(int $userId, string $periodType, ?string $periodKey = null, int $limit = LEADERBOARD_LIMIT): array
     {
-        $periodKey ??= leaderboard_period_key($periodType);
         $limit = max(1, min($limit, LEADERBOARD_LIMIT));
 
-        $ids = friend_ids($userId);
-        $ids[] = $userId;
+        return array_slice(leaderboard_friends_group($userId, $periodType, $periodKey), 0, $limit);
+    }
+
+    /**
+     * The whole group — the user and every friend — ranked on the period's
+     * points, the same order the board has always used.
+     *
+     * Once somebody has friends, everyone in the group is on it: a friend
+     * who has not earned points in the period yet is there with 0, so a
+     * request accepted a moment ago puts them on the board at once, and the
+     * user is always on their own board. Without friends it is the user
+     * alone, once they have points — as it always was. The group is at most
+     * FRIEND_LIMIT + 1 people, so it is read whole and cut to the board's
+     * size by leaderboard_friends().
+     */
+    function leaderboard_friends_group(int $userId, string $periodType, ?string $periodKey = null): array
+    {
+        $periodKey ??= leaderboard_period_key($periodType);
+
+        $friends = friend_ids($userId);
+        $ids = [...$friends, $userId];
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-        $rows = db_all(
-            'SELECT pp.points, u.id AS user_id, u.username, p.avatar_path
-               FROM user_period_points pp
-               JOIN users u ON u.id = pp.user_id AND u.status = ?
-          LEFT JOIN user_profiles p ON p.user_id = u.id
-              WHERE pp.period_type = ? AND pp.period_key = ?
-                AND pp.user_id IN (' . $placeholders . ')
-           ORDER BY pp.points DESC, u.username
-              LIMIT ' . (int) $limit,
-            ['active', $periodType, $periodKey, ...$ids]
-        );
+        $rows = $friends === []
+            ? db_all(
+                'SELECT pp.points, u.id AS user_id, u.username, p.avatar_path
+                   FROM user_period_points pp
+                   JOIN users u ON u.id = pp.user_id AND u.status = ?
+              LEFT JOIN user_profiles p ON p.user_id = u.id
+                  WHERE pp.period_type = ? AND pp.period_key = ?
+                    AND pp.user_id IN (' . $placeholders . ')
+               ORDER BY pp.points DESC, u.username',
+                ['active', $periodType, $periodKey, ...$ids]
+            )
+            : db_all(
+                'SELECT COALESCE(pp.points, 0) AS points, u.id AS user_id, u.username, p.avatar_path
+                   FROM users u
+              LEFT JOIN user_period_points pp
+                     ON pp.user_id = u.id AND pp.period_type = ? AND pp.period_key = ?
+              LEFT JOIN user_profiles p ON p.user_id = u.id
+                  WHERE u.status = ? AND u.id IN (' . $placeholders . ')
+               ORDER BY points DESC, u.username',
+                [$periodType, $periodKey, 'active', ...$ids]
+            );
 
         $position = 0;
         foreach ($rows as $index => $row) {

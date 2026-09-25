@@ -4,7 +4,9 @@
  * behind the opening screen's two buttons for everyone not signed in.
  *
  * Signed in, it shows the account and what can be changed. Deliberately not
- * a profile page.
+ * a profile page. Behind its Vrienden button is a second page, in the same
+ * panel: friends, friend requests and who may send them
+ * (components/account-friends.php, run by friends.js).
  *
  * Signed out, it is one of two flows and never both: Inloggen or
  * Registreren, whichever button opened it (account.js). The same form serves
@@ -46,6 +48,14 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
     <div class="account__panel card" role="dialog" aria-modal="true" aria-labelledby="account-title">
 
         <div class="account__head">
+            <?php if ($signedIn): ?>
+                <?php /* Back from the Vrienden page to the account. Only there. */ ?>
+                <button type="button" class="account__close account__back press" data-friends-back
+                        aria-label="Terug naar account" hidden>
+                    <?= icon('chevron-left') ?>
+                </button>
+            <?php endif; ?>
+
             <?php /* Signed in, or choosing a Google username, this is the
                      account. Otherwise it names the one flow it is on. */ ?>
             <h2 class="card__eyebrow" id="account-title"
@@ -79,6 +89,13 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
         <?php endif; ?>
 
         <?php if ($signedIn): ?>
+
+            <?php
+            /* The Vrienden button says where things stand without opening it. */
+            $friendCount  = count($data['community']['friends'] ?? []);
+            $requestCount = count($data['community']['pending'] ?? []);
+            ?>
+            <div class="account__view" data-account-view="main">
 
             <div class="account__identity">
                 <span class="account__avatar" data-account-avatar>
@@ -114,9 +131,27 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <p class="account__hint">JPG, PNG of WebP, maximaal 3 MB.</p>
             </form>
 
+            <div class="account__form">
+                <p class="account__label" id="account-friends-label">Vrienden</p>
+                <button type="button" class="account__nav press" data-friends-open
+                        aria-labelledby="account-friends-label account-friends-summary">
+                    <span class="account__nav-text" id="account-friends-summary" data-friends-summary>
+                        <span><?= e($friendCount === 0 ? 'Nog geen vrienden' : $friendCount . ($friendCount === 1 ? ' vriend' : ' vrienden')) ?></span>
+                        <?php if ($requestCount > 0): ?>
+                            <span class="account__badge"><?= e($requestCount . ($requestCount === 1 ? ' verzoek' : ' verzoeken')) ?></span>
+                        <?php endif; ?>
+                    </span>
+                    <?= icon('chevron-right', 'account__nav-icon') ?>
+                </button>
+            </div>
+
             <form class="account__form" data-account-form="logout">
                 <button type="submit" class="btn btn--ghost press account__logout">Uitloggen</button>
             </form>
+
+            </div>
+
+            <?php component('account-friends', $data); ?>
 
         <?php elseif ($pending !== null): ?>
 

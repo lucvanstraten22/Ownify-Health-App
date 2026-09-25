@@ -109,6 +109,8 @@ CREATE TABLE `user_profiles` (
                     NULL COMMENT 'Self-declared; drives targets, not a measurement',
     `avatar_path`   VARCHAR(255) NULL COMMENT 'Relative path under uploads/, never a client filename',
     `locale`        VARCHAR(10)  NOT NULL DEFAULT 'nl',
+    `allow_friend_requests` TINYINT(1) NOT NULL DEFAULT 1
+                    COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`),
@@ -563,6 +565,11 @@ CREATE TABLE `goal_progress` (
 -- Friendship is symmetric — there is no follow. One row per pair, with the
 -- pair stored in a fixed order so the unique key makes a duplicate or a
 -- mirrored request impossible; requested_by records who asked.
+--
+-- A friend request is a `pending` row: created_at is when it was sent.
+-- Accepting makes it `accepted`, declining closes it as `declined` (both set
+-- responded_at), and removing a friend deletes the row. Whether somebody can
+-- be sent a request at all is user_profiles.allow_friend_requests.
 CREATE TABLE `friendships` (
     `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_low_id`  BIGINT UNSIGNED NOT NULL COMMENT 'Always the smaller of the two ids',

@@ -35,17 +35,23 @@ if (!function_exists('hydrate_community')) {
             }
         }
 
+        /* What the account panel's Vrienden page shows: friends, requests
+           both ways, and the account's own "Vriendverzoeken toestaan". */
         if ($userId !== null && db_available()) {
-            $community['friends'] = friend_list($userId);
-            $community['pending'] = friend_pending_for($userId);
-            $community['best']    = [
+            $community['friends']        = friend_list($userId);
+            $community['pending']        = friend_pending_for($userId);
+            $community['sent']           = friend_sent_by($userId);
+            $community['allow_requests'] = friend_requests_allowed($userId);
+            $community['best']           = [
                 'national' => leaderboard_best_position($userId, 'national', 'alltime'),
                 'friends'  => leaderboard_best_position($userId, 'friends', 'alltime'),
             ];
         } else {
-            $community['friends'] = [];
-            $community['pending'] = [];
-            $community['best']    = ['national' => null, 'friends' => null];
+            $community['friends']        = [];
+            $community['pending']        = [];
+            $community['sent']           = [];
+            $community['allow_requests'] = true;
+            $community['best']           = ['national' => null, 'friends' => null];
         }
 
         return $community;
@@ -54,8 +60,11 @@ if (!function_exists('hydrate_community')) {
     /** One scope/period board, in the shape the leaderboard component renders. */
     function hydrate_community_board(int $userId, string $scope, string $period, int $limit): array
     {
-        $rows = $scope === 'friends'
-            ? leaderboard_friends($userId, $period, null, $limit)
+        /* Friends: the whole group, so the user's own place is known even
+           when fifty friends are ahead of them. */
+        $group = $scope === 'friends' ? leaderboard_friends_group($userId, $period) : null;
+        $rows  = $group !== null
+            ? array_slice($group, 0, max(1, min($limit, LEADERBOARD_LIMIT)))
             : leaderboard_national($period, null, $limit);
 
         $entries = [];
@@ -76,6 +85,14 @@ if (!function_exists('hydrate_community')) {
 
             if ($isYou) {
                 $you = ['rank' => $entry['rank'], 'points' => $entry['points']];
+            }
+        }
+
+        if ($you['rank'] === null && $group !== null) {
+            foreach ($group as $row) {
+                if ((int) $row['user_id'] === $userId) {
+                    $you = ['rank' => (int) $row['position'], 'points' => (int) $row['points']];
+                }
             }
         }
 

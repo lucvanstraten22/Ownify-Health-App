@@ -144,6 +144,20 @@ if (db_available()) {
             line('warn', 'leaderboard points', 'point_events.award_key is missing, so no points are awarded — '
                 . 'import database/migrations/010-health-score-and-points.sql');
         }
+
+        /* Not fatal: without it friends work and everybody accepts requests,
+           but "Vriendverzoeken toestaan" cannot be switched off. */
+        $friendSetting = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_profiles' AND column_name = 'allow_friend_requests'"
+        );
+
+        if ($friendSetting > 0) {
+            line('ok', 'friend requests', 'user_profiles.allow_friend_requests is there');
+        } else {
+            line('warn', 'friend requests', 'user_profiles.allow_friend_requests is missing, so "Vriendverzoeken toestaan" '
+                . 'cannot be switched off — import database/migrations/011-friend-requests-setting.sql');
+        }
     } else {
         line('fail', 'schema', 'the database is empty — import database/schema.sql');
         $problems++;

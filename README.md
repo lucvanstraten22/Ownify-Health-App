@@ -420,6 +420,21 @@ rectangle by the scroll container's own padding, so `.board__scroll`'s
 bottom padding already clears the tab bar and the row's `bottom` only needs to
 be the small gap on top of it.
 
+**Friends.** Friends are managed from the account button, under **Vrienden**:
+*Vriend toevoegen* looks up exactly one username when you press Zoeken (never
+while you type) and shows that account's picture, name and where the two of you
+stand, with a request button when one can be sent; *Vriendverzoeken* lists
+requests waiting for you (Accepteren, Weigeren) and the ones you sent;
+*Vriendverzoeken toestaan* switches new requests off; *Vrienden (n)* lists your
+friends, each with Verwijderen, which asks first. The Friends board is you and
+your friends — accepting a request puts the friend on it, with the points they
+have in that period, and removing one takes them off, both without a reload.
+Everything is stored in MySQL (`friendships`, and
+`user_profiles.allow_friend_requests` from
+`database/migrations/011-friend-requests-setting.sql`) and changed only
+through `api/friends/`, which takes who is asking from the session; a lookup
+returns a username and a picture and nothing else.
+
 **Points are for what you did.** A night's sleep, a rated day, a workout, a
 step count, three workouts in a week — each earns points once, by the rules in
 `config/points.php`, and a phone that sends the same workout three times has

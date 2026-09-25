@@ -1,10 +1,13 @@
 <?php
 /**
- * Finds accounts by handle.
+ * Finds the account with exactly this username — the "Vriend toevoegen"
+ * lookup. Only when asked: the panel sends it when the person presses
+ * Zoeken, never while they type.
  *
- * Returns public fields only — a username and a picture. There is no query
- * here that could reach a health record, which is the point of
- * user_search_by_username() being the only thing this calls.
+ * Returns public fields only — the username, the picture and where the two
+ * of you stand. There is no query behind this that could reach a health
+ * record, and no partial match: a username you do not know is not something
+ * this will show you.
  */
 declare(strict_types=1);
 
@@ -16,26 +19,11 @@ api_require_csrf();
 api_require_database();
 
 $userId = api_require_user();
-$query  = trim((string) ($_POST['q'] ?? ''));
+$result = friend_find($userId, (string) ($_POST['username'] ?? $_POST['q'] ?? ''));
 
-if (mb_strlen($query) < 2) {
-    api_ok(['results' => []]);
+if (!$result['ok']) {
+    api_json(['ok' => false, 'code' => $result['code'], 'error' => $result['error']],
+        $result['code'] === 'empty' ? 422 : 404);
 }
 
-$blocked = user_blocked_ids($userId);
-$results = [];
-
-foreach (user_search_by_username($query, 20) as $person) {
-    if ($person['id'] === $userId || in_array($person['id'], $blocked, true)) {
-        continue;
-    }
-
-    $results[] = [
-        'id'       => $person['id'],
-        'username' => $person['username'],
-        'avatar'   => $person['avatar'],
-        'status'   => friend_status($userId, $person['id']),
-    ];
-}
-
-api_ok(['results' => $results]);
+api_ok(['person' => $result['person']]);

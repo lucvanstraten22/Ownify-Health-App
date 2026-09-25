@@ -257,7 +257,7 @@ edit the two values.
 
 | Table | Holds |
 | --- | --- |
-| `friendships` | one row per pair, symmetric, with a status |
+| `friendships` | one row per pair: a friend request (`pending`), a friendship (`accepted`) or a turned-down request (`declined`), with who asked and when |
 | `user_blocks` | one-directional blocks |
 | `point_rules` | the nine things that earn points; their values are in `config/points.php` |
 | `point_events` | the ledger: one row per award, at most one per `award_key` |
@@ -282,14 +282,35 @@ heart rate off a night, without either needing its own column.
 
 **Friendship is one row, not two.** The pair is stored in a fixed id order
 (`user_low_id < user_high_id`), so the unique key makes a mirrored duplicate
-impossible; `requested_by` records who asked. There is no follow.
+impossible; `requested_by` records who asked. There is no follow. The row is
+the request and then the friendship:
+
+| State | Means |
+| --- | --- |
+| `pending` | a friend request; `requested_by` sent it, `created_at` is when |
+| `accepted` | friends, both ways, since `responded_at` |
+| `declined` | the request was turned down: closed, nobody is a friend; either can ask again |
+| no row | nothing between them — a friend removed, a request withdrawn |
+
+So the same request can never be sent twice: a second request for the pair is
+the same row, and the write that reopens a declined one is a single statement,
+so two requests at the same moment still leave one.
+
+**Who may send you a request** is `user_profiles.allow_friend_requests`
+("Vriendverzoeken toestaan"), on unless the person switches it off. Off, nobody
+can send them a new request; friends they have and requests already waiting
+are not touched. An existing database gets the column from
+`database/migrations/011-friend-requests-setting.sql`; until then everybody
+accepts requests and the switch says it cannot be saved yet.
 
 **Blocking is separate from friendship** because it is one-directional: A can
-block B without B blocking A. A block wins over any friendship row, and
-`friend_ids()` filters both directions out.
+block B without B blocking A. A block wins: it deletes whatever row the pair
+had, neither can find or ask the other, and `friend_ids()` filters both
+directions out.
 
-**There is no limit on friends.** The 50 is a *leaderboard* limit, applied when
-a board is read.
+**At most 50 friends.** An account holds at most `FRIEND_LIMIT` (50) friends,
+the size of the friends leaderboard — checked for both people when a request
+is sent and again when it is accepted.
 
 ## Privacy
 
@@ -543,7 +564,11 @@ all-time.
 - **Friends top 50** — `leaderboard_friends()` is *not* stored: a friends
   ranking depends on who is asking, so it is derived by joining the rollup to
   that user's accepted friendships and ranking within the group. Cheap, and
-  always correct.
+  always correct. Once somebody has friends the board is the whole group —
+  them and every friend, a friend without points in the period at 0 — so a
+  request accepted a moment ago puts the friend on the board at once, and a
+  removed friend is gone from it at once. Without friends it is only you, once
+  you have points.
 - **Your own position** — `leaderboard_position()` reads your row directly,
   whether you are 7th or 1180th.
 - **Best ever** — `leaderboard_best_positions` is a separate concept from the
@@ -590,9 +615,10 @@ private data is returned.
 | `api/goals/delete.php` | deletes the goal and its history |
 | `api/goals/progress.php` | `goal_progress` the way the goal's type needs it, and completes a goal that reaches its target |
 | `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal, awards the points for what arrived and recalculates the Health Score |
-| `api/friends/search.php` | reads only, and only public fields |
-| `api/friends/request.php` | `friendships` |
-| `api/friends/block.php` | `user_blocks` |
+| `api/friends/search.php` | reads only: the one account with exactly that username (case does not matter), its username and picture, and where the two of you stand |
+| `api/friends/request.php` | `friendships`: send a request, accept or decline one sent to you, withdraw your own, or remove a friend (deletes the row) — each checked against the pair's own row |
+| `api/friends/settings.php` | `user_profiles.allow_friend_requests` of the signed-in account |
+| `api/friends/block.php` | `user_blocks`, and deletes the pair's `friendships` row |
 
 "Points" means `point_events`, and the `user_period_points` rollup for the
 periods they land in; "the Health Score" means `daily_scores`. Rendering
