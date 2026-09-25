@@ -3,12 +3,15 @@
  * Records a night's sleep.
  *
  * Re-sending the same start time corrects that night rather than adding a
- * second one, so a watch that syncs twice does not double the week.
+ * second one, so a watch that syncs twice does not double the week — and the
+ * night's points are the night's, whatever it is sent: they are evaluated
+ * again, never added again.
  */
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/includes/scoring.php';
+require_once dirname(__DIR__, 2) . '/includes/health-score.php';
+require_once dirname(__DIR__, 2) . '/includes/points.php';
 
 api_require_post();
 api_require_csrf();
@@ -41,10 +44,15 @@ if ($sleepId === null) {
     api_fail('Vul een geldige begin- en eindtijd in.', 422);
 }
 
-$date = (new DateTimeImmutable($session['ended_at']))->format('Y-m-d');
+/* A night is filed under the morning it ended. Its points first, then the
+   Health Score over the 90 days that now include it — separately. */
+$night  = (new DateTimeImmutable($session['ended_at']))->format('Y-m-d');
+$awards = points_process($userId, ['nights' => [$night]]);
+$scores = health_score_summary(health_score_refresh($userId));
 
 api_ok([
     'sleep_id' => $sleepId,
-    'scores'   => score_domains($userId, $date),
-    'overall'  => score_overall($userId, $date),
+    'scores'   => array_diff_key($scores, ['overall' => true]),
+    'overall'  => $scores['overall'],
+    'points'   => points_feedback($awards),
 ]);

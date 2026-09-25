@@ -62,6 +62,11 @@ $ratio = score_ratio($score['value'], $score['max']);
                 </section>
 
                 <?php
+                /* Voeding only: the daily cijfer its score is built from. */
+                if (!empty($area['rating'])) {
+                    component('nutrition-rating', $data + ['area' => $area]);
+                }
+
                 component('metric-tiles', $data + ['area' => $area, 'tiles' => $area['highlights']]);
 
                 if (!empty($area['timeline'])) {

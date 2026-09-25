@@ -155,7 +155,14 @@ if (!function_exists('health_source_id')) {
             ]
         );
 
-        return db_insert_id();
+        /* Looked up rather than taken from lastInsertId, which is 0 when the
+           night already existed and was updated. */
+        $id = db_value(
+            'SELECT id FROM sleep_sessions WHERE user_id = ? AND started_at = ?',
+            [$userId, $start->format('Y-m-d H:i:s')]
+        );
+
+        return $id === null ? null : (int) $id;
     }
 
     /**
@@ -266,7 +273,13 @@ if (!function_exists('health_source_id')) {
             ]
         );
 
-        return db_insert_id();
+        /* Looked up for the same reason as a night's. */
+        $id = db_value(
+            'SELECT id FROM workouts WHERE user_id = ? AND started_at = ?',
+            [$userId, $start->format('Y-m-d H:i:s')]
+        );
+
+        return $id === null ? null : (int) $id;
     }
 
     /* ---------------------------------------------------------- reading */

@@ -9,7 +9,8 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/includes/scoring.php';
+require_once dirname(__DIR__, 2) . '/includes/health-score.php';
+require_once dirname(__DIR__, 2) . '/includes/points.php';
 
 api_require_post();
 api_require_csrf();
@@ -47,10 +48,15 @@ if ($entryId === null) {
     api_fail('Deze invoer kon niet worden opgeslagen.', 500);
 }
 
-$date = substr((string) $entry['consumed_at'], 0, 10);
+/* A rating is what nutrition points and the Nutrition score read; a meal
+   without one changes neither. */
+$date   = (new DateTimeImmutable((string) $entry['consumed_at']))->format('Y-m-d');
+$awards = $entry['rating'] === null ? [] : points_process($userId, ['nutrition_days' => [$date]]);
+$scores = health_score_summary(health_score_refresh($userId));
 
 api_ok([
     'entry_id' => $entryId,
-    'scores'   => score_domains($userId, $date),
-    'overall'  => score_overall($userId, $date),
+    'scores'   => array_diff_key($scores, ['overall' => true]),
+    'overall'  => $scores['overall'],
+    'points'   => points_feedback($awards),
 ]);

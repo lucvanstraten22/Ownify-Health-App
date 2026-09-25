@@ -96,6 +96,8 @@ return [
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Hoe je nacht is verlopen: duur, ritme en herstel.',
             'empty'   => 'Koppel een bron om je slaapscore te berekenen.',
+            /* Some nights recorded, fewer than the score needs. %s = "3 dagen". */
+            'collecting' => 'Nog %s met slaapgegevens nodig voor je slaapscore.',
 
             'highlights' => [
                 ['key' => 'sleep_duration',   'value' => null],
@@ -152,7 +154,18 @@ return [
             'accent'  => 'nutrition',
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je eet en drinkt, en hoe regelmatig je dat doet.',
-            'empty'   => 'Voeg maaltijden toe of koppel een bron voor je voedingsscore.',
+            'empty'   => 'Geef je voeding een dagcijfer om je voedingsscore te berekenen.',
+            'collecting' => 'Nog %s met een dagcijfer nodig voor je voedingsscore.',
+
+            /* The daily self-assessment the Nutrition score is built from.
+               One cijfer per day; saving again replaces it. */
+            'rating' => [
+                'title'       => 'Hoe at je vandaag?',
+                'label'       => 'Jouw dagcijfer, van 1 tot 10',
+                'placeholder' => '1 tot 10',
+                'button'      => 'Opslaan',
+                'hint'        => 'Eén cijfer per dag. Opnieuw opslaan vervangt het cijfer van vandaag.',
+            ],
 
             'highlights' => [
                 ['key' => 'meals',       'value' => null],
@@ -200,6 +213,7 @@ return [
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je hebt bewogen, hoe zwaar het was en hoe je herstelt.',
             'empty'   => 'Koppel een bron om je trainingsscore te berekenen.',
+            'collecting' => 'Nog %s met een training nodig voor je trainingsscore.',
 
             'highlights' => [
                 ['key' => 'steps',            'value' => null],

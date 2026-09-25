@@ -2,13 +2,15 @@
 /**
  * Records a training session.
  *
- * Nothing is overwritten: the history is the point, and the day's score is
- * read from whatever sessions the day holds.
+ * Nothing is overwritten: the history is the point. The same start time sent
+ * again is the same workout, so its points are evaluated again, never added
+ * again — and a third workout in a week pays the weekly bonus at once.
  */
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/includes/scoring.php';
+require_once dirname(__DIR__, 2) . '/includes/health-score.php';
+require_once dirname(__DIR__, 2) . '/includes/points.php';
 
 api_require_post();
 api_require_csrf();
@@ -48,10 +50,12 @@ if ($workoutId === null) {
     api_fail('Deze training kon niet worden opgeslagen.', 422);
 }
 
-$date = substr((string) $workout['started_at'], 0, 10);
+$awards = points_process($userId, ['workouts' => [$workoutId]]);
+$scores = health_score_summary(health_score_refresh($userId));
 
 api_ok([
     'workout_id' => $workoutId,
-    'scores'     => score_domains($userId, $date),
-    'overall'    => score_overall($userId, $date),
+    'scores'     => array_diff_key($scores, ['overall' => true]),
+    'overall'    => $scores['overall'],
+    'points'     => points_feedback($awards),
 ]);

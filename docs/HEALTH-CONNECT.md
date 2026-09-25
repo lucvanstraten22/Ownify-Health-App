@@ -96,11 +96,21 @@ error there would make the app retry forever.
 
 ```json
 { "ok": true, "written": 7, "skipped": 0, "days": ["2026-09-18"],
-  "unmapped": { "MenstruationFlow": 1 }, "problems": [] }
+  "unmapped": { "MenstruationFlow": 1 }, "problems": [], "goals_completed": 0,
+  "points": [ { "points": 35, "label": "Training", "note": null,
+                "text": "+35 punten — Training" } ],
+  "scores": { "sleep": 84, "nutrition": null, "training": 71, "overall": 78 } }
 ```
 
 `unmapped` lists record types JoLu does not handle yet, by type and count, so
 they surface instead of vanishing.
+
+`points` is what this batch earned, one line per award. A record that was
+already paid for earns nothing a second time, so sending the same night twice
+answers with an empty list the second time. `scores` is the Health Score after
+the batch, `null` per category that has fewer than 7 days of data — the two are
+separate answers, and the scores never pay out. `scores` is `null` altogether
+when nothing was written.
 
 `401` means the token is unknown or revoked. The app's answer to both is the
 same: stop syncing and ask the user to pair again.
@@ -197,6 +207,15 @@ without eventually duplicating them.
 
 Anything else is reported in `unmapped` and ignored. Adding one is a case in
 `health_connect_map_one()` — server side, no app release.
+
+**What that means for scores and points.** A `SleepSession` with stages feeds
+all three parts of the sleep score and can earn the sleep-quality bonus; one
+without stages has only its times, so it counts for duration and regularity
+and earns no quality bonus. An `ExerciseSession` carries its type and times
+only: it earns the training points by duration and counts toward the weekly
+bonus, but not the intensity bonus or a personal record, which need effort,
+heart rate or distance on the workout itself. Those work today through
+`api/health/training.php`.
 
 ### Example
 

@@ -130,6 +130,20 @@ if (db_available()) {
             line('warn', 'staying signed in', 'user_login_tokens is missing, so a sign-in ends with its session — '
                 . 'import database/migrations/008-persistent-login.sql');
         }
+
+        /* Not fatal: without it the health scores still work, but nothing
+           earns leaderboard points, because an award could not be made once. */
+        $awards = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'point_events' AND column_name = 'award_key'"
+        );
+
+        if ($awards > 0) {
+            line('ok', 'leaderboard points', 'point_events.award_key is there');
+        } else {
+            line('warn', 'leaderboard points', 'point_events.award_key is missing, so no points are awarded — '
+                . 'import database/migrations/010-health-score-and-points.sql');
+        }
     } else {
         line('fail', 'schema', 'the database is empty — import database/schema.sql');
         $problems++;

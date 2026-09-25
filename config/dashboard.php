@@ -86,8 +86,8 @@ return [
             'value'       => null,
             'max'         => 100,
             'caption'     => 'Nog geen gegevens',
-            'description' => 'Je score bundelt slaap, voeding en beweging tot één beeld van vandaag.',
-            'empty_hint'  => 'Verbind een bron om je dagscore te berekenen.',
+            'description' => 'Je score bundelt slaap, voeding en beweging over de afgelopen 90 dagen.',
+            'empty_hint'  => 'Verbind een bron om je gezondheidsscore te berekenen.',
         ],
 
         /* Ring legend — the three pillars the score averages, each with its own

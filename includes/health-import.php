@@ -36,7 +36,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 require_once __DIR__ . '/goal-progress.php';
-require_once __DIR__ . '/scoring.php';
+require_once __DIR__ . '/health-score.php';
+require_once __DIR__ . '/points.php';
 
 if (!function_exists('health_import_records')) {
 
@@ -60,7 +61,8 @@ if (!function_exists('health_import_records')) {
         $written  = 0;
         $skipped  = 0;
         $problems = [];
-        $days     = [];         // which dates to re-score afterwards
+        $days     = [];         // which dates the batch touched
+        $touched  = [];         // what may earn points: nights, workouts, rated days, step days
 
         foreach ($records as $index => $record) {
             if (!is_array($record)) {
@@ -77,23 +79,28 @@ if (!function_exists('health_import_records')) {
                 if ($result['date'] !== null) {
                     $days[$result['date']] = true;
                 }
+
+                foreach ($result['touch'] ?? [] as [$kind, $what]) {
+                    $touched[$kind][] = $what;
+                }
             } else {
                 $skipped++;
                 $problems[] = ['index' => $index, 'error' => $result['error']];
             }
         }
 
-        /* A day whose data changed has a stale stored score, if it has one at
-           all. Clearing it makes the engine derive from what is now there. */
-        foreach (array_keys($days) as $date) {
-            health_import_invalidate_scores($userId, (string) $date);
-        }
-
-        /* And the goals that read this data are recomputed in the same breath.
+        /* The goals that read this data are recomputed in the same breath.
            This is what makes "new steps arrive, the steps goal moves" true
            rather than something the user has to trigger by opening the goal
            and pressing something. A sync that finishes a goal says so. */
         $goalsCompleted = $written > 0 ? goal_refresh_all($userId) : 0;
+
+        /* What the batch earned, the moment it arrived — each night, workout,
+           rating and day of steps once, however often it is sent — and the
+           Health Score recalculated over the 90 days that now include it.
+           Two separate things: the score does not pay out. */
+        $awards = $written > 0 ? points_process($userId, $touched) : [];
+        $scores = $written > 0 ? health_score_refresh($userId) : null;
 
         return [
             'ok'              => true,
@@ -103,6 +110,8 @@ if (!function_exists('health_import_records')) {
             'days'            => array_keys($days),
             'problems'        => array_slice($problems, 0, 20),
             'goals_completed' => $goalsCompleted,
+            'awards'          => $awards,
+            'scores'          => $scores,
         ];
     }
 
@@ -194,7 +203,7 @@ if (!function_exists('health_import_records')) {
             ]
         );
 
-        return ['ok' => true, 'error' => null, 'date' => $nightOf];
+        return ['ok' => true, 'error' => null, 'date' => $nightOf, 'touch' => [['nights', $nightOf]]];
     }
 
     /* ------------------------------------------------------------- workout */
@@ -248,7 +257,17 @@ if (!function_exists('health_import_records')) {
             ]
         );
 
-        return ['ok' => true, 'error' => null, 'date' => $start->format('Y-m-d')];
+        $workoutId = db_value(
+            'SELECT id FROM workouts WHERE user_id = ? AND source_id = ? AND external_id = ?',
+            [$userId, $sourceId, $externalId]
+        );
+
+        return [
+            'ok'    => true,
+            'error' => null,
+            'date'  => $start->format('Y-m-d'),
+            'touch' => $workoutId === null ? [] : [['workouts', (int) $workoutId]],
+        ];
     }
 
     /* ----------------------------------------------------------- nutrition */
@@ -316,7 +335,14 @@ if (!function_exists('health_import_records')) {
             }
         }
 
-        return ['ok' => true, 'error' => null, 'date' => $when->format('Y-m-d')];
+        $rated = isset($r['rating']) && $r['rating'] !== null && $r['rating'] !== '';
+
+        return [
+            'ok'    => true,
+            'error' => null,
+            'date'  => $when->format('Y-m-d'),
+            'touch' => $rated ? [['nutrition_days', $when->format('Y-m-d')]] : [],
+        ];
     }
 
     /* --------------------------------------------------------- measurement */
@@ -392,26 +418,13 @@ if (!function_exists('health_import_records')) {
             ]
         );
 
-        return ['ok' => true, 'error' => null, 'date' => $when->format('Y-m-d')];
-    }
+        $touch = match ($code) {
+            'steps'            => [['step_days', $when->format('Y-m-d')]],
+            'nutrition_rating' => [['nutrition_days', $when->format('Y-m-d')]],
+            default            => [],
+        };
 
-    /* ------------------------------------------------------------- scores */
-
-    /**
-     * Drops any stored score for a day whose data just changed.
-     *
-     * daily_scores holds recorded scores, which win over derived ones. After an
-     * import the recorded one describes yesterday's data, so it is removed and
-     * the engine derives from what is actually there now. Days nobody imported
-     * are untouched.
-     */
-    function health_import_invalidate_scores(int $userId, string $date): void
-    {
-        db_run(
-            "DELETE FROM daily_scores
-              WHERE user_id = ? AND score_date = ? AND algorithm_version = 'v1'",
-            [$userId, $date]
-        );
+        return ['ok' => true, 'error' => null, 'date' => $when->format('Y-m-d'), 'touch' => $touch];
     }
 
     /* -------------------------------------------------------------- casts */

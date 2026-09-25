@@ -8,10 +8,10 @@
  * private is joined in, and there is no query here that could return one
  * user's health data to another.
  *
- * Points are awarded by includes/leaderboard.php. Nothing awards any yet: the
- * scoring rules are a product decision that has not been made, so point_rules
- * ships empty and both boards render their existing empty state until it is.
- * That is the honest position — an empty board, not an invented one.
+ * Points are awarded by includes/points.php, for what people actually did —
+ * never for their Health Score — and the rollups these boards read are rebuilt
+ * the moment an award changes. A period nobody has earned points in renders
+ * the existing empty state: an empty board, never an invented one.
  */
 
 declare(strict_types=1);

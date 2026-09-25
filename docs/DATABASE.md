@@ -12,11 +12,18 @@ from the signed-in user's own rows, filled in by `lib/hydrate-health.php`,
 calls with the id from the session. A key nothing fills stays `null`, and
 `null` is what the components already draw as an empty state.
 
-**Scores.** Every score in the app comes out of `includes/scoring.php`. The
-overall score is the average of whichever of sleep, nutrition and training
-that day actually has: a missing pillar is skipped, never counted as a zero,
-and when all three are missing there is no score rather than a `0`. Moving to
-a weighted average is a change to `score_combine()` and nothing else.
+**Scores.** Every Health Score in the app comes out of
+`includes/health-score.php`: sleep, nutrition and training, each 0-100 over a
+rolling 90 days, and none until a category has 7 days of data. The overall
+score is the average of whichever of the three exist, in `score_combine()`
+(`includes/scoring.php`): a missing pillar is skipped, never counted as a zero,
+and when all three are missing there is no score rather than a `0`. See
+*Health Score and points* below.
+
+**Points.** Leaderboard points come out of `includes/points.php`, a separate
+system: points pay for things somebody did — a night, a rated day, a workout,
+steps, three workouts in a week — and each of those pays once. Nothing that
+awards points reads a Health Score.
 
 **Goals.** Where a goal stands comes out of `includes/goal-progress.php`, and
 its type decides the arithmetic: a **Mijlpaal** is its best result (60, 75,
@@ -237,7 +244,7 @@ edit the two values.
 | `workouts` | one training session, every column nullable |
 | `workout_hr_zones` | seconds per heart-rate zone |
 | `health_metrics` | every scalar reading, whatever its frequency |
-| `daily_scores` | where the future scoring engine writes its results |
+| `daily_scores` | the Health Score per category, one row per day it was calculated, with the days and components behind it |
 
 **Goals — private**
 
@@ -252,8 +259,8 @@ edit the two values.
 | --- | --- |
 | `friendships` | one row per pair, symmetric, with a status |
 | `user_blocks` | one-directional blocks |
-| `point_rules` | what earns points — **empty**, no formula is decided |
-| `point_events` | the ledger of awards |
+| `point_rules` | the nine things that earn points; their values are in `config/points.php` |
+| `point_events` | the ledger: one row per award, at most one per `award_key` |
 | `user_period_points` | points per period, plus the national position |
 | `leaderboard_best_positions` | best rank ever reached |
 
@@ -408,25 +415,116 @@ the schema needs to change: a metric the platform reports that we do not know
 yet is a new `health_metric_types` row. Add the importer under `includes/` as
 its own file; keep the raw platform payloads out of these tables.
 
-**The points system.** Decide the rules, insert them into `point_rules`, and
-have the engine call `points_award($userId, $points, $ruleCode, ...)` for each
-qualifying event. Then call `leaderboard_rebuild($periodType)` to roll the
-ledger up. Nothing in the UI or the leaderboard functions changes — they read
-points, they never compute them.
+**Nutrition from real food data.** The nutrition score is the daily 1-10
+rating for now. Logged meals can become a second component in
+`health_score_nutrition()` with its own weight in `config/scoring.php`; the
+rating keeps working beside it.
 
-**Scores.** `daily_scores` holds a recorded per-domain score, and a recorded
-score always wins over a derived one — that is where an importer or a future
-scoring engine writes. When nothing is stored, `includes/scoring.php` derives
-the day's score from the readings the user actually has (v1: sleep against
-eight hours tempered by efficiency, nutrition from the 1-10 rating, training
-from active minutes with steps as a fallback). Those three targets are the
-only judgement in the file and they are constants at the top of their
-functions. The overall score is never stored: it is the average of the
-pillars that exist, computed on every render so it cannot disagree with them.
+**The first day of the week.** The weekly training bonus counts weeks from
+`week_starts_on` in `config/points.php` (Monday). Once Instellingen stores a
+person's own choice, `points_week_start()` is the one place that reads it.
 
 **The assistant.** It should read a user's own data through the same
 `includes/health-data.php` functions, with the id from the session. It must
 never be handed another user's records.
+
+## Health Score and points
+
+Two systems that never touch. The Health Score **measures a pattern** — how
+healthy the last 90 days were. Points **pay for actions** — a night, a rated
+day, a workout — and put people on the leaderboard. Nothing that awards points
+reads a Health Score, and a score of 91 is never 91 points. Every number either
+of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
+
+### The Health Score
+
+`includes/health-score.php`, reading the records through
+`includes/health-signals.php`.
+
+- **Window.** The moment of calculation minus 90 days. Not this week, not this
+  month: tomorrow's score has a day more at the front and a day less at the
+  back.
+- **At least 7 days.** A category needs 7 distinct days of its own data in the
+  window. Below that it has no score, and the page says how many days are
+  still needed. A day without data is not a day of zero: 24 nights in 90 days
+  are averaged over 24.
+- **Missing parts.** A component the person's device does not measure is left
+  out and the other components' weights are scaled up (`health_weighted()`),
+  rather than it counting as a zero.
+- **No steps.** Every measurement becomes 0-100 on a smooth curve through the
+  points in the config (`health_curve()`, monotone cubic), so 7:59 and 8:00 of
+  sleep score almost the same.
+
+| Category | Formula |
+| --- | --- |
+| Sleep | 45% duration + 30% regularity + 25% quality. **Duration**: each night's main sleep on the duration curve (95 at 7:30, 100 at 8:00, 96 at 8:30, 84 at 7:00, 62 at 6:00), averaged over the nights. **Regularity**: the night-to-night standard deviation of bedtime and wake time (40% each, measured on the clock, so 23:50 and 00:10 are 20 minutes apart) and of the duration (20%), each on its curve (15 min or less is 100, an hour 56 for the times). **Quality**: each night's efficiency, time awake, deep and REM share on their curves — only what the device measured — averaged over at least 3 such nights. |
+| Nutrition | The day's rating × 10 (several on one day count as their average), averaged over the rated days. |
+| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity, VO2max and the person's own strength and performance goal results; holding steady is 60. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before), heavy days back to back, and sleep in the nights after training. |
+| Overall | The average of the categories that have a score (`score_combine()`). None of them: no score, never a 0. |
+
+What counts as one night or one workout is decided once, in
+`includes/health-signals.php`, for the scores and the points alike: two
+recordings of one night are one night (the one with sleep stages, else the
+longer), and two recordings of one workout that overlap by more than half are
+one workout (the longer). A workout counts from 10 minutes to 8 hours.
+
+Scores are calculated from the records whenever they are read, and every
+calculation is written to `daily_scores` — the score, `data_days` and the
+components as JSON in `inputs` — one row per category and one for the overall
+score per day, rewritten only when something changed. The Gezondheid trend is
+the same score, day by day.
+
+### Points
+
+`includes/points.php`. One entry point, `points_process($userId, $touched)`,
+is handed the nights, workouts and days a save or a sync touched, and makes
+their awards what they should be.
+
+| Rule (`point_rules.code`) | Pays |
+| --- | --- |
+| `sleep_duration` | minutes asleep in the night's main sleep: 7:00-7:29 **25**, 7:30-7:59 **35**, 8:00-8:59 **45**, 9:00-9:30 **35**, longer **20** |
+| `sleep_regularity` | **+10** when bedtime and wake time are both within 45 minutes of the usual times of the previous 14 nights (at least 5 of them) |
+| `sleep_quality` | **+10** when the night's measured quality is at least 75 |
+| `nutrition_rating` | the day's rating: 1-3 **0**, 4-5 **10**, 6-7 **25**, 8-9 **40**, 10 **50** |
+| `workout` | a qualifying workout: 10-29 min **20**, 30-59 min **35**, 60 min or more **45** |
+| `workout_intensity` | **+10** hard, **+15** very hard (effort 9+, half the time in zone 4+, or 85% of the maximum heart rate) |
+| `workout_record` | **+25** for the longest distance, or the fastest pace over a comparable distance, of that kind of activity — at least 1 km, against at least 3 earlier ones |
+| `steps` | steps in a day: 5.000 **10**, 7.500 **20**, 10.000 **35**, 12.500 **45** |
+| `weekly_workouts` | **+75** the moment the third workout of the week, on a third different day, is recorded — once per week |
+
+A list of tiers pays the one tier reached, not their sum. There is no daily
+cap.
+
+**Each event pays once.** Every award has an `award_key` naming the event it
+is for — `workout:123`, `sleep_duration:2026-09-24`, `nutrition_rating:2026-09-24`,
+`steps:2026-09-24`, `weekly_workouts:2026-09-21` — and `(user_id, award_key)`
+is UNIQUE, so the database itself refuses a second award for the same event,
+however often and however simultaneously the record arrives. Every write is an
+upsert on that key. An award follows its record: a corrected rating moves its
+award up or down instead of adding one, and a deleted night takes its points
+with it.
+
+- `awarded_at` is when the activity happened, so a night synced three days
+  late counts in the month it was slept.
+- Activity from before the account existed earns nothing (`award_from`), so
+  connecting a phone with a year of history does not buy a place on the board;
+  and nothing dated in the future does.
+- After every change the rollup is rebuilt for the month, year and all-time of
+  that award, so the boards show new points on the next page view.
+- `points_history()` lists a person's own awards with the rule behind each —
+  the answer to "why do I have these points?".
+
+An existing database needs `database/migrations/010-health-score-and-points.sql`
+(`schema.sql` already has all of it). It adds `point_events.award_key` with its
+unique key, `point_events.updated_at`, the `day` and `week` reference types,
+the nine rules, and `daily_scores.data_days` and `.inputs`; it can be imported
+more than once. Until it is imported the scores work and no points are
+awarded — the server log says why, and `php tools/check-config.php` reports it.
+
+After importing it, run `php tools/points-backfill.php` once: activity saved
+before the migration never went through the points engine, and this runs every
+existing night, workout, rating and step count through the same rules as a
+live save. A second run changes nothing, so it is safe to repeat.
 
 ## Leaderboards
 
@@ -453,7 +551,9 @@ all-time.
   `leaderboard_note_best_position()` only ever lowers it.
 
 `leaderboard_rebuild()` reconstructs the rollup from the ledger, so the rollup
-is a cache: losing it costs nothing.
+is a cache: losing it costs nothing. The points engine calls it for every
+period an award lands in, and deleting an account calls it for every period
+that account had points in, so nobody else's position is left stale.
 
 ## Development data
 
@@ -476,22 +576,27 @@ private data is returned.
 | `api/auth/login.php` / `logout.php` | this browser's `user_login_tokens` row, added or deleted; login touches `last_login_at` |
 | `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise this browser's `user_login_tokens` row |
 | `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` — the Google identity waiting in the session |
-| `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file |
+| `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file; then re-ranks every board it had points on |
 | `api/profile/username.php` | `users.username` |
 | `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
 | `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |
 | `api/profile/onboarding.php` | `date_of_birth`, `gender` — once, then it refuses |
-| `api/health/sleep.php` | `sleep_sessions` |
-| `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics` |
-| `api/health/training.php` | `workouts` |
+| `api/health/sleep.php` | `sleep_sessions`; then that night's points and the Health Score |
+| `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics`; a rating earns that day's points |
+| `api/health/rating.php` | the day's 1-10 nutrition rating, one `health_metrics` row per day (today or up to 6 days back, saving again replaces it); then that day's points and the Health Score |
+| `api/health/training.php` | `workouts`; then its points, the week's bonus and the Health Score |
 | `api/goals/create.php` | `goals`, subject to three active and one primary |
 | `api/goals/update.php` | pause, resume, complete, re-prioritise |
 | `api/goals/delete.php` | deletes the goal and its history |
 | `api/goals/progress.php` | `goal_progress` the way the goal's type needs it, and completes a goal that reaches its target |
-| `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal |
+| `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal, awards the points for what arrived and recalculates the Health Score |
 | `api/friends/search.php` | reads only, and only public fields |
 | `api/friends/request.php` | `friendships` |
 | `api/friends/block.php` | `user_blocks` |
+
+"Points" means `point_events`, and the `user_period_points` rollup for the
+periods they land in; "the Health Score" means `daily_scores`. Rendering
+the app also records the day's Health Score, only when it changed.
 
 Any request can also replace the validator on this browser's
 `user_login_tokens` row, or delete a row that has run out: that is how a
@@ -534,14 +639,23 @@ nothing.
 
 Honest list, so nobody goes looking for wiring that is not there.
 
-- **Points, and therefore both leaderboards.** `point_rules` ships empty
-  because the rules are a product decision nobody has made. Until something
-  awards points, the boards show their empty state. The plumbing either side
-  of that decision is finished.
+- **Points from what a phone does not send.** A Health Connect workout
+  arrives with its type and times only, so it earns the duration points and
+  counts toward the weekly bonus, but never the intensity bonus or a personal
+  record — those need effort, heart rate or distance on the workout, which
+  `api/health/training.php` accepts today. Strength sets are not stored at
+  all, so strength progress is read from the person's own strength goals.
+  A night without sleep stages earns no quality bonus.
+- **Steps counted twice inside Health Connect.** When two apps on one phone
+  both write steps to Health Connect, both arrive as separate records and are
+  added up; which app wrote a record is not stored, so they cannot be told
+  apart yet.
 - **App preferences** — theme, language, units, first day of the week,
   accessibility, notifications. These have no columns and no endpoints; the
   settings screens say so rather than pretending. Profile data on those same
-  screens *is* persisted.
-- **Entry screens for sleep and training, and the nutrition slider.** The
-  endpoints and the tables are complete and tested, but the app has no UI that
-  posts to them yet — building those screens is design work, not wiring.
+  screens *is* persisted. Until the first day of the week is stored, weeks
+  start on Monday for the weekly bonus.
+- **Entry screens for sleep and training.** The endpoints and the tables are
+  complete and tested, but the app has no UI that posts to them yet —
+  building those screens is design work, not wiring. Nutrition has one: the
+  day's 1-10 rating on the Voeding page.

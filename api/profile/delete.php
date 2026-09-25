@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/google-signin.php';
+require_once dirname(__DIR__, 2) . '/includes/leaderboard.php';
 
 api_require_post();
 api_require_csrf();
@@ -32,10 +33,29 @@ if (($_POST['confirm'] ?? '') !== 'verwijderen') {
     api_fail('Bevestig eerst dat je je account wilt verwijderen.', 422);
 }
 
+/* The board periods this account earned points in: its points leave with it,
+   and those periods are re-ranked at once, so nobody below is left one place
+   short of where they now are. */
+$periods = db_all(
+    "SELECT DISTINCT DATE_FORMAT(awarded_on, '%Y-%m') AS month, DATE_FORMAT(awarded_on, '%Y') AS year
+       FROM point_events WHERE user_id = ?",
+    [$userId]
+);
+
 $result = user_delete_account($userId, app_upload_root());
 
 if (!$result['ok']) {
     api_fail((string) $result['error'], 500);
+}
+
+if ($periods !== []) {
+    foreach (array_unique(array_column($periods, 'month')) as $month) {
+        leaderboard_rebuild('month', $month);
+    }
+    foreach (array_unique(array_column($periods, 'year')) as $year) {
+        leaderboard_rebuild('year', $year);
+    }
+    leaderboard_rebuild('alltime', 'all');
 }
 
 /* Nobody is signed in to an account that no longer exists. A fresh session

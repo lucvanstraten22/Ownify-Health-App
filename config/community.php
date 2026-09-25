@@ -3,11 +3,11 @@
  * Community — leaderboard scopes, periods and copy.
  *
  * ------------------------------------------------------------------
- * POINTS ARE NOT DECIDED YET
+ * WHERE THE POINTS COME FROM
  * ------------------------------------------------------------------
- * Nothing awards points. point_rules ships empty because the scoring rules
- * are a product decision nobody has made, so both boards render their empty
- * state until something fills user_period_points.
+ * includes/points.php awards them for what people did — a night, a day's
+ * nutrition rating, a workout, steps, three workouts in a week — with every
+ * value in config/points.php. The Health Score never pays out.
  *
  * ------------------------------------------------------------------
  * WHO IS ON A BOARD
@@ -39,7 +39,7 @@ return [
             'limit' => 50,
             'empty' => [
                 'title' => 'Ranglijst nog niet beschikbaar',
-                'body'  => 'De landelijke top 50 verschijnt zodra er punten worden bijgehouden.',
+                'body'  => 'De landelijke top 50 verschijnt zodra er in deze periode punten zijn verdiend.',
             ],
         ],
     ],

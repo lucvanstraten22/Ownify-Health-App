@@ -23,7 +23,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/includes/health-data.php';
-require_once dirname(__DIR__) . '/includes/scoring.php';
+require_once dirname(__DIR__) . '/includes/health-score.php';
 
 if (!function_exists('hydrate_health')) {
 
@@ -40,14 +40,44 @@ if (!function_exists('hydrate_health')) {
         $date   = $date ?? date('Y-m-d');
         $values = hydrate_health_values($userId, $date);
 
-        /* Area scores come from the scoring engine, never from the values map:
-           one place decides what a score is. */
-        $scores = score_domains($userId, $date);
+        /* Area scores come from the Health Score engine — the rolling 90 days
+           up to this moment — never from the values map: one place decides
+           what a score is. Rendering also writes down today's result. */
+        $scores  = health_score_now($userId);
+        $minDays = (int) health_scoring_config()['min_days'];
+
+        health_score_store($userId, $scores);
 
         foreach ($health['areas'] as $areaKey => $area) {
-            if (array_key_exists($areaKey, $scores)) {
-                $health['areas'][$areaKey]['score']['value'] = $scores[$areaKey];
+            if (!isset($scores[$areaKey])) {
+                continue;
             }
+
+            $result = $scores[$areaKey];
+
+            $health['areas'][$areaKey]['score']['value'] = $result['score'];
+            $health['areas'][$areaKey]['score']['days']  = $result['days'];
+
+            /* Some days of data but not enough for a score yet: the empty
+               state says how many more, rather than asking for a source the
+               person already has. */
+            if ($result['score'] === null && $result['days'] > 0 && !empty($area['collecting'])) {
+                $needed = max(1, $minDays - $result['days']);
+                $health['areas'][$areaKey]['empty'] = sprintf(
+                    (string) $area['collecting'],
+                    $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen')
+                );
+            }
+        }
+
+        /* Today's own cijfer, so the rating card opens on it. */
+        if (isset($health['areas']['nutrition']['rating'])) {
+            $today = db_value(
+                'SELECT value FROM health_metrics
+                  WHERE user_id = ? AND source_id = ? AND external_id = ?',
+                [$userId, health_source_id('manual'), 'daily-rating:' . date('Y-m-d')]
+            );
+            $health['areas']['nutrition']['rating_today'] = $today === null ? null : (int) round((float) $today);
         }
 
         $health['areas'] = hydrate_health_fill($health['areas'], $values);
@@ -236,7 +266,9 @@ if (!function_exists('hydrate_health')) {
     }
 
     /**
-     * The trend chart: one score per day for each pillar.
+     * The trend chart: the Health Score per category as it stood at the end of
+     * each day (today: now) — so the line shows how the rolling 90-day score
+     * moved, not one day's readings.
      *
      * Days without a score stay null, which is what the chart already draws as
      * a gap rather than as a drop to zero.
@@ -248,6 +280,7 @@ if (!function_exists('hydrate_health')) {
         }
 
         $today = new DateTimeImmutable($date);
+        $daily = health_score_trend($userId, 28);
 
         foreach ($trend['series'] as $domain => $ranges) {
             foreach ($ranges as $rangeKey => $range) {
@@ -266,15 +299,22 @@ if (!function_exists('hydrate_health')) {
                         $day = $monday->modify('+' . $i . ' day');
                         $values[] = $day > $today
                             ? null                      // the future is not a gap in the data
-                            : score_domain($userId, $day->format('Y-m-d'), $domain);
+                            : ($daily[$day->format('Y-m-d')][$domain] ?? null);
                     }
                 } else {
                     /* Month: each slot is a week, oldest first, averaged over
                        the days in it that have a score. */
                     for ($i = $slots - 1; $i >= 0; $i--) {
-                        $end   = $today->modify('-' . (7 * $i) . ' day');
-                        $start = $end->modify('-6 day');
-                        $week  = score_series($userId, $domain, $start->format('Y-m-d'), $end->format('Y-m-d'));
+                        $end  = $today->modify('-' . (7 * $i) . ' day');
+                        $week = [];
+
+                        for ($d = 6; $d >= 0; $d--) {
+                            $score = $daily[$end->modify('-' . $d . ' day')->format('Y-m-d')][$domain] ?? null;
+                            if ($score !== null) {
+                                $week[] = $score;
+                            }
+                        }
+
                         $values[] = $week === [] ? null : (int) round(array_sum($week) / count($week));
                     }
                 }

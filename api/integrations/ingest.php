@@ -80,4 +80,10 @@ api_ok([
        link between a sync and a goal moving visible in one response rather
        than something you have to go and check. */
     'goals_completed' => $result['goals_completed'] ?? 0,
+
+    /* What the batch earned — "+35 punten — Training" per award, each event
+       once however often it is sent — and the Health Scores it now gives.
+       Two separate answers: the scores do not pay out. */
+    'points' => points_feedback($result['awards'] ?? []),
+    'scores' => $result['scores'] === null ? null : health_score_summary($result['scores']),
 ]);

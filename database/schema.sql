@@ -366,14 +366,18 @@ CREATE TABLE `health_metrics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- Where the scoring engine writes its results. The formula is not decided, so
--- nothing computes these yet; algorithm_version lets it change without
--- invalidating what is already stored.
+-- What the Health Score was on a day, and what it was calculated from. The
+-- score itself is always calculated from the health records over the rolling
+-- 90-day window (includes/health-score.php); this is the record of each day's
+-- result, written whenever it is recalculated. algorithm_version lets the
+-- formula change without invalidating what is already stored.
 CREATE TABLE `daily_scores` (
     `user_id`           BIGINT UNSIGNED NOT NULL,
     `score_date`        DATE NOT NULL,
     `domain`            ENUM('overall','sleep','nutrition','training') NOT NULL,
     `score`             TINYINT UNSIGNED NULL COMMENT '0-100, null while there is not enough data',
+    `data_days`         SMALLINT UNSIGNED NULL COMMENT 'Days with data in the 90-day window the score was calculated over',
+    `inputs`            TEXT NULL COMMENT 'JSON: each component of the score, null where there was no data',
     `algorithm_version` VARCHAR(20) NULL,
     `computed_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`, `score_date`, `domain`),
@@ -601,9 +605,9 @@ CREATE TABLE `user_blocks` (
 --  6. POINTS AND LEADERBOARDS
 -- ============================================================================
 
--- What earns points. Intentionally EMPTY: the formula is not decided, and
--- hardcoding "10.000 steps = X" here would be deciding it. The scoring engine
--- will insert rows and read them; nothing else needs to change.
+-- What can earn points: the catalogue every award in the ledger points back
+-- to. The values and thresholds live in config/points.php so they can be tuned
+-- without a migration; `points` here is the most one event can earn.
 CREATE TABLE `point_rules` (
     `id`         SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `code`       VARCHAR(60) NOT NULL,
@@ -620,20 +624,30 @@ CREATE TABLE `point_rules` (
 
 -- The ledger: one row per award. Everything a leaderboard shows can be rebuilt
 -- from this table, which is why the rollups below are caches and not truth.
+-- `award_key` names the event and rule an award pays for — workout:123,
+-- steps:2026-09-25, weekly_workouts:2026-09-21 — and is unique per person, so
+-- the same event can never pay out twice however often it is synced.
+-- `awarded_at` is when the activity happened, so a point lands in the month
+-- the effort was made.
 CREATE TABLE `point_events` (
     `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`        BIGINT UNSIGNED NOT NULL,
     `rule_id`        SMALLINT UNSIGNED NULL,
+    `award_key`      VARCHAR(120) NULL COMMENT 'The event and rule this pays for, e.g. workout:123 — unique per person',
     `points`         INT NOT NULL,
     `awarded_at`     DATETIME NOT NULL,
     `awarded_on`     DATE AS (DATE(`awarded_at`)) STORED,
-    `reference_type` ENUM('sleep_session','workout','nutrition_entry','metric','manual') NULL,
+    `reference_type` ENUM('sleep_session','workout','nutrition_entry','metric','manual','day','week') NULL,
     `reference_id`   BIGINT UNSIGNED NULL COMMENT 'Id within reference_type; intentionally not a FK',
     `note`           VARCHAR(160) NULL,
     `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+                     COMMENT 'Set when the award was re-evaluated, e.g. a step tier reached later',
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_points_award` (`user_id`, `award_key`),
     KEY `idx_points_user_time` (`user_id`, `awarded_at`),
     KEY `idx_points_user_day` (`user_id`, `awarded_on`),
+    KEY `idx_points_day` (`awarded_on`),
     CONSTRAINT `fk_points_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_points_rule` FOREIGN KEY (`rule_id`)
@@ -727,3 +741,16 @@ INSERT INTO `health_metric_types` (`code`, `label`, `unit`, `domain`, `aggregati
     ('vo2max',            'VO2max',               'ml/kg/min', 'training', 'last'),
     ('readiness',         'Herstel',              '/100', 'training',  'last'),
     ('training_load',     'Belasting',            '',     'training',  'last');
+
+-- The rules that can earn points. Values live in config/points.php; `points` is
+-- the most one event can earn. Kept in step with that file by the app.
+INSERT INTO `point_rules` (`code`, `label`, `domain`, `points`, `cadence`, `is_active`) VALUES
+    ('sleep_duration',    'Nachtrust',              'sleep',     45, 'daily',     1),
+    ('sleep_regularity',  'Regelmatig geslapen',    'sleep',     10, 'daily',     1),
+    ('sleep_quality',     'Goed geslapen',          'sleep',     10, 'daily',     1),
+    ('nutrition_rating',  'Voeding beoordeeld',     'nutrition', 50, 'daily',     1),
+    ('workout',           'Training',               'training',  45, 'per_event', 1),
+    ('workout_intensity', 'Intensieve training',    'training',  15, 'per_event', 1),
+    ('workout_record',    'Persoonlijk record',     'training',  25, 'per_event', 1),
+    ('steps',             'Stappen',                'training',  45, 'daily',     1),
+    ('weekly_workouts',   '3 trainingen deze week', 'training',  75, 'weekly',    1);

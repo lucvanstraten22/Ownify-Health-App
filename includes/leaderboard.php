@@ -13,9 +13,9 @@
  * The rollup is a cache: leaderboard_rebuild() reconstructs it from the ledger
  * at any time, so losing it costs nothing.
  *
- * No scoring rule lives here. points_award() takes a number someone else
- * decided; the formula belongs in a scoring engine that inserts point_rules
- * rows and calls this — see docs/DATABASE.md.
+ * No rule about what earns points lives here: that is includes/points.php,
+ * with its values in config/points.php. This file keeps the ledger's rollups
+ * and reads the boards.
  */
 
 declare(strict_types=1);
@@ -40,63 +40,41 @@ if (!function_exists('leaderboard_period_key')) {
         };
     }
 
-    /* ------------------------------------------------------------ points */
-
-    /**
-     * Records an award. `$points` is decided by the caller — this function
-     * holds no rule about what earns what.
-     */
-    function points_award(
-        int $userId,
-        int $points,
-        ?string $ruleCode = null,
-        ?string $referenceType = null,
-        ?int $referenceId = null,
-        ?string $awardedAt = null
-    ): ?int {
-        $ruleId = null;
-
-        if ($ruleCode !== null) {
-            $found = db_value('SELECT id FROM point_rules WHERE code = ?', [$ruleCode]);
-            $ruleId = $found === null ? null : (int) $found;
-        }
-
-        db_run(
-            'INSERT INTO point_events (user_id, rule_id, points, awarded_at, reference_type, reference_id)
-                  VALUES (?, ?, ?, ?, ?, ?)',
-            [$userId, $ruleId, $points, $awardedAt ?? date('Y-m-d H:i:s'), $referenceType, $referenceId]
-        );
-
-        return db_insert_id();
-    }
-
     /* ----------------------------------------------------------- rollups */
 
-    /** Rebuilds one period's totals from the ledger, then re-ranks it. */
+    /**
+     * Rebuilds one period's totals from the ledger, then re-ranks it.
+     *
+     * Called whenever an award in the period changes (includes/points.php),
+     * so a point earned now is on the board now. The period is a range of
+     * days, which the index on awarded_on serves. Somebody whose points in the
+     * period went back to nothing is taken off its board.
+     */
     function leaderboard_rebuild(string $periodType, ?string $periodKey = null): int
     {
         $periodKey ??= leaderboard_period_key($periodType);
 
-        $filter = match ($periodType) {
-            'month' => 'DATE_FORMAT(awarded_on, "%Y-%m") = ?',
-            'year'  => 'DATE_FORMAT(awarded_on, "%Y") = ?',
-            default => '1 = 1',
+        [$filter, $params] = match ($periodType) {
+            'month' => ['awarded_on BETWEEN ? AND LAST_DAY(?)', [$periodKey . '-01', $periodKey . '-01']],
+            'year'  => ['awarded_on BETWEEN ? AND ?', [$periodKey . '-01-01', $periodKey . '-12-31']],
+            default => ['1 = 1', []],
         };
-
-        $params = $periodType === 'alltime' ? [] : [$periodKey];
 
         $totals = db_all(
             'SELECT user_id, SUM(points) AS points
                FROM point_events
               WHERE ' . $filter . '
            GROUP BY user_id
+             HAVING SUM(points) > 0
            ORDER BY points DESC, user_id',
             $params
         );
 
         $position = 0;
+
         foreach ($totals as $row) {
             $position++;
+
             db_run(
                 'INSERT INTO user_period_points (user_id, period_type, period_key, points, position)
                       VALUES (?, ?, ?, ?, ?)
@@ -108,6 +86,18 @@ if (!function_exists('leaderboard_period_key')) {
 
             leaderboard_note_best_position((int) $row['user_id'], 'national', $periodType, $position, $periodKey);
         }
+
+        /* Off the board: whoever no longer has points in the period. */
+        db_run(
+            'DELETE FROM user_period_points
+              WHERE period_type = ? AND period_key = ?
+                AND user_id NOT IN (SELECT user_id
+                                      FROM point_events
+                                     WHERE ' . $filter . '
+                                  GROUP BY user_id
+                                    HAVING SUM(points) > 0)',
+            [$periodType, $periodKey, ...$params]
+        );
 
         return $position;
     }

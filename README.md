@@ -310,6 +310,20 @@ declares its `availability`. A group whose metrics all need a wearable is
 marked with a lock and a line saying so — never hidden, never filled with
 invented numbers.
 
+**The Health Score.** Slaap, Voeding and Training each get their own score,
+0-100, over the last 90 days — rolling, not a calendar week or month — and
+only once a category has 7 days of data; before that the card says how many
+days are still missing. The score on Overzicht is the average of the ones that
+exist, and there is no score at all rather than a `0`. Every weight and curve
+is in `config/scoring.php`; the formulas are in
+[docs/DATABASE.md](docs/DATABASE.md#health-score-and-points). Scores never
+earn leaderboard points.
+
+**The day's cijfer.** The Voeding page has one input: how you ate today, 1 to
+10. It is the nutrition score's data for now, it replaces itself when saved
+again the same day, and saving it answers with what it earned ("+40 punten —
+Voeding beoordeeld") and updates the scores and the leaderboard in place.
+
 **Seeing the design populated.** Every value ships as null. `config/health.php`
 has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
 into the charts and tiles so the design can be looked at with data, without a
@@ -406,10 +420,17 @@ rectangle by the scroll container's own padding, so `.board__scroll`'s
 bottom padding already clears the tab bar and the row's `bottom` only needs to
 be the small gap on top of it.
 
-**Points are not decided.** `points` is just a number carried on an entry,
-kept out of the UI entirely, so a future scoring engine can produce the
-ranking without the leaderboard changing. Scope and period are likewise plain
-keys.
+**Points are for what you did.** A night's sleep, a rated day, a workout, a
+step count, three workouts in a week — each earns points once, by the rules in
+`config/points.php`, and a phone that sends the same workout three times has
+done one workout. The Health Score is a separate thing and never pays out.
+The month and year boards count points by when the activity happened. The
+rules, and how a repeated sync is kept from paying twice, are in
+[docs/DATABASE.md](docs/DATABASE.md#points). An existing database needs
+`database/migrations/010-health-score-and-points.sql`; until it is imported
+the scores work and nothing earns points, and `php tools/check-config.php`
+says so. After importing it, `php tools/points-backfill.php` awards the points
+for what was recorded before — once, however often it runs.
 
 **Placeholder contract.** Shipped, both boards are empty and no name appears:
 `config/community.php` has the same `demo` flag as health. Turn it on and
@@ -550,6 +571,6 @@ A working chatbot of any kind, ChatGPT or other API calls, AI responses,
 message history, an input field, prompt suggestions, persistent goal storage,
 automatic goal progress, stored settings, Apple Health / Health Connect
 integrations, notifications, a light theme, English, imperial units, real
-leaderboard data, real medical analysis and real personal recommendations.
+medical analysis and real personal recommendations.
 The data layer, focus system, screen deck and component boundaries are
 prepared for them; none of them are implemented.
