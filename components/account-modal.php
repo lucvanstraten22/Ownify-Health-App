@@ -11,10 +11,10 @@
  * both — the one field only registering needs is hidden while logging in —
  * and says which it is in its title.
  *
- * Signing in takes a username and a password. Apple and Google are two small
- * marks under the form rather than two full-width buttons above it — they are
- * secondary. Google works once it is configured (includes/google-signin.php);
- * Apple is not implemented. Whichever is not available renders disabled.
+ * Signing in takes a username and a password. Google is a small mark under
+ * the form rather than a full-width button above it — it is secondary. It
+ * works once it is configured (includes/google-signin.php); until then it
+ * renders disabled.
  *
  * Coming back from Google the panel opens by itself: with the one step a new
  * Google user still has — choosing a username — or with a message saying why
@@ -180,19 +180,11 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <button type="submit" class="btn account__submit press" data-account-submit>Inloggen</button>
             </form>
 
-            <?php /* Apple and Google are secondary: two small marks, no labels.
-                     They are brand marks rather than icons — filled, and in
-                     Google's case four-colour — so they cannot come from
-                     icons.php, which is one stroked family by design. */ ?>
+            <?php /* Google is secondary: a small mark, no label. It is a
+                     brand mark rather than an icon — four-colour — so it
+                     cannot come from icons.php, which is one stroked family
+                     by design. */ ?>
             <div class="account__socials">
-                <button type="button" class="social press" data-account-provider="apple"
-                        aria-label="Doorgaan met Apple" <?= $providers['apple'] ? '' : 'disabled' ?>>
-                    <svg class="social__mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
-                        <path d="M16.36 12.73c-.02-2.4 1.96-3.55 2.05-3.61-1.12-1.63-2.86-1.86-3.48-1.88-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.91-.43 7.22 1.2 9.58.8 1.16 1.75 2.45 3 2.4 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.13.75 1.29-.02 2.11-1.17 2.9-2.34.91-1.34 1.29-2.64 1.31-2.71-.03-.01-2.51-.96-2.53-3.83Z"/>
-                        <path d="M14.13 5.63c.66-.8 1.11-1.92.99-3.03-.95.04-2.11.63-2.79 1.43-.61.71-1.15 1.85-1.01 2.94 1.06.08 2.15-.54 2.81-1.34Z"/>
-                    </svg>
-                </button>
-
                 <button type="button" class="social press" data-account-provider="google"
                         aria-label="Doorgaan met Google" <?= $providers['google'] ? '' : 'disabled' ?>>
                     <svg class="social__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -204,8 +196,8 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 </button>
             </div>
 
-            <?php if (!$providers['apple'] && !$providers['google']): ?>
-                <p class="account__hint account__hint--centred">Apple en Google zijn nog niet gekoppeld.</p>
+            <?php if (!$providers['google']): ?>
+                <p class="account__hint account__hint--centred">Google is nog niet gekoppeld.</p>
             <?php endif; ?>
 
         <?php endif; ?>

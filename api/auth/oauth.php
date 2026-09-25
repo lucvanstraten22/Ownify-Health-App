@@ -8,8 +8,6 @@
  *
  * POST with the CSRF token, like every other endpoint, so no other site can
  * start a sign-in — and in particular a link — in somebody's session.
- *
- * Apple is not implemented and says so: it answers 501, and signs nobody in.
  */
 
 declare(strict_types=1);
@@ -22,12 +20,8 @@ api_require_csrf();
 
 $provider = (string) ($_POST['provider'] ?? '');
 
-if (!in_array($provider, ['apple', 'google'], true)) {
+if ($provider !== 'google') {
     api_fail('Onbekende aanbieder.', 400);
-}
-
-if ($provider === 'apple') {
-    api_fail('Inloggen met Apple is nog niet gekoppeld.', 501);
 }
 
 api_require_database();

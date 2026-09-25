@@ -151,7 +151,7 @@ and two buttons where the tab bar will be. **Inloggen** and **Registreren**
 open the same account panel as the app's account button, with the same forms
 and endpoints, each on its own flow only: logging in shows username and
 password, registering adds the e-mail address, and neither offers the other.
-Google and Apple stay under both. Signing in, registering, or finishing a
+Google stays under both. Signing in, registering, or finishing a
 Google sign-in reloads the page, which the server now renders as the app.
 Signing out — from the account panel or from Instellingen — reloads onto the
 opening screen.
@@ -493,9 +493,8 @@ Sign-in, profiles, health data, goals, friendships and leaderboards have a real
 MySQL schema behind them — see **[docs/DATABASE.md](docs/DATABASE.md)** for the
 tables, the privacy model and where the future integrations plug in.
 
-What works today: email/password sign-in, changing a username, uploading a
-profile picture. **Apple and Google are not implemented and are not faked** —
-their buttons render disabled and the endpoint answers 501.
+What works today: email/password sign-in, Google sign-in once it is
+configured, changing a username, uploading a profile picture.
 
 The pages still render placeholder data. The database is the foundation under
 them, not yet their source.

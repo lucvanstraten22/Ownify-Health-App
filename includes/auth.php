@@ -7,16 +7,12 @@
  * INSERT, not a migration.
  *
  * ---------------------------------------------------------------------------
- * GOOGLE IS WIRED UP, APPLE IS NOT
+ * E-MAIL AND GOOGLE
  * ---------------------------------------------------------------------------
  * Google sign-in lives in includes/google-signin.php: an OpenID Connect flow
  * whose ID token is verified on this server before its 'sub' is believed. It
  * is offered only once config/auth.php has credentials; until then its button
- * renders disabled, exactly as before.
- *
- * Apple has no flow and none is faked: auth_provider_available() returns
- * false, its button renders disabled, and the endpoint answers with an
- * explicit "not configured".
+ * renders disabled.
  */
 
 declare(strict_types=1);
@@ -28,7 +24,7 @@ if (!function_exists('auth_provider_available')) {
 
     /**
      * Whether a way of signing in can be offered right now. Google only once
-     * it has credentials; Apple not at all. Nothing here pretends otherwise.
+     * it has credentials. Nothing here pretends otherwise.
      */
     function auth_provider_available(string $provider): bool
     {
@@ -234,46 +230,6 @@ if (!function_exists('auth_provider_available')) {
         db_run('UPDATE user_auth_identities SET last_login_at = NOW() WHERE id = ?', [(int) $identity['id']]);
 
         return ['ok' => true, 'error' => null, 'user_id' => (int) $identity['user_id']];
-    }
-
-    /* ------------------------------------------------- provider identities */
-
-    /**
-     * Attaches a verified provider identity to an account.
-     *
-     * Kept for Apple. Google links through google_signin_link(), which also
-     * refuses a second Google account on the same JoLu account. The caller
-     * must have verified the provider's ID token server-side first — this
-     * function trusts its arguments, so handing it an unverified 'sub' would be
-     * handing out accounts.
-     */
-    function auth_link_identity(int $userId, string $provider, string $subject, ?string $email = null): array
-    {
-        if (!in_array($provider, ['apple', 'google'], true)) {
-            return ['ok' => false, 'error' => 'Onbekende aanbieder.'];
-        }
-
-        if (!db_available()) {
-            return ['ok' => false, 'error' => 'Geen databaseverbinding.'];
-        }
-
-        $owner = db_value(
-            'SELECT user_id FROM user_auth_identities WHERE provider = ? AND provider_subject = ?',
-            [$provider, $subject]
-        );
-
-        if ($owner !== null && (int) $owner !== $userId) {
-            return ['ok' => false, 'error' => 'Deze aanmelding hoort al bij een ander account.'];
-        }
-
-        db_run(
-            'INSERT INTO user_auth_identities (user_id, provider, provider_subject, email)
-                  VALUES (?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE email = VALUES(email), last_login_at = NOW()',
-            [$userId, $provider, $subject, $email]
-        );
-
-        return ['ok' => true, 'error' => null];
     }
 
     /** Sign-in methods on an account, for the account panel. Never the hashes. */

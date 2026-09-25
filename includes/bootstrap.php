@@ -182,7 +182,6 @@ if (!function_exists('app_auth')) {
             'csrf'      => csrf_token(),
             'providers' => [
                 'email'  => auth_provider_available('email'),
-                'apple'  => auth_provider_available('apple'),
                 'google' => auth_provider_available('google'),
             ],
             'google_pending' => $pending,

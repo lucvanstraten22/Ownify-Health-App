@@ -123,14 +123,13 @@ CREATE TABLE `user_profiles` (
 --
 --   provider = 'email'   provider_subject = the normalised email address
 --                        password_hash    = password_hash(), never plain text
---   provider = 'apple'   provider_subject = the Apple 'sub' claim
 --   provider = 'google'  provider_subject = the Google 'sub' claim
 --
 -- No provider password or token is ever stored here.
 CREATE TABLE `user_auth_identities` (
     `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`           BIGINT UNSIGNED NOT NULL,
-    `provider`          ENUM('email','apple','google') NOT NULL,
+    `provider`          ENUM('email','google') NOT NULL,
     `provider_subject`  VARCHAR(191) NOT NULL COMMENT 'Email address, or the provider subject id',
     `email`             VARCHAR(191) NULL,
     `email_verified_at` DATETIME     NULL,

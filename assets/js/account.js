@@ -149,7 +149,7 @@
     /**
      * Asks the server to start a sign-in, then goes where it says. The server
      * keeps the state, nonce and PKCE verifier in the session; the browser
-     * only ever carries the address. Apple answers "not linked yet".
+     * only ever carries the address.
      */
     function startProvider(provider, mode, button, onError) {
         var body = new FormData();

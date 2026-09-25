@@ -202,8 +202,8 @@
 }
 
 /* ------------------------------------------------------- social sign-in
-   Apple and Google are secondary here: two small marks under the form, not
-   two full-width buttons above it. Same glass recipe as the header pills, so
+   Google is secondary here: a small mark under the form, not a full-width
+   button above it. Same glass recipe as the header pills, so
    they read as part of the same kit rather than as borrowed brand chrome. */
 .account__socials {
     display: flex;
@@ -238,8 +238,7 @@
     cursor: not-allowed;
 }
 
-/* One box for both marks, so the Apple silhouette and the Google G sit on
-   the same optical baseline despite different shapes. */
+/* The Google G, at the size the glass circle was drawn around. */
 .social__mark {
     width: 21px;
     height: 21px;

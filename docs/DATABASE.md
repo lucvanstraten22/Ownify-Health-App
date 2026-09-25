@@ -343,7 +343,6 @@ row per method, so connecting Google to an existing account later is an INSERT.
 ```
 users (1) ──< user_auth_identities
                  ├── provider 'email'   subject = email,  password_hash set
-                 ├── provider 'apple'   subject = Apple 'sub'
                  └── provider 'google'  subject = Google 'sub'
 ```
 
@@ -399,12 +398,6 @@ with the authorization code flow and PKCE:
 
 Codes and tokens are never stored or logged. Test the verification offline
 with `php tools/google-signin-test.php`.
-
-**Apple is not implemented, and nothing pretends it is.**
-`auth_provider_available('apple')` returns false, its button renders disabled,
-and `api/auth/oauth.php` answers 501. `auth_link_identity()` is ready for it:
-it trusts its arguments, so it must only ever be called with a `sub` from a
-verified ID token.
 
 ## Where the future work goes
 
@@ -541,9 +534,6 @@ nothing.
 
 Honest list, so nobody goes looking for wiring that is not there.
 
-- **Apple sign-in.** No flow exists and none is faked. `api/auth/oauth.php`
-  answers `501` for it and its button renders disabled. Google sign-in works
-  once it is configured — see *Secrets on the server*.
 - **Points, and therefore both leaderboards.** `point_rules` ships empty
   because the rules are a product decision nobody has made. Until something
   awards points, the boards show their empty state. The plumbing either side
