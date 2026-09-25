@@ -56,6 +56,8 @@
     position: relative;
     flex: 1 1 auto;
     min-height: 0;
+    /* How far your row stays from the edge it docks against. */
+    --board-dock: var(--space-2);
 }
 
 .board { display: none; }
@@ -84,6 +86,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+}
+
+/* Room at both ends of a board for your row's docking offset. Without it the
+   sticky row, at rest as the first row (you are #1) or the last one (scrolled
+   to the end), is pushed that offset in from the edge and slides into the row
+   next to it. With it, its resting place already satisfies the offset, so it
+   sits in line like every other row and only docks once it is scrolled away.
+   One pixel more at the end: how far a board scrolls is rounded to whole
+   pixels, and without it the last row could dock a fraction of one early.
+   The single row under an empty board is not sticky and needs none. */
+.board-list:not(.board-list--single) {
+    padding-block: var(--board-dock) calc(var(--board-dock) + 1px);
 }
 
 /* --------------------------------------------------------------------------
@@ -173,11 +187,11 @@
 
 .board-row--sticky {
     position: sticky;
-    top: var(--space-2);
+    top: var(--board-dock);
     /* Small, not the full dock clearance: the scroller's own bottom padding
        already lifts the sticky rectangle clear of the tab bar, and the offset
        is measured from there. */
-    bottom: var(--space-2);
+    bottom: var(--board-dock);
     z-index: 2;
     -webkit-backdrop-filter: blur(var(--blur-card)) saturate(140%);
     backdrop-filter: blur(var(--blur-card)) saturate(140%);
