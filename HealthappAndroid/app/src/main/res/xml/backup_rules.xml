@@ -10,4 +10,6 @@
    <include domain="sharedpref" path="."/>
    <exclude domain="sharedpref" path="device.xml"/>
 -->
+    <!-- The JoLu device token (JoluTokenStore) never leaves this phone. -->
+    <exclude domain="sharedpref" path="jolu_connection.xml" />
 </full-backup-content>

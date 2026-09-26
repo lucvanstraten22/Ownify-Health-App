@@ -9,11 +9,10 @@
         <include .../>
         <exclude .../>
         -->
+        <!-- The JoLu device token (JoluTokenStore) never leaves this phone. -->
+        <exclude domain="sharedpref" path="jolu_connection.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="sharedpref" path="jolu_connection.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>
