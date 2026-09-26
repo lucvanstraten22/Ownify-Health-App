@@ -33,6 +33,18 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Robolectric: the JoLu sync tests run WorkManager and the real
+        // worker on the JVM, with the app's manifest and resources.
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                // Robolectric's Android 16 sets up its shared memory through
+                // a JDK internal it has to be allowed to reach.
+                it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -47,7 +59,13 @@ dependencies {
 
     implementation("androidx.health.connect:connect-client:1.1.0")
 
+    // The automatic JoLu sync (JoluBackgroundSync, JoluSyncWorker).
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

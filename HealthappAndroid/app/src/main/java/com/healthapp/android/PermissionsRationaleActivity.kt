@@ -22,7 +22,11 @@ class PermissionsRationaleActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Health Connect access is used to read your step count."
+                    text = "JoLu reads your steps, distance, active calories, heart rate, sleep, " +
+                        "exercise and nutrition from Health Connect and sends them to your own " +
+                        "JoLu account. With background access it also does this about once an " +
+                        "hour while the app is closed. JoLu only reads: it never changes or " +
+                        "deletes anything in Health Connect."
                 )
             }
         }

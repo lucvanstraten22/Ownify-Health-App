@@ -35,6 +35,7 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import com.healthapp.android.jolu.JoluBackgroundSync
 import com.healthapp.android.jolu.JoluConnectionSection
 import com.healthapp.android.ui.theme.HealthappAndroidTheme
 import java.time.Duration
@@ -197,6 +198,11 @@ class MainActivity : ComponentActivity() {
                         contract = PermissionController
                             .createRequestPermissionResultContract()
                     ) { grantedPermissions ->
+
+                        // Something can be read now: the JoLu sync picks it up.
+                        if (grantedPermissions.isNotEmpty()) {
+                            JoluBackgroundSync.healthAccessGranted(this@MainActivity)
+                        }
 
                         if (grantedPermissions.containsAll(permissions)) {
 

@@ -11,8 +11,10 @@
         -->
         <!-- The JoLu device token (JoluTokenStore) never leaves this phone. -->
         <exclude domain="sharedpref" path="jolu_connection.xml" />
+        <exclude domain="sharedpref" path="jolu_sync_status.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="jolu_connection.xml" />
+        <exclude domain="sharedpref" path="jolu_sync_status.xml" />
     </device-transfer>
 </data-extraction-rules>

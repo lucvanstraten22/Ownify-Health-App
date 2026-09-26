@@ -272,13 +272,24 @@ is one night.
    grant **per category**, so assume you will get some and not others — a
    missing category is a category with no data, never a zero.
 2. On first run, ask for the pairing code and exchange it.
-3. Sync periodically (WorkManager). Use Health Connect's **changes token** so
-   each run sends what changed rather than everything; overlap the last window
-   by a day or two, because data arrives late and gets corrected. Re-sending is
-   safe by design.
-4. Check `status.php` before each sync, and skip the work when it answers
-   `401`.
-5. On `401`, clear the stored token and prompt to pair again.
+3. Sync periodically, in the background. JoLu Android does this with
+   WorkManager: every hour while the phone is paired, on a network and with a
+   battery that is not low, plus once right after pairing, after Health
+   Connect access is granted and on opening the app when the last sync is more
+   than 30 minutes old. Every run — automatic or the "Sync to JoLu" button —
+   is the same pipeline and re-sends the last 7 days: data arrives late and
+   gets corrected, and re-sending is safe by design (the server upserts on
+   `metadata.id` and counts overlapping apps once). A changes token could
+   later make each run smaller; it would not change what the server stores.
+4. Reading while the app is closed needs Health Connect's own
+   `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND`, which the user
+   grants separately and which exists only where Health Connect reports
+   `FEATURE_READ_HEALTH_DATA_IN_BACKGROUND` as available. Without it the
+   automatic sync still runs whenever the app is open, and skips (sending
+   nothing) when it is not. See `HealthappAndroid/README.md`.
+5. On `401` from any call, clear the stored token, stop the automatic sync and
+   prompt to pair again — an invalid token is never used a second time.
+   Offline or a server error keeps the token and retries with backoff.
 
 A thin Kotlin sketch of the sync:
 

@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_NUTRITION" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <!-- The automatic JoLu sync reads while the app is closed. Health Connect
+         asks the user for it separately ("Access data in the background"), and
+         only offers it where its FEATURE_READ_HEALTH_DATA_IN_BACKGROUND is
+         available; without it the sync runs while JoLu is open. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
 
     <!-- JoLu account connection -->
     <uses-permission android:name="android.permission.INTERNET" />

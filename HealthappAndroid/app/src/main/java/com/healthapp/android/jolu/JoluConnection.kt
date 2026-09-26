@@ -64,7 +64,11 @@ object JoluConnection {
     var state: JoluState by mutableStateOf(JoluState.Checking)
         private set
 
-    private val api = JoluApi()
+    /** The JoLu server. Tests point it at their own; nothing else changes it. */
+    internal var api = JoluApi()
+
+    /** Where the token is kept: encrypted on the phone (JoluTokenStore). Tests keep it in memory. */
+    internal var storage: (Context) -> JoluTokenStorage = { JoluTokenStore(it) }
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, _ ->
@@ -75,7 +79,10 @@ object JoluConnection {
     )
 
     private var job: Job? = null
-    private var tokenStore: JoluTokenStore? = null
+    private var tokenStore: JoluTokenStorage? = null
+
+    /** The application context, never an activity: kept for the automatic sync's schedule. */
+    private var appContext: Context? = null
 
     private val busy: Boolean
         get() = job?.isActive == true
@@ -119,6 +126,12 @@ object JoluConnection {
                     }
 
                     if (stored) {
+                        // A new pairing, perhaps another account: the last
+                        // sync shown belonged to the old connection.
+                        val app = context.applicationContext
+                        withContext(Dispatchers.IO) { JoluSyncRunner.environment(app).status.clear() }
+                        JoluSync.refresh(app)
+
                         load(store, result.value)
                     } else {
                         state = JoluState.NotConnected(NOT_STORED_MESSAGE)
@@ -145,8 +158,9 @@ object JoluConnection {
     }
 
     /**
-     * Another JoLu call (the sync) was answered with 401: handled exactly like
-     * a 401 on the profile — the token is forgotten and a new code asked for.
+     * Another JoLu call (the sync, by the button or automatic) was answered
+     * with 401: handled exactly like a 401 on the profile — the token is
+     * forgotten, automatic sync stops, and a new code is asked for.
      */
     internal suspend fun unauthorized(context: Context) {
         expire(store(context))
@@ -171,7 +185,7 @@ object JoluConnection {
     }
 
     /** Profile, then targets. A 401 from either ends the connection; any other failure keeps it. */
-    private suspend fun load(store: JoluTokenStore, token: String) {
+    private suspend fun load(store: JoluTokenStorage, token: String) {
         state = JoluState.Loading
 
         val profile = when (val result = api.profile(token)) {
@@ -187,11 +201,18 @@ object JoluConnection {
         }
 
         state = JoluState.Connected(profile, targets)
+
+        // Paired, or reconnected at start-up: keep the automatic sync going.
+        appContext?.let { JoluBackgroundSync.connected(it) }
     }
 
-    /** The server no longer accepts the token: forget it and ask for a new code. */
-    private suspend fun expire(store: JoluTokenStore) {
+    /**
+     * The server no longer accepts the token: forget it, stop the automatic
+     * sync so it is never tried again, and ask for a new code.
+     */
+    private suspend fun expire(store: JoluTokenStorage) {
         withContext(Dispatchers.IO) { store.clear() }
+        appContext?.let { JoluBackgroundSync.stop(it) }
         state = JoluState.NotConnected(EXPIRED_MESSAGE)
     }
 
@@ -214,8 +235,10 @@ object JoluConnection {
                 "JoLu sent an unexpected response. Please try again later."
         }
 
-    private fun store(context: Context): JoluTokenStore =
-        tokenStore ?: JoluTokenStore(context.applicationContext).also { tokenStore = it }
+    private fun store(context: Context): JoluTokenStorage {
+        appContext = context.applicationContext
+        return tokenStore ?: storage(context.applicationContext).also { tokenStore = it }
+    }
 
     /**
      * How this phone is listed under the paired devices on the JoLu website,

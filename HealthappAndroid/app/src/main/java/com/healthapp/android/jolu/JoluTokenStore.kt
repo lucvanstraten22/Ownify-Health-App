@@ -11,6 +11,13 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
+/** Where the device token is kept. [JoluTokenStore] on the phone; tests keep it in memory. */
+internal interface JoluTokenStorage {
+    fun load(): String?
+    fun save(token: String)
+    fun clear()
+}
+
 /**
  * Keeps this phone's JoLu device token between launches — only the token: no
  * password, no user id, no profile.
@@ -25,7 +32,7 @@ import javax.crypto.spec.GCMParameterSpec
  *
  * Every call touches the Keystore or the disk: call from a background thread.
  */
-internal class JoluTokenStore(context: Context) {
+internal class JoluTokenStore(context: Context) : JoluTokenStorage {
 
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -35,7 +42,7 @@ internal class JoluTokenStore(context: Context) {
      * be decrypted (its Keystore key is gone) reads as none too; pairing again
      * overwrites it.
      */
-    fun load(): String? =
+    override fun load(): String? =
         try {
             prefs.getString(KEY_TOKEN, null)?.let { decrypt(it) }
         } catch (e: Exception) {
@@ -43,7 +50,7 @@ internal class JoluTokenStore(context: Context) {
         }
 
     /** Throws when the token cannot be encrypted or written; nothing is stored then. */
-    fun save(token: String) {
+    override fun save(token: String) {
         val written = prefs.edit()
             .putString(KEY_TOKEN, encrypt(token))
             .commit()
@@ -52,7 +59,7 @@ internal class JoluTokenStore(context: Context) {
     }
 
     /** Written at once, so the token is gone before the screen asks for a new code. */
-    fun clear() {
+    override fun clear() {
         prefs.edit(commit = true) {
             remove(KEY_TOKEN)
         }

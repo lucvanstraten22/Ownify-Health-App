@@ -4,20 +4,16 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.health.connect.client.HealthConnectClient
 import java.time.Duration
 import java.time.Instant
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
 
-/** Where the manual "Sync to JoLu" stands. The JoLu section shows exactly this. */
+/** Where the sync stands — the button's or an automatic one. The JoLu section shows exactly this. */
 sealed interface JoluSyncState {
 
     data object Idle : JoluSyncState
@@ -42,27 +38,17 @@ data class JoluSyncSummary(
 )
 
 /**
- * The manual sync: Health Connect records of the last [RANGE] go to
- * ingest.php, with the stored device token.
+ * The sync as the screen sees it: the "Sync to JoLu" button, and the state
+ * the JoLu section shows — for the button's runs and the automatic ones alike.
  *
- *   1. the stored token (JoluConnection) — none: nothing is read or sent;
- *   2. the records (HealthConnectSyncReader) — only granted types;
- *   3. the JSON (IngestPayload) — Health Connect's own format;
- *   4. POST in batches (JoluApi.ingest), and the answers added up.
- *
- * Duplicates are the server's job: every record carries Health Connect's own
- * id and the server updates a record it already has, so syncing the same
- * days again is safe and earns no points twice.
- *
- * No background work: it runs when the button is pressed, and only then.
+ * The work itself is JoluSyncRunner's, the one pipeline both the button and
+ * the background worker (JoluSyncWorker) run. Nothing here reads, converts
+ * or sends a record.
  */
 object JoluSync {
 
-    /** How far back a sync reads, counted from the moment it starts. */
-    val RANGE: Duration = Duration.ofDays(7)
-
-    /** Records per request. ingest.php accepts up to 2000. */
-    private const val BATCH_SIZE = 500
+    /** How far back a sync reads — the same for the button and the automatic sync. */
+    val RANGE: Duration get() = JoluSyncRunner.RANGE
 
     private const val NOT_CONNECTED_MESSAGE = "Connect your JoLu account first."
     private const val NO_HEALTH_CONNECT_MESSAGE = "Health Connect is not available on this phone."
@@ -74,7 +60,9 @@ object JoluSync {
     var state: JoluSyncState by mutableStateOf(JoluSyncState.Idle)
         private set
 
-    private val api = JoluApi()
+    /** How the last sync went, by the button or automatically — kept between launches. */
+    var record: JoluSyncRecord by mutableStateOf(JoluSyncRecord())
+        private set
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, _ ->
@@ -85,82 +73,68 @@ object JoluSync {
 
     private var job: Job? = null
 
+    /** "Sync to JoLu": now, in the app, whatever the automatic sync is doing. */
     fun sync(context: Context) {
         if (job?.isActive == true) {
             return
         }
 
-        val app = context.applicationContext
+        val env = JoluSyncRunner.environment(context.applicationContext)
 
         job = scope.launch {
             state = JoluSyncState.Syncing
-            state = run(app)
+            state = show(JoluSyncRunner.run(env, automatic = false))
+            record = env.status.read()
         }
     }
 
-    private suspend fun run(context: Context): JoluSyncState {
-        val token = JoluConnection.storedToken(context)
-            ?: return JoluSyncState.Failed(NOT_CONNECTED_MESSAGE)
+    /**
+     * One automatic run (JoluSyncWorker). The screen shows it while it runs
+     * and shows its result when it synced; anything else it leaves to the
+     * status line, rather than showing an error nobody asked about.
+     */
+    internal suspend fun runAutomatic(context: Context): JoluSyncOutcome {
+        val env = JoluSyncRunner.environment(context.applicationContext)
 
-        if (HealthConnectClient.getSdkStatus(context) != HealthConnectClient.SDK_AVAILABLE) {
-            return JoluSyncState.Failed(NO_HEALTH_CONNECT_MESSAGE)
+        val outcome = JoluSyncRunner.run(env, automatic = true) {
+            state = JoluSyncState.Syncing
         }
 
-        val to = Instant.now()
-        val from = to.minus(RANGE)
-
-        val reading = try {
-            HealthConnectSyncReader(HealthConnectClient.getOrCreate(context))
-                .read(IngestPayload.TYPES, from, to)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            return JoluSyncState.Failed(READ_FAILED_MESSAGE)
+        if (outcome != JoluSyncOutcome.Busy) {
+            state = if (outcome is JoluSyncOutcome.Synced) JoluSyncState.Synced(outcome.summary) else JoluSyncState.Idle
+            record = env.status.read()
         }
 
-        if (reading.notGranted.size == IngestPayload.TYPES.size) {
-            return JoluSyncState.Failed(NO_PERMISSION_MESSAGE)
-        }
+        return outcome
+    }
 
-        val payload = withContext(Dispatchers.Default) { IngestPayload.of(reading.records) }
+    /** Reads the kept status again, e.g. when the screen opens or a new account is paired. */
+    internal fun refresh(context: Context) {
+        record = JoluSyncRunner.environment(context.applicationContext).status.read()
+    }
 
-        // Nothing to send is still sent: the server records that the phone
-        // synced, and answers "0 written" rather than the app guessing it.
-        val batches = IngestPayload.batches(payload, BATCH_SIZE).ifEmpty { listOf(JSONArray()) }
-        val results = mutableListOf<IngestResult>()
-
-        for ((index, batch) in batches.withIndex()) {
-            when (val result = api.ingest(token, batch)) {
-                is JoluResult.Success -> results += result.value
-
-                // The token no longer works: the connection handles it as
-                // always, and its status line asks for a new code.
-                is JoluResult.Unauthorized -> {
-                    JoluConnection.unauthorized(context)
-                    return JoluSyncState.Idle
+    /** The button's run, in the words it has always used. */
+    private fun show(outcome: JoluSyncOutcome): JoluSyncState =
+        when (outcome) {
+            is JoluSyncOutcome.Synced -> JoluSyncState.Synced(outcome.summary)
+            JoluSyncOutcome.NotConnected -> JoluSyncState.Failed(NOT_CONNECTED_MESSAGE)
+            // The token no longer works: the connection handles it as always,
+            // and its status line asks for a new code.
+            JoluSyncOutcome.Unauthorized -> JoluSyncState.Idle
+            JoluSyncOutcome.ReadFailed -> JoluSyncState.Failed(READ_FAILED_MESSAGE)
+            JoluSyncOutcome.Busy -> JoluSyncState.Idle
+            is JoluSyncOutcome.NoAccess -> JoluSyncState.Failed(
+                if (outcome.access == HealthAccess.NOT_INSTALLED) NO_HEALTH_CONNECT_MESSAGE else NO_PERMISSION_MESSAGE
+            )
+            is JoluSyncOutcome.SendFailed -> {
+                val done = if (outcome.done == 0) {
+                    ""
+                } else {
+                    " ${outcome.done} of ${outcome.batches} parts were already synced; syncing again is safe."
                 }
-
-                is JoluResult.Failure -> {
-                    val done = if (index == 0) {
-                        ""
-                    } else {
-                        " $index of ${batches.size} parts were already synced; syncing again is safe."
-                    }
-                    return JoluSyncState.Failed(JoluConnection.describe(result) + done)
-                }
+                JoluSyncState.Failed(JoluConnection.describe(outcome.failure) + done)
             }
         }
-
-        return JoluSyncState.Synced(
-            JoluSyncSummary(
-                from = from,
-                to = to,
-                sent = IngestPayload.countByType(payload),
-                notGranted = reading.notGranted,
-                result = combine(results)
-            )
-        )
-    }
 }
 
 /**

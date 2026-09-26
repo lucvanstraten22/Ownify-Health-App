@@ -1,5 +1,6 @@
 package com.healthapp.android.jolu
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.PermissionController
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -133,6 +136,8 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
                     sync = JoluSync.state,
                     onSync = { JoluSync.sync(context) }
                 )
+
+                AutomaticSyncLines()
             }
 
             is JoluState.Failed -> {
@@ -172,6 +177,60 @@ private fun SyncPanel(sync: JoluSyncState, onSync: () -> Unit) {
 
         is JoluSyncState.Synced ->
             SyncResult(sync.summary)
+    }
+}
+
+/**
+ * The automatic sync, in three lines: the last successful sync, how the last
+ * sync went, and whether the automatic sync is on — plus, where Health
+ * Connect supports it and it is not granted yet, a way to let JoLu sync while
+ * it is closed.
+ */
+@Composable
+private fun AutomaticSyncLines() {
+    val context = LocalContext.current
+    val record = JoluSync.record
+    val active by remember { JoluBackgroundSync.active(context) }.collectAsState(initial = false)
+    var background by remember { mutableStateOf<BackgroundRead?>(null) }
+
+    val askBackground = rememberLauncherForActivityResult(
+        PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        if (JoluBackgroundSync.BACKGROUND_PERMISSION in granted) {
+            background = BackgroundRead.GRANTED
+            JoluBackgroundSync.healthAccessGranted(context)
+        }
+    }
+
+    // Opening JoLu: keep the schedule, sync if it has been a while, and show
+    // the kept status.
+    LaunchedEffect(Unit) {
+        JoluBackgroundSync.connected(context)
+        JoluSync.refresh(context)
+        background = runCatching { JoluBackgroundSync.backgroundRead(context) }.getOrNull()
+    }
+
+    Line("Last successful sync: ${record.lastSuccessAt?.let { moment(it) } ?: "not yet"}", top = 16.dp)
+    Line(
+        "Sync status: " + (record.lastOutcome?.let {
+            it.label + if (record.lastWasAutomatic) " (automatic)" else " (button)"
+        } ?: "not synced yet")
+    )
+    Line("Automatic sync: ${if (active) "On — every ${JoluBackgroundSync.INTERVAL.toHours()} h" else "Off"}")
+
+    when (background) {
+        BackgroundRead.NOT_GRANTED ->
+            Button(
+                onClick = { askBackground.launch(setOf(JoluBackgroundSync.BACKGROUND_PERMISSION)) },
+                modifier = Modifier.padding(top = 12.dp)
+            ) {
+                Text("Allow background sync")
+            }
+
+        BackgroundRead.NOT_SUPPORTED ->
+            Line("This phone's Health Connect cannot be read in the background; JoLu syncs while it is open.")
+
+        else -> Unit
     }
 }
 
