@@ -1,0 +1,11 @@
+# The schema, the migrations and the development seed. They live in this
+# repository for whoever sets up or upgrades a database — by hand, in
+# phpMyAdmin or with the mysql client — and are never part of the website:
+# nothing here may answer an HTTP request, on WAMP or on the server. The app
+# itself never reads these files.
+#
+# The Hestia deploy (.github/workflows/deploy.yml) also leaves every file in
+# this folder except this one out of the upload, so a file type nginx serves
+# on its own, without asking Apache, cannot slip through either.
+
+Require all denied

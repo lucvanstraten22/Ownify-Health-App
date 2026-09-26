@@ -35,6 +35,18 @@ jobs:
           find HealthappAndroid -mindepth 1 ! -path HealthappAndroid/.htaccess -delete
           ls -A HealthappAndroid
 
+      # The same for the database scripts (schema, migrations, the dev seed
+      # with its published dev password) and the developer docs: they are
+      # for people setting up a database or reading the code, and the app
+      # never reads them. Their .htaccess (deny all) goes up, so the copies
+      # uploaded before this are refused by Apache too.
+      - name: Leave the database scripts and docs out of the upload
+        run: |
+          for dir in database docs; do
+            find "$dir" -mindepth 1 ! -path "$dir/.htaccess" -delete
+            ls -A "$dir"
+          done
+
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
