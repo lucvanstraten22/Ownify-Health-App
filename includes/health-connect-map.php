@@ -180,17 +180,29 @@ if (!function_exists('health_connect_map')) {
 
         /* Stages are optional: a phone without a watch reports a session and
            no breakdown, and the app already draws that as an empty timeline
-           rather than as zeroes. */
+           rather than as zeroes.
+
+           Health Connect's stages, and what each one is here:
+             4 light, 5 deep, 6 REM  asleep, and the breakdown the timeline
+                                     and sleep quality are made of
+             2 sleeping              asleep, but not said which kind — it
+                                     counts as sleep, never as light, deep
+                                     or REM
+             1 awake, 7 awake in bed awake in bed: time in bed, not sleep
+             3 out of bed            neither asleep nor in bed
+             0 unknown               says nothing, and is left out */
         $minutes = [
             HC_STAGE_LIGHT        => 0,
             HC_STAGE_DEEP         => 0,
             HC_STAGE_REM          => 0,
+            HC_STAGE_SLEEPING     => 0,
             HC_STAGE_AWAKE        => 0,
             HC_STAGE_AWAKE_IN_BED => 0,
+            HC_STAGE_OUT_OF_BED   => 0,
         ];
 
         $awakenings = 0;
-        $hasStages  = false;
+        $detailed   = false;     // any light, deep or REM stage
 
         foreach ($r['stages'] ?? [] as $stage) {
             $from = strtotime((string) ($stage['startTime'] ?? ''));
@@ -201,32 +213,42 @@ if (!function_exists('health_connect_map')) {
                 continue;
             }
 
-            $hasStages = true;
             $minutes[$kind] += (int) round(($to - $from) / 60);
+
+            if (in_array($kind, [HC_STAGE_LIGHT, HC_STAGE_DEEP, HC_STAGE_REM], true)) {
+                $detailed = true;
+            }
 
             if ($kind === HC_STAGE_AWAKE) {
                 $awakenings++;
             }
         }
 
-        if ($hasStages) {
+        $asleep = $minutes[HC_STAGE_LIGHT] + $minutes[HC_STAGE_DEEP] + $minutes[HC_STAGE_REM]
+                + $minutes[HC_STAGE_SLEEPING];
+
+        /* Stages that hold no sleep at all (only awake, out of bed or unknown)
+           do not describe this sleep, so they are not believed over its own
+           times: the session is kept as one without a breakdown, rather than
+           as a night of zero minutes. */
+        if ($asleep > 0) {
             $awake = $minutes[HC_STAGE_AWAKE] + $minutes[HC_STAGE_AWAKE_IN_BED];
+            $inBed = $asleep + $awake;
 
-            $record['light_minutes'] = $minutes[HC_STAGE_LIGHT];
-            $record['deep_minutes']  = $minutes[HC_STAGE_DEEP];
-            $record['rem_minutes']   = $minutes[HC_STAGE_REM];
-            $record['awake_minutes'] = $awake;
-            $record['awakenings']    = $awakenings;
+            $record['duration_minutes']    = $asleep;
+            $record['time_in_bed_minutes'] = $inBed;
+            $record['awake_minutes']       = $awake;
+            $record['awakenings']          = $awakenings;
+            /* Efficiency is time asleep over time in bed — derived from
+               two measured numbers, not invented. */
+            $record['efficiency_pct'] = round($asleep / $inBed * 100, 2);
 
-            $asleep = $minutes[HC_STAGE_LIGHT] + $minutes[HC_STAGE_DEEP] + $minutes[HC_STAGE_REM];
-            $inBed  = $asleep + $awake;
-
-            if ($inBed > 0) {
-                $record['duration_minutes']    = $asleep;
-                $record['time_in_bed_minutes'] = $inBed;
-                /* Efficiency is time asleep over time in bed — derived from
-                   two measured numbers, not invented. */
-                $record['efficiency_pct'] = round($asleep / $inBed * 100, 2);
+            /* The breakdown only when the device measured one. A night of
+               "sleeping" alone has no deep or REM to speak of — not zero. */
+            if ($detailed) {
+                $record['light_minutes'] = $minutes[HC_STAGE_LIGHT];
+                $record['deep_minutes']  = $minutes[HC_STAGE_DEEP];
+                $record['rem_minutes']   = $minutes[HC_STAGE_REM];
             }
         }
 

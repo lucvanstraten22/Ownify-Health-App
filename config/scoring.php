@@ -78,6 +78,12 @@ return [
            night: the one with sleep stages counts, otherwise the longer. */
         'overlap' => 0.5,
 
+        /* Two parts of one night — asleep, up for a while, asleep again — are
+           one night when the gap between them is at most this many minutes.
+           A nap hours away from the night stays a separate, shorter sleep and
+           is never the night (includes/health-signals.php). */
+        'merge_gap_minutes' => 60,
+
         /* Hours asleep in one night -> score. Around 8 hours is the top; the
            curve falls away gently either side, faster below 6 and above 10. */
         'duration_curve' => [

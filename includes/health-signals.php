@@ -260,22 +260,80 @@ if (!function_exists('health_scoring_config')) {
        ================================================================== */
 
     /**
-     * Nights whose sleep ended in ($from, $to], one per date: the longest
-     * session filed under that date. Oldest first.
+     * THE MAIN SLEEP OF A DATE — one rule, for every reader.
+     *
+     * The Slaap card, the sleep score, the sleep points and sleep goals all
+     * ask "what was the night of this date?", and they must get one answer.
+     * They get it here:
+     *
+     *   1. A night belongs to the date its sleep ENDED (night_of — the morning
+     *      you woke up), as every writer already files it.
+     *   2. Recordings that overlap by more than `overlap` of the shorter one
+     *      are the same sleep seen twice (a watch and a phone): the one with
+     *      sleep stages is believed, otherwise the longer. They never add up.
+     *   3. What remains, in time order, is joined into one sleep where the
+     *      gap between two parts is at most `merge_gap_minutes`: a night that
+     *      was broken by getting up is still one night.
+     *   4. The longest of those sleeps is the night. A nap is a separate,
+     *      shorter sleep on the same date and is never the night, nor part
+     *      of it.
+     *
+     * Imported and manually entered nights go through the same rule: both
+     * live in sleep_sessions, with the same columns, and nothing here asks
+     * where a row came from.
+     */
+
+    /**
+     * Nights whose sleep ended in ($from, $to], one per date, oldest first.
+     * The score and the points read their windows this way.
      *
      * @return array<int,array<string,mixed>>
      */
     function health_nights(int $userId, string $from, string $to): array
     {
-        $rows = db_all(
+        return health_nights_from_rows(db_all(
             'SELECT id, night_of, started_at, ended_at, duration_minutes, time_in_bed_minutes,
-                    efficiency_pct, awake_minutes, light_minutes, deep_minutes, rem_minutes
+                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes
                FROM sleep_sessions
               WHERE user_id = ? AND ended_at > ? AND ended_at <= ?
            ORDER BY night_of, started_at',
             [$userId, $from, $to]
-        );
+        ));
+    }
 
+    /**
+     * The nights filed under the dates $fromDate..$toDate (Y-m-d), keyed by
+     * date. The Slaap card and sleep goals read their dates this way.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    function health_nights_on(int $userId, string $fromDate, string $toDate): array
+    {
+        $nights = health_nights_from_rows(db_all(
+            'SELECT id, night_of, started_at, ended_at, duration_minutes, time_in_bed_minutes,
+                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes
+               FROM sleep_sessions
+              WHERE user_id = ? AND night_of BETWEEN ? AND ?
+           ORDER BY night_of, started_at',
+            [$userId, $fromDate, $toDate]
+        ));
+
+        return array_column($nights, null, 'date');
+    }
+
+    /** The night of one date (Y-m-d), or null when nothing was slept that counts. */
+    function health_night_on(int $userId, string $date): ?array
+    {
+        return health_nights_on($userId, $date, $date)[$date] ?? null;
+    }
+
+    /**
+     * sleep_sessions rows -> one night per date. A row with no sleep time
+     * (a zero or negative duration, or times the wrong way round) is no
+     * night and is left out.
+     */
+    function health_nights_from_rows(array $rows): array
+    {
         $byDate = [];
 
         foreach ($rows as $row) {
@@ -295,6 +353,7 @@ if (!function_exists('health_scoring_config')) {
             }
 
             $date = (string) $row['night_of'];
+            $number = static fn ($value): ?float => $value === null ? null : (float) $value;
 
             $byDate[$date][] = [
                 'session_id' => (int) $row['id'],
@@ -302,12 +361,13 @@ if (!function_exists('health_scoring_config')) {
                 'start'      => $start,
                 'end'        => $end,
                 'minutes'    => $minutes,
-                'in_bed'     => $row['time_in_bed_minutes'] === null ? null : (float) $row['time_in_bed_minutes'],
-                'efficiency' => $row['efficiency_pct'] === null ? null : (float) $row['efficiency_pct'],
-                'awake'      => $row['awake_minutes'] === null ? null : (float) $row['awake_minutes'],
-                'light'      => $row['light_minutes'] === null ? null : (float) $row['light_minutes'],
-                'deep'       => $row['deep_minutes'] === null ? null : (float) $row['deep_minutes'],
-                'rem'        => $row['rem_minutes'] === null ? null : (float) $row['rem_minutes'],
+                'in_bed'     => $number($row['time_in_bed_minutes']),
+                'efficiency' => $number($row['efficiency_pct']),
+                'awakenings' => $number($row['awakenings'] ?? null),
+                'awake'      => $number($row['awake_minutes']),
+                'light'      => $number($row['light_minutes']),
+                'deep'       => $number($row['deep_minutes']),
+                'rem'        => $number($row['rem_minutes']),
             ];
         }
 
@@ -317,21 +377,20 @@ if (!function_exists('health_scoring_config')) {
     }
 
     /**
-     * The one session that stands for a night.
-     *
-     * Recordings that overlap are the same sleep seen twice — typically a
-     * watch with sleep stages and a phone without — and of those the one that
-     * measured stages is believed, since it knows time asleep rather than
-     * time in bed; with equal detail, the longer one. Separate sleeps on the
-     * same date (a nap) are compared on length, and the longest is the night.
+     * The one night that stands for a date, from its sessions — steps 2-4 of
+     * the rule above.
      */
     function health_night_main(array $sessions): array
     {
+        $sleep   = health_scoring_config()['sleep'];
         $staged  = static fn (array $s): bool => $s['deep'] !== null && $s['rem'] !== null;
-        $overlap = (float) health_scoring_config()['sleep']['overlap'];
+        $overlap = (float) $sleep['overlap'];
+        /* A default only for the moment a deploy has uploaded this file but
+           not yet config/scoring.php; the value lives in the config. */
+        $gap     = 60 * (int) ($sleep['merge_gap_minutes'] ?? 60);
 
-        /* Group recordings of the same sleep: overlapping by more than
-           `overlap` of the shorter one. */
+        /* 2. Recordings of the same sleep: overlapping by more than `overlap`
+              of the shorter one. */
         $groups = [];
 
         foreach ($sessions as $session) {
@@ -350,13 +409,75 @@ if (!function_exists('health_scoring_config')) {
             $groups[] = [$session];
         }
 
-        /* The longest sleep is the night; within it, the best recording. */
-        usort($groups, static fn ($a, $b) => max(array_column($b, 'minutes')) <=> max(array_column($a, 'minutes')));
+        /* Of each sleep, the best recording: stages first, then the longer.
+           The sleep is weighed by its longest recording, as it always was. */
+        $sleeps = [];
 
-        $night = $groups[0];
-        usort($night, static fn ($a, $b) => [$staged($b), $b['minutes']] <=> [$staged($a), $a['minutes']]);
+        foreach ($groups as $group) {
+            usort($group, static fn ($a, $b) => [$staged($b), $b['minutes']] <=> [$staged($a), $a['minutes']]);
+            $sleeps[] = ['best' => $group[0], 'weight' => max(array_column($group, 'minutes'))];
+        }
 
-        return $night[0];
+        /* 3. Parts close together in time are one sleep. */
+        usort($sleeps, static fn ($a, $b) => [$a['best']['start'], $a['best']['session_id']] <=> [$b['best']['start'], $b['best']['session_id']]);
+
+        $episodes = [];
+
+        foreach ($sleeps as $part) {
+            $last = count($episodes) - 1;
+
+            if ($last >= 0 && $part['best']['start'] - max(array_column(array_column($episodes[$last], 'best'), 'end')) <= $gap) {
+                $episodes[$last][] = $part;
+            } else {
+                $episodes[] = [$part];
+            }
+        }
+
+        /* 4. The longest sleep is the night. */
+        usort($episodes, static fn ($a, $b) => array_sum(array_column($b, 'weight')) <=> array_sum(array_column($a, 'weight')));
+
+        return health_night_join(array_column($episodes[0], 'best'));
+    }
+
+    /**
+     * Parts of one sleep as one night. A single part is returned exactly as
+     * it is, so an ordinary night reads the same as its row. Several parts
+     * add up; a measurement counts only if every part has it, because half a
+     * night's deep sleep is not the night's deep sleep.
+     */
+    function health_night_join(array $parts): array
+    {
+        if (count($parts) === 1) {
+            return $parts[0];
+        }
+
+        usort($parts, static fn ($a, $b) => $b['minutes'] <=> $a['minutes']);
+
+        $sum = static function (string $key) use ($parts): ?float {
+            $values = array_column($parts, $key);
+
+            return count(array_filter($values, static fn ($v) => $v === null)) > 0 || count($values) < count($parts)
+                ? null
+                : (float) array_sum($values);
+        };
+
+        $minutes = (float) array_sum(array_column($parts, 'minutes'));
+        $inBed   = $sum('in_bed');
+
+        return [
+            'session_id' => $parts[0]['session_id'],          // the longest part
+            'date'       => $parts[0]['date'],
+            'start'      => min(array_column($parts, 'start')),
+            'end'        => max(array_column($parts, 'end')),
+            'minutes'    => $minutes,
+            'in_bed'     => $inBed,
+            'efficiency' => $inBed !== null && $inBed > 0 ? round(min(100.0, $minutes / $inBed * 100), 2) : null,
+            'awakenings' => $sum('awakenings'),
+            'awake'      => $sum('awake'),
+            'light'      => $sum('light'),
+            'deep'       => $sum('deep'),
+            'rem'        => $sum('rem'),
+        ];
     }
 
     /**

@@ -130,43 +130,38 @@ if (!function_exists('hydrate_health')) {
 
         /* ---------------------------------------------------------- sleep */
 
-        $night = db_one(
-            'SELECT started_at, ended_at, duration_minutes, time_in_bed_minutes,
-                    efficiency_pct, awakenings, awake_minutes,
-                    light_minutes, deep_minutes, rem_minutes
-               FROM sleep_sessions
-              WHERE user_id = ? AND night_of = ?
-           ORDER BY started_at DESC
-              LIMIT 1',
-            [$userId, $date]
-        );
+        /* The night of this date by the one rule the score, the points and
+           sleep goals use too (health_night_on() in health-signals.php): the
+           main sleep, never a nap, a duplicate recording counted once. */
+        $night = health_night_on($userId, $date);
 
         if ($night !== null) {
-            $put('sleep_duration',   hydrate_hours($night['duration_minutes']));
-            $put('time_in_bed',      hydrate_hours($night['time_in_bed_minutes']));
-            $put('bedtime',          hydrate_clock($night['started_at']));
-            $put('wake_time',        hydrate_clock($night['ended_at']));
-            $put('sleep_efficiency', hydrate_round($night['efficiency_pct']));
+            $put('sleep_duration',   hydrate_hours((int) round($night['minutes'])));
+            $put('time_in_bed',      $night['in_bed'] === null ? null : hydrate_hours((int) round($night['in_bed'])));
+            $put('bedtime',          date('H:i', $night['start']));
+            $put('wake_time',        date('H:i', $night['end']));
+            $put('sleep_efficiency', hydrate_round($night['efficiency']));
             $put('awakenings',       hydrate_int($night['awakenings']));
-            $put('awake_time',       hydrate_int($night['awake_minutes']));
+            $put('awake_time',       hydrate_round($night['awake']));
 
             /* The timeline wants each stage as a share of the night, so it is
-               only meaningful once the stages add up to something. */
-            $stages = [
-                'stage_deep'  => $night['deep_minutes'],
-                'stage_rem'   => $night['rem_minutes'],
-                'stage_light' => $night['light_minutes'],
-                'stage_awake' => $night['awake_minutes'],
-            ];
+               only drawn when the device measured the stages — deep and REM,
+               as for sleep quality. A night known only as "asleep" has no
+               breakdown to draw. */
+            if ($night['deep'] !== null && $night['rem'] !== null) {
+                $stages = [
+                    'stage_deep'  => $night['deep'],
+                    'stage_rem'   => $night['rem'],
+                    'stage_light' => $night['light'] ?? 0,
+                    'stage_awake' => $night['awake'] ?? 0,
+                ];
 
-            $total = 0;
-            foreach ($stages as $minutes) {
-                $total += (int) ($minutes ?? 0);
-            }
+                $total = array_sum($stages);
 
-            if ($total > 0) {
-                foreach ($stages as $key => $minutes) {
-                    $put($key, (int) round((int) ($minutes ?? 0) / $total * 100));
+                if ($total > 0) {
+                    foreach ($stages as $key => $minutes) {
+                        $put($key, (int) round($minutes / $total * 100));
+                    }
                 }
             }
         }

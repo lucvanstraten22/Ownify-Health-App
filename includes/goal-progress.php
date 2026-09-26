@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
+require_once __DIR__ . '/health-signals.php';
 require_once __DIR__ . '/goals.php';
 
 /** Six weeks of calendar. Longer goals show their most recent six. */
@@ -1148,28 +1149,23 @@ if (!function_exists('goal_sources_available')) {
     }
 
     /**
-     * Sleep per night, from the sessions themselves.
-     *
-     * A night is filed under the morning it ended, which is what night_of
-     * already means everywhere else in the app. Two sessions on one night —
-     * a nap, a broken night — add up for duration and average for efficiency.
+     * Sleep per night: the night of each date by the one rule the Slaap
+     * card, the sleep score and the sleep points use (health_nights_on() in
+     * health-signals.php) — filed under the morning it ended, the main sleep
+     * only. A nap does not add to it and a night recorded by two devices
+     * counts once; a night broken by getting up for a while is still one.
      *
      * @return array<string, float>  night => value, only nights with a session
      */
     function goal_sleep_by_day(int $userId, string $key, string $from, string $to): array
     {
-        $column = $key === 'sleep_efficiency' ? 'AVG(efficiency_pct)' : 'SUM(duration_minutes)';
-
         $out = [];
 
-        foreach (db_all(
-            'SELECT night_of AS d, ' . $column . ' AS v FROM sleep_sessions
-              WHERE user_id = ? AND night_of BETWEEN ? AND ?
-           GROUP BY night_of',
-            [$userId, $from, $to]
-        ) as $row) {
-            if ($row['v'] !== null) {
-                $out[(string) $row['d']] = (float) $row['v'];
+        foreach (health_nights_on($userId, $from, $to) as $date => $night) {
+            $value = $key === 'sleep_efficiency' ? $night['efficiency'] : $night['minutes'];
+
+            if ($value !== null) {
+                $out[(string) $date] = (float) $value;
             }
         }
 

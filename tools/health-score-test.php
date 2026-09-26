@@ -242,6 +242,74 @@ check('a nap on the same date is not the night', health_night_main([$nap, $watch
 check('two recordings without stages: the longer counts',
     health_night_main([night($now, 7.0, ['session_id' => 4]), night($now + 300, 7.4, ['session_id' => 5])])['session_id'] === 5);
 
+/* A night broken by getting up: 3:30 asleep, 40 minutes up, 3:50 asleep. */
+$wake   = $now - 4 * $day;
+$first  = night($wake - (int) (4.5 * 3600), 3.5, ['session_id' => 20, 'in_bed' => 215.0, 'awake' => 5.0]);
+$second = night($wake, 230 / 60, ['session_id' => 21, 'in_bed' => 235.0, 'awake' => 5.0]);
+$broken = health_night_main([$second, $first]);
+check('a night broken by 40 minutes up is one night: 3:30 + 3:50 = 7:20',
+    (int) round($broken['minutes']) === 440, (string) $broken['minutes']);
+check('  from the first part\'s start to the second part\'s end',
+    $broken['start'] === $first['start'] && $broken['end'] === $second['end']);
+check('  named after its longest part, and its measurements added up',
+    $broken['session_id'] === 21 && $broken['in_bed'] === 450.0 && $broken['awake'] === 10.0
+    && abs($broken['efficiency'] - 97.78) < 0.01, json_encode($broken));
+check('  a measurement one part lacks is not the night\'s',
+    health_night_main([$first, night($wake, 230 / 60, ['session_id' => 22])])['in_bed'] === null);
+
+$evening = night($first['start'] - 90 * 60, 0.5, ['session_id' => 23]);        // 90 minutes before bed
+check('a nap 90 minutes before bed is not joined to the night',
+    (int) round(health_night_main([$evening, $first, $second])['minutes']) === 440);
+check('a night recorded whole by a watch and in two parts by a phone counts once, the watch\'s',
+    health_night_main([$first, $second, night($wake, 7.9, ['session_id' => 24, 'deep' => 80.0, 'rem' => 90.0])])['session_id'] === 24);
+check('an ordinary night reads exactly as its session', health_night_main([$watch]) === $watch);
+
+/* ====================================================================== */
+section('Health Connect sleep stages');
+
+require_once dirname(__DIR__) . '/includes/health-connect-map.php';
+
+/** A Health Connect sleep session from 23:00 to 07:00, with stages as [from, to, stage] in hours after 23:00. */
+function hc_night(array $stages): array
+{
+    $at = static fn (float $h): string => gmdate('Y-m-d\TH:i:s\Z', (int) (strtotime('2026-09-01T21:00:00Z') + $h * 3600));
+
+    return health_connect_sleep('hc', [
+        'startTime' => $at(0),
+        'endTime'   => $at(8),
+        'stages'    => array_map(static fn ($s) => ['startTime' => $at($s[0]), 'endTime' => $at($s[1]), 'stage' => $s[2]], $stages),
+    ])[0];
+}
+
+$detailed = hc_night([[0, 2, 4], [2, 3.5, 5], [3.5, 5, 6], [5, 5.25, 1], [5.25, 8, 4]]);
+check('light, deep, REM and awake: unchanged — 7:45 asleep, 15 awake, the breakdown kept',
+    $detailed['duration_minutes'] === 465 && $detailed['awake_minutes'] === 15 && $detailed['time_in_bed_minutes'] === 480
+    && $detailed['light_minutes'] === 285 && $detailed['deep_minutes'] === 90 && $detailed['rem_minutes'] === 90
+    && $detailed['awakenings'] === 1, json_encode($detailed));
+
+$generic = hc_night([[0, 3.5, 2], [3.5, 3.6667, 1], [3.6667, 8, 2]]);
+check('stage 2 "sleeping" is sleep: 7:50 asleep, 10 awake — not the 0:00 it was',
+    $generic['duration_minutes'] === 470 && $generic['awake_minutes'] === 10 && $generic['time_in_bed_minutes'] === 480,
+    json_encode($generic));
+check('  and no light, deep or REM is claimed for it (unknown, not zero)',
+    !isset($generic['light_minutes']) && !isset($generic['deep_minutes']) && !isset($generic['rem_minutes']));
+
+$outOfBed = hc_night([[0, 3, 4], [3, 3.3333, 3], [3.3333, 5, 5], [5, 6.5, 6], [6.5, 8, 4]]);
+check('stage 3 "out of bed" is not sleep and not time in bed: 7:40 asleep of the 8 hours',
+    $outOfBed['duration_minutes'] === 460 && $outOfBed['time_in_bed_minutes'] === 460 && $outOfBed['efficiency_pct'] === 100.0,
+    json_encode($outOfBed));
+check('  the session keeps its own start and end', $outOfBed['started_at'] === '2026-09-01T21:00:00Z' && $outOfBed['ended_at'] === '2026-09-02T05:00:00Z');
+
+$mixed = hc_night([[0, 2, 4], [2, 4, 2], [4, 5.5, 5], [5.5, 8, 6]]);
+check('"sleeping" next to measured stages still counts as sleep: 8:00 asleep',
+    $mixed['duration_minutes'] === 480 && $mixed['light_minutes'] === 120 && $mixed['deep_minutes'] === 90, json_encode($mixed));
+
+foreach (['only out of bed' => [[0, 8, 3]], 'only awake' => [[0, 8, 1]], 'only unknown' => [[0, 8, 0]], 'none' => []] as $what => $stages) {
+    $session = hc_night($stages);
+    check("stages that hold no sleep ($what): the session keeps its own times, never 0:00",
+        !isset($session['duration_minutes']) && !isset($session['time_in_bed_minutes']), json_encode($session));
+}
+
 /* ====================================================================== */
 section('training: more is not automatically better');
 

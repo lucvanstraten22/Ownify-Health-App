@@ -184,7 +184,7 @@ without eventually duplicating them.
 
 | Health Connect record | Becomes | Notes |
 | --- | --- | --- |
-| `SleepSession` | a sleep session | stages → deep/REM/light/awake minutes; efficiency derived from time asleep over time in bed |
+| `SleepSession` | a sleep session | stages → light/deep/REM/awake minutes; "sleeping" (2) counts as sleep without a breakdown; "out of bed" (3) is neither sleep nor time in bed; efficiency derived from time asleep over time in bed |
 | `ExerciseSession` | a workout | `exerciseTypeName`, `title` or `exerciseType`, whichever is present |
 | `Steps` | metric `steps` | |
 | `Distance` | metric `distance` | metres → km |
@@ -210,8 +210,9 @@ Anything else is reported in `unmapped` and ignored. Adding one is a case in
 
 **What that means for scores and points.** A `SleepSession` with stages feeds
 all three parts of the sleep score and can earn the sleep-quality bonus; one
-without stages has only its times, so it counts for duration and regularity
-and earns no quality bonus. An `ExerciseSession` carries its type and times
+recorded only as "sleeping" and "awake" has no deep or REM, so its quality
+rests on efficiency and time awake; one without stages has only its times, so
+it counts for duration and regularity and earns no quality bonus. An `ExerciseSession` carries its type and times
 only: it earns the training points by duration and counts toward the weekly
 bonus, but not the intensity bonus or a personal record, which need effort,
 heart rate or distance on the workout itself. Those work today through
@@ -233,7 +234,17 @@ heart rate or distance on the workout itself. Those work today through
 ```
 
 Stage numbers are Health Connect's own: 1 awake, 2 sleeping, 3 out of bed,
-4 light, 5 deep, 6 REM, 7 awake in bed.
+4 light, 5 deep, 6 REM, 7 awake in bed. Light, deep, REM and sleeping are time
+asleep; awake and awake in bed are time in bed; out of bed and unknown (0) are
+neither. Stages that hold no sleep at all leave the session its own start and
+end rather than making it a night of zero minutes.
+
+A night is filed under the date it ended, and a date has one night: its main
+sleep, the same for the Slaap card, the sleep score, the sleep points and
+sleep goals (`health_night_main()` in `includes/health-signals.php`). Two
+recordings of the same sleep count once — the one with stages; a nap is not
+the night and does not add to it; a night broken by less than an hour awake
+is one night.
 
 ## What the app has to do
 
