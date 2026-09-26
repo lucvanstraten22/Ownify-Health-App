@@ -20,6 +20,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/health-totals.php';
 
 if (!function_exists('health_source_id')) {
 
@@ -296,8 +297,12 @@ if (!function_exists('health_source_id')) {
             return null;
         }
 
+        /* A total is THE day total, the one every page reads. */
+        if ($type['aggregation'] === 'sum') {
+            return health_metric_totals($userId, $metricCode, $date, $date)[$date] ?? null;
+        }
+
         $aggregate = match ($type['aggregation']) {
-            'sum' => 'SUM(value)',
             'avg' => 'AVG(value)',
             'min' => 'MIN(value)',
             'max' => 'MAX(value)',
@@ -321,8 +326,11 @@ if (!function_exists('health_source_id')) {
             return [];
         }
 
+        if ($type['aggregation'] === 'sum') {
+            return health_metric_totals($userId, $metricCode, $from, $to);
+        }
+
         $aggregate = match ($type['aggregation']) {
-            'sum' => 'SUM(value)',
             'min' => 'MIN(value)',
             'max' => 'MAX(value)',
             default => 'AVG(value)',

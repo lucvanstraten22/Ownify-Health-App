@@ -108,6 +108,14 @@ if (!function_exists('health_connect_map')) {
         $start = $r['startTime'] ?? $r['time'] ?? null;
         $end   = $r['endTime'] ?? null;
 
+        /* What a reading covers and which app wrote it — kept so that a day's
+           total can count two apps' records of the same activity once, as
+           Health Connect does (health_metric_totals() in health-totals.php).
+           An interval needs both ends; anything else is a reading at one
+           moment. */
+        $origin   = ['data_origin' => health_connect_origin($r)];
+        $interval = $origin + ['started_at' => isset($r['startTime'], $r['endTime']) ? $r['startTime'] : null];
+
         return match ($type) {
             'SleepSession'         => health_connect_sleep($id, $r),
             'ExerciseSession'      => health_connect_exercise($id, $r),
@@ -126,29 +134,29 @@ if (!function_exists('health_connect_map')) {
 
             /* Everything scalar. The end of an interval is when it counted. */
             'Steps'                => health_connect_metric($id, 'steps',
-                                        health_connect_number($r['count'] ?? null), $end ?? $start),
+                                        health_connect_number($r['count'] ?? null), $end ?? $start, $interval),
             'Distance'             => health_connect_metric($id, 'distance',
-                                        health_connect_scale($r['distance']['meters'] ?? null, 0.001), $end ?? $start),
+                                        health_connect_scale($r['distance']['meters'] ?? null, 0.001), $end ?? $start, $interval),
             'FloorsClimbed'        => health_connect_metric($id, 'floors',
-                                        health_connect_number($r['floors'] ?? null), $end ?? $start),
+                                        health_connect_number($r['floors'] ?? null), $end ?? $start, $interval),
             'ActiveCaloriesBurned' => health_connect_metric($id, 'active_energy',
-                                        health_connect_number($r['energy']['kilocalories'] ?? null), $end ?? $start),
+                                        health_connect_number($r['energy']['kilocalories'] ?? null), $end ?? $start, $interval),
             'TotalCaloriesBurned'  => health_connect_metric($id, 'total_energy',
-                                        health_connect_number($r['energy']['kilocalories'] ?? null), $end ?? $start),
+                                        health_connect_number($r['energy']['kilocalories'] ?? null), $end ?? $start, $interval),
             'RestingHeartRate'     => health_connect_metric($id, 'resting_hr',
-                                        health_connect_number($r['beatsPerMinute'] ?? null), $start),
+                                        health_connect_number($r['beatsPerMinute'] ?? null), $start, $origin),
             'HeartRateVariabilityRmssd' => health_connect_metric($id, 'hrv',
-                                        health_connect_number($r['heartRateVariabilityMillis'] ?? null), $start),
+                                        health_connect_number($r['heartRateVariabilityMillis'] ?? null), $start, $origin),
             'OxygenSaturation'     => health_connect_metric($id, 'spo2',
-                                        health_connect_number($r['percentage'] ?? null), $start),
+                                        health_connect_number($r['percentage'] ?? null), $start, $origin),
             'RespiratoryRate'      => health_connect_metric($id, 'respiratory_rate',
-                                        health_connect_number($r['rate'] ?? null), $start),
+                                        health_connect_number($r['rate'] ?? null), $start, $origin),
             'Vo2Max'               => health_connect_metric($id, 'vo2max',
-                                        health_connect_number($r['vo2MillilitersPerMinuteKilogram'] ?? null), $start),
+                                        health_connect_number($r['vo2MillilitersPerMinuteKilogram'] ?? null), $start, $origin),
             'SkinTemperature', 'BodyTemperature' => health_connect_metric($id, 'skin_temp',
-                                        health_connect_number($r['temperature']['celsius'] ?? null), $start),
+                                        health_connect_number($r['temperature']['celsius'] ?? null), $start, $origin),
             'Hydration'            => health_connect_metric($id, 'water',
-                                        health_connect_number($r['volume']['liters'] ?? null), $end ?? $start),
+                                        health_connect_number($r['volume']['liters'] ?? null), $end ?? $start, $interval),
 
             /* A heart-rate record is a series of samples. The average over the
                night is what the sleep card shows, so that is what is kept —
@@ -383,12 +391,14 @@ if (!function_exists('health_connect_map')) {
             return [];
         }
 
-        return health_connect_metric($id, 'sleeping_hr', $total / $count, $last ?? ($r['startTime'] ?? null));
+        return health_connect_metric($id, 'sleeping_hr', $total / $count, $last ?? ($r['startTime'] ?? null),
+            ['data_origin' => health_connect_origin($r)]);
     }
 
     /* --------------------------------------------------------- small parts */
 
-    function health_connect_metric(string $id, string $code, ?float $value, mixed $at): array
+    /** $extra: 'started_at' for a value that covers an interval, 'data_origin' for the app that wrote it. */
+    function health_connect_metric(string $id, string $code, ?float $value, mixed $at, array $extra = []): array
     {
         if ($value === null || $at === null) {
             return [];
@@ -400,7 +410,27 @@ if (!function_exists('health_connect_map')) {
             'metric_code' => $code,
             'value'       => $value,
             'recorded_at' => $at,
-        ]];
+        ] + $extra];
+    }
+
+    /**
+     * The app that wrote the record in Health Connect — its package name,
+     * e.g. "com.google.android.apps.fitness" — or null when not given.
+     */
+    function health_connect_origin(array $r): ?string
+    {
+        $origin = $r['metadata']['dataOrigin'] ?? null;
+
+        /* Health Connect's own objects call it DataOrigin(packageName). */
+        if (is_array($origin)) {
+            $origin = $origin['packageName'] ?? null;
+        }
+
+        if (!is_string($origin) || trim($origin) === '') {
+            return null;
+        }
+
+        return mb_substr(trim($origin), 0, 191);
     }
 
     function health_connect_measure(string $id, string $type, string $unit, ?float $value, mixed $at): array

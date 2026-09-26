@@ -62,10 +62,21 @@ $days = static function (int $userId, ?int $type): array {
         return [];
     }
 
-    return array_column(db_all(
+    $dates = array_column(db_all(
         'SELECT DISTINCT recorded_on FROM health_metrics WHERE user_id = ? AND metric_type_id = ?',
         [$userId, $type]
     ), 'recorded_on');
+
+    /* A walk from 23:50 to 00:10 counts on the day it started too. */
+    if (health_metric_intervals_available()) {
+        $dates = array_merge($dates, array_column(db_all(
+            'SELECT DISTINCT DATE(started_at) AS d FROM health_metrics
+              WHERE user_id = ? AND metric_type_id = ? AND started_at IS NOT NULL',
+            [$userId, $type]
+        ), 'd'));
+    }
+
+    return array_values(array_unique($dates));
 };
 
 echo "JoLu points backfill\n", str_repeat('-', 72), "\n";

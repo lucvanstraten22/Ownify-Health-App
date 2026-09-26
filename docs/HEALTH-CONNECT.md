@@ -208,6 +208,26 @@ without eventually duplicating them.
 Anything else is reported in `unmapped` and ignored. Adding one is a case in
 `health_connect_map_one()` — server side, no app release.
 
+**Two apps, one walk.** Health Connect holds every connected app's records
+side by side: the phone's step counter and a watch both write the same walk,
+5.000 steps and 4.900. The upsert on `metadata.id` cannot help there — they
+are two different records — and adding them up gives 9.900. So the server
+keeps what each record says about itself: `startTime` as `started_at`, and
+`metadata.dataOrigin` (the app's package name) as `data_origin`, on steps,
+distance, active and total calories, floors and water; the one-moment metrics
+keep their app too. A day's total then counts every moment once, the way
+Health Connect's own totals do: at each moment the record of the
+highest-ranked app counts, for its share of the value, and the next app fills
+in where it has nothing. Health Connect asks the user to rank their apps but
+lets no app read that ranking, so JoLu's is in `config/health-sources.php`:
+a priority list (empty by default), then the app that covers most of that day,
+then the larger total, then the name. Every record is still stored as it
+arrived; the rule only decides what counts. It runs on the server
+(`health_metric_totals()` in `includes/health-totals.php`), so the app keeps
+sending every record it reads and never adds anything up itself. It needs
+`database/migrations/012-metric-intervals.sql`; the next sync after importing
+it fills the two columns in for the days it sends.
+
 **What that means for scores and points.** A `SleepSession` with stages feeds
 all three parts of the sleep score and can earn the sleep-quality bonus; one
 recorded only as "sleeping" and "awake" has no deep or REM, so its quality
@@ -349,6 +369,21 @@ account is left for you to remove on the server.
 Both tools are CLI-only — they answer `404` to a browser, and `tools/.htaccess`
 denies the directory as well, because a configuration report is a map of the
 server.
+
+How two apps' records of the same time are counted has a test of its own,
+against the database this checkout is configured for:
+
+```bash
+php tools/metric-totals-test.php
+```
+
+It checks the rule by itself first, then imports records the way `ingest.php`
+does into a throwaway account (`totalstest_…`, removed at the end) and asks
+the Training card, goal progress, the trend series and the steps points what
+each day came to: one app, several intervals, the same record and the same
+walk sent twice, two apps over the same hour, partly overlapping and apart, a
+full re-sync, records crossing midnight, three apps, a reading typed in by
+hand, and rows from before migration 012.
 
 **One thing worth knowing:** `pairing-code.php` issues a code even while
 `app_available` is `false`. That is deliberate, not a gap. The flag decides

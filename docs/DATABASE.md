@@ -244,6 +244,7 @@ edit the two values.
 | `workouts` | one training session, every column nullable |
 | `workout_hr_zones` | seconds per heart-rate zone |
 | `health_metrics` | every scalar reading, whatever its frequency |
+| `health_metric_day_totals` | a day's steps, distance and calories as `health_metric_totals()` worked them out, kept so a long goal is not worked out again on every page — nothing in it is a source |
 | `daily_scores` | the Health Score per category, one row per day it was calculated, with the days and components behind it |
 
 **Goals — private**
@@ -279,6 +280,32 @@ a new wearable metric is an INSERT into the catalogue, not a migration. A
 reading can point at a `sleep_session_id`, a `workout_id` or a
 `nutrition_entry_id` — that is how a nutrient hangs off a meal and an overnight
 heart rate off a night, without either needing its own column.
+
+**A day's total counts every moment once.** A phone and a watch can both
+record the same walk in Health Connect — 5.000 steps from one, 4.900 from the
+other — and adding the rows up gives 9.900 steps nobody walked. So a reading
+that covers a span keeps it: `started_at` to `recorded_at`, plus
+`data_origin`, the app that wrote it (its package name). For the metrics
+listed in `config/health-sources.php` — steps, distance, active and total
+calories, floors — `health_metric_totals()` (`includes/health-totals.php`) cuts
+the day into moments and lets one record count at each: the highest-ranked
+app's, for its share of the value; the next app fills in where it has nothing,
+and a record crossing midnight is split over both days. Which app ranks
+highest is set in that config file: a priority list (empty by default), then
+the app covering most of that day, then the larger total, then the name. The
+rule decides what *counts*; nothing is deleted, and every row stays as it
+arrived. A reading without a span — typed in by hand, or imported before the
+columns existed — counts as it is. That one function is the day total for the
+Training card, goal progress and the steps points alike, and any other summed
+metric (water, nutrients) is still the plain sum per day. Each day it works
+out is kept in `health_metric_day_totals` with a fingerprint of the readings
+behind it; when a reading changes — however it changes — the fingerprint no
+longer matches and the day is worked out again on the next read, so no code
+that writes readings has to know the table is there. An existing database
+gets the two columns and the table from
+`database/migrations/012-metric-intervals.sql`; until then every total is the
+plain sum it always was, and the phone's next sync fills the columns in for
+the days it sends again.
 
 **Friendship is one row, not two.** The pair is stored in a fixed id order
 (`user_low_id < user_high_id`), so the unique key makes a mirrored duplicate

@@ -1204,12 +1204,16 @@ if (!function_exists('goal_sources_available')) {
             case 'metric':
                 $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$key]);
 
-                if ($type !== null) {
+                if ($type !== null && $type['aggregation'] === 'sum') {
+                    /* A total is THE day total — the number the Training card
+                       shows and the steps points are paid on, with two apps
+                       that counted the same walk counted once. */
+                    $out = health_metric_totals($userId, $key, $from, $to);
+                } elseif ($type !== null) {
                     /* The catalogue decides how a day rolls up, exactly as
                        health_daily_metric() does, so the chart and the day
                        calendar can never disagree about what a day was. */
                     $aggregate = match (true) {
-                        $type['aggregation'] === 'sum' => 'SUM(value)',
                         $type['aggregation'] === 'avg' => 'AVG(value)',
                         $type['aggregation'] === 'min' => 'MIN(value)',
                         $type['aggregation'] === 'max' => 'MAX(value)',

@@ -397,29 +397,72 @@ if (!function_exists('health_import_records')) {
         }
 
         $context = $r['context'] ?? [];
+        $end     = $when->format('Y-m-d H:i:s');
 
-        db_run(
-            'INSERT INTO health_metrics
-                (user_id, metric_type_id, source_id, external_id, value, recorded_at,
-                 sleep_session_id, workout_id, nutrition_entry_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-                metric_type_id = VALUES(metric_type_id), value = VALUES(value),
-                recorded_at = VALUES(recorded_at),
-                sleep_session_id = VALUES(sleep_session_id),
-                workout_id = VALUES(workout_id),
-                nutrition_entry_id = VALUES(nutrition_entry_id)',
-            [
-                $userId, $typeId, $sourceId, $externalId, $value,
-                $when->format('Y-m-d H:i:s'),
-                $context['sleep_session_id'] ?? null,
-                $context['workout_id'] ?? null,
-                $context['nutrition_entry_id'] ?? null,
-            ]
-        );
+        /* The time a value covers, when it covers one: steps from 10:00 to
+           10:15 are stored with both ends, so a day's total can count two
+           apps' records of the same quarter hour once (health_metric_totals()).
+           A start that is not before the end is no span at all. */
+        $start = health_import_time($r['started_at'] ?? null)?->format('Y-m-d H:i:s');
+        $start = ($start !== null && $start < $end) ? $start : null;
+
+        $origin = is_string($r['data_origin'] ?? null) && trim($r['data_origin']) !== ''
+            ? mb_substr(trim($r['data_origin']), 0, 191)
+            : null;
+
+        if (health_metric_intervals_available()) {
+            /* Same key, same upsert: sending a record again rewrites it. The
+               app that wrote a record never changes, so a copy sent without
+               one keeps the one already known. */
+            db_run(
+                'INSERT INTO health_metrics
+                    (user_id, metric_type_id, source_id, data_origin, external_id, value,
+                     started_at, recorded_at, sleep_session_id, workout_id, nutrition_entry_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    metric_type_id = VALUES(metric_type_id),
+                    data_origin = COALESCE(VALUES(data_origin), data_origin),
+                    value = VALUES(value),
+                    started_at = VALUES(started_at), recorded_at = VALUES(recorded_at),
+                    sleep_session_id = VALUES(sleep_session_id),
+                    workout_id = VALUES(workout_id),
+                    nutrition_entry_id = VALUES(nutrition_entry_id)',
+                [
+                    $userId, $typeId, $sourceId, $origin, $externalId, $value,
+                    $start, $end,
+                    $context['sleep_session_id'] ?? null,
+                    $context['workout_id'] ?? null,
+                    $context['nutrition_entry_id'] ?? null,
+                ]
+            );
+        } else {
+            /* Before migration 012: the columns are not there yet. */
+            db_run(
+                'INSERT INTO health_metrics
+                    (user_id, metric_type_id, source_id, external_id, value, recorded_at,
+                     sleep_session_id, workout_id, nutrition_entry_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                    metric_type_id = VALUES(metric_type_id), value = VALUES(value),
+                    recorded_at = VALUES(recorded_at),
+                    sleep_session_id = VALUES(sleep_session_id),
+                    workout_id = VALUES(workout_id),
+                    nutrition_entry_id = VALUES(nutrition_entry_id)',
+                [
+                    $userId, $typeId, $sourceId, $externalId, $value, $end,
+                    $context['sleep_session_id'] ?? null,
+                    $context['workout_id'] ?? null,
+                    $context['nutrition_entry_id'] ?? null,
+                ]
+            );
+        }
+
+        /* Steps from 23:50 to 00:10 count on both days, so both days' awards
+           are looked at again. */
+        $stepDays = array_unique(array_filter([$start === null ? null : substr($start, 0, 10), $when->format('Y-m-d')]));
 
         $touch = match ($code) {
-            'steps'            => [['step_days', $when->format('Y-m-d')]],
+            'steps'            => array_map(fn (string $day): array => ['step_days', $day], array_values($stepDays)),
             'nutrition_rating' => [['nutrition_days', $when->format('Y-m-d')]],
             default            => [],
         };

@@ -58,6 +58,7 @@ DROP TABLE IF EXISTS `workout_hr_zones`;
 DROP TABLE IF EXISTS `workouts`;
 DROP TABLE IF EXISTS `nutrition_entries`;
 DROP TABLE IF EXISTS `sleep_sessions`;
+DROP TABLE IF EXISTS `health_metric_day_totals`;
 DROP TABLE IF EXISTS `health_metrics`;
 DROP TABLE IF EXISTS `health_metric_types`;
 DROP TABLE IF EXISTS `user_measurements`;
@@ -337,8 +338,12 @@ CREATE TABLE `health_metrics` (
     `user_id`            BIGINT UNSIGNED NOT NULL,
     `metric_type_id`     SMALLINT UNSIGNED NOT NULL,
     `source_id`          SMALLINT UNSIGNED NULL,
+    `data_origin`        VARCHAR(191) NULL COMMENT 'The Health Connect app that wrote it (package name); NULL when not from Health Connect',
     `external_id`        VARCHAR(191) NULL COMMENT 'Id in the system it came from',
     `value`              DECIMAL(14,4) NOT NULL,
+    -- The interval a value covers runs from started_at to recorded_at; a
+    -- reading at one moment has no started_at (migration 012).
+    `started_at`         DATETIME NULL COMMENT 'Start of the interval the value covers (recorded_at is its end); NULL for a reading at one moment',
     `recorded_at`        DATETIME NOT NULL,
     -- Stored generated column so "everything on this day" stays an index hit.
     `recorded_on`        DATE AS (DATE(`recorded_at`)) STORED,
@@ -365,6 +370,25 @@ CREATE TABLE `health_metrics` (
         REFERENCES `workouts` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_hm_meal` FOREIGN KEY (`nutrition_entry_id`)
         REFERENCES `nutrition_entries` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A day's total of a reconciled metric (steps, distance, calories), as
+-- health_metric_totals() worked it out from health_metrics — kept so a long
+-- goal window is not worked out again on every page. The fingerprint says
+-- which readings it came from; when they change it is worked out again on the
+-- next read. Nothing here is a source: emptying it only costs time.
+CREATE TABLE `health_metric_day_totals` (
+    `user_id`        BIGINT UNSIGNED NOT NULL,
+    `metric_type_id` SMALLINT UNSIGNED NOT NULL,
+    `day`            DATE NOT NULL,
+    `total`          DECIMAL(14,4) NULL COMMENT 'NULL: nothing counted on this day',
+    `readings_hash`  CHAR(32) NOT NULL COMMENT 'Fingerprint of the readings and the rule it was worked out from',
+    `computed_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_id`, `metric_type_id`, `day`),
+    CONSTRAINT `fk_hmdt_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_hmdt_type` FOREIGN KEY (`metric_type_id`)
+        REFERENCES `health_metric_types` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

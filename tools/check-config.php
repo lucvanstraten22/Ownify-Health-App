@@ -158,6 +158,25 @@ if (db_available()) {
             line('warn', 'friend requests', 'user_profiles.allow_friend_requests is missing, so "Vriendverzoeken toestaan" '
                 . 'cannot be switched off — import database/migrations/011-friend-requests-setting.sql');
         }
+
+        /* Not fatal: without it a day's steps, distance and calories are the
+           plain sum of every record, so a walk the phone and a watch both
+           counted is counted twice — as it always was. */
+        $intervals = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'health_metrics'
+                AND column_name IN ('started_at', 'data_origin')"
+        ) + (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'health_metric_day_totals'"
+        );
+
+        if ($intervals === 3) {
+            line('ok', 'activity totals', 'health_metrics.started_at/data_origin and health_metric_day_totals are there');
+        } else {
+            line('warn', 'activity totals', 'migration 012 is not (fully) in, so steps from two apps are added up — '
+                . 'import database/migrations/012-metric-intervals.sql');
+        }
     } else {
         line('fail', 'schema', 'the database is empty — import database/schema.sql');
         $problems++;

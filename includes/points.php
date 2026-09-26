@@ -306,21 +306,25 @@ if (!function_exists('points_process')) {
 
     function points_for_steps_day(array $ctx, string $date): array
     {
-        $key  = 'steps:' . $date;
-        $type = health_metric_type_id('steps');
+        $key = 'steps:' . $date;
 
-        $row = $type === null ? null : db_one(
-            'SELECT SUM(value) AS steps, MAX(recorded_at) AS at, COUNT(*) AS n
-               FROM health_metrics
-              WHERE user_id = ? AND metric_type_id = ? AND recorded_on = ?',
-            [$ctx['user'], $type, $date]
-        );
+        /* The day's steps as every page shows them: a walk that the phone and
+           a watch both counted is paid once (health_metric_totals()). */
+        $total = health_metric_totals($ctx['user'], 'steps', $date, $date)[$date] ?? null;
 
-        if ($row === null || (int) $row['n'] === 0) {
+        if ($total === null) {
             return points_remove($ctx, ['steps' => $key]);
         }
 
-        $at = (int) strtotime((string) $row['at']);
+        /* When the day's steps were in: its last reading, or the end of the
+           day when all it has is a walk that ran on past midnight. */
+        $last = db_value(
+            'SELECT MAX(recorded_at) FROM health_metrics
+              WHERE user_id = ? AND metric_type_id = ? AND recorded_on = ?',
+            [$ctx['user'], health_metric_type_id('steps'), $date]
+        );
+
+        $at = (int) strtotime($last !== null ? (string) $last : $date . ' 23:59:59');
         $eligibility = points_eligibility($ctx, $at);
 
         if ($eligibility === 'future') {
@@ -331,7 +335,7 @@ if (!function_exists('points_process')) {
             return points_remove($ctx, ['steps' => $key]);
         }
 
-        $steps  = (int) round((float) $row['steps']);
+        $steps  = (int) round($total);
         $points = points_steps_value($steps);
 
         $change = points_set($ctx, $key, 'steps', $points, date('Y-m-d H:i:s', $at),
