@@ -24,6 +24,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 private const val NO_DATA = "No data"
 
@@ -125,6 +128,11 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
                 Line("Daily protein: ${amount(targets.proteinTargetG, "g")}")
                 Line("BMR: ${amount(targets.bmrKcal, "kcal")}")
                 Line("TDEE: ${amount(targets.tdeeKcal, "kcal")}")
+
+                SyncPanel(
+                    sync = JoluSync.state,
+                    onSync = { JoluSync.sync(context) }
+                )
             }
 
             is JoluState.Failed -> {
@@ -138,6 +146,67 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
 
             JoluState.Checking, JoluState.Loading -> Unit
         }
+    }
+}
+
+/** "Sync to JoLu", and what the last sync did. */
+@Composable
+private fun SyncPanel(sync: JoluSyncState, onSync: () -> Unit) {
+    Button(
+        onClick = onSync,
+        enabled = sync != JoluSyncState.Syncing,
+        modifier = Modifier.padding(top = 20.dp)
+    ) {
+        Text("Sync to JoLu")
+    }
+
+    when (sync) {
+        JoluSyncState.Idle ->
+            Line("Sends the last ${JoluSync.RANGE.toDays()} days of Health Connect data.")
+
+        JoluSyncState.Syncing ->
+            Line("Syncing...")
+
+        is JoluSyncState.Failed ->
+            Line(sync.message)
+
+        is JoluSyncState.Synced ->
+            SyncResult(sync.summary)
+    }
+}
+
+/** Everything the server answered, as it answered it. */
+@Composable
+private fun SyncResult(summary: JoluSyncSummary) {
+    val result = summary.result
+
+    Line("Synced successfully")
+    Line("Range: ${moment(summary.from)} – ${moment(summary.to)}")
+    Line("Sent: ${summary.sent.values.sum()} records${breakdown(summary.sent)}")
+
+    Line("Records written: ${result.written}", top = 12.dp)
+    Line("Records skipped: ${result.skipped}")
+    Line("Days: ${result.days.joinToString(", ").ifEmpty { "none" }}")
+    Line("Unmapped: ${counts(result.unmapped).ifEmpty { "none" }}")
+    Line("Problems: ${problems(result.problems)}")
+
+    val earned = result.points.sumOf { it.points }
+    Line("Points earned: ${if (earned > 0) "+$earned" else "none"}", top = 12.dp)
+    result.points.forEach { Line("+${it.points} — ${it.label}", top = 4.dp) }
+
+    val scores = result.scores
+    Line(
+        if (scores == null) {
+            "Scores: not recalculated (nothing written)"
+        } else {
+            "Scores: Sleep ${score(scores.sleep)} · Nutrition ${score(scores.nutrition)} · " +
+                "Training ${score(scores.training)} · Overall ${score(scores.overall)}"
+        },
+        top = 12.dp
+    )
+
+    if (summary.notGranted.isNotEmpty()) {
+        Line("Not read (no permission): ${summary.notGranted.joinToString(", ")}")
     }
 }
 
@@ -172,6 +241,30 @@ private fun measurement(value: Double?, unit: String): String {
 
     return "${number.format(value)} $unit"
 }
+
+/** "Steps 212, SleepSession 7", or "" when there is nothing to list. */
+private fun counts(counts: Map<String, Int>): String =
+    counts.entries.joinToString(", ") { "${it.key} ${it.value}" }
+
+/** " (Steps 212, SleepSession 7)", or "" when there is nothing to list. */
+private fun breakdown(counts: Map<String, Int>): String =
+    if (counts.isEmpty()) "" else " (${counts(counts)})"
+
+/** The server's reasons, each once with how often it came up. */
+private fun problems(problems: List<String>): String =
+    if (problems.isEmpty()) {
+        "none"
+    } else {
+        problems.groupingBy { it }.eachCount().entries.joinToString("; ") { (text, count) ->
+            if (count > 1) "$text (${count}×)" else text
+        }
+    }
+
+private fun score(value: Int?): String = value?.toString() ?: NO_DATA
+
+/** "19 Sep 14:02" on the phone's own clock. */
+private fun moment(instant: Instant): String =
+    instant.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM HH:mm"))
 
 private fun amount(value: Int?, unit: String): String =
     if (value == null) NO_DATA else "$value $unit"

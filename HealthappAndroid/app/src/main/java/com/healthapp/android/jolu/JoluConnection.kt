@@ -138,6 +138,20 @@ object JoluConnection {
         }
     }
 
+    /** The stored token for another JoLu call (the sync), or null when this phone is not paired. */
+    internal suspend fun storedToken(context: Context): String? {
+        val store = store(context)
+        return withContext(Dispatchers.IO) { store.load() }
+    }
+
+    /**
+     * Another JoLu call (the sync) was answered with 401: handled exactly like
+     * a 401 on the profile — the token is forgotten and a new code asked for.
+     */
+    internal suspend fun unauthorized(context: Context) {
+        expire(store(context))
+    }
+
     private fun reconnect(context: Context) {
         if (busy) {
             return
@@ -185,7 +199,7 @@ object JoluConnection {
         state = JoluState.Failed(describe(failure))
     }
 
-    private fun describe(failure: JoluResult.Failure): String =
+    internal fun describe(failure: JoluResult.Failure): String =
         when (failure) {
             is JoluResult.Unauthorized ->
                 EXPIRED_MESSAGE
