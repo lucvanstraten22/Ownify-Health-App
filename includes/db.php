@@ -43,6 +43,12 @@ if (!function_exists('db')) {
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_STRINGIFY_FETCHES  => false,
             ]);
+
+            /* MySQL's NOW(), CURDATE() and DATETIME defaults run on PHP's
+               clock — the zone includes/bootstrap.php sets — so a time the
+               database writes and a time PHP writes can be compared. As an
+               offset ("+02:00"), which needs no time-zone tables in MySQL. */
+            $pdo->exec("SET time_zone = '" . date('P') . "'");
         } catch (PDOException $e) {
             db_note_failure($e->getMessage());
             $pdo = null;

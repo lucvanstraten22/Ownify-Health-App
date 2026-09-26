@@ -9,6 +9,20 @@
 
 declare(strict_types=1);
 
+/* ---------------------------------------------------------------------------
+ * ONE CLOCK: DUTCH LOCAL TIME
+ * ---------------------------------------------------------------------------
+ * JoLu is a Dutch app and every date it shows or files — "today" on the
+ * health pages, the night a sleep belongs to, the day a workout earns its
+ * points — is a date on a Dutch calendar. PHP's default zone is whatever the
+ * server's php.ini says (UTC on many hosts), which would make "today" start
+ * at 02:00 in summer and read the phone's local timestamps as two hours in
+ * the future. So it is set here, once, for every page and every endpoint,
+ * before anything reads the clock or opens the database; db.php hands the
+ * same offset to MySQL so NOW() and date() agree.
+ * ------------------------------------------------------------------------ */
+date_default_timezone_set('Europe/Amsterdam');
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
