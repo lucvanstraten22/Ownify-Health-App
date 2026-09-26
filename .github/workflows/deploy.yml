@@ -26,6 +26,15 @@ jobs:
           printf '%s' "${GITHUB_SHA}" > VERSION
           echo "Stamped VERSION with ${GITHUB_SHA}"
 
+      # The Android project is in the repository for development, not for the
+      # website. Only its .htaccess (deny all) is uploaded: nginx on Hestia
+      # serves .xml, .webp and .jar itself, so an .htaccess alone cannot keep
+      # those private — they must not reach the server at all.
+      - name: Leave the Android project out of the upload
+        run: |
+          find HealthappAndroid -mindepth 1 ! -path HealthappAndroid/.htaccess -delete
+          ls -A HealthappAndroid
+
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:

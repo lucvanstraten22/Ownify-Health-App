@@ -1,0 +1,9 @@
+# The Android app's source project. It lives in this repository for
+# development and is never part of the website: nothing here may answer an
+# HTTP request, on WAMP or on the server.
+#
+# The Hestia deploy (.github/workflows/deploy.yml) also leaves every file in
+# this folder except this one out of the upload, because nginx serves some
+# file types there (.xml, .webp, .jar) directly, without ever asking Apache.
+
+Require all denied
