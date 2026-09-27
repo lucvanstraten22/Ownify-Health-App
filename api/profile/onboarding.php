@@ -12,10 +12,9 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId = api_require_user();
+$userId = api_require_account_user();
 
 $result = user_set_onboarding_facts(
     $userId,

@@ -82,6 +82,23 @@ if (!function_exists('health_metric')) {
     }
 }
 
+if (!function_exists('health_group_locked')) {
+    /**
+     * A group is "locked" when nothing in it can arrive without a device:
+     * every metric in it (resolved with health_metric()) is device-only.
+     */
+    function health_group_locked(array $metrics): bool
+    {
+        foreach ($metrics as $metric) {
+            if (($metric['availability'] ?? null) !== 'device') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('health_series_has_data')) {
     /** True when at least one point in a series carries a value. */
     function health_series_has_data(array $values): bool

@@ -9,7 +9,8 @@
  *   remove    end your friendship with user_id
  *   cancel    withdraw a request you sent
  *
- * Every branch takes the acting user from the session; the id in the request
+ * Every branch takes the acting user from the session (or the app's account
+ * token, api_require_account_user()); the id in the request
  * only ever names the other person, and each action checks the pair's own
  * row — a request can only be answered by the person it was sent to, and a
  * friendship only ended by one of the two friends.
@@ -22,10 +23,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/friends.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId  = api_require_user();
+$userId  = api_require_account_user();
 $otherId = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 $action  = (string) ($_POST['action'] ?? 'request');
 $other   = $otherId === false ? null : user_public_profile($otherId);

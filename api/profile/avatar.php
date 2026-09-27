@@ -4,10 +4,9 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId = api_require_user();
+$userId = api_require_account_user();
 
 if (!isset($_FILES['avatar'])) {
     api_fail('Geen bestand ontvangen.', 400);

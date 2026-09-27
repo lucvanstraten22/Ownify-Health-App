@@ -25,10 +25,9 @@ require_once dirname(__DIR__, 2) . '/includes/goals.php';
 require_once dirname(__DIR__, 2) . '/includes/goal-progress.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId = api_require_user();
+$userId = api_require_account_user();
 
 $name = trim((string) ($_POST['name'] ?? ''));
 

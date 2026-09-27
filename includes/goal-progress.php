@@ -151,6 +151,68 @@ if (!function_exists('goal_sources_available')) {
         return $catalogue;
     }
 
+    /**
+     * The wizard's list of sources — "Hoe houd je dit bij?" — grouped by
+     * domain in the order the wizard shows them: each source with the unit a
+     * target is typed in, the line under it, and which goal types can use it.
+     * A weight can be a Mijlpaal but not a Streak, and only what builds up
+     * over a day can be added up (create.php refuses the rest anyway).
+     *
+     * One list for the website's wizard (components/goal-wizard.php) and the
+     * JoLu app's (api/app/state.php).
+     *
+     * @return array<int, array{domain: string, label: string, sources: array<int, array<string, mixed>>}>
+     */
+    function goal_wizard_sources(): array
+    {
+        $domainLabels = [
+            'body'      => 'Lichaam',
+            'training'  => 'Beweging en training',
+            'sleep'     => 'Slaap',
+            'nutrition' => 'Voeding',
+            'vital'     => 'Vitale waarden',
+        ];
+
+        $byDomain = [];
+        foreach (goal_source_catalogue() as $source) {
+            $byDomain[$source['domain']][] = $source;
+        }
+
+        $groups = [];
+
+        foreach ($domainLabels as $domain => $domainLabel) {
+            if (empty($byDomain[$domain])) {
+                continue;
+            }
+
+            $sources = [];
+
+            foreach ($byDomain[$domain] as $source) {
+                $unit  = goal_source_unit($source['kind'], $source['key']);
+                $types = ['milestone'];
+                if ($source['kind'] !== 'measurement') {
+                    $types[] = 'streak';
+                }
+                if ($source['kind'] === 'workout' || $source['daily']) {
+                    $types[] = 'accumulate';
+                }
+
+                $sources[] = [
+                    'kind'  => $source['kind'],
+                    'key'   => $source['key'],
+                    'label' => $source['label'],
+                    'unit'  => $unit['word'],
+                    'hint'  => $unit['word'] === '' ? 'Uit je eigen gegevens' : 'In ' . $unit['word'],
+                    'types' => $types,
+                ];
+            }
+
+            $groups[] = ['domain' => $domain, 'label' => $domainLabel, 'sources' => $sources];
+        }
+
+        return $groups;
+    }
+
     /** One source, or null when the key is not one this app can read. */
     function goal_source_find(?string $kind, ?string $key): ?array
     {

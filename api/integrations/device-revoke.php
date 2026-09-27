@@ -17,10 +17,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/devices.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId   = api_require_user();
+$userId   = api_require_account_user();
 $deviceId = (int) ($_POST['device'] ?? 0);
 
 if ($deviceId <= 0) {

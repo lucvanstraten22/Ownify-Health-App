@@ -2,10 +2,12 @@
 /**
  * Mints a pairing code for the signed-in user to type into the phone app.
  *
- * Session-authenticated, because the person asking is sitting in front of the
- * website. The code comes back once, in this response, and is never
- * retrievable again — only its hash is stored, so showing it twice would mean
- * keeping it, and then it would be worth stealing.
+ * Asked for by the signed-in account — on the website, or in the JoLu app
+ * signed in with its account token (api_require_account_user()), to pair
+ * another phone. A pairing token can never mint one. The code comes back once,
+ * in this response, and is never retrievable again — only its hash is stored,
+ * so showing it twice would mean keeping it, and then it would be worth
+ * stealing.
  */
 declare(strict_types=1);
 
@@ -13,10 +15,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/devices.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId   = api_require_user();
+$userId   = api_require_account_user();
 $provider = (string) ($_POST['provider'] ?? '');
 
 if (!integration_known($provider)) {

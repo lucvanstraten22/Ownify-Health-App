@@ -15,10 +15,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/friends.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId = api_require_user();
+$userId = api_require_account_user();
 $result = friend_find($userId, (string) ($_POST['username'] ?? $_POST['q'] ?? ''));
 
 if (!$result['ok']) {

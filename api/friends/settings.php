@@ -12,10 +12,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/friends.php';
 
 api_require_post();
-api_require_csrf();
 api_require_database();
 
-$userId = api_require_user();
+$userId = api_require_account_user();
 $value  = (string) ($_POST['allow_requests'] ?? '');
 
 if ($value !== '0' && $value !== '1') {

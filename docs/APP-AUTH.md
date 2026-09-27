@@ -124,9 +124,11 @@ ID token verified here.
 
 `501` until the Android clients are configured (below).
 
-## The pilot: `api/goals/update.php`
+## Acting as the account: `api_require_account_user()`
 
-The first endpoint that takes both kinds of caller, through
+`api/goals/update.php` was the first endpoint that takes both kinds of caller;
+the app's read (`api/app/state.php`) and every endpoint the app's pages write
+to now do too — see [APP-STATE.md](APP-STATE.md). Through
 `api_require_account_user()` in `api/bootstrap.php`:
 
 | Request | Answer |
@@ -140,9 +142,10 @@ A request that carries a bearer token is decided by it alone; it never falls
 back to the session cookie. No CSRF token is needed with a bearer token because
 a browser never adds an `Authorization` header on its own and another site
 cannot make it add one without a CORS preflight this server does not answer.
-Every other endpoint still takes the website's session only; each moves over
-when the app needs it, by swapping its `api_require_csrf()` +
-`api_require_user()` for `api_require_account_user()`.
+Every other endpoint still takes the website's session only (signing in on
+the website, Google's redirects, the manual sleep, training and nutrition
+entry endpoints); one moves over when the app needs it, by swapping its
+`api_require_csrf()` + `api_require_user()` for `api_require_account_user()`.
 
 ## Lifetime, revocation, switching accounts
 
