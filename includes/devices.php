@@ -25,6 +25,40 @@
  *   4. revoking the device kills that token and nothing else
  *
  * ---------------------------------------------------------------------------
+ * TWO SCOPES: SYNC AND ACCOUNT (migration 013)
+ * ---------------------------------------------------------------------------
+ * That token is a SYNC token, and it stays exactly that. The full JoLu app
+ * also has to act as the account — set goals, see friends, change the
+ * profile — and it gets that authority the only way that proves it is the
+ * account holder: by signing in, with the password or with Google, in the app
+ * (api/auth/app-login.php, app-register.php, app-google.php). What that
+ * issues is an ACCOUNT token, in this same table:
+ *
+ *   scope    issued by                     may
+ *   sync     a pairing code (pair.php)     upload records and read what a
+ *                                          sync needs (the integration
+ *                                          endpoints) — nothing else
+ *   account  signing in in the app         all of that, and act as the
+ *                                          account where an endpoint says so
+ *                                          (api_require_account_user())
+ *
+ * A token never changes scope. When the app signs in on a phone that already
+ * has a token, and shows it, that phone's row is given a NEW token with the
+ * account scope and the old one stops working that instant
+ * (device_issue_account_token()). So there is one row per phone, and a
+ * pairing code's token can never be turned into more than it was.
+ *
+ * An account token lapses after DEVICE_ACCOUNT_TOKEN_DAYS without use;
+ * last_seen_at, set on every authenticated request, says when that is. It is
+ * not rotated on use: a background sync and the app can hold the same token
+ * at the same moment, and a rotation one of them misses would sign the phone
+ * out. Sync tokens do not lapse, as before 013.
+ *
+ * Both kinds are revoked the same way — the button in Settings, disconnecting
+ * the source, deleting the account — and an account token also by signing
+ * out in the app (device_revoke_token()).
+ *
+ * ---------------------------------------------------------------------------
  * HOW THE SECRETS ARE STORED
  * ---------------------------------------------------------------------------
  * Hashed, not encrypted. Neither the pairing code nor the device token is ever
@@ -51,12 +85,64 @@ if (!defined('DEVICE_LIMIT_PER_PROVIDER')) {
     define('DEVICE_LIMIT_PER_PROVIDER', 5);
 }
 
+/** Days an account token keeps working unused. Every use starts them again. */
+if (!defined('DEVICE_ACCOUNT_TOKEN_DAYS')) {
+    define('DEVICE_ACCOUNT_TOKEN_DAYS', 365);
+}
+
 if (!function_exists('device_hash')) {
 
     /** One place, so minting and checking can never disagree. */
     function device_hash(string $secret): string
     {
         return hash('sha256', $secret);
+    }
+
+    /**
+     * Whether user_devices has migration 013's scope column. Asked once per
+     * request. Before it, every token is what pairing made — a sync token —
+     * and signing in in the app is not offered.
+     */
+    function devices_scoped(): bool
+    {
+        static $scoped = null;
+
+        if ($scoped !== null) {
+            return $scoped;
+        }
+
+        if (!db_available()) {
+            return $scoped = false;
+        }
+
+        return $scoped = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_devices' AND column_name = 'scope'"
+        ) === 1;
+    }
+
+    /**
+     * The condition for a row that still works: not revoked and, for an
+     * account token, used within DEVICE_ACCOUNT_TOKEN_DAYS. `$alias` is the
+     * table's alias in the statement, if it has one.
+     */
+    function device_live_sql(string $alias = ''): string
+    {
+        $t   = $alias === '' ? '' : $alias . '.';
+        $sql = $t . 'revoked_at IS NULL';
+
+        if (devices_scoped()) {
+            $sql .= ' AND (' . $t . "scope = 'sync' OR COALESCE(" . $t . 'last_seen_at, ' . $t . 'created_at) >= NOW() - INTERVAL '
+                . (int) DEVICE_ACCOUNT_TOKEN_DAYS . ' DAY)';
+        }
+
+        return $sql;
+    }
+
+    /** The phone's own source, from the platform the app says it runs on. */
+    function device_app_provider(?string $platform): string
+    {
+        return strtolower(trim((string) $platform)) === 'ios' ? 'apple_health' : 'google_health_connect';
     }
 
     /* ------------------------------------------------------ pairing code */
@@ -165,16 +251,17 @@ if (!function_exists('device_hash')) {
         /* 256 bits from the server. Returned now and never again. */
         $token = bin2hex(random_bytes(32));
 
+        /* A sync token, said in so many words rather than left to the
+           column's default: a pairing code never buys more than that. */
         db_run(
-            'INSERT INTO user_devices (user_id, provider, token_hash, label, platform, app_version, last_seen_at)
-                  VALUES (?, ?, ?, ?, ?, ?, NOW())',
+            'INSERT INTO user_devices (user_id, provider, token_hash, ' . (devices_scoped() ? 'scope, ' : '')
+                . 'label, platform, app_version, last_seen_at)
+                  VALUES (?, ?, ?, ' . (devices_scoped() ? "'sync', " : '') . '?, ?, ?, NOW())',
             [
                 $userId,
                 $provider,
                 device_hash($token),
-                isset($device['label']) ? mb_substr((string) $device['label'], 0, 80) : null,
-                isset($device['platform']) ? mb_substr((string) $device['platform'], 0, 40) : null,
-                isset($device['app_version']) ? mb_substr((string) $device['app_version'], 0, 40) : null,
+                ...device_details($device),
             ]
         );
 
@@ -201,6 +288,18 @@ if (!function_exists('device_hash')) {
      * in the request body is ever consulted for identity: a user id in a body
      * is a user id an attacker can change.
      */
+    /**
+     * Also for the app's account token (scope 'account'): this says which
+     * kind it is, and the caller decides whether that kind is enough. The
+     * integration endpoints take either; anything that acts as the account
+     * asks api_require_account_user(), which takes only 'account'.
+     *
+     * An account token unused for DEVICE_ACCOUNT_TOKEN_DAYS is refused like a
+     * revoked one. Using one moves last_seen_at, which starts its days again.
+     *
+     * @return array{device_id: int, user_id: int, provider: string, label: ?string,
+     *               scope: string, last_seen_at: ?string}|null
+     */
     function device_authenticate(?string $token): ?array
     {
         if ($token === null || !preg_match('/^[a-f0-9]{64}$/', $token)) {
@@ -208,7 +307,8 @@ if (!function_exists('device_hash')) {
         }
 
         $row = db_one(
-            'SELECT id, user_id, provider, label, platform, revoked_at
+            'SELECT id, user_id, provider, label, platform, created_at, last_seen_at, revoked_at'
+                . (devices_scoped() ? ', scope' : '') . '
                FROM user_devices WHERE token_hash = ?',
             [device_hash($token)]
         );
@@ -217,14 +317,155 @@ if (!function_exists('device_hash')) {
             return null;
         }
 
+        $scope = (string) ($row['scope'] ?? 'sync');
+
+        if ($scope === 'account') {
+            $used = strtotime((string) ($row['last_seen_at'] ?? $row['created_at']));
+
+            if ($used === false || $used < time() - DEVICE_ACCOUNT_TOKEN_DAYS * 86400) {
+                return null;
+            }
+        }
+
         db_run('UPDATE user_devices SET last_seen_at = NOW() WHERE id = ?', [(int) $row['id']]);
 
         return [
-            'device_id' => (int) $row['id'],
-            'user_id'   => (int) $row['user_id'],
-            'provider'  => (string) $row['provider'],
-            'label'     => $row['label'],
+            'device_id'    => (int) $row['id'],
+            'user_id'      => (int) $row['user_id'],
+            'provider'     => (string) $row['provider'],
+            'label'        => $row['label'],
+            'scope'        => $scope,
+            'last_seen_at' => $row['last_seen_at'],
         ];
+    }
+
+    /**
+     * What the app says about itself, cut to the columns' sizes.
+     *
+     * @return list<?string>  label, platform, app_version
+     */
+    function device_details(array $device): array
+    {
+        return [
+            isset($device['label']) && is_scalar($device['label']) ? mb_substr((string) $device['label'], 0, 80) : null,
+            isset($device['platform']) && is_scalar($device['platform']) ? mb_substr((string) $device['platform'], 0, 40) : null,
+            isset($device['app_version']) && is_scalar($device['app_version']) ? mb_substr((string) $device['app_version'], 0, 40) : null,
+        ];
+    }
+
+    /* ---------------------------------------------------- account token */
+
+    /**
+     * An account token for somebody who has just proved who they are in the
+     * app — with their password, a new registration, or Google. Never called
+     * for anything less: this is the one place that makes a token that can
+     * act as the account.
+     *
+     * $presented is the token the app already holds, if any, from its
+     * Authorization header. When it is a working token of this same account —
+     * the phone was paired before, or signed in before — that phone's row is
+     * reused: a new token, scope 'account', and the old token dead at once.
+     * One phone stays one row in Settings, its sync history intact.
+     *
+     * A token of somebody else's account is left alone: signing in as B
+     * proves nothing about A's phone entry, which A can see and revoke.
+     *
+     * The phone's source is connected, as pairing does: the row is listed,
+     * and revoked, under it in Settings.
+     *
+     * @return array{ok: bool, error: ?string, status?: int, token?: string, device_id?: int, provider?: string}
+     */
+    function device_issue_account_token(int $userId, array $device, ?string $presented = null): array
+    {
+        if (!devices_scoped()) {
+            return ['ok' => false, 'error' => 'Inloggen in de app is op deze server nog niet beschikbaar.', 'status' => 503];
+        }
+
+        /* 256 bits from the server, like a pairing token, and unrelated to
+           anything else — the password, the browser's sign-in, a sync token.
+           Returned now and never again. */
+        $token   = bin2hex(random_bytes(32));
+        $details = device_details($device);
+        $current = device_authenticate($presented);
+
+        if ($current !== null && $current['user_id'] === $userId) {
+            $statement = db_run(
+                "UPDATE user_devices
+                    SET token_hash = ?, scope = 'account',
+                        label = COALESCE(?, label), platform = COALESCE(?, platform),
+                        app_version = COALESCE(?, app_version), last_seen_at = NOW()
+                  WHERE id = ? AND user_id = ? AND revoked_at IS NULL",
+                [device_hash($token), ...$details, $current['device_id'], $userId]
+            );
+
+            if ($statement !== null && $statement->rowCount() === 1) {
+                integration_connect($userId, $current['provider'], ['external_account_label' => $details[0]]);
+
+                return [
+                    'ok'        => true,
+                    'error'     => null,
+                    'token'     => $token,
+                    'device_id' => $current['device_id'],
+                    'provider'  => $current['provider'],
+                ];
+            }
+        }
+
+        $provider = device_app_provider($details[1]);
+
+        if (device_count($userId, $provider) >= DEVICE_LIMIT_PER_PROVIDER) {
+            return [
+                'ok'     => false,
+                'error'  => 'Je hebt het maximum aantal gekoppelde apparaten bereikt. Verwijder er een via Instellingen op de website.',
+                'status' => 409,
+            ];
+        }
+
+        $insert = db_run(
+            "INSERT INTO user_devices (user_id, provider, token_hash, scope, label, platform, app_version, last_seen_at)
+                  VALUES (?, ?, ?, 'account', ?, ?, ?, NOW())",
+            [$userId, $provider, device_hash($token), ...$details]
+        );
+
+        $deviceId = $insert === null ? null : db_insert_id();
+
+        /* Never a token without the row that makes it work. */
+        if ($deviceId === null || $deviceId <= 0) {
+            return ['ok' => false, 'error' => 'Er kon niet worden ingelogd. Probeer het opnieuw.', 'status' => 500];
+        }
+
+        integration_connect($userId, $provider, ['external_account_label' => $details[0]]);
+
+        return [
+            'ok'        => true,
+            'error'     => null,
+            'token'     => $token,
+            'device_id' => $deviceId,
+            'provider'  => $provider,
+        ];
+    }
+
+    /**
+     * Signing out in the app: the account token it shows, and nothing else —
+     * not the account's other phones, not a browser. Only an account token:
+     * a sync token is ended by revoking the phone on the website, as always.
+     *
+     * True when a token was revoked; false when there was nothing to revoke
+     * (unknown, already revoked, lapsed, or not an account token).
+     */
+    function device_revoke_token(?string $token): bool
+    {
+        if (!devices_scoped() || $token === null || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+            return false;
+        }
+
+        $statement = db_run(
+            "UPDATE user_devices SET revoked_at = NOW()
+              WHERE token_hash = ? AND scope = 'account' AND revoked_at IS NULL",
+            [device_hash($token)]
+        );
+
+        return $statement !== null && $statement->rowCount() > 0;
     }
 
     function device_note_sync(int $deviceId): void
@@ -238,7 +479,7 @@ if (!function_exists('device_hash')) {
     {
         return (int) db_value(
             'SELECT COUNT(*) FROM user_devices
-              WHERE user_id = ? AND provider = ? AND revoked_at IS NULL',
+              WHERE user_id = ? AND provider = ? AND ' . device_live_sql(),
             [$userId, $provider]
         );
     }
@@ -248,7 +489,7 @@ if (!function_exists('device_hash')) {
     {
         $sql = 'SELECT id, provider, label, platform, app_version, created_at, last_seen_at, last_sync_at
                   FROM user_devices
-                 WHERE user_id = ? AND revoked_at IS NULL';
+                 WHERE user_id = ? AND ' . device_live_sql();
         $params = [$userId];
 
         if ($provider !== null) {

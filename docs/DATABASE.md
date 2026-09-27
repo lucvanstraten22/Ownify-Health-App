@@ -454,6 +454,22 @@ with the authorization code flow and PKCE:
 Codes and tokens are never stored or logged. Test the verification offline
 with `php tools/google-signin-test.php`.
 
+**Failed sign-ins are limited** (`includes/auth-throttle.php`,
+`auth_attempts`): 5 wrong passwords per 15 minutes for one name from one
+network address, then `429` until the oldest failure is out of the window. A
+name without an account is treated identically, a correct password clears the
+count, and nothing locks for good. Rows hold a SHA-256 of the name and address
+together, never either as text, and are deleted after a day.
+
+**The JoLu app signs in as an account** with its own token, not a cookie:
+`user_devices.scope` is `sync` for a phone paired with a code (upload only) and
+`account` for the app after signing in with the password or Google (acts as the
+account where an endpoint takes `api_require_account_user()`). Only SHA-256
+hashes are stored; an account token lapses after a year without use. See
+[APP-AUTH.md](APP-AUTH.md). An existing database gets the column and the table
+from `database/migrations/013-app-tokens.sql`; until then every token is a
+sync token and sign-ins are not counted.
+
 ## Where the future work goes
 
 **Apple Health / Health Connect sync.** Write an importer that calls

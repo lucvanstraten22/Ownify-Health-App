@@ -33,6 +33,15 @@ $settings = [
         'client_secret' => '',
         // https://your-domain.tld/api/auth/google-callback.php
         'redirect_uri'  => '',
+
+        /* The JoLu app's own OAuth clients (type "Android", one per signing
+           key: package name + SHA-1), in the same Google Cloud project as
+           the client above. Not secret. The app asks Google for an ID token
+           for the Web client above; Google names the Android client that
+           asked in the token's `azp`, and only these are believed
+           (api/auth/app-google.php). Empty: signing in with Google in the
+           app is not offered. */
+        'android_client_ids' => [],
     ],
 ];
 
@@ -54,6 +63,12 @@ foreach ([
     if ($value !== false && $value !== '') {
         $settings[$provider][$key] = $value;
     }
+}
+
+/* A list, so a comma-separated one: debug and release keys have a client each. */
+$android = getenv('GOOGLE_SIGNIN_ANDROID_CLIENT_IDS');
+if ($android !== false && trim($android) !== '') {
+    $settings['google']['android_client_ids'] = array_values(array_filter(array_map('trim', explode(',', $android))));
 }
 
 return $settings;

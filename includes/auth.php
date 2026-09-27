@@ -135,12 +135,15 @@ if (!function_exists('auth_provider_available')) {
             ['email', $email]
         );
 
+        /* `taken` marks the two answers that say something about other
+           accounts, which the app's registration limit counts
+           (api/auth/app-register.php). It never reaches a response. */
         if ($existing !== null) {
-            return ['ok' => false, 'error' => 'Er bestaat al een account met dit e-mailadres.'];
+            return ['ok' => false, 'error' => 'Er bestaat al een account met dit e-mailadres.', 'taken' => true];
         }
 
         if (user_username_taken($username)) {
-            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.'];
+            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.', 'taken' => true];
         }
 
         try {
@@ -205,7 +208,10 @@ if (!function_exists('auth_provider_available')) {
             ['email', auth_normalise_email($identifier), $identifier]
         );
 
-        $generic = ['ok' => false, 'error' => 'Gebruikersnaam of wachtwoord klopt niet.'];
+        /* `credentials` marks the one failure that is a wrong guess, so the
+           sign-in limit (includes/auth-throttle.php) counts that and nothing
+           else. It never reaches a response. */
+        $generic = ['ok' => false, 'error' => 'Gebruikersnaam of wachtwoord klopt niet.', 'credentials' => true];
 
         if ($identity === null || empty($identity['password_hash'])) {
             // Spend comparable time so the response cannot be used to probe.

@@ -177,6 +177,24 @@ if (db_available()) {
             line('warn', 'activity totals', 'migration 012 is not (fully) in, so steps from two apps are added up — '
                 . 'import database/migrations/012-metric-intervals.sql');
         }
+
+        /* Not fatal: without it paired phones sync as they always did, but
+           the app cannot sign in as an account and failed sign-ins are not
+           counted, so password guessing is not slowed down. */
+        $appTokens = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_devices' AND column_name = 'scope'"
+        ) + (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'auth_attempts'"
+        );
+
+        if ($appTokens === 2) {
+            line('ok', 'app sign-in', 'user_devices.scope and auth_attempts are there');
+        } else {
+            line('warn', 'app sign-in', 'migration 013 is not (fully) in, so the app cannot sign in as an account and '
+                . 'failed sign-ins are not limited — import database/migrations/013-app-tokens.sql');
+        }
     } else {
         line('fail', 'schema', 'the database is empty — import database/schema.sql');
         $problems++;

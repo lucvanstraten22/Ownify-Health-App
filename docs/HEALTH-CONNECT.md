@@ -58,6 +58,12 @@ Revoking a device kills that token and nothing else, so losing a phone costs
 you that phone rather than every phone. Disconnecting in Settings revokes every
 phone for that source.
 
+That token is a **sync token** (`user_devices.scope = 'sync'`, migration 013)
+and stays one: it can never be used to act as the account. The full JoLu app
+signs in with the account's password or Google instead and gets an **account
+token** in the same table — listed and revoked in Settings the same way, and
+accepted by every endpoint below too. See [APP-AUTH.md](APP-AUTH.md).
+
 ## The endpoints
 
 ### 1. Exchange a pairing code — `POST /api/integrations/pair.php`

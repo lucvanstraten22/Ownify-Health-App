@@ -63,6 +63,7 @@ DROP TABLE IF EXISTS `health_metrics`;
 DROP TABLE IF EXISTS `health_metric_types`;
 DROP TABLE IF EXISTS `user_measurements`;
 DROP TABLE IF EXISTS `data_sources`;
+DROP TABLE IF EXISTS `auth_attempts`;
 DROP TABLE IF EXISTS `user_login_tokens`;
 DROP TABLE IF EXISTS `user_auth_identities`;
 DROP TABLE IF EXISTS `user_profiles`;
@@ -170,6 +171,22 @@ CREATE TABLE `user_login_tokens` (
     KEY `idx_login_expiry` (`expires_at`),
     CONSTRAINT `fk_login_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Failed sign-ins, so password guessing is slowed down: a name or e-mail
+-- from one address gets a limited number of tries per quarter of an hour.
+-- Keyed by a SHA-256 of both — neither is stored as text — and no link to an
+-- account, because most keys belong to none. Rows older than a day are
+-- deleted as new ones arrive. See includes/auth-throttle.php.
+CREATE TABLE `auth_attempts` (
+    `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `action`       VARCHAR(16) NOT NULL COMMENT 'login, register',
+    `key_hash`     CHAR(64) NOT NULL COMMENT 'sha256 of the typed name or e-mail and the source address; neither is stored as text',
+    `attempted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_attempt_key` (`action`, `key_hash`, `attempted_at`),
+    KEY `idx_attempt_time` (`attempted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -471,11 +488,16 @@ CREATE TABLE `device_pairing_codes` (
 
 -- Hashed rather than encrypted: the token is never needed back, only
 -- recognised, so a dump yields nothing replayable.
+-- scope: 'sync' is what a pairing code gets (upload records, read what a sync
+-- needs); 'account' is what signing in in the JoLu app gets (acts as the
+-- account). An account token lapses after a year unused — last_seen_at, set
+-- on every authenticated request, says when that is (includes/devices.php).
 CREATE TABLE `user_devices` (
     `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`      BIGINT UNSIGNED NOT NULL,
     `provider`     VARCHAR(40) NOT NULL COMMENT 'Matches data_sources.code',
     `token_hash`   CHAR(64) NOT NULL COMMENT 'sha256 of the device token',
+    `scope`        ENUM('sync','account') NOT NULL DEFAULT 'sync' COMMENT 'sync: pairing code, uploads only. account: signed in in the app, acts as the account',
     `label`        VARCHAR(80) NULL COMMENT 'What to call it on screen',
     `platform`     VARCHAR(40) NULL COMMENT 'android, ios',
     `app_version`  VARCHAR(40) NULL,

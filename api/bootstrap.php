@@ -134,6 +134,117 @@ if (!function_exists('api_json')) {
     }
 
     /**
+     * The authenticated user id for an endpoint that acts as the account —
+     * for the website AND for the JoLu app.
+     *
+     *   Authorization: Bearer <token>
+     *       The app. The token must be an ACCOUNT token (issued by signing in
+     *       in the app), working, of an active account. A sync token from a
+     *       pairing code is refused with 403: it may upload records, not act
+     *       as the account. Unknown, revoked and lapsed tokens are 401. A
+     *       request that carries a bearer token is decided by it alone and
+     *       never falls back to a session cookie.
+     *
+     *       No CSRF token: a browser never adds an Authorization header by
+     *       itself, and another site cannot make it add one (that takes a
+     *       CORS preflight this server does not answer), so a forged request
+     *       has no token to carry.
+     *
+     *   no bearer token
+     *       The website, exactly as api_require_csrf() + api_require_user():
+     *       the form's CSRF token (419 when wrong), then the session's user
+     *       (401 when there is none, or its account is gone).
+     *
+     * Nothing about the user ever comes from the request body.
+     */
+    function api_require_account_user(): int
+    {
+        $token = api_bearer_token();
+
+        if ($token === null) {
+            api_require_csrf();
+
+            return api_require_user();
+        }
+
+        require_once dirname(__DIR__) . '/includes/devices.php';
+
+        $device = db_available() ? device_authenticate($token) : null;
+
+        if ($device === null) {
+            api_fail('Je bent niet ingelogd.', 401);
+        }
+
+        if ($device['scope'] !== 'account') {
+            api_fail('Dit apparaat is alleen gekoppeld om gegevens te synchroniseren. Log in de app in met je account.', 403);
+        }
+
+        /* An account that was suspended keeps its rows; it does not keep
+           acting through them. (A deleted one has no rows left at all.) */
+        if (db_value('SELECT id FROM users WHERE id = ? AND status = ?', [$device['user_id'], 'active']) === null) {
+            api_fail('Je bent niet ingelogd.', 401);
+        }
+
+        return $device['user_id'];
+    }
+
+    /**
+     * HTTPS, for the endpoints that take a password or hand out a token.
+     *
+     * The same test session_boot() uses for the Secure cookie flag — which on
+     * the live server is right, behind its proxy. Only this machine itself may
+     * use plain http, for a development server on localhost.
+     */
+    function api_require_https(): void
+    {
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['SERVER_PORT'] ?? null) == 443);
+
+        if (!$https && !in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+            api_fail('Gebruik een beveiligde verbinding (https).', 403);
+        }
+    }
+
+    /**
+     * The app has proved who it is for — a password, a new account, Google —
+     * and gets its account token. The one answer every way of signing in in
+     * the app ends with:
+     *
+     *   { ok, token, scope: "account", provider: "password"|"google",
+     *     account: { username, avatar, created_at, age } }
+     *
+     * The token appears here once and never again: only its hash is stored.
+     * No user id, no e-mail address, nothing about health. A token the app
+     * already holds (Authorization header) for this same account is replaced
+     * on the same phone row — see device_issue_account_token().
+     *
+     * @param array<string, mixed> $input  the request body: label, platform, app_version
+     * @param array<string, mixed> $extra  more fields for the answer, e.g. Google's status
+     */
+    function api_app_signed_in(int $userId, string $method, array $input, array $extra = []): never
+    {
+        require_once dirname(__DIR__) . '/includes/devices.php';
+
+        $issued = device_issue_account_token($userId, [
+            'label'       => $input['label'] ?? null,
+            'platform'    => $input['platform'] ?? null,
+            'app_version' => $input['app_version'] ?? null,
+        ], api_bearer_token());
+
+        if (!$issued['ok']) {
+            api_fail((string) $issued['error'], (int) ($issued['status'] ?? 500));
+        }
+
+        auth_touch_last_seen($userId);
+
+        api_ok($extra + [
+            'token'    => $issued['token'],
+            'scope'    => 'account',
+            'provider' => $method,
+        ] + api_account_payload($userId));
+    }
+
+    /**
      * The request body as an array, whether it arrived as JSON or as a form.
      *
      * The phone app speaks JSON; curl and a browser form speak the other. Both

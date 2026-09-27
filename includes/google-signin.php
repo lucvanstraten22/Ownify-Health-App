@@ -113,7 +113,7 @@ if (!function_exists('google_signin_config')) {
        CONFIGURATION
        ================================================================== */
 
-    /** @return array{client_id: string, client_secret: string, redirect_uri: string} */
+    /** @return array{client_id: string, client_secret: string, redirect_uri: string, android_client_ids: list<string>} */
     function google_signin_config(): array
     {
         static $config = null;
@@ -129,7 +129,30 @@ if (!function_exists('google_signin_config')) {
             'client_id'     => trim((string) ($google['client_id'] ?? '')),
             'client_secret' => trim((string) ($google['client_secret'] ?? '')),
             'redirect_uri'  => trim((string) ($google['redirect_uri'] ?? '')),
+
+            /* The JoLu app's Android OAuth clients (api/auth/app-google.php). */
+            'android_client_ids' => array_values(array_filter(
+                array_map(static fn ($id): string => is_string($id) ? trim($id) : '', (array) ($google['android_client_ids'] ?? [])),
+                static fn (string $id): bool => $id !== ''
+            )),
         ];
+    }
+
+    /**
+     * Whether the JoLu app can sign in with Google here: the Web client's id
+     * (the audience of the app's ID tokens), at least one Android client (the
+     * party allowed to present them), and the means to fetch and verify. The
+     * app needs no client secret and no redirect: Google hands its ID token
+     * straight to the app.
+     */
+    function google_signin_native_configured(): bool
+    {
+        $config = google_signin_config();
+
+        return $config['client_id'] !== ''
+            && $config['android_client_ids'] !== []
+            && function_exists('openssl_verify')
+            && (function_exists('curl_init') || (bool) ini_get('allow_url_fopen'));
     }
 
     /**
@@ -305,10 +328,16 @@ if (!function_exists('google_signin_config')) {
      *   nonce      the one this sign-in was started with
      *   sub        present and plausible
      *
+     * $authorisedParties is for the JoLu app. Its ID token is issued for the
+     * Web client (aud) at the request of the app's Android client, which
+     * Google names in azp. When the list is given, azp must be there and be
+     * one of them. Left out, azp must be the Web client itself, as before.
+     *
      * @param list<array<string, mixed>> $keys
+     * @param list<string>|null $authorisedParties
      * @return array{ok: bool, error: ?string, claims: ?array<string, mixed>}
      */
-    function google_signin_verify(string $jwt, array $keys, string $clientId, string $nonce, ?int $now = null): array
+    function google_signin_verify(string $jwt, array $keys, string $clientId, string $nonce, ?int $now = null, ?array $authorisedParties = null): array
     {
         $now  = $now ?? time();
         $fail = static fn (string $why): array => ['ok' => false, 'error' => $why, 'claims' => null];
@@ -385,7 +414,11 @@ if (!function_exists('google_signin_config')) {
             return $fail('wrong audience');
         }
 
-        if ((is_array($audience) || isset($claims['azp'])) && ($claims['azp'] ?? null) !== $clientId) {
+        if ($authorisedParties !== null) {
+            if (!in_array($claims['azp'] ?? null, $authorisedParties, true)) {
+                return $fail('wrong authorised party');
+            }
+        } elseif ((is_array($audience) || isset($claims['azp'])) && ($claims['azp'] ?? null) !== $clientId) {
             return $fail('wrong authorised party');
         }
 
@@ -713,6 +746,41 @@ if (!function_exists('google_signin_config')) {
     /** @param callable(string, ?string): array $out */
     function google_signin_login(string $sub, ?string $email, callable $out): array
     {
+        $match = google_signin_match($sub, $email);
+
+        if ($match['outcome'] === 'error') {
+            return $out('error', $match['error']);
+        }
+
+        if ($match['outcome'] === 'existing') {
+            session_login($match['user_id']);
+            auth_touch_last_seen($match['user_id']);
+
+            return $out('signed_in');
+        }
+
+        google_signin_hold($sub, (string) $email);
+
+        return $out('choose_username');
+    }
+
+    /**
+     * Who a verified Google identity is — the decision the website's sign-in
+     * and the app's (api/auth/app-google.php) share, so the two can never
+     * treat the same Google account differently. Signs nobody in.
+     *
+     *   existing   `sub` is linked to an active account (its last sign-in is
+     *              noted)                               -> user_id
+     *   new        nobody has it, and Google vouches for an address no
+     *              password account uses                -> a username is next
+     *   error      an inactive account, no verified address, or an address
+     *              a password account already has       -> error, and
+     *              `conflict` for that last one
+     *
+     * @return array{outcome: string, user_id?: int, error?: string, conflict?: bool}
+     */
+    function google_signin_match(string $sub, ?string $email): array
+    {
         $identity = db_one(
             'SELECT i.id, i.user_id, u.status
                FROM user_auth_identities i
@@ -723,30 +791,39 @@ if (!function_exists('google_signin_config')) {
 
         if ($identity !== null) {
             if ($identity['status'] !== 'active') {
-                return $out('error', 'Dit account is niet actief.');
+                return ['outcome' => 'error', 'error' => 'Dit account is niet actief.'];
             }
 
             db_run('UPDATE user_auth_identities SET last_login_at = NOW() WHERE id = ?', [(int) $identity['id']]);
 
-            session_login((int) $identity['user_id']);
-            auth_touch_last_seen((int) $identity['user_id']);
-
-            return $out('signed_in');
+            return ['outcome' => 'existing', 'user_id' => (int) $identity['user_id']];
         }
 
         /* A new account needs an address Google vouches for: it is what the
            check below compares, and an unverified one proves nothing. */
         if ($email === null) {
-            return $out('error', 'Google gaf geen bevestigd e-mailadres door. Gebruik een Google-account met een bevestigd adres, of maak een account aan met e-mail en wachtwoord.');
+            return ['outcome' => 'error', 'error' => 'Google gaf geen bevestigd e-mailadres door. Gebruik een Google-account met een bevestigd adres, of maak een account aan met e-mail en wachtwoord.'];
         }
 
         if (google_signin_email_taken($email)) {
-            return $out('error', 'Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.');
+            return [
+                'outcome'  => 'error',
+                'error'    => 'Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.',
+                'conflict' => true,
+            ];
         }
 
-        /* Held here, and only here, until a username is chosen. A new session
-           id first, so an identity waiting to become an account can never sit
-           in a session id somebody else could have planted. */
+        return ['outcome' => 'new'];
+    }
+
+    /**
+     * Holds a verified identity in the session, and only there, until a
+     * username is chosen (google_signin_create_account()). A new session id
+     * first, so an identity waiting to become an account can never sit in a
+     * session id somebody else could have planted.
+     */
+    function google_signin_hold(string $sub, string $email): void
+    {
         session_regenerate_id(true);
 
         $_SESSION['google_signin_pending'] = [
@@ -754,8 +831,6 @@ if (!function_exists('google_signin_config')) {
             'email'   => $email,
             'expires' => time() + GOOGLE_SIGNIN_PENDING_TTL,
         ];
-
-        return $out('choose_username');
     }
 
     /** Whether an e-mail/password account already uses this address. */

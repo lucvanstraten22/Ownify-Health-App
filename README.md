@@ -531,7 +531,13 @@ MySQL schema behind them — see **[docs/DATABASE.md](docs/DATABASE.md)** for th
 tables, the privacy model and where the future integrations plug in.
 
 What works today: email/password sign-in, Google sign-in once it is
-configured, changing a username, uploading a profile picture.
+configured, changing a username, uploading a profile picture. Failed sign-ins
+are limited to 5 per 15 minutes per name and network address.
+
+The JoLu app can sign in as an account too — its own token, never a cookie —
+through `api/auth/app-login.php`, `app-register.php`, `app-google.php` and
+`app-logout.php`; see **[docs/APP-AUTH.md](docs/APP-AUTH.md)**. Needs
+`database/migrations/013-app-tokens.sql`.
 
 The pages still render placeholder data. The database is the foundation under
 them, not yet their source.
