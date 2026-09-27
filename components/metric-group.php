@@ -19,10 +19,7 @@ $metrics = array_map(
 );
 
 /* A group is "locked" when nothing in it can arrive without a device. */
-$locked = true;
-foreach ($metrics as $metric) {
-    if ($metric['availability'] !== 'device') { $locked = false; break; }
-}
+$locked = health_group_locked($metrics);
 
 $id = 'group-' . $areaId . '-' . $index;
 ?>

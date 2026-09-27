@@ -15,13 +15,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/lib/render.php';
-require __DIR__ . '/lib/health.php';
-require __DIR__ . '/lib/community.php';
-require __DIR__ . '/lib/goals.php';
-require __DIR__ . '/lib/settings.php';
-require __DIR__ . '/lib/hydrate-health.php';
-require __DIR__ . '/lib/hydrate-goals.php';
-require __DIR__ . '/lib/hydrate-community.php';
+require __DIR__ . '/lib/app-data.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
@@ -55,45 +49,10 @@ if (!$data['auth']['signed_in']) {
    changing something a browser can reach. */
 $userId = current_user_id();
 
-/* The config files describe the shape of each page — which areas exist, what
-   they are called, in what unit. The values come from the signed-in user's own
-   records; anything they have not recorded stays null and renders empty. */
-$data['health'] = hydrate_health(require __DIR__ . '/config/health.php', $userId);
-
-/* The ring is the average of whichever pillars have a score, derived on every
-   render rather than stored, so it can never disagree with them — and the
-   legend under it reads the same three values. */
-$data['scores']['overall']['value'] = health_overall_score(
-    $data['health'],
-    (int) $data['scores']['overall']['max']
-);
-
-$data['scores']['contributors'] = health_contributor_scores(
-    $data['scores']['contributors'],
-    $data['health']
-);
-
-/* Real accounts and real points, or an empty board. */
-$data['community'] = hydrate_community(require __DIR__ . '/config/community.php', $userId);
-
-/* Goals: read for this user, then expanded, split by view and ordered. */
-$data['goals'] = goals_prepare(hydrate_goals(require __DIR__ . '/config/goals.php', $userId));
-
-/* The line under each page says which of three situations the reader is in.
-   An account with data gets no line at all: there is nothing to disclaim. */
-$data['disclaimer'] = match (true) {
-    !$data['auth']['database'] => $data['disclaimers']['no_database'],
-    $userId === null           => $data['disclaimers']['signed_out'],
-    $data['scores']['overall']['value'] === null
-        && ($data['goals']['used'] ?? 0) === 0 => $data['disclaimers']['no_data'],
-    default                    => '',
-};
-
-/* The Overzicht page's goal card follows whichever goal is primary. */
-$data['goal'] = hydrate_dashboard_goal($data['goal'], $data['goals']['primary'] ?? null);
-
-/* Settings: integrations resolved, profile read off the signed-in record. */
-$data['settings'] = settings_prepare(require __DIR__ . '/config/settings.php', $data['auth']);
+/* Everything the pages show, filled for this account: the same pipeline the
+   JoLu app reads as JSON (api/app/state.php), so the two can never disagree.
+   See lib/app-data.php. */
+$data = app_page_data($data, $userId);
 
 $app   = $data['app'];
 $focus = $data['focus'];

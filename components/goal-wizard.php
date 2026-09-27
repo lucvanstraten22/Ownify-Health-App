@@ -104,17 +104,7 @@ $total  = count($steps);
                bottom: plenty of worthwhile goals have no health data behind
                them, and it is a real answer rather than a failure to find
                something. */
-            $sourceGroups = [];
-            foreach (goal_source_catalogue() as $source) {
-                $sourceGroups[$source['domain']][] = $source;
-            }
-            $domainLabels = [
-                'body'      => 'Lichaam',
-                'training'  => 'Beweging en training',
-                'sleep'     => 'Slaap',
-                'nutrition' => 'Voeding',
-                'vital'     => 'Vitale waarden',
-            ];
+            $sourceGroups = goal_wizard_sources();
             ?>
             <section class="wizard__step" data-wizard-step="3" aria-label="<?= e($steps[3]['label']) ?>" hidden>
                 <h3 class="wizard__title"><?= e($steps[3]['title']) ?></h3>
@@ -130,30 +120,21 @@ $total  = count($steps);
                         <span class="wizard-type__hint"><?= e($copy['source_manual_hint']) ?></span>
                     </button>
 
-                    <?php foreach ($domainLabels as $domain => $domainLabel): ?>
-                        <?php if (empty($sourceGroups[$domain])) { continue; } ?>
-                        <p class="wizard__label wizard__label--spaced" data-source-group="<?= e($domain) ?>"><?= e($domainLabel) ?></p>
-                        <?php foreach ($sourceGroups[$domain] as $source): ?>
-                            <?php
-                            $unit  = goal_source_unit($source['kind'], $source['key']);
-                            $types = ['milestone'];
-                            if ($source['kind'] !== 'measurement') {
-                                $types[] = 'streak';
-                            }
-                            if ($source['kind'] === 'workout' || $source['daily']) {
-                                $types[] = 'accumulate';
-                            }
-                            ?>
+                    <?php foreach ($sourceGroups as $group):
+                        $domain = $group['domain'];
+                        ?>
+                        <p class="wizard__label wizard__label--spaced" data-source-group="<?= e($domain) ?>"><?= e($group['label']) ?></p>
+                        <?php foreach ($group['sources'] as $source): ?>
                             <button type="button" class="wizard-type press"
                                     data-wizard-source="<?= e($source['kind'] . ':' . $source['key']) ?>"
                                     data-source-kind="<?= e($source['kind']) ?>"
                                     data-source-key="<?= e($source['key']) ?>"
-                                    data-source-unit="<?= e($unit['word']) ?>"
+                                    data-source-unit="<?= e($source['unit']) ?>"
                                     data-source-group="<?= e($domain) ?>"
-                                    data-source-types="<?= e(implode(' ', $types)) ?>"
+                                    data-source-types="<?= e(implode(' ', $source['types'])) ?>"
                                     aria-pressed="false">
                                 <span class="wizard-type__label"><?= e($source['label']) ?></span>
-                                <span class="wizard-type__hint"><?= e($unit['word'] === '' ? 'Uit je eigen gegevens' : 'In ' . $unit['word']) ?></span>
+                                <span class="wizard-type__hint"><?= e($source['hint']) ?></span>
                             </button>
                         <?php endforeach; ?>
                     <?php endforeach; ?>
