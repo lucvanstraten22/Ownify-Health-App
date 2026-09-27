@@ -50,12 +50,12 @@ object JoluSync {
     /** How far back a sync reads — the same for the button and the automatic sync. */
     val RANGE: Duration get() = JoluSyncRunner.RANGE
 
-    private const val NOT_CONNECTED_MESSAGE = "Connect your JoLu account first."
-    private const val NO_HEALTH_CONNECT_MESSAGE = "Health Connect is not available on this phone."
+    private const val NOT_CONNECTED_MESSAGE = "Log eerst in bij JoLu."
+    private const val NO_HEALTH_CONNECT_MESSAGE = "Health Connect is niet beschikbaar op deze telefoon."
     private const val NO_PERMISSION_MESSAGE =
-        "Allow Health Connect access first (\"Connect to Health Connect\")."
-    private const val READ_FAILED_MESSAGE = "Could not read Health Connect data. Please try again."
-    private const val UNEXPECTED_MESSAGE = "Something went wrong while syncing. Please try again."
+        "Geef JoLu eerst toegang tot Health Connect."
+    private const val READ_FAILED_MESSAGE = "Health Connect kon niet worden gelezen. Probeer het opnieuw."
+    private const val UNEXPECTED_MESSAGE = "Er ging iets mis bij het synchroniseren. Probeer het opnieuw."
 
     var state: JoluSyncState by mutableStateOf(JoluSyncState.Idle)
         private set
@@ -141,7 +141,7 @@ object JoluSync {
                 val done = if (outcome.done == 0) {
                     ""
                 } else {
-                    " ${outcome.done} of ${outcome.batches} parts were already synced; syncing again is safe."
+                    " ${outcome.done} van ${outcome.batches} delen waren al verstuurd; opnieuw synchroniseren is veilig."
                 }
                 JoluSyncState.Failed(JoluConnection.describe(outcome.failure) + done)
             }

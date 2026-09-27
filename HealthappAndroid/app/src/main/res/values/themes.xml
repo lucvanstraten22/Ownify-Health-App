@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.HealthappAndroid" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dark, as the website is (color-scheme: dark): the window is JoLu's
+         deepest ground, so nothing flashes white before the first frame. -->
+    <style name="Theme.HealthappAndroid" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/jolu_bg_deep</item>
+        <item name="android:colorBackground">@color/jolu_bg_deep</item>
+    </style>
 </resources>

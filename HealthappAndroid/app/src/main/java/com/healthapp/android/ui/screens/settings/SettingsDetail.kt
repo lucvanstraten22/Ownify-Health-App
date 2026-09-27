@@ -1,0 +1,669 @@
+package com.healthapp.android.ui.screens.settings
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalGraphicsContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import com.healthapp.android.data.AppData
+import com.healthapp.android.data.Integration
+import com.healthapp.android.data.JoluActions
+import com.healthapp.android.data.Outcome
+import com.healthapp.android.data.ProfileField
+import com.healthapp.android.data.SettingsBlock
+import com.healthapp.android.data.SettingsPage
+import com.healthapp.android.jolu.JoluConnection
+import com.healthapp.android.ui.app.DetailColumn
+import com.healthapp.android.ui.app.LocalShell
+import com.healthapp.android.ui.app.Overlay
+import com.healthapp.android.ui.design.BoxShadow
+import com.healthapp.android.ui.design.Btn
+import com.healthapp.android.ui.design.CardHint
+import com.healthapp.android.ui.design.CardStyle
+import com.healthapp.android.ui.design.Chip
+import com.healthapp.android.ui.design.Disclaimer
+import com.healthapp.android.ui.design.IconTile
+import com.healthapp.android.ui.design.JCard
+import com.healthapp.android.ui.design.JIcon
+import com.healthapp.android.ui.design.JStyle
+import com.healthapp.android.ui.design.JoluIcons
+import com.healthapp.android.ui.design.LocalScreen
+import com.healthapp.android.ui.design.PageIntro
+import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.Toggle
+import com.healthapp.android.ui.design.cardShape
+import com.healthapp.android.ui.design.chWidth
+import com.healthapp.android.ui.design.press
+import com.healthapp.android.ui.design.reveal
+import com.healthapp.android.ui.screens.account.AvatarCircle
+import com.healthapp.android.ui.screens.account.LinkButton
+import com.healthapp.android.ui.screens.devices.StatusDot
+import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.JoluType
+import kotlinx.coroutines.launch
+
+/**
+ * One settings screen (pages/settings-detail.php), built from the blocks
+ * the server lists for it — identity, fields, sign-in, sources, choices,
+ * facts, switches, rows and notes — and, when it offers a choice, the line
+ * that says choices are not kept.
+ */
+@Composable
+fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
+    DetailColumn(scroll, back = "Instellingen", backAria = "Terug naar Instellingen") {
+        PageIntro(page.title, page.lede, Modifier.reveal())
+        page.blocks.forEachIndexed { n, block ->
+            when (block) {
+                SettingsBlock.Identity -> IdentityHero(data)
+                is SettingsBlock.Fields -> FieldsBlock(data, block)
+                is SettingsBlock.Signin -> SigninBlock(data, block)
+                is SettingsBlock.Integrations -> IntegrationsBlock(data, block)
+                is SettingsBlock.Choice -> ChoiceBlock(page.id, n, block)
+                is SettingsBlock.States -> StatesBlock(block)
+                is SettingsBlock.Toggles -> TogglesBlock(block)
+                is SettingsBlock.Rows -> RowsBlock(block)
+                is SettingsBlock.Note -> SettingsNote(block.icon, block.text, Modifier.reveal())
+            }
+        }
+        if (page.blocks.any { it is SettingsBlock.Choice }) Disclaimer(data.settings.notSaved)
+    }
+}
+
+/** `.settings-hero`: the picture, the username, the name. */
+@Composable
+private fun IdentityHero(data: AppData) {
+    val profile = data.settings.profile
+    val name = listOfNotNull(profile.firstName, profile.lastName).joinToString(" ").trim()
+    JCard(Modifier.fillMaxWidth().reveal()) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            AvatarCircle(profile.avatar, 68.dp, 28.dp)
+            T(profile.username ?: "Niet ingelogd", JoluType.style(20.sp, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Jolu.Space3), align = TextAlign.Center)
+            T(name.ifEmpty { "Naam nog niet ingevuld" }, JStyle.Meta, Modifier.padding(top = Jolu.Space1), align = TextAlign.Center)
+        }
+    }
+}
+
+/** A block's eyebrow and, when it has one, its lede (`.settings-block__lede`: 4 closer, 12 above the card). */
+@Composable
+private fun BlockHead(title: String, lede: String?) {
+    SettingsEyebrow(title)
+    if (!lede.isNullOrEmpty()) {
+        T(
+            lede,
+            JStyle.Meta,
+            Modifier.fillMaxWidth().padding(horizontal = Jolu.Space2).padding(bottom = Jolu.Space3).graphicsLayer { translationY = -4.dp.toPx() }
+        )
+    }
+}
+
+@Composable
+private fun FieldsBlock(data: AppData, block: SettingsBlock.Fields) {
+    val shell = LocalShell.current
+    Column(Modifier.fillMaxWidth().reveal()) {
+        BlockHead(block.title, block.lede)
+        SettingsCard {
+            block.fields.forEachIndexed { i, field ->
+                if (i > 0) Hairline()
+                FieldRow(field) {
+                    // Two open the account panel, as they did before the profile existed.
+                    if (field.opens == "account") shell.open(Overlay.Account()) else shell.open(Overlay.EditField(field.key))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * `components/settings-field.php`: the label (and its note), the value or
+ * the picture, and what a tap does — a chevron to change it, a lock once it
+ * is fixed, nothing for a value worked out from another.
+ */
+@Composable
+private fun FieldRow(field: ProfileField, onEdit: () -> Unit) {
+    val narrow = LocalScreen.current.narrow
+    val live = field.live
+    val filled = field.value != null
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val fill by animateColorAsState(
+        when {
+            live && pressed -> Jolu.white(0.05f)
+            !live -> Jolu.white(0.022f)
+            else -> Color.Transparent
+        },
+        tween(Jolu.FastMs, easing = Jolu.Ease),
+        label = "field"
+    )
+
+    Row(
+        Modifier
+            .then(if (live) Modifier.press(interaction) else Modifier)
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .background(fill)
+            .then(if (live) Modifier.clickable(interaction, indication = null, role = Role.Button, onClick = onEdit) else Modifier)
+            .semantics(mergeDescendants = true) { }
+            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+    ) {
+        Column(Modifier.weight(1f)) {
+            T(field.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
+            if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+        }
+        if (field.kind == "image") {
+            AvatarCircle(field.value, 34.dp, 17.dp)
+        } else {
+            T(
+                field.value ?: field.blank,
+                JoluType.style(
+                    Jolu.FsSmall,
+                    if (filled) FontWeight.SemiBold else FontWeight.Medium,
+                    if (filled) Jolu.TextSecondary else Jolu.TextMuted
+                ),
+                Modifier.weight(1f, fill = false),
+                align = TextAlign.End,
+                maxLines = 1,
+                ellipsis = true
+            )
+        }
+        when {
+            field.state == "locked" -> JIcon(JoluIcons.lock, size = 15.dp, color = Jolu.TextMuted)
+            live -> JIcon(JoluIcons.chevronRight, size = 15.dp, color = Jolu.TextFaint)
+        }
+    }
+}
+
+/**
+ * Inloggen: the ways into this account, in the fields' shape. Google is
+ * linked on the website — the app has no Google sign-in of its own — so the
+ * row that links it opens the website (docs/PARITY.md).
+ */
+@Composable
+private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
+    val context = LocalContext.current
+    val auth = data.auth
+    val email = auth.identities.firstOrNull { it.first == "email" }
+    val google = auth.identities.firstOrNull { it.first == "google" }
+
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        SettingsCard {
+            if (!auth.signedIn) {
+                StaticField("Niet ingelogd", null, "—", filled = false)
+            } else {
+                StaticField(
+                    "E-mail en wachtwoord",
+                    if (email != null) "Inloggen met je gebruikersnaam of e-mailadres" else "Je logt in met Google",
+                    email?.second ?: "Niet ingesteld",
+                    filled = email != null
+                )
+                Hairline()
+                when {
+                    google != null -> StaticField("Google", "Gekoppeld — je kunt ook met Google inloggen", google.second ?: "Gekoppeld", filled = true, check = true)
+                    auth.googleAvailable -> FieldRow(
+                        ProfileField("google", "Google", "Koppel Google om daarmee in te loggen", null, null, null, "editable", null, "Koppel Google", null)
+                    ) {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(JoluConnection.api.siteUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    }
+                    else -> StaticField("Google", null, "Nog niet beschikbaar", filled = false)
+                }
+            }
+        }
+    }
+}
+
+/** A field row that is a fact, not a control. */
+@Composable
+private fun StaticField(label: String, note: String?, value: String, filled: Boolean, check: Boolean = false) {
+    val narrow = LocalScreen.current.narrow
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .semantics(mergeDescendants = true) { }
+            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+    ) {
+        Column(Modifier.weight(1f)) {
+            T(label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
+            if (note != null) T(note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+        }
+        T(
+            value,
+            JoluType.style(Jolu.FsSmall, if (filled) FontWeight.SemiBold else FontWeight.Medium, if (filled) Jolu.TextSecondary else Jolu.TextMuted),
+            Modifier.weight(1f, fill = false),
+            align = TextAlign.End,
+            maxLines = 1,
+            ellipsis = true
+        )
+        if (check) JIcon(JoluIcons.check, size = 15.dp, color = Jolu.TextFaint)
+    }
+}
+
+@Composable
+private fun IntegrationsBlock(data: AppData, block: SettingsBlock.Integrations) {
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+            data.settings.integrations.forEach { IntegrationCard(data, it) }
+        }
+    }
+}
+
+/**
+ * `components/settings-integration.php`: one health source, its settings
+ * folded inside it. Health Connect on this phone also shows the phone's own
+ * side, and its "Nu synchroniseren" works here (docs/PARITY.md).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IntegrationCard(data: AppData, item: Integration) {
+    val shell = LocalShell.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val narrow = LocalScreen.current.narrow
+    val labels = data.settings.integrationLabels
+    val shadows = LocalGraphicsContext.current.shadowContext
+    var open by rememberSaveable(item.key) { mutableStateOf(false) }
+    var busy by remember { mutableStateOf<String?>(null) }
+    val connected = item.connected
+    val statusText = when (item.status) {
+        "connected" -> labels["connected"]
+        "revoked" -> labels["revoked"]
+        "error" -> labels["error"]
+        else -> labels["disconnected"]
+    }.orEmpty()
+    val thisPhone = item.key == "health_connect"
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val headFill by animateColorAsState(if (pressed) Jolu.white(0.04f) else Color.Transparent, tween(Jolu.FastMs, easing = Jolu.Ease), label = "head")
+    val turn by animateFloatAsState(if (open) 180f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "chevron")
+    val border by animateColorAsState(
+        if (connected) Jolu.mix(Jolu.Health, 0.28f, Color.Transparent) else Jolu.GlassBorderSoft,
+        tween(Jolu.SlowMs, easing = Jolu.EaseOut),
+        label = "border"
+    )
+
+    /** Posts one field and reads the pages again: the row, the count and the summary follow. */
+    fun post(action: String, path: String, field: String, value: String) {
+        busy = action
+        scope.launch {
+            JoluActions.form(context, path, mapOf(field to value), "Er ging iets mis.")
+            busy = null
+        }
+    }
+
+    JCard(
+        Modifier.fillMaxWidth(),
+        style = CardStyle.Quiet.copy(border = border),
+        shape = cardShape(),
+        padding = PaddingValues(0.dp)
+    ) {
+        // .integration__head
+        val head: @Composable () -> Unit = {
+            JoluIcons.named(item.icon)?.let {
+                IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = if (connected) Jolu.Health else Jolu.TextSecondary)
+            }
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .background(headFill)
+                .clickable(interaction, indication = null) { open = !open }
+                .clearAndSetSemantics {
+                    role = Role.Button
+                    contentDescription = (labels["expand"] ?: "%s").replace("%s", item.label) + ", $statusText"
+                    stateDescription = if (open) "Uitgeklapt" else "Ingeklapt"
+                    onClick { open = !open; true }
+                }
+                .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+            verticalArrangement = Arrangement.spacedBy(Jolu.Space1)
+        ) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+                head()
+                Column(Modifier.weight(1f)) {
+                    T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                    T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+                }
+                if (!narrow) StatusDot(statusText, connected)
+                JIcon(JoluIcons.chevronDown, Modifier.graphicsLayer { rotationZ = turn }, size = 16.dp, color = Jolu.TextFaint)
+            }
+            // Below 360 dp the status takes a line of its own, under the name.
+            if (narrow) Row(Modifier.padding(start = 32.dp + Jolu.Space3)) { StatusDot(statusText, connected) }
+        }
+
+        if (open) {
+            Column(Modifier.fillMaxWidth()) {
+                Hairline()
+                Column(Modifier.fillMaxWidth().padding(start = Jolu.Space4, end = Jolu.Space4, bottom = Jolu.Space4)) {
+                    Column(Modifier.fillMaxWidth().padding(top = Jolu.Space2)) {
+                        PhoneRow(labels["status"].orEmpty(), statusText, first = true)
+                        item.account?.let { PhoneRow(labels["account"].orEmpty(), it) }
+                        PhoneRow(labels["last_sync"].orEmpty(), item.lastSync ?: labels["never"].orEmpty(), empty = item.lastSync == null)
+                        PhoneRow(labels["permissions"].orEmpty(), labels["permissions_note"].orEmpty())
+                    }
+
+                    if (item.devices.isNotEmpty()) {
+                        Caption(labels["devices"].orEmpty(), Modifier.padding(top = Jolu.Space4))
+                        Column(Modifier.fillMaxWidth().padding(top = Jolu.Space2)) {
+                            item.devices.forEachIndexed { i, device ->
+                                if (i > 0) Hairline()
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = if (i == 0) 0.dp else Jolu.Space3, bottom = Jolu.Space3),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+                                ) {
+                                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        T(device.label, JoluType.style(Jolu.FsSmall, FontWeight.SemiBold))
+                                        T(device.lastSync ?: labels["never"].orEmpty(), JStyle.Tiny)
+                                    }
+                                    LinkButton(
+                                        labels["revoke"].orEmpty(),
+                                        Modifier.semantics { contentDescription = (labels["revoke_device"] ?: "%s").replace("%s", device.label) },
+                                        enabled = busy == null
+                                    ) { post("revoke:${device.id}", "api/integrations/device-revoke.php", "device", device.id.toString()) }
+                                }
+                            }
+                        }
+                    }
+
+                    Caption(labels["categories"].orEmpty(), Modifier.padding(top = Jolu.Space4))
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(top = Jolu.Space2),
+                        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2),
+                        verticalArrangement = Arrangement.spacedBy(Jolu.Space2)
+                    ) {
+                        item.categories.forEach { Chip(it, muted = true) }
+                    }
+
+                    if (!item.error.isNullOrEmpty()) {
+                        IntegrationHint(item.error, JoluIcons.info, warn = true)
+                    }
+
+                    // This phone's own Health Connect, when this is it.
+                    if (thisPhone && JoluConnection.state is com.healthapp.android.jolu.JoluState.Connected) {
+                        PhoneSection(rememberPhoneHealth(), Modifier.padding(top = Jolu.Space4))
+                    }
+
+                    // .integration__actions
+                    val actions: @Composable (Modifier) -> Unit = { each ->
+                        if (connected) {
+                            if (thisPhone) SyncNowButton(each)
+                            else Btn(labels["sync_now"].orEmpty(), onClick = {}, enabled = false, modifier = each)
+                            Btn(
+                                labels["disconnect"].orEmpty(),
+                                onClick = { post("disconnect", "api/integrations/disconnect.php", "provider", item.provider.orEmpty()) },
+                                enabled = busy == null,
+                                modifier = each
+                            )
+                        } else {
+                            val canPair = item.available && !item.provider.isNullOrEmpty()
+                            Btn(
+                                if (item.status == "revoked") labels["reconnect"].orEmpty() else labels["connect"].orEmpty(),
+                                onClick = {
+                                    val provider = item.provider ?: return@Btn
+                                    if (item.transport == "device") {
+                                        shell.open(Overlay.Pairing(provider))
+                                    } else {
+                                        // A cloud source's consent screen is the provider's own page, in the browser.
+                                        runCatching {
+                                            context.startActivity(
+                                                Intent(Intent.ACTION_VIEW, Uri.parse(JoluConnection.api.siteUrl + "api/integrations/" + Uri.encode(provider) + "/start.php"))
+                                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            )
+                                        }
+                                    }
+                                },
+                                enabled = canPair,
+                                modifier = each
+                            )
+                        }
+                    }
+                    if (narrow) {
+                        Column(Modifier.fillMaxWidth().padding(top = Jolu.Space4), verticalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
+                            actions(Modifier.fillMaxWidth())
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth().padding(top = Jolu.Space4), horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
+                            actions(Modifier.weight(1f))
+                        }
+                    }
+                    if (thisPhone && connected) SyncResult()
+
+                    when {
+                        !item.available && !connected && !item.blocked.isNullOrEmpty() -> IntegrationHint(item.blocked, JoluIcons.lock)
+                        connected -> IntegrationHint(labels["disconnect_confirm"].orEmpty(), JoluIcons.lock)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** `.integration__hint`: a tiny line with its icon — in the caution colour for a failure. */
+@Composable
+private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, warn: Boolean = false) {
+    val color = if (warn) Jolu.Nutrition else Jolu.TextMuted
+    Row(
+        Modifier.fillMaxWidth().padding(top = Jolu.Space3),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
+    ) {
+        JIcon(icon, size = 14.dp, color = color)
+        T(text, JoluType.style(Jolu.FsTiny, color = color), Modifier.weight(1f))
+    }
+}
+
+/** A choice: one option ticked. The tick moves; nothing is stored (settings.js). */
+@Composable
+private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice) {
+    val narrow = LocalScreen.current.narrow
+    var selected by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        SettingsCard {
+            block.options.forEachIndexed { i, option ->
+                if (i > 0) Hairline()
+                val on = option.key == selected
+                val interaction = remember { MutableInteractionSource() }
+                val pressed by interaction.collectIsPressedAsState()
+                val fill by animateColorAsState(if (pressed && !option.disabled) Jolu.white(0.05f) else Color.Transparent, tween(Jolu.FastMs, easing = Jolu.Ease), label = "option")
+                val mark by animateFloatAsState(if (on) 1f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "mark")
+                Row(
+                    Modifier
+                        .press(interaction, enabled = !option.disabled)
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .background(fill)
+                        .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) { selected = option.key }
+                        .semantics(mergeDescendants = true) {
+                            this.selected = on
+                            if (option.disabled) disabled()
+                        }
+                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        T(
+                            option.label,
+                            JoluType.style(
+                                Jolu.FsLabel,
+                                if (on) FontWeight.SemiBold else FontWeight.Medium,
+                                if (option.disabled) Jolu.TextSecondary else Jolu.TextPrimary
+                            )
+                        )
+                        if (!option.note.isNullOrEmpty()) T(option.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                    }
+                    Box(
+                        Modifier.size(22.dp).graphicsLayer {
+                            alpha = mark
+                            val s = 0.7f + 0.3f * mark
+                            scaleX = s
+                            scaleY = s
+                        },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        JIcon(JoluIcons.check, size = 18.dp, color = Jolu.Health)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Read-only facts: a label and its value on one line, a sentence under them. */
+@Composable
+private fun StatesBlock(block: SettingsBlock.States) {
+    val narrow = LocalScreen.current.narrow
+    Column(Modifier.fillMaxWidth().reveal()) {
+        BlockHead(block.title, block.lede)
+        SettingsCard {
+            block.items.forEachIndexed { i, item ->
+                if (i > 0) Hairline()
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .semantics(mergeDescendants = true) { }
+                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3)
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Jolu.Space4)) {
+                        T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
+                        T(
+                            item.value ?: "—",
+                            JoluType.style(
+                                Jolu.FsSmall,
+                                if (item.value != null) FontWeight.SemiBold else FontWeight.Medium,
+                                if (item.value != null) Jolu.mix(Jolu.Health, 0.34f, Color.White) else Jolu.TextMuted
+                            ),
+                            Modifier.alignByBaseline(),
+                            align = TextAlign.End
+                        )
+                    }
+                    if (!item.note.isNullOrEmpty()) {
+                        T(item.note, JStyle.Tiny, Modifier.padding(top = Jolu.Space1).widthIn(max = chWidth(JStyle.Tiny, 44f)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Switches that do nothing yet: shown, never moved — "a switch that moves but changes nothing is a lie". */
+@Composable
+private fun TogglesBlock(block: SettingsBlock.Toggles) {
+    val narrow = LocalScreen.current.narrow
+    Column(Modifier.fillMaxWidth().reveal()) {
+        BlockHead(block.title, block.lede)
+        SettingsCard {
+            block.items.forEachIndexed { i, item ->
+                if (i > 0) Hairline()
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .semantics(mergeDescendants = true) {
+                            toggleableState = ToggleableState(item.on)
+                            role = Role.Switch
+                            disabled()
+                        }
+                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium, Jolu.TextSecondary))
+                        if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                    }
+                    Toggle(item.on, dimmed = true)
+                }
+            }
+        }
+    }
+}
+
+/** Plain label and value, in an ordinary card. */
+@Composable
+private fun RowsBlock(block: SettingsBlock.Rows) {
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        JCard(Modifier.fillMaxWidth()) {
+            block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0) }
+        }
+    }
+}
+
+/** `.settings-note`: one framed line, its icon at the top. */
+@Composable
+fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(Jolu.RadiusMd)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Jolu.white(0.035f))
+            .border(1.dp, Jolu.GlassHairline, shape)
+            .padding(Jolu.Space4),
+        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+    ) {
+        JoluIcons.named(icon)?.let { JIcon(it, Modifier.padding(top = 2.dp), size = 16.dp, color = Jolu.TextMuted) }
+        T(text, JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary), Modifier.weight(1f))
+    }
+}

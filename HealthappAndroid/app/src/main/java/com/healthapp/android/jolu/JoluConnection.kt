@@ -21,8 +21,12 @@ sealed interface JoluState {
     /** Looking for a stored token at start-up. */
     data object Checking : JoluState
 
-    /** No token: signing in, registering and the pairing form. [message] says why, when there is a reason. */
-    data class NotConnected(val message: String? = null) : JoluState
+    /**
+     * No token: signing in, registering and the pairing form. [message] says
+     * why, when there is a reason; [link] is a way onward from it (Google's
+     * own page, after deleting an account that used Google).
+     */
+    data class NotConnected(val message: String? = null, val link: JoluLink? = null) : JoluState
 
     /** A pairing code is being exchanged for a token. */
     data object Pairing : JoluState
@@ -40,6 +44,9 @@ sealed interface JoluState {
     /** A token is stored but this attempt failed: offline, or trouble on the server. The token is kept. */
     data class Failed(val message: String, val scope: JoluScope? = null) : JoluState
 }
+
+/** A fixed address the server named, opened beside the app, with its label. */
+data class JoluLink(val href: String, val label: String)
 
 /** Signing in, registering or signing out: what is going on, or why the last attempt did not work. */
 sealed interface JoluAuthState {
@@ -81,7 +88,7 @@ sealed interface JoluAuthState {
  */
 object JoluConnection {
 
-    const val EXPIRED_MESSAGE = "JoLu connection expired. Please pair the device again."
+    const val EXPIRED_MESSAGE = "De koppeling met JoLu is verlopen. Koppel deze telefoon opnieuw."
     const val SESSION_EXPIRED_MESSAGE = "Je sessie is verlopen. Log opnieuw in."
     const val LOGGED_OUT_MESSAGE = "Je bent uitgelogd."
     const val LOGGED_OUT_UNREACHED_MESSAGE =
@@ -89,11 +96,11 @@ object JoluConnection {
             "verwijder dit apparaat zo nodig via Instellingen op de website."
 
     private const val INVALID_CODE_MESSAGE =
-        "Enter the 8-character pairing code from the JoLu website."
+        "Vul de koppelcode van 8 tekens van de JoLu-website in."
     private const val NOT_STORED_MESSAGE =
-        "This phone could not store the JoLu connection securely. Please pair again with a new code."
+        "Deze telefoon kon de koppeling niet veilig bewaren. Koppel opnieuw met een nieuwe code."
     private const val UNEXPECTED_MESSAGE =
-        "Something went wrong while connecting to JoLu. Please try again."
+        "Er ging iets mis bij het verbinden met JoLu. Probeer het opnieuw."
 
     private const val LOGIN_EMPTY_MESSAGE = "Vul je gebruikersnaam en wachtwoord in."
     private const val REGISTER_EMPTY_MESSAGE = "Vul een gebruikersnaam, e-mailadres en wachtwoord in."
@@ -140,6 +147,13 @@ object JoluConnection {
 
     private val busy: Boolean
         get() = job?.isActive == true
+
+    /** The last sign-in's error, put away: the form moved to another flow, or was closed. */
+    fun dismissAuthMessage() {
+        if (auth is JoluAuthState.Failed) {
+            auth = JoluAuthState.Idle
+        }
+    }
 
     /** At start-up: a stored token reconnects without asking for a code or a password. */
     fun start(context: Context) {
@@ -194,7 +208,7 @@ object JoluConnection {
                 // already used, or the maximum number of phones is reached.
                 is JoluResult.Unauthorized ->
                     state = JoluState.NotConnected(
-                        "Pairing failed: " + (result.message ?: "the code is not valid or has expired.")
+                        "Koppelen is niet gelukt: " + (result.message ?: "de code is ongeldig of verlopen.")
                     )
 
                 is JoluResult.Failure ->
@@ -305,6 +319,23 @@ object JoluConnection {
 
         ended(forgotten.scope)
         return true
+    }
+
+    /**
+     * The account was deleted with [token] (api/profile/delete.php said ok):
+     * the token went with it. Forgotten — if it is still the stored one — the
+     * automatic sync stopped and its status cleared, and the opening screen
+     * says what the server said. A token replaced meanwhile is left alone.
+     */
+    internal suspend fun accountDeleted(context: Context, token: String, message: String, link: JoluLink?) {
+        val store = store(context)
+        forget(store, token) ?: return
+
+        val app = context.applicationContext
+        JoluBackgroundSync.stop(app)
+        withContext(Dispatchers.IO) { JoluSyncRunner.environment(app).status.clear() }
+        JoluSync.forget(app)
+        state = JoluState.NotConnected(message, link)
     }
 
     /**
@@ -456,13 +487,13 @@ object JoluConnection {
                 EXPIRED_MESSAGE
 
             is JoluResult.HttpError ->
-                "JoLu is not available right now (HTTP ${failure.status}). Please try again later."
+                "JoLu is nu niet beschikbaar (HTTP ${failure.status}). Probeer het later opnieuw."
 
             JoluResult.NetworkError ->
-                "Could not reach JoLu. Check your internet connection and try again."
+                "Kan JoLu niet bereiken. Controleer je internetverbinding en probeer het opnieuw."
 
             JoluResult.InvalidResponse ->
-                "JoLu sent an unexpected response. Please try again later."
+                "JoLu gaf een onverwacht antwoord. Probeer het later opnieuw."
         }
 
     /**

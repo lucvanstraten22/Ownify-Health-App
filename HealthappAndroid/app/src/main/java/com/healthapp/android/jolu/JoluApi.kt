@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URI
+import java.net.URLEncoder
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,6 +27,10 @@ import org.json.JSONObject
  * not a password, not a token, not the profile.
  */
 class JoluApi(private val baseUrl: String = BASE_URL) {
+
+    /** The website itself, for the few things only it can do (linking Google, a provider's consent screen). */
+    val siteUrl: String get() = baseUrl
+
 
     /** Exchanges a pairing code from the JoLu website for this phone's own token. */
     suspend fun pair(code: String, label: String): JoluResult<String> {
@@ -125,6 +130,82 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
         ) { json -> readIngestResult(json) }
 
     /**
+     * Everything the signed-in app shows (api/app/state.php): the data the
+     * website's pages are rendered from, for the account [token]. A sync
+     * token is refused with 403, a token that no longer works with 401.
+     */
+    suspend fun appState(token: String): JoluResult<JSONObject> =
+        request(
+            "api/app/state.php", JSON_TYPE, "{}".toByteArray(), token,
+            TIMEOUT_MS, MAX_STATE_BYTES
+        ) { json -> json.optJSONObject("data")?.takeIf { json.opt("version") == STATE_VERSION } }
+
+    /**
+     * One of the website's write endpoints, as the website sends it: a form
+     * (application/x-www-form-urlencoded), with the account [token] instead
+     * of its session. The whole answer comes back; its `error` is in the
+     * failure.
+     */
+    suspend fun form(path: String, fields: Map<String, String>, token: String): JoluResult<JSONObject> {
+        val body = fields.entries.joinToString("&") { (key, value) ->
+            URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
+        }
+        return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, TIMEOUT_MS, MAX_RESPONSE_BYTES) { it }
+    }
+
+    /** A JSON body to a write endpoint that reads one (api/goals/update.php). */
+    suspend fun json(path: String, body: JSONObject, token: String): JoluResult<JSONObject> =
+        post(path, body, token) { it }
+
+    /** A file, as the website uploads the profile picture: multipart/form-data, field [field]. */
+    suspend fun upload(
+        path: String,
+        field: String,
+        fileName: String,
+        mimeType: String,
+        content: ByteArray,
+        token: String
+    ): JoluResult<JSONObject> {
+        val boundary = "jolu" + java.util.UUID.randomUUID().toString().replace("-", "")
+        val head = "--$boundary\r\nContent-Disposition: form-data; name=\"$field\"; filename=\"$fileName\"\r\n" +
+            "Content-Type: $mimeType\r\n\r\n"
+        val tail = "\r\n--$boundary--\r\n"
+        val bytes = head.toByteArray(Charsets.UTF_8) + content + tail.toByteArray(Charsets.UTF_8)
+        return request(
+            path, "multipart/form-data; boundary=$boundary", bytes, token,
+            UPLOAD_TIMEOUT_MS, MAX_RESPONSE_BYTES
+        ) { it }
+    }
+
+    /** A file the server serves as it is — a profile picture — or null. Never with the token. */
+    suspend fun image(path: String, maxBytes: Int = MAX_IMAGE_BYTES): ByteArray? = withContext(Dispatchers.IO) {
+        try {
+            val connection = URI.create(baseUrl + path.trimStart('/')).toURL().openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = TIMEOUT_MS
+                connection.readTimeout = TIMEOUT_MS
+                connection.instanceFollowRedirects = false
+                if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+                connection.inputStream.use { stream ->
+                    val out = ByteArrayOutputStream()
+                    val buffer = ByteArray(8 * 1024)
+                    while (true) {
+                        val count = stream.read(buffer)
+                        if (count < 0) break
+                        out.write(buffer, 0, count)
+                        if (out.size() > maxBytes) return@withContext null
+                    }
+                    out.toByteArray()
+                }
+            } finally {
+                connection.disconnect()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * One call, reduced to a [JoluResult]. Never throws: no connection, a
      * server error and an answer that is not the expected JSON each come back
      * as their own failure.
@@ -135,9 +216,24 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
         token: String?,
         readTimeoutMs: Int = TIMEOUT_MS,
         read: (JSONObject) -> T?
+    ): JoluResult<T> =
+        request(path, JSON_TYPE, body.toString().toByteArray(Charsets.UTF_8), token, readTimeoutMs, MAX_RESPONSE_BYTES, read)
+
+    /**
+     * The same, for any body: [contentType] and its [bytes]. [maxBytes] is
+     * how large an answer may be; anything larger is not read.
+     */
+    private suspend fun <T : Any> request(
+        path: String,
+        contentType: String,
+        bytes: ByteArray,
+        token: String?,
+        readTimeoutMs: Int,
+        maxBytes: Int,
+        read: (JSONObject) -> T?
     ): JoluResult<T> = withContext(Dispatchers.IO) {
         val response = try {
-            send(path, body.toString(), token, readTimeoutMs)
+            send(path, contentType, bytes, token, readTimeoutMs, maxBytes)
         } catch (e: Exception) {
             // Offline, unknown host, timeout, TLS: there was no answer at all.
             return@withContext JoluResult.NetworkError
@@ -156,7 +252,7 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
                 JoluResult.Unauthorized(json?.text("error"))
 
             response.status !in 200..299 ->
-                JoluResult.HttpError(response.status, json?.text("error"))
+                JoluResult.HttpError(response.status, json?.text("error"), json)
 
             json == null || json.opt("ok") != true ->
                 JoluResult.InvalidResponse
@@ -167,8 +263,14 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
     }
 
     /** One POST. Throws when there is no answer; any HTTP status is an answer. */
-    private fun send(path: String, body: String, token: String?, readTimeoutMs: Int): Response {
-        val bytes = body.toByteArray(Charsets.UTF_8)
+    private fun send(
+        path: String,
+        contentType: String,
+        bytes: ByteArray,
+        token: String?,
+        readTimeoutMs: Int,
+        maxBytes: Int
+    ): Response {
         val connection = URI.create(baseUrl + path).toURL().openConnection() as HttpURLConnection
 
         try {
@@ -179,7 +281,7 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
             // A redirect is not followed: it could carry the token somewhere else.
             connection.instanceFollowRedirects = false
             connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            connection.setRequestProperty("Content-Type", contentType)
             connection.setRequestProperty("Accept", "application/json")
 
             if (token != null) {
@@ -191,14 +293,14 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
 
-            return Response(status, stream?.use { readAtMost(it) })
+            return Response(status, stream?.use { readAtMost(it, maxBytes) })
         } finally {
             connection.disconnect()
         }
     }
 
     /** The body as text, or null when it is far larger than any answer these endpoints give. */
-    private fun readAtMost(stream: InputStream): String? {
+    private fun readAtMost(stream: InputStream, maxBytes: Int): String? {
         val out = ByteArrayOutputStream()
         val buffer = ByteArray(8 * 1024)
 
@@ -211,7 +313,7 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
 
             out.write(buffer, 0, count)
 
-            if (out.size() > MAX_RESPONSE_BYTES) {
+            if (out.size() > maxBytes) {
                 return null
             }
         }
@@ -227,6 +329,19 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
 
         private const val TIMEOUT_MS = 15_000
         private const val MAX_RESPONSE_BYTES = 64 * 1024
+
+        /** The app's state: every page at once, charts included — far more than the other answers. */
+        private const val MAX_STATE_BYTES = 4 * 1024 * 1024
+
+        /** A profile picture: the server takes up to 3 MB. */
+        private const val MAX_IMAGE_BYTES = 4 * 1024 * 1024
+        private const val UPLOAD_TIMEOUT_MS = 60_000
+
+        /** The state's shape this app reads (api/app/state.php `version`). */
+        private const val STATE_VERSION = 1
+
+        private const val JSON_TYPE = "application/json; charset=utf-8"
+        private const val FORM_TYPE = "application/x-www-form-urlencoded; charset=utf-8"
 
         /**
          * An ingest batch is stored, then goals, points and the Health Score
@@ -268,8 +383,12 @@ sealed interface JoluResult<out T> {
      */
     data class Unauthorized(val message: String?) : Failure
 
-    /** Any other status that is not a success, with the server's message if it sent one. */
-    data class HttpError(val status: Int, val message: String?) : Failure
+    /**
+     * Any other status that is not a success, with the server's message if it
+     * sent one — and its whole answer, for the few that say more (where two
+     * friends now stand, after a refused request).
+     */
+    data class HttpError(val status: Int, val message: String?, val body: JSONObject? = null) : Failure
 
     /** No answer: offline, server unreachable, timeout. */
     data object NetworkError : Failure
