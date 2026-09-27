@@ -15,6 +15,9 @@ import androidx.work.WorkerParameters
  *   no token, or the server said 401  done, and automatic sync is switched off
  *                                   until the phone is paired again — an
  *                                   invalid token is never tried twice
+ *   401 for a token already replaced  done, and the schedule is kept: signing
+ *                                   in or out changed the token mid-run, and
+ *                                   that is not a reason to stop
  *   no Health Connect access        done; nothing was sent, and the next
  *                                   scheduled run looks again (no network)
  *   offline, server trouble, a      try again later, with WorkManager's
@@ -47,6 +50,7 @@ class JoluSyncWorker(context: Context, params: WorkerParameters) : CoroutineWork
             when (outcome) {
                 is JoluSyncOutcome.Synced,
                 is JoluSyncOutcome.NoAccess,
+                JoluSyncOutcome.TokenReplaced,
                 JoluSyncOutcome.Busy -> Decision.DONE
 
                 JoluSyncOutcome.NotConnected,

@@ -41,11 +41,17 @@ internal interface JoluSyncEnvironment {
 
     val status: JoluSyncStatusStore
 
-    /** The stored device token, or null when this phone is not paired. */
+    /** The stored token — a sync or an account token, both may upload — or null when there is none. */
     suspend fun token(): String?
 
-    /** The server answered 401: the connection's own handling — forget the token, stop automatic sync. */
-    suspend fun tokenRejected()
+    /**
+     * The server answered 401 to [token]. When it is still the stored token,
+     * the connection's own handling: forget it, stop automatic sync — and
+     * true. When it is not (signing in or out replaced it while this run was
+     * sending), nothing is touched — and false: that 401 was about a token
+     * that is already gone, and must not sign anybody out.
+     */
+    suspend fun tokenRejected(token: String): Boolean
 
     /** Whether Health Connect can be read now. An [automatic] run may be in the background. */
     suspend fun healthAccess(automatic: Boolean): HealthAccess
@@ -65,6 +71,14 @@ internal sealed interface JoluSyncOutcome {
 
     /** The server refused the token; it has been forgotten. */
     data object Unauthorized : JoluSyncOutcome
+
+    /**
+     * The server refused the token this run was sending with, but the phone
+     * had already replaced it — signed in, or out, meanwhile — and a second
+     * run with the current one was refused the same way. Nothing forgotten,
+     * nothing stopped; the next run uses whatever is stored then.
+     */
+    data object TokenReplaced : JoluSyncOutcome
 
     /** Health Connect could not be read, for the reason given. Nothing was sent. */
     data class NoAccess(val access: HealthAccess) : JoluSyncOutcome
@@ -96,6 +110,12 @@ internal sealed interface JoluSyncOutcome {
  *
  * One run at a time: an automatic run that finds one going leaves it to it;
  * the button waits for it and then runs, as it always has.
+ *
+ * A 401 forgets the token only if it is still the stored one. Signing in on a
+ * paired phone replaces the sync token with an account token, and a run that
+ * was already sending with the old one gets a 401 for it: that run starts
+ * again, once, with the token stored now, rather than signing out the person
+ * who just signed in.
  */
 internal object JoluSyncRunner {
 
@@ -137,7 +157,14 @@ internal object JoluSyncRunner {
         }
     }
 
+    /** A run, and — when its token was replaced while it was sending — one more with the current one. */
     private suspend fun sync(env: JoluSyncEnvironment, automatic: Boolean): JoluSyncOutcome {
+        val outcome = attempt(env, automatic)
+
+        return if (outcome == JoluSyncOutcome.TokenReplaced) attempt(env, automatic) else outcome
+    }
+
+    private suspend fun attempt(env: JoluSyncEnvironment, automatic: Boolean): JoluSyncOutcome {
         val token = env.token() ?: return JoluSyncOutcome.NotConnected
 
         val access = try {
@@ -181,10 +208,8 @@ internal object JoluSyncRunner {
             when (val result = env.api.ingest(token, batch)) {
                 is JoluResult.Success -> results += result.value
 
-                is JoluResult.Unauthorized -> {
-                    env.tokenRejected()
-                    return JoluSyncOutcome.Unauthorized
-                }
+                is JoluResult.Unauthorized ->
+                    return if (env.tokenRejected(token)) JoluSyncOutcome.Unauthorized else JoluSyncOutcome.TokenReplaced
 
                 is JoluResult.Failure -> return JoluSyncOutcome.SendFailed(result, index, batches.size)
             }
@@ -225,6 +250,8 @@ internal object JoluSyncRunner {
             JoluSyncOutcome.NotConnected -> JoluSyncOutcomeKind.NOT_CONNECTED
             JoluSyncOutcome.Unauthorized -> JoluSyncOutcomeKind.EXPIRED
             JoluSyncOutcome.ReadFailed -> JoluSyncOutcomeKind.READ_FAILED
+            // Not this phone's state: the token it describes is already gone.
+            JoluSyncOutcome.TokenReplaced -> null
             JoluSyncOutcome.Busy -> null
             is JoluSyncOutcome.NoAccess -> when (outcome.access) {
                 HealthAccess.NOT_INSTALLED -> JoluSyncOutcomeKind.NO_HEALTH_CONNECT
@@ -248,7 +275,7 @@ internal class AndroidSyncEnvironment(context: Context) : JoluSyncEnvironment {
 
     override suspend fun token(): String? = JoluConnection.storedToken(app)
 
-    override suspend fun tokenRejected() = JoluConnection.unauthorized(app)
+    override suspend fun tokenRejected(token: String): Boolean = JoluConnection.rejected(app, token)
 
     override suspend fun healthAccess(automatic: Boolean): HealthAccess {
         if (HealthConnectClient.getSdkStatus(app) != HealthConnectClient.SDK_AVAILABLE) {

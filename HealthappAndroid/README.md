@@ -5,14 +5,61 @@ the JoLu backend, which is the single source of truth: every total, score,
 point and goal is worked out there, never here.
 
 The screen is a technical test interface for now; the JoLu section at the
-bottom is where pairing and syncing live.
+bottom is where signing in, pairing and syncing live.
+
+## Signing in
+
+Two ways to connect a phone, both the server's (docs/APP-AUTH.md in the
+backend):
+
+| Way | Endpoint | Credential | May |
+| --- | --- | --- | --- |
+| **Inloggen** (username or e-mail + password) | `api/auth/app-login.php` | account token | sync, and act as the account |
+| **Account aanmaken** (username, e-mail, password) | `api/auth/app-register.php` | account token | the same |
+| pairing code from the website | `api/integrations/pair.php` | sync token | sync only |
+
+The phone holds **one** credential — `JoluCredential(token, scope)` — kept by
+`JoluTokenStore`: the token encrypted with a key in the Android Keystore, the
+scope (`sync`/`account`) beside it. A token stored before scopes existed was
+made by pairing and reads as `sync`, so a phone paired earlier carries on.
+No password, user id or profile is ever stored, and nothing is logged.
+
+Signing in on a paired phone sends the sync token along as the bearer token;
+the server turns that phone's row into the account row with a new token and
+the old one stops working, so the phone keeps one entry under Apparaten on
+the website and the automatic sync carries on with the account token. A token
+of another account is left alone by the server.
+
+- **Restart**: a stored account token signs in again without a password
+  (profile and targets are read with it). Offline, it stays signed in.
+- **Uitloggen** (`api/auth/app-logout.php`): the token is forgotten on the
+  phone and the automatic sync stopped first, then it is revoked on the
+  server — the phone signs out even if the server cannot be reached. Health
+  Connect permissions are not touched; signing in again syncs straight away.
+  A phone that was paired before signing in was the same row, so it is signed
+  out too: sign in again, or pair again, to sync.
+- **401** anywhere (revoked on the website, the account gone, a year unused):
+  the token is forgotten, automatic sync stops, and the screen asks to sign
+  in (account) or pair (sync) again.
+
+### A late 401 cannot sign anybody out
+
+A sync can be on its way with the paired token at the moment the phone signs
+in; the server has already replaced that token, so the sync gets 401. That
+401 is about a token that is gone, and it must not delete the account token
+just stored. So a 401 forgets the credential **only if it is still the very
+token that was refused** (`JoluConnection.rejected`, under the same lock as
+every write to the credential); otherwise nothing is forgotten or stopped,
+and the sync run starts once more with the token stored now
+(`JoluSyncOutcome.TokenReplaced`). The same holds for a late 401 after
+signing out.
 
 ## Syncing with JoLu
 
 One pipeline, `jolu/JoluSyncRunner.kt`, does every sync:
 
-1. the stored device token (`JoluConnection`, encrypted by `JoluTokenStore`) —
-   none: nothing is read or sent;
+1. the stored token — sync or account, both may upload (`JoluConnection`,
+   encrypted by `JoluTokenStore`) — none: nothing is read or sent;
 2. Health Connect access — none: nothing is sent;
 3. the records of the last 7 days (`HealthConnectSyncReader`), granted types
    only;
@@ -48,7 +95,8 @@ WorkManager keeps the schedule when the app is closed and after a restart.
 | What happens | Then |
 | --- | --- |
 | synced | the next run comes on schedule |
-| no token, or the server answers `401` (phone removed on the website, account gone) | the token is forgotten and the automatic sync is switched off until the phone is paired again — an invalid token is never used twice |
+| no token, or the server answers `401` (phone removed on the website, account gone) | the token is forgotten and the automatic sync is switched off until the phone is paired or signed in again — an invalid token is never used twice |
+| `401` for a token the phone has already replaced (signed in or out meanwhile) | nothing is forgotten or stopped; the run starts once more with the current token |
 | offline, a timeout, a server error (5xx, 429) | retried with exponential backoff from 10 minutes, at most 3 times, then the next hourly run; the token is kept |
 | no Health Connect, no permission, or no background access | nothing is sent and nothing retried; the next scheduled run looks again (without using the network) |
 
@@ -100,3 +148,11 @@ schedules the real `JoluSyncWorker`, which runs the real pipeline against a
 JoLu server on localhost. Only Health Connect and the Android Keystore, which
 the JVM does not have, are stand-ins. The first run downloads Robolectric's
 Android jar.
+
+- `JoluAccountTest` — signing in, registering, signing out, the session after
+  a restart, expired and revoked tokens, scopes, and the late-401 race (a
+  sync held mid-request while the phone signs in), through the real
+  `JoluConnection`, `JoluApi` and worker.
+- `JoluTokenStoreTest` — what is kept in `jolu_connection.xml`, including a
+  token stored before scopes existed.
+- `JoluAuthScreenTest` — the temporary sign-in screen, rendered and clicked.

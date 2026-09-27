@@ -12,16 +12,18 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /**
- * The three JoLu endpoints this app uses: pair, profile and nutrition-targets.
+ * The JoLu endpoints this app uses: pairing, profile, nutrition targets and
+ * ingest for the sync, and signing in, registering and signing out as an
+ * account (docs/APP-AUTH.md on the server).
  *
- * Every call is a POST with a JSON body, as the backend requires. The device
- * token travels only in the Authorization header, and no request ever carries
- * a user id: whose data comes back is decided by the server from the token
+ * Every call is a POST with a JSON body, as the backend requires. A token
+ * travels only in the Authorization header, and no request ever carries a
+ * user id: whose data comes back is decided by the server from the token
  * alone.
  *
- * HttpURLConnection and org.json are both part of Android, so three small
+ * HttpURLConnection and org.json are both part of Android, so these small
  * calls add no library to the app. Nothing here logs — not the pairing code,
- * not the token, not the profile.
+ * not a password, not a token, not the profile.
  */
 class JoluApi(private val baseUrl: String = BASE_URL) {
 
@@ -36,6 +38,51 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
             (json.opt("token") as? String)?.takeIf { TOKEN_FORMAT.matches(it) }
         }
     }
+
+    /**
+     * Signs in as an account with a username (or e-mail address) and password.
+     *
+     * [current] is the token this phone already holds, if any. It goes along
+     * as the bearer token so the server can turn this phone's row into the
+     * account row instead of adding a second one; the server leaves a token
+     * of another account alone. A 401 here means the name or password was
+     * wrong — never that [current] is.
+     */
+    suspend fun login(identifier: String, password: String, label: String, current: String?): JoluResult<JoluSession> {
+        val body = JSONObject()
+            .put("identifier", identifier)
+            .put("password", password)
+            .put("label", label)
+            .put("platform", "android")
+
+        return post("api/auth/app-login.php", body, current) { json -> readSession(json) }
+    }
+
+    /** Creates an account and signs in as it, exactly as [login] does afterwards. */
+    suspend fun register(
+        email: String,
+        username: String,
+        password: String,
+        label: String,
+        current: String?
+    ): JoluResult<JoluSession> {
+        val body = JSONObject()
+            .put("email", email)
+            .put("username", username)
+            .put("password", password)
+            .put("label", label)
+            .put("platform", "android")
+
+        return post("api/auth/app-register.php", body, current) { json -> readSession(json) }
+    }
+
+    /**
+     * Signs this account token out on the server. Success whatever state the
+     * token was in: `true` when it was revoked just now, `false` when there
+     * was nothing left to revoke.
+     */
+    suspend fun logout(token: String): JoluResult<Boolean> =
+        post("api/auth/app-logout.php", JSONObject(), token) { json -> json.opt("revoked") as? Boolean }
 
     /** The profile of the account this token belongs to. */
     suspend fun profile(token: String): JoluResult<JoluProfile> =
@@ -186,14 +233,15 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
          * are recalculated before the answer comes, so it may take longer.
          */
         private const val INGEST_TIMEOUT_MS = 60_000
-
-        /**
-         * What pair.php issues: 32 random bytes as 64 hex characters. Checked
-         * before the token is stored, and so before it is ever put in a header.
-         */
-        private val TOKEN_FORMAT = Regex("[0-9a-f]{64}")
     }
 }
+
+/**
+ * What the server issues — a pairing token or an account token alike: 32
+ * random bytes as 64 hex characters. Checked before a token is stored, and so
+ * before it is ever put in a header.
+ */
+private val TOKEN_FORMAT = Regex("[0-9a-f]{64}")
 
 /**
  * The pairing code as the server expects it, or null when it cannot be one:
@@ -228,6 +276,35 @@ sealed interface JoluResult<out T> {
 
     /** An answer, but not the JSON this app expects. */
     data object InvalidResponse : Failure
+}
+
+/**
+ * A successful sign-in: the account token (shown once by the server, never
+ * again) and the account's username.
+ */
+class JoluSession(val token: String, val username: String?) {
+
+    override fun equals(other: Any?): Boolean =
+        other is JoluSession && other.token == token && other.username == username
+
+    override fun hashCode(): Int = 31 * token.hashCode() + (username?.hashCode() ?: 0)
+
+    /** Never the token. */
+    override fun toString(): String = "JoluSession(username=$username)"
+}
+
+/**
+ * A sign-in answer, or null when it is not one: a well-formed token that the
+ * server says is an ACCOUNT token. Anything else is not stored.
+ */
+private fun readSession(json: JSONObject): JoluSession? {
+    val token = (json.opt("token") as? String)?.takeIf { TOKEN_FORMAT.matches(it) } ?: return null
+
+    if (json.opt("scope") != "account") {
+        return null
+    }
+
+    return JoluSession(token, json.optJSONObject("account")?.text("username"))
 }
 
 /** The part of a JoLu profile this app shows. Null: the person has not filled it in. */

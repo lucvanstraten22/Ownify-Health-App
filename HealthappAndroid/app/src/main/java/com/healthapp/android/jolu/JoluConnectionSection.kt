@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
@@ -36,10 +38,19 @@ private const val NO_DATA = "No data"
 /** Room for a code typed with spaces or a dash; anything longer is cut off. */
 private const val MAX_CODE_INPUT = 16
 
+/** Room for any username or e-mail address the server accepts (it allows 191 for an address). */
+private const val MAX_FIELD_INPUT = 191
+
+/** The server refuses passwords over 200 characters; there is no point typing more. */
+private const val MAX_PASSWORD_INPUT = 200
+
 /**
- * "Connect JoLu account": pairs this phone with a code from the JoLu website,
- * then shows the account's profile and the daily targets the server worked
- * out for it.
+ * "Connect JoLu account": signs in to a JoLu account (or creates one), or
+ * pairs this phone with a code from the JoLu website, then shows the
+ * account's profile and the daily targets the server worked out for it.
+ *
+ * A TEST INTERFACE, not the app's design: just enough to sign in, register,
+ * sign out, pair and sync by hand.
  *
  * It shows only what the server sent. Nothing is calculated here and nothing
  * is filled in: a value JoLu does not have reads "No data".
@@ -89,6 +100,12 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
             is JoluState.NotConnected, JoluState.Pairing -> {
                 val pairing = state == JoluState.Pairing
 
+                if (!pairing) {
+                    AccountForms()
+                }
+
+                Line("Of koppel deze telefoon met een code van de JoLu-website:", top = 24.dp)
+
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.take(MAX_CODE_INPUT) },
@@ -119,6 +136,10 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
                 val profile = state.profile
                 val targets = state.targets
 
+                if (state.scope == JoluScope.ACCOUNT) {
+                    SignedIn(profile.username)
+                }
+
                 Line("Username: ${profile.username ?: NO_DATA}", top = 16.dp)
 
                 Line("Age: ${profile.age?.toString() ?: NO_DATA}", top = 16.dp)
@@ -138,6 +159,13 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
                 )
 
                 AutomaticSyncLines()
+
+                // Paired with a code: signing in turns this phone into the
+                // account's own, and the sync carries on.
+                if (state.scope == JoluScope.SYNC) {
+                    Line("Gekoppeld met een code. Log in om je account te gebruiken:", top = 24.dp)
+                    AccountForms()
+                }
             }
 
             is JoluState.Failed -> {
@@ -147,11 +175,127 @@ fun JoluConnectionSection(modifier: Modifier = Modifier) {
                 ) {
                     Text("Try again")
                 }
+
+                // Signed in but JoLu cannot be reached: signing out still works.
+                if (state.scope == JoluScope.ACCOUNT) {
+                    SignedIn(null)
+                }
             }
 
             JoluState.Checking, JoluState.Loading -> Unit
         }
     }
+}
+
+/**
+ * "Inloggen" and "Account aanmaken". The passwords live only in these fields
+ * while they are on screen — never saved, never logged — and are gone once
+ * signed in, when the forms leave the screen.
+ */
+@Composable
+private fun AccountForms() {
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val auth = JoluConnection.auth
+    val enabled = auth !is JoluAuthState.Working && JoluConnection.canSignIn
+
+    var loginName by remember { mutableStateOf("") }
+    var loginPassword by remember { mutableStateOf("") }
+    var newName by remember { mutableStateOf("") }
+    var newEmail by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+
+    fun login() {
+        focusManager.clearFocus()
+        JoluConnection.login(context, loginName, loginPassword)
+    }
+
+    fun register() {
+        focusManager.clearFocus()
+        JoluConnection.register(context, newName, newEmail, newPassword)
+    }
+
+    Text("Inloggen", modifier = Modifier.padding(top = 20.dp))
+
+    Field("Gebruikersnaam", loginName, enabled, KeyboardType.Ascii) { loginName = it.take(MAX_FIELD_INPUT) }
+    Field("Wachtwoord", loginPassword, enabled, KeyboardType.Password, password = true, onDone = { login() }) {
+        loginPassword = it.take(MAX_PASSWORD_INPUT)
+    }
+
+    Button(onClick = { login() }, enabled = enabled, modifier = Modifier.padding(top = 12.dp)) {
+        Text("Inloggen")
+    }
+
+    Text("Account aanmaken", modifier = Modifier.padding(top = 24.dp))
+
+    Field("Gebruikersnaam", newName, enabled, KeyboardType.Ascii) { newName = it.take(MAX_FIELD_INPUT) }
+    Field("E-mailadres", newEmail, enabled, KeyboardType.Email) { newEmail = it.take(MAX_FIELD_INPUT) }
+    Field("Wachtwoord", newPassword, enabled, KeyboardType.Password, password = true, onDone = { register() }) {
+        newPassword = it.take(MAX_PASSWORD_INPUT)
+    }
+
+    Button(onClick = { register() }, enabled = enabled, modifier = Modifier.padding(top = 12.dp)) {
+        Text("Registreren")
+    }
+
+    AuthLine(auth)
+}
+
+/** Signed in as an account: who, and the way out. */
+@Composable
+private fun SignedIn(username: String?) {
+    val context = LocalContext.current
+    val auth = JoluConnection.auth
+
+    Line(if (username != null) "Ingelogd als $username" else "Ingelogd", top = 16.dp)
+    Line("Account: ingelogd")
+
+    Button(
+        onClick = { JoluConnection.logout(context) },
+        enabled = auth !is JoluAuthState.Working,
+        modifier = Modifier.padding(top = 12.dp)
+    ) {
+        Text("Uitloggen")
+    }
+
+    AuthLine(auth)
+}
+
+@Composable
+private fun AuthLine(auth: JoluAuthState) {
+    when (auth) {
+        is JoluAuthState.Working -> Line(auth.message)
+        is JoluAuthState.Failed -> Line(auth.message)
+        JoluAuthState.Idle -> Unit
+    }
+}
+
+@Composable
+private fun Field(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    keyboard: KeyboardType,
+    password: Boolean = false,
+    onDone: (() -> Unit)? = null,
+    onChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onChange,
+        modifier = Modifier.padding(top = 8.dp),
+        enabled = enabled,
+        singleLine = true,
+        label = { Text(label) },
+        visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            autoCorrectEnabled = false,
+            keyboardType = keyboard,
+            imeAction = if (onDone != null) ImeAction.Done else ImeAction.Next
+        ),
+        keyboardActions = KeyboardActions(onDone = { onDone?.invoke() })
+    )
 }
 
 /** "Sync to JoLu", and what the last sync did. */
@@ -283,7 +427,7 @@ private fun statusText(state: JoluState): String =
         is JoluState.NotConnected -> state.message ?: "JoLu not connected"
         JoluState.Pairing -> "Connecting to JoLu..."
         JoluState.Loading -> "Loading JoLu profile..."
-        is JoluState.Connected -> "JoLu connected"
+        is JoluState.Connected -> if (state.scope == JoluScope.ACCOUNT) "Ingelogd bij JoLu" else "JoLu connected"
         is JoluState.Failed -> state.message
     }
 

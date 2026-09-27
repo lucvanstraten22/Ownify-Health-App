@@ -113,6 +113,16 @@ object JoluSync {
         record = JoluSyncRunner.environment(context.applicationContext).status.read()
     }
 
+    /**
+     * Signed in or out: the last sync's result on screen — counts, points,
+     * Health Scores — belonged to the session before, and is not shown to the
+     * next one. The kept status is cleared by the caller.
+     */
+    internal fun forget(context: Context) {
+        state = JoluSyncState.Idle
+        refresh(context)
+    }
+
     /** The button's run, in the words it has always used. */
     private fun show(outcome: JoluSyncOutcome): JoluSyncState =
         when (outcome) {
@@ -121,6 +131,7 @@ object JoluSync {
             // The token no longer works: the connection handles it as always,
             // and its status line asks for a new code.
             JoluSyncOutcome.Unauthorized -> JoluSyncState.Idle
+            JoluSyncOutcome.TokenReplaced -> JoluSyncState.Idle
             JoluSyncOutcome.ReadFailed -> JoluSyncState.Failed(READ_FAILED_MESSAGE)
             JoluSyncOutcome.Busy -> JoluSyncState.Idle
             is JoluSyncOutcome.NoAccess -> JoluSyncState.Failed(

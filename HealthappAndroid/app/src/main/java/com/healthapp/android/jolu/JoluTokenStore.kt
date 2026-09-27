@@ -11,16 +11,53 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** Where the device token is kept. [JoluTokenStore] on the phone; tests keep it in memory. */
-internal interface JoluTokenStorage {
-    fun load(): String?
-    fun save(token: String)
-    fun clear()
+/**
+ * What a JoLu token may do — the server's `user_devices.scope`, kept next to
+ * the token so the app always knows which one it holds. The server decides
+ * what a token may do whatever the phone thinks; this is only so the app
+ * offers the right things.
+ */
+enum class JoluScope {
+    /** From a pairing code: upload Health Connect records, read the profile and targets. Nothing else. */
+    SYNC,
+
+    /** From signing in (or registering) in the app: all of that, and act as the account. */
+    ACCOUNT
 }
 
 /**
- * Keeps this phone's JoLu device token between launches — only the token: no
- * password, no user id, no profile.
+ * The one JoLu credential this phone holds. One, not one per scope: signing
+ * in on a paired phone turns that phone's row on the server into the account
+ * row, with a new token, and the old sync token stops working (see
+ * docs/APP-AUTH.md) — so there is never a second token worth keeping.
+ */
+class JoluCredential(val token: String, val scope: JoluScope) {
+
+    override fun equals(other: Any?): Boolean =
+        other is JoluCredential && other.token == token && other.scope == scope
+
+    override fun hashCode(): Int = 31 * token.hashCode() + scope.hashCode()
+
+    /** Never the token: a credential that ends up in a log or a crash report must not carry it. */
+    override fun toString(): String = "JoluCredential(scope=$scope)"
+}
+
+/** Where the credential is kept. [JoluTokenStore] on the phone; tests keep it in memory. */
+internal interface JoluTokenStorage {
+    fun load(): JoluCredential?
+    fun save(credential: JoluCredential)
+    fun clear()
+}
+
+/** Turns the token into something only this phone can read back, and back again. */
+internal interface JoluTokenCipher {
+    fun encrypt(plain: String): String
+    fun decrypt(stored: String): String
+}
+
+/**
+ * Keeps this phone's JoLu credential between launches — only the token and
+ * its scope: no password, no user id, no profile.
  *
  * The token is encrypted with AES-256-GCM under a key that is generated inside
  * the Android Keystore and can never be read out of it (on most phones it
@@ -30,53 +67,85 @@ internal interface JoluTokenStorage {
  * backups and device transfers as well (res/xml/backup_rules.xml and
  * data_extraction_rules.xml).
  *
+ * The scope is stored beside it in plain text: it is not a secret, and the
+ * server enforces it regardless. A token stored before scopes existed has
+ * none, and was made by pairing — so it reads as [JoluScope.SYNC], and a phone
+ * paired before this version carries on syncing untouched.
+ *
  * Every call touches the Keystore or the disk: call from a background thread.
  */
-internal class JoluTokenStore(context: Context) : JoluTokenStorage {
+internal class JoluTokenStore(
+    context: Context,
+    private val cipher: JoluTokenCipher = KeystoreTokenCipher
+) : JoluTokenStorage {
 
     private val prefs = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     /**
-     * The stored token, or null when there is none. A value that can no longer
-     * be decrypted (its Keystore key is gone) reads as none too; pairing again
-     * overwrites it.
+     * The stored credential, or null when there is none. A value that can no
+     * longer be decrypted (its Keystore key is gone) reads as none too;
+     * pairing or signing in again overwrites it.
      */
-    override fun load(): String? =
+    override fun load(): JoluCredential? =
         try {
-            prefs.getString(KEY_TOKEN, null)?.let { decrypt(it) }
+            prefs.getString(KEY_TOKEN, null)?.let { stored ->
+                JoluCredential(cipher.decrypt(stored), scopeOf(prefs.getString(KEY_SCOPE, null)))
+            }
         } catch (e: Exception) {
             null
         }
 
-    /** Throws when the token cannot be encrypted or written; nothing is stored then. */
-    override fun save(token: String) {
+    /** Token and scope in one write. Throws when it cannot be encrypted or written; nothing changes then. */
+    override fun save(credential: JoluCredential) {
         val written = prefs.edit()
-            .putString(KEY_TOKEN, encrypt(token))
+            .putString(KEY_TOKEN, cipher.encrypt(credential.token))
+            .putString(KEY_SCOPE, credential.scope.name.lowercase())
             .commit()
 
         check(written) { "The JoLu token could not be written." }
     }
 
-    /** Written at once, so the token is gone before the screen asks for a new code. */
+    /** Written at once, so the token is gone before the screen asks for a new one. */
     override fun clear() {
         prefs.edit(commit = true) {
             remove(KEY_TOKEN)
+            remove(KEY_SCOPE)
         }
     }
 
+    private fun scopeOf(stored: String?): JoluScope =
+        if (stored == "account") JoluScope.ACCOUNT else JoluScope.SYNC
+
+    private companion object {
+        /** shared_prefs/jolu_connection.xml — the name the backup rules exclude. */
+        const val PREFS_NAME = "jolu_connection"
+        const val KEY_TOKEN = "device_token"
+        const val KEY_SCOPE = "token_scope"
+    }
+}
+
+/** AES-256-GCM under a key that never leaves the Android Keystore. */
+internal object KeystoreTokenCipher : JoluTokenCipher {
+
+    private const val KEYSTORE = "AndroidKeyStore"
+    private const val KEY_ALIAS = "jolu_device_token_key"
+    private const val TRANSFORMATION = "AES/GCM/NoPadding"
+    private const val TAG_BITS = 128
+    private const val SEPARATOR = ":"
+
     /** "iv:ciphertext", both Base64. The Keystore picks a fresh random IV every time. */
-    private fun encrypt(token: String): String {
+    override fun encrypt(plain: String): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key())
 
-        val ciphertext = cipher.doFinal(token.toByteArray(Charsets.UTF_8))
+        val ciphertext = cipher.doFinal(plain.toByteArray(Charsets.UTF_8))
         val base64 = Base64.getEncoder()
 
         return base64.encodeToString(cipher.iv) + SEPARATOR + base64.encodeToString(ciphertext)
     }
 
-    private fun decrypt(stored: String): String {
+    override fun decrypt(stored: String): String {
         val parts = stored.split(SEPARATOR)
         require(parts.size == 2) { "Not a stored token." }
 
@@ -109,17 +178,5 @@ internal class JoluTokenStore(context: Context) : JoluTokenStorage {
         )
 
         return generator.generateKey()
-    }
-
-    private companion object {
-        /** shared_prefs/jolu_connection.xml — the name the backup rules exclude. */
-        const val PREFS_NAME = "jolu_connection"
-        const val KEY_TOKEN = "device_token"
-
-        const val KEYSTORE = "AndroidKeyStore"
-        const val KEY_ALIAS = "jolu_device_token_key"
-        const val TRANSFORMATION = "AES/GCM/NoPadding"
-        const val TAG_BITS = 128
-        const val SEPARATOR = ":"
     }
 }

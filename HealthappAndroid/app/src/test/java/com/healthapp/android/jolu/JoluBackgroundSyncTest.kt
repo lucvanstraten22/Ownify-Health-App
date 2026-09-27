@@ -66,7 +66,8 @@ class JoluBackgroundSyncTest {
         TestSyncEnvironment.reads = 0
         JoluSyncRunner.environment = { TestSyncEnvironment }
 
-        MemoryTokenStorage.token = null
+        MemoryTokenStorage.clear()
+        JoluConnection.reset()
         JoluSyncStatusPrefs(context).clear()
     }
 
@@ -426,6 +427,7 @@ class JoluBackgroundSyncTest {
         assertEquals(s, JoluSyncWorker.decide(JoluSyncOutcome.NotConnected, 0))
         assertEquals(s, JoluSyncWorker.decide(JoluSyncOutcome.Unauthorized, 0))
         assertEquals(d, JoluSyncWorker.decide(JoluSyncOutcome.Busy, 0))
+        assertEquals("a 401 for a token already replaced keeps the schedule", d, JoluSyncWorker.decide(JoluSyncOutcome.TokenReplaced, 0))
         assertEquals(d, JoluSyncWorker.decide(JoluSyncOutcome.NoAccess(HealthAccess.NO_PERMISSION), 0))
         assertEquals(r, JoluSyncWorker.decide(JoluSyncOutcome.ReadFailed, 0))
         assertEquals(r, JoluSyncWorker.decide(sent(JoluResult.NetworkError), 2))

@@ -213,18 +213,23 @@ In the Google Cloud project that has the **Web** client the website uses:
 
 These ids are not secret, but they belong to the deployment, not the code.
 
-## What the app has to do (when it is built)
+## What the app does
 
-1. Sign in through one of the endpoints above; keep the token where the
-   current sync token is kept (Android Keystore, excluded from backups).
-2. When the phone was paired before, send the old token along as the bearer
-   header of the sign-in, so the same row is upgraded; **stop the background
-   sync first** — a sync still running with the old token gets `401`, and the
-   current 401 handling would forget the token that was just saved.
-3. Send the account token on every request, sync included.
-4. On `401` anywhere: forget the token, stop syncing, show the opening screen.
-   On `403` from an account endpoint: the token is a sync token — ask to sign in.
-5. Signing out: `app-logout.php`, then forget the token whatever it answered.
+Implemented in the Android app (HealthappAndroid/README.md, "Signing in"):
+
+1. Sign in through one of the endpoints above; the token is kept where the
+   sync token was (Android Keystore, excluded from backups), with its scope.
+2. When the phone was paired before, the old token goes along as the bearer
+   header of the sign-in, so the same row is upgraded. A sync still running
+   with the old token gets `401`: the app forgets a token on `401` only if it
+   is still the stored one, so that late answer cannot delete the account
+   token just saved (the run starts again with the new one).
+3. The account token is sent on every request, sync included.
+4. On `401` anywhere for the stored token: forget it, stop syncing, ask to
+   sign in again. On `403` from an account endpoint: the token is a sync
+   token — ask to sign in.
+5. Signing out: forget the token and stop syncing, then `app-logout.php`,
+   whatever it answers.
 
 ## Testing
 
