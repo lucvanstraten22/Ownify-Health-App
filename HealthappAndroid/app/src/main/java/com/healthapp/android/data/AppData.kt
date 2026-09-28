@@ -179,7 +179,9 @@ data class GoalCard(
     val ctaLabel: String,
     val ctaEnabled: Boolean,
     val ctaNote: String,
-    val milestones: List<Milestone>
+    val milestones: List<Milestone>,
+    /** What the bar says held or pointed at: "85 kg van 100 kg"; null without the goal's own numbers. */
+    val reading: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject?) = GoalCard(
@@ -194,12 +196,20 @@ data class GoalCard(
             ctaLabel = o.obj("cta").str("label").orEmpty(),
             ctaEnabled = o.obj("cta").bool("enabled"),
             ctaNote = o.obj("cta").str("note").orEmpty(),
-            milestones = o.arr("milestones").map { Milestone(it.str("label").orEmpty(), it.bool("reached")) }
+            milestones = o.arr("milestones").map { it }.let { list ->
+                // `at`: where the stop sits on the bar, in percent (0, 50, 85, 100). An older
+                // server did not say, and spread its stops evenly.
+                list.mapIndexed { i, m ->
+                    val even = if (list.size > 1) i * 100 / (list.size - 1) else 0
+                    Milestone(m.str("label").orEmpty(), m.bool("reached"), m.int("at") ?: even)
+                }
+            },
+            reading = o.str("reading")?.takeIf { it.isNotBlank() }
         )
     }
 }
 
-data class Milestone(val label: String, val reached: Boolean)
+data class Milestone(val label: String, val reached: Boolean, val at: Int = 0)
 
 data class Insights(val title: String, val subtitle: String, val items: List<Insight>) {
     companion object {

@@ -451,18 +451,18 @@ if (!function_exists('hydrate_dashboard_goal')) {
             $card['cta']['label'] = 'Doel openen';
         }
 
-        /* The four markers fill as the percentage passes them. A goal with no
+        /* The four markers fill as the percentage passes them — each at its
+           own place on the bar (`at`: 0, 50, 85, 100). A goal with no
            measurable progress yet keeps them all empty rather than guessing. */
         if ($percent !== null) {
-            foreach ([0, 50, 90, 100] as $index => $threshold) {
-                if (isset($card['milestones'][$index])) {
-                    $card['milestones'][$index]['reached'] = $percent >= $threshold;
-                }
+            foreach ($card['milestones'] as $index => $milestone) {
+                $card['milestones'][$index]['reached'] = $percent >= (int) ($milestone['at'] ?? 100);
             }
         }
 
         if ($primary['current_label'] !== null && $primary['target_label'] !== null) {
-            $card['unit'] = $primary['current_label'] . ' van ' . $primary['target_label'];
+            $card['unit']    = $primary['current_label'] . ' van ' . $primary['target_label'];
+            $card['reading'] = $card['unit'];
         }
 
         return $card;

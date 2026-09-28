@@ -116,12 +116,18 @@ return [
            moment one is created, and until something is recorded. */
         'pending'     => 'Je voortgang verschijnt zodra je iets vastlegt voor dit doel.',
         'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => 'Opent de Doelen-pagina'],
+        /* `at`: where each stop sits on the bar, in percent, and the progress
+           at which it is reached — the same number, so a dot lights as the
+           fill passes it. */
         'milestones'  => [
-            ['label' => 'Start',  'reached' => false],
-            ['label' => 'Halverwege', 'reached' => false],
-            ['label' => 'Bijna',  'reached' => false],
-            ['label' => 'Doel',   'reached' => false],
+            ['label' => 'Start',      'at' => 0,   'reached' => false],
+            ['label' => 'Halverwege', 'at' => 50,  'reached' => false],
+            ['label' => 'Bijna',      'at' => 85,  'reached' => false],
+            ['label' => 'Doel',       'at' => 100, 'reached' => false],
         ],
+        /* What the bar says when you point at it or hold it: "85 kg van
+           100 kg". Null until a goal has both numbers. */
+        'reading'     => null,
     ],
 
     /* -------------------------------------------------- insights */

@@ -12,6 +12,8 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -342,6 +344,44 @@ class JoluAppFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Vrienden") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Gebruikersnaam") and hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
         field("Gebruikersnaam").assertIsFocused()
+    }
+
+    @Test
+    fun `Persoonlijk doel - stops at 0, 50, 85 and 100, no line under the bar, and the reading shows while a finger rests on it`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        val bar = compose.onNode(hasContentDescription("0% — 0 dagen van 14 dagen op rij"))
+        bar.performScrollTo()
+        compose.waitForIdle()
+        val track = bar.fetchSemanticsNode().boundsInRoot
+        fun label(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().single().boundsInRoot
+        val tolerance = 1.5f * compose.density.density
+        assertEquals("Start from the left edge", track.left, label("Start").left, tolerance)
+        assertEquals("Halverwege centred at 50%", track.left + track.width * 0.50f, label("Halverwege").center.x, tolerance)
+        assertEquals("Bijna centred at 85%", track.left + track.width * 0.85f, label("Bijna").center.x, tolerance)
+        assertEquals("Doel to the right edge", track.right, label("Doel").right, tolerance)
+
+        // The line that said it under the bar is gone; the reading is on the bar, and only when asked.
+        val reading = hasTestTag(com.healthapp.android.ui.screens.overview.GoalReadingTag)
+        assertTrue(compose.onAllNodesWithText("0 dagen van 14 dagen op rij", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+
+        // A tap: nothing.
+        bar.performTouchInput { down(center); up() }
+        compose.mainClock.advanceTimeBy(600)
+        assertTrue("a tap shows nothing", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+
+        // A finger at rest on it: the reading, until it lets go.
+        bar.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(600)
+        compose.onNode(reading, useUnmergedTree = true).assertExists()
+        val bubble = compose.onNode(reading, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertTrue("above the bar ($bubble / $track)", bubble.bottom <= track.top)
+        bar.performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(600)
+        assertTrue("letting go hides it", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
     }
 
     @Test

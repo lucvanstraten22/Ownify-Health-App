@@ -137,3 +137,60 @@
         init();
     }
 }());
+
+/**
+ * The goal bar's reading, by touch. A pointer shows it by hovering (CSS) and
+ * the keyboard by focus; a finger shows it by resting on the bar for a
+ * moment, and it stays while the finger does. Moving first is a swipe or a
+ * scroll, not a hold, and leaves the page to it. Delegated, so a card that
+ * is swapped in keeps working.
+ */
+(function () {
+    'use strict';
+
+    var HOLD_MS = 280;      // long enough not to fire on a tap or a swipe's start
+    var SLOP    = 10;       // px a resting finger may drift before it counts as moving
+
+    var track = null;
+    var timer = 0;
+    var startX = 0;
+    var startY = 0;
+
+    function end() {
+        window.clearTimeout(timer);
+        timer = 0;
+        if (track) { track.classList.remove('is-reading'); }
+        track = null;
+    }
+
+    document.addEventListener('pointerdown', function (event) {
+        if (event.pointerType === 'mouse') { return; }
+
+        var hit = event.target.closest && event.target.closest('[data-goal-track]');
+        if (!hit) { return; }
+
+        end();
+        track = hit;
+        startX = event.clientX;
+        startY = event.clientY;
+        timer = window.setTimeout(function () {
+            if (track) { track.classList.add('is-reading'); }
+        }, HOLD_MS);
+    }, { passive: true });
+
+    document.addEventListener('pointermove', function (event) {
+        if (!track || track.classList.contains('is-reading')) { return; }
+        if (Math.abs(event.clientX - startX) > SLOP || Math.abs(event.clientY - startY) > SLOP) { end(); }
+    }, { passive: true });
+
+    ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function () { if (track) { end(); } }, { passive: true });
+    });
+
+    /* A held finger is not asking for the browser's own menu. */
+    document.addEventListener('contextmenu', function (event) {
+        if (event.target.closest && event.target.closest('[data-goal-track]')) { event.preventDefault(); }
+    });
+
+    window.addEventListener('blur', end);
+}());

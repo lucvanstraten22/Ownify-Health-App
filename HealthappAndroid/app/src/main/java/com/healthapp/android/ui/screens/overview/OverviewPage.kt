@@ -1,6 +1,17 @@
 package com.healthapp.android.ui.screens.overview
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import kotlinx.coroutines.delay
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
@@ -48,6 +59,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -186,20 +198,10 @@ private fun GoalProgressCard(goal: GoalCard) {
             }
         }
 
-        Meter(
-            share = if (set) (goal.progress ?: 0) / 100f else null,
-            play = play,
-            accent = Jolu.Health,
-            height = 10.dp,
-            emptyHeight = 6.dp,
-            modifier = Modifier
-                .padding(top = Jolu.Space3)
-                .semantics { contentDescription = if (set) "${goal.progress}% ${goal.unit}" else "Nog geen doel ingesteld" }
-        )
+        GoalTrack(goal, set, play)
 
-        Milestones(goal)
-
-        CardHint(if (set) goal.unit else goal.description, icon = null, plain = true)
+        // The reading lives on the bar now; only the "no goal yet" card keeps its line.
+        if (!set) CardHint(goal.description, icon = null, plain = true)
 
         if (!set) {
             Row(
@@ -214,34 +216,153 @@ private fun GoalProgressCard(goal: GoalCard) {
     }
 }
 
-/** `.milestones`: four stops along the bar; the first to the left, the last to the right. */
+/**
+ * `.goal__track`: the bar, its stops and — set — its reading. A finger held
+ * on it for a moment (or a mouse over it) shows the reading above the fill's
+ * end, as the website does on hover and on a held touch; a tap or a swipe
+ * shows nothing, and letting go hides it.
+ */
 @Composable
-private fun Milestones(goal: GoalCard) {
-    Row(Modifier.fillMaxWidth().padding(top = Jolu.Space3)) {
-        goal.milestones.forEachIndexed { i, milestone ->
-            val align = when (i) {
-                0 -> Alignment.Start
-                goal.milestones.lastIndex -> Alignment.End
-                else -> Alignment.CenterHorizontally
-            }
-            Column(Modifier.weight(1f), horizontalAlignment = align, verticalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
-                Box(
-                    Modifier
-                        .size(7.dp)
-                        .drawBehind {
-                            if (milestone.reached) {
-                                drawCircle(Jolu.Health.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
-                                drawCircle(Jolu.Health)
-                            } else {
-                                drawCircle(Jolu.white(0.18f))
-                            }
-                        }
+private fun GoalTrack(goal: GoalCard, set: Boolean, play: Boolean) {
+    val scope = rememberCoroutineScope()
+    val hover = remember { MutableInteractionSource() }
+    val hovered by hover.collectIsHoveredAsState()
+    var held by remember { mutableStateOf(false) }
+    val share = ((goal.progress ?: 0) / 100f).coerceIn(0f, 1f)
+    val reading = goal.reading ?: "${goal.progress}% van je doel"
+    val shown = set && (held || hovered)
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "reading")
+    val lift by animateDpAsState(if (shown) 4.dp else (-2).dp, tween(Jolu.FastMs, easing = Jolu.Ease), label = "reading-lift")
+    val barTop = Jolu.Space3
+
+    Layout(
+        content = {
+            Column(Modifier.fillMaxWidth()) {
+                Meter(
+                    share = if (set) share else null,
+                    play = play,
+                    accent = Jolu.Health,
+                    height = 10.dp,
+                    emptyHeight = 6.dp,
+                    modifier = Modifier
+                        .padding(top = barTop)
+                        .semantics { contentDescription = if (set) "${goal.progress}% — $reading" else "Nog geen doel ingesteld" }
                 )
-                T(milestone.label, JStyle.Tiny.copy(color = if (milestone.reached) Jolu.TextSecondary else Jolu.TextMuted), maxLines = 1)
+                Milestones(goal)
+            }
+            // Only while it shows (or fades): at rest nothing is drawn, and TalkBack
+            // already hears the reading in the bar's own description.
+            if (set && (shown || alpha > 0f)) ReadingBubble(reading, Modifier.graphicsLayer { this.alpha = alpha })
+        },
+        modifier = if (!set) Modifier.fillMaxWidth() else Modifier
+            .fillMaxWidth()
+            .hoverable(hover)
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    // A moment's rest before it shows: a tap or a swipe's start never does.
+                    val wait = scope.launch {
+                        delay(HOLD_MS)
+                        held = true
+                    }
+                    tryAwaitRelease()
+                    wait.cancel()
+                    held = false
+                })
+            }
+    ) { measurables, constraints ->
+        val track = measurables[0].measure(constraints)
+        val bubble = measurables.getOrNull(1)?.measure(Constraints(maxWidth = constraints.maxWidth))
+        layout(track.width, track.height) {
+            track.placeRelative(0, 0)
+            bubble?.let {
+                // The fill's end, at the same share of the bubble's width: over the bar at 0 and at 100 alike.
+                val x = (share * track.width - share * it.width).toInt()
+                val y = (barTop.toPx() - it.height - lift.toPx()).toInt()
+                it.placeRelative(x, y, zIndex = 3f)
             }
         }
     }
 }
+
+private const val HOLD_MS = 280L
+
+/** The reading bubble, for tests. */
+const val GoalReadingTag = "goal-reading"
+
+/** `.goal__tip`: the reading, in a small pill of dark glass. */
+@Composable
+private fun ReadingBubble(text: String, modifier: Modifier) {
+    val shape = RoundedCornerShape(50)
+    Box(
+        modifier
+            .clearAndSetSemantics { testTag = GoalReadingTag }
+            .shadow(14.dp, shape, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
+            .clip(shape)
+            .background(Color(40, 40, 42).copy(alpha = 0.92f))
+            .border(1.dp, Jolu.GlassBorder, shape)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        T(text, JoluType.style(Jolu.FsSmall, FontWeight.SemiBold, Jolu.TextPrimary, tabular = true), maxLines = 1)
+    }
+}
+
+/**
+ * `.milestones`: each stop at its own place on the bar (`at`: 0, 50, 85,
+ * 100) — the first from the left edge, the last to the right edge, the ones
+ * between centred on their point. On the narrowest phones Bijna's word ends
+ * at its dot instead, so it clears Doel; the dot stays where it is.
+ */
+@Composable
+private fun Milestones(goal: GoalCard) {
+    val narrow = LocalScreen.current.narrow
+    val stops = goal.milestones
+    Layout(
+        content = {
+            stops.forEachIndexed { i, milestone ->
+                val align = when {
+                    i == 0 -> Alignment.Start
+                    i == stops.lastIndex -> Alignment.End
+                    narrow && i == stops.lastIndex - 1 -> Alignment.End
+                    else -> Alignment.CenterHorizontally
+                }
+                Column(horizontalAlignment = align, verticalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
+                    Box(
+                        Modifier
+                            .size(DOT)
+                            .drawBehind {
+                                if (milestone.reached) {
+                                    drawCircle(Jolu.Health.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
+                                    drawCircle(Jolu.Health)
+                                } else {
+                                    drawCircle(Jolu.white(0.18f))
+                                }
+                            }
+                    )
+                    T(milestone.label, JStyle.Tiny.copy(color = if (milestone.reached) Jolu.TextSecondary else Jolu.TextMuted), maxLines = 1)
+                }
+            }
+        },
+        modifier = Modifier.fillMaxWidth().padding(top = Jolu.Space3)
+    ) { measurables, constraints ->
+        val items = measurables.map { it.measure(Constraints(maxWidth = constraints.maxWidth)) }
+        val width = constraints.maxWidth
+        val half = DOT.toPx() / 2f
+        layout(width, items.maxOfOrNull { it.height } ?: 0) {
+            items.forEachIndexed { i, item ->
+                val point = stops[i].at.coerceIn(0, 100) / 100f * width
+                val x = when {
+                    i == 0 -> 0f
+                    i == items.lastIndex -> (width - item.width).toFloat()
+                    narrow && i == items.lastIndex - 1 -> point + half - item.width
+                    else -> point - item.width / 2f
+                }
+                item.placeRelative(x.toInt(), 0)
+            }
+        }
+    }
+}
+
+private val DOT = 7.dp
 
 /** `components/insights.php`. */
 @Composable

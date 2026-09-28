@@ -5,6 +5,11 @@ declare(strict_types=1);
 $goal    = $data['goal'];
 $isSet   = $goal['state'] !== 'unset' && has_value($goal['progress']);
 $ratio   = score_ratio($goal['progress'], 100);
+
+/* What the bar says when you point at it, focus it or hold it: the goal's own
+   numbers ("85 kg van 100 kg"), or its percentage when it has none. */
+$reading = $isSet ? (string) ($goal['reading'] ?? ($goal['progress'] . '% van je doel')) : null;
+$fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 ?>
 <section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
 
@@ -20,21 +25,34 @@ $ratio   = score_ratio($goal['progress'], 100);
         </p>
     </div>
 
-    <div class="meter meter--goal" role="img"
-         aria-label="<?= $isSet ? e((string) $goal['progress']) . '% ' . e($goal['unit']) : 'Nog geen doel ingesteld' ?>">
-        <span class="meter__fill" data-bar data-progress="<?= e((string) round($ratio, 4)) ?>"></span>
+    <?php /* The bar, its reading and its stops. Set, it can be pointed at,
+             focused or held (dashboard.js) to show the reading above the
+             fill's end; unset there is nothing to read. */ ?>
+    <div class="goal__track"<?= $isSet ? ' data-goal-track tabindex="0" aria-describedby="goal-reading"' : '' ?>>
+        <div class="meter meter--goal" role="img"
+             aria-label="<?= $isSet ? e((string) $goal['progress']) . '% — ' . e($reading) : 'Nog geen doel ingesteld' ?>">
+            <span class="meter__fill" data-bar data-progress="<?= e((string) round($ratio, 4)) ?>"></span>
+        </div>
+
+        <?php if ($isSet): ?>
+            <span class="goal__tip" id="goal-reading" role="tooltip" style="--p: <?= e((string) $fillAt) ?>"><?= e($reading) ?></span>
+        <?php endif; ?>
+
+        <?php /* Each stop at its own place on the bar: 0, 50, 85, 100. */ ?>
+        <ol class="milestones" role="list">
+            <?php foreach ($goal['milestones'] as $milestone): ?>
+                <li class="milestones__item<?= $milestone['reached'] ? ' is-reached' : '' ?>"
+                    style="--p: <?= e((string) (int) ($milestone['at'] ?? 0)) ?>">
+                    <span class="milestones__dot" aria-hidden="true"></span>
+                    <span class="milestones__label"><?= e($milestone['label']) ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ol>
     </div>
 
-    <ol class="milestones" role="list">
-        <?php foreach ($goal['milestones'] as $milestone): ?>
-            <li class="milestones__item<?= $milestone['reached'] ? ' is-reached' : '' ?>">
-                <span class="milestones__dot" aria-hidden="true"></span>
-                <span class="milestones__label"><?= e($milestone['label']) ?></span>
-            </li>
-        <?php endforeach; ?>
-    </ol>
-
-    <p class="card__hint card__hint--plain"><?= e($isSet ? $goal['unit'] : $goal['description']) ?></p>
+    <?php if (!$isSet): ?>
+        <p class="card__hint card__hint--plain"><?= e($goal['description']) ?></p>
+    <?php endif; ?>
 
     <?php if (!$isSet): ?>
         <div class="goal__action">
