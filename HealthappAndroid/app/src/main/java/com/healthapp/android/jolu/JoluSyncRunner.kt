@@ -94,7 +94,7 @@ internal sealed interface JoluSyncOutcome {
 }
 
 /**
- * THE sync — the only one. The "Sync to JoLu" button (JoluSync.sync) and the
+ * THE sync — the only one. The "Nu synchroniseren" button (JoluSync.sync) and the
  * background worker (JoluSyncWorker) both run exactly this:
  *
  *   1. the stored token — none: nothing is read or sent;

@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.healthapp.android.ui.design.cssPadding
 import kotlinx.coroutines.launch
 import com.healthapp.android.ui.design.CardStyle
 import com.healthapp.android.ui.design.GlassFilter
@@ -190,7 +191,7 @@ fun PanelColumn(
     content: @Composable ColumnScope.() -> Unit
 ) {
     // The column scrolls inside the card's 1 px border, as `.card`'s own overflow does.
-    Box(modifier.panelGlass(scrim = scrim).padding(1.dp)) {
+    Box(modifier.panelGlass(scrim = scrim).cssPadding(border = 1.dp)) {
         Column(
             Modifier
                 .verticalScroll(scroll)

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,6 +69,7 @@ import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.Meter
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.countUpText
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.rememberPlayOnSight
 import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.screens.health.EditorError
@@ -76,6 +78,9 @@ import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalAccent
 import kotlinx.coroutines.launch
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.focusSafely
 
 /**
  * One goal in full (pages/goal-detail.php), in the order it matters: how far
@@ -348,11 +353,14 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
     var value by rememberSaveable(goal.id) { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val field = remember { FocusRequester() }
 
     fun save(tick: Boolean) {
         error = null
         if (!tick && value.trim().isEmpty()) {
             error = "Vul een waarde in."
+            // goals.js: back into the field.
+            field.focusSafely()
             return
         }
         focus.clearFocus()
@@ -387,7 +395,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
                 JInput(
                     value, { value = it.take(16) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(field),
                     placeholder = entry.placeholder ?: entry.label,
                     label = entry.label,
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
@@ -503,7 +511,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .clip(shape)
                         .background(Jolu.mix(accent, 0.12f, Color.Transparent))
                         .border(1.dp, Jolu.mix(accent, 0.28f, Color.Transparent), shape)
-                        .padding(1.dp).padding(horizontal = Jolu.Space4, vertical = Jolu.Space3)
+                        .cssPadding(PaddingValues(horizontal = Jolu.Space4, vertical = Jolu.Space3), border = 1.dp)
                         .semantics(mergeDescendants = true) { },
                     horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                 ) {
@@ -538,7 +546,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .clip(shape)
                         .background(Jolu.Nutrition.copy(alpha = 0.10f))
                         .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-                        .padding(1.dp).padding(Jolu.Space4)
+                        .cssPadding(PaddingValues(Jolu.Space4), border = 1.dp)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), JoluType.style(Jolu.FsSmall))
                     Row(Modifier.fillMaxWidth().padding(top = Jolu.Space3), horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {

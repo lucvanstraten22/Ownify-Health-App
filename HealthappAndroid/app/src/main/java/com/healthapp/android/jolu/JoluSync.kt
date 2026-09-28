@@ -38,7 +38,7 @@ data class JoluSyncSummary(
 )
 
 /**
- * The sync as the screen sees it: the "Sync to JoLu" button, and the state
+ * The sync as the screen sees it: the "Nu synchroniseren" button, and the state
  * the JoLu section shows — for the button's runs and the automatic ones alike.
  *
  * The work itself is JoluSyncRunner's, the one pipeline both the button and
@@ -73,7 +73,7 @@ object JoluSync {
 
     private var job: Job? = null
 
-    /** "Sync to JoLu": now, in the app, whatever the automatic sync is doing. */
+    /** "Nu synchroniseren": now, in the app, whatever the automatic sync is doing. */
     fun sync(context: Context) {
         if (job?.isActive == true) {
             return

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -35,8 +34,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -57,10 +56,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import com.healthapp.android.data.AppData
 import com.healthapp.android.data.Integration
 import com.healthapp.android.data.JoluActions
-import com.healthapp.android.data.Outcome
 import com.healthapp.android.data.ProfileField
 import com.healthapp.android.data.SettingsBlock
 import com.healthapp.android.data.SettingsPage
@@ -68,9 +67,7 @@ import com.healthapp.android.jolu.JoluConnection
 import com.healthapp.android.ui.app.DetailColumn
 import com.healthapp.android.ui.app.LocalShell
 import com.healthapp.android.ui.app.Overlay
-import com.healthapp.android.ui.design.BoxShadow
 import com.healthapp.android.ui.design.Btn
-import com.healthapp.android.ui.design.CardHint
 import com.healthapp.android.ui.design.CardStyle
 import com.healthapp.android.ui.design.Chip
 import com.healthapp.android.ui.design.Disclaimer
@@ -85,6 +82,7 @@ import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.Toggle
 import com.healthapp.android.ui.design.cardShape
 import com.healthapp.android.ui.design.chWidth
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.screens.account.AvatarCircle
@@ -160,8 +158,7 @@ private fun FieldsBlock(data: AppData, block: SettingsBlock.Fields) {
         BlockHead(block.title, block.lede)
         SettingsCard {
             block.fields.forEachIndexed { i, field ->
-                if (i > 0) Hairline()
-                FieldRow(field) {
+                FieldRow(field, divided = i > 0) {
                     // Two open the account panel, as they did before the profile existed.
                     if (field.opens == "account") shell.open(Overlay.Account()) else shell.open(Overlay.EditField(field.key))
                 }
@@ -176,7 +173,7 @@ private fun FieldsBlock(data: AppData, block: SettingsBlock.Fields) {
  * is fixed, nothing for a value worked out from another.
  */
 @Composable
-private fun FieldRow(field: ProfileField, onEdit: () -> Unit) {
+private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) {
     // A live field is a <button> (letter-spacing: normal); a locked or derived one is a <div>.
     CompositionLocalProvider(LocalTracking provides if (field.live) 0.sp else LocalTracking.current) {
         val narrow = LocalScreen.current.narrow
@@ -194,42 +191,76 @@ private fun FieldRow(field: ProfileField, onEdit: () -> Unit) {
             label = "field"
         )
 
-        Row(
+        FieldColumns(
             Modifier
                 .then(if (live) Modifier.press(interaction) else Modifier)
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .background(fill)
+                .settingsRow(divided, fill)
                 .then(if (live) Modifier.clickable(interaction, indication = null, role = Role.Button, onClick = onEdit) else Modifier)
                 .semantics(mergeDescendants = true) { }
-                .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
-        ) {
-            Column(Modifier.weight(1f)) {
-                T(field.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
-                if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (divided) 1.dp else 0.dp),
+            label = {
+                Column {
+                    T(field.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
+                    if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                }
+            },
+            value = {
+                if (field.kind == "image") {
+                    AvatarCircle(field.value, 34.dp, 17.dp)
+                } else {
+                    T(
+                        field.value ?: field.blank,
+                        JoluType.style(
+                            Jolu.FsSmall,
+                            if (filled) FontWeight.SemiBold else FontWeight.Medium,
+                            if (filled) Jolu.TextSecondary else Jolu.TextMuted
+                        ),
+                        align = TextAlign.End,
+                        maxLines = 1,
+                        ellipsis = true
+                    )
+                }
+            },
+            mark = {
+                when {
+                    field.state == "locked" -> JIcon(JoluIcons.lock, size = 15.dp, color = Jolu.TextMuted)
+                    live -> JIcon(JoluIcons.chevronRight, size = 15.dp, color = Jolu.TextFaint)
+                }
             }
-            if (field.kind == "image") {
-                AvatarCircle(field.value, 34.dp, 17.dp)
-            } else {
-                T(
-                    field.value ?: field.blank,
-                    JoluType.style(
-                        Jolu.FsSmall,
-                        if (filled) FontWeight.SemiBold else FontWeight.Medium,
-                        if (filled) Jolu.TextSecondary else Jolu.TextMuted
-                    ),
-                    Modifier.weight(1f, fill = false),
-                    align = TextAlign.End,
-                    maxLines = 1,
-                    ellipsis = true
-                )
-            }
-            when {
-                field.state == "locked" -> JIcon(JoluIcons.lock, size = 15.dp, color = Jolu.TextMuted)
-                live -> JIcon(JoluIcons.chevronRight, size = 15.dp, color = Jolu.TextFaint)
-            }
+        )
+    }
+}
+
+/**
+ * `.settings-field`'s `grid-template-columns: minmax(0, 1fr) auto auto`,
+ * 12 apart: the mark and the value take what they need, the label what is
+ * left, each centred on the row. The gap before the mark stays when there
+ * is no mark, as a grid's gap does beside an empty track.
+ */
+@Composable
+private fun FieldColumns(
+    modifier: Modifier,
+    label: @Composable () -> Unit,
+    value: @Composable () -> Unit,
+    mark: @Composable () -> Unit
+) {
+    Layout(contents = listOf(label, value, mark), modifier = modifier) { (labels, values, marks), constraints ->
+        val gap = Jolu.Space3.roundToPx()
+        val width = constraints.maxWidth
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val markBoxes = marks.map { it.measure(loose) }
+        val markWidth = markBoxes.maxOfOrNull { it.width } ?: 0
+        val valueBoxes = values.map { it.measure(loose.copy(maxWidth = (width - markWidth - 2 * gap).coerceAtLeast(0))) }
+        val valueWidth = valueBoxes.maxOfOrNull { it.width } ?: 0
+        val labelBoxes = labels.map { it.measure(loose.copy(maxWidth = (width - markWidth - valueWidth - 2 * gap).coerceAtLeast(0))) }
+        val height = (labelBoxes + valueBoxes + markBoxes).maxOfOrNull { it.height }
+            .let { (it ?: 0).coerceIn(constraints.minHeight, constraints.maxHeight) }
+        fun centre(h: Int) = Alignment.CenterVertically.align(h, height)
+        layout(width, height) {
+            labelBoxes.forEach { it.placeRelative(0, centre(it.height)) }
+            valueBoxes.forEach { it.placeRelative(width - markWidth - gap - it.width, centre(it.height)) }
+            markBoxes.forEach { it.placeRelative(width - it.width, centre(it.height)) }
         }
     }
 }
@@ -258,17 +289,17 @@ private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
                     email?.second ?: "Niet ingesteld",
                     filled = email != null
                 )
-                Hairline()
                 when {
-                    google != null -> StaticField("Google", "Gekoppeld — je kunt ook met Google inloggen", google.second ?: "Gekoppeld", filled = true, check = true)
+                    google != null -> StaticField("Google", "Gekoppeld — je kunt ook met Google inloggen", google.second ?: "Gekoppeld", filled = true, check = true, divided = true)
                     auth.googleAvailable -> FieldRow(
-                        ProfileField("google", "Google", "Koppel Google om daarmee in te loggen", null, null, null, "editable", null, "Koppel Google", null)
+                        ProfileField("google", "Google", "Koppel Google om daarmee in te loggen", null, null, null, "editable", null, "Koppel Google", null),
+                        divided = true
                     ) {
                         runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(JoluConnection.api.siteUrl)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                            context.startActivity(Intent(Intent.ACTION_VIEW, JoluConnection.api.siteUrl.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }
-                    else -> StaticField("Google", null, "Nog niet beschikbaar", filled = false)
+                    else -> StaticField("Google", null, "Nog niet beschikbaar", filled = false, divided = true)
                 }
             }
         }
@@ -277,31 +308,31 @@ private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
 
 /** A field row that is a fact, not a control. */
 @Composable
-private fun StaticField(label: String, note: String?, value: String, filled: Boolean, check: Boolean = false) {
+private fun StaticField(label: String, note: String?, value: String, filled: Boolean, check: Boolean = false, divided: Boolean = false) {
     val narrow = LocalScreen.current.narrow
-    Row(
+    FieldColumns(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .settingsRow(divided)
             .semantics(mergeDescendants = true) { }
-            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
-    ) {
-        Column(Modifier.weight(1f)) {
-            T(label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
-            if (note != null) T(note, JStyle.Tiny, Modifier.padding(top = 2.dp))
-        }
-        T(
-            value,
-            JoluType.style(Jolu.FsSmall, if (filled) FontWeight.SemiBold else FontWeight.Medium, if (filled) Jolu.TextSecondary else Jolu.TextMuted),
-            Modifier.weight(1f, fill = false),
-            align = TextAlign.End,
-            maxLines = 1,
-            ellipsis = true
-        )
-        if (check) JIcon(JoluIcons.check, size = 15.dp, color = Jolu.TextFaint)
-    }
+            .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (divided) 1.dp else 0.dp),
+        label = {
+            Column {
+                T(label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
+                if (note != null) T(note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+            }
+        },
+        value = {
+            T(
+                value,
+                JoluType.style(Jolu.FsSmall, if (filled) FontWeight.SemiBold else FontWeight.Medium, if (filled) Jolu.TextSecondary else Jolu.TextMuted),
+                align = TextAlign.End,
+                maxLines = 1,
+                ellipsis = true
+            )
+        },
+        mark = { if (check) JIcon(JoluIcons.check, size = 15.dp, color = Jolu.TextFaint) }
+    )
 }
 
 @Composable
@@ -383,7 +414,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                         stateDescription = if (open) "Uitgeklapt" else "Ingeklapt"
                         onClick { open = !open; true }
                     }
-                    .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                    .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3),
                 verticalArrangement = Arrangement.spacedBy(Jolu.Space1)
             ) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
@@ -476,7 +507,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                         // A cloud source's consent screen is the provider's own page, in the browser.
                                         runCatching {
                                             context.startActivity(
-                                                Intent(Intent.ACTION_VIEW, Uri.parse(JoluConnection.api.siteUrl + "api/integrations/" + Uri.encode(provider) + "/start.php"))
+                                                Intent(Intent.ACTION_VIEW, (JoluConnection.api.siteUrl + "api/integrations/" + Uri.encode(provider) + "/start.php").toUri())
                                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             )
                                         }
@@ -532,7 +563,6 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
         InButton {
             SettingsCard {
                 block.options.forEachIndexed { i, option ->
-                    if (i > 0) Hairline()
                     val on = option.key == selected
                     val interaction = remember { MutableInteractionSource() }
                     val pressed by interaction.collectIsPressedAsState()
@@ -542,14 +572,13 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                         Modifier
                             .press(interaction, enabled = !option.disabled)
                             .fillMaxWidth()
-                            .heightIn(min = 56.dp)
-                            .background(fill)
+                            .settingsRow(i > 0, fill)
                             .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) { selected = option.key }
                             .semantics(mergeDescendants = true) {
                                 this.selected = on
                                 if (option.disabled) disabled()
                             }
-                            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                            .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (i > 0) 1.dp else 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                     ) {
@@ -590,13 +619,12 @@ private fun StatesBlock(block: SettingsBlock.States) {
         BlockHead(block.title, block.lede)
         SettingsCard {
             block.items.forEachIndexed { i, item ->
-                if (i > 0) Hairline()
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp)
+                        .settingsRow(i > 0)
                         .semantics(mergeDescendants = true) { }
-                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3)
+                        .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (i > 0) 1.dp else 0.dp)
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Jolu.Space4)) {
                         T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
@@ -629,17 +657,16 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
         InButton {
             SettingsCard {
                 block.items.forEachIndexed { i, item ->
-                    if (i > 0) Hairline()
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 56.dp)
+                            .settingsRow(i > 0)
                             .semantics(mergeDescendants = true) {
                                 toggleableState = ToggleableState(item.on)
                                 role = Role.Switch
                                 disabled()
                             }
-                            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                            .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (i > 0) 1.dp else 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                     ) {
@@ -676,7 +703,7 @@ fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(Jolu.white(0.035f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(1.dp).padding(Jolu.Space4),
+            .cssPadding(PaddingValues(Jolu.Space4), border = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
         JoluIcons.named(icon)?.let { JIcon(it, Modifier.padding(top = 2.dp), size = 16.dp, color = Jolu.TextMuted) }

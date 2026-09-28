@@ -7,7 +7,7 @@ import androidx.work.WorkerParameters
 /**
  * The automatic sync, run by WorkManager (scheduled by JoluBackgroundSync).
  *
- * It runs the same pipeline as the "Sync to JoLu" button — JoluSyncRunner,
+ * It runs the same pipeline as the "Nu synchroniseren" button — JoluSyncRunner,
  * through JoluSync.runAutomatic — and only decides what WorkManager should do
  * next:
  *

@@ -39,7 +39,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -69,6 +68,7 @@ import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.RangeSwitch
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.chWidth
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.drawBoxShadows
 import com.healthapp.android.ui.design.drawBorder
 import com.healthapp.android.ui.theme.Accent
@@ -315,8 +315,7 @@ private fun BoardRow(
                     "$rankText. ${name ?: "—"}, ${points(entry.points)} $unit"
             }
             // `.board-row`'s border is there on every row, transparent but for yours: it takes room.
-            .padding(1.dp)
-            .padding(horizontal = if (narrow) Jolu.Space2 else Jolu.Space3, vertical = Jolu.Space1),
+            .cssPadding(PaddingValues(horizontal = if (narrow) Jolu.Space2 else Jolu.Space3, vertical = Jolu.Space1), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)
     ) {

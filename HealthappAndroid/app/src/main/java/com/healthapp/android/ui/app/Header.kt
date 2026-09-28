@@ -2,6 +2,7 @@ package com.healthapp.android.ui.app
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,9 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
@@ -194,10 +193,8 @@ fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, conte
                             radius = size.width / 2f + 8.dp.toPx()
                         )
                     }
-                    .clip(CircleShape)
-                    .drawWithContent {
-                        drawCircle(Jolu.Health)
-                    }
+                    .background(Jolu.Health, CircleShape)
+                    // border: 2px solid var(--bg-deep)
                     .border(2.dp, Jolu.BgDeep, CircleShape)
             )
         }

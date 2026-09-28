@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,6 +76,7 @@ import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.LocalStillMotion
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.drawBoxShadows
 import com.healthapp.android.ui.design.drawChartLine
 import com.healthapp.android.ui.design.rememberSvgPaths
@@ -463,7 +465,7 @@ private fun Reading(point: ChartPoint, accent: Color) {
                     .clip(shape)
                     .background(Color(46, 42, 44).copy(alpha = 0.97f))
                     .border(1.dp, Jolu.GlassBorder, shape)
-                    .padding(1.dp).padding(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp),
+                    .cssPadding(PaddingValues(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp), border = 1.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 T(point.date, JoluType.style(Jolu.FsTiny, color = Jolu.TextMuted, lineHeight = 1.25.em), maxLines = 1)

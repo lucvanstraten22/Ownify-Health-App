@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
 import com.healthapp.android.jolu.JoluConnection
 import com.healthapp.android.jolu.JoluState
 import com.healthapp.android.ui.app.Detail

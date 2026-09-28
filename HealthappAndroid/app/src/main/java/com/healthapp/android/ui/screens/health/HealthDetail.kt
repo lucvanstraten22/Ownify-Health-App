@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,6 +72,7 @@ import com.healthapp.android.ui.design.ScoreRing
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.chWidth
 import com.healthapp.android.ui.design.countUpText
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.rememberPlayOnSight
 import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.theme.Accent
@@ -78,6 +80,9 @@ import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalAccent
 import kotlinx.coroutines.launch
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.focusSafely
 
 /**
  * One health area in full (pages/health-detail.php), in the order it
@@ -147,12 +152,15 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var status by rememberSaveable { mutableStateOf<String?>(null) }
+    val field = remember { FocusRequester() }
 
     fun save() {
         val rating = value.trim()
         error = null
         if (!Regex("^(10|[1-9])$").matches(rating)) {
             error = "Kies een cijfer van 1 tot 10."
+            // health-rating.js: back into the field.
+            field.focusSafely()
             return
         }
         focus.clearFocus()
@@ -182,7 +190,7 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
             JInput(
                 value, { value = it.filter(Char::isDigit).take(4) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).focusRequester(field),
                 placeholder = copy.placeholder,
                 label = copy.label,
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
@@ -243,7 +251,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
             .clip(shape)
             .background(Jolu.white(0.035f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(1.dp).padding(Jolu.Space3)
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp)
             .clearAndSetSemantics {
                 contentDescription = "${metric.label}: " + (metric.value?.let { v -> if (metric.unit.isNotEmpty()) "$v ${metric.unit}" else v } ?: "nog geen gegevens")
             }
@@ -385,7 +393,8 @@ private fun MetricGroupCard(group: MetricGroup) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
         ) {
-            Column(Modifier.weight(1f, fill = false)) {
+            // .card__head: space-between — the headings take the row, the lock sits at its end.
+            Column(Modifier.weight(1f)) {
                 T(group.title, JStyle.Eyebrow, Modifier.semantics { heading() })
                 if (!group.hint.isNullOrEmpty()) T(group.hint, JStyle.Tiny, Modifier.padding(top = Jolu.Space1))
             }
@@ -418,7 +427,7 @@ private fun MetricRow(metric: Metric, first: Boolean) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(top = if (first) 0.dp else Jolu.Space3, bottom = Jolu.Space3)
+                .cssPadding(top = if (first) 0.dp else Jolu.Space3, bottom = Jolu.Space3, above = if (first) 0.dp else 1.dp)
                 .semantics(mergeDescendants = true) { },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)

@@ -9,8 +9,9 @@ import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.unit.dp
 
 /**
- * The JoLu icon set — generated from the website's components/icons.php, so
- * the two draw exactly the same marks: a 24 grid, a 1.6 stroke, round caps
+ * The JoLu icon set — generated from the website's components/icons.php by
+ * HealthappAndroid/tools/gen_icons.py (do not edit by hand), so the two draw
+ * exactly the same marks: a 24 grid, a 1.6 stroke, round caps
  * and joins, no fills. <circle> and <rect> are written out as the same shapes
  * in path data.
  *

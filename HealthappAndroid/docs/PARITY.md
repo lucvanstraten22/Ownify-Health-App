@@ -71,7 +71,34 @@ as the website reloads or re-fetches the page after one.
 All from `assets/css/theme.css`, `components.css` and the page sheets; CSS
 px are dp, rem is 16 sp. Font: the web's stack is the system sans-serif,
 which on Android is Roboto — the app uses the platform default for the same
-reason.
+reason. Icons are generated from `components/icons.php`
+(`tools/gen_icons.py`).
+
+Text is laid out the way the browser lays it out, not with Compose's
+defaults:
+
+- Letter spacing is inherited as CSS inherits it: body's `-0.01em` resolves
+  once, to −0.15 px at every size below it (`LocalTracking`); inside a
+  `<button>` or `<input>` it is `normal` (`InButton`).
+- Glyphs advance linearly (`TextMotion.Animated`), as Chrome's do.
+- A line box is lines × line-height, rounded to the pixel, and a line height
+  below the font's own is honoured (`cssLineBox`).
+- A line's width includes the letter-spacing after its last letter, as the
+  browser's does and Android's does not: the "%" after a big tracked number
+  sits where it does on the website, and a line with negative spacing fits
+  as much before it breaks.
+- `max-width` in `ch` measures the digit zero, as CSS does.
+- A 1 px border takes room (CSS `border-box`): cards, panels, chips, pills,
+  buttons, fields, switch options and board rows inset their content by it.
+- Box edges are rounded where they fall, as the browser rounds them when it
+  draws, not side by side (`cssPadding`): 12 dp above and below a row is
+  63 px, not 32 + 32, so rows and cards do not gain a pixel each down a page.
+- A settings card's rows are `min-height: 56px` in `border-box` with the
+  hairline as the next row's top border (`settingsRow`), so a short row is 56
+  with its line.
+- `.settings-field` is its grid (`minmax(0, 1fr) auto auto`): the value takes
+  what it needs at the right, the label the rest; `.metric-row` and
+  `.card__head` put their value and badge at the end (`space-between`).
 
 ## Deviations
 
@@ -79,8 +106,40 @@ reason.
 | --- | --- |
 | Pairing with a code lives in the sign-in panel ("Koppel met een code") and a paired-only phone sees the welcome screen with its sync status | the website has no pairing form (it hands out codes); pairing must keep working in the app |
 | Health Connect card in Apparaten & Gezondheid shows this phone's permissions, background access, last sync and an enabled "Nu synchroniseren" | Android-only; the website's card is read-only for a phone source |
-| OAuth sources (Google Health) open nothing in the app | their connect flow is a browser redirect bound to a website session |
-| Google sign-in shows the website's "not available" state | needs Android OAuth clients configured on the server and Credential Manager; the ids belong to the deployment |
+| A cloud source's Verbinden (Google Health) opens the website's `api/integrations/<provider>/start.php` in the browser | its consent screen is the provider's own page, a redirect bound to a website session; the browser must be signed in to JoLu |
+| Koppel Google (Instellingen › Inloggen en beveiliging) opens the website in the browser | linking is the same session-bound redirect |
+| Google sign-in shows the website's "not available" state ("Google is nog niet gekoppeld.", the mark at 50%) | needs Android OAuth clients configured on the server and Credential Manager; the ids belong to the deployment |
 | After deleting an account with Google linked, the app shows the website's "revoke it yourself" notice instead of redirecting | the Google revoke is a browser redirect bound to a session the app does not have |
 | Backdrop blur only on Android 12+ | `RenderEffect` does not exist before API 31; older phones get the same translucent surfaces without blur, as the website does without `backdrop-filter` |
 | System back closes the frontmost layer | Android navigation; the website relies on Escape and the pills |
+| The avatar is chosen with Android's photo picker (images only) | the website's `<input type="file" accept="image/jpeg,image/png,image/webp">`; the server checks the type and size as before |
+| Dates (Geboortedatum) are picked in the system date dialog | the website's `<input type="date">`, which on an Android browser opens the same kind of dialog |
+| The browser's own constraint bubbles (`required`, `minlength`) are not drawn | they are the browser's, not JoLu's; the form is sent and the server's message is shown in the panel's error box, as the website shows it when its checks fail. The website's own script messages ("Vul een waarde in.") are copied |
+| Focus follows the website: a panel's first field is focused as it opens, the field in error after a failed check, and a tapped button takes focus from a field | what the website's script and the browser do; the keyboard therefore opens with the login and editor panels |
+
+## Verification
+
+Every page, detail, panel and wizard step — 61 scenarios, the demo account
+with friends, goals and a week of data — is captured on both sides at the
+same size and pixel ratio: the website in Chromium (412 × 915, 2.625, reduced
+motion, real taps) and the app in `ScreenshotCapture` (412 × 915 dp, 420 dpi,
+hardware rendering, motion still), each from the same `api/app/state.php`
+answer of the same day. Each text's position, width, line count, size,
+weight and letter spacing is compared, then the shots are compared by eye
+and by sampled colour.
+
+What is left, and why:
+
+| Difference | Why |
+| --- | --- |
+| A few long lines break one word earlier or later on one side (the Voeding detail's lede, one line of the overview) | the test browser's font measures text about −1 % to +0.5 % wider than Android does, depending on size; a phone's browser and the app share the same font and metrics |
+| Weight 600 looks bolder in the browser shots and lighter in the app shots | the test machines' fonts are static Roboto files (600 is drawn as 700 by Chromium, as 500 by Robolectric); a phone's variable Roboto draws 600 on both |
+| Texts sit on average 0.9 dp lower or higher than on the website, at most about 5 dp far down a long scrolled page | Compose lays out on whole pixels; box edges are rounded as the browser rounds them, but a line of text, a meter or a picture still rounds its own height |
+| The page under the scrolled header is blurred in the app and sharp in the website shots | the app draws `.app-header.is-scrolled` as written (a 30 px backdrop blur, saturate 140 %, the tint); the test browser draws a 30 px backdrop blur there as none at all (an 8 px one it does draw). What a phone's browser draws was not checked |
+| The website's detail layer throws a shadow band at the screen's right edge while closed | a website bug (the hidden layer keeps its `box-shadow`); the app does not copy it |
+| "calorieÃ«n" in a metric label in the local test data | the label was stored double-encoded by a test import; both sides show what the server sends |
+
+Not verified here: nothing ran on a physical phone or an emulator (the
+build machine has neither), so real Health Connect, the Keystore, the photo
+picker, backdrop blur on a GPU and gesture feel were checked in Robolectric
+and by reading, not on a device.

@@ -1,10 +1,7 @@
 package com.healthapp.android.ui.screens.overview
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -14,9 +11,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -32,6 +29,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -81,6 +79,7 @@ import com.healthapp.android.ui.design.ScoreRing
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.chWidth
 import com.healthapp.android.ui.design.countUpText
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.design.rememberPlayOnSight
 import com.healthapp.android.ui.design.reveal
@@ -260,7 +259,7 @@ private fun InsightsCard(insights: Insights) {
                         .clip(shape)
                         .background(Jolu.white(0.035f))
                         .border(1.dp, Jolu.GlassHairline, shape)
-                        .padding(1.dp).padding(Jolu.Space3),
+                        .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp),
                     horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                 ) {
                     Box(
@@ -385,7 +384,8 @@ private fun ScrollTop(scroll: ScrollState) {
     val screen = LocalScreen.current
     val scope = rememberCoroutineScope()
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val show = scroll.value > with(density) { 360.dp.toPx() }
+    val threshold = with(density) { 360.dp.toPx() }
+    val show by remember(scroll, threshold) { derivedStateOf { scroll.value > threshold } }
     val shown by animateFloatAsState(if (show) 1f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "fab")
     val bottom = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
     if (shown <= 0f) return

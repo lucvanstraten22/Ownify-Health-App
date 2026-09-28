@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -176,7 +177,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                             JoluType.style(if (narrow) Jolu.FsTiny else Jolu.FsSmall, FontWeight.SemiBold, tracking = (-0.01).em),
                             maxLines = 1
                         )
-                        JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 13.dp, color = Jolu.TextMuted)
+                        JIcon(JoluIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 13.dp, color = Jolu.TextMuted)
                     }
                 }
             }

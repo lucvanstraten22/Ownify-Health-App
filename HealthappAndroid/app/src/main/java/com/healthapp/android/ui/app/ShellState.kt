@@ -6,6 +6,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -61,7 +62,7 @@ class ShellState(
     // ------------------------------------------------------------ the rail
 
     /** The page shown, or being moved to. */
-    var index by mutableStateOf(pageIds.indexOf(startPage).coerceAtLeast(0))
+    var index by mutableIntStateOf(pageIds.indexOf(startPage).coerceAtLeast(0))
         private set
 
     /** The rail's position in pages, mid-way included. */

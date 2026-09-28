@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,7 +49,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
@@ -81,6 +81,7 @@ import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.LocalStillMotion
 import com.healthapp.android.ui.design.RangeSwitch
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.screens.account.FieldLabel
 import com.healthapp.android.ui.theme.Accent
@@ -93,6 +94,10 @@ import java.text.NumberFormat
 import java.time.LocalDate
 import java.util.Locale
 import kotlinx.coroutines.launch
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.focusSafely
+import com.healthapp.android.ui.design.blurring
 
 private const val TOTAL = 6
 
@@ -194,7 +199,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
     val complete = isComplete(step, draft, goals)
 
     OverlayFrame(overlay, title = words["title"], maxWidth = 432.dp, onDismiss = ::close) { panelModifier ->
-        Box(panelModifier.panelGlass().padding(1.dp)) {
+        Box(panelModifier.panelGlass().cssPadding(border = 1.dp)) {
             Column(Modifier.padding(Jolu.Space5)) {
                 // .wizard__head
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
@@ -396,8 +401,10 @@ private fun DefinitionStep(draft: Draft, goals: Goals) {
     StepHead(step?.title.orEmpty(), step?.lede.orEmpty())
 
     FieldLabel(words["name_label"], Modifier.padding(top = 0.dp))
+    val nameField = remember { FocusRequester() }
     JInput(
         draft.name, { draft.name = it.take(120) },
+        modifier = Modifier.focusRequester(nameField),
         placeholder = words["name_hint"],
         label = words["name_label"],
         keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = false, imeAction = ImeAction.Done)
@@ -410,7 +417,13 @@ private fun DefinitionStep(draft: Draft, goals: Goals) {
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space2),
             verticalArrangement = Arrangement.spacedBy(Jolu.Space2)
         ) {
-            suggestions.forEach { text -> Suggestion(text) { draft.name = text } }
+            // goal-wizard.js: the name is filled in and the cursor put in it.
+            suggestions.forEach { text ->
+                Suggestion(text) {
+                    draft.name = text
+                    nameField.focusSafely()
+                }
+            }
         }
     }
 
@@ -740,7 +753,7 @@ private fun WizardNote(text: String, icon: androidx.compose.ui.graphics.vector.I
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(1.dp).padding(Jolu.Space3),
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
     ) {
         if (icon != null) JIcon(icon, Modifier.padding(top = 2.dp), size = 15.dp, color = Jolu.TextSecondary)
@@ -762,8 +775,8 @@ private fun Suggestion(text: String, onClick: () -> Unit) {
                 .clip(shape)
                 .background(Jolu.white(0.05f))
                 .border(1.dp, Jolu.GlassHairline, shape)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-                .padding(1.dp).padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
+                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
+                .cssPadding(PaddingValues(horizontal = Jolu.Space3, vertical = Jolu.Space1), border = 1.dp),
             maxLines = 1
         )
     }
@@ -815,9 +828,9 @@ private fun Choice(
                     .clip(shape)
                     .background(fill)
                     .border(1.dp, border, shape)
-                    .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                    .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
                     .semantics(mergeDescendants = true) { selected = chosen }
-                    .padding(1.dp).padding(Jolu.Space3),
+                    .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp),
                 content = content
             )
         }
@@ -947,7 +960,9 @@ internal fun dutchNumber(text: String): String {
         maximumFractionDigits = 2
         roundingMode = RoundingMode.HALF_UP
     }
-    return format.format(n)
+    // JavaScript rounds the shortest decimal that reads back as the number
+    // ("2.355" → 2,36), not its binary value (2.35499…, which would give 2,35).
+    return format.format(java.math.BigDecimal(n.toString()))
 }
 
 internal fun withUnit(number: String, unit: String): String =

@@ -214,14 +214,25 @@ class ScreenshotCapture {
             if (!text.isNullOrBlank() && layout != null && layout.lineCount > 0 && node.boundsInRoot.height > 0f) {
                 // Where the text itself sits: inside any padding its own modifiers add.
                 val p = node.layoutInfo.coordinates.positionInRoot()
+                // The browser measures a line with the letter-spacing after its last
+                // letter; Android leaves that off. Add it, so the widths compare.
+                val style = layout.layoutInput.style
+                val spacing = with(compose.density) {
+                    when {
+                        style.letterSpacing.isEm -> style.letterSpacing.value * style.fontSize.toPx()
+                        style.letterSpacing.isSp -> style.letterSpacing.toPx()
+                        else -> 0f
+                    }
+                }
+                val line = layout.getLineRight(0) - layout.getLineLeft(0) + spacing
                 list.put(
                     JSONObject()
                         .put("text", text)
                         // End-aligned text reports its line against the width it was
                         // measured at; it is drawn inside its own box.
-                        .put("x", (p.x + minOf(layout.getLineLeft(0), node.layoutInfo.width - (layout.getLineRight(0) - layout.getLineLeft(0)))) / density)
+                        .put("x", (p.x + minOf(layout.getLineLeft(0), node.layoutInfo.width - line)) / density)
                         .put("cy", (p.y + (layout.getLineTop(0) + layout.getLineBottom(0)) / 2f) / density)
-                        .put("w", (layout.getLineRight(0) - layout.getLineLeft(0)) / density)
+                        .put("w", line / density)
                         .put("lines", layout.lineCount)
                         .put("size", layout.layoutInput.style.fontSize.value)
                         .put("weight", layout.layoutInput.style.fontWeight?.weight ?: 400)

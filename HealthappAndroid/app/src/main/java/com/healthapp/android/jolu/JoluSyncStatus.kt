@@ -23,7 +23,10 @@ data class JoluSyncRecord(
     val lastWritten: Int? = null
 )
 
-/** What kind of outcome a sync had, in the words the screen uses. */
+/**
+ * What kind of outcome a sync had. [label] is its plain English name; the
+ * screen says it in Dutch (`outcomeText` in ui/screens/settings/PhoneSync.kt).
+ */
 enum class JoluSyncOutcomeKind(val label: String) {
     SYNCED("Synced"),
     OFFLINE("Could not reach JoLu — will try again automatically"),

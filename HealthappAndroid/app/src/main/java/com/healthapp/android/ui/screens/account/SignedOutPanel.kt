@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.healthapp.android.jolu.JoluAuthState
 import com.healthapp.android.jolu.JoluConnection
 import com.healthapp.android.jolu.JoluLink
@@ -59,10 +61,12 @@ import com.healthapp.android.ui.design.Btn
 import com.healthapp.android.ui.design.JInput
 import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.T
-import com.healthapp.android.ui.design.press
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.InButton
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.rememberFocusOnOpen
 
 /** Room for any username or e-mail address the server accepts (191 for an address). */
 private const val MAX_FIELD = 191
@@ -119,7 +123,7 @@ fun Notice(text: String, link: JoluLink? = null) {
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(1.dp).padding(Jolu.Space3)
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
         T(text, JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary))
@@ -132,7 +136,7 @@ fun Notice(text: String, link: JoluLink? = null) {
                     .clickable(role = Role.Button) {
                         runCatching {
                             context.startActivity(
-                                android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link.href))
+                                android.content.Intent(android.content.Intent.ACTION_VIEW, link.href.toUri())
                                     .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                             )
                         }
@@ -154,7 +158,7 @@ fun ErrorBox(text: String, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(Jolu.Nutrition.copy(alpha = 0.10f))
             .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-            .padding(1.dp).padding(Jolu.Space3)
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )
 }
@@ -195,6 +199,8 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
 
     // Another flow starts without the last one's error, as setMode() clears it.
     LaunchedEffect(register) { JoluConnection.dismissAuthMessage() }
+    // open(): the first control on screen takes focus — the username field.
+    val focusFirst = rememberFocusOnOpen()
 
     if (auth is JoluAuthState.Failed) ErrorBox(auth.message, Modifier.padding(bottom = Jolu.Space4))
 
@@ -203,6 +209,7 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
             FieldLabel("Gebruikersnaam")
             JInput(
                 username, { username = it.take(MAX_FIELD) },
+                modifier = Modifier.focusRequester(focusFirst),
                 enabled = !working,
                 label = "Gebruikersnaam",
                 keyboard = KeyboardOptions(

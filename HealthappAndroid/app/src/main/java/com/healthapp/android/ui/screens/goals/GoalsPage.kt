@@ -51,7 +51,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -455,7 +455,7 @@ fun GoalCard(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
                         if (model.paused && !model.completed && !model.pausedChip.isNullOrEmpty()) Chip(model.pausedChip, quiet = true)
                         T(model.deadline, JStyle.Meta, Modifier.weight(1f), maxLines = 1, ellipsis = true)
-                        if (!preview) JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 15.dp, color = Jolu.TextMuted)
+                        if (!preview) JIcon(JoluIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Jolu.TextMuted)
                     }
                 }
             }

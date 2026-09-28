@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +34,7 @@ import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 
@@ -77,8 +77,7 @@ fun DevicesPopup(overlay: Overlay, data: AppData) {
                     panelModifier
                         .widthIn(max = 296.dp)
                         .panelGlass()
-                        .padding(1.dp)
-                        .padding(Jolu.Space4)
+                        .cssPadding(PaddingValues(Jolu.Space4), border = 1.dp)
                 ) {
                     if (lines.isEmpty()) {
                         T(

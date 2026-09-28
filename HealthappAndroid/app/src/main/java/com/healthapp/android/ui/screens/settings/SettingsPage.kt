@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +43,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.healthapp.android.data.AppData
 import com.healthapp.android.data.SettingsRow
@@ -59,6 +62,7 @@ import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.PageIntro
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.screens.account.AvatarCircle
@@ -90,8 +94,7 @@ fun SettingsPage(data: AppData, scroll: ScrollState) {
                 SettingsEyebrow(group.label)
                 SettingsCard {
                     group.rows.forEachIndexed { i, row ->
-                        if (i > 0) Hairline()
-                        SettingsRowButton(row) { shell.openDetail(Detail.SettingsPage(row.id)) }
+                        SettingsRowButton(row, divided = i > 0) { shell.openDetail(Detail.SettingsPage(row.id)) }
                     }
                 }
             }
@@ -152,7 +155,7 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
                         Modifier.padding(top = 2.dp)
                     )
                 }
-                JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 15.dp, color = Jolu.TextFaint)
+                JIcon(JoluIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Jolu.TextFaint)
             }
         }
     }
@@ -160,7 +163,7 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
 
 /** `.settings-row`: its mark, its name, the current value under it, a chevron. */
 @Composable
-private fun SettingsRowButton(row: SettingsRow, onClick: () -> Unit) {
+private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () -> Unit) {
     InButton {
         val narrow = LocalScreen.current.narrow
         val meta = row.value ?: row.hint
@@ -173,15 +176,14 @@ private fun SettingsRowButton(row: SettingsRow, onClick: () -> Unit) {
             Modifier
                 .press(interaction)
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .background(fill)
+                .settingsRow(divided, fill)
                 .clickable(interaction, indication = null, onClick = onClick)
                 .clearAndSetSemantics {
                     role = Role.Button
                     contentDescription = row.label + (meta?.let { " — $it" } ?: "") + ". Open instellingen."
                     onClick { onClick(); true }
                 }
-                .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                .cssPadding(if (narrow) Jolu.Space3 else Jolu.Space4, top = Jolu.Space3, bottom = Jolu.Space3, above = if (divided) 1.dp else 0.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)
         ) {
@@ -190,7 +192,7 @@ private fun SettingsRowButton(row: SettingsRow, onClick: () -> Unit) {
                 T(row.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
                 if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = 2.dp))
             }
-            JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 15.dp, color = Jolu.TextFaint)
+            JIcon(JoluIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Jolu.TextFaint)
         }
     }
 }
@@ -249,8 +251,28 @@ fun SettingsCard(modifier: Modifier = Modifier, content: @Composable ColumnScope
     JCard(modifier.fillMaxWidth(), padding = PaddingValues(0.dp), content = content)
 }
 
-/** The hairline between two rows of a settings card. */
+/** A hairline between two parts of a card. */
 @Composable
 fun Hairline() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(Jolu.GlassHairline))
 }
+
+/**
+ * A settings card's row: `min-height: 56px` in `box-sizing: border-box`,
+ * and on every row after the card's first (`.settings-card > * + *`) the
+ * hairline as its top border, inside that height. A short row is 56 with
+ * its line, as on the website; a taller one grows by the line.
+ */
+fun Modifier.settingsRow(divided: Boolean, fill: Color = Color.Transparent): Modifier =
+    heightIn(min = 56.dp)
+        .then(if (fill != Color.Transparent) Modifier.background(fill) else Modifier)
+        .then(
+            if (divided) {
+                Modifier
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(Jolu.GlassHairline, size = Size(size.width, 1.dp.roundToPx().toFloat()))
+                    }
+                    .padding(top = 1.dp)
+            } else Modifier
+        )

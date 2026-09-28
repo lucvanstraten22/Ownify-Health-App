@@ -194,8 +194,7 @@ fun JCard(
         modifier = modifier
             .cardSurface(shape, style, LocalGround.current, shadows)
             // The 1 px border takes room, as `.card`'s does (border-box).
-            .padding(1.dp)
-            .padding(padding),
+            .cssPadding(padding, border = 1.dp),
         content = content
     )
 }

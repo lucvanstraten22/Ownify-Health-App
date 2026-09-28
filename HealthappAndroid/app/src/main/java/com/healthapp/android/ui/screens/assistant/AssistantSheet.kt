@@ -2,13 +2,10 @@ package com.healthapp.android.ui.screens.assistant
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +58,7 @@ import com.healthapp.android.ui.theme.JoluType
 import androidx.compose.foundation.layout.requiredSize
 import com.healthapp.android.ui.design.rememberBackdrop
 import com.healthapp.android.ui.design.recordBackdrop
+import com.healthapp.android.ui.design.LocalGround
 
 /**
  * The assistant (pages/ai.php): a sheet pulled up over the current page.
@@ -185,6 +183,6 @@ private fun AssistantOrb() {
         }
       }
         // .orb__core — inset 16%
-        GlassOrb(size * 0.68f, if (still) 1f else breathe, behind)
+        GlassOrb(size * 0.68f, if (still) 1f else breathe, behind, LocalGround.current)
     }
 }

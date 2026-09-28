@@ -4,8 +4,19 @@ The Android client of JoLu. It reads Health Connect and sends the records to
 the JoLu backend, which is the single source of truth: every total, score,
 point and goal is worked out there, never here.
 
-The screen is a technical test interface for now; the JoLu section at the
-bottom is where signing in, pairing and syncing live.
+The screens are a native Jetpack Compose copy of the JoLu web app: the same
+pages, panels, copy, tokens, glass and gestures, filled from the same server
+pipeline the website renders from (`api/app/state.php`). What the app shows
+and the few places it cannot copy the website are in
+[`docs/PARITY.md`](docs/PARITY.md).
+
+- **Signing in and registering**: the opening screen's buttons, or the
+  account button in the header, open the account panel (Inloggen / Account
+  aanmaken).
+- **Pairing**: "Of koppel deze telefoon met een koppelcode" under the login
+  form.
+- **Syncing**: Instellingen › Apparaten & Gezondheid, this phone's Health
+  Connect card (and, on a phone that is only paired, its opening screen).
 
 ## Signing in
 
@@ -75,7 +86,7 @@ removed or deduplicated on the phone.
 
 Two things start that pipeline:
 
-- **the "Sync to JoLu" button** (`JoluSync.sync`) — now, in the app;
+- **Nu synchroniseren** (`JoluSync.sync`) — now, in the app;
 - **the automatic sync** (`JoluSyncWorker`, scheduled by `JoluBackgroundSync`).
 
 ### When the automatic sync runs
@@ -123,13 +134,13 @@ while JoLu is closed it needs `READ_HEALTH_DATA_IN_BACKGROUND`
 - exists only where Health Connect reports
   `HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND` as available
   (checked at runtime, `JoluBackgroundSync.backgroundRead`);
-- is asked for separately: the JoLu section shows **Allow background sync**
-  when it is supported and not granted yet.
+- is asked for separately: this phone's Health Connect card shows **Op de
+  achtergrond toestaan** when it is supported and not granted yet.
 
 Without it the automatic sync still runs whenever JoLu is open, and when it
-is closed it skips (sending nothing) and says so: "Syncs while JoLu is open;
-allow background access to sync when it is closed". On a phone whose Health
-Connect has no background reading at all, the section says that JoLu syncs
+is closed it skips (sending nothing) and says so: "Synchroniseert terwijl
+JoLu open is; sta de achtergrond toe voor daarna". On a phone whose Health
+Connect has no background reading at all, the card says that JoLu syncs
 while it is open.
 
 A Play Store release has to declare this background use in the Health
@@ -142,17 +153,64 @@ Connect declaration form; the in-app rationale
 ./gradlew :app:testDebugUnitTest
 ```
 
-`app/src/test/.../jolu/JoluBackgroundSyncTest.kt` runs under Robolectric: the
-real WorkManager (its test driver standing in for time, network and battery)
-schedules the real `JoluSyncWorker`, which runs the real pipeline against a
-JoLu server on localhost. Only Health Connect and the Android Keystore, which
+Everything runs under Robolectric against a JoLu server on localhost
+(`FakeJoluServer` in `SyncTestKit.kt`, answering with a real
+`api/app/state.php` response). The real WorkManager (its test driver standing
+in for time, network and battery) schedules the real `JoluSyncWorker`, which
+runs the real pipeline. Only Health Connect and the Android Keystore, which
 the JVM does not have, are stand-ins. The first run downloads Robolectric's
 Android jar.
 
-- `JoluAccountTest` — signing in, registering, signing out, the session after
-  a restart, expired and revoked tokens, scopes, and the late-401 race (a
-  sync held mid-request while the phone signs in), through the real
+- `jolu/JoluAccountTest` — signing in, registering, signing out, the session
+  after a restart, expired and revoked tokens, scopes, and the late-401 race
+  (a sync held mid-request while the phone signs in), through the real
   `JoluConnection`, `JoluApi` and worker.
-- `JoluTokenStoreTest` — what is kept in `jolu_connection.xml`, including a
-  token stored before scopes existed.
-- `JoluAuthScreenTest` — the temporary sign-in screen, rendered and clicked.
+- `jolu/JoluBackgroundSyncTest` — when the automatic sync runs, what each
+  answer does (401, offline, 5xx, no access), pairing, and that the button
+  and the worker run one pipeline and send the same records again unchanged.
+- `jolu/JoluTokenStoreTest` — what is kept in `jolu_connection.xml`,
+  including a token stored before scopes existed.
+- `data/JoluAppStateTest` — the app's read and its writes: the Bearer token
+  only, a sync token refused the account (403, nothing forgotten), offline
+  keeps the last pages, a revoked token signs out, and a stale 401 on a read
+  or a write never signs out the session that replaced it.
+- `data/AppDataParseTest` — the state response parsed as the pages read it.
+- `ui/JoluAppFlowTest` — the whole app: sign in, a wrong password, register,
+  restore, sign out, offline and retry, a revoked session, a paired phone,
+  the tabs, a detail and back, the panels, and accessibility (46 dp targets,
+  headings, the navigation's name).
+- `ui/PhoneSyncUiTest` — this phone's Health Connect card in each state
+  (unavailable, update needed, no/part/all access, background) and "Nu
+  synchroniseren" end to end: success, revoked, offline.
+- `ui/PresentationHelpersTest` — the few things the app formats itself
+  (points, avatar accent and initial, member since, slot note, spans, Dutch
+  numbers, sync moments), each checked against the website's own output.
+
+### Side-by-side with the website
+
+`ui/ScreenshotCapture` takes a shot of every page, detail, panel and wizard
+step at 412 × 915 dp and 420 dpi, and writes each text's position, size,
+weight and spacing beside it. It is skipped unless asked for:
+
+```bash
+./gradlew :app:testDebugUnitTest --tests '*ScreenshotCapture*' \
+  -Djolu.shots=<dir> -Djolu.state=<state.json> \
+  -Djolu.state.free=<state.json of an account with a free goal slot> \
+  -Djolu.server=<the JoLu server the photos come from>
+```
+
+`<state.json>` is `api/app/state.php`'s answer for a signed-in account, read
+the same day as the website is captured (the pages carry "Vandaag"). Add
+`-Djolu.tree=1` for a dump of the layout tree. The website is captured in a
+browser at the same size and pixel ratio (2.625), with reduced motion, and
+the two dumps are compared text by text.
+
+## Regenerating the icons
+
+`ui/design/JoluIcons.kt` is generated from the website's
+`components/icons.php`; after changing an icon there:
+
+```bash
+python3 HealthappAndroid/tools/gen_icons.py components/icons.php \
+  HealthappAndroid/app/src/main/java/com/healthapp/android/ui/design/JoluIcons.kt
+```

@@ -128,6 +128,25 @@ class FakeJoluServer {
     @Volatile
     var ingestArrived = CountDownLatch(1)
 
+    /** What api/app/state.php answers a working account token with: the demo account's pages. */
+    @Volatile
+    var stateBody: String = FakeJoluServer::class.java.classLoader!!.getResource("state-demo.json").readText()
+
+    /**
+     * An endpoint ("state.php", "rating.php", …) whose requests are held after
+     * they arrive — until [holdGate] opens — and only then answered, by the
+     * tokens as they are at that moment: a read or a write caught mid-flight.
+     */
+    @Volatile
+    var hold: String? = null
+
+    @Volatile
+    var holdGate = CountDownLatch(1)
+
+    /** Counts down when a held request arrives. */
+    @Volatile
+    var held = CountDownLatch(1)
+
     val requests = CopyOnWriteArrayList<Request>()
 
     val ingests: List<Request> get() = requests.filter { it.path.endsWith("/ingest.php") }
@@ -149,7 +168,15 @@ class FakeJoluServer {
         val body = exchange.requestBody.readBytes().toString(Charsets.UTF_8)
         val path = exchange.requestURI.path
         val headers = exchange.requestHeaders.mapKeys { it.key.lowercase() }.mapValues { it.value.joinToString(",") }
-        requests += Request(path, headers, JSONObject(body.ifEmpty { "{}" }))
+        // The app's writes are forms, like the website's; everything else is JSON.
+        requests += Request(path, headers, runCatching { JSONObject(body.ifEmpty { "{}" }) }.getOrElse { JSONObject().put("form", body) })
+
+        hold?.let { endpoint ->
+            if (path.endsWith("/$endpoint")) {
+                held.countDown()
+                holdGate.await(30, TimeUnit.SECONDS)
+            }
+        }
 
         val bearer = headers["authorization"]?.removePrefix("Bearer ")
         val tokenWorks = bearer != null && bearer !in revoked
@@ -190,6 +217,21 @@ class FakeJoluServer {
                             """{"ok":true,"written":$count,"skipped":0,"days":["2026-09-25"],"unmapped":[],"problems":[],"points":[],"scores":null}""")
                     }
                 }
+            }
+            // The app's one read: its pages, for an account token only.
+            path.endsWith("/app/state.php") -> {
+                val works = bearer != null && bearer !in revoked
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    bearer == TEST_TOKEN -> reply(exchange, 403, """{"ok":false,"error":"Deze koppeling mag je account niet lezen."}""")
+                    else -> reply(exchange, 200, stateBody)
+                }
+            }
+            // Two of the app's writes, with the account token.
+            path.endsWith("/health/rating.php") || path.endsWith("/profile/username.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (works) reply(exchange, 200, """{"ok":true,"message":"Opgeslagen."}""")
+                else reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
             }
             else -> reply(exchange, 404, """{"ok":false}""")
         }

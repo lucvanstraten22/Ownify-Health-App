@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -80,6 +81,7 @@ import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.Toggle
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.InButton
@@ -90,6 +92,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.rememberFocusOnOpen
+import com.healthapp.android.ui.design.focusSafely
+import androidx.compose.runtime.withFrameNanos
+import com.healthapp.android.ui.design.blurring
 
 /** A picture larger than this is not read at all; the server's own limit (3 MB) answers below it. */
 private const val MAX_PICTURE_BYTES = 8 * 1024 * 1024
@@ -116,6 +124,8 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
 
     // Each page starts at its top, as showPage() scrolls the sheet back.
     LaunchedEffect(page) { scroll.scrollTo(0) }
+    // open(): the first control on screen takes focus — the username field.
+    val focusFirst = rememberFocusOnOpen()
 
     OverlayFrame(overlay, title = title) { panelModifier ->
         PanelColumn(panelModifier, scroll = scroll) {
@@ -124,7 +134,7 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
                 onClose = { shell.close(overlay) },
                 leading = if (friends) ({ RoundButton(JoluIcons.chevronLeft, "Terug naar account", { page = "main" }) }) else null
             )
-            if (friends) FriendsView(data) else AccountView(data, onFriends = { page = "friends" })
+            if (friends) FriendsView(data) else AccountView(data, onFriends = { page = "friends" }, focusFirst = focusFirst)
         }
     }
 }
@@ -132,7 +142,7 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
 // ---------------------------------------------------------------- account
 
 @Composable
-private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit) {
+private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusFirst: FocusRequester?) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
@@ -182,7 +192,7 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
         JInput(
             username, { username = it.take(30) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).then(if (focusFirst != null) Modifier.focusRequester(focusFirst) else Modifier),
             label = "Gebruikersnaam",
             keyboard = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
@@ -331,7 +341,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
             modifier
                 .fillMaxWidth()
                 .fieldBox()
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = "Bestand kiezen", onClick = onClick)
+                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = "Bestand kiezen", onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { contentDescription = "Profielfoto: ${name ?: "Geen bestand gekozen"}" }
                 .padding(horizontal = Jolu.Space3, vertical = Jolu.Space2),
             verticalAlignment = Alignment.CenterVertically,
@@ -345,7 +355,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
                     .clip(shape)
                     .background(Jolu.white(0.08f))
                     .border(1.dp, Jolu.GlassBorderSoft, shape)
-                    .padding(1.dp).padding(horizontal = Jolu.Space2, vertical = 3.dp),
+                    .cssPadding(PaddingValues(horizontal = Jolu.Space2, vertical = 3.dp), border = 1.dp),
                 maxLines = 1
             )
             T(
@@ -375,7 +385,7 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
                 .press(interaction)
                 .fillMaxWidth()
                 .fieldBox(fill)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { contentDescription = "$label: $text${badge?.let { ", $it" }.orEmpty()}" }
                 .padding(horizontal = Jolu.Space3),
             verticalAlignment = Alignment.CenterVertically,
@@ -401,7 +411,7 @@ private fun Badge(text: String) {
             .clip(shape)
             .background(Jolu.mix(Jolu.Health, 0.22f, Color.Transparent))
             .border(1.dp, Jolu.mix(Jolu.Health, 0.42f, Color.Transparent), shape)
-            .padding(1.dp).padding(horizontal = Jolu.Space2),
+            .cssPadding(PaddingValues(horizontal = Jolu.Space2), border = 1.dp),
         contentAlignment = Alignment.Center
     ) {
         T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold), maxLines = 1)
@@ -444,6 +454,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
     val community = data.community
     var searching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
+    val searchField = remember { FocusRequester() }
     var searchError by remember { mutableStateOf<String?>(null) }
     var busySearch by remember { mutableStateOf(false) }
     var found by remember { mutableStateOf<Found?>(null) }
@@ -505,6 +516,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
         val name = query.trim()
         if (name.isEmpty()) {
             searchError = "Vul een gebruikersnaam in."
+            searchField.focusSafely()
             return
         }
         busySearch = true
@@ -523,6 +535,13 @@ private fun ColumnScope.FriendsView(data: AppData) {
     }
 
     // ------------------------------------------------------ Vriend toevoegen
+    // Opening the form puts the cursor in its field (friends.js).
+    LaunchedEffect(searching) {
+        if (searching) {
+            withFrameNanos { }
+            searchField.focusSafely()
+        }
+    }
     Btn(
         "Vriend toevoegen",
         onClick = {
@@ -544,7 +563,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
                     query = it.take(30)
                     searchError = null
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).focusRequester(searchField),
                 placeholder = "Gebruikersnaam",
                 label = "Gebruikersnaam",
                 keyboard = KeyboardOptions(
@@ -567,7 +586,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
                     .clip(shape)
                     .background(Jolu.white(0.04f))
                     .border(1.dp, Jolu.GlassHairline, shape)
-                    .padding(1.dp).padding(Jolu.Space3)
+                    .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 SearchResult(result, rows[RESULT] ?: RowState()) { action -> act(RESULT, result.person.id, action) }
@@ -636,7 +655,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
                 }
             }
             .semantics(mergeDescendants = true) { toggleableState = ToggleableState(allowed) }
-            .padding(1.dp).padding(Jolu.Space3),
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
@@ -739,7 +758,7 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(1.dp).padding(Jolu.Space3),
+            .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp),
         verticalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
         T("$name verwijderen uit je vrienden?", JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary))
@@ -777,7 +796,7 @@ private fun SentMark() {
             .clip(shape)
             .background(Jolu.mix(Jolu.Health, 0.18f, Color.Transparent))
             .border(1.dp, Jolu.mix(Jolu.Health, 0.42f, Color.Transparent), shape)
-            .padding(1.dp).padding(horizontal = Jolu.Space4),
+            .cssPadding(PaddingValues(horizontal = Jolu.Space4), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space2, Alignment.CenterHorizontally)
     ) {
@@ -805,7 +824,7 @@ fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = t
                 .alpha(if (enabled) 1f else 0.45f)
                 .heightIn(min = 44.dp)
                 .clip(RoundedCornerShape(50))
-                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
                 .padding(horizontal = Jolu.Space2),
             contentAlignment = Alignment.Center
         ) {

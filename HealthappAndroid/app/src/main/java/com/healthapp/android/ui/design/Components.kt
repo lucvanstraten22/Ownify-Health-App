@@ -2,7 +2,6 @@ package com.healthapp.android.ui.design
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -25,7 +23,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -55,8 +52,6 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -68,7 +63,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -78,10 +72,12 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.isUnspecified
+import androidx.compose.ui.unit.offset
 import androidx.compose.ui.unit.sp
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -91,6 +87,11 @@ import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalTracking
 import com.healthapp.android.ui.theme.LocalAccent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.heading
 
 // ---------------------------------------------------------------------------
 // Type — the website's text classes
@@ -130,16 +131,17 @@ fun T(
     uppercase: Boolean = false
 ) {
     val tracking = LocalTracking.current
+    val resolved = style.let { s ->
+        var out = s
+        if (out.letterSpacing.isUnspecified) out = out.copy(letterSpacing = tracking)
+        if (color != null) out = out.copy(color = color)
+        if (align != null) out = out.copy(textAlign = align)
+        out
+    }
     BasicText(
         text = if (uppercase) text.uppercase(java.util.Locale.forLanguageTag("nl")) else text,
-        modifier = modifier.cssLineBox(style),
-        style = style.let { s ->
-            var out = s
-            if (out.letterSpacing.isUnspecified) out = out.copy(letterSpacing = tracking)
-            if (color != null) out = out.copy(color = color)
-            if (align != null) out = out.copy(textAlign = align)
-            out
-        },
+        modifier = modifier.cssLineBox(resolved),
+        style = resolved,
         maxLines = maxLines,
         overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
         softWrap = maxLines != 1
@@ -156,9 +158,38 @@ fun T(
  * which adds up down a page. The number of lines is read back from the
  * height Android gives the text, so intrinsic measurement (a row sized to
  * its tallest tile) comes out the same as the real one.
+ *
+ * Its width as CSS makes it too: the browser adds letter-spacing after every
+ * letter, the last on a line included, and Android leaves it off the line's
+ * end. So a line of tracked text is |spacing| narrower on the website — what
+ * follows it sits closer, a centred line sits half that further right — and
+ * with negative spacing a line fits |spacing| more text before it breaks.
  */
 private fun Modifier.cssLineBox(style: TextStyle): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
+    val spacing = style.letterSpacing.let { ls ->
+        when {
+            ls.isSp -> ls.toPx()
+            ls.isEm && style.fontSize.isSp -> ls.value * style.fontSize.toPx()
+            else -> 0f
+        }
+    }
+    // The room the browser's lines have that Android's do not, to the nearest pixel.
+    val room = if (spacing < 0f && constraints.hasBoundedWidth) (-spacing).roundToInt() else 0
+    val fixed = constraints.minWidth == constraints.maxWidth
+    val placeable = measurable.measure(
+        if (room == 0) constraints
+        else constraints.copy(minWidth = if (fixed) constraints.minWidth + room else constraints.minWidth, maxWidth = constraints.maxWidth + room)
+    )
+    // The website's box: the lines' widths with their last spacing, within the space given.
+    val width = (if (fixed) constraints.maxWidth else (placeable.width + spacing).roundToInt())
+        .coerceIn(constraints.minWidth, constraints.maxWidth)
+    // Where the lines sit in it: a centred or end-aligned line moves by what it lost.
+    val side = when (style.textAlign) {
+        TextAlign.Center -> 0.5f
+        TextAlign.End, TextAlign.Right -> 1f
+        else -> 0f
+    }
+    val x = (side * (width - spacing - placeable.width)).roundToInt()
     val lineHeight = style.lineHeight
     val linePx = when {
         lineHeight.isSp -> lineHeight.toPx()
@@ -166,7 +197,7 @@ private fun Modifier.cssLineBox(style: TextStyle): Modifier = layout { measurabl
         else -> Float.NaN
     }
     if (linePx.isNaN() || linePx <= 0f || !style.fontSize.isSp) {
-        return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+        return@layout layout(width, placeable.height) { placeable.place(x, 0) }
     }
     // What Android made of it: whole-pixel lines, and the first line's top and
     // the last one's bottom never inside the font's own height.
@@ -175,8 +206,52 @@ private fun Modifier.cssLineBox(style: TextStyle): Modifier = layout { measurabl
     val count = ((placeable.height - extra) / androidLine.toFloat()).roundToInt().coerceAtLeast(1)
     val height = (count * linePx).roundToInt().coerceIn(constraints.minHeight, constraints.maxHeight)
     val shift = ((placeable.height - height) / 2f).roundToInt()
-    layout(placeable.width, height) { placeable.place(0, -shift) }
+    layout(width, height) { placeable.place(x, -shift) }
 }
+
+/**
+ * Padding with its edges where the browser puts them. CSS keeps a box's
+ * edges at fractional positions and rounds each to the pixel only when it
+ * draws; Compose rounds every side on its own, so 12 dp above and below a
+ * row (31.5 px each) come out 32 + 32 instead of 63, a pixel a row, which
+ * adds up to several dp down a page of rows. Here each edge is rounded at
+ * its place from the top of the box — [above] being a border drawn there
+ * first — and the pair keeps its true total.
+ */
+fun Modifier.cssPadding(horizontal: Dp = 0.dp, top: Dp = 0.dp, bottom: Dp = 0.dp, above: Dp = 0.dp): Modifier =
+    layout { measurable, constraints ->
+        val start = above.toPx()
+        val contentTop = (start + top.toPx()).roundToInt()
+        val padTop = contentTop - start.roundToInt()
+        val padBottom = (start + top.toPx() + bottom.toPx()).roundToInt() - contentTop
+        val side = horizontal.roundToPx()
+        val placeable = measurable.measure(constraints.offset(-2 * side, -(padTop + padBottom)))
+        val width = (placeable.width + 2 * side).coerceIn(constraints.minWidth, constraints.maxWidth)
+        val height = (placeable.height + padTop + padBottom).coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(width, height) { placeable.placeRelative(side, padTop) }
+    }
+
+/**
+ * A CSS border-box's insides: a [border] on every side taking room, then
+ * [padding], each edge rounded where it falls — the box's width and height
+ * keep their true totals instead of gaining a pixel per rounded side.
+ */
+fun Modifier.cssPadding(padding: PaddingValues = PaddingValues(0.dp), border: Dp): Modifier =
+    layout { measurable, constraints ->
+        val b = border.toPx()
+        val l = padding.calculateLeftPadding(layoutDirection).toPx()
+        val r = padding.calculateRightPadding(layoutDirection).toPx()
+        val t = padding.calculateTopPadding().toPx()
+        val u = padding.calculateBottomPadding().toPx()
+        val left = (b + l).roundToInt()
+        val right = (2 * b + l + r).roundToInt() - left
+        val top = (b + t).roundToInt()
+        val bottom = (2 * b + t + u).roundToInt() - top
+        val placeable = measurable.measure(constraints.offset(-(left + right), -(top + bottom)))
+        val width = (placeable.width + left + right).coerceIn(constraints.minWidth, constraints.maxWidth)
+        val height = (placeable.height + top + bottom).coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(width, height) { placeable.place(left, top) }
+    }
 
 /** The height Android gives one line of the system font at a size: its ascent to its descent, in whole pixels. */
 private object NaturalLine {
@@ -278,7 +353,7 @@ fun Chip(
             .clip(shape)
             .background(background)
             .border(1.dp, border, shape)
-            .padding(1.dp).padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
+            .cssPadding(PaddingValues(horizontal = Jolu.Space3, vertical = Jolu.Space1), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (leading != null) 6.dp else Jolu.Space2)
     ) {
@@ -332,9 +407,9 @@ fun Pill(
                 .clip(shape)
                 .background(Jolu.GlassSoft)
                 .border(1.dp, Jolu.GlassBorderSoft, shape)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
-                .padding(1.dp).padding(padding),
+                .cssPadding(padding, border = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
         ) {
@@ -387,9 +462,9 @@ fun Btn(
                 .clip(shape)
                 .background(look.fill)
                 .border(1.dp, look.border, shape)
-                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
                 .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
-                .padding(1.dp).padding(horizontal = Jolu.Space4),
+                .cssPadding(PaddingValues(horizontal = Jolu.Space4), border = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space2, Alignment.CenterHorizontally)
         ) {
@@ -577,7 +652,7 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
         .clip(shape)
         .background(Jolu.white(0.035f))
         .border(1.dp, Jolu.GlassHairline, shape)
-        .padding(1.dp).padding(vertical = Jolu.Space3, horizontal = Jolu.Space2)
+        .cssPadding(PaddingValues(vertical = Jolu.Space3, horizontal = Jolu.Space2), border = 1.dp)
 
     @Composable
     fun Item(item: LegendItem, rowModifier: Modifier) {
@@ -675,7 +750,7 @@ fun RangeSwitch(
                 .clip(shape)
                 .background(Jolu.white(0.04f))
                 .border(1.dp, Jolu.GlassHairline, shape)
-                .padding(1.dp).padding(3.dp)
+                .cssPadding(PaddingValues(3.dp), border = 1.dp)
                 .semantics { if (label != null) contentDescription = label },
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
@@ -701,11 +776,10 @@ fun RangeSwitch(
                             drawContent()
                         }
                         .clip(shape)
-                        .clickable(role = Role.Button) { onSelect(key) }
+                        .clickable(role = Role.Button, onClick = blurring { onSelect(key) })
                         .semantics { this.selected = active }
                         // `border: 1px solid transparent` on every option: it takes room either way.
-                        .padding(1.dp)
-                        .padding(horizontal = optionPadding),
+                        .cssPadding(PaddingValues(horizontal = optionPadding), border = 1.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, color), maxLines = 1)
@@ -733,7 +807,7 @@ fun Toggle(on: Boolean, modifier: Modifier = Modifier, dimmed: Boolean = false) 
         Box(
             Modifier
                 // top: 3px; left: 3px — inside the 1 px border.
-                .offset(x = 4.dp + x, y = 4.dp)
+                .offset { IntOffset((4.dp + x).roundToPx(), 4.dp.roundToPx()) }
                 .size(17.dp)
                 .background(if (on) Color.White else Jolu.white(0.55f), CircleShape)
         )
@@ -788,7 +862,7 @@ fun JInput(
                     .clip(shape)
                     .background(fill)
                     .border(1.dp, border, shape)
-                    .padding(1.dp).padding(horizontal = Jolu.Space3),
+                    .cssPadding(PaddingValues(horizontal = Jolu.Space3), border = 1.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (value.isEmpty() && placeholder.isNotEmpty()) {
@@ -798,6 +872,39 @@ fun JInput(
             }
         }
     )
+}
+
+/**
+ * A panel's first field, focused as the website focuses it when the panel
+ * opens — `first.focus()` in the same tap, so on a phone the keyboard comes
+ * up with it. Once per panel, not each time the field is composed again.
+ */
+@Composable
+fun rememberFocusOnOpen(): FocusRequester {
+    val requester = remember { FocusRequester() }
+    LaunchedEffect(requester) {
+        withFrameNanos { }
+        requester.focusSafely()
+    }
+    return requester
+}
+
+/**
+ * [onClick], after letting go of the focus: a tapped `<button>` takes focus
+ * on the website, so a field that had it loses it and the keyboard goes.
+ */
+@Composable
+fun blurring(onClick: () -> Unit): () -> Unit {
+    val focus = LocalFocusManager.current
+    return {
+        focus.clearFocus()
+        onClick()
+    }
+}
+
+/** Focus the field, as the website's `input.focus()` does; nothing if it is not on screen. */
+fun FocusRequester.focusSafely() {
+    runCatching { requestFocus() }
 }
 
 /** `.disclaimer`: the line under a page, when there is one. */
@@ -816,7 +923,8 @@ fun Disclaimer(text: String, modifier: Modifier = Modifier) {
 @Composable
 fun PageIntro(title: String, lede: String?, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(horizontal = Jolu.Space2)) {
-        T(title, JStyle.Section)
+        // `h1.page-intro__title`: the page's heading.
+        T(title, JStyle.Section, Modifier.semantics { heading() })
         if (!lede.isNullOrBlank()) {
             T(lede, JStyle.Meta, Modifier.padding(top = Jolu.Space1))
         }

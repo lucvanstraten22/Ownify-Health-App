@@ -2,7 +2,6 @@ package com.healthapp.android.ui.screens.settings
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
@@ -47,6 +47,7 @@ import com.healthapp.android.jolu.JoluSyncState
 import com.healthapp.android.ui.design.Btn
 import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 import java.time.Instant
@@ -259,7 +260,7 @@ fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolea
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(top = if (first) 0.dp else Jolu.Space3, bottom = Jolu.Space3)
+                .cssPadding(top = if (first) 0.dp else Jolu.Space3, bottom = Jolu.Space3, above = if (first) 0.dp else 1.dp)
                 .semantics(mergeDescendants = true) { },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
@@ -273,7 +274,6 @@ fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolea
                     if (empty) Jolu.TextMuted else Jolu.TextPrimary,
                     tabular = true
                 ),
-                Modifier.weight(1f, fill = false),
                 align = TextAlign.End
             )
         }
@@ -315,7 +315,7 @@ internal fun outcomeText(kind: JoluSyncOutcomeKind): String = when (kind) {
 
 /** Health Connect's own page in the Play Store: to install it, or bring it up to date. */
 private fun openStore(context: Context) {
-    val uri = Uri.parse("market://details?id=$HEALTH_CONNECT_PACKAGE&url=healthconnect%3A%2F%2Fonboarding")
+    val uri = "market://details?id=$HEALTH_CONNECT_PACKAGE&url=healthconnect%3A%2F%2Fonboarding".toUri()
     val intent = Intent(Intent.ACTION_VIEW, uri).apply {
         setPackage("com.android.vending")
         putExtra("overlay", true)
@@ -325,7 +325,7 @@ private fun openStore(context: Context) {
     runCatching { context.startActivity(intent) }.onFailure {
         runCatching {
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE"))
+                Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE".toUri())
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
         }

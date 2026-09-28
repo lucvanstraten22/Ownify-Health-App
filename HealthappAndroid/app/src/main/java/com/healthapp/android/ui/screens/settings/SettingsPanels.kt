@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -67,6 +68,7 @@ import com.healthapp.android.ui.design.JInput
 import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.T
+import com.healthapp.android.ui.design.cssPadding
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.screens.health.EditorError
 import com.healthapp.android.ui.theme.Jolu
@@ -74,6 +76,9 @@ import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import androidx.compose.ui.focus.focusRequester
+import com.healthapp.android.ui.design.rememberFocusOnOpen
+import com.healthapp.android.ui.design.blurring
 
 /** `.confirm__yes`: the answer that goes ahead, in the caution colour. */
 private val YesLook = BtnLook(border = Jolu.Nutrition.copy(alpha = 0.45f), fill = Jolu.Nutrition.copy(alpha = 0.18f))
@@ -95,7 +100,7 @@ private fun ConfirmFrame(
     content: @Composable ColumnScope.() -> Unit
 ) {
     OverlayFrame(overlay, title = title, scrim = CONFIRM_SCRIM, maxWidth = 368.dp, onDismiss = onDismiss) { panelModifier ->
-        Box(panelModifier.panelGlass(scrim = CONFIRM_SCRIM).padding(1.dp)) {
+        Box(panelModifier.panelGlass(scrim = CONFIRM_SCRIM).cssPadding(border = 1.dp)) {
             Column(
                 Modifier
                     .verticalScroll(rememberScrollState())
@@ -190,10 +195,12 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                 "choice" -> ChoiceControl(input, value) { value = it }
                 "date" -> DateControl(input, value, field.label) { value = it }
                 else -> {
+                    // open(): the field takes focus, so the keyboard is there.
+                    val first = rememberFocusOnOpen()
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
                         JInput(
                             value, { value = it.take(input.maxLength ?: 120) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).focusRequester(first),
                             label = field.label,
                             keyboard = KeyboardOptions(
                                 keyboardType = if (input.type == "number") KeyboardType.Decimal else KeyboardType.Text,
@@ -236,9 +243,9 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
                         .clip(shape)
                         .background(fill)
                         .border(1.dp, border, shape)
-                        .clickable(interaction, indication = null, role = Role.RadioButton) { onChoose(key) }
+                        .clickable(interaction, indication = null, role = Role.RadioButton, onClick = blurring { onChoose(key) })
                         .semantics { selected = active }
-                        .padding(1.dp).padding(horizontal = Jolu.Space3),
+                        .cssPadding(PaddingValues(horizontal = Jolu.Space3), border = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     T(label, JoluType.style(Jolu.FsLabel, color = if (active) Jolu.TextPrimary else Jolu.TextSecondary))
@@ -334,7 +341,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .clip(shape)
                         .background(Jolu.Nutrition.copy(alpha = 0.10f))
                         .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-                        .padding(1.dp).padding(Jolu.Space3)
+                        .cssPadding(PaddingValues(Jolu.Space3), border = 1.dp)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )
             }

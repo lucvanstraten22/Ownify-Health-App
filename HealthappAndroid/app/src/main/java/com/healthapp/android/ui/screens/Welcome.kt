@@ -4,8 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -54,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
-import com.healthapp.android.ui.design.JStyle
 import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.LocalStillMotion
 import com.healthapp.android.ui.design.Pane
@@ -85,7 +81,7 @@ import com.healthapp.android.ui.design.glassBackdrop
 import com.healthapp.android.ui.design.rememberBackdrop
 import com.healthapp.android.ui.design.rememberBlurLayer
 import com.healthapp.android.ui.design.recordBackdrop
-import com.healthapp.android.ui.design.LocalGround
+import com.healthapp.android.ui.design.GroundPlacement
 
 /**
  * The opening screen (pages/welcome.php): the mark — the score ring's
@@ -282,20 +278,26 @@ private fun WelcomeMark(size: Dp) {
         }
       }
 
-        GlassOrb(size * 0.58f, if (still) 1f else breathe, behind)
+        // .welcome__mark's opacity animation (fill-mode both) makes it the
+        // orb's backdrop root: the ground is not in what the glass sees.
+        GlassOrb(size * 0.58f, if (still) 1f else breathe, behind, ground = null)
     }
 }
 
 /**
  * The glass orb (`.welcome__orb` / `.orb__core`): a sphere of glass — a
  * light radial wash, a hairline edge, a rim of light on top and depth under
- * it, and a soft specular sheen.
+ * it, and a soft specular sheen — over what is behind it, blurred.
+ *
+ * [backdrop] holds the light and the ring behind it; [ground] is what the
+ * browser's backdrop also holds under them — null where an ancestor makes
+ * itself the backdrop root, and the glass then lays its filtered copy of the
+ * light over the light itself.
  */
 @Composable
-fun GlassOrb(size: Dp, scale: Float, backdrop: Backdrop?) {
+fun GlassOrb(size: Dp, scale: Float, backdrop: Backdrop?, ground: GroundPlacement?) {
     val shadows = LocalGraphicsContext.current.shadowContext
     val blurLayer = rememberBlurLayer()
-    val ground = LocalGround.current
     Box(
         Modifier
             .size(size)
