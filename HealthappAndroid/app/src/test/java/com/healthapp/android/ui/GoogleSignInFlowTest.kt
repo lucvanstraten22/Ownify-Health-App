@@ -5,6 +5,13 @@ import android.content.Context
 import android.os.Looper
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -136,16 +143,23 @@ class GoogleSignInFlowTest {
         show()
         waitFor("Registreren")
         button("Inloggen").performClick()
-        waitFor("Doorgaan met Google")
+        waitForGoogle()
     }
 
-    private fun google() = button("Doorgaan met Google").performScrollTo().performClick()
+    /** The website's `.social` mark: no label, named "Doorgaan met Google" as its aria-label is. */
+    private fun googleButton(): SemanticsNodeInteraction =
+        compose.onNode(hasContentDescription("Doorgaan met Google") and hasClickAction())
+
+    private fun waitForGoogle() =
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription("Doorgaan met Google")).fetchSemanticsNodes().isNotEmpty() }
+
+    private fun google() = googleButton().performScrollTo().performClick()
 
     @Test
     fun `Doorgaan met Google - Google's chooser, and the app opens on the account's pages`() {
         openSignIn()
         settle { JoluConnection.googleAvailable == true }
-        button("Doorgaan met Google").assertIsEnabled()
+        googleButton().assertIsEnabled()
 
         google()
 
@@ -157,11 +171,25 @@ class GoogleSignInFlowTest {
     }
 
     @Test
+    fun `the button is the website's Google mark - a 46 dp round button, the G and no label`() {
+        openSignIn()
+
+        googleButton().assertWidthIsEqualTo(46.dp).assertHeightIsEqualTo(46.dp)
+        googleButton().assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+        assertTrue("no text label, as on the website", compose.onAllNodesWithText("Doorgaan met Google", substring = true).fetchSemanticsNodes().isEmpty())
+        // Centred under the form, as `.account__socials` centres it.
+        val panel = compose.onNode(hasSetTextAction() and hasContentDescription("Gebruikersnaam")).fetchSemanticsNode().boundsInRoot
+        val mark = googleButton().fetchSemanticsNode().boundsInRoot
+        assertEquals(panel.center.x, mark.center.x, 1f)
+        assertTrue("under the form", mark.top > panel.bottom)
+    }
+
+    @Test
     fun `from Registreren too - Google is under that form as well`() {
         show()
         waitFor("Registreren")
         button("Registreren").performClick()
-        waitFor("Doorgaan met Google")
+        waitForGoogle()
 
         google()
 
@@ -179,7 +207,7 @@ class GoogleSignInFlowTest {
         waitFor("Kies je gebruikersnaam")
         compose.onNodeWithText("Google heeft nieuw@gmail.com bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.").assertIsDisplayed()
         waitFor("Deze stap verloopt over 10 minuten.")
-        assertTrue("the sign-in form is gone meanwhile", compose.onAllNodesWithText("Doorgaan met Google").fetchSemanticsNodes().isEmpty())
+        assertTrue("the sign-in form is gone meanwhile", compose.onAllNodes(hasContentDescription("Doorgaan met Google")).fetchSemanticsNodes().isEmpty())
         assertNull(MemoryTokenStorage.load())
 
         field("Gebruikersnaam").performTextInput("nieuw")
@@ -204,7 +232,7 @@ class GoogleSignInFlowTest {
 
         button("Annuleren").performScrollTo().performClick()
 
-        waitFor("Doorgaan met Google")
+        waitForGoogle()
         settle { server.google("cancel").size == 1 }
         assertNull(MemoryTokenStorage.load())
         assertTrue("the old message went with the step", compose.onAllNodesWithText("Deze gebruikersnaam is al bezet.").fetchSemanticsNodes().isEmpty())
@@ -221,7 +249,7 @@ class GoogleSignInFlowTest {
         assertNull(MemoryTokenStorage.load())
         // The password form is right there to do just that.
         field("Gebruikersnaam").assertIsDisplayed()
-        button("Doorgaan met Google").assertIsEnabled()
+        googleButton().assertIsEnabled()
     }
 
     @Test
@@ -233,7 +261,7 @@ class GoogleSignInFlowTest {
 
         settle { FakeGoogle.asked.isNotEmpty() && JoluConnection.auth == JoluAuthState.Idle }
         compose.waitForIdle()
-        button("Doorgaan met Google").assertIsEnabled()
+        googleButton().assertIsEnabled()
         assertTrue(compose.onAllNodesWithText("niet gelukt", substring = true).fetchSemanticsNodes().isEmpty())
         assertTrue(server.google("verify").isEmpty())
     }
@@ -255,8 +283,8 @@ class GoogleSignInFlowTest {
         openSignIn()
 
         waitFor("Google is nog niet gekoppeld.")
-        button("Doorgaan met Google").assertIsNotEnabled()
-        button("Doorgaan met Google").performSemanticsAction(SemanticsActions.OnClick)
+        googleButton().assertIsNotEnabled()
+        googleButton().performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
         assertTrue(FakeGoogle.asked.isEmpty())
         assertTrue(server.google("nonce").isEmpty())
@@ -277,7 +305,7 @@ class GoogleSignInFlowTest {
         settle { FakeGoogle.signedOut == 1 }
 
         button("Inloggen").performClick()
-        waitFor("Doorgaan met Google")
+        waitForGoogle()
         google()
         waitForPages()
         assertEquals("Google was asked again, with a new nonce", 2, FakeGoogle.asked.size)

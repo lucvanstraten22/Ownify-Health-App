@@ -4,6 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,7 +20,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -263,18 +268,19 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(top = Jolu.Space4)
     )
 
-    // Google under the form, as on the website — here Google's own labelled
-    // button (its branding guidelines), the website's disabled state and
-    // words when the server has not set it up (docs/PARITY.md).
+    // Google under the form, as on the website: `.account__socials`, the
+    // mark centred with space-4 above it, disabled with the website's words
+    // when the server has not set Google up for the app (docs/PARITY.md).
     val googleAvailable = JoluConnection.googleAvailable
-    GoogleButton(
-        onClick = {
-            focus.clearFocus()
-            JoluConnection.signInWithGoogle(context.findActivity() ?: context)
-        },
-        enabled = googleAvailable != false && !working && JoluConnection.canSignIn,
-        modifier = Modifier.fillMaxWidth().padding(top = Jolu.Space3)
-    )
+    Row(Modifier.fillMaxWidth().padding(top = Jolu.Space4), horizontalArrangement = Arrangement.Center) {
+        GoogleButton(
+            onClick = {
+                focus.clearFocus()
+                JoluConnection.signInWithGoogle(context.findActivity() ?: context)
+            },
+            enabled = googleAvailable != false && !working && JoluConnection.canSignIn
+        )
+    }
     if (googleAvailable == false) FieldHint("Google is nog niet gekoppeld.", centred = true)
 
     if (!register) {
@@ -283,47 +289,42 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
 }
 
 /**
- * Google's "Continue with Google" button — "Doorgaan met Google" — in the dark
- * theme of Google's Sign in with Google branding guidelines, which JoLu's
- * dark glass sits closest to: fill #131314, a 1 dp #8E918F outline, the
- * standard four-colour G at 20 dp, 10 dp before the label, the label in
- * Roboto Medium 14 #E3E3E3, as a pill. Disabled: 38 %, as Google specifies.
- * Everything else about it is Google's, not JoLu's, on purpose.
+ * `.social`: the website's Google button — the Google mark, no label, in a
+ * 46 circle of soft glass (`--glass-soft`, a 1 px `--glass-border-soft`
+ * ring), the G at 21. Pressed it settles to 0.94 and the glass firms up to
+ * `--glass`, both over `--transition-fast`; disabled it fades to 50 %.
+ *
+ * The website's `backdrop-filter: blur(16px)` blurs what is behind the mark:
+ * inside the panel that is the panel's own even glass, already blurred, which
+ * a second blur leaves exactly as it was — so the tint and ring are the whole
+ * of it here too. Its name for TalkBack is the website's aria-label.
  */
 @Composable
 private fun GoogleButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(50)
     val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val fill by animateColorAsState(
+        targetValue = if (pressed && enabled) Jolu.Glass else Jolu.GlassSoft,
+        animationSpec = tween(Jolu.FastMs, easing = Jolu.Ease),
+        label = "social"
+    )
 
-    Row(
+    Box(
         modifier
-            .press(interaction, enabled = enabled)
-            .heightIn(min = 42.dp)
-            .alpha(if (enabled) 1f else 0.38f)
-            .clip(shape)
-            .background(GoogleDarkFill)
-            .border(1.dp, GoogleDarkStroke, shape)
+            .press(interaction, scale = 0.94f, enabled = enabled)
+            .alpha(if (enabled) 1f else 0.5f)
+            .size(46.dp)
+            .clip(CircleShape)
+            .background(fill)
+            .border(1.dp, Jolu.GlassBorderSoft, CircleShape)
             // Compose still hands a disabled node's click action through; this button does nothing then.
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button) { if (enabled) onClick() }
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .semantics { contentDescription = "Doorgaan met Google" },
+        contentAlignment = Alignment.Center
     ) {
-        GoogleG(Modifier.size(20.dp))
-        InButton {
-            T(
-                "Doorgaan met Google",
-                JoluType.style(14.sp, FontWeight.Medium, GoogleDarkText, tracking = 0.sp, lineHeight = 20.sp),
-                Modifier.padding(start = 10.dp),
-                maxLines = 1
-            )
-        }
+        GoogleG(Modifier.size(21.dp))
     }
 }
-
-private val GoogleDarkFill = Color(0xFF131314)
-private val GoogleDarkStroke = Color(0xFF8E918F)
-private val GoogleDarkText = Color(0xFFE3E3E3)
 
 /** Google's standard "G", unaltered: the same four paths the website draws. */
 @Composable

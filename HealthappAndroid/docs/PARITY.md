@@ -32,7 +32,7 @@ as the website reloads or re-fetches the page after one.
 | Web | Android | States |
 | --- | --- | --- |
 | `pages/welcome.php` | `WelcomeScreen` | ring draw-in, rise-in, two buttons; paired-only variant (see deviations) |
-| `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, Doorgaan met Google (disabled + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
+| `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, the Google mark (`.social`: 46 round soft glass, the G at 21, pressed 0.94, disabled at 50 % + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
 | `components/header.php` | `AppHeader` (shared, over the rail) | clear / scrolled (gradient + blur), devices dot |
 | `components/devices-popup.php` | `DevicesPopup` | list, empty, "Apparaat koppelen" → Instellingen › Apparaten |
 | `pages/overview.php` | `OverviewPage` | score ring (value / empty), legend, lock hint; goal card unset / active / reached; insights; patterns; recommendation; disclaimer |
@@ -116,7 +116,6 @@ defaults:
 | Health Connect card in Apparaten & Gezondheid shows this phone's permissions, background access, last sync and an enabled "Nu synchroniseren" | Android-only; the website's card is read-only for a phone source |
 | A cloud source's Verbinden (Google Health) opens the website's `api/integrations/<provider>/start.php` in the browser | its consent screen is the provider's own page, a redirect bound to a website session; the browser must be signed in to JoLu |
 | Koppel Google (Instellingen › Inloggen en beveiliging) opens the website in the browser | linking is the same session-bound redirect |
-| Doorgaan met Google is Google's own labelled button (dark theme: #131314, #8E918F outline, the four-colour G, "Doorgaan met Google") under the form, where the website has a small round mark without a label | Google's Sign in with Google branding guidelines for a native button, and a clear action asked for in the app; the website's sign-in panel was left as it is. Behind both is the same account: `api/auth/app-google.php` verifies the ID token with the website's code and rules |
 | Google's account chooser is the phone's own (Credential Manager, Sign in with Google) instead of Google's web page | the app asks Google on the phone for an ID token; the server verifies it, the phone believes nothing in it |
 | After deleting an account with Google linked, the app shows the website's "revoke it yourself" notice instead of redirecting | the Google revoke is a browser redirect bound to a session the app does not have |
 | Backdrop blur only on Android 12+ | `RenderEffect` does not exist before API 31; older phones get the same translucent surfaces without blur, as the website does without `backdrop-filter` |
