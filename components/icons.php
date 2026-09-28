@@ -30,8 +30,12 @@ if (!function_exists('icon')) {
                 // sleep
                 'moon'     => '<path d="M20.2 14.4A8.4 8.4 0 0 1 9.6 3.8a8.4 8.4 0 1 0 10.6 10.6Z"/>',
 
-                // nutrition
-                'leaf'     => '<path d="M11 20.2A7.2 7.2 0 0 1 9.9 6.3C15.4 5.2 16.9 4.7 18.9 2.4c1 2 1.9 4.1 1.9 7.8 0 5.5-4.4 10-9.8 10Z"/><path d="M3.4 21c0-3.1 1.9-5.5 3.1-6.4"/>',
+                // nutrition — a fork and a knife, eating rather than a leaf:
+                // the fork's two outer tines round into its middle one, which
+                // runs on as the handle; the knife is one straight back and
+                // handle with the blade's edge curving out from the tip
+                'utensils' => '<path d="M5.2 3.6v5.4a2.6 2.6 0 0 0 5.2 0V3.6"/><path d="M7.8 3.6v16.8"/>'
+                    . '<path d="M18.6 3.6v16.8"/><path d="M18.6 3.6c-2.3 1.4-3.6 4-3.6 7.3 0 2 1.1 3.3 3.6 3.7"/>',
 
                 // sport / energy
                 'bolt'     => '<path d="M13.2 2.8 5.6 13.2h5.3l-.9 8 7.6-10.4h-5.3l.9-8Z"/>',

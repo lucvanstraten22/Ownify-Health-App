@@ -138,7 +138,7 @@ return [
                 'state'  => 'empty',
             ],
             [
-                'icon'   => 'leaf',
+                'icon'   => 'utensils',
                 'accent' => 'nutrition',
                 'title'  => 'Voeding en energie',
                 'body'   => 'Hier komt het verband tussen je eetmomenten en je energie.',

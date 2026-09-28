@@ -27,6 +27,10 @@ return [
     'title' => 'Gezondheid',
     'lede'  => 'Je drie pijlers. Tik op een onderdeel voor de details.',
 
+    /* Instead of the lede while there is no score at all yet (see
+       lib/hydrate-health.php). %s = "3 dagen", "1 dag". */
+    'lede_collecting' => 'Je hebt nog %s data nodig om een score te ontgrendelen.',
+
     /* ============================================================ metrics */
     'metrics' => [
         /* --- sleep ----------------------------------------------------- */
@@ -150,7 +154,7 @@ return [
 
         'nutrition' => [
             'label'   => 'Voeding',
-            'icon'    => 'leaf',
+            'icon'    => 'utensils',
             'accent'  => 'nutrition',
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je eet en drinkt, en hoe regelmatig je dat doet.',

@@ -166,6 +166,12 @@
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 if (!fresh.querySelector('[data-deck]')) { return; }
 
+                /* Gezondheid's intro: "nog N dagen" until the first score,
+                   the three pillars once there is one. */
+                var lede = document.querySelector('[data-page="health"] .page-intro__lede');
+                var nextLede = fresh.querySelector('[data-page="health"] .page-intro__lede');
+                if (lede && nextLede) { lede.textContent = nextLede.textContent; }
+
                 each(document, '[data-page="health"] .health-card[data-detail-open]', function (area) {
                     var id = area.getAttribute('data-detail-open');
                     replace(area, fresh.querySelector('[data-page="health"] .health-card[data-detail-open="' + id + '"]'));

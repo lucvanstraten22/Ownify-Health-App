@@ -23,8 +23,9 @@
  * ---------------------------------------------------------------------------
  * MISSING IS NOT ZERO
  * ---------------------------------------------------------------------------
- *   - fewer than 7 days with data in the window: no score, and the number of
- *     days so far, so the page can say how many are still needed;
+ *   - fewer than `min_days` (3) distinct days with data in the window: no
+ *     score, and the number of days so far, so the page can say how many are
+ *     still needed;
  *   - days without data are not days of zero: 24 nights in 90 days are
  *     averaged over 24;
  *   - a component nobody's device measures is left out and the rest weigh

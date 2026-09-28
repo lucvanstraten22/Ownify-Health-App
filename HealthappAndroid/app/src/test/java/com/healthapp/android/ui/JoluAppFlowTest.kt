@@ -267,6 +267,40 @@ class JoluAppFlowTest {
     }
 
     @Test
+    fun `Gezondheid's intro is the server's - how many more days unlock a score, then the three pillars once there is one`() {
+        val demo = server.stateBody
+        server.stateBody = org.json.JSONObject(demo).apply {
+            getJSONObject("data").getJSONObject("health").put("lede", "Je hebt nog 2 dagen data nodig om een score te ontgrendelen.")
+        }.toString()
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        button("Gezondheid").performClick()
+        waitFor("Je hebt nog 2 dagen data nodig om een score te ontgrendelen.")
+
+        // New data on the server (a sync, a rating): the app's next read of its pages brings the pillars back.
+        server.stateBody = demo
+        JoluAppState.refresh(context)
+        waitFor("Je drie pijlers. Tik op een onderdeel voor de details.")
+        assertTrue(compose.onAllNodesWithText("nog 2 dagen", substring = true).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun `every icon the server names exists here, Voeding's fork and knife among them`() {
+        for (fixture in listOf("state-demo.json", "state-new-account.json")) {
+            val text = javaClass.classLoader!!.getResource(fixture).readText()
+            val names = Regex("\"icon\"\\s*:\\s*\"([a-z-]+)\"").findAll(text).map { it.groupValues[1] }.toSet()
+            assertTrue("$fixture names icons", names.isNotEmpty())
+            names.forEach { assertTrue("$fixture: $it", it in com.healthapp.android.ui.design.JoluIcons.byName) }
+            val nutrition = org.json.JSONObject(text).getJSONObject("data").getJSONObject("health")
+                .getJSONObject("areas").getJSONObject("nutrition").getString("icon")
+            assertEquals("utensils", nutrition)
+        }
+        assertTrue("the leaf is gone", "leaf" !in com.healthapp.android.ui.design.JoluIcons.byName)
+    }
+
+    @Test
     fun `accessibility - named controls, touch targets as large as the website's, and one heading per page`() {
         MemoryTokenStorage.signedIn()
         show()

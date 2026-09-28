@@ -39,9 +39,10 @@ declare(strict_types=1);
 return [
 
     /* The window, and how much of it has to hold data before a category
-       says anything. */
+       says anything: distinct days with data, not hours. The overall score
+       appears as soon as one category has its days. */
     'window_days' => 90,
-    'min_days'    => 7,
+    'min_days'    => 3,
 
     /* What a score means. Interpretation only: no calculation reads these. */
     'bands' => [

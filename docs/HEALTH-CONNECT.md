@@ -114,7 +114,7 @@ they surface instead of vanishing.
 `points` is what this batch earned, one line per award. A record that was
 already paid for earns nothing a second time, so sending the same night twice
 answers with an empty list the second time. `scores` is the Health Score after
-the batch, `null` per category that has fewer than 7 days of data — the two are
+the batch, `null` per category that has fewer than 3 days of data — the two are
 separate answers, and the scores never pay out. `scores` is `null` altogether
 when nothing was written.
 

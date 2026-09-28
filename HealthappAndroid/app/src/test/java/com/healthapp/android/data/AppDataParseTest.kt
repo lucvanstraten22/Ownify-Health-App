@@ -104,6 +104,7 @@ class AppDataParseTest {
         assertTrue(data.goals.all.isEmpty())
         assertTrue(data.goals.canAdd)
         assertNull(data.health.area("sleep")!!.score.value)
+        assertEquals("no score yet: Gezondheid says how many days unlock one", "Je hebt nog 3 dagen data nodig om een score te ontgrendelen.", data.health.lede)
         assertFalse(data.health.trend.charts["sleep"]!!["week"]!!.hasData)
         assertTrue(data.community.friends.isEmpty())
     }

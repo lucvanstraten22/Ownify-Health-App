@@ -312,8 +312,9 @@ invented numbers.
 
 **The Health Score.** Slaap, Voeding and Training each get their own score,
 0-100, over the last 90 days — rolling, not a calendar week or month — and
-only once a category has 7 days of data; before that the card says how many
-days are still missing. The score on Overzicht is the average of the ones that
+only once a category has 3 distinct days of data; before that the card says
+how many days are still missing, and Gezondheid's intro says how many more
+unlock a score. The score on Overzicht is the average of the ones that
 exist, and there is no score at all rather than a `0`. Every weight and curve
 is in `config/scoring.php`; the formulas are in
 [docs/DATABASE.md](docs/DATABASE.md#health-score-and-points). Scores never

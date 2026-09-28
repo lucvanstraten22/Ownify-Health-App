@@ -110,7 +110,7 @@ import androidx.compose.ui.unit.dp
 object JoluIcons {{
 
 {chr(10).join(lines)}
-    /** By the website's own name, for icons named in the server's data ("moon", "leaf", …). */
+    /** By the website's own name, for icons named in the server's data ("moon", "utensils", …). */
     val byName: Map<String, ImageVector> by lazy {{
         mapOf(
 {by_name}

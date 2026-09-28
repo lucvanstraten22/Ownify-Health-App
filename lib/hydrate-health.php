@@ -48,6 +48,26 @@ if (!function_exists('hydrate_health')) {
 
         health_score_store($userId, $scores);
 
+        /* No score at all yet: the intro says how many more days of data
+           unlock one, instead of introducing three pillars with nothing in
+           them. One category with its days is enough for the overall score,
+           so it counts the category closest to that — the engine's own
+           distinct days, not a guess — and the lede returns by itself once a
+           score exists. */
+        if ($scores['overall']['score'] === null && !empty($health['lede_collecting'])) {
+            $closest = max(
+                (int) ($scores['sleep']['days'] ?? 0),
+                (int) ($scores['nutrition']['days'] ?? 0),
+                (int) ($scores['training']['days'] ?? 0)
+            );
+            $needed = max(1, $minDays - $closest);
+
+            $health['lede'] = sprintf(
+                (string) $health['lede_collecting'],
+                $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen')
+            );
+        }
+
         foreach ($health['areas'] as $areaKey => $area) {
             if (!isset($scores[$areaKey])) {
                 continue;

@@ -67,11 +67,13 @@ object JoluIcons {
         )
     }
 
-    /** `leaf` */
-    val leaf: ImageVector by lazy {
-        icon("leaf", null,
-            "M11 20.2A7.2 7.2 0 0 1 9.9 6.3C15.4 5.2 16.9 4.7 18.9 2.4c1 2 1.9 4.1 1.9 7.8 0 5.5-4.4 10-9.8 10Z",
-            "M3.4 21c0-3.1 1.9-5.5 3.1-6.4"
+    /** `utensils` */
+    val utensils: ImageVector by lazy {
+        icon("utensils", null,
+            "M5.2 3.6v5.4a2.6 2.6 0 0 0 5.2 0V3.6",
+            "M7.8 3.6v16.8",
+            "M18.6 3.6v16.8",
+            "M18.6 3.6c-2.3 1.4-3.6 4-3.6 7.3 0 2 1.1 3.3 3.6 3.7"
         )
     }
 
@@ -301,7 +303,7 @@ object JoluIcons {
         )
     }
 
-    /** By the website's own name, for icons named in the server's data ("moon", "leaf", …). */
+    /** By the website's own name, for icons named in the server's data ("moon", "utensils", …). */
     val byName: Map<String, ImageVector> by lazy {
         mapOf(
         "device" to device,
@@ -309,7 +311,7 @@ object JoluIcons {
         "heart" to heart,
         "community" to community,
         "moon" to moon,
-        "leaf" to leaf,
+        "utensils" to utensils,
         "bolt" to bolt,
         "dumbbell" to dumbbell,
         "rings" to rings,

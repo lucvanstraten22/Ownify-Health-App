@@ -14,7 +14,7 @@ calls with the id from the session. A key nothing fills stays `null`, and
 
 **Scores.** Every Health Score in the app comes out of
 `includes/health-score.php`: sleep, nutrition and training, each 0-100 over a
-rolling 90 days, and none until a category has 7 days of data. The overall
+rolling 90 days, and none until a category has 3 days of data. The overall
 score is the average of whichever of the three exist, in `score_combine()`
 (`includes/scoring.php`): a missing pillar is skipped, never counted as a zero,
 and when all three are missing there is no score rather than a `0`. See
@@ -512,9 +512,11 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
 - **Window.** The moment of calculation minus 90 days. Not this week, not this
   month: tomorrow's score has a day more at the front and a day less at the
   back.
-- **At least 7 days.** A category needs 7 distinct days of its own data in the
-  window. Below that it has no score, and the page says how many days are
-  still needed. A day without data is not a day of zero: 24 nights in 90 days
+- **At least 3 days.** A category needs 3 distinct days of its own data in the
+  window (`min_days` in `config/scoring.php`). Below that it has no score, and
+  the page says how many days are still needed — on the card, and, while no
+  category has a score yet, in Gezondheid's intro ("Je hebt nog 2 dagen data
+  nodig om een score te ontgrendelen."). A day without data is not a day of zero: 24 nights in 90 days
   are averaged over 24.
 - **Missing parts.** A component the person's device does not measure is left
   out and the other components' weights are scaled up (`health_weighted()`),

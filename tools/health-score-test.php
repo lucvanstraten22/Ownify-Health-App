@@ -7,7 +7,7 @@
  * Every score in JoLu comes out of includes/health-score.php, with its
  * numbers in config/scoring.php; every point value out of includes/points.php
  * and config/points.php. This checks the arithmetic on made-up records held in
- * memory — the curves, the 90-day window, the 7-day minimum, missing data
+ * memory — the curves, the 90-day window, the 3-day minimum, missing data
  * that must not count as zero, re-weighting, the overall average, and the
  * point tiers — so tuning a number and running this says at once whether the
  * behaviour still holds. Nothing here touches the database or an account.
@@ -153,20 +153,38 @@ check('training volume has diminishing returns',
 check('extreme volume is not automatically 100', health_curve($volume, 900) < 100);
 
 /* ====================================================================== */
-section('a category needs 7 days of real data');
+section('a category needs 3 distinct days of real data');
 
-check('6 nights: no sleep score, and 6 days counted', ($r = health_score_sleep(nights(6, 8)))['score'] === null && $r['days'] === 6);
-check('7 nights: a sleep score', is_int(health_score_sleep(nights(7, 8))['score']));
+check('the minimum is 3 days', (int) $cfg['min_days'] === 3, (string) $cfg['min_days']);
 
-$ratings6 = array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, 6));
-$ratings7 = array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, 7));
-check('6 rated days: no nutrition score', health_score_nutrition($ratings6)['score'] === null);
-check('7 rated days: a nutrition score', health_score_nutrition($ratings7)['score'] === 70);
+foreach ([0, 1, 2] as $n) {
+    $r = health_score_sleep(nights($n, 8));
+    check("{$n} nights: no sleep score, and {$n} days counted", $r['score'] === null && $r['days'] === $n);
+    $ratings = $n === 0 ? [] : array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, $n));
+    $r = health_score_nutrition($ratings);
+    check("{$n} rated days: no nutrition score, {$n} counted", $r['score'] === null && $r['days'] === $n);
+}
+check('3 nights: a sleep score', is_int(health_score_sleep(nights(3, 8))['score']));
 
-$six   = schedule([1, 3, 5, 8, 10, 12], 45, static fn () => 'moderate');
-$seven = schedule([1, 3, 5, 8, 10, 12, 15], 45, static fn () => 'moderate');
-check('6 training days: no training score', health_score_training($six, [], [], [], $now)['score'] === null);
-check('7 training days: a training score', is_int(health_score_training($seven, [], [], [], $now)['score']));
+$ratings3 = array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, 3));
+check('3 rated days: a nutrition score, the same arithmetic (7 -> 70)', health_score_nutrition($ratings3)['score'] === 70);
+
+$twoOnOneDay = [rating($now - $day, 7), rating($now - $day + 3600, 9), rating($now - 2 * $day, 7)];
+check('distinct days, not ratings: 3 ratings on 2 days are still 2 days, no score',
+    ($r = health_score_nutrition($twoOnOneDay))['score'] === null && $r['days'] === 2);
+
+$two   = schedule([1, 3], 45, static fn () => 'moderate');
+$three = schedule([1, 3, 5], 45, static fn () => 'moderate');
+check('2 training days: no training score', health_score_training($two, [], [], [], $now)['score'] === null);
+check('3 training days: a training score', is_int(health_score_training($three, [], [], [], $now)['score']));
+
+$none = ['nights' => [], 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []];
+check('2 days in every category: no overall score, never a 0',
+    health_score_at(['nights' => nights(2, 8), 'ratings' => array_slice($ratings3, 0, 2)] + $none, $asOf)['overall']['score'] === null);
+$unlocked = health_score_at(['nights' => nights(3, 8)] + $none, $asOf);
+check('3 nights and nothing else: the overall score is the sleep score — the others left out, not zero',
+    is_int($unlocked['overall']['score']) && $unlocked['overall']['score'] === $unlocked['sleep']['score']
+    && $unlocked['nutrition']['score'] === null && $unlocked['training']['score'] === null);
 
 /* ====================================================================== */
 section('missing days are not zero');
@@ -191,7 +209,7 @@ foreach ([1 => 10, 5 => 50, 7 => 70, 10 => 100] as $value => $expected) {
     check("a week of {$value}s scores {$expected}", health_score_nutrition($week)['score'] === $expected);
 }
 
-$twoADay = $ratings7;
+$twoADay = array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, 7));
 $twoADay[] = rating($now - $day + 3600, 9);        // a second rating on day 1: 7 and 9 -> 8 that day
 $expected = (int) round((8 * 10 + 6 * 70) / 7);
 check('two ratings on one day count as that day\'s average, once', health_score_nutrition($twoADay)['score'] === $expected,

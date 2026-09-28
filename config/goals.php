@@ -63,7 +63,7 @@ return [
         'weight'      => ['label' => 'Gewicht',    'icon' => 'chart',    'accent' => 'nutrition', 'units' => ['kg', '%']],
         'strength'    => ['label' => 'Kracht',     'icon' => 'dumbbell', 'accent' => 'activity',  'units' => ['kg', 'reps']],
         'activity'    => ['label' => 'Activiteit', 'icon' => 'bolt',     'accent' => 'activity',  'units' => ['stappen', 'km', 'min', 'keer']],
-        'nutrition'   => ['label' => 'Voeding',    'icon' => 'leaf',     'accent' => 'nutrition', 'units' => ['g', 'kcal', 'l']],
+        'nutrition'   => ['label' => 'Voeding',    'icon' => 'utensils',     'accent' => 'nutrition', 'units' => ['g', 'kcal', 'l']],
         'habit'       => ['label' => 'Gewoonte',   'icon' => 'sparkle',  'accent' => 'health',    'units' => ['dagen', 'keer']],
         'performance' => ['label' => 'Prestatie',  'icon' => 'pulse',    'accent' => 'activity',  'units' => ['min', 'km', 'bpm']],
         'other'       => ['label' => 'Anders',     'icon' => 'flag',     'accent' => 'health',    'units' => []],
@@ -109,7 +109,7 @@ return [
      */
     'sources' => [
         'sleep'     => ['label' => 'Slaap',     'icon' => 'moon',     'accent' => 'health',    'note' => 'Slaapduur en regelmaat'],
-        'nutrition' => ['label' => 'Voeding',   'icon' => 'leaf',     'accent' => 'nutrition', 'note' => 'Maaltijden en hydratatie'],
+        'nutrition' => ['label' => 'Voeding',   'icon' => 'utensils',     'accent' => 'nutrition', 'note' => 'Maaltijden en hydratatie'],
         'training'  => ['label' => 'Training',  'icon' => 'dumbbell', 'accent' => 'activity',  'note' => 'Workouts en belasting'],
         'activity'  => ['label' => 'Beweging',  'icon' => 'bolt',     'accent' => 'activity',  'note' => 'Stappen en dagelijkse beweging'],
         'body'      => ['label' => 'Metingen',  'icon' => 'chart',    'accent' => 'nutrition', 'note' => 'Gewicht en lichaamssamenstelling'],
