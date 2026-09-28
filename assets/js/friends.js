@@ -106,6 +106,26 @@
         }
     });
 
+    /* Vrienden toevoegen on the Vrienden leaderboard: account.js opens the
+       panel (the row is a [data-account-open]); this then turns it to the
+       Vrienden page with Vriend toevoegen open and its field focused. A
+       delegated listener: the boards' rows are swapped in after changes. */
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('[data-friends-add-open]')) { return; }
+
+        window.requestAnimationFrame(function () {
+            showPage('friends');
+
+            if (form.hidden) {
+                form.hidden = false;
+                addBtn.setAttribute('aria-expanded', 'true');
+            }
+
+            input.focus({ preventScroll: true });
+            refresh({ lists: true, hold: 0 });
+        });
+    });
+
     /* The panel always opens on the account: once it has closed, the next
        opening starts there, whatever page it was left on. */
     if (typeof MutationObserver === 'function') {

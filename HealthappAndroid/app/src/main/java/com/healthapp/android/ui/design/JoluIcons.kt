@@ -43,6 +43,15 @@ object JoluIcons {
         )
     }
 
+    /** `user-plus` */
+    val userPlus: ImageVector by lazy {
+        icon("user-plus", null,
+            "M6.2 9a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0Z",
+            "M3 19.6a6.4 6.4 0 0 1 12.8 0",
+            "M19.2 8.2v5.2M16.6 10.8h5.2"
+        )
+    }
+
     /** `heart` */
     val heart: ImageVector by lazy {
         icon("heart", Optical(0.8878f, 12f, 11.42f),
@@ -308,6 +317,7 @@ object JoluIcons {
         mapOf(
         "device" to device,
         "user" to user,
+        "user-plus" to userPlus,
         "heart" to heart,
         "community" to community,
         "moon" to moon,

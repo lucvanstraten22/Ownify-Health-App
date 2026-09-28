@@ -274,6 +274,23 @@ try {
     check('the page shows the day\'s cijfer the app reads (' . var_export($rated, true) . ')',
         $rated === 8 && preg_match('/data-detail="nutrition".*?card--tiles.*?data-count-to="8"/s', $page['raw']) === 1);
 
+    section('Vrienden toevoegen: on every Vrienden board, above #1 — on no Nederland board');
+    preg_match_all('/data-board data-scope="([a-z]+)" data-period="([a-z]+)"(.*?)(?=data-board data-scope=|<\/section>)/s', $page['raw'], $boards, PREG_SET_ORDER);
+    $seen = [];
+    foreach ($boards as [, $boardScope, $boardPeriod, $html]) {
+        $add   = strpos($html, 'data-friends-add-open');
+        $first = strpos($html, 'class="board-list');
+        $seen[$boardScope][$boardPeriod] = $add !== false && substr_count($html, 'data-friends-add-open') === 1
+            && ($first === false || $add < $first) && str_contains($html, 'Vrienden toevoegen');
+    }
+    check('six boards: Vrienden and Nederland, each Maand, Jaar and All-time', count($boards) === 6
+        && array_keys($seen) === ['friends', 'netherlands'], json_encode(array_map('array_keys', $seen)));
+    check('every Vrienden board has it once, before its first row', ($seen['friends'] ?? []) === ['month' => true, 'year' => true, 'alltime' => true],
+        json_encode($seen['friends'] ?? null));
+    check('no Nederland board has it, in any period', !preg_match('/data-friends-add-open|Vrienden toevoegen/',
+        implode('', array_map(static fn ($b) => $b[1] === 'netherlands' ? $b[3] : '', $boards))));
+    check('the app reads the same row\'s label', ($app['body']['data']['community']['add_friends'] ?? null) === 'Vrienden toevoegen');
+
     /* ==================================================================
        THE WRITES
        ================================================================== */

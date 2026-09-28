@@ -20,6 +20,10 @@ if (!function_exists('icon')) {
                 // account
                 'user'     => '<circle cx="12" cy="9" r="3.2"/><path d="M5.6 19.6a6.6 6.6 0 0 1 12.8 0"/>',
 
+                // adding a friend — the account's person moved left, a plus beside it
+                'user-plus' => '<circle cx="9.4" cy="9" r="3.2"/><path d="M3 19.6a6.4 6.4 0 0 1 12.8 0"/>'
+                    . '<path d="M19.2 8.2v5.2M16.6 10.8h5.2"/>',
+
                 // health section — sleep, nutrition and sport together
                 'heart'    => '<path d="M20.3 4.9a5 5 0 0 0-7.1 0L12 6.1l-1.2-1.2a5 5 0 1 0-7.1 7.1l1.2 1.2L12 19.4l7.1-6.2 1.2-1.2a5 5 0 0 0 0-7.1Z"/>',
 

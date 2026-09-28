@@ -41,7 +41,7 @@ as the website reloads or re-fetches the page after one.
 | `pages/goals.php` | `GoalsPage` | Actief / Behaald, primary slot, list, slots note, empty states, add button (disabled when full) |
 | `pages/goal-detail.php` | `GoalDetail` | hero, chips, meter, facts, day calendar, manual entry, Verloop chart (scrub), sources, recent, Beheer (promote, pause/resume, delete + confirm) |
 | `components/goal-wizard.php` | `GoalWizard` | six steps, per-step validation, source catalogue, targets, durations, summary, priority, done, errors |
-| `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board, your sticky row, gap row, empty board |
+| `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board, Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
 | `pages/settings.php` | `SettingsPage` | identity card, five groups, logout, delete link |
 | `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles, rows, notes, not-saved line |
 | `components/settings-editor.php` | `FieldEditor` | text / date / choice / measure, once-warning, error |

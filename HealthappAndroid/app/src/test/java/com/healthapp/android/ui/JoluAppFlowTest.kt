@@ -6,6 +6,7 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -298,6 +299,49 @@ class JoluAppFlowTest {
             assertEquals("utensils", nutrition)
         }
         assertTrue("the leaf is gone", "leaf" !in com.healthapp.android.ui.design.JoluIcons.byName)
+    }
+
+    @Test
+    fun `Community - Vrienden toevoegen above #1 on every Vrienden board, never on Nederland, and it opens Vriend toevoegen`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Community").performClick()
+        waitFor("Vrienden")
+
+        val add = hasContentDescription("Vrienden toevoegen") and hasClickAction()
+        val first = androidx.compose.ui.test.SemanticsMatcher("rank 1") { node ->
+            node.config.getOrElse(androidx.compose.ui.semantics.SemanticsProperties.ContentDescription) { emptyList() }
+                .any { it.startsWith("1. ") || it.contains(": 1. ") }
+        }
+        fun adds() = compose.onAllNodes(add).fetchSemanticsNodes()
+
+        for (period in listOf("Maand", "Jaar", "All-time")) {
+            button(period).performClick()
+            compose.waitForIdle()
+            val row = adds().single().boundsInRoot
+            val one = compose.onAllNodes(first).fetchSemanticsNodes().first().boundsInRoot
+            assertTrue("Vrienden · $period: directly above #1 ($row / $one)", row.bottom <= one.top && one.top - row.bottom <= 5 * compose.density.density)
+            assertEquals("Vrienden · $period: #1's width", one.width, row.width, 0.5f)
+            assertEquals("Vrienden · $period: a row's height", one.height, row.height, 0.5f)
+        }
+
+        button("Nederland").performClick()
+        for (period in listOf("Maand", "Jaar", "All-time")) {
+            button(period).performClick()
+            compose.waitForIdle()
+            assertTrue("Nederland · $period: no Vrienden toevoegen", adds().isEmpty())
+            assertTrue(compose.onAllNodesWithText("Vrienden toevoegen", substring = true, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+        }
+
+        button("Vrienden").performClick()
+        compose.waitForIdle()
+        assertEquals("back on Vrienden: there again", 1, adds().size)
+
+        compose.onNode(add).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Vrienden") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Gebruikersnaam") and hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
+        field("Gebruikersnaam").assertIsFocused()
     }
 
     @Test

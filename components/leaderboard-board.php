@@ -25,12 +25,27 @@ $empty   = $community['scopes'][$scope]['empty'];
 
 $youInList = has_value($you['rank']) && (int) $you['rank'] <= $limit;
 $hasEntries = $entries !== [];
+
+/* Vrienden only — never Nederland: a row of the board's own kind, above #1,
+   that opens Vriend toevoegen in the account panel (friends.js). */
+$addFriends = $scope === 'friends' && !empty($community['add_friends']);
 ?>
 <div class="board<?= $isActive ? ' is-active' : '' ?>"
      data-board data-scope="<?= e($scope) ?>" data-period="<?= e($period) ?>"
      <?= $isActive ? '' : 'aria-hidden="true" inert' ?>>
 
     <div class="board__scroll" data-board-scroll>
+
+        <?php if ($addFriends): ?>
+            <div class="board-add">
+                <button type="button" class="board-row board-row--add press"
+                        data-account-open data-friends-add-open>
+                    <span class="board-row__rank" aria-hidden="true"></span>
+                    <span class="board-row__avatar" aria-hidden="true"><?= icon('user-plus') ?></span>
+                    <span class="board-row__name"><?= e($community['add_friends']) ?></span>
+                </button>
+            </div>
+        <?php endif; ?>
 
         <?php if ($hasEntries): ?>
 

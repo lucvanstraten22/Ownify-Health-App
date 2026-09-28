@@ -656,7 +656,9 @@ data class Community(
     val sent: List<Person>,
     val allowRequests: Boolean,
     val badgesTitle: String,
-    val badgesBody: String
+    val badgesBody: String,
+    /** "Vrienden toevoegen": the first row of every Vrienden board, never Nederland's. */
+    val addFriends: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject?) = Community(
@@ -677,7 +679,8 @@ data class Community(
             sent = o.arr("sent").map(Person::parse),
             allowRequests = o.bool("allow_requests"),
             badgesTitle = o.obj("badges").str("title").orEmpty(),
-            badgesBody = o.obj("badges").str("body").orEmpty()
+            badgesBody = o.obj("badges").str("body").orEmpty(),
+            addFriends = o.str("add_friends")?.takeIf { it.isNotBlank() }
         )
     }
 }

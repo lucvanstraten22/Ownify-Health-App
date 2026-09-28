@@ -45,6 +45,15 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsContext
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import com.healthapp.android.ui.app.LocalShell
+import com.healthapp.android.ui.app.Overlay
+import com.healthapp.android.ui.design.press
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -124,7 +133,13 @@ fun CommunityPage(data: AppData) {
         }
 
         val key = "$scope/$period"
-        Board(community, scope, period, scrolls.getOrPut(key) { ScrollState(0) }, Modifier.weight(1f).fillMaxWidth())
+        val shell = LocalShell.current
+        Board(
+            community, scope, period, scrolls.getOrPut(key) { ScrollState(0) }, Modifier.weight(1f).fillMaxWidth(),
+            // Vrienden only — Nederland never has it, whatever the period.
+            addFriends = community.addFriends?.takeIf { scope == "friends" },
+            onAddFriends = { shell.open(Overlay.Account(FRIENDS_ADD)) }
+        )
     }
 }
 
@@ -134,7 +149,15 @@ fun CommunityPage(data: AppData) {
  * would otherwise leave (`position: sticky`, one row, never a copy).
  */
 @Composable
-private fun Board(community: Community, scope: String, period: String, scroll: ScrollState, modifier: Modifier) {
+private fun Board(
+    community: Community,
+    scope: String,
+    period: String,
+    scroll: ScrollState,
+    modifier: Modifier,
+    addFriends: String? = null,
+    onAddFriends: () -> Unit = {}
+) {
     val screen = LocalScreen.current
     val density = LocalDensity.current
     val board = community.boards[scope]?.get(period)
@@ -155,6 +178,12 @@ private fun Board(community: Community, scope: String, period: String, scroll: S
                 .padding(bottom = dockClear),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // .board-add: 8 above, then the rows' own 4 to #1 (or 12 to the empty card).
+            if (addFriends != null) {
+                Box(Modifier.width(screen.shell).padding(top = Jolu.Space2)) {
+                    AddFriendsRow(addFriends, onAddFriends)
+                }
+            }
             if (entries.isNotEmpty()) {
                 // .board-list: 8 above, 9 below, 4 between rows. Your row is kept inside it.
                 val stick = remember(scroll) { Sticky(scroll) }
@@ -168,7 +197,7 @@ private fun Board(community: Community, scope: String, period: String, scroll: S
                 Column(
                     Modifier
                         .width(screen.shell)
-                        .padding(top = Jolu.Space2, bottom = Jolu.Space2 + 1.dp)
+                        .padding(top = if (addFriends != null) Jolu.Space1 else Jolu.Space2, bottom = Jolu.Space2 + 1.dp)
                         // After the padding: the list's content box, where a sticky row must stay.
                         .onGloballyPositioned {
                             stick.listTop = it.positionInParent().y
@@ -193,7 +222,7 @@ private fun Board(community: Community, scope: String, period: String, scroll: S
             } else {
                 // .board-empty, then your row on its own.
                 JCard(
-                    Modifier.width(screen.shell),
+                    Modifier.width(screen.shell).padding(top = if (addFriends != null) Jolu.Space3 else 0.dp),
                     padding = PaddingValues(horizontal = Jolu.Space5, vertical = Jolu.Space6)
                 ) {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -362,6 +391,59 @@ private fun BoardRow(
             )
             T(unit, JoluType.style(Jolu.FsTiny, FontWeight.Medium, Jolu.TextMuted), Modifier.alignByBaseline().padding(start = 3.dp), maxLines = 1)
         }
+    }
+}
+
+/** The account panel's view for [AccountPanel]: its Vrienden page with Vriend toevoegen open. */
+const val FRIENDS_ADD = "friends-add"
+
+/**
+ * `.board-row--add`: Vrienden toevoegen, a row of the board's own kind — the
+ * same height, glass, corners, padding, grid and type as [BoardRow], the
+ * user-plus in the avatar's circle and the rank's column left empty so it
+ * lines up with the rows under it. Settles under the finger as `.press` does.
+ */
+@Composable
+private fun AddFriendsRow(label: String, onClick: () -> Unit) {
+    val narrow = LocalScreen.current.narrow
+    val shape = RoundedCornerShape(Jolu.RadiusMd)
+    val interaction = remember { MutableInteractionSource() }
+
+    Row(
+        Modifier
+            .press(interaction)
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clip(shape)
+            .background(Jolu.white(0.035f))
+            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = label
+                role = Role.Button
+                onClick { onClick(); true }
+            }
+            .cssPadding(PaddingValues(horizontal = if (narrow) Jolu.Space2 else Jolu.Space3, vertical = Jolu.Space1), border = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)
+    ) {
+        Spacer(Modifier.width(if (narrow) 30.4.dp else 36.dp))
+        Box(
+            Modifier
+                .size(if (narrow) 30.dp else 34.dp)
+                .clip(CircleShape)
+                .background(Jolu.white(0.07f))
+                .border(1.dp, Jolu.GlassHairline, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            JIcon(JoluIcons.userPlus, size = 16.dp, color = Jolu.TextMuted)
+        }
+        T(
+            label,
+            JoluType.style(if (narrow) Jolu.FsSmall else Jolu.FsLabel, FontWeight.Normal, Jolu.TextSecondary),
+            Modifier.weight(1f),
+            maxLines = 1,
+            ellipsis = true
+        )
     }
 }
 

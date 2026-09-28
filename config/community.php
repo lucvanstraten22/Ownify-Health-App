@@ -54,6 +54,10 @@ return [
     'default_scope'  => 'friends',
     'default_period' => 'month',
 
+    /* The first row of every Vrienden board (never Nederland): opens Vriend
+       toevoegen in the account panel. */
+    'add_friends' => 'Vrienden toevoegen',
+
     /* The signed-in user. Rank and points come from the board, not from here. */
     'you' => ['name' => 'Jij'],
 

@@ -98,6 +98,7 @@ import com.healthapp.android.ui.design.rememberFocusOnOpen
 import com.healthapp.android.ui.design.focusSafely
 import androidx.compose.runtime.withFrameNanos
 import com.healthapp.android.ui.design.blurring
+import com.healthapp.android.ui.screens.community.FRIENDS_ADD
 
 /** A picture larger than this is not read at all; the server's own limit (3 MB) answers below it. */
 private const val MAX_PICTURE_BYTES = 8 * 1024 * 1024
@@ -117,7 +118,9 @@ private const val PICTURE_UNREADABLE = "Uploaden is niet gelukt."
 @Composable
 fun AccountPanel(overlay: Overlay.Account, data: AppData) {
     val shell = LocalShell.current
-    var page by remember { mutableStateOf("main") }
+    // Vrienden toevoegen on the Vrienden leaderboard opens it on Vrienden, Vriend toevoegen open.
+    val addFriend = overlay.view == FRIENDS_ADD
+    var page by remember { mutableStateOf(if (addFriend) "friends" else "main") }
     val friends = page == "friends"
     val title = if (friends) "Vrienden" else "Account"
     val scroll = rememberScrollState()
@@ -134,7 +137,7 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
                 onClose = { shell.close(overlay) },
                 leading = if (friends) ({ RoundButton(JoluIcons.chevronLeft, "Terug naar account", { page = "main" }) }) else null
             )
-            if (friends) FriendsView(data) else AccountView(data, onFriends = { page = "friends" }, focusFirst = focusFirst)
+            if (friends) FriendsView(data, searchFirst = addFriend) else AccountView(data, onFriends = { page = "friends" }, focusFirst = focusFirst)
         }
     }
 }
@@ -447,12 +450,12 @@ private data class Found(val person: Person, val relation: String, val status: S
 private const val RESULT = "result"
 
 @Composable
-private fun ColumnScope.FriendsView(data: AppData) {
+private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val focus = LocalFocusManager.current
     val community = data.community
-    var searching by rememberSaveable { mutableStateOf(false) }
+    var searching by rememberSaveable { mutableStateOf(searchFirst) }
     var query by rememberSaveable { mutableStateOf("") }
     val searchField = remember { FocusRequester() }
     var searchError by remember { mutableStateOf<String?>(null) }
