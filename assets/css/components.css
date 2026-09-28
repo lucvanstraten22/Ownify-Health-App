@@ -821,6 +821,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Centred over the page's column, not the window: a classic scrollbar
+       (laptops) narrows the column, not the dock (interactions.js). */
+    padding-inline-end: var(--scroll-gutter, 0px);
     touch-action: none;
     pointer-events: none;
 }

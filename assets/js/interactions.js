@@ -29,6 +29,69 @@
         });
 
         sharedHeader();
+        dockGutter();
+    }
+
+    /**
+     * The tab bar is centred in the window; the page's column is centred in
+     * what its scroller leaves beside a classic scrollbar (a laptop's, not a
+     * phone's). The front scroller's scrollbar width goes to --scroll-gutter,
+     * which the dock keeps free at its end, so the bar lines up with the
+     * cards above it. Overlay scrollbars measure 0 and change nothing.
+     */
+    function dockGutter() {
+        var dock = document.querySelector('.app-dock');
+        if (!dock) { return; }
+
+        var root = document.documentElement;
+        var ticking = false;
+
+        function frontScroller() {
+            var details = document.querySelectorAll('[data-detail]:not([aria-hidden="true"]) [data-scroller]');
+            if (details.length) { return details[details.length - 1]; }
+            var page = document.querySelector('[data-page="' + root.getAttribute('data-active-page') + '"]');
+            return page ? page.querySelector('[data-scroller]') : null;
+        }
+
+        function update() {
+            ticking = false;
+            var scroller = frontScroller();
+            var gutter = scroller ? Math.max(0, scroller.offsetWidth - scroller.clientWidth) : 0;
+            root.style.setProperty('--scroll-gutter', gutter + 'px');
+        }
+
+        function schedule() {
+            if (ticking) { return; }
+            ticking = true;
+            window.requestAnimationFrame(update);
+        }
+
+        window.addEventListener('resize', schedule);
+
+        if ('MutationObserver' in window) {
+            /* Another page shown, a detail opened or closed, a detail added. */
+            new MutationObserver(schedule).observe(document.body, {
+                subtree: true,
+                childList: true,
+                attributes: true,
+                attributeFilter: ['data-active-page', 'aria-hidden']
+            });
+            new MutationObserver(schedule).observe(root, {
+                attributes: true,
+                attributeFilter: ['data-active-page']
+            });
+        }
+
+        /* A page whose content grows past the screen gains its scrollbar. */
+        if ('ResizeObserver' in window) {
+            var sizes = new ResizeObserver(schedule);
+            Array.prototype.forEach.call(document.querySelectorAll('[data-scroller]'), function (scroller) {
+                sizes.observe(scroller);
+                if (scroller.firstElementChild) { sizes.observe(scroller.firstElementChild); }
+            });
+        }
+
+        update();
     }
 
     /**
