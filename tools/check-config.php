@@ -295,6 +295,43 @@ if ($google['client_id'] === '' && $google['client_secret'] === '') {
     }
 }
 
+/* The JoLu app's own Google clients (api/auth/app-google.php): how many, and
+   whether they can work with the Web client above — never the ids. The app
+   asks Google for a token for the Web client, and Google gives one only to an
+   Android client of the same Google Cloud project: the number in front. */
+$androidClients = $google['android_client_ids'];
+
+if ($androidClients === []) {
+    line('warn', 'Google in the app', 'no Android client ids — the app offers no Google sign-in (docs/APP-AUTH.md)');
+} else {
+    $project     = static fn (string $id): string => (string) strstr($id, '-', true);
+    $appProblems = [];
+
+    if ($google['client_id'] === '') {
+        $appProblems[] = 'the Web client id is missing — the app\'s tokens are made out to it';
+    }
+
+    foreach ($androidClients as $id) {
+        if (!preg_match('/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/', $id)) {
+            $appProblems[] = 'an Android client id is not a client id (…apps.googleusercontent.com)';
+        } elseif ($id === $google['client_id']) {
+            $appProblems[] = 'an Android client id is the Web client\'s own — create a client of type Android';
+        } elseif ($google['client_id'] !== '' && $project($id) !== $project($google['client_id'])) {
+            $appProblems[] = 'an Android client is in another Google Cloud project than the Web client';
+        }
+    }
+
+    foreach (array_unique($appProblems) as $appProblem) {
+        line('fail', 'Google in the app', $appProblem);
+        $problems++;
+    }
+
+    if ($appProblems === []) {
+        $count = count($androidClients);
+        line('ok', 'Google in the app', $count . ' Android client' . ($count === 1 ? '' : 's') . ' — the app offers Google sign-in');
+    }
+}
+
 if (is_file(dirname(__DIR__) . '/config/auth.local.php')) {
     line('ok', 'auth.local.php', 'present');
 }

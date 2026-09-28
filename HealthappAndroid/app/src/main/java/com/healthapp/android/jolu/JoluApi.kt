@@ -14,8 +14,8 @@ import org.json.JSONObject
 
 /**
  * The JoLu endpoints this app uses: pairing, profile, nutrition targets and
- * ingest for the sync, and signing in, registering and signing out as an
- * account (docs/APP-AUTH.md on the server).
+ * ingest for the sync, and signing in (with a password or with Google),
+ * registering and signing out as an account (docs/APP-AUTH.md on the server).
  *
  * Every call is a POST with a JSON body, as the backend requires. A token
  * travels only in the Authorization header, and no request ever carries a
@@ -79,6 +79,77 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
             .put("platform", "android")
 
         return post("api/auth/app-register.php", body, current) { json -> readSession(json) }
+    }
+
+    /**
+     * Whether this server offers Google sign-in to the app at all
+     * (app-google.php, `status`). False: the button is shown as the website
+     * shows an unconfigured Google — disabled, "Google is nog niet gekoppeld."
+     */
+    suspend fun googleAvailable(): JoluResult<Boolean> =
+        post(GOOGLE_PATH, JSONObject().put("action", "status"), token = null) { json -> json.opt("available") as? Boolean }
+
+    /** One sign-in with Google, from the nonce to the account token. */
+    fun google(): GoogleConversation = GoogleConversation()
+
+    /**
+     * A sign-in with Google (app-google.php): up to three requests that share
+     * the server's session — its cookie is kept here, and only here, for the
+     * length of this one sign-in. The session holds the nonce handed to
+     * Google and, for somebody new, who Google said they are while they
+     * choose a username; the server believes nothing else about the person,
+     * only an ID token it has verified itself.
+     */
+    inner class GoogleConversation internal constructor() {
+
+        private val cookies = LinkedHashMap<String, String>()
+
+        /** A nonce for Google, and the id of the server's Web client to ask Google for a token for. */
+        suspend fun start(): JoluResult<GoogleStart> =
+            post(GOOGLE_PATH, JSONObject().put("action", "nonce"), token = null, jar = cookies) { json ->
+                val nonce = json.text("nonce")
+                val client = json.text("client_id")
+                if (nonce == null || client == null) null else GoogleStart(nonce, client)
+            }
+
+        /**
+         * The ID token Google gave, for the server to verify. [current] is the
+         * token this phone already holds, sent along as [login] does, so a
+         * paired phone stays one phone on the server.
+         */
+        suspend fun verify(idToken: String, label: String, current: String?): JoluResult<GoogleOutcome> {
+            val body = JSONObject()
+                .put("action", "verify")
+                .put("id_token", idToken)
+                .put("label", label)
+                .put("platform", "android")
+
+            return post(GOOGLE_PATH, body, current, jar = cookies) { json ->
+                when (json.opt("status")) {
+                    "signed_in" -> readSession(json)?.let { GoogleOutcome.SignedIn(it) }
+                    "choose_username" -> json.text("email")?.let { email ->
+                        GoogleOutcome.ChooseUsername(email, json.number("expires_in")?.roundToInt() ?: GOOGLE_STEP_SECONDS)
+                    }
+                    else -> null
+                }
+            }
+        }
+
+        /** The username for somebody new; the account is made, already linked to Google. */
+        suspend fun username(name: String, label: String, current: String?): JoluResult<JoluSession> {
+            val body = JSONObject()
+                .put("action", "username")
+                .put("username", name)
+                .put("label", label)
+                .put("platform", "android")
+
+            return post(GOOGLE_PATH, body, current, jar = cookies) { json -> readSession(json) }
+        }
+
+        /** Given up: the server forgets who Google said this was. Nothing is kept either way. */
+        suspend fun cancel() {
+            post(GOOGLE_PATH, JSONObject().put("action", "cancel"), token = null, jar = cookies) { true }
+        }
     }
 
     /**
@@ -215,13 +286,16 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
         body: JSONObject,
         token: String?,
         readTimeoutMs: Int = TIMEOUT_MS,
+        jar: MutableMap<String, String>? = null,
         read: (JSONObject) -> T?
     ): JoluResult<T> =
-        request(path, JSON_TYPE, body.toString().toByteArray(Charsets.UTF_8), token, readTimeoutMs, MAX_RESPONSE_BYTES, read)
+        request(path, JSON_TYPE, body.toString().toByteArray(Charsets.UTF_8), token, readTimeoutMs, MAX_RESPONSE_BYTES, jar, read)
 
     /**
      * The same, for any body: [contentType] and its [bytes]. [maxBytes] is
-     * how large an answer may be; anything larger is not read.
+     * how large an answer may be; anything larger is not read. [jar] holds
+     * the cookies of a conversation that needs the server's session (a sign-in
+     * with Google); every other call sends none and keeps none.
      */
     private suspend fun <T : Any> request(
         path: String,
@@ -230,10 +304,11 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
         token: String?,
         readTimeoutMs: Int,
         maxBytes: Int,
+        jar: MutableMap<String, String>? = null,
         read: (JSONObject) -> T?
     ): JoluResult<T> = withContext(Dispatchers.IO) {
         val response = try {
-            send(path, contentType, bytes, token, readTimeoutMs, maxBytes)
+            send(path, contentType, bytes, token, readTimeoutMs, maxBytes, jar)
         } catch (e: Exception) {
             // Offline, unknown host, timeout, TLS: there was no answer at all.
             return@withContext JoluResult.NetworkError
@@ -269,7 +344,8 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
         bytes: ByteArray,
         token: String?,
         readTimeoutMs: Int,
-        maxBytes: Int
+        maxBytes: Int,
+        jar: MutableMap<String, String>? = null
     ): Response {
         val connection = URI.create(baseUrl + path).toURL().openConnection() as HttpURLConnection
 
@@ -288,14 +364,46 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
                 connection.setRequestProperty("Authorization", "Bearer $token")
             }
 
+            if (!jar.isNullOrEmpty()) {
+                connection.setRequestProperty("Cookie", jar.entries.joinToString("; ") { (name, value) -> "$name=$value" })
+            }
+
             connection.outputStream.use { it.write(bytes) }
 
             val status = connection.responseCode
+
+            if (jar != null) {
+                keepCookies(connection, jar)
+            }
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
 
             return Response(status, stream?.use { readAtMost(it, maxBytes) })
         } finally {
             connection.disconnect()
+        }
+    }
+
+    /**
+     * The server's Set-Cookie headers, into [jar]: a new value replaces the
+     * old one (the server gives its session a new id at each step), and an
+     * emptied or expired cookie is dropped. Only the name and value are
+     * kept — this jar lives for one conversation with one server.
+     */
+    private fun keepCookies(connection: HttpURLConnection, jar: MutableMap<String, String>) {
+        val headers = connection.headerFields.orEmpty()
+            .filterKeys { it != null && it.equals("Set-Cookie", ignoreCase = true) }
+            .values
+            .flatten()
+
+        for (header in headers) {
+            val pair = header.substringBefore(';').trim()
+            val name = pair.substringBefore('=', "").trim()
+            if (name.isEmpty()) continue
+
+            val value = pair.substringAfter('=', "").trim()
+            val gone = value.isEmpty() || value == "deleted" || EXPIRED_COOKIE.containsMatchIn(header)
+
+            if (gone) jar.remove(name) else jar[name] = value
         }
     }
 
@@ -326,6 +434,14 @@ class JoluApi(private val baseUrl: String = BASE_URL) {
     companion object {
         /** The JoLu server. HTTPS only — Android refuses plain HTTP anyway. */
         const val BASE_URL = "https://healthpreview.acits.nl/"
+
+        private const val GOOGLE_PATH = "api/auth/app-google.php"
+
+        /** How long a new person has to choose a username, when the server does not say (it does: ten minutes). */
+        private const val GOOGLE_STEP_SECONDS = 600
+
+        /** A cookie the server has ended: Max-Age=0. */
+        private val EXPIRED_COOKIE = Regex(";\\s*max-age\\s*=\\s*0\\s*(;|$)", RegexOption.IGNORE_CASE)
 
         private const val TIMEOUT_MS = 15_000
         private const val MAX_RESPONSE_BYTES = 64 * 1024
@@ -424,6 +540,25 @@ private fun readSession(json: JSONObject): JoluSession? {
     }
 
     return JoluSession(token, json.optJSONObject("account")?.text("username"))
+}
+
+/** Where a sign-in with Google starts: the server's nonce, and its Web client's id for Google. */
+class GoogleStart(val nonce: String, val serverClientId: String) {
+    override fun toString(): String = "GoogleStart(serverClientId=$serverClientId)"
+}
+
+/** What the server made of a verified Google account. */
+sealed interface GoogleOutcome {
+
+    /** A JoLu account has this Google account: signed in as it. */
+    data class SignedIn(val session: JoluSession) : GoogleOutcome
+
+    /**
+     * Nobody has it yet: the person chooses a username, once, and the account
+     * is made. [email] is the address Google vouched for; [seconds] how long
+     * the step waits.
+     */
+    data class ChooseUsername(val email: String, val seconds: Int) : GoogleOutcome
 }
 
 /** The part of a JoLu profile this app shows. Null: the person has not filled it in. */

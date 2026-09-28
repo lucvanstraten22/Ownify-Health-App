@@ -48,6 +48,13 @@ sealed interface JoluState {
 /** A fixed address the server named, opened beside the app, with its label. */
 data class JoluLink(val href: String, val label: String)
 
+/**
+ * Somebody new after Google: the one step before their account exists —
+ * choosing a username (the website's "Kies je gebruikersnaam"). [email] is the
+ * address Google vouched for; [minutes] how long the step waits.
+ */
+data class GoogleUsernameStep(val email: String, val minutes: Int)
+
 /** Signing in, registering or signing out: what is going on, or why the last attempt did not work. */
 sealed interface JoluAuthState {
 
@@ -66,8 +73,8 @@ sealed interface JoluAuthState {
  *
  *   pairing   the 8-character code from the JoLu website -> a SYNC token:
  *             Health Connect sync, profile, targets
- *   signing   username (or e-mail) and password, or a new account -> an
- *   in        ACCOUNT token: all of that, and acting as the account
+ *   signing   username (or e-mail) and password, a new account, or Google
+ *   in        -> an ACCOUNT token: all of that, and acting as the account
  *
  * Both are kept encrypted (JoluTokenStore) with their scope, and the phone
  * holds at most one: signing in on a paired phone sends the sync token along,
@@ -102,6 +109,16 @@ object JoluConnection {
     private const val UNEXPECTED_MESSAGE =
         "Er ging iets mis bij het verbinden met JoLu. Probeer het opnieuw."
 
+    private const val GOOGLE_WORKING_MESSAGE = "Inloggen met Google..."
+    private const val GOOGLE_FAILED_MESSAGE = "Inloggen met Google is niet gelukt. Probeer het opnieuw."
+    private const val GOOGLE_NO_ACCOUNT_MESSAGE =
+        "Er staat geen Google-account op deze telefoon. Voeg er een toe in de instellingen van je telefoon en probeer het opnieuw."
+    private const val GOOGLE_UNAVAILABLE_MESSAGE =
+        "Inloggen met Google werkt niet op deze telefoon: Google Play-services ontbreken of zijn verouderd."
+    private const val GOOGLE_INTERRUPTED_MESSAGE = "Inloggen met Google werd onderbroken. Probeer het opnieuw."
+    private const val GOOGLE_EXPIRED_MESSAGE = "Je Google-aanmelding is verlopen. Begin opnieuw met Google."
+    private const val USERNAME_EMPTY_MESSAGE = "Kies een gebruikersnaam."
+
     private const val LOGIN_EMPTY_MESSAGE = "Vul je gebruikersnaam en wachtwoord in."
     private const val REGISTER_EMPTY_MESSAGE = "Vul een gebruikersnaam, e-mailadres en wachtwoord in."
     private const val ACCOUNT_NOT_STORED_MESSAGE =
@@ -113,6 +130,18 @@ object JoluConnection {
     var auth: JoluAuthState by mutableStateOf(JoluAuthState.Idle)
         private set
 
+    /**
+     * Whether this server offers Google sign-in to the app: null until asked
+     * ([checkGoogle]) or while it cannot be reached — then the button stays,
+     * and pressing it says what is wrong.
+     */
+    var googleAvailable: Boolean? by mutableStateOf(null)
+        private set
+
+    /** Somebody new after Google, choosing their username; null otherwise. */
+    var googleStep: GoogleUsernameStep? by mutableStateOf(null)
+        private set
+
     /** Whether signing in or registering is on offer: not signed in as an account yet, nothing else going on. */
     val canSignIn: Boolean
         get() = !busy && (state is JoluState.NotConnected || (state as? JoluState.Connected)?.scope == JoluScope.SYNC)
@@ -122,6 +151,12 @@ object JoluConnection {
 
     /** Where the token is kept: encrypted on the phone (JoluTokenStore). Tests keep it in memory. */
     internal var storage: (Context) -> JoluTokenStorage = { JoluTokenStore(it) }
+
+    /** Google's side of signing in: Credential Manager. Tests stand in for Google. */
+    internal var google: GoogleIdTokens = CredentialManagerGoogle
+
+    /** The sign-in with Google waiting for a username: its server session lives in here. */
+    private var googleConversation: JoluApi.GoogleConversation? = null
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, _ ->
@@ -250,6 +285,160 @@ object JoluConnection {
     }
 
     /**
+     * Asks the server whether it offers Google sign-in to the app, for the
+     * button. Nothing changes when it cannot be reached.
+     */
+    fun checkGoogle() {
+        scope.launch {
+            val result = api.googleAvailable()
+            if (result is JoluResult.Success) {
+                googleAvailable = result.value
+            }
+        }
+    }
+
+    /**
+     * Signs in with Google, through the JoLu server (app-google.php):
+     *
+     *   1. a nonce from the server, with its Web client's id;
+     *   2. Google's account chooser on the phone (Credential Manager), which
+     *      hands back an ID token for that client with that nonce;
+     *   3. the ID token to the server, which verifies it — signature,
+     *      audience, this app's Android client, expiry, nonce — and decides
+     *      with the website's own rules: a JoLu account with this Google
+     *      account is signed in; somebody new chooses a username first
+     *      ([googleStep], [chooseGoogleUsername]); an address a password
+     *      account already has is refused, never merged.
+     *
+     * The phone believes nothing in the ID token and keeps none of it. What it
+     * keeps is the account token the server issues, exactly as after a
+     * password — so staying signed in, reopening the app and signing out are
+     * the same as for every account. [activity] shows Google's chooser.
+     */
+    fun signInWithGoogle(activity: Context) {
+        if (!canSignIn) {
+            return
+        }
+
+        val store = store(activity)
+        cancelGoogleConversation()
+
+        job = scope.launch {
+            auth = JoluAuthState.Working(GOOGLE_WORKING_MESSAGE)
+
+            val conversation = api.google()
+
+            val start = when (val result = conversation.start()) {
+                is JoluResult.Success -> result.value
+                is JoluResult.Failure -> {
+                    if (result is JoluResult.HttpError && result.status == 501) {
+                        googleAvailable = false
+                    }
+                    auth = JoluAuthState.Failed(describeGoogle(result))
+                    return@launch
+                }
+            }
+
+            val idToken = when (val result = google.request(activity, start.serverClientId, start.nonce)) {
+                is GoogleIdResult.Token -> result.idToken
+                GoogleIdResult.Cancelled -> {
+                    // Closed Google's chooser: back where they were, nothing to say.
+                    auth = JoluAuthState.Idle
+                    return@launch
+                }
+                GoogleIdResult.NoAccount -> return@launch googleFailed(GOOGLE_NO_ACCOUNT_MESSAGE)
+                GoogleIdResult.Unavailable -> return@launch googleFailed(GOOGLE_UNAVAILABLE_MESSAGE)
+                GoogleIdResult.Interrupted -> return@launch googleFailed(GOOGLE_INTERRUPTED_MESSAGE)
+                GoogleIdResult.Failed -> return@launch googleFailed(GOOGLE_FAILED_MESSAGE)
+            }
+
+            val current = withContext(Dispatchers.IO) { store.load() }
+
+            when (val result = conversation.verify(idToken, deviceLabel(), current?.token)) {
+                is JoluResult.Success -> when (val outcome = result.value) {
+                    is GoogleOutcome.SignedIn -> signedIn(activity, store, outcome.session)
+
+                    is GoogleOutcome.ChooseUsername -> {
+                        googleConversation = conversation
+                        googleStep = GoogleUsernameStep(outcome.email, ((outcome.seconds + 59) / 60).coerceAtLeast(1))
+                        auth = JoluAuthState.Idle
+                    }
+                }
+
+                is JoluResult.Failure -> auth = JoluAuthState.Failed(describeGoogle(result))
+            }
+        }
+    }
+
+    /**
+     * Somebody new after Google: their username, once. The server makes the
+     * account, already linked to Google, and signs them in. A username that is
+     * not valid or taken keeps them on the step with the server's words; the
+     * step running out sends them back to the start.
+     */
+    fun chooseGoogleUsername(context: Context, username: String) {
+        val conversation = googleConversation ?: return
+        val name = username.trim()
+
+        if (busy) {
+            return
+        }
+
+        if (name.isEmpty()) {
+            auth = JoluAuthState.Failed(USERNAME_EMPTY_MESSAGE)
+            return
+        }
+
+        val store = store(context)
+
+        job = scope.launch {
+            auth = JoluAuthState.Working("Account aanmaken...")
+
+            val current = withContext(Dispatchers.IO) { store.load() }
+
+            when (val result = conversation.username(name, deviceLabel(), current?.token)) {
+                is JoluResult.Success -> {
+                    googleConversation = null
+                    googleStep = null
+                    signedIn(context, store, result.value)
+                }
+
+                is JoluResult.HttpError -> {
+                    if (result.status == 410) {
+                        googleConversation = null
+                        googleStep = null
+                        auth = JoluAuthState.Failed(result.message ?: GOOGLE_EXPIRED_MESSAGE)
+                    } else {
+                        auth = JoluAuthState.Failed(describeGoogle(result))
+                    }
+                }
+
+                is JoluResult.Failure -> auth = JoluAuthState.Failed(describeGoogle(result))
+            }
+        }
+    }
+
+    /** "Annuleren" on the username step: nothing is made, the server forgets who Google said this was. */
+    fun cancelGoogle() {
+        if (busy) {
+            return
+        }
+        cancelGoogleConversation()
+        auth = JoluAuthState.Idle
+    }
+
+    private fun cancelGoogleConversation() {
+        val conversation = googleConversation ?: return
+        googleConversation = null
+        googleStep = null
+        scope.launch { conversation.cancel() }
+    }
+
+    private fun googleFailed(message: String) {
+        auth = JoluAuthState.Failed(message)
+    }
+
+    /**
      * Signs the account out: the token is forgotten on this phone and the
      * automatic sync stopped first — so nothing starting now can use it —
      * then revoked on the server (app-logout.php), which also ends it if the
@@ -285,6 +474,9 @@ object JoluConnection {
             JoluBackgroundSync.stop(app)
             withContext(Dispatchers.IO) { JoluSyncRunner.environment(app).status.clear() }
             JoluSync.forget(app)
+            // Signed in with Google or not: Credential Manager is not to pick an account by itself
+            // next time. Beside the sign-out, never in its way.
+            scope.launch { google.signedOut(app) }
 
             val reached = when (val result = api.logout(signedOut.token)) {
                 is JoluResult.Success, is JoluResult.Unauthorized -> true
@@ -356,6 +548,9 @@ object JoluConnection {
         job?.cancel()
         job = null
         tokenStore = null
+        googleConversation = null
+        googleStep = null
+        googleAvailable = null
         state = JoluState.Checking
         auth = JoluAuthState.Idle
     }
@@ -374,27 +569,33 @@ object JoluConnection {
             val current = withContext(Dispatchers.IO) { store.load() }
 
             when (val result = call(current?.token)) {
-                is JoluResult.Success -> {
-                    val credential = JoluCredential(result.value.token, JoluScope.ACCOUNT)
-
-                    if (!save(store, credential)) {
-                        auth = JoluAuthState.Failed(ACCOUNT_NOT_STORED_MESSAGE)
-                        return@launch
-                    }
-
-                    auth = JoluAuthState.Idle
-
-                    // A new session: what the last one synced is not shown to this one.
-                    val app = context.applicationContext
-                    withContext(Dispatchers.IO) { JoluSyncRunner.environment(app).status.clear() }
-                    JoluSync.forget(app)
-
-                    load(store, credential)
-                }
-
+                is JoluResult.Success -> signedIn(context, store, result.value)
                 is JoluResult.Failure -> auth = JoluAuthState.Failed(describeSignIn(result))
             }
         }
+    }
+
+    /**
+     * Every way of signing in ends here: the new ACCOUNT token is stored —
+     * encrypted, replacing whatever the phone had — and the account opens.
+     * A token the phone could not store is not used: nothing changes then.
+     */
+    private suspend fun signedIn(context: Context, store: JoluTokenStorage, session: JoluSession) {
+        val credential = JoluCredential(session.token, JoluScope.ACCOUNT)
+
+        if (!save(store, credential)) {
+            auth = JoluAuthState.Failed(ACCOUNT_NOT_STORED_MESSAGE)
+            return
+        }
+
+        auth = JoluAuthState.Idle
+
+        // A new session: what the last one synced is not shown to this one.
+        val app = context.applicationContext
+        withContext(Dispatchers.IO) { JoluSyncRunner.environment(app).status.clear() }
+        JoluSync.forget(app)
+
+        load(store, credential)
     }
 
     private fun reconnect(context: Context) {
@@ -502,10 +703,10 @@ object JoluConnection {
      * the name exists or not), "too many attempts, try again in N minutes",
      * an address or username that is taken — otherwise what kind of trouble.
      */
-    internal fun describeSignIn(failure: JoluResult.Failure): String =
+    internal fun describeSignIn(failure: JoluResult.Failure, unauthorized: String = "Gebruikersnaam of wachtwoord klopt niet."): String =
         when (failure) {
             is JoluResult.Unauthorized ->
-                failure.message ?: "Gebruikersnaam of wachtwoord klopt niet."
+                failure.message ?: unauthorized
 
             is JoluResult.HttpError ->
                 failure.message ?: when (failure.status) {
@@ -519,6 +720,14 @@ object JoluConnection {
             JoluResult.InvalidResponse ->
                 "JoLu gaf een onverwacht antwoord. Probeer het later opnieuw."
         }
+
+    /**
+     * Why signing in with Google did not work, in the server's own words when
+     * it sent some: a token it could not verify, a sign-in that ran out, an
+     * address a password account already has, an account that is not
+     * active, Google not set up on the server, too many phones.
+     */
+    internal fun describeGoogle(failure: JoluResult.Failure): String = describeSignIn(failure, GOOGLE_FAILED_MESSAGE)
 
     private fun store(context: Context): JoluTokenStorage {
         appContext = context.applicationContext

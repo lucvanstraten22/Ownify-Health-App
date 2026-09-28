@@ -266,9 +266,12 @@ private fun FieldColumns(
 }
 
 /**
- * Inloggen: the ways into this account, in the fields' shape. Google is
- * linked on the website — the app has no Google sign-in of its own — so the
- * row that links it opens the website (docs/PARITY.md).
+ * Inloggen: the ways into this account, in the fields' shape. Linking Google
+ * to an account that has a password is the website's own flow — Google's
+ * pages in a browser signed in to JoLu — so the row that links it opens the
+ * website (docs/PARITY.md). Signing in with a Google account that is already
+ * linked, or starting a new account with Google, is the sign-in panel's
+ * "Doorgaan met Google".
  */
 @Composable
 private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {

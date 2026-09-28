@@ -300,6 +300,33 @@ file_put_contents($keysDir . '/jwks.json', json_encode(['keys' => [[
     'e'   => google_signin_b64url_encode($googleDetails['rsa']['e']),
 ]]]));
 
+/* Google's token endpoint, for the website's own sign-in: the code the test
+   hands the callback carries who signs in and the nonce the website asked
+   for, and this answers with an ID token for the Web client, signed with the
+   test's key — what Google does after the person chose their account. */
+openssl_pkey_export($googleKey, $googlePem);
+file_put_contents($keysDir . '/google-key.pem', $googlePem);
+file_put_contents($keysDir . '/stand-in.json', json_encode(['client' => $webClient]));
+file_put_contents($keysDir . '/token.php', <<<'PHP'
+<?php
+$b64    = static fn (string $bytes): string => rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+$code   = json_decode((string) base64_decode(strtr((string) ($_POST['code'] ?? ''), '-_', '+/')), true);
+$client = json_decode((string) file_get_contents(__DIR__ . '/stand-in.json'), true)['client'] ?? '';
+if (!is_array($code) || ($_POST['client_id'] ?? null) !== $client || ($_POST['grant_type'] ?? null) !== 'authorization_code') {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_grant']);
+    return;
+}
+$input = $b64(json_encode(['alg' => 'RS256', 'kid' => 'test-key', 'typ' => 'JWT'])) . '.' . $b64(json_encode([
+    'iss' => 'https://accounts.google.com', 'aud' => $client, 'azp' => $client,
+    'sub' => $code['sub'], 'email' => $code['email'], 'email_verified' => true, 'nonce' => $code['nonce'],
+    'iat' => time(), 'exp' => time() + 3600,
+]));
+openssl_sign($input, $signature, openssl_pkey_get_private((string) file_get_contents(__DIR__ . '/google-key.pem')), OPENSSL_ALGO_SHA256);
+header('Content-Type: application/json');
+echo json_encode(['id_token' => $input . '.' . $b64($signature), 'access_token' => 'stand-in-access-token', 'token_type' => 'Bearer']);
+PHP);
+
 /** An ID token as Credential Manager would hand the app, unless told otherwise. */
 function id_token(array $claims, $key = null): string
 {
@@ -322,6 +349,33 @@ function id_token(array $claims, $key = null): string
     return $input . '.' . google_signin_b64url_encode($signature);
 }
 
+/**
+ * The website's own Google sign-in, as a browser goes through it: the button
+ * (oauth.php), Google — the person picks the account [sub, email] — and the
+ * callback. The browser is then signed in, or on the username step.
+ *
+ * @return array{start: array, back: array}
+ */
+function web_google(array $browser, string $sub, string $email): array
+{
+    $start = web($browser, '/api/auth/oauth.php', ['provider' => 'google', 'mode' => 'login']);
+    parse_str((string) parse_url((string) ($start['body']['redirect'] ?? ''), PHP_URL_QUERY), $query);
+
+    $code = google_signin_b64url_encode(json_encode(['sub' => $sub, 'email' => $email, 'nonce' => (string) ($query['nonce'] ?? '')]));
+    $back = http('/api/auth/google-callback.php?' . http_build_query(['code' => $code, 'state' => (string) ($query['state'] ?? '')]),
+        ['get' => true, 'jar' => $browser['jar']]);
+
+    return ['start' => $start, 'back' => $back];
+}
+
+/** Who a browser is signed in as on the website, by the app's own read of it. */
+function web_username(array $browser): ?string
+{
+    $state = web($browser, '/api/app/state.php');
+
+    return $state['body']['data']['auth']['user']['username'] ?? null;
+}
+
 /** A fresh app conversation with its nonce. @return array{jar: string, nonce: string} */
 function google_start(): array
 {
@@ -340,6 +394,7 @@ $base       = 'http://127.0.0.1:' . $appPort;
 $googleServer = serve($googlePort, $keysDir, null, []);
 $appEnv       = [
     'JOLU_TEST_GOOGLE_JWKS_URL'        => 'http://127.0.0.1:' . $googlePort . '/jwks.json',
+    'JOLU_TEST_GOOGLE_TOKEN_URL'       => 'http://127.0.0.1:' . $googlePort . '/token.php',
     'GOOGLE_SIGNIN_CLIENT_ID'          => $webClient,
     'GOOGLE_SIGNIN_CLIENT_SECRET'      => 'not-a-secret-test-value',
     'GOOGLE_SIGNIN_REDIRECT_URI'       => $base . '/api/auth/google-callback.php',
@@ -800,6 +855,13 @@ check('the website\'s logout: 200, signed out', $webOut['status'] === 200 && (ht
    GOOGLE  (37–41)
    ====================================================================== */
 
+section('Google: whether to offer it, and what to ask Google for');
+$offered = http('/api/auth/app-google.php', ['json' => ['action' => 'status']]);
+check('status: 200, available', $offered['status'] === 200 && ($offered['body']['available'] ?? null) === true, summary($offered));
+$asked = http('/api/auth/app-google.php', ['json' => ['action' => 'nonce'], 'jar' => browser()['jar']]);
+check('the nonce comes with the Web client\'s id to hand Google, and nothing secret',
+    ($asked['body']['client_id'] ?? null) === $webClient && !str_contains($asked['raw'], 'not-a-secret-test-value'), summary($asked));
+
 section('37. Google: somebody new — verify, choose a username, signed in');
 $olaSub   = 'google-sub-ola-' . $run;
 $olaMail  = 'at_' . $run . '_ola@jolu-test.invalid';
@@ -827,6 +889,38 @@ $back  = http('/api/auth/app-google.php', ['jar' => $again['jar'], 'json' => [
 ]]);
 check('200, signed_in, a token for that account', $back['status'] === 200 && ($back['body']['status'] ?? null) === 'signed_in'
     && (int) (row_of((string) ($back['body']['token'] ?? ''))['user_id'] ?? 0) === user_id_of($olaName), summary($back));
+
+section('Google on the website and in the app: one Google account, one JoLu account');
+/* Made on the website: the button, Google, the callback, the username step. */
+$wenSub    = 'google-sub-wen-' . $run;
+$wenMail   = 'at_' . $run . '_wen@jolu-test.invalid';
+$wenName   = account_name('wen');
+$wenWeb    = browser();
+$wenFlow   = web_google($wenWeb, $wenSub, $wenMail);
+check('the website sends the browser to Google, and back to the app', ($wenFlow['start']['body']['ok'] ?? false) === true
+    && $wenFlow['back']['status'] === 303, summary($wenFlow['back']));
+$wenMade   = web($wenWeb, '/api/auth/google-username.php', ['username' => $wenName]);
+check('the website\'s username step makes the account, signed in', $wenMade['status'] === 200 && web_username($wenWeb) === $wenName, summary($wenMade));
+$usersBefore = (int) db_value('SELECT COUNT(*) FROM users');
+$wenApp    = google_start();
+$wenIn     = http('/api/auth/app-google.php', ['jar' => $wenApp['jar'], 'json' => [
+    'action' => 'verify', 'id_token' => id_token(['sub' => $wenSub, 'email' => $wenMail, 'nonce' => $wenApp['nonce']]), 'platform' => 'android',
+]]);
+check('the app, with the same Google account: straight in — no username step', $wenIn['status'] === 200 && ($wenIn['body']['status'] ?? null) === 'signed_in'
+    && ($wenIn['body']['account']['username'] ?? null) === $wenName, summary($wenIn));
+check('its token is that very account\'s', (int) (row_of((string) ($wenIn['body']['token'] ?? ''))['user_id'] ?? 0) === user_id_of($wenName));
+$wenState  = http('/api/app/state.php', ['bearer' => (string) ($wenIn['body']['token'] ?? ''), 'json' => []]);
+check('and the app reads that account\'s own pages', ($wenState['body']['data']['auth']['user']['username'] ?? null) === $wenName, summary($wenState));
+check('no second account, no second Google link', (int) db_value('SELECT COUNT(*) FROM users') === $usersBefore
+    && (int) db_value("SELECT COUNT(*) FROM user_auth_identities WHERE provider = 'google' AND provider_subject = ?", [$wenSub]) === 1);
+
+/* Made in the app (37, above): the website's Google sign-in finds it. */
+$olaWeb    = browser();
+$olaFlow   = web_google($olaWeb, $olaSub, $olaMail);
+check('the website, with the Google account the app signed up: signed in as that account, no username step',
+    $olaFlow['back']['status'] === 303 && web_username($olaWeb) === $olaName, summary($olaFlow['back']));
+check('still no second account', (int) db_value('SELECT COUNT(*) FROM users') === $usersBefore
+    && (int) db_value("SELECT COUNT(*) FROM user_auth_identities WHERE provider = 'google' AND provider_subject = ?", [$olaSub]) === 1);
 
 section('38–40. Google: tokens that must be refused');
 $refusals = [
@@ -888,6 +982,9 @@ $bareEnv['GOOGLE_SIGNIN_ANDROID_CLIENT_IDS'] = '';
 $servers[] = serve($bare, $root, $root . '/tools/app-auth-router.php', $bareEnv);
 $off = http('/api/auth/app-google.php', ['base' => 'http://127.0.0.1:' . $bare, 'json' => ['action' => 'nonce']]);
 check('501', $off['status'] === 501, summary($off));
+$offStatus = http('/api/auth/app-google.php', ['base' => 'http://127.0.0.1:' . $bare, 'json' => ['action' => 'status']]);
+check('status: 200, not available — the app shows it as the website shows an unconfigured Google',
+    $offStatus['status'] === 200 && ($offStatus['body']['available'] ?? null) === false, summary($offStatus));
 
 /* ======================================================================
    BEFORE MIGRATION 013
@@ -947,7 +1044,9 @@ if ($pre !== '') {
     foreach ($servers as $process) {
         proc_terminate($process);
     }
-    @unlink($keysDir . '/jwks.json');
+    foreach (['jwks.json', 'google-key.pem', 'stand-in.json', 'token.php'] as $file) {
+        @unlink($keysDir . '/' . $file);
+    }
     @rmdir($keysDir);
 }
 

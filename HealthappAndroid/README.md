@@ -12,7 +12,7 @@ and the few places it cannot copy the website are in
 
 - **Signing in and registering**: the opening screen's buttons, or the
   account button in the header, open the account panel (Inloggen / Account
-  aanmaken).
+  aanmaken), with **Doorgaan met Google** under either form.
 - **Pairing**: "Of koppel deze telefoon met een koppelcode" under the login
   form.
 - **Syncing**: Instellingen › Apparaten & Gezondheid, this phone's Health
@@ -27,6 +27,7 @@ backend):
 | --- | --- | --- | --- |
 | **Inloggen** (username or e-mail + password) | `api/auth/app-login.php` | account token | sync, and act as the account |
 | **Account aanmaken** (username, e-mail, password) | `api/auth/app-register.php` | account token | the same |
+| **Doorgaan met Google** | `api/auth/app-google.php` | account token | the same |
 | pairing code from the website | `api/integrations/pair.php` | sync token | sync only |
 
 The phone holds **one** credential — `JoluCredential(token, scope)` — kept by
@@ -52,6 +53,40 @@ of another account is left alone by the server.
 - **401** anywhere (revoked on the website, the account gone, a year unused):
   the token is forgotten, automatic sync stops, and the screen asks to sign
   in (account) or pair (sync) again.
+
+### Doorgaan met Google
+
+The same JoLu accounts as the website's "Doorgaan met Google": one Google
+account is one JoLu account, on both. The phone proves nothing itself — the
+server does, with the website's own code (`includes/google-signin.php`):
+
+1. `app-google.php` `nonce` → a fresh nonce, and the id of the website's
+   **Web** OAuth client (public; the app carries no copy of it).
+2. Android **Credential Manager** with Google's `GetSignInWithGoogleOption`
+   (the option for a Sign in with Google button: Google's own account chooser,
+   every account on the phone, and adding one) asks Google for an **ID token**
+   for that Web client, with that nonce (`jolu/GoogleSignIn.kt`).
+3. `app-google.php` `verify` with the ID token. The server checks Google's
+   signature, issuer, audience (the Web client), authorised party (one of the
+   app's Android clients), expiry and the nonce, then decides as the website
+   does: the JoLu account that has this Google account is signed in;
+   somebody new chooses a username once (`username`) and the account is made,
+   already linked; an address a password account already has is **refused,
+   never merged** — sign in with the password and link Google in Instellingen
+   on the website.
+4. The answer is an ordinary **account token**, stored and used exactly like
+   one from a password: reopening the app restores it without Google, and
+   Uitloggen revokes it on the server (and tells Credential Manager, so it
+   does not pick an account by itself next time). No Google token is kept.
+
+The three requests share the server's session cookie, kept in memory for this
+one sign-in only (`JoluApi.GoogleConversation`). The button asks the server
+first (`status`) whether Google is set up for the app; when it is not, the
+button is shown disabled with "Google is nog niet gekoppeld.", as on the
+website. Setting it up — an OAuth client of type Android per signing key,
+whose ids go into the server's `config/auth.local.php` — is in
+docs/APP-AUTH.md, "Setting up Google for the app"; nothing about it goes into
+this project.
 
 ### A late 401 cannot sign anybody out
 
@@ -165,6 +200,14 @@ Android jar.
   after a restart, expired and revoked tokens, scopes, and the late-401 race
   (a sync held mid-request while the phone signs in), through the real
   `JoluConnection`, `JoluApi` and worker.
+- `jolu/GoogleSignInTest` — Doorgaan met Google through the real
+  `JoluConnection` and `JoluApi` against a server that keeps its session in a
+  cookie and checks the ID token's audience and nonce: the same account,
+  somebody new and their username (taken, run out, cancelled), the address a
+  password account has, a token it cannot verify, the chooser closed, no
+  Google account, no Play services, offline, not set up, a paired phone, and
+  staying signed in and signing out. Google's chooser is the stand-in
+  (`FakeGoogle`).
 - `jolu/JoluBackgroundSyncTest` — when the automatic sync runs, what each
   answer does (401, offline, 5xx, no access), pairing, and that the button
   and the worker run one pipeline and send the same records again unchanged.
@@ -179,6 +222,10 @@ Android jar.
   restore, sign out, offline and retry, a revoked session, a paired phone,
   the tabs, a detail and back, the panels, and accessibility (46 dp targets,
   headings, the navigation's name).
+- `ui/GoogleSignInFlowTest` — Doorgaan met Google on screen: from Inloggen
+  and Registreren into the account's pages, the username step and its
+  Annuleren, the server's reasons in the panel, the disabled button when the
+  server has no Google for the app, and signing out and back in.
 - `ui/PhoneSyncUiTest` — this phone's Health Connect card in each state
   (unavailable, update needed, no/part/all access, background) and "Nu
   synchroniseren" end to end: success, revoked, offline.

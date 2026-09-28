@@ -75,7 +75,7 @@ wins over the file.
 | --- | --- | --- | --- |
 | Database | `config/database.local.php` | `DB_HOST` `DB_NAME` `DB_USER` `DB_PASSWORD` | everything |
 | App key | `config/app.local.php` | `JOLU_APP_KEY` | storing OAuth tokens |
-| Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` | signing in with Google |
+| Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` `_ANDROID_CLIENT_IDS` | signing in with Google (the last: in the JoLu app) |
 | Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
 
 Check what a machine actually has, without printing any of it:
@@ -215,6 +215,10 @@ registered in step 3 character for character, or Google answers
 `redirect_uri_mismatch`. Without SSH, Hestia's File Manager can create the file:
 copy `config/auth.local.php.example`, rename the copy to `auth.local.php`, and
 edit the two values.
+
+The JoLu app signs in with Google through this same project, consent screen
+and Web client, plus one OAuth client of type *Android* per key the app is
+signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 
 ## The tables
 

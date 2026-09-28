@@ -72,6 +72,13 @@ dependencies {
     // The automatic JoLu sync (JoluBackgroundSync, JoluSyncWorker).
     implementation(libs.androidx.work.runtime.ktx)
 
+    // Sign in with Google: Android Credential Manager and Google's ID-token
+    // option for it (GoogleSignIn.kt). The ID token goes to the JoLu server,
+    // which verifies it (api/auth/app-google.php).
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
     testImplementation(libs.junit)
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.androidx.test.core)

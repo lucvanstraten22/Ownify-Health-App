@@ -6,12 +6,22 @@
  * ---------------------------------------------------------------------------
  * THE CONVERSATION, IN UP TO THREE REQUESTS
  * ---------------------------------------------------------------------------
+ *   0. { "action": "status" }
+ *        -> { ok, available }
+ *      Whether this server offers Google sign-in to the app at all, so the
+ *      app can show its Google button as the website shows its own: working,
+ *      or disabled with "Google is nog niet gekoppeld." Asked before
+ *      anything else and answered even when it is not set up.
+ *
  *   1. { "action": "nonce" }
- *        -> { ok, nonce, expires_in }
+ *        -> { ok, nonce, expires_in, client_id }
  *      A fresh random nonce, kept in this server's session (the jolu_session
  *      cookie; the app keeps cookies for the length of this conversation).
- *      The app hands it to Credential Manager (GetGoogleIdOption.setNonce),
- *      with the Web client's id as the server client id.
+ *      The app hands it to Credential Manager (GetSignInWithGoogleOption or
+ *      GetGoogleIdOption, setNonce), with client_id — the Web client's id,
+ *      which is public: it is in every Google sign-in address the website
+ *      sends a browser to — as the server client id. So the app carries no
+ *      copy of it that could drift from the audience checked here.
  *
  *   2. { "action": "verify", "id_token": "…", label, platform, app_version }
  *      The ID token Google gave the app, checked here by
@@ -53,6 +63,15 @@ require_once dirname(__DIR__, 2) . '/includes/devices.php';
 
 api_require_post();
 api_require_https();
+
+$input  = api_json_body();
+$action = is_string($input['action'] ?? null) ? $input['action'] : '';
+
+/* 0. Whether to offer it at all: yes only when every step below can work. */
+if ($action === 'status') {
+    api_ok(['available' => db_available() && google_signin_native_configured() && devices_scoped()]);
+}
+
 api_require_database();
 
 if (!google_signin_native_configured()) {
@@ -62,9 +81,6 @@ if (!google_signin_native_configured()) {
 if (!devices_scoped()) {
     api_fail('Inloggen in de app is op deze server nog niet beschikbaar.', 503);
 }
-
-$input  = api_json_body();
-$action = is_string($input['action'] ?? null) ? $input['action'] : '';
 
 /** Ends this conversation's session: the app has its token, or has given up. */
 $finish = static function (): void {
@@ -86,7 +102,11 @@ switch ($action) {
 
         $_SESSION['google_native'] = ['nonce' => $nonce, 'started' => time()];
 
-        api_ok(['nonce' => $nonce, 'expires_in' => GOOGLE_SIGNIN_FLOW_TTL]);
+        api_ok([
+            'nonce'      => $nonce,
+            'expires_in' => GOOGLE_SIGNIN_FLOW_TTL,
+            'client_id'  => google_signin_config()['client_id'],
+        ]);
 
     /* ----------------------------------------------------------- 2. verify */
     case 'verify':

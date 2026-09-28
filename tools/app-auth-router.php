@@ -4,11 +4,12 @@
  *
  *     php -S 127.0.0.1:8300 -t . tools/app-auth-router.php
  *
- * Runs the app as it is, with one difference: where Google's signing keys are
- * fetched from. google-signin.php defines that address only if nothing has
- * yet, so defining it here first points it at a stand-in that serves the
- * test's own keys (JOLU_TEST_GOOGLE_JWKS_URL). Everything else — the
- * endpoints, the checks, the database — is the real thing.
+ * Runs the app as it is, with one difference: where Google is. Its signing
+ * keys and its token endpoint are addresses google-signin.php defines only
+ * if nothing has yet, so defining them here first points them at a stand-in
+ * that serves the test's own keys and ID tokens (JOLU_TEST_GOOGLE_JWKS_URL,
+ * JOLU_TEST_GOOGLE_TOKEN_URL). Everything else — the endpoints, the checks,
+ * the database — is the real thing.
  *
  * Only the built-in server runs this. Under Apache it answers 404, and
  * tools/.htaccess refuses the whole directory anyway.
@@ -24,6 +25,14 @@ $jwks = getenv('JOLU_TEST_GOOGLE_JWKS_URL');
 
 if (is_string($jwks) && $jwks !== '') {
     define('GOOGLE_SIGNIN_JWKS_URL', $jwks);
+}
+
+/* And where the website's own Google sign-in exchanges its code, so the test
+   can run it end to end too (JOLU_TEST_GOOGLE_TOKEN_URL). */
+$token = getenv('JOLU_TEST_GOOGLE_TOKEN_URL');
+
+if (is_string($token) && $token !== '') {
+    define('GOOGLE_SIGNIN_TOKEN_URL', $token);
 }
 
 $root = dirname(__DIR__);
