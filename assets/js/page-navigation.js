@@ -105,6 +105,142 @@
         });
     }
 
+    /* ---------------------------------------------------------- the glass */
+
+    /**
+     * The tab bar's selected pane is one piece of glass, not five panes that
+     * take turns: choosing a tab sends it there from wherever it is, and a
+     * swipe carries it along under the finger. It moves on a damped spring
+     * in tab units — the same spring, the same numbers, as the Android app's
+     * — so a far tab is reached in the same time as the next one, only
+     * faster. While it moves it stretches along the bar with its speed and
+     * thins a little, and it settles with the spring's small overshoot.
+     *
+     * The rail and the bar are built from the same list, so a page's place
+     * on the rail is its tab's place in the bar. Everything measured is
+     * measured when the bar changes size; a frame only writes a transform.
+     */
+    var glass = (function () {
+        var bar = deck.querySelector('.tabbar');
+        var pane = bar && bar.querySelector('[data-tab-glass]');
+        var tabs = bar ? Array.prototype.slice.call(bar.querySelectorAll('[data-nav]')) : [];
+        if (!pane || !tabs.length) { return null; }
+
+        // spring(dampingRatio 0.8, stiffness 340): arrives in about 190 ms,
+        // 1.5 % past the mark, at rest by about 430 ms.
+        var STIFFNESS = 340;
+        var DAMPING = 0.8;
+        // At most 30 % longer at speed (tabs per second), a quarter of that thinner.
+        var STRETCH = 0.30;
+        var STRETCH_SPEED = 9;
+        var THIN = 0.25;
+
+        var omega = Math.sqrt(STIFFNESS);
+        var decay = DAMPING * omega;
+        var ring = omega * Math.sqrt(1 - DAMPING * DAMPING);
+
+        var slots = [];       // each tab's pane: its left edge, px from the bar
+        var x = index;        // where the glass is, in tabs
+        var v = 0;            // and how fast it is going, in tabs per second
+        var target = index;
+        var from = 0;         // the spring's start: offset from the target, and speed
+        var fromSpeed = 0;
+        var startedAt = 0;
+        var frame = 0;
+
+        function measure() {
+            var box = bar.getBoundingClientRect();
+            var glow = tabs[0].querySelector('.tab__glow');
+            var inset = glow ? parseFloat(getComputedStyle(glow).top) || 0 : 0;
+            var first = tabs[0].getBoundingClientRect();
+            // The pane is placed inside the bar's border (the desktop bar has one).
+            var originX = box.left + bar.clientLeft;
+            var originY = box.top + bar.clientTop;
+
+            slots = tabs.map(function (tab) {
+                return tab.getBoundingClientRect().left - originX + inset;
+            });
+            pane.style.top = (first.top - originY + inset) + 'px';
+            pane.style.width = Math.max(0, first.width - 2 * inset) + 'px';
+            pane.style.height = Math.max(0, first.height - 2 * inset) + 'px';
+            draw();
+        }
+
+        /** The pane's left edge at a place in tabs, between and past the ends too. */
+        function left(at) {
+            var last = slots.length - 1;
+            if (last < 1) { return slots[0] || 0; }
+            var n = nav.clamp(Math.floor(at), 0, last - 1);
+            return slots[n] + (slots[n + 1] - slots[n]) * (at - n);
+        }
+
+        function draw() {
+            if (!slots.length) { return; }
+            var long = 1 + STRETCH * (1 - Math.exp(-Math.abs(v) / STRETCH_SPEED));
+            var thin = 1 - THIN * (long - 1);
+            pane.style.transform = 'translate3d(' + left(x).toFixed(2) + 'px, 0, 0) scale('
+                + long.toFixed(4) + ', ' + thin.toFixed(4) + ')';
+        }
+
+        /** The spring at a moment: x and v, from its start. */
+        function sample(now) {
+            var t = Math.max(0, now - startedAt) / 1000;
+            var a = from;
+            var b = (fromSpeed + decay * a) / ring;
+            var e = Math.exp(-decay * t);
+            var cos = Math.cos(ring * t);
+            var sin = Math.sin(ring * t);
+            x = target + e * (a * cos + b * sin);
+            v = e * (-decay * (a * cos + b * sin) + ring * (b * cos - a * sin));
+        }
+
+        function tick(now) {
+            frame = 0;
+            sample(now);
+            if (Math.abs(x - target) < 0.001 && Math.abs(v) < 0.01) {
+                x = target;
+                v = 0;
+                draw();
+                return;
+            }
+            draw();
+            frame = window.requestAnimationFrame(tick);
+        }
+
+        /** Sends the glass to a place in tabs, from wherever it is and at whatever speed. */
+        function to(place, now) {
+            var at = window.performance.now();
+            if (frame) { sample(at); }
+
+            if (now || nav.reduceMotion) {
+                window.cancelAnimationFrame(frame);
+                frame = 0;
+                x = target = place;
+                v = 0;
+                draw();
+                return;
+            }
+            if (place === target && !frame && x === place) { return; }
+
+            from = x - place;
+            fromSpeed = v;
+            target = place;
+            startedAt = at;
+            if (!frame) { frame = window.requestAnimationFrame(tick); }
+        }
+
+        measure();
+        bar.classList.add('tabbar--glass');
+
+        if ('ResizeObserver' in window) {
+            new ResizeObserver(measure).observe(bar);
+        } else {
+            window.addEventListener('resize', measure);
+        }
+
+        return { to: to };
+    }());
+
     /* ------------------------------------------------------------- motion */
 
     /**
@@ -124,6 +260,7 @@
 
         document.documentElement.dataset.activePage = currentId();
         syncTabs();
+        if (glass) { glass.to(target); }
         refresh();
 
         window.clearTimeout(settleTimer);
@@ -178,6 +315,8 @@
 
             drag.position = nav.clamp(drag.from - ctx.dx / ctx.width, lowest, highest);
             place(drag.position);
+            // The glass goes where the finger takes the page.
+            if (glass) { glass.to(drag.position); }
         },
 
         end: function (ctx) {

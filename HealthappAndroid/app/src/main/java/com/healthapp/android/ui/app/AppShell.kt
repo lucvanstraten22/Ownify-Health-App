@@ -156,6 +156,8 @@ fun AppShell(data: AppData, screens: ShellScreens, onShell: ((ShellState) -> Uni
                     Dock(
                         items = data.navigation,
                         current = shell.currentPage,
+                        // The rail and the bar are one list: a page's place is its tab's.
+                        glassAt = { if (shell.railHeld) shell.rail else shell.index.toFloat() },
                         openAria = data.ai.openAria,
                         onTab = shell::tab,
                         onOpenAssistant = shell::openAi,

@@ -69,6 +69,10 @@ class ShellState(
     var rail by mutableFloatStateOf(index.toFloat())
         private set
 
+    /** Whether a finger holds the rail: then the tab bar's glass follows [rail], otherwise it goes to [index]. */
+    var railHeld by mutableStateOf(false)
+        private set
+
     val currentPage: String get() = pageIds[index]
 
     /** Each page keeps its own scroll, so leaving it and coming back finds it where it was. */
@@ -216,6 +220,7 @@ class ShellState(
     private fun settleRail(target: Int) {
         val clamped = target.coerceIn(0, pageIds.lastIndex)
         railDrag = null
+        railHeld = false
         index = clamped
         railJob?.cancel()
         railJob = scope.launch {
@@ -260,6 +265,7 @@ class ShellState(
             railJob?.cancel()
             val base = if (kotlin.math.abs(from - index) < 1f) index.toFloat() else kotlin.math.round(from)
             railDrag = Drag(from, base)
+            railHeld = true
             rail = from
         }
 

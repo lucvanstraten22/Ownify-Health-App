@@ -24,4 +24,5 @@ $items = $data['navigation'];
             </li>
         <?php endforeach; ?>
     </ul>
+    <span class="tabbar__glass" data-tab-glass aria-hidden="true"></span>
 </nav>

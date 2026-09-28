@@ -62,6 +62,14 @@ as the website reloads or re-fetches the page after one.
   completes, a quick swipe (≤ 300 ms, ≥ 32 dp) completes, otherwise past a
   quarter, or past half after holding still for 160 ms. A layer caught
   mid-way carries on from where it is.
+- The tab bar's chosen pane is one piece of glass on both: a tab sends it
+  there, a swipe carries it under the finger. It moves on one damped spring
+  in tab units — damping ratio 0.8, stiffness 340 (page-navigation.js, and
+  `GlassSpring` in Dock.kt) — about 190 ms to arrive and 1.5 % past the mark,
+  keeps its speed when sent somewhere else on the way, and stretches up to
+  30 % along the bar with its speed (a quarter of that thinner). With reduced
+  motion (the browser's setting, Android's "remove animations") it goes
+  straight to the tab.
 - Durations: screen 280 ms `(.22, 1, .36, 1)`, fast 180 ms, slow 420 ms
   `(.22, .61, .36, 1)`; meters and count-ups 1000 ms ease-out-cubic, ring
   1100 ms; reveal 14 dp + fade, staggered 60 ms.

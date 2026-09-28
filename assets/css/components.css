@@ -1018,9 +1018,8 @@
    inside the first — lighter, with its own lit top edge and its own small
    shadow, so it reads as a piece of the material and not as a coloured chip.
    No accent: the bar is grey and white throughout. */
-.tab__glow {
-    position: absolute;
-    inset: var(--tab-glow-inset);
+.tab__glow,
+.tabbar__glass {
     border-radius: var(--radius-pill);
     background: linear-gradient(178deg,
         rgba(255, 255, 255, 0.20) 0%,
@@ -1030,11 +1029,34 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.28),
         inset 0 -1px 0 rgba(255, 255, 255, 0.05),
         0 2px 7px rgba(0, 0, 0, 0.20);
+    pointer-events: none;
+}
+
+.tab__glow {
+    position: absolute;
+    inset: var(--tab-glow-inset);
     opacity: 0;
     transform: scale(0.94);
     transition: opacity var(--transition-slow), transform var(--transition-slow);
-    pointer-events: none;
 }
+
+/* With script, the selected pane is one piece of glass for the whole bar,
+   and choosing a tab sends it there: it travels, stretching a little with
+   its speed, and settles (page-navigation.js). It sits where each tab's own
+   pane sat, over the icon and label, and is placed by transform alone. The
+   tabs keep their own pane for a press. Without script, the chosen tab's
+   own pane is the state, as before. */
+.tabbar__glass {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    transform-origin: 50% 50%;
+    will-change: transform;
+}
+
+.tabbar--glass .tabbar__glass { display: block; }
 
 /* The whole tab is a .press elsewhere in the app; inside the capsule the
    lozenge does the responding, so the tab itself must not also shrink. */
@@ -1049,6 +1071,11 @@
 .tab.is-active .tab__glow {
     opacity: 1;
     transform: none;
+}
+
+.tabbar--glass .tab.is-active .tab__glow {
+    opacity: 0;
+    transition: none;
 }
 
 /* A press lifts the glass under the finger, then lets it settle. */
