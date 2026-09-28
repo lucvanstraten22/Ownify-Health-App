@@ -122,8 +122,7 @@ if (!function_exists('google_signin_config')) {
             return $config;
         }
 
-        $all    = (array) require dirname(__DIR__) . '/config/auth.php';
-        $google = (array) ($all['google'] ?? []);
+        $google = (array) (google_signin_settings()['settings']['google'] ?? []);
 
         return $config = [
             'client_id'     => trim((string) ($google['client_id'] ?? '')),
@@ -136,6 +135,68 @@ if (!function_exists('google_signin_config')) {
                 static fn (string $id): bool => $id !== ''
             )),
         ];
+    }
+
+    /**
+     * config/auth.php as loaded — config/auth.local.php and the environment
+     * over it — and, when it could not be loaded, why.
+     *
+     * A BROKEN FILE HERE IS GOOGLE SWITCHED OFF, NOT THE SITE
+     * -------------------------------------------------------
+     * config/auth.local.php is edited by hand on the server. Every page, the
+     * app's read (api/app/state.php) and app-google.php ask whether Google is
+     * on offer, so one syntax error in that file (a second "<?php", a missing
+     * comma) — or a copy the web server may not read — threw on every one of
+     * them: the whole site and the app answered 500 over an optional sign-in
+     * method. Now Google is simply not
+     * offered, everything else carries on, and the reason goes to the server
+     * log on each request until the file is fixed. tools/check-config.php
+     * reports it as a failure (google_signin_config_error()).
+     *
+     * @return array{settings: array, error: ?string}
+     */
+    function google_signin_settings(): array
+    {
+        static $loaded = null;
+
+        if ($loaded !== null) {
+            return $loaded;
+        }
+
+        try {
+            return $loaded = ['settings' => (array) require dirname(__DIR__) . '/config/auth.php', 'error' => null];
+        } catch (Throwable $e) {
+            $error = sprintf(
+                '%s: %s in %s on line %d',
+                $e::class,
+                google_signin_redact($e->getMessage()),
+                $e->getFile(),
+                $e->getLine()
+            );
+
+            error_log('[google-signin] config/auth.php could not be loaded, so Google sign-in is off: ' . $error);
+
+            return $loaded = ['settings' => [], 'error' => $error];
+        }
+    }
+
+    /** Why config/auth.php (or config/auth.local.php) could not be loaded; null when it loaded. */
+    function google_signin_config_error(): ?string
+    {
+        return google_signin_settings()['error'];
+    }
+
+    /**
+     * A PHP error message about the config file, without the values in it: a
+     * syntax error quotes the text it stumbled on, which can be the client
+     * secret. Short quoted words ("]", "android_client_ids") stay — they say
+     * what is wrong — as do paths and addresses (a "/" in them: the file that
+     * could not be opened, the redirect URI, neither secret). Anything else as
+     * long as a client id or a secret becomes "…".
+     */
+    function google_signin_redact(string $message): string
+    {
+        return (string) preg_replace('~"[^"/]{21,}"|\'[^\'/]{21,}\'~', '"…"', $message);
     }
 
     /**

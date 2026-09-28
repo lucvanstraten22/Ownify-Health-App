@@ -285,6 +285,7 @@ it. `GOOGLE_SIGNIN_ANDROID_CLIENT_IDS=id1,id2` in the environment does the
 same.) Then:
 
 ```bash
+php -l config/auth.local.php        # must say: No syntax errors detected
 php tools/check-config.php
 ```
 
@@ -307,6 +308,7 @@ app alike. Add each tester's Google address there (**+ Add users**), or press
 | What you see | Usually |
 | --- | --- |
 | The button is disabled, "Google is nog niet gekoppeld." | the server has no Android client ids (step 3), or no Web client. `php tools/check-config.php` says which |
+| Google is off on the website **and** in the app, right after editing `config/auth.local.php` | the file does not load: a syntax error (a second `<?php`, a missing comma, a block pasted outside `return [ … ];`) or a copy the web server may not read. Google is then switched off rather than the site (before, every page and the app answered 500). `php -l config/auth.local.php` and `php tools/check-config.php` name the line; the server log has `[google-signin] config/auth.php could not be loaded …` |
 | "Er staat geen Google-account op deze telefoon…" although there is one; or "Inloggen met Google is niet gelukt" straight after the chooser, with nothing in the server log | Google refused this build before any token was made: no Android client for **the SHA-1 this build is signed with** (a debug build from another computer, a Play build without the app signing key's client), a typo in the package name or SHA-1, or the Android client in another project than the Web client. Compare `./gradlew signingReport` with the client. Google says a new or changed client can take from five minutes to a few hours to take effect |
 | "Inloggen met Google is niet gelukt" after choosing an account, and the server log has `[google-signin] app ID token refused: …` | the server refused the token: e.g. `azp` (the Android client) not in `android_client_ids`, or the server's clock is off. The reason is in the log line |
 | Signing in fails for some Google accounts only, or Google says the app is not available to them | *Testing*, and those accounts are not test users (step 4) |

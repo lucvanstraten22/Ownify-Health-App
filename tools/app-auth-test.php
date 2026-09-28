@@ -986,6 +986,58 @@ $offStatus = http('/api/auth/app-google.php', ['base' => 'http://127.0.0.1:' . $
 check('status: 200, not available — the app shows it as the website shows an unconfigured Google',
     $offStatus['status'] === 200 && ($offStatus['body']['available'] ?? null) === false, summary($offStatus));
 
+section('A broken config/auth.local.php switches Google off — never the site or the app');
+/* A second "<?php" in the server's own config file once answered 500 on every
+   page and on the app's read. A developer's real file is never touched: the
+   broken one is only ever created where none exists (fopen 'x' refuses to
+   open an existing file), and only a file still holding exactly what this
+   test wrote is removed. */
+$localAuth  = $root . '/config/auth.local.php';
+$brokenAuth = "<?php\nreturn [\n    'google' => [\n<?php\n        'client_id' => 'x',\n    ],\n];\n";
+$removeOurs = static function () use ($localAuth, $brokenAuth): void {
+    clearstatcache();
+    if (is_file($localAuth) && @file_get_contents($localAuth) === $brokenAuth) {
+        @unlink($localAuth);
+    }
+};
+
+if (is_file($localAuth)) {
+    check('skipped: this checkout has its own config/auth.local.php', true);
+} else {
+    /* Made before the file breaks anything: web_account() exits when it cannot
+       register, and an exit runs no finally — only shutdown functions. */
+    $cfgUser = web_account('cfg');
+    $created = @fopen($localAuth, 'x');
+
+    if ($created === false) {
+        check('skipped: config/auth.local.php appeared meanwhile, and is left alone', true);
+    } else {
+        register_shutdown_function($removeOurs);
+        $brokenLocalAuth = $removeOurs;
+        fwrite($created, $brokenAuth);
+        fclose($created);
+
+        try {
+            $cfgHome = http('/', ['get' => true]);
+            check('the website: 200, with Google shown as not set up', $cfgHome['status'] === 200
+                && str_contains($cfgHome['raw'], 'Google is nog niet gekoppeld.'), summary($cfgHome));
+            $cfgWeb = web(browser(), '/api/auth/login.php', ['username' => $cfgUser['username'], 'password' => $password]);
+            check('the website\'s password login: 200', $cfgWeb['status'] === 200 && ($cfgWeb['body']['ok'] ?? false) === true, summary($cfgWeb));
+            $cfgStatus = http('/api/auth/app-google.php', ['json' => ['action' => 'status']]);
+            check('the app\'s Google button: status 200, not available', $cfgStatus['status'] === 200
+                && ($cfgStatus['body']['available'] ?? null) === false, summary($cfgStatus));
+            $cfgLogin = http('/api/auth/app-login.php', ['json' => ['identifier' => $cfgUser['username'], 'password' => $password, 'platform' => 'android']]);
+            check('the app signs in with a password: 200', $cfgLogin['status'] === 200, summary($cfgLogin));
+            $cfgState = http('/api/app/state.php', ['bearer' => (string) ($cfgLogin['body']['token'] ?? ''), 'json' => []]);
+            check('the app\'s read: 200, that account, Google off and e-mail on', $cfgState['status'] === 200
+                && ($cfgState['body']['data']['auth']['user']['username'] ?? null) === $cfgUser['username']
+                && ($cfgState['body']['data']['auth']['providers'] ?? null) === ['email' => true, 'google' => false], summary($cfgState));
+        } finally {
+            $removeOurs();
+        }
+    }
+}
+
 /* ======================================================================
    BEFORE MIGRATION 013
    ====================================================================== */
@@ -1043,6 +1095,9 @@ if ($pre !== '') {
 
     foreach ($servers as $process) {
         proc_terminate($process);
+    }
+    if (isset($brokenLocalAuth)) {
+        $brokenLocalAuth();
     }
     foreach (['jwks.json', 'google-key.pem', 'stand-in.json', 'token.php'] as $file) {
         @unlink($keysDir . '/' . $file);

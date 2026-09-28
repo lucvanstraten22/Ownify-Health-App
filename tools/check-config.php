@@ -260,7 +260,14 @@ require_once dirname(__DIR__) . '/includes/google-signin.php';
 
 $google = google_signin_config();
 
-if ($google['client_id'] === '' && $google['client_secret'] === '') {
+/* A config file that does not load switches Google off on the site and in the
+   app (google_signin_settings()); here it is a failure, with where to look. */
+$googleBroken = function_exists('google_signin_config_error') ? google_signin_config_error() : null;
+
+if ($googleBroken !== null) {
+    line('fail', 'Google sign-in', 'config/auth.php could not be loaded, so Google is off — ' . $googleBroken);
+    $problems++;
+} elseif ($google['client_id'] === '' && $google['client_secret'] === '') {
     line('warn', 'Google sign-in', 'not configured — the button stays disabled (see config/auth.local.php.example)');
 } else {
     foreach (['client_id' => 'client id', 'client_secret' => 'client secret', 'redirect_uri' => 'redirect URI'] as $key => $label) {
@@ -301,7 +308,9 @@ if ($google['client_id'] === '' && $google['client_secret'] === '') {
    Android client of the same Google Cloud project: the number in front. */
 $androidClients = $google['android_client_ids'];
 
-if ($androidClients === []) {
+if ($googleBroken !== null) {
+    /* Said above: nothing about Google was read. */
+} elseif ($androidClients === []) {
     line('warn', 'Google in the app', 'no Android client ids — the app offers no Google sign-in (docs/APP-AUTH.md)');
 } else {
     $project     = static fn (string $id): string => (string) strstr($id, '-', true);
@@ -332,7 +341,7 @@ if ($androidClients === []) {
     }
 }
 
-if (is_file(dirname(__DIR__) . '/config/auth.local.php')) {
+if ($googleBroken === null && is_file(dirname(__DIR__) . '/config/auth.local.php')) {
     line('ok', 'auth.local.php', 'present');
 }
 
