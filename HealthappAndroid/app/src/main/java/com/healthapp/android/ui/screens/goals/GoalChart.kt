@@ -83,6 +83,7 @@ import com.healthapp.android.ui.design.stretched
 import com.healthapp.android.ui.screens.health.Axis
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
+import com.healthapp.android.ui.theme.LocalTracking
 import com.healthapp.android.ui.theme.LocalAccent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -352,7 +353,8 @@ private fun EndLabel(chart: GoalChart, reading: Boolean) {
     val end = chart.end ?: return
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
-    val style = JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextSecondary, tabular = true)
+    // Measured here to place it, so its inherited letter spacing is settled here too.
+    val style = JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextSecondary, tabular = true, tracking = LocalTracking.current)
     val label = remember(end.label, style) { measurer.measure(end.label, style, maxLines = 1) }
     val shown by animateFloatAsState(if (reading) 0f else 1f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "end")
     val lines = rememberSvgPaths(chart.line)
@@ -461,7 +463,7 @@ private fun Reading(point: ChartPoint, accent: Color) {
                     .clip(shape)
                     .background(Color(46, 42, 44).copy(alpha = 0.97f))
                     .border(1.dp, Jolu.GlassBorder, shape)
-                    .padding(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp),
+                    .padding(1.dp).padding(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 T(point.date, JoluType.style(Jolu.FsTiny, color = Jolu.TextMuted, lineHeight = 1.25.em), maxLines = 1)

@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsContext
@@ -80,10 +81,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 import com.healthapp.android.ui.theme.Accent
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
+import com.healthapp.android.ui.theme.LocalTracking
 import com.healthapp.android.ui.theme.LocalAccent
 
 // ---------------------------------------------------------------------------
@@ -94,8 +100,8 @@ object JStyle {
     /** `.card__title`, `.page-intro__title`, `.score-ring__label`. */
     val Section = JoluType.style(Jolu.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
 
-    /** `.card__eyebrow`. */
-    val Eyebrow = JoluType.style(Jolu.FsLabel, FontWeight.SemiBold)
+    /** `.card__eyebrow` (its own -0.01em). */
+    val Eyebrow = JoluType.style(Jolu.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em)
 
     /** `.card__caption`, `.settings-eyebrow`: small caps, spaced. */
     val Caption = JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextMuted, tracking = Jolu.TrackingWide)
@@ -123,11 +129,13 @@ fun T(
     ellipsis: Boolean = false,
     uppercase: Boolean = false
 ) {
+    val tracking = LocalTracking.current
     BasicText(
         text = if (uppercase) text.uppercase(java.util.Locale.forLanguageTag("nl")) else text,
-        modifier = modifier,
+        modifier = modifier.cssLineBox(style),
         style = style.let { s ->
             var out = s
+            if (out.letterSpacing.isUnspecified) out = out.copy(letterSpacing = tracking)
             if (color != null) out = out.copy(color = color)
             if (align != null) out = out.copy(textAlign = align)
             out
@@ -138,12 +146,69 @@ fun T(
     )
 }
 
-/** `max-width: <n>ch` — n widths of the digit zero in [style]. */
+/**
+ * The text's box as CSS makes it: its lines times the line height, rounded
+ * to the nearest pixel, the glyphs centred in it and free to spill over.
+ *
+ * Android keeps a line at least as tall as the font (about 1.17 em for
+ * Roboto), so `line-height: 1` on a big number would otherwise stand 8 dp
+ * taller than on the website; and it rounds every line up to a whole pixel,
+ * which adds up down a page. The number of lines is read back from the
+ * height Android gives the text, so intrinsic measurement (a row sized to
+ * its tallest tile) comes out the same as the real one.
+ */
+private fun Modifier.cssLineBox(style: TextStyle): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val lineHeight = style.lineHeight
+    val linePx = when {
+        lineHeight.isSp -> lineHeight.toPx()
+        lineHeight.isEm && style.fontSize.isSp -> style.fontSize.toPx() * lineHeight.value
+        else -> Float.NaN
+    }
+    if (linePx.isNaN() || linePx <= 0f || !style.fontSize.isSp) {
+        return@layout layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+    // What Android made of it: whole-pixel lines, and the first line's top and
+    // the last one's bottom never inside the font's own height.
+    val androidLine = ceil(linePx).toInt()
+    val extra = (NaturalLine.height(style.fontSize.toPx(), style.fontWeight) - androidLine).coerceAtLeast(0)
+    val count = ((placeable.height - extra) / androidLine.toFloat()).roundToInt().coerceAtLeast(1)
+    val height = (count * linePx).roundToInt().coerceIn(constraints.minHeight, constraints.maxHeight)
+    val shift = ((placeable.height - height) / 2f).roundToInt()
+    layout(placeable.width, height) { placeable.place(0, -shift) }
+}
+
+/** The height Android gives one line of the system font at a size: its ascent to its descent, in whole pixels. */
+private object NaturalLine {
+    private val cache = HashMap<Long, Int>()
+    private val paint = android.graphics.Paint()
+
+    fun height(sizePx: Float, weight: FontWeight?): Int {
+        val w = weight?.weight ?: 400
+        val key = (sizePx.toBits().toLong() shl 16) or w.toLong()
+        return synchronized(cache) {
+            cache.getOrPut(key) {
+                paint.typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, w, false)
+                paint.textSize = sizePx
+                paint.fontMetricsInt.let { it.descent - it.ascent }
+            }
+        }
+    }
+}
+
+/**
+ * `max-width: <n>ch` — n advances of the digit zero in [style]. As CSS has
+ * it: the glyph's own advance, without letter spacing and unrounded (ten
+ * zeros measured, so no pixel rounding creeps in).
+ */
 @Composable
 fun chWidth(style: TextStyle, n: Float): Dp {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    val width = remember(style, n) { measurer.measure("0", style).size.width * n }
+    val width = remember(style, n, density) {
+        val zeros = measurer.measure("0000000000", style.copy(letterSpacing = 0.sp), softWrap = false)
+        (zeros.getLineRight(0) - zeros.getLineLeft(0)) / 10f * n
+    }
     return with(density) { width.toDp() }
 }
 
@@ -213,7 +278,7 @@ fun Chip(
             .clip(shape)
             .background(background)
             .border(1.dp, border, shape)
-            .padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
+            .padding(1.dp).padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (leading != null) 6.dp else Jolu.Space2)
     ) {
@@ -257,23 +322,25 @@ fun Pill(
     contentDescription: String? = null,
     padding: PaddingValues = PaddingValues(start = Jolu.Space2, end = Jolu.Space3)
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(50)
-    Row(
-        modifier
-            .press(interaction)
-            .heightIn(min = 42.dp)
-            .clip(shape)
-            .background(Jolu.GlassSoft)
-            .border(1.dp, Jolu.GlassBorderSoft, shape)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
-            .padding(padding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
-    ) {
-        if (icon != null) JIcon(icon, size = 18.dp, color = Jolu.TextSecondary)
-        T(label, JoluType.style(Jolu.FsSmall, FontWeight.Medium, Jolu.TextSecondary), maxLines = 1)
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val shape = RoundedCornerShape(50)
+        Row(
+            modifier
+                .press(interaction)
+                .heightIn(min = 42.dp)
+                .clip(shape)
+                .background(Jolu.GlassSoft)
+                .border(1.dp, Jolu.GlassBorderSoft, shape)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
+                .padding(1.dp).padding(padding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
+        ) {
+            if (icon != null) JIcon(icon, size = 18.dp, color = Jolu.TextSecondary)
+            T(label, JoluType.style(Jolu.FsSmall, FontWeight.Medium, Jolu.TextSecondary), maxLines = 1)
+        }
     }
 }
 
@@ -309,27 +376,29 @@ fun Btn(
     contentDescription: String? = null,
     content: (@Composable RowScope.() -> Unit)? = null
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(50)
-    Row(
-        modifier
-            .press(interaction, enabled = enabled)
-            .alpha(if (enabled) 1f else look.disabledAlpha)
-            .heightIn(min = 42.dp)
-            .clip(shape)
-            .background(look.fill)
-            .border(1.dp, look.border, shape)
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
-            .padding(horizontal = Jolu.Space4),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2, Alignment.CenterHorizontally)
-    ) {
-        if (content != null) {
-            content()
-        } else {
-            if (icon != null) JIcon(icon, size = iconSize, color = look.text)
-            T(label, JoluType.style(Jolu.FsSmall, FontWeight.SemiBold, look.text), maxLines = 1)
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val shape = RoundedCornerShape(50)
+        Row(
+            modifier
+                .press(interaction, enabled = enabled)
+                .alpha(if (enabled) 1f else look.disabledAlpha)
+                .heightIn(min = 42.dp)
+                .clip(shape)
+                .background(look.fill)
+                .border(1.dp, look.border, shape)
+                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
+                .padding(1.dp).padding(horizontal = Jolu.Space4),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Jolu.Space2, Alignment.CenterHorizontally)
+        ) {
+            if (content != null) {
+                content()
+            } else {
+                if (icon != null) JIcon(icon, size = iconSize, color = look.text)
+                T(label, JoluType.style(Jolu.FsSmall, FontWeight.SemiBold, look.text), maxLines = 1)
+            }
         }
     }
 }
@@ -508,7 +577,7 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
         .clip(shape)
         .background(Jolu.white(0.035f))
         .border(1.dp, Jolu.GlassHairline, shape)
-        .padding(vertical = Jolu.Space3, horizontal = Jolu.Space2)
+        .padding(1.dp).padding(vertical = Jolu.Space3, horizontal = Jolu.Space2)
 
     @Composable
     fun Item(item: LegendItem, rowModifier: Modifier) {
@@ -555,7 +624,14 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
  * `--plain`: left-aligned, 12 above instead of 16.
  */
 @Composable
-fun CardHint(text: String, modifier: Modifier = Modifier, icon: ImageVector? = JoluIcons.lock, plain: Boolean = false) {
+fun CardHint(
+    text: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = JoluIcons.lock,
+    plain: Boolean = false,
+    // It takes its card's text-align: centred in a hero card, from the start elsewhere.
+    textAlign: TextAlign = TextAlign.Start
+) {
     Column(modifier.fillMaxWidth().padding(top = Jolu.Space4)) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Jolu.GlassHairline))
         Row(
@@ -566,7 +642,7 @@ fun CardHint(text: String, modifier: Modifier = Modifier, icon: ImageVector? = J
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) JIcon(icon, size = 14.dp, color = Jolu.TextMuted)
-            T(text, JStyle.Tiny, align = if (plain) TextAlign.Start else TextAlign.Center)
+            T(text, JStyle.Tiny, align = if (plain) TextAlign.Start else textAlign)
         }
     }
 }
@@ -590,46 +666,50 @@ fun RangeSwitch(
     optionPadding: Dp = if (wide) Jolu.Space2 else Jolu.Space3,
     label: String? = null
 ) {
-    val shape = RoundedCornerShape(50)
-    val shadows = LocalGraphicsContext.current.shadowContext
-    Row(
-        modifier
-            .then(if (wide) Modifier.fillMaxWidth() else Modifier)
-            .clip(shape)
-            .background(Jolu.white(0.04f))
-            .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(3.dp)
-            .semantics { if (label != null) contentDescription = label },
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        for ((key, text) in options) {
-            val active = key == selected
-            val color by animateColorAsState(
-                if (active) Jolu.TextPrimary else Jolu.TextMuted,
-                tween(Jolu.FastMs, easing = Jolu.Ease),
-                label = "option"
-            )
-            Box(
-                Modifier
-                    .then(if (wide) Modifier.weight(1f) else Modifier)
-                    .heightIn(min = optionHeight)
-                    .drawWithContent {
-                        if (active) {
-                            val outline = shape.createOutline(size, layoutDirection, this)
-                            val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
-                            drawPath(path, Brush.verticalGradient(listOf(Jolu.white(0.12f), Jolu.white(0.03f))))
-                            drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Jolu.white(0.08f), inset = true)), shadows, outline)
-                            drawBorder(outline, Jolu.GlassHairline)
+    InButton {
+        val shape = RoundedCornerShape(50)
+        val shadows = LocalGraphicsContext.current.shadowContext
+        Row(
+            modifier
+                .then(if (wide) Modifier.fillMaxWidth() else Modifier)
+                .clip(shape)
+                .background(Jolu.white(0.04f))
+                .border(1.dp, Jolu.GlassHairline, shape)
+                .padding(1.dp).padding(3.dp)
+                .semantics { if (label != null) contentDescription = label },
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            for ((key, text) in options) {
+                val active = key == selected
+                val color by animateColorAsState(
+                    if (active) Jolu.TextPrimary else Jolu.TextMuted,
+                    tween(Jolu.FastMs, easing = Jolu.Ease),
+                    label = "option"
+                )
+                Box(
+                    Modifier
+                        .then(if (wide) Modifier.weight(1f) else Modifier)
+                        .heightIn(min = optionHeight)
+                        .drawWithContent {
+                            if (active) {
+                                val outline = shape.createOutline(size, layoutDirection, this)
+                                val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
+                                drawPath(path, Brush.verticalGradient(listOf(Jolu.white(0.12f), Jolu.white(0.03f))))
+                                drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Jolu.white(0.08f), inset = true)), shadows, outline)
+                                drawBorder(outline, Jolu.GlassHairline)
+                            }
+                            drawContent()
                         }
-                        drawContent()
-                    }
-                    .clip(shape)
-                    .clickable(role = Role.Button) { onSelect(key) }
-                    .semantics { this.selected = active }
-                    .padding(horizontal = optionPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, color), maxLines = 1)
+                        .clip(shape)
+                        .clickable(role = Role.Button) { onSelect(key) }
+                        .semantics { this.selected = active }
+                        // `border: 1px solid transparent` on every option: it takes room either way.
+                        .padding(1.dp)
+                        .padding(horizontal = optionPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, color), maxLines = 1)
+                }
             }
         }
     }
@@ -683,7 +763,8 @@ fun JInput(
     val shape = RoundedCornerShape(radius)
     val border = if (focused) Jolu.Health.copy(alpha = 0.5f) else Jolu.GlassBorderSoft
     val fill = if (focused) Jolu.white(0.07f) else Jolu.white(0.05f)
-    val style = JoluType.style(textSize, color = Jolu.TextPrimary, lineHeight = 1.3.em)
+    // A field's text, like a button's, keeps `letter-spacing: normal`.
+    val style = JoluType.style(textSize, color = Jolu.TextPrimary, lineHeight = 1.3.em, tracking = 0.sp)
 
     BasicTextField(
         value = value,
@@ -707,7 +788,7 @@ fun JInput(
                     .clip(shape)
                     .background(fill)
                     .border(1.dp, border, shape)
-                    .padding(horizontal = Jolu.Space3),
+                    .padding(1.dp).padding(horizontal = Jolu.Space3),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (value.isEmpty() && placeholder.isNotEmpty()) {

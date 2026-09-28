@@ -61,10 +61,31 @@ import com.healthapp.android.ui.design.Pane
 import com.healthapp.android.ui.design.Panes
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.chWidth
+import com.healthapp.android.ui.design.loopValue
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
 import kotlinx.coroutines.delay
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalGraphicsContext
+import com.healthapp.android.ui.design.BoxShadow
+import com.healthapp.android.ui.design.drawBoxShadows
+import com.healthapp.android.ui.design.blurRadiusFor
+import kotlin.math.pow
+import kotlin.math.sqrt
+import androidx.compose.foundation.layout.requiredSize
+import com.healthapp.android.ui.design.Backdrop
+import com.healthapp.android.ui.design.GlassFilter
+import com.healthapp.android.ui.design.glassBackdrop
+import com.healthapp.android.ui.design.rememberBackdrop
+import com.healthapp.android.ui.design.rememberBlurLayer
+import com.healthapp.android.ui.design.recordBackdrop
+import com.healthapp.android.ui.design.LocalGround
 
 /**
  * The opening screen (pages/welcome.php): the mark — the score ring's
@@ -205,17 +226,8 @@ private fun Rise(delayMs: Int, content: @Composable () -> Unit) {
 private fun WelcomeMark(size: Dp) {
     val still = LocalStillMotion.current
     val draw = remember { Animatable(if (still) 1f else 0f) }
-    val infinite = rememberInfiniteTransition(label = "welcome")
-    val turn by infinite.animateFloat(
-        0f, 360f,
-        infiniteRepeatable(tween(90_000, delayMillis = 1_600, easing = LinearEasing)),
-        label = "turn"
-    )
-    val breathe by infinite.animateFloat(
-        1f, 1.035f,
-        infiniteRepeatable(tween(3_500, delayMillis = 1_600, easing = Jolu.Ease), RepeatMode.Reverse),
-        label = "breathe"
-    )
+    val turn = loopValue(0f, 360f, infiniteRepeatable(tween(90_000, delayMillis = 1_600, easing = LinearEasing)))
+    val breathe = loopValue(1f, 1.035f, infiniteRepeatable(tween(3_500, delayMillis = 1_600, easing = Jolu.Ease), RepeatMode.Reverse))
 
     LaunchedEffect(Unit) {
         if (!still) {
@@ -224,7 +236,10 @@ private fun WelcomeMark(size: Dp) {
         }
     }
 
+    val (behind, behindLayer) = rememberBackdrop()
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+      // What the glass looks through: the light and the ring, recorded.
+      Box(Modifier.requiredSize(size * 1.6f).recordBackdrop(behind, behindLayer), contentAlignment = Alignment.Center) {
         // .welcome__glow — inset -30%, a soft green light with a long falloff.
         Canvas(Modifier.size(size * 1.6f)) {
             drawCircle(
@@ -265,8 +280,9 @@ private fun WelcomeMark(size: Dp) {
                 }
             }
         }
+      }
 
-        GlassOrb(size * 0.58f, if (still) 1f else breathe)
+        GlassOrb(size * 0.58f, if (still) 1f else breathe, behind)
     }
 }
 
@@ -276,7 +292,10 @@ private fun WelcomeMark(size: Dp) {
  * it, and a soft specular sheen.
  */
 @Composable
-fun GlassOrb(size: Dp, scale: Float) {
+fun GlassOrb(size: Dp, scale: Float, backdrop: Backdrop?) {
+    val shadows = LocalGraphicsContext.current.shadowContext
+    val blurLayer = rememberBlurLayer()
+    val ground = LocalGround.current
     Box(
         Modifier
             .size(size)
@@ -284,19 +303,15 @@ fun GlassOrb(size: Dp, scale: Float) {
                 scaleX = scale
                 scaleY = scale
             }
+            // backdrop-filter: blur(14px) saturate(125%) — the light and the
+            // ring behind it, seen through the glass instead of under it.
+            .glassBackdrop(backdrop, CircleShape, OrbGlass, blurLayer, ground)
+            // In CSS's order: the shadow outside it, the background, the
+            // inset shadows, the border.
             .drawBehind {
                 val r = this.size.minDimension / 2f
-                // box-shadow: 0 20px 42px rgba(0,0,0,.28)
-                drawCircle(
-                    Brush.radialGradient(
-                        0f to Color.Black.copy(alpha = 0.28f),
-                        1f to Color.Black.copy(alpha = 0f),
-                        center = center + Offset(0f, 20.dp.toPx()),
-                        radius = r + 21.dp.toPx()
-                    ),
-                    radius = r + 21.dp.toPx(),
-                    center = center + Offset(0f, 20.dp.toPx())
-                )
+                // box-shadow: 0 20px 42px rgba(0,0,0,.28) — around the sphere, never under it
+                drawBoxShadows(CircleShape, listOf(BoxShadow(y = 20.dp, blur = 42.dp, color = Color.Black.copy(alpha = 0.28f))), shadows)
                 // radial-gradient(120% 120% at 30% 22%, …)
                 drawCircle(
                     Brush.radialGradient(
@@ -309,40 +324,57 @@ fun GlassOrb(size: Dp, scale: Float) {
                     ),
                     radius = r
                 )
-                // inset 0 -20px 30px rgba(0,0,0,.20): depth at the bottom
-                drawCircle(
-                    Brush.verticalGradient(
-                        0.55f to Color.Black.copy(alpha = 0f),
-                        1f to Color.Black.copy(alpha = 0.20f)
+                // inset 0 2px 1px rgba(255,255,255,.24): the rim of light on top;
+                // inset 0 -20px 30px rgba(0,0,0,.20): the depth underneath
+                drawBoxShadows(
+                    CircleShape,
+                    listOf(
+                        BoxShadow(y = 2.dp, blur = 1.dp, color = Color.White.copy(alpha = 0.24f), inset = true),
+                        BoxShadow(y = (-20).dp, blur = 30.dp, color = Color.Black.copy(alpha = 0.20f), inset = true)
                     ),
-                    radius = r
-                )
-                // inset 0 2px 1px rgba(255,255,255,.24): the rim of light on top
-                drawArc(
-                    Color.White.copy(alpha = 0.24f),
-                    startAngle = 200f, sweepAngle = 140f, useCenter = false,
-                    topLeft = Offset(1.dp.toPx(), 1.5.dp.toPx()),
-                    size = Size(this.size.width - 2.dp.toPx(), this.size.height - 2.dp.toPx()),
-                    style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round)
+                    shadows
                 )
                 // border: 1px solid rgba(255,255,255,.16)
                 drawCircle(Color.White.copy(alpha = 0.16f), radius = r - 0.5.dp.toPx(), style = Stroke(1.dp.toPx()))
-                // ::after — the specular sheen, top left
-                val w = this.size.width
-                val h = this.size.height
-                val sheen = Size(w * 0.63f, h * 0.37f)
-                val origin = Offset(w * 0.17f, h * 0.09f)
-                val c = origin + Offset(sheen.width * 0.42f, sheen.height * 0.24f)
-                drawOval(
-                    Brush.radialGradient(
-                        0f to Color.White.copy(alpha = 0.30f),
-                        0.72f to Color.White.copy(alpha = 0f),
-                        center = c,
-                        radius = sheen.width * 0.82f
-                    ),
-                    topLeft = origin,
-                    size = sheen
-                )
             }
-    )
+    ) {
+        // ::after — inset 9% 20% 54% 17%: the specular sheen, blurred 3px
+        Box(
+            Modifier
+                .padding(start = size * 0.17f, top = size * 0.09f, end = size * 0.20f, bottom = size * 0.54f)
+                .fillMaxSize()
+                .graphicsLayer {
+                    val radius = blurRadiusFor(3.dp.toPx())
+                    renderEffect = BlurEffect(radius, radius, TileMode.Decal)
+                }
+                .drawBehind { drawOval(sheen(this.size)) }
+        )
+    }
+}
+
+/** The orb's `backdrop-filter`. */
+private val OrbGlass = GlassFilter(14.dp, saturate = 1.25f)
+
+/**
+ * `radial-gradient(ellipse at 42% 24%, rgba(255,255,255,.30), transparent 72%)`:
+ * an ellipse the shape `closest-side` would give it, grown until it reaches
+ * the farthest corner (CSS's default size), fading out at 72% of that.
+ */
+private fun sheen(size: Size): Brush {
+    val cx = size.width * 0.42f
+    val cy = size.height * 0.24f
+    val sx = minOf(cx, size.width - cx)
+    val sy = minOf(cy, size.height - cy)
+    val k = sqrt((maxOf(cx, size.width - cx) / sx).pow(2) + (maxOf(cy, size.height - cy) / sy).pow(2))
+    val rx = sx * k
+    val ry = sy * k
+    return object : ShaderBrush() {
+        override fun createShader(size: Size): Shader =
+            android.graphics.RadialGradient(
+                cx, cy, rx,
+                intArrayOf(Color.White.copy(alpha = 0.30f).toArgb(), Color.White.copy(alpha = 0f).toArgb()),
+                floatArrayOf(0f, 0.72f),
+                android.graphics.Shader.TileMode.CLAMP
+            ).apply { setLocalMatrix(android.graphics.Matrix().apply { setScale(1f, ry / rx, cx, cy) }) }
+    }
 }

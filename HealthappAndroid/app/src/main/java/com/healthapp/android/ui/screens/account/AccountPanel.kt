@@ -82,6 +82,7 @@ import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.Toggle
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -324,65 +325,69 @@ private fun Modifier.fieldBox(fill: Color = Jolu.white(0.05f)): Modifier {
  */
 @Composable
 private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .fillMaxWidth()
-            .fieldBox()
-            .clickable(interaction, indication = null, role = Role.Button, onClickLabel = "Bestand kiezen", onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = "Profielfoto: ${name ?: "Geen bestand gekozen"}" }
-            .padding(horizontal = Jolu.Space3, vertical = Jolu.Space2),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
-    ) {
-        val shape = RoundedCornerShape(50)
-        T(
-            "Bestand kiezen",
-            JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextPrimary),
-            Modifier
-                .clip(shape)
-                .background(Jolu.white(0.08f))
-                .border(1.dp, Jolu.GlassBorderSoft, shape)
-                .padding(horizontal = Jolu.Space2, vertical = 3.dp),
-            maxLines = 1
-        )
-        T(
-            name ?: "Geen bestand gekozen",
-            JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary),
-            Modifier.weight(1f),
-            maxLines = 1,
-            ellipsis = true
-        )
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        Row(
+            modifier
+                .fillMaxWidth()
+                .fieldBox()
+                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = "Bestand kiezen", onClick = onClick)
+                .semantics(mergeDescendants = true) { contentDescription = "Profielfoto: ${name ?: "Geen bestand gekozen"}" }
+                .padding(horizontal = Jolu.Space3, vertical = Jolu.Space2),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
+        ) {
+            val shape = RoundedCornerShape(50)
+            T(
+                "Bestand kiezen",
+                JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextPrimary),
+                Modifier
+                    .clip(shape)
+                    .background(Jolu.white(0.08f))
+                    .border(1.dp, Jolu.GlassBorderSoft, shape)
+                    .padding(1.dp).padding(horizontal = Jolu.Space2, vertical = 3.dp),
+                maxLines = 1
+            )
+            T(
+                name ?: "Geen bestand gekozen",
+                JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary),
+                Modifier.weight(1f),
+                maxLines = 1,
+                ellipsis = true
+            )
+        }
     }
 }
 
 /** `.account__nav`: the text, a badge when requests wait, and a chevron; `.08` while pressed. */
 @Composable
 private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: String) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val fill by animateColorAsState(
-        if (pressed) Jolu.white(0.08f) else Jolu.white(0.05f),
-        tween(Jolu.FastMs, easing = Jolu.Ease),
-        label = "nav"
-    )
-    Row(
-        Modifier
-            .press(interaction)
-            .fillMaxWidth()
-            .fieldBox(fill)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = "$label: $text${badge?.let { ", $it" }.orEmpty()}" }
-            .padding(horizontal = Jolu.Space3),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
-    ) {
-        // .account__nav-text: the line, and the badge pushed to its end (margin-left: auto).
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
-            T(text, JoluType.style(Jolu.FsLabel), Modifier.weight(1f, fill = badge != null), maxLines = 1, ellipsis = true)
-            if (badge != null) Badge(badge)
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val fill by animateColorAsState(
+            if (pressed) Jolu.white(0.08f) else Jolu.white(0.05f),
+            tween(Jolu.FastMs, easing = Jolu.Ease),
+            label = "nav"
+        )
+        Row(
+            Modifier
+                .press(interaction)
+                .fillMaxWidth()
+                .fieldBox(fill)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) { contentDescription = "$label: $text${badge?.let { ", $it" }.orEmpty()}" }
+                .padding(horizontal = Jolu.Space3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
+        ) {
+            // .account__nav-text: the line, and the badge pushed to its end (margin-left: auto).
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
+                T(text, JoluType.style(Jolu.FsLabel), Modifier.weight(1f, fill = badge != null), maxLines = 1, ellipsis = true)
+                if (badge != null) Badge(badge)
+            }
+            JIcon(JoluIcons.chevronRight, size = 16.dp, color = Jolu.TextMuted)
         }
-        JIcon(JoluIcons.chevronRight, size = 16.dp, color = Jolu.TextMuted)
     }
 }
 
@@ -396,7 +401,7 @@ private fun Badge(text: String) {
             .clip(shape)
             .background(Jolu.mix(Jolu.Health, 0.22f, Color.Transparent))
             .border(1.dp, Jolu.mix(Jolu.Health, 0.42f, Color.Transparent), shape)
-            .padding(horizontal = Jolu.Space2),
+            .padding(1.dp).padding(horizontal = Jolu.Space2),
         contentAlignment = Alignment.Center
     ) {
         T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold), maxLines = 1)
@@ -562,7 +567,7 @@ private fun ColumnScope.FriendsView(data: AppData) {
                     .clip(shape)
                     .background(Jolu.white(0.04f))
                     .border(1.dp, Jolu.GlassHairline, shape)
-                    .padding(Jolu.Space3)
+                    .padding(1.dp).padding(Jolu.Space3)
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 SearchResult(result, rows[RESULT] ?: RowState()) { action -> act(RESULT, result.person.id, action) }
@@ -631,18 +636,20 @@ private fun ColumnScope.FriendsView(data: AppData) {
                 }
             }
             .semantics(mergeDescendants = true) { toggleableState = ToggleableState(allowed) }
-            .padding(Jolu.Space3),
+            .padding(1.dp).padding(Jolu.Space3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
-        Column(Modifier.weight(1f)) {
-            T("Vriendverzoeken toestaan", JoluType.style(Jolu.FsLabel, FontWeight.Medium, Jolu.TextSecondary))
-            T(
-                toggleError ?: if (allowed) "Anderen kunnen je een vriendverzoek sturen."
-                else "Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.",
-                JoluType.style(Jolu.FsTiny, color = if (toggleError != null) Jolu.Nutrition else Jolu.TextMuted),
-                Modifier.padding(top = 2.dp)
-            )
+        InButton {
+            Column(Modifier.weight(1f)) {
+                T("Vriendverzoeken toestaan", JoluType.style(Jolu.FsLabel, FontWeight.Medium, Jolu.TextSecondary))
+                T(
+                    toggleError ?: if (allowed) "Anderen kunnen je een vriendverzoek sturen."
+                    else "Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.",
+                    JoluType.style(Jolu.FsTiny, color = if (toggleError != null) Jolu.Nutrition else Jolu.TextMuted),
+                    Modifier.padding(top = 2.dp)
+                )
+            }
         }
         Toggle(allowed)
     }
@@ -732,7 +739,7 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(Jolu.Space3),
+            .padding(1.dp).padding(Jolu.Space3),
         verticalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
         T("$name verwijderen uit je vrienden?", JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary))
@@ -770,7 +777,7 @@ private fun SentMark() {
             .clip(shape)
             .background(Jolu.mix(Jolu.Health, 0.18f, Color.Transparent))
             .border(1.dp, Jolu.mix(Jolu.Health, 0.42f, Color.Transparent), shape)
-            .padding(horizontal = Jolu.Space4),
+            .padding(1.dp).padding(horizontal = Jolu.Space4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space2, Alignment.CenterHorizontally)
     ) {
@@ -785,22 +792,24 @@ private fun SentMark() {
  */
 @Composable
 fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .layout { measurable, constraints ->
-                val pull = Jolu.Space2.roundToPx()
-                val placeable = measurable.measure(constraints)
-                layout((placeable.width - pull).coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
-            }
-            .press(interaction, enabled = enabled)
-            .alpha(if (enabled) 1f else 0.45f)
-            .heightIn(min = 44.dp)
-            .clip(RoundedCornerShape(50))
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Jolu.Space2),
-        contentAlignment = Alignment.Center
-    ) {
-        T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextSecondary), maxLines = 1)
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        Box(
+            modifier
+                .layout { measurable, constraints ->
+                    val pull = Jolu.Space2.roundToPx()
+                    val placeable = measurable.measure(constraints)
+                    layout((placeable.width - pull).coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
+                }
+                .press(interaction, enabled = enabled)
+                .alpha(if (enabled) 1f else 0.45f)
+                .heightIn(min = 44.dp)
+                .clip(RoundedCornerShape(50))
+                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .padding(horizontal = Jolu.Space2),
+            contentAlignment = Alignment.Center
+        ) {
+            T(text, JoluType.style(Jolu.FsTiny, FontWeight.SemiBold, Jolu.TextSecondary), maxLines = 1)
+        }
     }
 }

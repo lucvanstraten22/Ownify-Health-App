@@ -42,6 +42,16 @@ android {
                 // Robolectric's Android 16 sets up its shared memory through
                 // a JDK internal it has to be allowed to reach.
                 it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+                // The screenshots for the parity check with the website
+                // (ScreenshotCapture) are only taken when asked for:
+                // -Djolu.shots=<dir> -Djolu.state=<state.json> -Djolu.server=<url>
+                // (-Djolu.state.free: an account with a free goal slot, for the wizard)
+                for (key in listOf("jolu.shots", "jolu.state", "jolu.state.free", "jolu.server", "jolu.tree")) {
+                    it.systemProperty(key, System.getProperty(key) ?: "")
+                }
+                // PixelCopy renders in hardware under Robolectric, so glass
+                // (RenderEffect blur) is in the screenshots too.
+                it.systemProperty("robolectric.pixelCopyRenderMode", "hardware")
             }
         }
     }

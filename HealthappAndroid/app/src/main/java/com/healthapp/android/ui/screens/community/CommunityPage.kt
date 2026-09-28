@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -156,20 +157,23 @@ private fun Board(community: Community, scope: String, period: String, scroll: S
         ) {
             if (entries.isNotEmpty()) {
                 // .board-list: 8 above, 9 below, 4 between rows. Your row is kept inside it.
-                val stick = with(density) {
-                    Sticky(
-                        scroll = scroll,
-                        viewport = viewport,
-                        top = Jolu.Space2.toPx(),
-                        bottom = dockClear.toPx() + Jolu.Space2.toPx()
-                    )
+                val stick = remember(scroll) { Sticky(scroll) }
+                SideEffect {
+                    with(density) {
+                        stick.viewport = viewport
+                        stick.top = Jolu.Space2.toPx()
+                        stick.bottom = dockClear.toPx() + Jolu.Space2.toPx()
+                    }
                 }
                 Column(
                     Modifier
                         .width(screen.shell)
                         .padding(top = Jolu.Space2, bottom = Jolu.Space2 + 1.dp)
                         // After the padding: the list's content box, where a sticky row must stay.
-                        .onGloballyPositioned { stick.list = it.positionInParent().y to it.size.height.toFloat() },
+                        .onGloballyPositioned {
+                            stick.listTop = it.positionInParent().y
+                            stick.listHeight = it.size.height.toFloat()
+                        },
                     verticalArrangement = Arrangement.spacedBy(Jolu.Space1)
                 ) {
                     entries.forEachIndexed { i, entry ->
@@ -228,14 +232,21 @@ private fun Board(community: Community, scope: String, period: String, scroll: S
 
 /**
  * Where your row may be drawn: in its own place, or docked 8 from the top
- * or 8 above the dock's room — never outside its list.
+ * or 8 above the dock's room — never outside its list. One per board, its
+ * measurements snapshot state, so the row moves as soon as any of them does;
+ * until the list has been measured the row stays in its place.
  */
-private class Sticky(val scroll: ScrollState, val viewport: Float, val top: Float, val bottom: Float) {
+private class Sticky(val scroll: ScrollState) {
+    var viewport by mutableFloatStateOf(0f)
+    var top by mutableFloatStateOf(0f)
+    var bottom by mutableFloatStateOf(0f)
+
     /** The list's content box in the scroller: its top and its height. */
-    var list: Pair<Float, Float> = 0f to 0f
+    var listTop by mutableFloatStateOf(0f)
+    var listHeight by mutableFloatStateOf(0f)
 
     fun shift(natural: Float, height: Float): Float {
-        val (listTop, listHeight) = list
+        if (listHeight <= 0f || viewport <= 0f || height <= 0f) return 0f
         val y = listTop + natural
         val lowest = scroll.value + top
         val highest = scroll.value + viewport - bottom - height
@@ -303,6 +314,8 @@ private fun BoardRow(
                 contentDescription = (if (you) community.labels["you_hint"].orEmpty() + ": " else "") +
                     "$rankText. ${name ?: "—"}, ${points(entry.points)} $unit"
             }
+            // `.board-row`'s border is there on every row, transparent but for yours: it takes room.
+            .padding(1.dp)
             .padding(horizontal = if (narrow) Jolu.Space2 else Jolu.Space3, vertical = Jolu.Space1),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)

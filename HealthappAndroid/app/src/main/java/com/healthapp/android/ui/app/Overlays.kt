@@ -189,7 +189,8 @@ fun PanelColumn(
     scroll: ScrollState = rememberScrollState(),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Box(modifier.panelGlass(scrim = scrim)) {
+    // The column scrolls inside the card's 1 px border, as `.card`'s own overflow does.
+    Box(modifier.panelGlass(scrim = scrim).padding(1.dp)) {
         Column(
             Modifier
                 .verticalScroll(scroll)

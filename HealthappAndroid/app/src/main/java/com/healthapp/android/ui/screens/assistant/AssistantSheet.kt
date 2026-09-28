@@ -53,10 +53,14 @@ import com.healthapp.android.ui.design.JoluIcons
 import com.healthapp.android.ui.design.LocalScreen
 import com.healthapp.android.ui.design.LocalStillMotion
 import com.healthapp.android.ui.design.Pill
+import com.healthapp.android.ui.design.loopValue
 import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.screens.GlassOrb
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
+import androidx.compose.foundation.layout.requiredSize
+import com.healthapp.android.ui.design.rememberBackdrop
+import com.healthapp.android.ui.design.recordBackdrop
 
 /**
  * The assistant (pages/ai.php): a sheet pulled up over the current page.
@@ -149,13 +153,13 @@ private fun AssistantOrb() {
     val still = LocalStillMotion.current
     val screen = LocalScreen.current
     val size = (screen.width * 0.36f).coerceIn(120.dp, 152.dp)
-    val infinite = rememberInfiniteTransition(label = "orb")
-    val turn by infinite.animateFloat(0f, 360f, infiniteRepeatable(tween(72_000, easing = LinearEasing)), label = "turn")
-    val breathe by infinite.animateFloat(
-        1f, 1.035f, infiniteRepeatable(tween(3_500, easing = Jolu.Ease), RepeatMode.Reverse), label = "breathe"
-    )
+    val turn = loopValue(0f, 360f, infiniteRepeatable(tween(72_000, easing = LinearEasing)))
+    val breathe = loopValue(1f, 1.035f, infiniteRepeatable(tween(3_500, easing = Jolu.Ease), RepeatMode.Reverse))
 
+    val (behind, behindLayer) = rememberBackdrop()
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+      // What the glass looks through: the light and the ring, recorded.
+      Box(Modifier.requiredSize(size * 1.68f).recordBackdrop(behind, behindLayer), contentAlignment = Alignment.Center) {
         // .orb__glow — inset -34%
         Canvas(Modifier.size(size * 1.68f)) {
             drawCircle(
@@ -179,7 +183,8 @@ private fun AssistantOrb() {
                 )
             }
         }
+      }
         // .orb__core — inset 16%
-        GlassOrb(size * 0.68f, if (still) 1f else breathe)
+        GlassOrb(size * 0.68f, if (still) 1f else breathe, behind)
     }
 }

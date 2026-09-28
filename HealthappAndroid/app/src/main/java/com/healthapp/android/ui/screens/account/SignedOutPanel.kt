@@ -62,6 +62,7 @@ import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
+import com.healthapp.android.ui.theme.InButton
 
 /** Room for any username or e-mail address the server accepts (191 for an address). */
 private const val MAX_FIELD = 191
@@ -118,7 +119,7 @@ fun Notice(text: String, link: JoluLink? = null) {
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(Jolu.Space3)
+            .padding(1.dp).padding(Jolu.Space3)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
         T(text, JoluType.style(Jolu.FsSmall, color = Jolu.TextSecondary))
@@ -153,7 +154,7 @@ fun ErrorBox(text: String, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(Jolu.Nutrition.copy(alpha = 0.10f))
             .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-            .padding(Jolu.Space3)
+            .padding(1.dp).padding(Jolu.Space3)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )
 }
@@ -288,17 +289,19 @@ private fun GoogleMark() {
 /** A quiet text link, as `.settings-delete` is quiet: muted, underlined, a full-height target. */
 @Composable
 fun QuietLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val interaction = remember { MutableInteractionSource() }
-    T(
-        text,
-        JoluType.style(Jolu.FsSmall, color = Jolu.TextMuted).copy(textDecoration = TextDecoration.Underline),
-        modifier
-            .clip(RoundedCornerShape(50))
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Jolu.Space4, vertical = Jolu.Space2)
-            .alpha(if (enabled) 1f else 0.45f),
-        align = TextAlign.Center
-    )
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        T(
+            text,
+            JoluType.style(Jolu.FsSmall, color = Jolu.TextMuted).copy(textDecoration = TextDecoration.Underline),
+            modifier
+                .clip(RoundedCornerShape(50))
+                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                .padding(horizontal = Jolu.Space4, vertical = Jolu.Space2)
+                .alpha(if (enabled) 1f else 0.45f),
+            align = TextAlign.Center
+        )
+    }
 }
 
 /**

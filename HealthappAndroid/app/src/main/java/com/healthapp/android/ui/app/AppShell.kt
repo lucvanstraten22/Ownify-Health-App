@@ -74,11 +74,14 @@ class ShellScreens(
  * the panels in front of everything.
  */
 @Composable
-fun AppShell(data: AppData, screens: ShellScreens) {
+fun AppShell(data: AppData, screens: ShellScreens, onShell: ((ShellState) -> Unit)? = null) {
     val scope = rememberCoroutineScope()
     val pageIds = remember(data.navigation) { data.navigation.map { it.id } }
     val start = remember(data.navigation) { data.navigation.firstOrNull { it.active }?.id ?: "overview" }
     val shell = remember(pageIds) { ShellState(pageIds, start, scope) }
+
+    // For tests and screenshots: the shell, to move it as a finger would.
+    LaunchedEffect(shell) { onShell?.invoke(shell) }
     val owned = remember { OwnedAreas() }
     val density = LocalDensity.current
     val screen = LocalScreen.current
@@ -335,7 +338,7 @@ fun DetailColumn(
     val scrolled by remember(scroll) { derivedStateOf { scroll.value > with(density) { 8.dp.roundToPx() } } }
 
     Box(Modifier.fillMaxSize()) {
-        PageColumn(scroll, Modifier.recordBackdrop(backdrop, layer), content = content)
+        PageColumn(scroll, Modifier.recordBackdrop(backdrop, layer), top = detailHeaderSpace(), content = content)
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
             DetailHeader(back, backAria, scrolled, onBack = shell::closeDetail)
         }

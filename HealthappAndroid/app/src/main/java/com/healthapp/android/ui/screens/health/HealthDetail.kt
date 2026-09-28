@@ -129,7 +129,7 @@ private fun HeroCard(area: Area) {
                 .widthIn(max = chWidth(JStyle.Lede, 34f)),
             align = TextAlign.Center
         )
-        if (empty) CardHint(area.empty)
+        if (empty) CardHint(area.empty, textAlign = TextAlign.Center)
     }
 }
 
@@ -243,7 +243,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
             .clip(shape)
             .background(Jolu.white(0.035f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(Jolu.Space3)
+            .padding(1.dp).padding(Jolu.Space3)
             .clearAndSetSemantics {
                 contentDescription = "${metric.label}: " + (metric.value?.let { v -> if (metric.unit.isNotEmpty()) "$v ${metric.unit}" else v } ?: "nog geen gegevens")
             }
@@ -263,7 +263,8 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
             if (!empty && metric.unit.isNotEmpty()) {
                 T(
                     metric.unit,
-                    JoluType.style(Jolu.FsSmall, FontWeight.Medium, Jolu.TextMuted, lineHeight = 1.1.em),
+                    // Inside the value, it keeps the value's spacing: -0.03em of 20, -0.6.
+                    JoluType.style(Jolu.FsSmall, FontWeight.Medium, Jolu.TextMuted, lineHeight = 1.1.em, tracking = (-0.6).sp),
                     Modifier.alignByBaseline().padding(start = 3.dp)
                 )
             }

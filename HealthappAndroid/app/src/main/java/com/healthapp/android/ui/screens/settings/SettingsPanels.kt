@@ -70,6 +70,7 @@ import com.healthapp.android.ui.design.T
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.screens.health.EditorError
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ private fun ConfirmFrame(
     content: @Composable ColumnScope.() -> Unit
 ) {
     OverlayFrame(overlay, title = title, scrim = CONFIRM_SCRIM, maxWidth = 368.dp, onDismiss = onDismiss) { panelModifier ->
-        Box(panelModifier.panelGlass(scrim = CONFIRM_SCRIM)) {
+        Box(panelModifier.panelGlass(scrim = CONFIRM_SCRIM).padding(1.dp)) {
             Column(
                 Modifier
                     .verticalScroll(rememberScrollState())
@@ -218,28 +219,30 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
 /** `.field-editor__options`: the answers, one under the other; the chosen one in the green. */
 @Composable
 private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
-        input.options.forEach { (key, label) ->
-            val active = key == value
-            val interaction = remember { MutableInteractionSource() }
-            val shape = RoundedCornerShape(Jolu.RadiusSm)
-            val fast = tween<Color>(Jolu.FastMs, easing = Jolu.Ease)
-            val border by animateColorAsState(if (active) Jolu.Health.copy(alpha = 0.5f) else Jolu.GlassBorderSoft, fast, label = "border")
-            val fill by animateColorAsState(if (active) Jolu.Health.copy(alpha = 0.14f) else Jolu.white(0.04f), fast, label = "fill")
-            Row(
-                Modifier
-                    .press(interaction)
-                    .fillMaxWidth()
-                    .heightIn(min = 44.dp)
-                    .clip(shape)
-                    .background(fill)
-                    .border(1.dp, border, shape)
-                    .clickable(interaction, indication = null, role = Role.RadioButton) { onChoose(key) }
-                    .semantics { selected = active }
-                    .padding(horizontal = Jolu.Space3),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                T(label, JoluType.style(Jolu.FsLabel, color = if (active) Jolu.TextPrimary else Jolu.TextSecondary))
+    InButton {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
+            input.options.forEach { (key, label) ->
+                val active = key == value
+                val interaction = remember { MutableInteractionSource() }
+                val shape = RoundedCornerShape(Jolu.RadiusSm)
+                val fast = tween<Color>(Jolu.FastMs, easing = Jolu.Ease)
+                val border by animateColorAsState(if (active) Jolu.Health.copy(alpha = 0.5f) else Jolu.GlassBorderSoft, fast, label = "border")
+                val fill by animateColorAsState(if (active) Jolu.Health.copy(alpha = 0.14f) else Jolu.white(0.04f), fast, label = "fill")
+                Row(
+                    Modifier
+                        .press(interaction)
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp)
+                        .clip(shape)
+                        .background(fill)
+                        .border(1.dp, border, shape)
+                        .clickable(interaction, indication = null, role = Role.RadioButton) { onChoose(key) }
+                        .semantics { selected = active }
+                        .padding(1.dp).padding(horizontal = Jolu.Space3),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    T(label, JoluType.style(Jolu.FsLabel, color = if (active) Jolu.TextPrimary else Jolu.TextSecondary))
+                }
             }
         }
     }
@@ -251,30 +254,32 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
  */
 @Composable
 private fun DateControl(input: FieldInput, value: String, label: String, onPick: (String) -> Unit) {
-    val context = LocalContext.current
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(Jolu.RadiusSm)
-    val date = runCatching { LocalDate.parse(value) }.getOrNull()
-    val shown = date?.let { "%02d-%02d-%04d".format(it.dayOfMonth, it.monthValue, it.year) }
+    InButton {
+        val context = LocalContext.current
+        val interaction = remember { MutableInteractionSource() }
+        val shape = RoundedCornerShape(Jolu.RadiusSm)
+        val date = runCatching { LocalDate.parse(value) }.getOrNull()
+        val shown = date?.let { "%02d-%02d-%04d".format(it.dayOfMonth, it.monthValue, it.year) }
 
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 44.dp)
-            .clip(shape)
-            .background(Jolu.white(0.05f))
-            .border(1.dp, Jolu.GlassBorderSoft, shape)
-            .clickable(interaction, indication = null, role = Role.Button, onClickLabel = label) {
-                val start = date ?: LocalDate.now().minusYears(30)
-                DatePickerDialog(context, { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toString()) }, start.year, start.monthValue - 1, start.dayOfMonth).apply {
-                    input.min?.let { runCatching { datePicker.minDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
-                    input.max?.let { runCatching { datePicker.maxDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
-                }.show()
-            }
-            .padding(horizontal = Jolu.Space3),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        T(shown ?: "dd-mm-jjjj", JoluType.style(Jolu.FsLabel, color = if (shown != null) Jolu.TextPrimary else Jolu.TextFaint, tabular = true))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .clip(shape)
+                .background(Jolu.white(0.05f))
+                .border(1.dp, Jolu.GlassBorderSoft, shape)
+                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = label) {
+                    val start = date ?: LocalDate.now().minusYears(30)
+                    DatePickerDialog(context, { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toString()) }, start.year, start.monthValue - 1, start.dayOfMonth).apply {
+                        input.min?.let { runCatching { datePicker.minDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
+                        input.max?.let { runCatching { datePicker.maxDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
+                    }.show()
+                }
+                .padding(horizontal = Jolu.Space3),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            T(shown ?: "dd-mm-jjjj", JoluType.style(Jolu.FsLabel, color = if (shown != null) Jolu.TextPrimary else Jolu.TextFaint, tabular = true))
+        }
     }
 }
 
@@ -329,7 +334,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .clip(shape)
                         .background(Jolu.Nutrition.copy(alpha = 0.10f))
                         .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-                        .padding(Jolu.Space3)
+                        .padding(1.dp).padding(Jolu.Space3)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )
             }

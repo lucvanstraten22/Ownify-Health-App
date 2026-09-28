@@ -16,7 +16,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
@@ -154,6 +156,18 @@ enum class Accent(val color: Color) {
     }
 }
 
+/**
+ * The letter spacing of text whose own rule names none, as CSS inherits it:
+ * body's `-0.01em`, worked out at body's 15px — so -0.15px at every size —
+ * and `normal` (0) inside a button or a field, whose browser style resets it
+ * (see [InButton]).
+ */
+val LocalTracking = compositionLocalOf { (-0.15).sp }
+
+/** What a `<button>` holds: its text keeps `letter-spacing: normal` unless its own rule says otherwise. */
+@Composable
+fun InButton(content: @Composable () -> Unit) = CompositionLocalProvider(LocalTracking provides 0.sp, content = content)
+
 /** `--accent` where an element opts into a category colour. */
 val LocalAccent = compositionLocalOf { Accent.HEALTH }
 
@@ -164,6 +178,11 @@ val LocalAccent = compositionLocalOf { Accent.HEALTH }
  *
  * Leading is split evenly above and below the line, as CSS does, and no
  * extra font padding is added.
+ *
+ * Glyphs advance by their true widths (TextMotion.Animated: linear metrics,
+ * subpixel positions), as the browser lays text out. Android's default rounds
+ * each advance to a whole pixel, which makes a line a few percent wider or
+ * narrower than the website's, and so breaks it in a different place.
  */
 @Immutable
 object JoluType {
@@ -172,13 +191,15 @@ object JoluType {
         fontFamily = FontFamily.Default,
         fontSize = Jolu.FsBody,
         lineHeight = 1.5.em,
-        letterSpacing = (-0.01).em,
+        // Unspecified: taken from where the text sits (LocalTracking), as CSS inherits it.
+        letterSpacing = TextUnit.Unspecified,
         color = Jolu.TextPrimary,
         platformStyle = PlatformTextStyle(includeFontPadding = false),
         lineHeightStyle = LineHeightStyle(
             alignment = LineHeightStyle.Alignment.Center,
             trim = LineHeightStyle.Trim.None
-        )
+        ),
+        textMotion = TextMotion.Animated
     )
 
     /** `font-variant-numeric: tabular-nums`. */
@@ -188,7 +209,7 @@ object JoluType {
         size: androidx.compose.ui.unit.TextUnit,
         weight: FontWeight = FontWeight.Normal,
         color: Color = Jolu.TextPrimary,
-        tracking: androidx.compose.ui.unit.TextUnit = (-0.01).em,
+        tracking: androidx.compose.ui.unit.TextUnit = TextUnit.Unspecified,
         lineHeight: androidx.compose.ui.unit.TextUnit = 1.5.em,
         tabular: Boolean = false
     ): TextStyle = Base.copy(

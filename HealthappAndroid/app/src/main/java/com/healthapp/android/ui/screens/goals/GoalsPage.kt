@@ -84,6 +84,7 @@ import com.healthapp.android.ui.design.rememberPlayOnSight
 import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.theme.Accent
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalAccent
 
@@ -323,137 +324,139 @@ fun GoalCard(
     label: String? = null,
     onClick: (() -> Unit)? = null
 ) {
-    val narrow = LocalScreen.current.narrow
-    val accent = Accent.of(model.accent)
-    val primary = variant == "primary"
-    val empty = model.percent == null
-    // The wizard's preview is built without the card's state classes: no dashes, no muted dash.
-    val preview = onClick == null
-    val quiet = !primary || model.paused
-    val (play, sight) = rememberPlayOnSight()
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val nudge by animateDpAsState(if (pressed) 2.dp else 0.dp, tween(Jolu.FastMs, easing = Jolu.Ease), label = "chevron")
-    val fade by animateFloatAsState(if (leaving) 0f else 1f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "leave")
+    InButton {
+        val narrow = LocalScreen.current.narrow
+        val accent = Accent.of(model.accent)
+        val primary = variant == "primary"
+        val empty = model.percent == null
+        // The wizard's preview is built without the card's state classes: no dashes, no muted dash.
+        val preview = onClick == null
+        val quiet = !primary || model.paused
+        val (play, sight) = rememberPlayOnSight()
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val nudge by animateDpAsState(if (pressed) 2.dp else 0.dp, tween(Jolu.FastMs, easing = Jolu.Ease), label = "chevron")
+        val fade by animateFloatAsState(if (leaving) 0f else 1f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "leave")
 
-    // A pause turns the surface quiet over --transition-slow, as the website's card does.
-    val slow = tween<Color>(Jolu.SlowMs, easing = Jolu.EaseOut)
-    val from by animateColorAsState(if (quiet) CardStyle.Quiet.from else CardStyle.Default.from, slow, label = "from")
-    val to by animateColorAsState(if (quiet) CardStyle.Quiet.to else CardStyle.Default.to, slow, label = "to")
-    val border by animateColorAsState(if (quiet) Jolu.GlassBorderSoft else Jolu.GlassBorder, slow, label = "border")
-    val bar by animateFloatAsState(if (model.paused) 0.35f else 1f, tween(Jolu.SlowMs, easing = Jolu.EaseOut), label = "bar")
+        // A pause turns the surface quiet over --transition-slow, as the website's card does.
+        val slow = tween<Color>(Jolu.SlowMs, easing = Jolu.EaseOut)
+        val from by animateColorAsState(if (quiet) CardStyle.Quiet.from else CardStyle.Default.from, slow, label = "from")
+        val to by animateColorAsState(if (quiet) CardStyle.Quiet.to else CardStyle.Default.to, slow, label = "to")
+        val border by animateColorAsState(if (quiet) Jolu.GlassBorderSoft else Jolu.GlassBorder, slow, label = "border")
+        val bar by animateFloatAsState(if (model.paused) 0.35f else 1f, tween(Jolu.SlowMs, easing = Jolu.EaseOut), label = "bar")
 
-    val padding = when {
-        primary && narrow -> PaddingValues(Jolu.Space4)
-        primary -> PaddingValues(horizontal = Jolu.Space5, vertical = Jolu.Space4)
-        narrow -> PaddingValues(Jolu.Space3)
-        else -> PaddingValues(horizontal = Jolu.Space4, vertical = Jolu.Space3)
-    }
+        val padding = when {
+            primary && narrow -> PaddingValues(Jolu.Space4)
+            primary -> PaddingValues(horizontal = Jolu.Space5, vertical = Jolu.Space4)
+            narrow -> PaddingValues(Jolu.Space3)
+            else -> PaddingValues(horizontal = Jolu.Space4, vertical = Jolu.Space3)
+        }
 
-    CompositionLocalProvider(LocalAccent provides accent) {
-        JCard(
-            modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    alpha = fade
-                    val s = 0.97f + 0.03f * fade
-                    scaleX = s
-                    scaleY = s
-                }
-                .then(if (onClick != null) Modifier.press(interaction, scale = 0.985f) else Modifier)
-                .then(sight)
-                .then(
-                    if (onClick != null) Modifier
-                        .clickable(interaction, indication = null, enabled = !leaving, onClick = onClick)
-                        .clearAndSetSemantics {
-                            role = Role.Button
-                            contentDescription = label ?: model.name
-                            onClick { onClick(); true }
-                        }
-                    else Modifier.clearAndSetSemantics { }
-                )
-                .drawWithContent {
-                    drawContent()
-                    // .goal-card--primary::after — the accent along the left edge.
-                    if (primary) {
-                        drawRect(
-                            Brush.verticalGradient(listOf(accent.color, Jolu.mix(accent.color, 0.35f, Color.Transparent))),
-                            topLeft = Offset.Zero,
-                            size = Size(3.dp.toPx(), size.height),
-                            alpha = bar
-                        )
+        CompositionLocalProvider(LocalAccent provides accent) {
+            JCard(
+                modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        alpha = fade
+                        val s = 0.97f + 0.03f * fade
+                        scaleX = s
+                        scaleY = s
                     }
-                },
-            style = CardStyle.Default.copy(from = from, to = to, border = border),
-            padding = padding
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(if (primary) Jolu.Space3 else Jolu.Space2)) {
-                // .goal-card__top
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
-                    JoluIcons.named(model.icon)?.let {
-                        if (primary) IconTile(it, color = accent.color)
-                        else IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)
-                        T(
-                            model.name,
-                            JoluType.style(
-                                if (primary && !narrow) 19.sp else 17.sp, FontWeight.SemiBold,
-                                if (model.paused) Jolu.TextSecondary else Jolu.TextPrimary,
-                                tracking = (-0.015).em
-                            ),
-                            Modifier.padding(top = 2.dp),
-                            maxLines = 1,
-                            ellipsis = true
-                        )
-                    }
-                    if (model.completed) {
-                        Box(
-                            Modifier.size(30.dp).clip(CircleShape).background(Jolu.mix(accent.color, 0.18f, Color.Transparent)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            JIcon(JoluIcons.award, size = 16.dp, color = accent.color)
-                        }
-                    }
-                }
-
-                // .goal-card__figures: the percentage and the target on one baseline.
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
-                    Row(Modifier.weight(1f).alignByBaseline()) {
-                        T(
-                            countUpText(model.percent?.toString() ?: "—", play && !empty),
-                            JoluType.style(
-                                if (primary && !narrow) Jolu.FsScoreSm else 24.sp, FontWeight.Bold,
-                                if ((empty && !preview) || model.paused) Jolu.TextSecondary else Jolu.TextPrimary,
-                                tracking = (-0.035).em, lineHeight = 1.em, tabular = true
-                            ),
-                            Modifier.alignByBaseline()
-                        )
-                        if (!empty) T("%", JStyle.Meta, Modifier.alignByBaseline().padding(start = 2.dp))
-                    }
-                    T(
-                        model.targetLabel,
-                        JoluType.style(if (narrow) Jolu.FsSmall else Jolu.FsLabel, FontWeight.SemiBold, Jolu.TextSecondary, tabular = true),
-                        Modifier.alignByBaseline(),
-                        maxLines = 1
+                    .then(if (onClick != null) Modifier.press(interaction, scale = 0.985f) else Modifier)
+                    .then(sight)
+                    .then(
+                        if (onClick != null) Modifier
+                            .clickable(interaction, indication = null, enabled = !leaving, onClick = onClick)
+                            .clearAndSetSemantics {
+                                role = Role.Button
+                                contentDescription = label ?: model.name
+                                onClick { onClick(); true }
+                            }
+                        else Modifier.clearAndSetSemantics { }
                     )
-                }
+                    .drawWithContent {
+                        drawContent()
+                        // .goal-card--primary::after — the accent along the left edge.
+                        if (primary) {
+                            drawRect(
+                                Brush.verticalGradient(listOf(accent.color, Jolu.mix(accent.color, 0.35f, Color.Transparent))),
+                                topLeft = Offset.Zero,
+                                size = Size(3.dp.toPx(), size.height),
+                                alpha = bar
+                            )
+                        }
+                    },
+                style = CardStyle.Default.copy(from = from, to = to, border = border),
+                padding = padding
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(if (primary) Jolu.Space3 else Jolu.Space2)) {
+                    // .goal-card__top
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+                        JoluIcons.named(model.icon)?.let {
+                            if (primary) IconTile(it, color = accent.color)
+                            else IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)
+                            T(
+                                model.name,
+                                JoluType.style(
+                                    if (primary && !narrow) 19.sp else 17.sp, FontWeight.SemiBold,
+                                    if (model.paused) Jolu.TextSecondary else Jolu.TextPrimary,
+                                    tracking = (-0.015).em
+                                ),
+                                Modifier.padding(top = 2.dp),
+                                maxLines = 1,
+                                ellipsis = true
+                            )
+                        }
+                        if (model.completed) {
+                            Box(
+                                Modifier.size(30.dp).clip(CircleShape).background(Jolu.mix(accent.color, 0.18f, Color.Transparent)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                JIcon(JoluIcons.award, size = 16.dp, color = accent.color)
+                            }
+                        }
+                    }
 
-                Meter(
-                    share = if (preview) 0f else if (empty) null else model.ratio.toFloat().coerceIn(0f, 1f),
-                    play = play,
-                    accent = accent.color,
-                    height = if (primary) 10.dp else 8.dp,
-                    emptyHeight = if (primary) 10.dp else 8.dp,
-                    fill = if (model.paused) SolidColor(Jolu.white(0.22f)) else null
-                )
+                    // .goal-card__figures: the percentage and the target on one baseline.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+                        Row(Modifier.weight(1f).alignByBaseline()) {
+                            T(
+                                countUpText(model.percent?.toString() ?: "—", play && !empty),
+                                JoluType.style(
+                                    if (primary && !narrow) Jolu.FsScoreSm else 24.sp, FontWeight.Bold,
+                                    if ((empty && !preview) || model.paused) Jolu.TextSecondary else Jolu.TextPrimary,
+                                    tracking = (-0.035).em, lineHeight = 1.em, tabular = true
+                                ),
+                                Modifier.alignByBaseline()
+                            )
+                            if (!empty) T("%", JStyle.Meta, Modifier.alignByBaseline().padding(start = 2.dp))
+                        }
+                        T(
+                            model.targetLabel,
+                            JoluType.style(if (narrow) Jolu.FsSmall else Jolu.FsLabel, FontWeight.SemiBold, Jolu.TextSecondary, tabular = true),
+                            Modifier.alignByBaseline(),
+                            maxLines = 1
+                        )
+                    }
 
-                // .goal-card__foot
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
-                    if (model.paused && !model.completed && !model.pausedChip.isNullOrEmpty()) Chip(model.pausedChip, quiet = true)
-                    T(model.deadline, JStyle.Meta, Modifier.weight(1f), maxLines = 1, ellipsis = true)
-                    if (!preview) JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 15.dp, color = Jolu.TextMuted)
+                    Meter(
+                        share = if (preview) 0f else if (empty) null else model.ratio.toFloat().coerceIn(0f, 1f),
+                        play = play,
+                        accent = accent.color,
+                        height = if (primary) 10.dp else 8.dp,
+                        emptyHeight = if (primary) 10.dp else 8.dp,
+                        fill = if (model.paused) SolidColor(Jolu.white(0.22f)) else null
+                    )
+
+                    // .goal-card__foot
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+                        if (model.paused && !model.completed && !model.pausedChip.isNullOrEmpty()) Chip(model.pausedChip, quiet = true)
+                        T(model.deadline, JStyle.Meta, Modifier.weight(1f), maxLines = 1, ellipsis = true)
+                        if (!preview) JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 15.dp, color = Jolu.TextMuted)
+                    }
                 }
             }
         }

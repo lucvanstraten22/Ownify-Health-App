@@ -84,6 +84,7 @@ import com.healthapp.android.ui.design.countUpText
 import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.design.rememberPlayOnSight
 import com.healthapp.android.ui.design.reveal
+import com.healthapp.android.ui.design.loopValue
 import com.healthapp.android.ui.theme.Accent
 import com.healthapp.android.ui.theme.Jolu
 import com.healthapp.android.ui.theme.JoluType
@@ -156,7 +157,7 @@ private fun HealthScoreCard(data: AppData) {
             Modifier.padding(top = Jolu.Space4)
         )
 
-        if (empty) CardHint(overall.emptyHint)
+        if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
     }
 }
 
@@ -259,7 +260,7 @@ private fun InsightsCard(insights: Insights) {
                         .clip(shape)
                         .background(Jolu.white(0.035f))
                         .border(1.dp, Jolu.GlassHairline, shape)
-                        .padding(Jolu.Space3),
+                        .padding(1.dp).padding(Jolu.Space3),
                     horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                 ) {
                     Box(
@@ -356,9 +357,7 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
 @Composable
 fun Skeleton(modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(50)) {
     val still = LocalStillMotion.current
-    val sweep by rememberInfiniteTransition(label = "shimmer").animateFloat(
-        -1f, 1f, infiniteRepeatable(tween(2_400, easing = Jolu.EaseOut)), label = "sweep"
-    )
+    val sweep = loopValue(-1f, 1f, infiniteRepeatable(tween(2_400, easing = Jolu.EaseOut)))
     Box(
         modifier
             .clip(shape)

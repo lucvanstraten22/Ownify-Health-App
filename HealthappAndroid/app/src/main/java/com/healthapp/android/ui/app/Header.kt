@@ -56,6 +56,13 @@ import com.healthapp.android.ui.theme.JoluType
 @Composable
 fun headerSpace(): Dp = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + Jolu.Space3 + Jolu.HeaderButton + Jolu.Space3 + 1.dp
 
+/** `.detail__top`: its bar holds only the back pill, so safe top + 12 + the 42 pill + 12 + the 1 px line. */
+@Composable
+fun detailHeaderSpace(): Dp = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() + Jolu.Space3 + PillHeight + Jolu.Space3 + 1.dp
+
+/** `.pill`'s min-height. */
+val PillHeight = 42.dp
+
 /** `.app-header.is-scrolled`: a solid tint that fades out at the bottom, over the page blurred 30 and saturated 140%. */
 private val ScrolledFilter = GlassFilter(Jolu.BlurBar, saturate = 1.4f)
 
@@ -209,7 +216,6 @@ fun DetailHeader(back: String, backAria: String, scrolled: Boolean, onBack: () -
             Modifier.fillMaxWidth().padding(horizontal = (screen.width - screen.shell) / 2),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(Modifier.size(width = 0.dp, height = Jolu.HeaderButton))
             Pill(back, onClick = onBack, icon = JoluIcons.chevronLeft, contentDescription = backAria)
         }
     }

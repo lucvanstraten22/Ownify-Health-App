@@ -77,6 +77,7 @@ fun DevicesPopup(overlay: Overlay, data: AppData) {
                     panelModifier
                         .widthIn(max = 296.dp)
                         .panelGlass()
+                        .padding(1.dp)
                         .padding(Jolu.Space4)
                 ) {
                     if (lines.isEmpty()) {

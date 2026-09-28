@@ -76,6 +76,7 @@ import com.healthapp.android.ui.design.reveal
 import com.healthapp.android.ui.design.stretched
 import com.healthapp.android.ui.theme.Accent
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalAccent
 
@@ -111,69 +112,72 @@ fun HealthPage(data: AppData, scroll: ScrollState) {
  */
 @Composable
 private fun HealthCard(area: Area, modifier: Modifier) {
-    val shell = LocalShell.current
-    val narrow = LocalScreen.current.narrow
-    val accent = Accent.of(area.accent)
-    val score = area.score
-    val empty = score.value == null
-    val (play, sight) = rememberPlayOnSight()
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val nudge by animateDpAsState(if (pressed) 1.dp else 0.dp, tween(Jolu.FastMs, easing = Jolu.Ease), label = "chevron")
+    InButton {
+        val shell = LocalShell.current
+        val narrow = LocalScreen.current.narrow
+        val accent = Accent.of(area.accent)
+        val score = area.score
+        val empty = score.value == null
+        val (play, sight) = rememberPlayOnSight()
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val nudge by animateDpAsState(if (pressed) 1.dp else 0.dp, tween(Jolu.FastMs, easing = Jolu.Ease), label = "chevron")
 
-    CompositionLocalProvider(LocalAccent provides accent) {
-        JCard(
-            modifier
-                .press(interaction)
-                .then(sight)
-                .clickable(interaction, indication = null) { shell.openDetail(Detail.HealthArea(area.id)) }
-                .clearAndSetSemantics {
-                    role = Role.Button
-                    contentDescription = "${area.label} — " +
-                        (if (empty) "nog geen gegevens" else "${score.value} van ${score.max}") + ". Open details."
-                },
-            padding = if (narrow) PaddingValues(horizontal = Jolu.Space2, vertical = Jolu.Space3) else PaddingValues(horizontal = Jolu.Space3, vertical = Jolu.Space4)
-        ) {
-            Column(
-                Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)
+        CompositionLocalProvider(LocalAccent provides accent) {
+            JCard(
+                modifier
+                    .press(interaction)
+                    .then(sight)
+                    .clickable(interaction, indication = null) { shell.openDetail(Detail.HealthArea(area.id)) }
+                    .clearAndSetSemantics {
+                        role = Role.Button
+                        contentDescription = "${area.label} — " +
+                            (if (empty) "nog geen gegevens" else "${score.value} van ${score.max}") + ". Open details."
+                    },
+                padding = if (narrow) PaddingValues(horizontal = Jolu.Space2, vertical = Jolu.Space3) else PaddingValues(horizontal = Jolu.Space3, vertical = Jolu.Space4)
             ) {
-                JoluIcons.named(area.icon)?.let {
-                    IconTile(it, size = if (narrow) 28.dp else 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
-                }
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(if (narrow) Jolu.Space2 else Jolu.Space3)
+                ) {
+                    JoluIcons.named(area.icon)?.let {
+                        IconTile(it, size = if (narrow) 28.dp else 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
+                    }
 
-                // .score-value--centred: the number and "/100" on one baseline.
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                    T(
-                        countUpText(score.value?.toString() ?: "—", play && !empty),
-                        JoluType.style(
-                            if (narrow) 24.sp else Jolu.FsScoreSm, FontWeight.Bold,
-                            if (empty) Jolu.TextSecondary else Jolu.TextPrimary,
-                            tracking = (-0.035).em, lineHeight = 1.em, tabular = true
-                        ),
-                        Modifier.alignByBaseline()
-                    )
-                    T(
-                        "/${score.max}",
-                        JoluType.style(if (narrow) Jolu.FsTiny else Jolu.FsSmall, color = Jolu.TextMuted),
-                        Modifier.alignByBaseline()
-                    )
-                }
+                    // .score-value--centred: the number and "/100" on one baseline.
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        T(
+                            countUpText(score.value?.toString() ?: "—", play && !empty),
+                            JoluType.style(
+                                if (narrow) 24.sp else Jolu.FsScoreSm, FontWeight.Bold,
+                                if (empty) Jolu.TextSecondary else Jolu.TextPrimary,
+                                tracking = (-0.035).em, lineHeight = 1.em, tabular = true
+                            ),
+                            Modifier.alignByBaseline()
+                        )
+                        T(
+                            "/${score.max}",
+                            JoluType.style(if (narrow) Jolu.FsTiny else Jolu.FsSmall, color = Jolu.TextMuted),
+                            Modifier.alignByBaseline()
+                        )
+                    }
 
-                Meter(
-                    share = if (empty || score.max <= 0) null else (score.value!!.toFloat() / score.max).coerceIn(0f, 1f),
-                    play = play,
-                    accent = accent.color
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                    T(
-                        area.label,
-                        JoluType.style(if (narrow) Jolu.FsTiny else Jolu.FsSmall, FontWeight.SemiBold),
-                        maxLines = 1
+                    Meter(
+                        share = if (empty || score.max <= 0) null else (score.value!!.toFloat() / score.max).coerceIn(0f, 1f),
+                        play = play,
+                        accent = accent.color
                     )
-                    JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 13.dp, color = Jolu.TextMuted)
+
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                        T(
+                            area.label,
+                            // `.health-card__label`'s own -0.01em.
+                            JoluType.style(if (narrow) Jolu.FsTiny else Jolu.FsSmall, FontWeight.SemiBold, tracking = (-0.01).em),
+                            maxLines = 1
+                        )
+                        JIcon(JoluIcons.chevronRight, Modifier.offset(x = nudge), size = 13.dp, color = Jolu.TextMuted)
+                    }
                 }
             }
         }

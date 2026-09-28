@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -90,8 +91,11 @@ import com.healthapp.android.ui.screens.account.AvatarCircle
 import com.healthapp.android.ui.screens.account.LinkButton
 import com.healthapp.android.ui.screens.devices.StatusDot
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.CompositionLocalProvider
+import com.healthapp.android.ui.theme.LocalTracking
 
 /**
  * One settings screen (pages/settings-detail.php), built from the blocks
@@ -142,7 +146,9 @@ private fun BlockHead(title: String, lede: String?) {
         T(
             lede,
             JStyle.Meta,
-            Modifier.fillMaxWidth().padding(horizontal = Jolu.Space2).padding(bottom = Jolu.Space3).graphicsLayer { translationY = -4.dp.toPx() }
+            // margin-top: -4px collapses into the eyebrow's 8, so the lede and
+            // everything under it sit 4 higher: drawn 4 up, 4 less below.
+            Modifier.fillMaxWidth().padding(horizontal = Jolu.Space2).padding(bottom = Jolu.Space3 - 4.dp).offset(y = (-4).dp)
         )
     }
 }
@@ -171,56 +177,59 @@ private fun FieldsBlock(data: AppData, block: SettingsBlock.Fields) {
  */
 @Composable
 private fun FieldRow(field: ProfileField, onEdit: () -> Unit) {
-    val narrow = LocalScreen.current.narrow
-    val live = field.live
-    val filled = field.value != null
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val fill by animateColorAsState(
-        when {
-            live && pressed -> Jolu.white(0.05f)
-            !live -> Jolu.white(0.022f)
-            else -> Color.Transparent
-        },
-        tween(Jolu.FastMs, easing = Jolu.Ease),
-        label = "field"
-    )
+    // A live field is a <button> (letter-spacing: normal); a locked or derived one is a <div>.
+    CompositionLocalProvider(LocalTracking provides if (field.live) 0.sp else LocalTracking.current) {
+        val narrow = LocalScreen.current.narrow
+        val live = field.live
+        val filled = field.value != null
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val fill by animateColorAsState(
+            when {
+                live && pressed -> Jolu.white(0.05f)
+                !live -> Jolu.white(0.022f)
+                else -> Color.Transparent
+            },
+            tween(Jolu.FastMs, easing = Jolu.Ease),
+            label = "field"
+        )
 
-    Row(
-        Modifier
-            .then(if (live) Modifier.press(interaction) else Modifier)
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .background(fill)
-            .then(if (live) Modifier.clickable(interaction, indication = null, role = Role.Button, onClick = onEdit) else Modifier)
-            .semantics(mergeDescendants = true) { }
-            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
-    ) {
-        Column(Modifier.weight(1f)) {
-            T(field.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
-            if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
-        }
-        if (field.kind == "image") {
-            AvatarCircle(field.value, 34.dp, 17.dp)
-        } else {
-            T(
-                field.value ?: field.blank,
-                JoluType.style(
-                    Jolu.FsSmall,
-                    if (filled) FontWeight.SemiBold else FontWeight.Medium,
-                    if (filled) Jolu.TextSecondary else Jolu.TextMuted
-                ),
-                Modifier.weight(1f, fill = false),
-                align = TextAlign.End,
-                maxLines = 1,
-                ellipsis = true
-            )
-        }
-        when {
-            field.state == "locked" -> JIcon(JoluIcons.lock, size = 15.dp, color = Jolu.TextMuted)
-            live -> JIcon(JoluIcons.chevronRight, size = 15.dp, color = Jolu.TextFaint)
+        Row(
+            Modifier
+                .then(if (live) Modifier.press(interaction) else Modifier)
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .background(fill)
+                .then(if (live) Modifier.clickable(interaction, indication = null, role = Role.Button, onClick = onEdit) else Modifier)
+                .semantics(mergeDescendants = true) { }
+                .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+        ) {
+            Column(Modifier.weight(1f)) {
+                T(field.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium))
+                if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+            }
+            if (field.kind == "image") {
+                AvatarCircle(field.value, 34.dp, 17.dp)
+            } else {
+                T(
+                    field.value ?: field.blank,
+                    JoluType.style(
+                        Jolu.FsSmall,
+                        if (filled) FontWeight.SemiBold else FontWeight.Medium,
+                        if (filled) Jolu.TextSecondary else Jolu.TextMuted
+                    ),
+                    Modifier.weight(1f, fill = false),
+                    align = TextAlign.End,
+                    maxLines = 1,
+                    ellipsis = true
+                )
+            }
+            when {
+                field.state == "locked" -> JIcon(JoluIcons.lock, size = 15.dp, color = Jolu.TextMuted)
+                live -> JIcon(JoluIcons.chevronRight, size = 15.dp, color = Jolu.TextFaint)
+            }
         }
     }
 }
@@ -360,32 +369,35 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                 IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = if (connected) Jolu.Health else Jolu.TextSecondary)
             }
         }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .background(headFill)
-                .clickable(interaction, indication = null) { open = !open }
-                .clearAndSetSemantics {
-                    role = Role.Button
-                    contentDescription = (labels["expand"] ?: "%s").replace("%s", item.label) + ", $statusText"
-                    stateDescription = if (open) "Uitgeklapt" else "Ingeklapt"
-                    onClick { open = !open; true }
+        // A <button>: its text keeps letter-spacing: normal.
+        InButton {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .background(headFill)
+                    .clickable(interaction, indication = null) { open = !open }
+                    .clearAndSetSemantics {
+                        role = Role.Button
+                        contentDescription = (labels["expand"] ?: "%s").replace("%s", item.label) + ", $statusText"
+                        stateDescription = if (open) "Uitgeklapt" else "Ingeklapt"
+                        onClick { open = !open; true }
+                    }
+                    .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                verticalArrangement = Arrangement.spacedBy(Jolu.Space1)
+            ) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
+                    head()
+                    Column(Modifier.weight(1f)) {
+                        T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                        T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+                    }
+                    if (!narrow) StatusDot(statusText, connected)
+                    JIcon(JoluIcons.chevronDown, Modifier.graphicsLayer { rotationZ = turn }, size = 16.dp, color = Jolu.TextFaint)
                 }
-                .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-            verticalArrangement = Arrangement.spacedBy(Jolu.Space1)
-        ) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
-                head()
-                Column(Modifier.weight(1f)) {
-                    T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-                    T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
-                }
-                if (!narrow) StatusDot(statusText, connected)
-                JIcon(JoluIcons.chevronDown, Modifier.graphicsLayer { rotationZ = turn }, size = 16.dp, color = Jolu.TextFaint)
+                // Below 360 dp the status takes a line of its own, under the name.
+                if (narrow) Row(Modifier.padding(start = 32.dp + Jolu.Space3)) { StatusDot(statusText, connected) }
             }
-            // Below 360 dp the status takes a line of its own, under the name.
-            if (narrow) Row(Modifier.padding(start = 32.dp + Jolu.Space3)) { StatusDot(statusText, connected) }
         }
 
         if (open) {
@@ -517,50 +529,52 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
     var selected by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
-        SettingsCard {
-            block.options.forEachIndexed { i, option ->
-                if (i > 0) Hairline()
-                val on = option.key == selected
-                val interaction = remember { MutableInteractionSource() }
-                val pressed by interaction.collectIsPressedAsState()
-                val fill by animateColorAsState(if (pressed && !option.disabled) Jolu.white(0.05f) else Color.Transparent, tween(Jolu.FastMs, easing = Jolu.Ease), label = "option")
-                val mark by animateFloatAsState(if (on) 1f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "mark")
-                Row(
-                    Modifier
-                        .press(interaction, enabled = !option.disabled)
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .background(fill)
-                        .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) { selected = option.key }
-                        .semantics(mergeDescendants = true) {
-                            this.selected = on
-                            if (option.disabled) disabled()
-                        }
-                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        T(
-                            option.label,
-                            JoluType.style(
-                                Jolu.FsLabel,
-                                if (on) FontWeight.SemiBold else FontWeight.Medium,
-                                if (option.disabled) Jolu.TextSecondary else Jolu.TextPrimary
-                            )
-                        )
-                        if (!option.note.isNullOrEmpty()) T(option.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
-                    }
-                    Box(
-                        Modifier.size(22.dp).graphicsLayer {
-                            alpha = mark
-                            val s = 0.7f + 0.3f * mark
-                            scaleX = s
-                            scaleY = s
-                        },
-                        contentAlignment = Alignment.Center
+        InButton {
+            SettingsCard {
+                block.options.forEachIndexed { i, option ->
+                    if (i > 0) Hairline()
+                    val on = option.key == selected
+                    val interaction = remember { MutableInteractionSource() }
+                    val pressed by interaction.collectIsPressedAsState()
+                    val fill by animateColorAsState(if (pressed && !option.disabled) Jolu.white(0.05f) else Color.Transparent, tween(Jolu.FastMs, easing = Jolu.Ease), label = "option")
+                    val mark by animateFloatAsState(if (on) 1f else 0f, tween(Jolu.FastMs, easing = Jolu.Ease), label = "mark")
+                    Row(
+                        Modifier
+                            .press(interaction, enabled = !option.disabled)
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .background(fill)
+                            .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) { selected = option.key }
+                            .semantics(mergeDescendants = true) {
+                                this.selected = on
+                                if (option.disabled) disabled()
+                            }
+                            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                     ) {
-                        JIcon(JoluIcons.check, size = 18.dp, color = Jolu.Health)
+                        Column(Modifier.weight(1f)) {
+                            T(
+                                option.label,
+                                JoluType.style(
+                                    Jolu.FsLabel,
+                                    if (on) FontWeight.SemiBold else FontWeight.Medium,
+                                    if (option.disabled) Jolu.TextSecondary else Jolu.TextPrimary
+                                )
+                            )
+                            if (!option.note.isNullOrEmpty()) T(option.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                        }
+                        Box(
+                            Modifier.size(22.dp).graphicsLayer {
+                                alpha = mark
+                                val s = 0.7f + 0.3f * mark
+                                scaleX = s
+                                scaleY = s
+                            },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            JIcon(JoluIcons.check, size = 18.dp, color = Jolu.Health)
+                        }
                     }
                 }
             }
@@ -612,27 +626,29 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
     val narrow = LocalScreen.current.narrow
     Column(Modifier.fillMaxWidth().reveal()) {
         BlockHead(block.title, block.lede)
-        SettingsCard {
-            block.items.forEachIndexed { i, item ->
-                if (i > 0) Hairline()
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .semantics(mergeDescendants = true) {
-                            toggleableState = ToggleableState(item.on)
-                            role = Role.Switch
-                            disabled()
+        InButton {
+            SettingsCard {
+                block.items.forEachIndexed { i, item ->
+                    if (i > 0) Hairline()
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .semantics(mergeDescendants = true) {
+                                toggleableState = ToggleableState(item.on)
+                                role = Role.Switch
+                                disabled()
+                            }
+                            .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium, Jolu.TextSecondary))
+                            if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
                         }
-                        .padding(horizontal = if (narrow) Jolu.Space3 else Jolu.Space4, vertical = Jolu.Space3),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        T(item.label, JoluType.style(Jolu.FsLabel, FontWeight.Medium, Jolu.TextSecondary))
-                        if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                        Toggle(item.on, dimmed = true)
                     }
-                    Toggle(item.on, dimmed = true)
                 }
             }
         }
@@ -660,7 +676,7 @@ fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
             .clip(shape)
             .background(Jolu.white(0.035f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(Jolu.Space4),
+            .padding(1.dp).padding(Jolu.Space4),
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
     ) {
         JoluIcons.named(icon)?.let { JIcon(it, Modifier.padding(top = 2.dp), size = 16.dp, color = Jolu.TextMuted) }

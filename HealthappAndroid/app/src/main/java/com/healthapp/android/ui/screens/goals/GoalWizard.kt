@@ -85,6 +85,7 @@ import com.healthapp.android.ui.design.press
 import com.healthapp.android.ui.screens.account.FieldLabel
 import com.healthapp.android.ui.theme.Accent
 import com.healthapp.android.ui.theme.Jolu
+import com.healthapp.android.ui.theme.InButton
 import com.healthapp.android.ui.theme.JoluType
 import com.healthapp.android.ui.theme.LocalAccent
 import java.math.RoundingMode
@@ -193,7 +194,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
     val complete = isComplete(step, draft, goals)
 
     OverlayFrame(overlay, title = words["title"], maxWidth = 432.dp, onDismiss = ::close) { panelModifier ->
-        Box(panelModifier.panelGlass()) {
+        Box(panelModifier.panelGlass().padding(1.dp)) {
             Column(Modifier.padding(Jolu.Space5)) {
                 // .wizard__head
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)) {
@@ -446,7 +447,8 @@ private fun SourceStep(draft: Draft, goals: Goals) {
         goals.wizardSources.forEach { group ->
             val fitting = group.sources.filter { fits(it, draft.type) }
             if (fitting.isNotEmpty()) {
-                FieldLabel(group.label, Modifier.padding(top = Jolu.Space5 - Jolu.Space2))
+                // `.wizard__label--spaced` in a flex column: its 24 margin and the 8 gap both count.
+                FieldLabel(group.label, Modifier.padding(top = Jolu.Space5))
                 fitting.forEach { source ->
                     Option(source.label, source.hint, chosen = draft.sourceKind == source.kind && draft.sourceKey == source.key) {
                         draft.sourceKind = source.kind
@@ -738,7 +740,7 @@ private fun WizardNote(text: String, icon: androidx.compose.ui.graphics.vector.I
             .clip(shape)
             .background(Jolu.white(0.04f))
             .border(1.dp, Jolu.GlassHairline, shape)
-            .padding(Jolu.Space3),
+            .padding(1.dp).padding(Jolu.Space3),
         horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)
     ) {
         if (icon != null) JIcon(icon, Modifier.padding(top = 2.dp), size = 15.dp, color = Jolu.TextSecondary)
@@ -749,20 +751,22 @@ private fun WizardNote(text: String, icon: androidx.compose.ui.graphics.vector.I
 /** `.wizard-suggestion`: a small pill that fills a field. */
 @Composable
 private fun Suggestion(text: String, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(50)
-    T(
-        text,
-        JoluType.style(Jolu.FsTiny, color = Jolu.TextSecondary),
-        Modifier
-            .press(interaction)
-            .clip(shape)
-            .background(Jolu.white(0.05f))
-            .border(1.dp, Jolu.GlassHairline, shape)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
-        maxLines = 1
-    )
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val shape = RoundedCornerShape(50)
+        T(
+            text,
+            JoluType.style(Jolu.FsTiny, color = Jolu.TextSecondary),
+            Modifier
+                .press(interaction)
+                .clip(shape)
+                .background(Jolu.white(0.05f))
+                .border(1.dp, Jolu.GlassHairline, shape)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                .padding(1.dp).padding(horizontal = Jolu.Space3, vertical = Jolu.Space1),
+            maxLines = 1
+        )
+    }
 }
 
 /**
@@ -793,28 +797,30 @@ private fun Choice(
     press: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(Jolu.RadiusMd)
-    val fast = tween<Color>(Jolu.FastMs, easing = Jolu.Ease)
-    val border by animateColorAsState(
-        if (chosen) Jolu.mix(accent, 0.40f, Color.Transparent) else Jolu.GlassHairline, fast, label = "border"
-    )
-    val fill by animateColorAsState(
-        if (chosen) Jolu.mix(accent, if (green) 0.12f else 0.14f, Color.Transparent) else Jolu.white(0.035f), fast, label = "fill"
-    )
-    CompositionLocalProvider(LocalAccent provides LocalAccent.current) {
-        Column(
-            modifier
-                .then(if (press) Modifier.press(interaction, enabled = enabled) else Modifier)
-                .alpha(if (enabled) 1f else 0.45f)
-                .clip(shape)
-                .background(fill)
-                .border(1.dp, border, shape)
-                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-                .semantics(mergeDescendants = true) { selected = chosen }
-                .padding(Jolu.Space3),
-            content = content
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val shape = RoundedCornerShape(Jolu.RadiusMd)
+        val fast = tween<Color>(Jolu.FastMs, easing = Jolu.Ease)
+        val border by animateColorAsState(
+            if (chosen) Jolu.mix(accent, 0.40f, Color.Transparent) else Jolu.GlassHairline, fast, label = "border"
         )
+        val fill by animateColorAsState(
+            if (chosen) Jolu.mix(accent, if (green) 0.12f else 0.14f, Color.Transparent) else Jolu.white(0.035f), fast, label = "fill"
+        )
+        CompositionLocalProvider(LocalAccent provides LocalAccent.current) {
+            Column(
+                modifier
+                    .then(if (press) Modifier.press(interaction, enabled = enabled) else Modifier)
+                    .alpha(if (enabled) 1f else 0.45f)
+                    .clip(shape)
+                    .background(fill)
+                    .border(1.dp, border, shape)
+                    .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
+                    .semantics(mergeDescendants = true) { selected = chosen }
+                    .padding(1.dp).padding(Jolu.Space3),
+                content = content
+            )
+        }
     }
 }
 

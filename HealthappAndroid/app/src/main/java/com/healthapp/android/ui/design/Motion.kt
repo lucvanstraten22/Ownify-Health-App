@@ -2,6 +2,9 @@ package com.healthapp.android.ui.design
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.InfiniteRepeatableSpec
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -73,6 +76,18 @@ val LocalVisibility = staticCompositionLocalOf { Visibility() }
 
 /** Whether the layout is being checked by a test or a screenshot, where things appear at once. */
 val LocalStillMotion = staticCompositionLocalOf { false }
+
+/**
+ * An endlessly repeating value (the shimmer, the turning rings, the orb's
+ * breath) — or [still] while the layout is being checked, where nothing
+ * moves and a test can go idle.
+ */
+@Composable
+fun loopValue(from: Float, to: Float, spec: InfiniteRepeatableSpec<Float>, still: Float = from): Float {
+    if (LocalStillMotion.current) return still
+    val value by rememberInfiniteTransition(label = "loop").animateFloat(from, to, spec, label = "loop")
+    return value
+}
 
 /**
  * `.reveal`: fades in and rises 14 dp over `--transition-slow` the first time

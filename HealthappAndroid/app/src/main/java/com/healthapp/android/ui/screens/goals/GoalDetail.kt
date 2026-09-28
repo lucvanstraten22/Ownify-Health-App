@@ -503,7 +503,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .clip(shape)
                         .background(Jolu.mix(accent, 0.12f, Color.Transparent))
                         .border(1.dp, Jolu.mix(accent, 0.28f, Color.Transparent), shape)
-                        .padding(horizontal = Jolu.Space4, vertical = Jolu.Space3)
+                        .padding(1.dp).padding(horizontal = Jolu.Space4, vertical = Jolu.Space3)
                         .semantics(mergeDescendants = true) { },
                     horizontalArrangement = Arrangement.spacedBy(Jolu.Space3)
                 ) {
@@ -538,7 +538,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .clip(shape)
                         .background(Jolu.Nutrition.copy(alpha = 0.10f))
                         .border(1.dp, Jolu.Nutrition.copy(alpha = 0.34f), shape)
-                        .padding(Jolu.Space4)
+                        .padding(1.dp).padding(Jolu.Space4)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), JoluType.style(Jolu.FsSmall))
                     Row(Modifier.fillMaxWidth().padding(top = Jolu.Space3), horizontalArrangement = Arrangement.spacedBy(Jolu.Space2)) {
