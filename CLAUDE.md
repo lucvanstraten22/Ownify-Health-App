@@ -19,7 +19,7 @@ other platform unless a genuine technical ambiguity prevents implementing it.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 1.0.0**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 1.0.2**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher:
@@ -27,3 +27,6 @@ every change that is shipped, in the same commit, and keep the Android
 - a small update (fix, tweak): patch, e.g. 1.0.0 → 1.0.1
 - a bigger change (new feature): minor, e.g. 1.0.1 → 1.1.0
 - a big UI refresh: major, e.g. 1.1.0 → 2.0.0 — only when the user says so
+
+Every commit title starts with the new version number, then the
+description: `1.0.2 Show the version in commit titles`.
