@@ -126,7 +126,7 @@ if (!function_exists('db')) {
             db_note_failure($e->getMessage());
 
             error_log(sprintf(
-                '[jolu] read failed, rendering the empty state instead: %s -- statement: %s',
+                '[ownify] read failed, rendering the empty state instead: %s -- statement: %s',
                 $e->getMessage(),
                 preg_replace('/\s+/', ' ', trim($sql))
             ));

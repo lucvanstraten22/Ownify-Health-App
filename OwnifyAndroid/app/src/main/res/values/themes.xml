@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Dark, as the website is (color-scheme: dark): the window is Ownify's
+         deepest ground, so nothing flashes white before the first frame. -->
+    <style name="Theme.Ownify" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ownify_bg_deep</item>
+        <item name="android:colorBackground">@color/ownify_bg_deep</item>
+    </style>
+</resources>

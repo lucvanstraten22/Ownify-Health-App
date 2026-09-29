@@ -1,7 +1,9 @@
-# Health App
+# Ownify
 
-A mobile-first health app in plain PHP, HTML, CSS and JavaScript — no
-framework, no build step, no dependencies. Two screens live in one document:
+Ownify is a mobile-first health app: a website in plain PHP, HTML, CSS and
+JavaScript — no framework, no build step, no dependencies — and a native
+Android app (`OwnifyAndroid/`, see its README). Two screens live in one
+document:
 
 ```
   Gezondheid ↔ Doelen ↔ Overzicht ↔ Community ↔ Instellingen   ← horizontal
@@ -27,7 +29,7 @@ For accounts, import `database/schema.sql` through phpMyAdmin and check
 placeholder data. See [docs/DATABASE.md](docs/DATABASE.md).
 
 To see what a machine is actually configured with — which database credentials
-are in force, whether they connect, whether `JOLU_APP_KEY` is set and where it
+are in force, whether they connect, whether `OWNIFY_APP_KEY` is set and where it
 came from — without printing any of it:
 
 ```bash
@@ -169,8 +171,8 @@ Signing in once lasts until you sign out. The PHP session alone could not do
 that: its cookie is gone when the browser closes, and the server throws the
 session away after a short idle spell (24 minutes by default), and either one
 used to send somebody back to the opening screen. So every sign-in — password,
-registration, Google — also gets a second cookie, `jolu_login`
-(`__Host-jolu_login` on https), and a row in `user_login_tokens`. When the
+registration, Google — also gets a second cookie, `ownify_login`
+(`__Host-ownify_login` on https), and a row in `user_login_tokens`. When the
 session is gone, `includes/persistent-login.php` puts it back from that
 cookie before anything else runs, so the person lands on Overzicht as if they
 had never left, and an app left open in a tab keeps working.
@@ -508,7 +510,7 @@ quietly discarding what you typed. Uitloggen really signs you out. Account
 verwijderen really deletes: two confirmations — what goes, then "Weet je het
 zeker?" — and then every row of the account, its picture, its paired phones
 and its Google link are gone. An account that had Google also asks Google to
-forget JoLu.
+forget Ownify.
 
 **Health sources expand in place.** The app has one detail layer, so a
 source's settings — status, last sync, permissions, categories, connect and
@@ -535,7 +537,7 @@ What works today: email/password sign-in, Google sign-in once it is
 configured, changing a username, uploading a profile picture. Failed sign-ins
 are limited to 5 per 15 minutes per name and network address.
 
-The JoLu app can sign in as an account too — its own token, never a cookie —
+The Ownify app can sign in as an account too — its own token, never a cookie —
 through `api/auth/app-login.php`, `app-register.php`, `app-google.php` and
 `app-logout.php`; see **[docs/APP-AUTH.md](docs/APP-AUTH.md)**. Needs
 `database/migrations/013-app-tokens.sql`.

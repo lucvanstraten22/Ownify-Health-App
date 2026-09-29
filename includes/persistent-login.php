@@ -124,7 +124,8 @@ if (!function_exists('persistent_login_resume')) {
      */
     function persistent_login_restore(): void
     {
-        if (!array_key_exists(persistent_login_cookie_name(), $_COOKIE)) {
+        if (!array_key_exists(persistent_login_cookie_name(), $_COOKIE)
+            && !array_key_exists(persistent_login_legacy_cookie_name(), $_COOKIE)) {
             return;
         }
 
@@ -395,6 +396,19 @@ if (!function_exists('persistent_login_resume')) {
 
     function persistent_login_cookie_name(): string
     {
+        return persistent_login_secure() ? '__Host-ownify_login' : 'ownify_login';
+    }
+
+    /**
+     * The cookie's name before the app was called Ownify. A browser signed in
+     * back then still carries it, and is signed in by it exactly as by the
+     * current one: the first time it is used it rotates, as always, and the
+     * new validator goes out under the current name while this one is expired.
+     * So renaming signed nobody out, and nobody has to do anything for it.
+     * It is only ever read and expired — never set.
+     */
+    function persistent_login_legacy_cookie_name(): string
+    {
         return persistent_login_secure() ? '__Host-jolu_login' : 'jolu_login';
     }
 
@@ -412,7 +426,9 @@ if (!function_exists('persistent_login_resume')) {
      */
     function persistent_login_presented(): ?array
     {
-        $value = $_COOKIE[persistent_login_cookie_name()] ?? null;
+        $value = $_COOKIE[persistent_login_cookie_name()]
+            ?? $_COOKIE[persistent_login_legacy_cookie_name()]
+            ?? null;
 
         if (!is_string($value) || !preg_match('/^([a-f0-9]{24})\.([a-f0-9]{64})$/', $value, $match)) {
             return null;
@@ -427,21 +443,34 @@ if (!function_exists('persistent_login_resume')) {
 
         persistent_login_send($value, time() + PERSISTENT_LOGIN_DAYS * 86400);
         $_COOKIE[persistent_login_cookie_name()] = $value;
+        persistent_login_clear_legacy_cookie();
     }
 
     function persistent_login_clear_cookie(): void
     {
         persistent_login_send('', time() - 42000);
         unset($_COOKIE[persistent_login_cookie_name()]);
+        persistent_login_clear_legacy_cookie();
     }
 
-    function persistent_login_send(string $value, int $expires): void
+    /** Expires the cookie under its old name, when this browser still has it. */
+    function persistent_login_clear_legacy_cookie(): void
+    {
+        $legacy = persistent_login_legacy_cookie_name();
+
+        if (array_key_exists($legacy, $_COOKIE)) {
+            persistent_login_send('', time() - 42000, $legacy);
+            unset($_COOKIE[$legacy]);
+        }
+    }
+
+    function persistent_login_send(string $value, int $expires, ?string $name = null): void
     {
         if (headers_sent()) {
             return;
         }
 
-        setcookie(persistent_login_cookie_name(), $value, [
+        setcookie($name ?? persistent_login_cookie_name(), $value, [
             'expires'  => $expires,
             'path'     => '/',
             'secure'   => persistent_login_secure(),
@@ -452,6 +481,6 @@ if (!function_exists('persistent_login_resume')) {
 
     function persistent_login_log(string $message): void
     {
-        error_log('[jolu] staying signed in: ' . $message);
+        error_log('[ownify] staying signed in: ' . $message);
     }
 }

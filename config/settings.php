@@ -122,7 +122,7 @@ return [
 
             'final_title'  => 'Weet je het zeker?',
             'final_body'   => 'Dit is de laatste stap. Je account en alles wat erbij hoort worden direct en voorgoed verwijderd. Dit kun je niet ongedaan maken.',
-            'final_google' => 'Daarna ga je heel even langs Google, zodat JoLu ook uit je Google-account verdwijnt.',
+            'final_google' => 'Daarna ga je heel even langs Google, zodat Ownify ook uit je Google-account verdwijnt.',
             'final_yes'    => 'Definitief verwijderen',
             'final_no'     => 'Nee, toch niet',
         ],
@@ -459,7 +459,7 @@ return [
      * `demo` fills in a connected state so that design can be reviewed.
      */
     /**
-     * The sources JoLu can take data from.
+     * The sources Ownify can take data from.
      *
      * `provider` is the key in includes/integrations.php and the code in
      * data_sources — the same string all the way down, so a row on this screen

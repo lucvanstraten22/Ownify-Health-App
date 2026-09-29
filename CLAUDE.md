@@ -1,9 +1,9 @@
-# JoLu
+# Ownify
 
-JoLu is two apps: the web app (this repository's root: `index.php`, `pages/`,
+Ownify is two apps: the web app (this repository's root: `index.php`, `pages/`,
 `components/`, `assets/`, `api/`, `lib/`) and the native Android app
-(`HealthappAndroid/`, Jetpack Compose). The web app is the source of truth for
-how things look and behave; `HealthappAndroid/docs/PARITY.md` records where
+(`OwnifyAndroid/`, Jetpack Compose). The web app is the source of truth for
+how things look and behave; `OwnifyAndroid/docs/PARITY.md` records where
 and why the Android app differs.
 
 ## Every request applies to both apps

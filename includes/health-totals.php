@@ -257,7 +257,7 @@ if (!function_exists('health_metric_totals')) {
         $spans  = [];   // date => the spans that fall in it, cut to it
 
         foreach ($rows as $row) {
-            /* Times are compared as the clock showed them, which is how JoLu
+            /* Times are compared as the clock showed them, which is how Ownify
                stores them. Reading them as UTC only keeps daylight saving
                out of the sums: every day is 24 hours, and a span is as long
                as its two clock times say. */

@@ -30,7 +30,7 @@ if (!function_exists('session_boot')) {
             'secure'   => $https,        // https only once there is https
         ]);
 
-        session_name('jolu_session');
+        session_name('ownify_session');
         session_start();
     }
 

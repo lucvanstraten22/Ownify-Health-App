@@ -38,7 +38,7 @@
  *           with Google was deleted       Google when the person is signed in
  *                                        there) for one short-lived access
  *                                        token, used once to tell Google to
- *                                        forget JoLu for that Google account,
+ *                                        forget Ownify for that Google account,
  *                                        and then discarded.
  *
  * ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ if (!defined('GOOGLE_ACCOUNT_CONNECTIONS_URL')) {
    told automatically: the account is gone either way, and this says what is
    left to do. The page adds the link to Google's own list. */
 if (!defined('GOOGLE_SIGNIN_NOT_REVOKED')) {
-    define('GOOGLE_SIGNIN_NOT_REVOKED', 'Je account is verwijderd, ook je koppeling met Google. JoLu kon zichzelf niet automatisch uit je Google-account halen; dat doe je in je Google-account bij apps met toegang.');
+    define('GOOGLE_SIGNIN_NOT_REVOKED', 'Je account is verwijderd, ook je koppeling met Google. Ownify kon zichzelf niet automatisch uit je Google-account halen; dat doe je in je Google-account bij apps met toegang.');
 }
 
 /** How long a started sign-in may take, and how long a chosen-but-unnamed identity waits. */
@@ -129,7 +129,7 @@ if (!function_exists('google_signin_config')) {
             'client_secret' => trim((string) ($google['client_secret'] ?? '')),
             'redirect_uri'  => trim((string) ($google['redirect_uri'] ?? '')),
 
-            /* The JoLu app's Android OAuth clients (api/auth/app-google.php). */
+            /* The Ownify app's Android OAuth clients (api/auth/app-google.php). */
             'android_client_ids' => array_values(array_filter(
                 array_map(static fn ($id): string => is_string($id) ? trim($id) : '', (array) ($google['android_client_ids'] ?? [])),
                 static fn (string $id): bool => $id !== ''
@@ -200,7 +200,7 @@ if (!function_exists('google_signin_config')) {
     }
 
     /**
-     * Whether the JoLu app can sign in with Google here: the Web client's id
+     * Whether the Ownify app can sign in with Google here: the Web client's id
      * (the audience of the app's ID tokens), at least one Android client (the
      * party allowed to present them), and the means to fetch and verify. The
      * app needs no client secret and no redirect: Google hands its ID token
@@ -389,7 +389,7 @@ if (!function_exists('google_signin_config')) {
      *   nonce      the one this sign-in was started with
      *   sub        present and plausible
      *
-     * $authorisedParties is for the JoLu app. Its ID token is issued for the
+     * $authorisedParties is for the Ownify app. Its ID token is issued for the
      * Web client (aud) at the request of the app's Android client, which
      * Google names in azp. When the list is given, azp must be there and be
      * one of them. Left out, azp must be the Web client itself, as before.
@@ -523,7 +523,7 @@ if (!function_exists('google_signin_config')) {
     /**
      * Starts a sign-in (mode 'login'), a link from Settings (mode 'link', for
      * the signed-in user) or, after an account was deleted, the request to
-     * Google to forget JoLu (mode 'revoke', for the Google account `$sub`).
+     * Google to forget Ownify (mode 'revoke', for the Google account `$sub`).
      * Returns the URL to send the browser to, or null when Google sign-in is
      * not configured.
      */
@@ -621,8 +621,8 @@ if (!function_exists('google_signin_config')) {
     }
 
     /**
-     * Asks Google to forget JoLu for the account this token belongs to: the
-     * grant is withdrawn, and JoLu leaves that account's list of apps with
+     * Asks Google to forget Ownify for the account this token belongs to: the
+     * grant is withdrawn, and Ownify leaves that account's list of apps with
      * access. Google answers 200 when it has done so.
      */
     function google_signin_revoke(string $token): bool
@@ -749,7 +749,7 @@ if (!function_exists('google_signin_config')) {
         if ($owner !== null) {
             return (int) $owner === $userId
                 ? $out('linked', 'Dit Google-account was al aan je account gekoppeld.')
-                : $out('error', 'Dit Google-account hoort al bij een ander JoLu-account.');
+                : $out('error', 'Dit Google-account hoort al bij een ander Ownify-account.');
         }
 
         $existing = db_value(
@@ -769,7 +769,7 @@ if (!function_exists('google_signin_config')) {
             );
         } catch (PDOException $e) {
             /* Lost a race on the unique key to somebody linking the same account. */
-            return $out('error', 'Dit Google-account hoort al bij een ander JoLu-account.');
+            return $out('error', 'Dit Google-account hoort al bij een ander Ownify-account.');
         }
 
         return $out('linked', 'Google is gekoppeld. Je kunt voortaan ook met Google inloggen.');
@@ -777,11 +777,11 @@ if (!function_exists('google_signin_config')) {
 
     /**
      * The last step of deleting an account that had Google: the access token
-     * from this round trip is used once, to withdraw JoLu's access, and then
+     * from this round trip is used once, to withdraw Ownify's access, and then
      * dropped. The account itself is already gone by now.
      *
      * Only for the Google account that was linked: a token for any other one
-     * is withdrawn too — JoLu has no business holding it — but the page then
+     * is withdrawn too — Ownify has no business holding it — but the page then
      * says the linked account still has to be done by hand.
      *
      * @param callable(string, ?string): array $out
@@ -800,7 +800,7 @@ if (!function_exists('google_signin_config')) {
         }
 
         return $revoked
-            ? $out('revoked', 'Je account is verwijderd, en JoLu is ook uit je Google-account gehaald.')
+            ? $out('revoked', 'Je account is verwijderd, en Ownify is ook uit je Google-account gehaald.')
             : $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
     }
 

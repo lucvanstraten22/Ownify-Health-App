@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- JoLu bg-deep: the window behind the app before its first frame. -->
-    <color name="jolu_bg_deep">#FF252223</color>
-</resources>

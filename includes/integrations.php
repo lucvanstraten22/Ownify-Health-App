@@ -49,12 +49,12 @@ if (!function_exists('integration_providers')) {
             'google_health_connect' => [
                 'label'     => 'Health Connect',
                 'transport' => 'device',
-                'note'      => 'Android — vereist de JoLu-app op je telefoon',
+                'note'      => 'Android — vereist de Ownify-app op je telefoon',
             ],
             'apple_health' => [
                 'label'     => 'Apple Health',
                 'transport' => 'device',
-                'note'      => 'iPhone — vereist de JoLu-app op je telefoon',
+                'note'      => 'iPhone — vereist de Ownify-app op je telefoon',
             ],
         ];
     }
@@ -126,7 +126,7 @@ if (!function_exists('integration_providers')) {
 
         if ($meta['transport'] === 'device') {
             return empty(integration_config($provider)['app_available'])
-                ? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de JoLu-app er is.'
+                ? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.'
                 : null;
         }
 
@@ -236,7 +236,7 @@ if (!function_exists('integration_providers')) {
             || ($connection['refresh_token'] ?? null) !== null;
 
         if ($needsTokens && !crypto_available()) {
-            return ['ok' => false, 'error' => 'De server kan tokens niet veilig opslaan. Stel JOLU_APP_KEY in.'];
+            return ['ok' => false, 'error' => 'De server kan tokens niet veilig opslaan. Stel OWNIFY_APP_KEY in.'];
         }
 
         db_run(

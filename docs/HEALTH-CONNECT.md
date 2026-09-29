@@ -1,6 +1,6 @@
 # Health Connect — the Android companion app
 
-Everything on the JoLu side is built and tested. This is the contract the
+Everything on the Ownify side is built and tested. This is the contract the
 Android app implements, and the reasoning behind the shape of it.
 
 ## Why there has to be an app at all
@@ -10,7 +10,7 @@ permissions the person grants to an app on that phone, and **there is no web,
 REST or server-to-server way to reach it**. No OAuth flow, no API key and no
 amount of server code gets at it.
 
-This is not a JoLu limitation. Google Fit's REST API was the one that could be
+This is not a Ownify limitation. Google Fit's REST API was the one that could be
 called from a web server, and it is closed to new developers and supported only
 to the end of 2026. Google's migration FAQ says it plainly: *"There is no
 alternative to the Fit REST API."* The two things it points at are Health
@@ -18,7 +18,7 @@ Connect, which is the phone, and the Google Health API, which is the cloud but
 returns **Fitbit and Pixel Watch data only** — nothing from a plain Android
 phone.
 
-So: an app on the phone reads Health Connect and posts to JoLu. That app is the
+So: an app on the phone reads Health Connect and posts to Ownify. That app is the
 only part that does not exist yet.
 
 ## How the app proves whose data it is sending
@@ -59,7 +59,7 @@ you that phone rather than every phone. Disconnecting in Settings revokes every
 phone for that source.
 
 That token is a **sync token** (`user_devices.scope = 'sync'`, migration 013)
-and stays one: it can never be used to act as the account. The full JoLu app
+and stays one: it can never be used to act as the account. The full Ownify app
 signs in with the account's password or Google instead and gets an **account
 token** in the same table — listed and revoked in Settings the same way, and
 accepted by every endpoint below too. See [APP-AUTH.md](APP-AUTH.md).
@@ -108,7 +108,7 @@ error there would make the app retry forever.
   "scores": { "sleep": 84, "nutrition": null, "training": 71, "overall": 78 } }
 ```
 
-`unmapped` lists record types JoLu does not handle yet, by type and count, so
+`unmapped` lists record types Ownify does not handle yet, by type and count, so
 they surface instead of vanishing.
 
 `points` is what this batch earned, one line per award. A record that was
@@ -225,7 +225,7 @@ keep their app too. A day's total then counts every moment once, the way
 Health Connect's own totals do: at each moment the record of the
 highest-ranked app counts, for its share of the value, and the next app fills
 in where it has nothing. Health Connect asks the user to rank their apps but
-lets no app read that ranking, so JoLu's is in `config/health-sources.php`:
+lets no app read that ranking, so Ownify's is in `config/health-sources.php`:
 a priority list (empty by default), then the app that covers most of that day,
 then the larger total, then the name. Every record is still stored as it
 arrived; the rule only decides what counts. It runs on the server
@@ -278,11 +278,11 @@ is one night.
    grant **per category**, so assume you will get some and not others — a
    missing category is a category with no data, never a zero.
 2. On first run, ask for the pairing code and exchange it.
-3. Sync periodically, in the background. JoLu Android does this with
+3. Sync periodically, in the background. Ownify Android does this with
    WorkManager: every hour while the phone is paired, on a network and with a
    battery that is not low, plus once right after pairing, after Health
    Connect access is granted and on opening the app when the last sync is more
-   than 30 minutes old. Every run — automatic or the "Sync to JoLu" button —
+   than 30 minutes old. Every run — automatic or the "Sync to Ownify" button —
    is the same pipeline and re-sends the last 7 days: data arrives late and
    gets corrected, and re-sending is safe by design (the server upserts on
    `metadata.id` and counts overlapping apps once). A changes token could
@@ -292,7 +292,7 @@ is one night.
    grants separately and which exists only where Health Connect reports
    `FEATURE_READ_HEALTH_DATA_IN_BACKGROUND` as available. Without it the
    automatic sync still runs whenever the app is open, and skips (sending
-   nothing) when it is not. See `HealthappAndroid/README.md`.
+   nothing) when it is not. See `OwnifyAndroid/README.md`.
 5. On `401` from any call, clear the stored token, stop the automatic sync and
    prompt to pair again — an invalid token is never used a second time.
    Offline or a server error keeps the token and retries with backoff.
@@ -430,7 +430,7 @@ The server half is finished and tested; nothing else needs to change.
   declaration form about which data types you read and why, and health data has
   its own Play Store policy. Check the current requirements when you submit —
   they change, and they are stricter than for an ordinary app.
-- **Set `JOLU_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
+- **Set `OWNIFY_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
   on Hestia*, has the exact commands. None of this flow needs it: a device
   token is hashed, not encrypted, and the test above passes on a server with no
   key at all. What needs it is any future OAuth source, which refuses to store

@@ -1,12 +1,12 @@
 -- ============================================================================
---  013 — the JoLu app signs in as an account; sign-in attempts are counted
+--  013 — the Ownify app signs in as an account; sign-in attempts are counted
 -- ----------------------------------------------------------------------------
 --  Until now a phone had one kind of credential: the device token it gets by
 --  typing a pairing code from the website (005). That token may upload health
 --  records and read the few things a sync needs, and nothing more — it is not
 --  an account sign-in, and it must never become one.
 --
---  The full JoLu app needs to act as the account: set goals, see friends,
+--  The full Ownify app needs to act as the account: set goals, see friends,
 --  change the profile. It signs in with the account's own password or Google,
 --  and gets a token of its own for that. Both kinds live in user_devices, so a
 --  phone is one row in Settings > Apparaten, revoked with the same button:

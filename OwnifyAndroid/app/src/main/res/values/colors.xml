@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ownify bg-deep: the window behind the app before its first frame. -->
+    <color name="ownify_bg_deep">#FF252223</color>
+</resources>

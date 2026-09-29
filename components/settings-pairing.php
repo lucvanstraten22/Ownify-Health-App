@@ -20,7 +20,7 @@ declare(strict_types=1);
          aria-labelledby="pairing-title">
 
         <h2 class="confirm__title" id="pairing-title">Koppelcode</h2>
-        <p class="confirm__body">Open de JoLu-app op je telefoon en voer deze code in.</p>
+        <p class="confirm__body">Open de Ownify-app op je telefoon en voer deze code in.</p>
 
         <p class="pairing__code" data-pairing-code aria-live="polite">••••••••</p>
         <p class="pairing__expiry" data-pairing-expiry></p>

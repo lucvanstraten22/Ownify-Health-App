@@ -21,7 +21,11 @@ jobs:
       - name: Copy files to WAMP
         shell: cmd
         run: |
-          robocopy "%GITHUB_WORKSPACE%" "C:\wamp64\www\JoLu" /MIR /XD ".git" "uploads"
+          robocopy "%GITHUB_WORKSPACE%" "C:\wamp64\www\Ownify" /MIR /XD ".git" "uploads"
+          if %ERRORLEVEL% GTR 7 exit /b %ERRORLEVEL%
+          rem uploads\ is left out of the mirror so nobody's avatar is deleted,
+          rem but its .htaccess (never run anything uploaded) must always be there.
+          robocopy "%GITHUB_WORKSPACE%\uploads" "C:\wamp64\www\Ownify\uploads" .htaccess
           if %ERRORLEVEL% LEQ 7 exit /b 0
           exit /b %ERRORLEVEL%
 

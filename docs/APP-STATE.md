@@ -1,4 +1,4 @@
-# What the JoLu app reads
+# What the Ownify app reads
 
 The website renders every page on the server (`index.php`). The Android app
 lays the same pages out natively and reads them from one endpoint. Both go

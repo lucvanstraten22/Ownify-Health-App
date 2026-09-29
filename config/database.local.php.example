@@ -20,7 +20,7 @@ return [
     // and the user usually look like 'youraccount_appname'.
     'host'     => 'localhost',
     'port'     => 3306,
-    'database' => 'luc_healthapp',
-    'username' => 'luc_healthapp',
+    'database' => 'luc_ownify',
+    'username' => 'luc_ownify',
     'password' => 'PUT-THE-REAL-PASSWORD-HERE',
 ];

@@ -421,7 +421,7 @@ if (!function_exists('user_validate_username')) {
      * hand — the current one, and any older one a failed tidy-up left behind.
      *
      * Returns the Google account id that was linked, if any, so the caller can
-     * also ask Google to forget JoLu. It is not stored anywhere any more.
+     * also ask Google to forget Ownify. It is not stored anywhere any more.
      *
      * @return array{ok: bool, error: ?string, google_sub: ?string}
      */

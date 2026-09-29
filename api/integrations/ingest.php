@@ -7,7 +7,7 @@
  * A user id in a request body is a user id an attacker can change, so there is
  * not one in this contract at all.
  *
- * The body is Health Connect's records as JSON; the mapping to JoLu's tables
+ * The body is Health Connect's records as JSON; the mapping to Ownify's tables
  * is health-connect-map.php, on this side, so correcting it is a deploy rather
  * than an app release.
  */

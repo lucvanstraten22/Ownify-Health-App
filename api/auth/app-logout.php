@@ -1,6 +1,6 @@
 <?php
 /**
- * The JoLu app signs out: the account token it sends stops working.
+ * The Ownify app signs out: the account token it sends stops working.
  *
  *   POST  Authorization: Bearer <account token>      (no body)
  *

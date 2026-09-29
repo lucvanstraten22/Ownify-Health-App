@@ -34,7 +34,7 @@ $settings = [
         // Must match a redirect URI registered on the OAuth client, exactly,
         // including https and any trailing path.
         'redirect_uri'  => '',
-        // Asked for at consent time. Read-only: JoLu imports, it never writes
+        // Asked for at consent time. Read-only: Ownify imports, it never writes
         // back to anyone's health account.
         'scopes'        => [
             'https://www.googleapis.com/auth/googlehealth.sleep.readonly',

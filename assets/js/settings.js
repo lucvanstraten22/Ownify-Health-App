@@ -507,7 +507,7 @@
             .then(function (result) {
                 if (result && result.ok) {
                     /* Gone. An account with Google makes one short trip past
-                       Google so it can forget JoLu too; otherwise the page
+                       Google so it can forget Ownify too; otherwise the page
                        reloads, signed out, and says what happened. */
                     if (result.redirect) {
                         window.location.assign(result.redirect);

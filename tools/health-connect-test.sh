@@ -45,7 +45,7 @@ FAIL=0
 # A name nobody will mistake for a real account, and a fresh one per run so
 # repeating the test never collides with a previous one it could not clean up.
 USER_NAME="hctest_$(date +%Y%m%d_%H%M%S)"
-USER_MAIL="${USER_NAME}@jolu-test.invalid"          # .invalid can never be a real domain
+USER_MAIL="${USER_NAME}@ownify-test.invalid"          # .invalid can never be a real domain
 USER_PASS="health-connect-test-password"            # a test password, not a secret
 
 cleanup_files() { rm -f "$JAR"; }
@@ -139,7 +139,7 @@ has "google_health refuses a code" \
 echo "== 2. the phone exchanges it — no session, no CSRF =="
 BODY="$(curl -s -X POST "$BASE_URL/api/integrations/pair.php" \
     -H 'Content-Type: application/json' \
-    -d "{\"code\":\"$CODE\",\"label\":\"JoLu test client\",\"platform\":\"curl\",\"app_version\":\"test\"}")"
+    -d "{\"code\":\"$CODE\",\"label\":\"Ownify test client\",\"platform\":\"curl\",\"app_version\":\"test\"}")"
 has "paired" "$BODY" '"ok":true'
 
 echo "== 3. it receives a device token, once =="
@@ -179,7 +179,7 @@ BODY="$(curl -s -X POST "$BASE_URL/api/integrations/status.php" \
     -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{}')"
 has "it is" "$BODY" '"ok":true'
 same "  for the right provider" "$(echo "$BODY" | field provider)" "google_health_connect"
-same "  and it knows the phone" "$(echo "$BODY" | field label)" "JoLu test client"
+same "  and it knows the phone" "$(echo "$BODY" | field label)" "Ownify test client"
 has "  it says nothing about the account" "$(echo "$BODY" | grep -c 'email\|username\|user_id' || true)" "0"
 same "no token -> 401" \
     "$(status_of -X POST "$BASE_URL/api/integrations/status.php" \
@@ -187,7 +187,7 @@ same "no token -> 401" \
 
 # ------------------------------------------------- 6. the right tables
 
-echo "== 6. the records became JoLu rows =="
+echo "== 6. the records became Ownify rows =="
 verify imported
 
 # ----------------------------------------------- 7,8. the same batch again
@@ -229,7 +229,7 @@ same "a token that is not even the right shape -> 401" \
 
 echo "== the owner can see the phone on the settings page =="
 PAGE="$(curl -s -b "$JAR" -c "$JAR" "$BASE_URL/?page=settings")"
-has "it is listed by name" "$PAGE" 'JoLu test client'
+has "it is listed by name" "$PAGE" 'Ownify test client'
 has "  with its own revoke button" "$PAGE" 'data-device-revoke'
 has "  and never a token" "$(echo "$PAGE" | grep -c "$TOKEN" || true)" "0"
 

@@ -8,7 +8,7 @@
  * A phone and a watch both count the steps of the same walk, and both put
  * their record in Health Connect: 5.000 from the phone, 4.900 from the watch.
  * Added up that is 9.900 steps nobody walked. Health Connect's own total
- * counts every moment once; this is how JoLu does the same, for the metrics
+ * counts every moment once; this is how Ownify does the same, for the metrics
  * listed under 'reconcile'. It is applied when a day's total is read
  * (health_metric_totals() in includes/health-totals.php), never by deleting a
  * record: everything the phone sent stays stored as it arrived.
@@ -45,7 +45,7 @@
  * from the numbers whether 5.000 or 4.900 is the true count; the rule only
  * makes sure the same moment is not counted twice, and always picks the
  * same way. Health Connect itself asks the user to rank their apps, but no
- * app can read that ranking — so, until JoLu asks the user too, the list
+ * app can read that ranking — so, until Ownify asks the user too, the list
  * below is the place to make that choice.
  */
 

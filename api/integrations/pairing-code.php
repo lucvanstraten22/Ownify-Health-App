@@ -2,7 +2,7 @@
 /**
  * Mints a pairing code for the signed-in user to type into the phone app.
  *
- * Asked for by the signed-in account — on the website, or in the JoLu app
+ * Asked for by the signed-in account — on the website, or in the Ownify app
  * signed in with its account token (api_require_account_user()), to pair
  * another phone. A pairing token can never mint one. The code comes back once,
  * in this response, and is never retrievable again — only its hash is stored,

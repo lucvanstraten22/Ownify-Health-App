@@ -65,7 +65,7 @@ if ($options === false || isset($options['help']) || $options === []) {
  * a fixed date eventually becomes a session from last year, and the parts of
  * the app that ask "what happened today" stop being exercised.
  *
- * The last record is deliberately a type JoLu does not map. It must come back
+ * The last record is deliberately a type Ownify does not map. It must come back
  * in `unmapped`, by name, rather than vanishing.
  */
 function hc_fixture(): array
@@ -77,7 +77,7 @@ function hc_fixture(): array
         'records' => [
             [
                 'recordType' => 'SleepSession',
-                'metadata'   => ['id' => 'jolu-test-sleep-1', 'dataOrigin' => 'jolu.test'],
+                'metadata'   => ['id' => 'ownify-test-sleep-1', 'dataOrigin' => 'ownify.test'],
                 'startTime'  => $yday . 'T23:10:00Z',
                 'endTime'    => $today . 'T06:42:00Z',
                 'stages'     => [
@@ -90,14 +90,14 @@ function hc_fixture(): array
             ],
             [
                 'recordType' => 'Steps',
-                'metadata'   => ['id' => 'jolu-test-steps-1'],
+                'metadata'   => ['id' => 'ownify-test-steps-1'],
                 'startTime'  => $today . 'T00:00:00Z',
                 'endTime'    => $today . 'T23:59:00Z',
                 'count'      => 9420,
             ],
             [
                 'recordType'       => 'ExerciseSession',
-                'metadata'         => ['id' => 'jolu-test-exercise-1'],
+                'metadata'         => ['id' => 'ownify-test-exercise-1'],
                 'startTime'        => $today . 'T18:00:00Z',
                 'endTime'          => $today . 'T18:45:00Z',
                 'exerciseTypeName' => 'running',
@@ -105,26 +105,26 @@ function hc_fixture(): array
             ],
             [
                 'recordType' => 'Weight',
-                'metadata'   => ['id' => 'jolu-test-weight-1'],
+                'metadata'   => ['id' => 'ownify-test-weight-1'],
                 'time'       => $today . 'T07:10:00Z',
                 'weight'     => ['kilograms' => 72.4],
             ],
             [
                 'recordType' => 'Height',
-                'metadata'   => ['id' => 'jolu-test-height-1'],
+                'metadata'   => ['id' => 'ownify-test-height-1'],
                 'time'       => $today . 'T07:10:00Z',
                 'height'     => ['meters' => 1.83],
             ],
             [
                 'recordType' => 'Hydration',
-                'metadata'   => ['id' => 'jolu-test-water-1'],
+                'metadata'   => ['id' => 'ownify-test-water-1'],
                 'startTime'  => $today . 'T12:00:00Z',
                 'endTime'    => $today . 'T12:00:00Z',
                 'volume'     => ['liters' => 1.8],
             ],
             [
                 'recordType' => 'Nutrition',
-                'metadata'   => ['id' => 'jolu-test-meal-1'],
+                'metadata'   => ['id' => 'ownify-test-meal-1'],
                 'startTime'  => $today . 'T12:30:00Z',
                 'mealType'   => 2,
                 'name'       => 'Testlunch',
@@ -135,7 +135,7 @@ function hc_fixture(): array
             [
                 /* Not mapped, on purpose. */
                 'recordType' => 'MenstruationFlow',
-                'metadata'   => ['id' => 'jolu-test-unmapped-1'],
+                'metadata'   => ['id' => 'ownify-test-unmapped-1'],
                 'time'       => $today . 'T08:00:00Z',
             ],
         ],

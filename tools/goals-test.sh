@@ -93,7 +93,7 @@ for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B"; do
     JAR="${PAIR%%:*}"; NAME="${PAIR##*:}"
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/auth/register.php" \
         --data-urlencode "csrf=$(csrf "$JAR")" --data-urlencode "username=$NAME" \
-        --data-urlencode "email=$NAME@jolu-test.invalid" --data-urlencode "password=$PASSWORD" > /dev/null
+        --data-urlencode "email=$NAME@ownify-test.invalid" --data-urlencode "password=$PASSWORD" > /dev/null
 done
 ok "four test accounts exist"
 
@@ -323,7 +323,7 @@ fi
 curl -s -b "$A" -c "$A" -X POST "$BASE_URL/api/auth/logout.php" --data-urlencode "csrf=$(csrf "$A")" > /dev/null
 rm -f "$A"; A="$(mktemp)"
 R="$(curl -s -b "$A" -c "$A" -X POST "$BASE_URL/api/auth/login.php" \
-    --data-urlencode "csrf=$(csrf "$A")" --data-urlencode "email=$USER_A@jolu-test.invalid" \
+    --data-urlencode "csrf=$(csrf "$A")" --data-urlencode "email=$USER_A@ownify-test.invalid" \
     --data-urlencode "password=$PASSWORD")"
 has "signed back in" "$R" '"ok":true'
 PAGE="$(page "$A")"

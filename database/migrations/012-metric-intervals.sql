@@ -2,7 +2,7 @@
 --  012 — which app a reading came from, and the time it covers
 -- ----------------------------------------------------------------------------
 --  Health Connect gives every step, distance and calorie record a start and
---  an end, and the app that wrote it (its package name, `dataOrigin`). JoLu
+--  an end, and the app that wrote it (its package name, `dataOrigin`). Ownify
 --  kept only the end, so when two apps recorded the same walk — the phone
 --  and a watch — both records were added up: 5.000 + 4.900 = 9.900 steps.
 --

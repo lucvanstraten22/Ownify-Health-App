@@ -82,7 +82,7 @@ if (!function_exists('points_process')) {
         ) > 0;
 
         if (!$available) {
-            error_log('[jolu] points: point_events has no award_key yet, so nothing is awarded — '
+            error_log('[ownify] points: point_events has no award_key yet, so nothing is awarded — '
                 . 'import database/migrations/010-health-score-and-points.sql');
         }
 
@@ -577,7 +577,7 @@ if (!function_exists('points_process')) {
 
     /**
      * The first day of the week a moment falls in. The person's own choice
-     * in Instellingen once it is stored; until then the JoLu default.
+     * in Instellingen once it is stored; until then the Ownify default.
      */
     function points_week_start(int $userId, int $timestamp): string
     {

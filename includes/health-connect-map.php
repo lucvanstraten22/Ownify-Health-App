@@ -1,6 +1,6 @@
 <?php
 /**
- * Health Connect records -> JoLu's normalised import shape.
+ * Health Connect records -> Ownify's normalised import shape.
  *
  * ---------------------------------------------------------------------------
  * WHY THIS IS ON THE SERVER
@@ -90,7 +90,7 @@ if (!function_exists('health_connect_map')) {
     }
 
     /**
-     * One Health Connect record becomes zero, one or several JoLu records.
+     * One Health Connect record becomes zero, one or several Ownify records.
      *
      * Several, because some Health Connect records carry more than one fact: a
      * nutrition record is a meal plus its nutrients, and each nutrient is its

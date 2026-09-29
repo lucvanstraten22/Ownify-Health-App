@@ -19,9 +19,15 @@
  * ---------------------------------------------------------------------------
  * Three places, in this order, first one wins:
  *
- *   1. the process environment          getenv('JOLU_APP_KEY')
- *   2. the server environment           $_SERVER['JOLU_APP_KEY']
+ *   1. the process environment          getenv('OWNIFY_APP_KEY')
+ *   2. the server environment           $_SERVER['OWNIFY_APP_KEY']
  *   3. config/app.local.php             ['app_key' => '...']
+ *
+ * The variable was called JOLU_APP_KEY before the app was renamed to Ownify.
+ * A server that still sets it under that name keeps working — the old name is
+ * read after the new one, in the same two places — and tools/check-config.php
+ * says to rename it. Only the name changed: the key is the same key, and
+ * changing it would make every stored token unreadable (see below).
  *
  * Never from a tracked file. A key in the checkout is a key on GitHub, a key
  * in every deploy and a key in every clone — so config/app.local.php is
@@ -30,7 +36,7 @@
  *
  * (2) exists because Apache's SetEnv and several FastCGI setups put the value
  * there rather than in the process environment. A request header can never
- * arrive that way: headers reach PHP prefixed with HTTP_, so HTTP_JOLU_APP_KEY
+ * arrive that way: headers reach PHP prefixed with HTTP_, so HTTP_OWNIFY_APP_KEY
  * is the most a caller could set, and that is not read here.
  *
  * ---------------------------------------------------------------------------
@@ -49,6 +55,16 @@
  */
 
 declare(strict_types=1);
+
+/** The environment variable that holds the key. */
+if (!defined('CRYPTO_KEY_VARIABLE')) {
+    define('CRYPTO_KEY_VARIABLE', 'OWNIFY_APP_KEY');
+}
+
+/** Its name before the app was called Ownify, still read after the current one. */
+if (!defined('CRYPTO_KEY_VARIABLE_LEGACY')) {
+    define('CRYPTO_KEY_VARIABLE_LEGACY', 'JOLU_APP_KEY');
+}
 
 if (!function_exists('crypto_key')) {
 
@@ -86,19 +102,25 @@ if (!function_exists('crypto_key')) {
         $raw    = null;
         $source = null;
 
-        $env = getenv('JOLU_APP_KEY');
+        /* The current name first, then the name from before the app was
+           called Ownify, so renaming the variable on a server is never urgent. */
+        foreach ([CRYPTO_KEY_VARIABLE, CRYPTO_KEY_VARIABLE_LEGACY] as $variable) {
+            $suffix = $variable === CRYPTO_KEY_VARIABLE ? '' : ' (under its old name ' . $variable . ')';
+            $env    = getenv($variable);
 
-        if (is_string($env) && $env !== '') {
-            $raw    = $env;
-            $source = 'the process environment';
-        }
+            if (is_string($env) && $env !== '') {
+                $raw    = $env;
+                $source = 'the process environment' . $suffix;
+                break;
+            }
 
-        if ($raw === null
-            && isset($_SERVER['JOLU_APP_KEY'])
-            && is_string($_SERVER['JOLU_APP_KEY'])
-            && $_SERVER['JOLU_APP_KEY'] !== '') {
-            $raw    = $_SERVER['JOLU_APP_KEY'];
-            $source = 'the server environment';
+            if (isset($_SERVER[$variable])
+                && is_string($_SERVER[$variable])
+                && $_SERVER[$variable] !== '') {
+                $raw    = $_SERVER[$variable];
+                $source = 'the server environment' . $suffix;
+                break;
+            }
         }
 
         if ($raw === null) {
@@ -120,7 +142,7 @@ if (!function_exists('crypto_key')) {
                 'key'     => null,
                 'state'   => 'missing',
                 'source'  => null,
-                'message' => 'JOLU_APP_KEY is not set. Set it in the environment or in '
+                'message' => CRYPTO_KEY_VARIABLE . ' is not set. Set it in the environment or in '
                     . 'config/app.local.php (see config/app.local.php.example). Until then '
                     . 'nothing that needs an encrypted token can be connected.',
             ];
@@ -138,8 +160,9 @@ if (!function_exists('crypto_key')) {
                 /* The length is safe to say and is usually the whole diagnosis;
                    the value is never said at all. */
                 'message' => sprintf(
-                    'JOLU_APP_KEY, from %s, is not %d bytes of base64 (it decodes to %s). '
+                    '%s, from %s, is not %d bytes of base64 (it decodes to %s). '
                         . 'Generate one with: php tools/check-config.php --generate-key',
+                    CRYPTO_KEY_VARIABLE,
                     $source,
                     SODIUM_CRYPTO_SECRETBOX_KEYBYTES,
                     $decoded === false ? 'nothing' : strlen($decoded) . ' bytes'
@@ -151,7 +174,7 @@ if (!function_exists('crypto_key')) {
             'key'     => $decoded,
             'state'   => 'ok',
             'source'  => $source,
-            'message' => 'JOLU_APP_KEY is set and usable, from ' . $source . '.',
+            'message' => CRYPTO_KEY_VARIABLE . ' is set and usable, from ' . $source . '.',
         ];
     }
 
@@ -209,7 +232,7 @@ if (!function_exists('crypto_key')) {
 
         if (!$logged && $status['state'] !== 'ok') {
             $logged = true;
-            error_log('[jolu] configuration: ' . $status['message']);
+            error_log('[ownify] configuration: ' . $status['message']);
         }
 
         return $status;

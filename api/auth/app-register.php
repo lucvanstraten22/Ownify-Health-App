@@ -1,6 +1,6 @@
 <?php
 /**
- * The JoLu app creates an account: e-mail address, username, password.
+ * The Ownify app creates an account: e-mail address, username, password.
  *
  *   POST  { "email": "…", "username": "…", "password": "…",
  *           "label": "Pixel 10", "platform": "android", "app_version": "1.0" }

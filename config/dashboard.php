@@ -24,7 +24,7 @@ return [
 
     /* -------------------------------------------------- app + shell */
     'app' => [
-        'name'        => 'NaamKomtNog!!',
+        'name'        => 'Ownify',
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',

@@ -79,7 +79,7 @@ $days = static function (int $userId, ?int $type): array {
     return array_values(array_unique($dates));
 };
 
-echo "JoLu points backfill\n", str_repeat('-', 72), "\n";
+echo "Ownify points backfill\n", str_repeat('-', 72), "\n";
 
 $accounts = 0;
 $changed  = 0;

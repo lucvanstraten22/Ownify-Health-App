@@ -210,7 +210,7 @@ if (!function_exists('health_score_now')) {
 
     /**
      * Results on the person's own strength and performance goals — the one
-     * place JoLu holds lifted weights, repetitions or times. Only milestone
+     * place Ownify holds lifted weights, repetitions or times. Only milestone
      * goals that go up or down, oldest entry first.
      *
      * @return array<int,array{direction: string, entries: array<int,array{at:int,value:float}>}>
@@ -684,7 +684,7 @@ if (!function_exists('health_score_now')) {
         } catch (PDOException $e) {
             /* A score that could not be written down is still the right
                score; the page shows it either way. */
-            error_log('[jolu] health score: could not record the day\'s scores: ' . $e->getMessage());
+            error_log('[ownify] health score: could not record the day\'s scores: ' . $e->getMessage());
         }
     }
 

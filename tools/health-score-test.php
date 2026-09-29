@@ -4,7 +4,7 @@
  *
  *     php tools/health-score-test.php
  *
- * Every score in JoLu comes out of includes/health-score.php, with its
+ * Every score in Ownify comes out of includes/health-score.php, with its
  * numbers in config/scoring.php; every point value out of includes/points.php
  * and config/points.php. This checks the arithmetic on made-up records held in
  * memory — the curves, the 90-day window, the 3-day minimum, missing data

@@ -1,6 +1,6 @@
 <?php
 /**
- * Everything the signed-in JoLu app shows, as JSON — the app's one read.
+ * Everything the signed-in Ownify app shows, as JSON — the app's one read.
  *
  * The website renders its pages on the server in one request (index.php); the
  * Android app lays out the same pages natively and reads them from here. Both

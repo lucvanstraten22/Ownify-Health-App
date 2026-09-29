@@ -50,7 +50,7 @@ if (!$data['auth']['signed_in']) {
 $userId = current_user_id();
 
 /* Everything the pages show, filled for this account: the same pipeline the
-   JoLu app reads as JSON (api/app/state.php), so the two can never disagree.
+   Ownify app reads as JSON (api/app/state.php), so the two can never disagree.
    See lib/app-data.php. */
 $data = app_page_data($data, $userId);
 

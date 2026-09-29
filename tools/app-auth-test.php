@@ -2,12 +2,12 @@
 /**
  * The app's account sign-in, tested end to end over HTTP.
  *
- *     DB_NAME=jolu_dev DB_USER=root php tools/app-auth-test.php
- *     PRE13_DB=jolu_pre13 DB_NAME=… php tools/app-auth-test.php   # also the before-013 checks
+ *     DB_NAME=ownify_dev DB_USER=root php tools/app-auth-test.php
+ *     PRE13_DB=ownify_pre13 DB_NAME=… php tools/app-auth-test.php   # also the before-013 checks
  *
  * Starts the app on PHP's built-in server (tools/app-auth-router.php), and a
  * second one standing in for Google's key endpoint with keys made here, then
- * makes the requests the website and the JoLu app make: registering, signing
+ * makes the requests the website and the Ownify app make: registering, signing
  * in, pairing, syncing, changing a goal, signing out — through the real
  * endpoints, with the real authentication, on the database named by DB_NAME.
  * Nothing is stubbed except Google itself, whose ID tokens this signs with
@@ -234,7 +234,7 @@ function web_account(string $who, ?string $baseUrl = null): array
     $username = account_name($who);
     $result   = web($browser, '/api/auth/register.php', [
         'username' => $username,
-        'email'    => $username . '@jolu-test.invalid',
+        'email'    => $username . '@ownify-test.invalid',
         'password' => $password,
     ], $baseUrl);
 
@@ -243,7 +243,7 @@ function web_account(string $who, ?string $baseUrl = null): array
         exit(1);
     }
 
-    return $browser + ['username' => $username, 'email' => $username . '@jolu-test.invalid'];
+    return $browser + ['username' => $username, 'email' => $username . '@ownify-test.invalid'];
 }
 
 /** Pairs a phone the way the website and the app do; returns the sync token. */
@@ -292,7 +292,7 @@ $googleKey     = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type
 $googleDetails = openssl_pkey_get_details($googleKey);
 $impostorKey   = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
 
-$keysDir = sys_get_temp_dir() . '/jolu-app-auth-' . $run;
+$keysDir = sys_get_temp_dir() . '/ownify-app-auth-' . $run;
 mkdir($keysDir);
 file_put_contents($keysDir . '/jwks.json', json_encode(['keys' => [[
     'kty' => 'RSA', 'kid' => 'test-key', 'use' => 'sig', 'alg' => 'RS256',
@@ -393,8 +393,8 @@ $base       = 'http://127.0.0.1:' . $appPort;
 
 $googleServer = serve($googlePort, $keysDir, null, []);
 $appEnv       = [
-    'JOLU_TEST_GOOGLE_JWKS_URL'        => 'http://127.0.0.1:' . $googlePort . '/jwks.json',
-    'JOLU_TEST_GOOGLE_TOKEN_URL'       => 'http://127.0.0.1:' . $googlePort . '/token.php',
+    'OWNIFY_TEST_GOOGLE_JWKS_URL'        => 'http://127.0.0.1:' . $googlePort . '/jwks.json',
+    'OWNIFY_TEST_GOOGLE_TOKEN_URL'       => 'http://127.0.0.1:' . $googlePort . '/token.php',
     'GOOGLE_SIGNIN_CLIENT_ID'          => $webClient,
     'GOOGLE_SIGNIN_CLIENT_SECRET'      => 'not-a-secret-test-value',
     'GOOGLE_SIGNIN_REDIRECT_URI'       => $base . '/api/auth/google-callback.php',
@@ -423,7 +423,7 @@ $bramId = user_id_of($bram['username']);
 $fixture = (string) shell_exec('php ' . escapeshellarg($root . '/tools/hc-verify.php') . ' --fixture');
 
 /* ======================================================================
-   EXISTING JOLU INTEGRATIONS  (32–36, first half)
+   EXISTING OWNIFY INTEGRATIONS  (32–36, first half)
    ====================================================================== */
 
 section('32. pairing still works, and makes a sync token');
@@ -459,7 +459,7 @@ check('the account: username, avatar, created_at, age', array_keys($login['body'
     && $login['body']['account']['username'] === $anna['username']);
 check('no user id, e-mail or hash anywhere in the answer',
     !preg_match('/user_id|"id"|email|_hash|\$2y\$|@/i', $login['raw']), $login['raw']);
-check('no stay-signed-in cookie: the app is not a browser', !preg_match('/^Set-Cookie:\s*(__Host-)?jolu_login/mi', $login['headers']));
+check('no stay-signed-in cookie: the app is not a browser', !preg_match('/^Set-Cookie:\s*(__Host-)?ownify_login/mi', $login['headers']));
 $annaRow = row_of($annaToken);
 check('its row: scope account, the phone\'s Health Connect source',
     ($annaRow['scope'] ?? null) === 'account' && ($annaRow['provider'] ?? null) === 'google_health_connect', json_encode($annaRow));
@@ -682,7 +682,7 @@ section('15, 20. the app registers an account');
 $gijs = 'at_' . $run . '_gijs';
 $made[] = $gijs;
 $reg = http('/api/auth/app-register.php', ['json' => [
-    'email' => $gijs . '@jolu-test.invalid', 'username' => $gijs, 'password' => $password,
+    'email' => $gijs . '@ownify-test.invalid', 'username' => $gijs, 'password' => $password,
     'label' => 'Gijs Pixel', 'platform' => 'android',
 ]]);
 check('200', $reg['status'] === 200, summary($reg));
@@ -692,18 +692,18 @@ check('20. a token with scope account', strlen($gijsToken) === 64 && ($reg['body
 check('the account exists, with a hashed password', user_id_of($gijs) > 0
     && str_starts_with((string) db_value("SELECT password_hash FROM user_auth_identities WHERE user_id = ? AND provider = 'email'", [user_id_of($gijs)]), '$2y$'));
 check('nothing about it but username, avatar, created_at, age', array_keys($reg['body']['account'] ?? []) === ['username', 'avatar', 'created_at', 'age']);
-check('no persistent sign-in cookie for a browser', !preg_match('/jolu_login/i', $reg['headers']));
+check('no persistent sign-in cookie for a browser', !preg_match('/ownify_login/i', $reg['headers']));
 check('and no browser sign-in row', (int) db_value('SELECT COUNT(*) FROM user_login_tokens WHERE user_id = ?', [user_id_of($gijs)]) === 0);
 check('the token works on the pilot', http('/api/goals/update.php', ['bearer' => $gijsToken, 'json' => ['goal_id' => 999999999, 'action' => 'pause']])['status'] === 404);
 check('Settings shows the phone under Health Connect', count(devices_for_user(user_id_of($gijs), 'google_health_connect')) === 1);
 
 section('16–19. what registering refuses');
 $cases = [
-    '16. a taken username'   => ['email' => 'at_' . $run . '_x1@jolu-test.invalid', 'username' => $gijs, 'password' => $password],
-    '17. a taken address'    => ['email' => $gijs . '@jolu-test.invalid', 'username' => 'at_' . $run . '_x2', 'password' => $password],
-    '18. an invalid username' => ['email' => 'at_' . $run . '_x3@jolu-test.invalid', 'username' => 'no spaces!', 'password' => $password],
-    '18. a username too short' => ['email' => 'at_' . $run . '_x4@jolu-test.invalid', 'username' => 'ab', 'password' => $password],
-    '19. a password too short' => ['email' => 'at_' . $run . '_x5@jolu-test.invalid', 'username' => 'at_' . $run . '_x5', 'password' => 'short'],
+    '16. a taken username'   => ['email' => 'at_' . $run . '_x1@ownify-test.invalid', 'username' => $gijs, 'password' => $password],
+    '17. a taken address'    => ['email' => $gijs . '@ownify-test.invalid', 'username' => 'at_' . $run . '_x2', 'password' => $password],
+    '18. an invalid username' => ['email' => 'at_' . $run . '_x3@ownify-test.invalid', 'username' => 'no spaces!', 'password' => $password],
+    '18. a username too short' => ['email' => 'at_' . $run . '_x4@ownify-test.invalid', 'username' => 'ab', 'password' => $password],
+    '19. a password too short' => ['email' => 'at_' . $run . '_x5@ownify-test.invalid', 'username' => 'at_' . $run . '_x5', 'password' => 'short'],
     'an invalid address'     => ['email' => 'not-an-address', 'username' => 'at_' . $run . '_x6', 'password' => $password],
     'nothing at all'         => [],
 ];
@@ -717,11 +717,11 @@ check('none of them made an account', (int) db_value("SELECT COUNT(*) FROM users
 
 section('registering: trying taken addresses is limited like guessing passwords');
 for ($i = 1; $i <= 4; $i++) {
-    http('/api/auth/app-register.php', ['json' => ['email' => $gijs . '@jolu-test.invalid', 'username' => 'at_' . $run . '_y' . $i, 'password' => $password]]);
+    http('/api/auth/app-register.php', ['json' => ['email' => $gijs . '@ownify-test.invalid', 'username' => 'at_' . $run . '_y' . $i, 'password' => $password]]);
 }
-$probe = http('/api/auth/app-register.php', ['json' => ['email' => $gijs . '@jolu-test.invalid', 'username' => 'at_' . $run . '_y9', 'password' => $password]]);
+$probe = http('/api/auth/app-register.php', ['json' => ['email' => $gijs . '@ownify-test.invalid', 'username' => 'at_' . $run . '_y9', 'password' => $password]]);
 check('the 6th try with a taken address: 429', $probe['status'] === 429, summary($probe));
-$shortOnes = 'at_' . $run . '_h@jolu-test.invalid';
+$shortOnes = 'at_' . $run . '_h@ownify-test.invalid';
 for ($i = 1; $i <= 6; $i++) {
     http('/api/auth/app-register.php', ['json' => ['email' => $shortOnes, 'username' => 'at_' . $run . '_h', 'password' => 'short']]);
 }
@@ -840,12 +840,36 @@ $webIn   = web($browser, '/api/auth/login.php', ['username' => $nina['username']
 check('24. login.php: 200 with the same answer shape', $webIn['status'] === 200 && array_keys($webIn['body'] ?? []) === ['ok', 'account'], summary($webIn));
 check('    and no token in it', !isset($webIn['body']['token']));
 check('25. the session is signed in', (http('/api/auth/session.php', ['jar' => $browser['jar']])['body']['signed_in'] ?? null) === true);
-check('27. the stay-signed-in cookie is set', (bool) preg_match('/^Set-Cookie:\s*(__Host-)?jolu_login=/mi', $webIn['headers']), $webIn['headers']);
+check('27. the stay-signed-in cookie is set', (bool) preg_match('/^Set-Cookie:\s*(__Host-)?ownify_login=/mi', $webIn['headers']), $webIn['headers']);
 /* A browser that closed: only the stay-signed-in cookie is left. */
 $jar = (string) file_get_contents($browser['jar']);
-file_put_contents($browser['jar'], implode("\n", array_filter(explode("\n", $jar), static fn (string $line): bool => !str_contains($line, 'jolu_session'))));
+file_put_contents($browser['jar'], implode("\n", array_filter(explode("\n", $jar), static fn (string $line): bool => !str_contains($line, 'ownify_session'))));
 check('27. with only that cookie left, the session comes back', (http('/api/auth/session.php', ['jar' => $browser['jar']])['body']['signed_in'] ?? null) === true);
 check('    and it can still save (its CSRF token belongs to the sign-in)', web($browser, '/api/goals/update.php', ['goal_id' => 1, 'action' => 'pause'])['status'] === 404);
+section('the stay-signed-in cookie from before the app was called Ownify');
+$legacy   = browser();
+$legacyIn = web($legacy, '/api/auth/login.php', ['username' => $nina['username'], 'password' => $password]);
+check('signed in', $legacyIn['status'] === 200, summary($legacyIn));
+/* A browser signed in before the rename, and closed since: no session, and
+   the stay-signed-in cookie under its old name. */
+$lines = array_filter(explode("\n", (string) file_get_contents($legacy['jar'])), static fn (string $line): bool => !str_contains($line, 'ownify_session'));
+file_put_contents($legacy['jar'], implode("\n", array_map(static fn (string $line): string => str_replace("\townify_login\t", "\tjolu_login\t", $line), $lines)));
+$jar = (string) file_get_contents($legacy['jar']);
+check('the browser has only the old cookie', str_contains($jar, "\tjolu_login\t") && !str_contains($jar, 'ownify_'));
+$back = http('/api/auth/session.php', ['jar' => $legacy['jar']]);
+check('with only the old cookie, the session comes back', ($back['body']['signed_in'] ?? null) === true, summary($back));
+check('the cookie goes out again under the new name, with a new validator',
+    (bool) preg_match('/^Set-Cookie:\s*ownify_login=[a-f0-9]{24}\.[a-f0-9]{64};/mi', $back['headers']), $back['headers']);
+check('and the old one is expired', (bool) preg_match('/^Set-Cookie:\s*jolu_login=deleted;.*Max-Age=0/mi', $back['headers']), $back['headers']);
+$jar = (string) file_get_contents($legacy['jar']);
+check('the browser now has the new cookie and not the old one', str_contains($jar, "\townify_login\t") && !str_contains($jar, "\tjolu_login\t"));
+$lines = array_filter(explode("\n", $jar), static fn (string $line): bool => !str_contains($line, 'ownify_session'));
+file_put_contents($legacy['jar'], implode("\n", $lines));
+check('closed once more, the new cookie brings the session back', (http('/api/auth/session.php', ['jar' => $legacy['jar']])['body']['signed_in'] ?? null) === true);
+check('    and it can still save', web($legacy, '/api/goals/update.php', ['goal_id' => 1, 'action' => 'pause'])['status'] === 404);
+$legacyOut = http('/api/auth/logout.php', ['form' => ['csrf' => csrf($legacy)], 'jar' => $legacy['jar']]);
+check('signing out ends it', $legacyOut['status'] === 200 && (http('/api/auth/session.php', ['jar' => $legacy['jar']])['body']['signed_in'] ?? null) === false);
+
 $webWrong = web(browser(), '/api/auth/login.php', ['username' => $nina['username'], 'password' => 'wrong']);
 check('a wrong password on the website: 401, the same words as ever', $webWrong['status'] === 401 && ($webWrong['body']['error'] ?? '') === 'Gebruikersnaam of wachtwoord klopt niet.', summary($webWrong));
 $webOut = http('/api/auth/logout.php', ['form' => ['csrf' => csrf($browser)], 'jar' => $browser['jar']]);
@@ -864,7 +888,7 @@ check('the nonce comes with the Web client\'s id to hand Google, and nothing sec
 
 section('37. Google: somebody new — verify, choose a username, signed in');
 $olaSub   = 'google-sub-ola-' . $run;
-$olaMail  = 'at_' . $run . '_ola@jolu-test.invalid';
+$olaMail  = 'at_' . $run . '_ola@ownify-test.invalid';
 $app      = google_start();
 check('a nonce', strlen($app['nonce']) >= 32);
 $verified = http('/api/auth/app-google.php', ['jar' => $app['jar'], 'json' => [
@@ -890,10 +914,10 @@ $back  = http('/api/auth/app-google.php', ['jar' => $again['jar'], 'json' => [
 check('200, signed_in, a token for that account', $back['status'] === 200 && ($back['body']['status'] ?? null) === 'signed_in'
     && (int) (row_of((string) ($back['body']['token'] ?? ''))['user_id'] ?? 0) === user_id_of($olaName), summary($back));
 
-section('Google on the website and in the app: one Google account, one JoLu account');
+section('Google on the website and in the app: one Google account, one Ownify account');
 /* Made on the website: the button, Google, the callback, the username step. */
 $wenSub    = 'google-sub-wen-' . $run;
-$wenMail   = 'at_' . $run . '_wen@jolu-test.invalid';
+$wenMail   = 'at_' . $run . '_wen@ownify-test.invalid';
 $wenName   = account_name('wen');
 $wenWeb    = browser();
 $wenFlow   = web_google($wenWeb, $wenSub, $wenMail);
@@ -963,7 +987,7 @@ check('and nothing was linked', (int) db_value("SELECT COUNT(*) FROM user_auth_i
 section('Google: an address Google has not verified is not enough for a new account');
 $unverified = google_start();
 $uv = http('/api/auth/app-google.php', ['jar' => $unverified['jar'], 'json' => [
-    'action' => 'verify', 'id_token' => id_token(['sub' => 'google-sub-uv-' . $run, 'email' => 'at_' . $run . '_uv@jolu-test.invalid', 'email_verified' => false, 'nonce' => $unverified['nonce']]),
+    'action' => 'verify', 'id_token' => id_token(['sub' => 'google-sub-uv-' . $run, 'email' => 'at_' . $run . '_uv@ownify-test.invalid', 'email_verified' => false, 'nonce' => $unverified['nonce']]),
 ]]);
 check('403, no account made', $uv['status'] === 403 && !isset($uv['body']['token']), summary($uv));
 
@@ -1067,7 +1091,7 @@ if ($pre !== '') {
     check('no table to count in: wrong passwords stay 401, never an error', $preWrong['status'] === 401, summary($preWrong));
     check('the app\'s sign-in: 503, not available yet',
         http('/api/auth/app-login.php', ['base' => $preBase, 'json' => ['identifier' => $preUser['username'], 'password' => $password]])['status'] === 503
-        && http('/api/auth/app-register.php', ['base' => $preBase, 'json' => ['email' => 'x@jolu-test.invalid', 'username' => 'x', 'password' => $password]])['status'] === 503
+        && http('/api/auth/app-register.php', ['base' => $preBase, 'json' => ['email' => 'x@ownify-test.invalid', 'username' => 'x', 'password' => $password]])['status'] === 503
         && http('/api/auth/app-google.php', ['base' => $preBase, 'json' => ['action' => 'nonce']])['status'] === 503);
     check('the app\'s sign-out: 200, nothing to revoke', (http('/api/auth/app-logout.php', ['base' => $preBase, 'bearer' => $preSync])['body']['revoked'] ?? null) === false);
     check('the pilot with a sync token: 403 (every token is a sync token)',

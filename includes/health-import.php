@@ -5,7 +5,7 @@
  * ---------------------------------------------------------------------------
  * ONE DOOR IN
  * ---------------------------------------------------------------------------
- * Everything from outside JoLu arrives here, in one normalised shape, whatever
+ * Everything from outside Ownify arrives here, in one normalised shape, whatever
  * fetched it. A cloud API the server polls and a phone app posting what it
  * read from Health Connect produce the same records and take the same path, so
  * the mapping, the de-duplication and the privacy rule are written once.

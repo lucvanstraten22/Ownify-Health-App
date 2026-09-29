@@ -150,7 +150,7 @@ if (!function_exists('friend_pair')) {
     function friend_set_requests_allowed(int $userId, bool $allowed): array
     {
         if (!friend_setting_stored()) {
-            error_log('[jolu] friends: user_profiles has no allow_friend_requests yet, so the switch cannot be saved — '
+            error_log('[ownify] friends: user_profiles has no allow_friend_requests yet, so the switch cannot be saved — '
                 . 'import database/migrations/011-friend-requests-setting.sql');
 
             return ['ok' => false, 'error' => 'Deze instelling kan nog niet worden opgeslagen.'];

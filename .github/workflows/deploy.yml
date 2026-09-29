@@ -1,4 +1,4 @@
-name: Deploy Health Preview
+name: Deploy Ownify
 
 on:
   push:
@@ -6,12 +6,12 @@ on:
       - main
 
 concurrency:
-  group: health-preview-production
+  group: ownify-production
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Deploy to Hestia
+    name: Deploy to Hestia (healthpreview.acits.nl)
     runs-on: ubuntu-latest
 
     steps:
@@ -32,8 +32,8 @@ jobs:
       # those private — they must not reach the server at all.
       - name: Leave the Android project out of the upload
         run: |
-          find HealthappAndroid -mindepth 1 ! -path HealthappAndroid/.htaccess -delete
-          ls -A HealthappAndroid
+          find OwnifyAndroid -mindepth 1 ! -path OwnifyAndroid/.htaccess -delete
+          ls -A OwnifyAndroid
 
       # The same for the database scripts (schema, migrations, the dev seed
       # with its published dev password) and the developer docs: they are

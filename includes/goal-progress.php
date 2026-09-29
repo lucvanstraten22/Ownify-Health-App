@@ -159,7 +159,7 @@ if (!function_exists('goal_sources_available')) {
      * over a day can be added up (create.php refuses the rest anyway).
      *
      * One list for the website's wizard (components/goal-wizard.php) and the
-     * JoLu app's (api/app/state.php).
+     * Ownify app's (api/app/state.php).
      *
      * @return array<int, array{domain: string, label: string, sources: array<int, array<string, mixed>>}>
      */

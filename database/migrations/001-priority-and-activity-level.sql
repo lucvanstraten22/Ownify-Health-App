@@ -13,7 +13,7 @@
 -- ----------------------------------------------------------------------------
 --  The database is whichever one you have selected. On shared hosting the
 --  name is not ours to choose — Hestia prefixes it with the account, so it is
---  `luc_healthapp` there and something else on the next server. Naming one
+--  `luc_ownify` there and something else on the next server. Naming one
 --  here would make this file work in exactly one place.
 --
 --  phpMyAdmin:  select the database in the sidebar FIRST, then Import.

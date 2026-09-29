@@ -1,6 +1,6 @@
 <?php
 /**
- * The JoLu app signs in with Google — Android Credential Manager, "Sign in
+ * The Ownify app signs in with Google — Android Credential Manager, "Sign in
  * with Google" — and gets an account token.
  *
  * ---------------------------------------------------------------------------
@@ -15,7 +15,7 @@
  *
  *   1. { "action": "nonce" }
  *        -> { ok, nonce, expires_in, client_id }
- *      A fresh random nonce, kept in this server's session (the jolu_session
+ *      A fresh random nonce, kept in this server's session (the ownify_session
  *      cookie; the app keeps cookies for the length of this conversation).
  *      The app hands it to Credential Manager (GetSignInWithGoogleOption or
  *      GetGoogleIdOption, setNonce), with client_id — the Web client's id,
@@ -30,7 +30,7 @@
  *      authorised party (one of the app's Android clients), expiry, issue
  *      time, and the nonce from step 1, which is then used up.
  *        -> { ok, status: "signed_in", token, scope, provider: "google", account }
- *           a JoLu account already has this Google account
+ *           a Ownify account already has this Google account
  *        -> { ok, status: "choose_username", email, expires_in }
  *           nobody has it yet; the verified identity waits in the session
  *           for ten minutes, as it does on the website

@@ -5,7 +5,7 @@
  *
  *     php tools/metric-totals-test.php
  *
- * The phone and a watch both write their steps to Health Connect. JoLu has to
+ * The phone and a watch both write their steps to Health Connect. Ownify has to
  * count a moment they both recorded once (health_metric_totals() in
  * includes/health-totals.php; the rule is in config/health-sources.php), and
  * every reader has to say the same number: the Training card, goal progress,
@@ -339,7 +339,7 @@ import([
     hc('ActiveCaloriesBurned', 'c4w', WATCH, "$d4 10:00", "$d4 11:00", 240),
 ]);
 $r = agree('phone 5.000 and watch 4.900 over the same hour', $d4, 5000);
-check('  the plain sum was 9.900 — what JoLu showed before', plain_sum('steps', $d4) === 9900.0);
+check('  the plain sum was 9.900 — what Ownify showed before', plain_sum('steps', $d4) === 9900.0);
 check('  10 points (the 5.000 tier), not the 20 that 9.900 would have paid', points_for($d4) === 10, (string) points_for($d4));
 check('  distance on the card: 3,8 km, not 7,5', ($r['values']['distance'] ?? null) === 3.8, json_encode($r['values']['distance'] ?? null));
 check('  active calories on the card: 250, not 490', ($r['values']['active_energy'] ?? null) === 250, json_encode($r['values']['active_energy'] ?? null));

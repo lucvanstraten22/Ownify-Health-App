@@ -2,7 +2,7 @@
 /**
  * Deletes the signed-in account, with everything that belongs to it.
  *
- * The account is the one in the session, or the JoLu app's account token
+ * The account is the one in the session, or the Ownify app's account token
  * (api_require_account_user()) — never one named in the request — and the
  * request has to say `confirm=verwijderen`, which only the second, final step
  * of the confirmation sends. A stray or forged call without it deletes
@@ -15,7 +15,7 @@
  * its next request.
  *
  * An account that had Google gets one more step: the answer carries a
- * redirect through Google that asks it to forget JoLu for that Google account
+ * redirect through Google that asks it to forget Ownify for that Google account
  * (see google_signin_forget). The account is already deleted by then, so
  * nothing about that step can stop or undo the deletion.
  *

@@ -1,9 +1,9 @@
 <?php
 /**
- * The JoLu app's read (api/app/state.php) and the write endpoints it uses with
+ * The Ownify app's read (api/app/state.php) and the write endpoints it uses with
  * its account token, tested end to end over HTTP.
  *
- *     DB_NAME=jolu_dev DB_USER=root php tools/app-state-test.php
+ *     DB_NAME=ownify_dev DB_USER=root php tools/app-state-test.php
  *
  * Starts the app on PHP's built-in server and makes the requests the Android
  * app and the website make, through the real endpoints and the real
@@ -164,7 +164,7 @@ function app_account(string $who): array
     $made[]   = $username;
 
     $r = http('/api/auth/app-register.php', ['json' => [
-        'email' => $username . '@jolu-test.invalid', 'username' => $username, 'password' => $password,
+        'email' => $username . '@ownify-test.invalid', 'username' => $username, 'password' => $password,
         'label' => 'State test phone', 'platform' => 'android', 'app_version' => 'test',
     ]]);
 
@@ -232,7 +232,7 @@ try {
         !array_key_exists('csrf', $data['auth'] ?? []) && !array_key_exists('flash', $data['auth'] ?? [])
         && !array_key_exists('google_pending', $data['auth'] ?? []) && !array_key_exists('id', $data['auth']['user'] ?? []));
     check('an identity is its provider and address', ($data['auth']['identities'] ?? null) === [
-        ['provider' => 'email', 'email' => $sanne['username'] . '@jolu-test.invalid']]);
+        ['provider' => 'email', 'email' => $sanne['username'] . '@ownify-test.invalid']]);
     check('a new account: the "no data yet" line, and an empty score',
         ($data['disclaimer'] ?? null) === ($data['disclaimers']['no_data'] ?? '-')
         && array_key_exists('value', $data['scores']['overall'] ?? []) && $data['scores']['overall']['value'] === null);

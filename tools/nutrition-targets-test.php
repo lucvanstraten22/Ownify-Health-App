@@ -4,7 +4,7 @@
  *
  *     php tools/nutrition-targets-test.php
  *
- * Every target in JoLu comes out of nutrition_targets_calculate() in
+ * Every target in Ownify comes out of nutrition_targets_calculate() in
  * includes/nutrition-targets.php, with its numbers in
  * nutrition_targets_config() at the top of that file. This checks the
  * arithmetic on made-up profiles held in memory — Mifflin-St Jeor, the

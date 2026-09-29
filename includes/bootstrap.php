@@ -12,7 +12,7 @@ declare(strict_types=1);
 /* ---------------------------------------------------------------------------
  * ONE CLOCK: DUTCH LOCAL TIME
  * ---------------------------------------------------------------------------
- * JoLu is a Dutch app and every date it shows or files — "today" on the
+ * Ownify is a Dutch app and every date it shows or files — "today" on the
  * health pages, the night a sleep belongs to, the day a workout earns its
  * points — is a date on a Dutch calendar. PHP's default zone is whatever the
  * server's php.ini says (UTC on many hosts), which would make "today" start
@@ -68,7 +68,7 @@ if (!function_exists('app_log_fatal')) {
     function app_log_fatal(string $kind, string $message, string $file, int $line): void
     {
         error_log(sprintf(
-            '[jolu] %s: %s in %s:%d  (request: %s %s)',
+            '[ownify] %s: %s in %s:%d  (request: %s %s)',
             $kind,
             $message,
             $file,
@@ -111,7 +111,7 @@ if (!function_exists('app_log_fatal')) {
 
 /* The configuration check, on the way in.
  *
- * A missing JOLU_APP_KEY does not stop the app: signing in, the health data
+ * A missing OWNIFY_APP_KEY does not stop the app: signing in, the health data
  * and the Health Connect pairing flow all work without it, because none of
  * them stores an encrypted token. It stops the things that do — and it does so
  * silently unless somebody is told, which is what this writes to the server
@@ -136,7 +136,7 @@ if (function_exists('crypto_check')) {
     crypto_check();
 } else {
     error_log(
-        '[jolu] configuration: includes/crypto.php is out of date on this server — '
+        '[ownify] configuration: includes/crypto.php is out of date on this server — '
         . 'crypto_check() is missing, so the startup check is being skipped. The site '
         . 'is serving normally. Clear the PHP opcode cache or re-deploy to fix it.'
     );

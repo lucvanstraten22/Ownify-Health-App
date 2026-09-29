@@ -2,7 +2,7 @@
 /**
  * What the signed-in app shows — one pipeline, two readers.
  *
- * index.php renders it as the website; api/app/state.php hands it to the JoLu
+ * index.php renders it as the website; api/app/state.php hands it to the Ownify
  * Android app as JSON. Both call app_page_data(), so the app can never show a
  * number, a label or a state the website would not: every score, point, goal
  * percentage, chart and sentence is worked out here, once, and the app only
@@ -82,7 +82,7 @@ if (!function_exists('app_page_data')) {
     }
 
     /**
-     * app_auth(), for a request the JoLu app makes with its account token
+     * app_auth(), for a request the Ownify app makes with its account token
      * instead of a browser session: the same shape, so every template helper
      * and settings_prepare() read it the same way.
      *

@@ -34,7 +34,7 @@ $settings = [
         // https://your-domain.tld/api/auth/google-callback.php
         'redirect_uri'  => '',
 
-        /* The JoLu app's own OAuth clients (type "Android", one per signing
+        /* The Ownify app's own OAuth clients (type "Android", one per signing
            key: package name + SHA-1), in the same Google Cloud project as
            the client above. Not secret. The app asks Google for an ID token
            for the Web client above; Google names the Android client that

@@ -1,6 +1,6 @@
-# Signing in in the JoLu app
+# Signing in in the Ownify app
 
-How the JoLu Android app signs in **as an account** — the foundation for the
+How the Ownify Android app signs in **as an account** — the foundation for the
 full app. The website's own sign-in (session cookie, CSRF token, the
 stay-signed-in cookie) is unchanged and described in
 [DATABASE.md](DATABASE.md#authentication); pairing a phone for Health Connect
@@ -16,7 +16,7 @@ failed sign-ins are not counted.
 | --- | --- | --- |
 | the website | session cookie + CSRF token | everything, as the signed-in person |
 | a paired phone | **sync token** — `user_devices.scope = 'sync'`, from a pairing code | upload records; read what a sync needs (`status`, `profile`, `nutrition-targets`) |
-| the JoLu app, signed in | **account token** — `user_devices.scope = 'account'`, from signing in in the app | all of the above, and act as the account on every endpoint that takes `api_require_account_user()` |
+| the Ownify app, signed in | **account token** — `user_devices.scope = 'account'`, from signing in in the app | all of the above, and act as the account on every endpoint that takes `api_require_account_user()` |
 
 Both tokens are 256 bits from `random_bytes()`, shown to the app once and
 stored only as SHA-256. They are sent only as `Authorization: Bearer <token>`,
@@ -226,12 +226,14 @@ Web client's secret stays where it is, on the server.
 ### 1. The SHA-1 of each key the app is signed with
 
 Google gives an Android client only to one package name signed with one
-certificate. The package name is `com.healthapp.android` (`applicationId` in
-`HealthappAndroid/app/build.gradle.kts`). The SHA-1 depends on who signs:
+certificate. The package name is `com.ownify.android` (`applicationId` in
+`OwnifyAndroid/app/build.gradle.kts`). It changed when the app was renamed to
+Ownify, and a client made for the package before that does not work for this
+one: `docs/OWNIFY-MIGRATION.md`, *D3*. The SHA-1 depends on who signs:
 
 | Build | Signed with | Where its SHA-1 is |
 | --- | --- | --- |
-| **Debug** — Android Studio's Run ▶, `./gradlew installDebug` | this computer's debug key, `~/.android/debug.keystore` (Windows: `%USERPROFILE%\.android\debug.keystore`), made by Android Studio. **Every computer has its own.** | `./gradlew signingReport` in `HealthappAndroid` (Android Studio: the Gradle panel → *app* → *Tasks* → *android* → *signingReport*, or type it in the Terminal tab). Under `Variant: debug`, `Config: debug`: the line `SHA1: 12:34:…`. Or: `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android` |
+| **Debug** — Android Studio's Run ▶, `./gradlew installDebug` | this computer's debug key, `~/.android/debug.keystore` (Windows: `%USERPROFILE%\.android\debug.keystore`), made by Android Studio. **Every computer has its own.** | `./gradlew signingReport` in `OwnifyAndroid` (Android Studio: the Gradle panel → *app* → *Tasks* → *android* → *signingReport*, or type it in the Terminal tab). Under `Variant: debug`, `Config: debug`: the line `SHA1: 12:34:…`. Or: `keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android` |
 | **Release, signed yourself** (an APK or AAB from your own keystore) | your release key | `keytool -list -v -keystore <your keystore> -alias <your alias>`, the `SHA1:` line |
 | **Installed from Google Play** (Play App Signing) | Google's app signing key — Play re-signs what you upload | Play Console → the app → **Test and release** → **App integrity** → **Play app signing** (*Settings*) → *App signing key certificate* → **SHA-1 certificate fingerprint**. If you also install builds signed with your upload key directly, that key needs a client too (*Upload key certificate*, same page) |
 
@@ -253,8 +255,8 @@ In Google Cloud Console, <https://console.cloud.google.com>:
 3. **+ Create client** (older: *+ Create credentials* → *OAuth client ID*).
 4. **Application type: Android.**
 5. **Name:** anything that says which key it is, for yourself — e.g.
-   `JoLu app — debug (<computer>)` or `JoLu app — Play`.
-6. **Package name:** `com.healthapp.android`
+   `Ownify app — debug (<computer>)` or `Ownify app — Play`.
+6. **Package name:** `com.ownify.android`
 7. **SHA-1 certificate fingerprint:** the SHA-1 from step 1.
 8. **Create.** Copy the **Client ID** it shows
    (`683455913655-….apps.googleusercontent.com`). There is no secret to copy.
@@ -317,7 +319,7 @@ app alike. Add each tester's Google address there (**+ Add users**), or press
 
 ## What the app does
 
-Implemented in the Android app (HealthappAndroid/README.md, "Signing in"):
+Implemented in the Android app (OwnifyAndroid/README.md, "Signing in"):
 
 1. Sign in through one of the endpoints above; the token is kept where the
    sync token was (Android Keystore, excluded from backups), with its scope.
@@ -357,11 +359,11 @@ database.
 
 For Google it also stands in for Google's token endpoint, so the website's
 own redirect flow (`oauth.php` → `google-callback.php` → `google-username.php`)
-runs too, and proves **one Google account is one JoLu account**: an account
+runs too, and proves **one Google account is one Ownify account**: an account
 made with Google on the website signs in to the app as that account (no
 username step, no second user or identity), and one made in the app signs in
 on the website as itself. `status` and the nonce's `client_id` (never the
 secret) are checked, configured and not.
 
 The app's side is tested in the Android project (`GoogleSignInTest`,
-`GoogleSignInFlowTest`; HealthappAndroid/README.md, "Tests").
+`GoogleSignInFlowTest`; OwnifyAndroid/README.md, "Tests").

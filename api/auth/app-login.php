@@ -1,6 +1,6 @@
 <?php
 /**
- * The JoLu app signs in with a username or e-mail address and the password.
+ * The Ownify app signs in with a username or e-mail address and the password.
  *
  *   POST  { "identifier": "sanne" | "sanne@example.nl", "password": "…",
  *           "label": "Pixel 10", "platform": "android", "app_version": "1.0" }

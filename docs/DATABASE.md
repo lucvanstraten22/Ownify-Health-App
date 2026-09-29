@@ -39,8 +39,10 @@ existing database gets the three types and those columns from
 ## Setting it up (WampServer)
 
 1. Start Wamp, open **phpMyAdmin**.
-2. Import `database/schema.sql`. It creates the `jolu` database and every
-   table, and can be re-imported at any time to rebuild from scratch.
+2. Create a database named `ownify` (phpMyAdmin → **Databases** → *Create
+   database*, collation `utf8mb4_unicode_ci`), select it, and import
+   `database/schema.sql` into it. That creates every table, and can be
+   re-imported at any time to rebuild from scratch.
 3. Optional: import `database/seed-dev.sql` for fake development data.
 4. Credentials default to Wamp's `root` with no password. To change them,
    create `config/database.local.php` (git-ignored) returning only what you
@@ -48,34 +50,47 @@ existing database gets the three types and those columns from
 
    ```php
    <?php // config/database.local.php
-   return ['username' => 'jolu', 'password' => 'secret'];
+   return ['username' => 'ownify', 'password' => 'secret'];
    ```
 
 Until the schema is imported the app still runs: it renders signed out, and
 the account panel says the database is unreachable instead of erroring.
 
-### Coming from a `vitalis` database
+### Before the rename to Ownify
 
-The app used to be called Vitalis and its database was named accordingly. If
-you already imported the old schema, either re-import `schema.sql` (it now
-creates `jolu`) and drop `vitalis`, or, to keep the accounts you already have,
-rename it in phpMyAdmin: select `vitalis` → **Operations** → *Rename database
-to* → `jolu`. The session cookie is now `jolu_session`, so everyone signs in
-again once either way.
+Until the app was renamed to Ownify, a checkout without
+`config/database.local.php` looked for a database called `jolu`; it now looks
+for `ownify`. A local database is not carried over: create `ownify` and import
+the schema as in step 2 above, and drop the old `jolu` when you like.
+
+The production database on Hestia moves from `luc_healthapp` to `luc_ownify`
+by *copying* it, never by renaming or dropping the old one, so that stays the
+backup until the new one has proven itself:
+
+```bash
+php tools/copy-database.php --from=luc_healthapp --to=luc_ownify --to-user=luc_ownify
+```
+
+It copies every table with its keys, foreign keys and `AUTO_INCREMENT`
+counters, then checks the copy against the original — tables, columns,
+indexes, foreign keys, row counts and a checksum of every table — and says so
+if anything differs. Signed-in people stay signed in: the sign-in rows are
+copied with everything else. `docs/OWNIFY-MIGRATION.md`, section A, has the
+whole procedure, including the switch-over.
 
 ## Secrets on the server
 
 Three things must exist on a machine running the app and must never exist in
 the repository: the database password, any OAuth client secret, and
-`JOLU_APP_KEY`. All three follow the same pattern — a git-ignored file next to
+`OWNIFY_APP_KEY`. All three follow the same pattern — a git-ignored file next to
 a tracked `.example` that shows the shape, or an environment variable that
 wins over the file.
 
 | Secret | File | Environment | Needed for |
 | --- | --- | --- | --- |
 | Database | `config/database.local.php` | `DB_HOST` `DB_NAME` `DB_USER` `DB_PASSWORD` | everything |
-| App key | `config/app.local.php` | `JOLU_APP_KEY` | storing OAuth tokens |
-| Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` `_ANDROID_CLIENT_IDS` | signing in with Google (the last: in the JoLu app) |
+| App key | `config/app.local.php` | `OWNIFY_APP_KEY` | storing OAuth tokens |
+| Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` `_ANDROID_CLIENT_IDS` | signing in with Google (the last: in the Ownify app) |
 | Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
 
 Check what a machine actually has, without printing any of it:
@@ -90,7 +105,7 @@ configured. It prints no passwords and no keys — not even a prefix — so its
 output is safe to paste somewhere when asking for help. It exits non-zero when
 something essential is missing, so a deploy step can fail on it.
 
-### `JOLU_APP_KEY`
+### `OWNIFY_APP_KEY`
 
 32 bytes of randomness, base64-encoded, used by `includes/crypto.php` to
 encrypt OAuth tokens before they go in the database. The key lives outside the
@@ -102,12 +117,12 @@ php tools/check-config.php --generate-key
 
 The app looks in three places, first one wins:
 
-1. `getenv('JOLU_APP_KEY')` — the process environment
-2. `$_SERVER['JOLU_APP_KEY']` — Apache `SetEnv`, and several FastCGI setups
+1. `getenv('OWNIFY_APP_KEY')` — the process environment
+2. `$_SERVER['OWNIFY_APP_KEY']` — Apache `SetEnv`, and several FastCGI setups
 3. `config/app.local.php`, returning `['app_key' => '...']`
 
 A request header could never be mistaken for the key: headers reach PHP with an
-`HTTP_` prefix, so the most a caller can set is `HTTP_JOLU_APP_KEY`, which
+`HTTP_` prefix, so the most a caller can set is `HTTP_OWNIFY_APP_KEY`, which
 nothing reads.
 
 **Without it the app still runs.** Signing in, health data, goals, and the whole
@@ -154,7 +169,7 @@ domain its own PHP-FPM pool, at
 `/etc/php/<version>/fpm/pool.d/<your-domain>.conf`. Adding a line there works:
 
 ```ini
-env[JOLU_APP_KEY] = "the-base64-key"
+env[OWNIFY_APP_KEY] = "the-base64-key"
 ```
 
 followed by `systemctl reload php<version>-fpm`. Know what you are taking on:
@@ -216,7 +231,7 @@ registered in step 3 character for character, or Google answers
 copy `config/auth.local.php.example`, rename the copy to `auth.local.php`, and
 edit the two values.
 
-The JoLu app signs in with Google through this same project, consent screen
+The Ownify app signs in with Google through this same project, consent screen
 and Web client, plus one OAuth client of type *Android* per key the app is
 signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 
@@ -381,7 +396,7 @@ acts on `confirm=verwijderen`, which only the second confirmation step sends.
 
 If Google was linked, the answer carries one silent round trip past Google
 (`prompt=none`, hinted to that Google account): the access token it yields is
-used once to revoke JoLu's access and then dropped, so JoLu also disappears
+used once to revoke Ownify's access and then dropped, so Ownify also disappears
 from the person's Google account. The account is already deleted before that
 trip starts, so nothing about Google can stop or undo the deletion; if Google
 needs to ask something first, the page says so and links to Google's own list
@@ -453,7 +468,7 @@ with the authorization code flow and PKCE:
    is still the one signed in, has no Google account yet, and the Google
    account is not already someone else's.
 6. Deleting an account with Google runs it once more with `mode=revoke`,
-   silently, to withdraw JoLu's access at Google — see *Privacy*.
+   silently, to withdraw Ownify's access at Google — see *Privacy*.
 
 Codes and tokens are never stored or logged. Test the verification offline
 with `php tools/google-signin-test.php`.
@@ -465,7 +480,7 @@ name without an account is treated identically, a correct password clears the
 count, and nothing locks for good. Rows hold a SHA-256 of the name and address
 together, never either as text, and are deleted after a day.
 
-**The JoLu app signs in as an account** with its own token, not a cookie:
+**The Ownify app signs in as an account** with its own token, not a cookie:
 `user_devices.scope` is `sync` for a phone paired with a code (upload only) and
 `account` for the app after signing in with the password or Google (acts as the
 account where an endpoint takes `api_require_account_user()`). Only SHA-256

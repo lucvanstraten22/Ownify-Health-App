@@ -8,7 +8,7 @@
  *
  * Signed in either way (api_require_account_user()):
  *   - the website: session + CSRF token, a form post, exactly as before;
- *   - the JoLu app: `Authorization: Bearer <account token>`, JSON or form.
+ *   - the Ownify app: `Authorization: Bearer <account token>`, JSON or form.
  * A sync token from a pairing code is refused (403): it may upload records,
  * not change goals. The first endpoint to take both; the others follow once
  * the app needs them.

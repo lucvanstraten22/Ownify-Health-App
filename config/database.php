@@ -18,8 +18,8 @@
  *     <?php  // config/database.local.php
  *     return [
  *         'host'     => 'localhost',
- *         'database' => 'luc_healthapp',
- *         'username' => 'luc_healthapp',
+ *         'database' => 'luc_ownify',
+ *         'username' => 'luc_ownify',
  *         'password' => 'the-real-one',
  *     ];
  *
@@ -32,7 +32,7 @@ declare(strict_types=1);
 $settings = [
     'host'     => '127.0.0.1',
     'port'     => 3306,
-    'database' => 'jolu',
+    'database' => 'ownify',
     'username' => 'root',
     'password' => '',
     'charset'  => 'utf8mb4',

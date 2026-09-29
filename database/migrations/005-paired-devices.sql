@@ -3,7 +3,7 @@
 -- ----------------------------------------------------------------------------
 --  Health Connect and Apple Health cannot be read from a server. An app on the
 --  phone reads them and sends the records here, which means that app has to be
---  able to prove which JoLu account it is sending for.
+--  able to prove which Ownify account it is sending for.
 --
 --  It cannot use the session cookie — it is not a browser — and it must not
 --  hold the account password. So it holds a token of its own:

@@ -7,7 +7,7 @@
  *
  * Answers the questions you cannot answer by looking at the site: is the
  * database reachable with the credentials this checkout will actually use, and
- * is JOLU_APP_KEY set — and if it is set, where did it come from and is it the
+ * is OWNIFY_APP_KEY set — and if it is set, where did it come from and is it the
  * right shape. The same question the app asks itself on every request, written
  * to the server log by includes/bootstrap.php; this is how you ask it without
  * reading a log.
@@ -41,7 +41,7 @@ $argvFlags = array_slice($argv ?? [], 1);
 if (in_array('--generate-key', $argvFlags, true)) {
     $key = crypto_generate_key();
 
-    echo "A fresh JOLU_APP_KEY. Put it in config/app.local.php as 'app_key',\n";
+    echo "A fresh " . CRYPTO_KEY_VARIABLE . ". Put it in config/app.local.php as 'app_key',\n";
     echo "or in the environment. It is shown once — this tool does not store it.\n\n";
     echo $key . "\n\n";
     echo "Changing an existing key makes every token already encrypted with the\n";
@@ -63,7 +63,7 @@ function line(string $state, string $label, string $detail): void
     printf("[%s] %-22s %s\n", $mark, $label, $detail);
 }
 
-echo "JoLu configuration check\n";
+echo "Ownify configuration check\n";
 echo str_repeat('-', 72) . "\n";
 
 /* ------------------------------------------------------------------ PHP */
@@ -210,17 +210,23 @@ $key = crypto_status();
 
 switch ($key['state']) {
     case 'ok':
-        line('ok', 'JOLU_APP_KEY', 'set and usable, from ' . $key['source']);
+        line('ok', CRYPTO_KEY_VARIABLE, 'set and usable, from ' . $key['source']);
+        /* Still under the name from before Ownify: it works, and the same
+           value only needs to move to the new name. */
+        if (str_contains((string) $key['source'], CRYPTO_KEY_VARIABLE_LEGACY)) {
+            line('warn', CRYPTO_KEY_VARIABLE_LEGACY, 'the old name of ' . CRYPTO_KEY_VARIABLE
+                . ' — rename the variable, keeping its value exactly as it is');
+        }
         break;
 
     case 'missing':
         /* Not fatal. Nothing in the app stores an encrypted token yet, so this
            is a warning about the next feature rather than a broken one. */
-        line('warn', 'JOLU_APP_KEY', 'not set — see config/app.local.php.example');
+        line('warn', CRYPTO_KEY_VARIABLE, 'not set — see config/app.local.php.example');
         break;
 
     default:
-        line('fail', 'JOLU_APP_KEY', $key['message']);
+        line('fail', CRYPTO_KEY_VARIABLE, $key['message']);
         $problems++;
 }
 
@@ -302,7 +308,7 @@ if ($googleBroken !== null) {
     }
 }
 
-/* The JoLu app's own Google clients (api/auth/app-google.php): how many, and
+/* The Ownify app's own Google clients (api/auth/app-google.php): how many, and
    whether they can work with the Web client above — never the ids. The app
    asks Google for a token for the Web client, and Google gives one only to an
    Android client of the same Google Cloud project: the number in front. */

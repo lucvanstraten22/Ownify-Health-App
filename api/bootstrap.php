@@ -135,7 +135,7 @@ if (!function_exists('api_json')) {
 
     /**
      * The authenticated user id for an endpoint that acts as the account —
-     * for the website AND for the JoLu app.
+     * for the website AND for the Ownify app.
      *
      *   Authorization: Bearer <token>
      *       The app. The token must be an ACCOUNT token (issued by signing in

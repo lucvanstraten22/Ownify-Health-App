@@ -489,7 +489,7 @@ CREATE TABLE `device_pairing_codes` (
 -- Hashed rather than encrypted: the token is never needed back, only
 -- recognised, so a dump yields nothing replayable.
 -- scope: 'sync' is what a pairing code gets (upload records, read what a sync
--- needs); 'account' is what signing in in the JoLu app gets (acts as the
+-- needs); 'account' is what signing in in the Ownify app gets (acts as the
 -- account). An account token lapses after a year unused — last_seen_at, set
 -- on every authenticated request, says when that is (includes/devices.php).
 CREATE TABLE `user_devices` (

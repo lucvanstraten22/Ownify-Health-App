@@ -8,7 +8,7 @@
  * Health Connect and Apple Health cannot be read from a server. The data sits
  * on the phone, behind permissions the person grants to an app on that phone,
  * and no amount of server-side OAuth reaches it. So an app reads it and posts
- * it here — which means that app has to prove which JoLu account it is posting
+ * it here — which means that app has to prove which Ownify account it is posting
  * for.
  *
  * It cannot use the session cookie: it is not a browser, and a cookie that
@@ -27,7 +27,7 @@
  * ---------------------------------------------------------------------------
  * TWO SCOPES: SYNC AND ACCOUNT (migration 013)
  * ---------------------------------------------------------------------------
- * That token is a SYNC token, and it stays exactly that. The full JoLu app
+ * That token is a SYNC token, and it stays exactly that. The full Ownify app
  * also has to act as the account — set goals, see friends, change the
  * profile — and it gets that authority the only way that proves it is the
  * account holder: by signing in, with the password or with Google, in the app
