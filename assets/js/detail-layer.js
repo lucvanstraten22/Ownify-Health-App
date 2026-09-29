@@ -53,7 +53,7 @@
 
     /** Back to the stylesheet's parking spot, off-screen right. */
     function park(detail) {
-        detail.classList.remove('is-dragging');
+        detail.classList.remove('is-dragging', 'is-current');
         detail.style.transform = '';
     }
 
@@ -130,6 +130,7 @@
         var returning = current === detail;   // caught on its way out: carry on from there
 
         current = detail;
+        current.classList.add('is-current');   // the one the stylesheet lifts off the rail
         opener = trigger || null;
 
         // Every detail starts at the top, never where it was left.
@@ -229,6 +230,7 @@
             if (current === detail) {
                 window.clearTimeout(settleTimer);
                 settleTimer = null;
+                detail.classList.remove('is-current');
                 current = null;
                 shown = false;
                 drag = null;

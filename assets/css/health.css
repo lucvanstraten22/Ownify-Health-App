@@ -387,8 +387,11 @@
 
 .detail.is-dragging { transition: none; }
 
-.deck[data-detail-state="moving"] .detail,
-.deck[data-detail-state="open"] .detail {
+/* Only the detail in front is lifted off the rail. The others wait just
+   off-screen right, where a shadow of theirs would fall across the right
+   edge of the screen. */
+.deck[data-detail-state="moving"] .detail.is-current,
+.deck[data-detail-state="open"] .detail.is-current {
     box-shadow: -18px 0 42px rgba(0, 0, 0, 0.34), inset 1px 0 0 rgba(255, 255, 255, 0.07);
 }
 
