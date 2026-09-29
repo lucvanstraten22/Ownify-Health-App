@@ -433,7 +433,7 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
 
     companion object {
         /** The Ownify server. HTTPS only — Android refuses plain HTTP anyway. */
-        const val BASE_URL = "https://healthpreview.acits.nl/"
+        const val BASE_URL = "https://ownify.acits.nl/"
 
         private const val GOOGLE_PATH = "api/auth/app-google.php"
 

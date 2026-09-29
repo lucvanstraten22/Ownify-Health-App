@@ -24,9 +24,9 @@ return [
         'client_secret' => 'GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 
         // Must be registered on that OAuth client EXACTLY as written here.
-        // Live:   https://healthpreview.acits.nl/api/auth/google-callback.php
+        // Live:   https://ownify.acits.nl/api/auth/google-callback.php
         // Local:  http://localhost:8000/api/auth/google-callback.php
-        'redirect_uri'  => 'https://healthpreview.acits.nl/api/auth/google-callback.php',
+        'redirect_uri'  => 'https://ownify.acits.nl/api/auth/google-callback.php',
 
         // Only for signing in with Google in the Ownify app. One OAuth client of
         // type "Android" per signing key (package name + SHA-1 of the key), in

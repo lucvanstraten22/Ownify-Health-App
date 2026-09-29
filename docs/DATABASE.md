@@ -207,7 +207,7 @@ older ones under **APIs & Services → OAuth consent screen / Credentials**.
    redirect URIs** add exactly:
 
    ```
-   https://healthpreview.acits.nl/api/auth/google-callback.php
+   https://ownify.acits.nl/api/auth/google-callback.php
    ```
 
    No JavaScript origins are needed. Create it, and copy the **Client ID** and

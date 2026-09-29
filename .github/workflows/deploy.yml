@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to Hestia (healthpreview.acits.nl)
+    name: Deploy to Hestia
     runs-on: ubuntu-latest
 
     steps:
