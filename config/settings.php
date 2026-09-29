@@ -94,7 +94,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie 0.7'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.0.0'],
             ],
         ],
     ],
@@ -424,8 +424,8 @@ return [
                     'type'  => 'rows',
                     'title' => 'App',
                     'items' => [
-                        ['label' => 'Naam',    'value' => 'AppName'],
-                        ['label' => 'Versie',  'value' => '0.7'],
+                        ['label' => 'Naam',    'value' => 'Ownify Health App'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.0.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],
@@ -449,7 +449,7 @@ return [
                 ],
 
                 ['type' => 'note', 'icon' => 'info',
-                 'text' => 'AppName is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
+                 'text' => 'Ownify Health App is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
             ],
         ],
     ],

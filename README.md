@@ -470,7 +470,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie 0.7
+OVER         Over de app · Versie Beta 1.0.0
 
              [ Uitloggen ]
                Account verwijderen
