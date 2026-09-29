@@ -38,6 +38,8 @@ class AppDataParseTest {
         // Overzicht
         assertEquals(82, data.overview.overall.value)
         assertEquals(listOf(84, 74, 88), data.overview.contributors.map { it.value })
+        assertEquals(listOf("sleep", "nutrition", "training"), data.overview.contributors.map { it.accent })
+        assertEquals(listOf("high", "mid", "high"), data.overview.contributors.map { it.scoreBand })
         assertEquals("active", data.overview.goal.state)
         assertEquals("0 dagen van 14 dagen op rij", data.overview.goal.unit)
         assertEquals(4, data.overview.goal.milestones.size)

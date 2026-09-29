@@ -81,7 +81,7 @@ import com.ownify.android.ui.design.rememberFocusOnOpen
 import com.ownify.android.ui.design.blurring
 
 /** `.confirm__yes`: the answer that goes ahead, in the caution colour. */
-private val YesLook = BtnLook(border = Ownify.Nutrition.copy(alpha = 0.45f), fill = Ownify.Nutrition.copy(alpha = 0.18f))
+private val YesLook = BtnLook(border = Ownify.Attention.copy(alpha = 0.45f), fill = Ownify.Attention.copy(alpha = 0.18f))
 
 /** `.confirm__scrim` is a little darker than the account panel's. */
 private const val CONFIRM_SCRIM = 0.55f
@@ -187,7 +187,7 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     ConfirmFrame(overlay, title = field.label, start = true) {
         ConfirmTitle(field.label, align = TextAlign.Start)
         if (field.state == "once") {
-            ConfirmBody("Dit kun je één keer invullen. Daarna staat het vast.", align = TextAlign.Start, color = Ownify.Nutrition)
+            ConfirmBody("Dit kun je één keer invullen. Daarna staat het vast.", align = TextAlign.Start, color = Ownify.Attention)
         }
 
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
@@ -311,7 +311,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
 
     ConfirmFrame(overlay, title = if (step == 1) copy["title"].orEmpty() else copy["final_title"].orEmpty()) {
         if (step == 1) {
-            IconTile(OwnifyIcons.trash, color = Ownify.Nutrition, background = Ownify.Nutrition.copy(alpha = 0.16f))
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.Attention.copy(alpha = 0.16f))
             ConfirmTitle(copy["title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
             ConfirmRow(
@@ -339,8 +339,8 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .fillMaxWidth()
                         .padding(top = Ownify.Space3)
                         .clip(shape)
-                        .background(Ownify.Nutrition.copy(alpha = 0.10f))
-                        .border(1.dp, Ownify.Nutrition.copy(alpha = 0.34f), shape)
+                        .background(Ownify.Attention.copy(alpha = 0.10f))
+                        .border(1.dp, Ownify.Attention.copy(alpha = 0.34f), shape)
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )

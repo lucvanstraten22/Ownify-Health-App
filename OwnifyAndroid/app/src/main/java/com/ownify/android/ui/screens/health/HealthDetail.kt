@@ -366,12 +366,12 @@ private fun SleepTimeline(timeline: Timeline) {
     }
 }
 
-/** The stage tones: deep in the green, REM a lighter green, light and awake in white. */
+/** The stage tones: deep in sleep's colour, REM in its lighter shade, light and awake in white. */
 private fun stageColor(tone: String): Color = when (tone) {
-    "rem" -> Ownify.mix(Ownify.Health, 0.62f, Color.White)
+    "rem" -> Ownify.SleepLight
     "light" -> Ownify.white(0.26f)
     "awake" -> Ownify.white(0.13f)
-    else -> Ownify.Health
+    else -> Ownify.Sleep
 }
 
 /**

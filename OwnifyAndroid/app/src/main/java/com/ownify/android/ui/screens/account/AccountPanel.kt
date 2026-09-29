@@ -668,7 +668,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                 T(
                     toggleError ?: if (allowed) "Anderen kunnen je een vriendverzoek sturen."
                     else "Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.",
-                    OwnifyType.style(Ownify.FsTiny, color = if (toggleError != null) Ownify.Nutrition else Ownify.TextMuted),
+                    OwnifyType.style(Ownify.FsTiny, color = if (toggleError != null) Ownify.Attention else Ownify.TextMuted),
                     Modifier.padding(top = 2.dp)
                 )
             }
@@ -728,7 +728,7 @@ private fun PersonRow(
                 if (!line.isNullOrEmpty()) {
                     T(
                         line,
-                        OwnifyType.style(Ownify.FsTiny, color = if (state.error) Ownify.Nutrition else Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsTiny, color = if (state.error) Ownify.Attention else Ownify.TextMuted),
                         Modifier.padding(top = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }
                     )
                 }

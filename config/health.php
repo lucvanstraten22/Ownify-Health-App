@@ -96,7 +96,7 @@ return [
         'sleep' => [
             'label'   => 'Slaap',
             'icon'    => 'moon',
-            'accent'  => 'health',
+            'accent'  => 'sleep',
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Hoe je nacht is verlopen: duur, ritme en herstel.',
             'empty'   => 'Koppel een bron om je slaapscore te berekenen.',
@@ -213,7 +213,7 @@ return [
         'training' => [
             'label'   => 'Training',
             'icon'    => 'dumbbell',
-            'accent'  => 'activity',
+            'accent'  => 'training',
             'score'   => ['value' => null, 'max' => 100],
             'summary' => 'Wat je hebt bewogen, hoe zwaar het was en hoe je herstelt.',
             'empty'   => 'Koppel een bron om je trainingsscore te berekenen.',

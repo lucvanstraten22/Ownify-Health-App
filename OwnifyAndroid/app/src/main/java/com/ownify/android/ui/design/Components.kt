@@ -483,8 +483,9 @@ fun Btn(
 // ---------------------------------------------------------------------------
 
 /**
- * `.meter`: a 6 high track at `.08`, filled with the accent running to 65%
- * accent in white, over 1000 ms once the card is on screen. Empty, it is a
+ * `.meter`: a 6 high track at `.08`, filled with the accent running to its
+ * lighter shade (`--accent-light`: a category's own, 65% accent in white for
+ * anything else), over 1000 ms once the card is on screen. Empty, it is a
  * dashed 4 px line (2 on, 6 off) — [emptyHeight] 6 for the goal meter.
  */
 @Composable
@@ -521,7 +522,7 @@ fun Meter(
                 if (w > 0f) {
                     drawRoundRect(
                         brush = fill ?: Brush.horizontalGradient(
-                            listOf(accent, Ownify.mix(accent, 0.65f, Color.White)),
+                            listOf(accent, Accent.byColor(accent)?.light ?: Ownify.mix(accent, 0.65f, Color.White)),
                             startX = 0f,
                             endX = w
                         ),
@@ -603,8 +604,8 @@ fun ScoreRing(
                 val arc = Size(r * 2, r * 2)
                 // The SVG is turned -90°, gradient and all: from the bottom-left to the top-right.
                 val brush = if (accent != null) SolidColor(accent.color) else Brush.linearGradient(
-                    0f to Ownify.Health,
-                    0.55f to Ownify.Activity,
+                    0f to Ownify.Sleep,
+                    0.55f to Ownify.Training,
                     1f to Ownify.Nutrition,
                     start = Offset(topLeft.x, topLeft.y + arc.height),
                     end = Offset(topLeft.x + arc.width, topLeft.y)
@@ -636,8 +637,12 @@ fun ScoreRing(
     }
 }
 
-/** One pillar of the legend: its accent, its name, its score (or "—"). */
-data class LegendItem(val label: String, val value: Int?, val accent: Accent)
+/**
+ * One pillar of the legend: its category, its name, its score (or "—"), and
+ * the colour of its dot — the category's own unless the caller says otherwise
+ * (Overzicht colours it by the score, see `overviewLegend`).
+ */
+data class LegendItem(val label: String, val value: Int?, val accent: Accent, val dot: Color = accent.color)
 
 /**
  * `.legend`: three equal columns in a quiet 20-radius box, each a dot with
@@ -665,8 +670,8 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
                 Modifier
                     .size(7.dp)
                     .drawBehind {
-                        drawCircle(item.accent.color.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
-                        drawCircle(item.accent.color)
+                        drawCircle(Ownify.mix(item.dot, 0.18f, Color.Transparent), radius = size.width / 2f + 3.dp.toPx())
+                        drawCircle(item.dot)
                     }
             )
             T(item.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary), maxLines = 1)

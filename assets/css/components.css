@@ -448,12 +448,21 @@
     min-width: 0;
 }
 
+/* A legend of categories (the trend chart): the category's own colour. */
 .legend__dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* A legend of scores (the pillars on Overzicht): how high the score is — the
+   colour of its band (data-score), never the pillar's category colour. No
+   score, no colour. */
+.legend__item[data-score] .legend__dot {
+    background: var(--score-color, var(--text-faint));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--score-color, var(--text-faint)) 18%, transparent);
 }
 
 .legend__label {
@@ -513,7 +522,7 @@
     height: 100%;
     border-radius: inherit;
     background: var(--accent);
-    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #ffffff));
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
     transition: width 1000ms var(--ease-out);
 }
 
@@ -547,7 +556,7 @@
 
 .card--goal .icon-tile { color: var(--accent); }
 
-.icon-tile--accent { color: var(--nutrition); }
+.icon-tile--accent { color: var(--attention); }
 
 .chip {
     display: inline-flex;

@@ -461,6 +461,58 @@ check('a longest distance is a record', str_starts_with((string) points_workout_
 check('with fewer than three earlier runs nothing is a record yet',
     points_workout_record($faster, [$runs[0], $runs[1], $faster]) === null);
 
+section('colours: a category keeps its colour, a score has its own');
+
+require_once dirname(__DIR__) . '/includes/scoring.php';
+require_once dirname(__DIR__) . '/lib/health.php';
+
+foreach ([100 => 'high', 80 => 'high', 79 => 'mid', 60 => 'mid', 59 => 'low', 0 => 'low'] as $score => $band) {
+    check("a score of {$score} is shown as {$band}", score_colour_band($score) === $band,
+        'got ' . var_export(score_colour_band($score), true));
+}
+check('79.6 is still below 80', score_colour_band(79.6) === 'mid');
+check('no score has no colour (not the colour of a zero)', score_colour_band(null) === null);
+
+$dashboard = require dirname(__DIR__) . '/config/dashboard.php';
+$healthCfg = require dirname(__DIR__) . '/config/health.php';
+$accents   = ['sleep' => 'sleep', 'nutrition' => 'nutrition', 'training' => 'training'];
+
+check('each pillar on Overzicht has its own category colour',
+    array_column($dashboard['scores']['contributors'], 'accent', 'area') === $accents);
+check('each area on Gezondheid has its own category colour',
+    array_map(fn ($a) => $a['accent'], $healthCfg['areas']) === $accents);
+
+$areas = fn (?int $s, ?int $n, ?int $t) => ['areas' => [
+    'sleep'     => ['score' => ['value' => $s]],
+    'nutrition' => ['score' => ['value' => $n]],
+    'training'  => ['score' => ['value' => $t]],
+]];
+$low  = health_contributor_scores($dashboard['scores']['contributors'], $areas(40, 59, 0));
+$high = health_contributor_scores($dashboard['scores']['contributors'], $areas(95, 80, 100));
+$none = health_contributor_scores($dashboard['scores']['contributors'], $areas(null, null, null));
+
+check('a score changes the dot', array_column($low, 'score_band') === ['low', 'low', 'low']
+    && array_column($high, 'score_band') === ['high', 'high', 'high']);
+check('... and never the category colour', array_column($low, 'accent') === array_values($accents)
+    && array_column($high, 'accent') === array_values($accents));
+check('no data: no band, category colour still its own', array_column($none, 'score_band') === [null, null, null]
+    && array_column($none, 'accent') === array_values($accents));
+
+/* The same colours on the website and in the app. */
+$css = (string) file_get_contents(dirname(__DIR__) . '/assets/css/theme.css');
+$kt  = (string) file_get_contents(dirname(__DIR__) . '/OwnifyAndroid/app/src/main/java/com/ownify/android/ui/theme/OwnifyTheme.kt');
+$expected = [
+    'sleep' => ['Sleep', '5B64C7'], 'sleep-light' => ['SleepLight', '747CDA'],
+    'nutrition' => ['Nutrition', '477B61'], 'nutrition-light' => ['NutritionLight', '67997D'],
+    'training' => ['Training', 'C97867'], 'training-light' => ['TrainingLight', 'D99586'],
+    'score-high' => ['ScoreHigh', '4E9F70'], 'score-mid' => ['ScoreMid', 'AECA0F'], 'score-low' => ['ScoreLow', 'C99A45'],
+];
+foreach ($expected as $token => [$name, $hex]) {
+    check("--{$token} is #{$hex} on the website and in the app",
+        preg_match('/--' . preg_quote($token, '/') . ':\s*#' . $hex . '\s*;/i', $css) === 1
+        && preg_match('/val ' . $name . ' = Color\(0xFF' . $hex . '\)/i', $kt) === 1);
+}
+
 echo str_repeat('-', 72) . "\n";
 printf("  %d passed, %d failed\n\n", $pass, $fail);
 

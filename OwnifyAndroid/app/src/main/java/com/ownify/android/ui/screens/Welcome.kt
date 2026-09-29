@@ -262,7 +262,7 @@ private fun WelcomeMark(size: Dp) {
                     val topLeft = Offset(center.x - r, center.y - r)
                     drawArc(
                         brush = Brush.linearGradient(
-                            0f to Ownify.Health, 0.55f to Ownify.Activity, 1f to Ownify.Nutrition,
+                            0f to Ownify.Sleep, 0.55f to Ownify.Training, 1f to Ownify.Nutrition,
                             start = Offset(topLeft.x, topLeft.y + 2 * r),
                             end = Offset(topLeft.x + 2 * r, topLeft.y)
                         ),

@@ -545,7 +545,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
 /** `.integration__hint`: a tiny line with its icon — in the caution colour for a failure. */
 @Composable
 private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, warn: Boolean = false) {
-    val color = if (warn) Ownify.Nutrition else Ownify.TextMuted
+    val color = if (warn) Ownify.Attention else Ownify.TextMuted
     Row(
         Modifier.fillMaxWidth().padding(top = Ownify.Space3),
         verticalAlignment = Alignment.CenterVertically,

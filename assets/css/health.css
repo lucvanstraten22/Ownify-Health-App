@@ -311,10 +311,10 @@
 .hypnogram__stage {
     flex: var(--share, 1) 1 0;
     border-radius: 4px;
-    background: var(--health);
+    background: var(--sleep);
 }
 
-.hypnogram__stage[data-tone="rem"] { background: color-mix(in srgb, var(--health) 62%, #ffffff); }
+.hypnogram__stage[data-tone="rem"] { background: var(--sleep-light); }
 .hypnogram__stage[data-tone="light"] { background: rgba(255, 255, 255, 0.26); }
 .hypnogram__stage[data-tone="awake"] { background: rgba(255, 255, 255, 0.13); }
 
@@ -345,10 +345,10 @@
     width: 8px;
     height: 8px;
     border-radius: 3px;
-    background: var(--health);
+    background: var(--sleep);
 }
 
-.stage-legend__item[data-tone="rem"] .stage-legend__dot { background: color-mix(in srgb, var(--health) 62%, #ffffff); }
+.stage-legend__item[data-tone="rem"] .stage-legend__dot { background: var(--sleep-light); }
 .stage-legend__item[data-tone="light"] .stage-legend__dot { background: rgba(255, 255, 255, 0.26); }
 .stage-legend__item[data-tone="awake"] .stage-legend__dot { background: rgba(255, 255, 255, 0.13); }
 

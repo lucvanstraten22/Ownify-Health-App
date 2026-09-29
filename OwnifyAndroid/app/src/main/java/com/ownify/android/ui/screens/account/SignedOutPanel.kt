@@ -163,7 +163,7 @@ fun Notice(text: String, link: OwnifyLink? = null) {
     }
 }
 
-/** `.account__error`: what went wrong, in the nutrition accent the website uses for caution. */
+/** `.account__error`: what went wrong, in the attention gold the website uses for caution. */
 @Composable
 fun ErrorBox(text: String, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(Ownify.RadiusSm)
@@ -173,8 +173,8 @@ fun ErrorBox(text: String, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Ownify.Nutrition.copy(alpha = 0.10f))
-            .border(1.dp, Ownify.Nutrition.copy(alpha = 0.34f), shape)
+            .background(Ownify.Attention.copy(alpha = 0.10f))
+            .border(1.dp, Ownify.Attention.copy(alpha = 0.34f), shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )

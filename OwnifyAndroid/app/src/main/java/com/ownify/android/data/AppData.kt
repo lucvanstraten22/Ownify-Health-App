@@ -158,10 +158,15 @@ data class OverallScore(
     }
 }
 
-data class Contributor(val area: String, val label: String, val accent: String, val value: Int?) {
+/**
+ * One pillar under the Overzicht ring. [accent] is its category colour, fixed;
+ * [scoreBand] is how high its score is (`high`, `mid`, `low`, or null without
+ * a score), decided on the server — the colour of the dot beside it.
+ */
+data class Contributor(val area: String, val label: String, val accent: String, val value: Int?, val scoreBand: String? = null) {
     companion object {
         fun parse(o: JSONObject) = Contributor(
-            o.str("area").orEmpty(), o.str("label").orEmpty(), o.str("accent").orEmpty(), o.int("value")
+            o.str("area").orEmpty(), o.str("label").orEmpty(), o.str("accent").orEmpty(), o.int("value"), o.str("score_band")
         )
     }
 }

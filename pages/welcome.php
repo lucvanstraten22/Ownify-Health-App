@@ -36,8 +36,8 @@ $welcome = $data['welcome'];
                 <svg class="welcome__ring" viewBox="0 0 160 160" focusable="false">
                     <defs>
                         <linearGradient id="welcomeGradient" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%"   stop-color="var(--health)"/>
-                            <stop offset="55%"  stop-color="var(--activity)"/>
+                            <stop offset="0%"   stop-color="var(--sleep)"/>
+                            <stop offset="55%"  stop-color="var(--training)"/>
                             <stop offset="100%" stop-color="var(--nutrition)"/>
                         </linearGradient>
                     </defs>

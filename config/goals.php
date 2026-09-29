@@ -55,17 +55,18 @@ return [
 
     /**
      * Categories. Open-ended on purpose — adding one is a line here, and the
-     * card, the wizard and the detail page all pick it up. `accent` reuses the
-     * app's own three colours; nothing new is introduced.
+     * card, the wizard and the detail page all pick it up. `accent` is one of
+     * the three category colours (sleep, nutrition, training), or `health` —
+     * the app's own green — for a goal that belongs to none of them.
      */
     'categories' => [
         'health'      => ['label' => 'Gezondheid', 'icon' => 'heart',    'accent' => 'health',    'units' => ['%', 'u', 'punten']],
         'weight'      => ['label' => 'Gewicht',    'icon' => 'chart',    'accent' => 'nutrition', 'units' => ['kg', '%']],
-        'strength'    => ['label' => 'Kracht',     'icon' => 'dumbbell', 'accent' => 'activity',  'units' => ['kg', 'reps']],
-        'activity'    => ['label' => 'Activiteit', 'icon' => 'bolt',     'accent' => 'activity',  'units' => ['stappen', 'km', 'min', 'keer']],
+        'strength'    => ['label' => 'Kracht',     'icon' => 'dumbbell', 'accent' => 'training',  'units' => ['kg', 'reps']],
+        'activity'    => ['label' => 'Activiteit', 'icon' => 'bolt',     'accent' => 'training',  'units' => ['stappen', 'km', 'min', 'keer']],
         'nutrition'   => ['label' => 'Voeding',    'icon' => 'utensils',     'accent' => 'nutrition', 'units' => ['g', 'kcal', 'l']],
         'habit'       => ['label' => 'Gewoonte',   'icon' => 'sparkle',  'accent' => 'health',    'units' => ['dagen', 'keer']],
-        'performance' => ['label' => 'Prestatie',  'icon' => 'pulse',    'accent' => 'activity',  'units' => ['min', 'km', 'bpm']],
+        'performance' => ['label' => 'Prestatie',  'icon' => 'pulse',    'accent' => 'training',  'units' => ['min', 'km', 'bpm']],
         'other'       => ['label' => 'Anders',     'icon' => 'flag',     'accent' => 'health',    'units' => []],
     ],
 
@@ -108,10 +109,10 @@ return [
      * clear what is counting and what still needs a hand.
      */
     'sources' => [
-        'sleep'     => ['label' => 'Slaap',     'icon' => 'moon',     'accent' => 'health',    'note' => 'Slaapduur en regelmaat'],
+        'sleep'     => ['label' => 'Slaap',     'icon' => 'moon',     'accent' => 'sleep',     'note' => 'Slaapduur en regelmaat'],
         'nutrition' => ['label' => 'Voeding',   'icon' => 'utensils',     'accent' => 'nutrition', 'note' => 'Maaltijden en hydratatie'],
-        'training'  => ['label' => 'Training',  'icon' => 'dumbbell', 'accent' => 'activity',  'note' => 'Workouts en belasting'],
-        'activity'  => ['label' => 'Beweging',  'icon' => 'bolt',     'accent' => 'activity',  'note' => 'Stappen en dagelijkse beweging'],
+        'training'  => ['label' => 'Training',  'icon' => 'dumbbell', 'accent' => 'training',  'note' => 'Workouts en belasting'],
+        'activity'  => ['label' => 'Beweging',  'icon' => 'bolt',     'accent' => 'training',  'note' => 'Stappen en dagelijkse beweging'],
         'body'      => ['label' => 'Metingen',  'icon' => 'chart',    'accent' => 'nutrition', 'note' => 'Gewicht en lichaamssamenstelling'],
         'manual'    => ['label' => 'Handmatig', 'icon' => 'user',     'accent' => 'health',    'note' => 'Je vult je voortgang zelf in'],
     ],

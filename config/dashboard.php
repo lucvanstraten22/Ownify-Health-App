@@ -94,11 +94,15 @@ return [
          * score beside it. `area` points at the Gezondheid area the row reads
          * from, which is why the Sport row can carry the Training score without
          * either name having to change. The three count equally, so there are
-         * no weights here. Values are DERIVED, like the overall score. */
+         * no weights here. Values are DERIVED, like the overall score.
+         * `accent` is the pillar's own category colour and never changes;
+         * `score_band` (high | mid | low, or null without a score) is how high
+         * its score is — the colour of the dot beside it — filled in by
+         * health_contributor_scores() from config/scoring.php. */
         'contributors' => [
-            ['area' => 'sleep',     'label' => 'Slaap',   'accent' => 'health',    'value' => null],
-            ['area' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'value' => null],
-            ['area' => 'training',  'label' => 'Sport',   'accent' => 'activity',  'value' => null],
+            ['area' => 'sleep',     'label' => 'Slaap',   'accent' => 'sleep',     'value' => null, 'score_band' => null],
+            ['area' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'value' => null, 'score_band' => null],
+            ['area' => 'training',  'label' => 'Sport',   'accent' => 'training',  'value' => null, 'score_band' => null],
         ],
 
     ],
@@ -138,7 +142,7 @@ return [
         'items'    => [
             [
                 'icon'   => 'pulse',
-                'accent' => 'health',
+                'accent' => 'sleep',
                 'title'  => 'Ritme in je week',
                 'body'   => 'Hier zie je straks welk dagritme het beste bij je past.',
                 'state'  => 'empty',
@@ -152,7 +156,7 @@ return [
             ],
             [
                 'icon'   => 'bolt',
-                'accent' => 'activity',
+                'accent' => 'training',
                 'title'  => 'Beweging en herstel',
                 'body'   => 'Hier zie je hoe beweging en herstel elkaar beïnvloeden.',
                 'state'  => 'empty',

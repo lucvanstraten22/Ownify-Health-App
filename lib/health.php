@@ -52,12 +52,21 @@ if (!function_exists('health_contributor_scores')) {
      * Derived on every render, from the same source as the overall score, so
      * the legend and the number in the middle of the ring can never drift
      * apart: they read the same three values.
+     *
+     * Each row also gets the colour band of its score (score_colour_band()),
+     * for the dot beside it. Its `accent` — the category colour — is left
+     * exactly as configured: the score decides the dot, never the category.
      */
     function health_contributor_scores(array $contributors, array $health): array
     {
+        require_once dirname(__DIR__) . '/includes/scoring.php';
+
         foreach ($contributors as $index => $row) {
-            $area = $health['areas'][$row['area']] ?? null;
-            $contributors[$index]['value'] = $area['score']['value'] ?? null;
+            $area  = $health['areas'][$row['area']] ?? null;
+            $value = $area['score']['value'] ?? null;
+
+            $contributors[$index]['value']      = $value;
+            $contributors[$index]['score_band'] = score_colour_band($value);
         }
 
         return $contributors;

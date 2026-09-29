@@ -709,7 +709,7 @@
 
 .confirm__mark {
     margin-inline: auto;
-    color: var(--nutrition);
+    color: var(--attention);
     background: rgba(191, 168, 99, 0.16);
 }
 
@@ -822,7 +822,7 @@
 
 .field-editor__once {
     margin-top: var(--space-2);
-    color: var(--nutrition);
+    color: var(--attention);
 }
 
 .field-editor__once[hidden] { display: none; }
@@ -898,9 +898,9 @@
 .field-editor__error[hidden] { display: none; }
 
 /* A connection that needs attention — revoked, or a sync that failed. Uses
-   the nutrition accent the confirmation dialog already uses for caution,
+   the attention gold the confirmation dialog already uses for caution,
    rather than introducing a colour. */
-.integration__hint--warn { color: var(--nutrition); }
+.integration__hint--warn { color: var(--attention); }
 
 /* The pairing code. Large, spaced and monospaced, because it is read off one
    screen and typed into another — the one place in the app where telling

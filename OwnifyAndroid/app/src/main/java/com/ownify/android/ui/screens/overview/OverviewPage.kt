@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.ownify.android.data.AppData
+import com.ownify.android.data.Contributor
 import com.ownify.android.data.GoalCard
 import com.ownify.android.data.Insights
 import com.ownify.android.data.Patterns
@@ -98,6 +99,7 @@ import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.design.loopValue
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.ScoreBand
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 
@@ -163,10 +165,7 @@ private fun HealthScoreCard(data: AppData) {
             align = TextAlign.Center
         )
 
-        Legend(
-            data.overview.contributors.map { LegendItem(it.label, it.value, Accent.of(it.accent)) },
-            Modifier.padding(top = Ownify.Space4)
-        )
+        Legend(overviewLegend(data.overview.contributors), Modifier.padding(top = Ownify.Space4))
 
         if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
     }
@@ -447,7 +446,7 @@ private fun PatternsCard(patterns: Patterns) {
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
     JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.sparkle, rec.title, iconColor = Ownify.Nutrition)
+        CompactHead(OwnifyIcons.sparkle, rec.title, iconColor = Ownify.Attention)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         CardHint(rec.note, icon = null, plain = true)
@@ -546,3 +545,13 @@ private fun ScrollTop(scroll: ScrollState) {
         }
     }
 }
+
+/**
+ * The legend under the Overzicht ring (`components/health-score.php`): each
+ * pillar keeps its category colour, and its dot takes the colour of its score
+ * band — the server's `score_band`, never the category. No score, a faint dot.
+ */
+internal fun overviewLegend(contributors: List<Contributor>): List<LegendItem> =
+    contributors.map {
+        LegendItem(it.label, it.value, Accent.of(it.accent), dot = ScoreBand.of(it.scoreBand)?.color ?: Ownify.TextFaint)
+    }

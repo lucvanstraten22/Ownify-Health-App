@@ -240,7 +240,7 @@ fun SyncResult(modifier: Modifier = Modifier) {
     if (line != null) {
         T(
             line,
-            OwnifyType.style(Ownify.FsTiny, color = if (OwnifySync.state is OwnifySyncState.Failed) Ownify.Nutrition else Ownify.TextMuted),
+            OwnifyType.style(Ownify.FsTiny, color = if (OwnifySync.state is OwnifySyncState.Failed) Ownify.Attention else Ownify.TextMuted),
             modifier.fillMaxWidth().padding(top = Ownify.Space3).semantics { liveRegion = LiveRegionMode.Polite }
         )
     }

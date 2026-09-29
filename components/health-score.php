@@ -36,8 +36,8 @@ $state  = state_class($overall['value']);
         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
             <defs>
                 <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%"   stop-color="var(--health)"/>
-                    <stop offset="55%"  stop-color="var(--activity)"/>
+                    <stop offset="0%"   stop-color="var(--sleep)"/>
+                    <stop offset="55%"  stop-color="var(--training)"/>
                     <stop offset="100%" stop-color="var(--nutrition)"/>
                 </linearGradient>
             </defs>
@@ -56,10 +56,12 @@ $state  = state_class($overall['value']);
     <h2 class="score-ring__label"><?= e($overall['label']) ?></h2>
     <p class="card__lede"><?= e($overall['description']) ?></p>
 
-    <?php /* The three pillars the score averages, each with its own score. */ ?>
+    <?php /* The three pillars the score averages, each with its own score. The
+             dot is the score's colour (data-score, decided on the server), not
+             the pillar's category colour. */ ?>
     <ul class="legend" role="list">
         <?php foreach ($contributors as $item): ?>
-            <li class="legend__item <?= state_class($item['value']) ?>" data-accent="<?= e($item['accent']) ?>">
+            <li class="legend__item <?= state_class($item['value']) ?>" data-score="<?= e((string) ($item['score_band'] ?? '')) ?>">
                 <span class="legend__dot" aria-hidden="true"></span>
                 <span class="legend__label"><?= e($item['label']) ?></span>
                 <span class="legend__value"><?= e(score_text($item['value'])) ?></span>

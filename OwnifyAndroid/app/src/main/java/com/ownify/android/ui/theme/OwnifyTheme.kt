@@ -41,10 +41,31 @@ object Ownify {
     val GlassBorderSoft = white(0.08f)
     val GlassHairline = white(0.06f)
 
-    // --- accents ----------------------------------------------------------
+    // --- category colours: WHICH part of health, whatever the score -------
+    // Exactly the website's --sleep, --nutrition, --training (+ -light).
+    val Sleep = Color(0xFF5B64C7)
+    val SleepLight = Color(0xFF747CDA)
+    val Nutrition = Color(0xFF477B61)
+    val NutritionLight = Color(0xFF67997D)
+    val Training = Color(0xFFC97867)
+    val TrainingLight = Color(0xFFD99586)
+
+    // --- score colours: HOW HIGH a score is, whatever the category --------
+    // Exactly the website's --score-high / -mid / -low. Which band a score is
+    // in comes from the server (config/scoring.php): 80–100, 60–79, 0–59.
+    val ScoreHigh = Color(0xFF4E9F70)
+    val ScoreMid = Color(0xFFAECA0F)
+    val ScoreLow = Color(0xFFC99A45)
+
+    // --- the app's own colours, not categories ----------------------------
+    /** `--health`: the positive state (connected, done, reached) and the accent of what has no category. */
     val Health = Color(0xFF3C9E72)
-    val Nutrition = Color(0xFFBFA863)
-    val Activity = Color(0xFF78A560)
+
+    /** `--attention`: warnings, a confirmation that cannot be undone, the recommendation's spark. */
+    val Attention = Color(0xFFBFA863)
+
+    /** The olive of the website's ambient backdrop washes — decoration, not a category. */
+    val AmbientOlive = Color(0xFF78A560)
 
     /** A day that did not make it — graphics only. */
     val Miss = Color(0xFFA8625C)
@@ -139,19 +160,54 @@ object Ownify {
     }
 }
 
-/** The three category colours: `data-accent="health|nutrition|activity"`. */
-enum class Accent(val color: Color) {
-    HEALTH(Ownify.Health),
-    NUTRITION(Ownify.Nutrition),
-    ACTIVITY(Ownify.Activity);
+/**
+ * `data-accent="sleep|nutrition|training|health"`: the three category colours,
+ * each with its lighter shade — fixed per category, never by score — and the
+ * app's own green for what belongs to no category.
+ */
+enum class Accent(val color: Color, val light: Color) {
+    SLEEP(Ownify.Sleep, Ownify.SleepLight),
+    NUTRITION(Ownify.Nutrition, Ownify.NutritionLight),
+    TRAINING(Ownify.Training, Ownify.TrainingLight),
+    HEALTH(Ownify.Health, Ownify.mix(Ownify.Health, 0.65f, Color.White));
 
     companion object {
-        /** The server's name for one; health for anything else, as `--accent` defaults. */
+        /**
+         * The server's name for one; health for anything else, as `--accent`
+         * defaults. `activity` is training's name from before the category
+         * colours, still understood from a server that has not caught up.
+         */
         fun of(name: String?): Accent =
             when (name) {
+                "sleep" -> SLEEP
                 "nutrition" -> NUTRITION
-                "activity" -> ACTIVITY
+                "training", "activity" -> TRAINING
                 else -> HEALTH
+            }
+
+        /** The accent whose colour this is, if it is one: for its lighter shade. */
+        fun byColor(color: Color): Accent? = entries.firstOrNull { it.color == color }
+    }
+}
+
+/**
+ * `data-score="high|mid|low"`: how high a score is, as its colour — the same
+ * for every category. The band itself is decided on the server
+ * (config/scoring.php, `score_band` in the state); this only draws it.
+ */
+enum class ScoreBand(val color: Color) {
+    HIGH(Ownify.ScoreHigh),
+    MID(Ownify.ScoreMid),
+    LOW(Ownify.ScoreLow);
+
+    companion object {
+        /** The server's name for one; null for no score (or a name it does not know). */
+        fun of(name: String?): ScoreBand? =
+            when (name) {
+                "high" -> HIGH
+                "mid" -> MID
+                "low" -> LOW
+                else -> null
             }
     }
 }

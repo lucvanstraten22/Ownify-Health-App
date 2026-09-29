@@ -16,11 +16,35 @@
     --glass-border-soft: rgba(255, 255, 255, 0.08);
     --glass-hairline: rgba(255, 255, 255, 0.06);
 
-    /* --- accents (desaturated, premium) -------------------------------- */
+    /* --- category colours ------------------------------------------------
+       WHICH part of health something belongs to — the same whatever its
+       score. Each has a lighter shade for gradients and second tones.
+       Mirrored exactly in OwnifyTheme.kt (Ownify.Sleep …). */
+    --sleep: #5B64C7;
+    --sleep-light: #747CDA;
+    --nutrition: #477B61;
+    --nutrition-light: #67997D;
+    --training: #C97867;
+    --training-light: #D99586;
+
+    /* --- score colours ---------------------------------------------------
+       HOW HIGH a score is — the same for every category. Which band a
+       score falls in is decided on the server (config/scoring.php,
+       'colour_bands': 80–100, 60–79, 0–59) and arrives as data-score.
+       Mirrored exactly in OwnifyTheme.kt (Ownify.ScoreHigh …). */
+    --score-high: #4E9F70;
+    --score-mid: #AECA0F;
+    --score-low: #C99A45;
+
+    /* --- the app's own colours -------------------------------------------
+       Not categories. Green is the app's positive state — connected, done,
+       reached, the notification dot — and the accent of anything that
+       belongs to no category. The warm gold asks for attention: warnings,
+       a confirmation that cannot be undone, the recommendation's spark. */
     --health: #3C9E72;
-    --nutrition: #BFA863;
-    --activity: #78A560;
+    --attention: #BFA863;
     --accent: var(--health);
+    --accent-light: color-mix(in srgb, var(--health) 65%, #ffffff);
 
     /* A day that did not make it. The palette had no such colour, because
        until now nothing in the app had to say "this went wrong" — scores go
@@ -188,10 +212,17 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Accent binding — any element can opt into a category colour. */
-[data-accent="health"] { --accent: var(--health); }
-[data-accent="nutrition"] { --accent: var(--nutrition); }
-[data-accent="activity"] { --accent: var(--activity); }
+/* Accent binding — any element can opt into a category colour. `health` is
+   the app's own green, for what belongs to no category. */
+[data-accent="sleep"] { --accent: var(--sleep); --accent-light: var(--sleep-light); }
+[data-accent="nutrition"] { --accent: var(--nutrition); --accent-light: var(--nutrition-light); }
+[data-accent="training"] { --accent: var(--training); --accent-light: var(--training-light); }
+[data-accent="health"] { --accent: var(--health); --accent-light: color-mix(in srgb, var(--health) 65%, #ffffff); }
+
+/* Score binding — the colour of a score, never of its category. */
+[data-score="high"] { --score-color: var(--score-high); }
+[data-score="mid"] { --score-color: var(--score-mid); }
+[data-score="low"] { --score-color: var(--score-low); }
 
 /* ==========================================================================
    Reset

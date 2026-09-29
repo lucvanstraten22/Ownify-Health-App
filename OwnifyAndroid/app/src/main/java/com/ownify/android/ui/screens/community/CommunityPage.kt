@@ -495,8 +495,8 @@ internal fun initial(name: String): String {
     return String(Character.toChars(trimmed.codePointAt(0))).uppercase(java.util.Locale.ROOT)
 }
 
-/** `community_avatar_accent()`: a stable one of the app's three accents per name (crc32 % 3). */
+/** `community_avatar_accent()`: a stable one of the three category colours per name (crc32 % 3). */
 internal fun avatarAccent(name: String?): String {
     val crc = CRC32().apply { update((name ?: "").toByteArray(Charsets.UTF_8)) }.value
-    return listOf("health", "nutrition", "activity")[(crc % 3).toInt()]
+    return listOf("sleep", "nutrition", "training")[(crc % 3).toInt()]
 }

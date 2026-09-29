@@ -409,7 +409,7 @@
 
 /* A refusal reads in the panel's own message colour, not as a status. */
 .friend__status.is-error,
-.account__toggle-note.is-error { color: var(--nutrition); }
+.account__toggle-note.is-error { color: var(--attention); }
 
 .friend__actions {
     display: flex;

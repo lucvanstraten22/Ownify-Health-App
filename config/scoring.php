@@ -55,6 +55,20 @@ return [
         0  => 'Zeer matig',
     ],
 
+    /* Which colour a score is shown in: the dot beside each pillar on
+       Overzicht. The same for every category — a category keeps its own
+       colour whatever its score, and a score's colour says nothing about its
+       category. Inclusive lower bounds: 80 is high, 60 is mid, 59 is low.
+       score_colour_band() (includes/scoring.php) is the one place that reads
+       these; the website and the app both show the band it hands them, in
+       --score-high / -mid / -low (assets/css/theme.css) and Ownify.ScoreHigh
+       / Mid / Low (OwnifyTheme.kt). */
+    'colour_bands' => [
+        80 => 'high',   // 80–100  #4E9F70
+        60 => 'mid',    // 60–79   #AECA0F
+        0  => 'low',    // 0–59    #C99A45
+    ],
+
     /* Which recorded workouts count at all — for the Training score and for
        the points alike, so the two can never disagree about what a workout
        is. Two recordings of one session (a watch and a phone app both

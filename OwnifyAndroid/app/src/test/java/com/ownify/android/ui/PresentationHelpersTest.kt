@@ -40,14 +40,14 @@ class PresentationHelpersTest {
     @Test
     fun `avatar accent and initial - community_avatar_accent() and community_initial()`() {
         val expected = mapOf(
-            "sanne_7001" to ("activity" to "S"),
+            "sanne_7001" to ("training" to "S"),
             "anna_7001" to ("nutrition" to "A"),
-            "bram_7001" to ("activity" to "B"),
-            "cas_7001" to ("health" to "C"),
-            "dewi_7001" to ("activity" to "D"),
-            "" to ("health" to ""),
-            "élise" to ("activity" to "É"),
-            "Ömer" to ("activity" to "Ö"),
+            "bram_7001" to ("training" to "B"),
+            "cas_7001" to ("sleep" to "C"),
+            "dewi_7001" to ("training" to "D"),
+            "" to ("sleep" to ""),
+            "élise" to ("training" to "É"),
+            "Ömer" to ("training" to "Ö"),
         )
         for ((name, pair) in expected) {
             assertEquals("accent of '$name'", pair.first, avatarAccent(name))

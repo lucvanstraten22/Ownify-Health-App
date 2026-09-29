@@ -544,8 +544,8 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .fillMaxWidth()
                         .padding(top = Ownify.Space2)
                         .clip(shape)
-                        .background(Ownify.Nutrition.copy(alpha = 0.10f))
-                        .border(1.dp, Ownify.Nutrition.copy(alpha = 0.34f), shape)
+                        .background(Ownify.Attention.copy(alpha = 0.10f))
+                        .border(1.dp, Ownify.Attention.copy(alpha = 0.34f), shape)
                         .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSmall))
@@ -558,7 +558,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                                 GoalBoard.delete(context, goal.id)
                             },
                             modifier = Modifier.weight(1f),
-                            look = BtnLook(border = Ownify.Nutrition.copy(alpha = 0.45f), fill = Ownify.Nutrition.copy(alpha = 0.18f))
+                            look = BtnLook(border = Ownify.Attention.copy(alpha = 0.45f), fill = Ownify.Attention.copy(alpha = 0.18f))
                         )
                     }
                 }

@@ -39,6 +39,36 @@ if (!defined('SCORE_DOMAINS')) {
     define('SCORE_DOMAINS', ['sleep', 'nutrition', 'training']);
 }
 
+if (!function_exists('score_colour_band')) {
+
+    /**
+     * How high a score is, as the colour it is shown in: 'high', 'mid' or
+     * 'low' — or null when there is no score (null is never a zero).
+     *
+     * The one place the colour thresholds are read (config/scoring.php,
+     * 'colour_bands'; inclusive lower bounds, so 80 is high and 59 is low).
+     * It is the same for every category: a category's own colour never
+     * depends on its score, and a score's colour never on its category.
+     */
+    function score_colour_band(int|float|null $score): ?string
+    {
+        if ($score === null) {
+            return null;
+        }
+
+        $bands = (array) (health_scoring_config()['colour_bands'] ?? []);
+        krsort($bands, SORT_NUMERIC);
+
+        foreach ($bands as $from => $band) {
+            if ($score >= $from) {
+                return (string) $band;
+            }
+        }
+
+        return $bands === [] ? null : (string) end($bands);   // below the lowest bound
+    }
+}
+
 if (!function_exists('score_combine')) {
 
     /**

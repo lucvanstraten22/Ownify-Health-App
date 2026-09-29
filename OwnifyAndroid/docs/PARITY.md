@@ -82,6 +82,20 @@ which on Android is Roboto — the app uses the platform default for the same
 reason. Icons are generated from `components/icons.php`
 (`tools/gen_icons.py`).
 
+Colour has two separate meanings, identical on both sides:
+
+- Category (`--sleep`, `--nutrition`, `--training` and their `-light`
+  shades; `Ownify.Sleep` … / `Accent`): which part of health something is.
+  Fixed per category, never changed by a score. `health` (`--health`) is the
+  app's own green for positive states and for what has no category;
+  `--attention` / `Ownify.Attention` is warnings and the recommendation.
+- Score (`--score-high/-mid/-low`; `Ownify.ScoreHigh/Mid/Low` / `ScoreBand`):
+  how high a score is — only the dot beside each pillar on Overzicht. The
+  band (80–100, 60–79, 0–59) is decided once on the server
+  (`score_colour_band()`, `config/scoring.php`) and sent as `score_band`;
+  neither client works it out. `tools/health-score-test.php` and
+  `ColourSystemTest` check the hex values match on both sides.
+
 Text is laid out the way the browser lays it out, not with Compose's
 defaults:
 

@@ -43,10 +43,10 @@ if (!function_exists('community_initial')) {
 }
 
 if (!function_exists('community_avatar_accent')) {
-    /** A stable accent per person, drawn from the app's own three. */
+    /** A stable accent per person, drawn from the three category colours. */
     function community_avatar_accent(?string $name): string
     {
-        $accents = ['health', 'nutrition', 'activity'];
+        $accents = ['sleep', 'nutrition', 'training'];
 
         return $accents[crc32((string) $name) % 3];
     }
