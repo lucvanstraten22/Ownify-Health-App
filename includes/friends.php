@@ -234,7 +234,7 @@ if (!function_exists('friend_pair')) {
         return [
             'id'          => $otherId,
             'username'    => $username,
-            'avatar'      => $avatar !== null && $avatar !== '' ? $avatar : null,
+            'avatar'      => avatar_small($avatar),
             'relation'    => $relation,
             'status'      => $status,
             'can_request' => $open,
@@ -444,7 +444,7 @@ if (!function_exists('friend_pair')) {
         return array_values(array_diff($ids, $exclude));
     }
 
-    /** Your friends: id, username, avatar_path — alphabetical. */
+    /** Your friends: id, username, avatar_path (the small copy) — alphabetical. */
     function friend_list(int $userId): array
     {
         $ids = friend_ids($userId);
@@ -454,20 +454,20 @@ if (!function_exists('friend_pair')) {
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-        return db_all(
+        return avatar_small_rows(db_all(
             'SELECT u.id, u.username, p.avatar_path
                FROM users u
           LEFT JOIN user_profiles p ON p.user_id = u.id
               WHERE u.id IN (' . $placeholders . ') AND u.status = ?
            ORDER BY u.username',
             [...$ids, 'active']
-        );
+        ));
     }
 
     /** Requests waiting for YOUR answer, newest first. */
     function friend_pending_for(int $userId): array
     {
-        return db_all(
+        return avatar_small_rows(db_all(
             'SELECT f.id, f.requested_by, f.requested_by AS user_id, f.created_at, u.username, p.avatar_path
                FROM friendships f
                JOIN users u ON u.id = f.requested_by AND u.status = ?
@@ -476,13 +476,13 @@ if (!function_exists('friend_pair')) {
                 AND (f.user_low_id = ? OR f.user_high_id = ?)
            ORDER BY f.created_at DESC',
             ['active', 'pending', $userId, $userId, $userId]
-        );
+        ));
     }
 
     /** Requests you sent that have not been answered yet, newest first. */
     function friend_sent_by(int $userId): array
     {
-        return db_all(
+        return avatar_small_rows(db_all(
             'SELECT f.id, u.id AS user_id, f.created_at, u.username, p.avatar_path
                FROM friendships f
                JOIN users u ON u.id = CASE WHEN f.user_low_id = ? THEN f.user_high_id ELSE f.user_low_id END
@@ -491,7 +491,7 @@ if (!function_exists('friend_pair')) {
               WHERE f.status = ? AND f.requested_by = ?
            ORDER BY f.created_at DESC',
             [$userId, 'active', 'pending', $userId]
-        );
+        ));
     }
 
     /* ------------------------------------------------------------ blocks */

@@ -37,7 +37,7 @@ if (!function_exists('hydrate_community')) {
 
         /* Your own line where a board's top does not reach you: your picture,
            as the boards show it. */
-        $community['you']['avatar'] = ($userId !== null && db_available()) ? leaderboard_avatar_of($userId) : null;
+        $community['you']['avatar'] = ($userId !== null && db_available()) ? avatar_small(leaderboard_avatar_of($userId)) : null;
 
         /* What the account panel's Vrienden page shows: friends, requests
            both ways, and the account's own "Vriendverzoeken toestaan". */
@@ -82,7 +82,7 @@ if (!function_exists('hydrate_community')) {
                 'name'   => (string) $row['username'],
                 'points' => (int) $row['points'],
                 'self'   => $isYou,
-                'avatar' => $row['avatar_path'] ?? null,
+                'avatar' => avatar_small($row['avatar_path'] ?? null),
             ];
 
             $entries[] = $entry;

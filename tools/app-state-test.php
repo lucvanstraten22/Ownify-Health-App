@@ -43,6 +43,7 @@ date_default_timezone_set('Europe/Amsterdam');
 require_once $root . '/includes/db.php';
 require_once $root . '/includes/devices.php';
 require_once $root . '/includes/google-signin.php';
+require_once $root . '/includes/user.php';
 
 if (!db_available() || !devices_scoped()) {
     fwrite(STDERR, 'The database ' . getenv('DB_NAME') . " is unreachable or has no migration 013.\n");
@@ -190,7 +191,7 @@ function paired_phone(string $accountToken): string
 function png(): string
 {
     $file  = tempnam(sys_get_temp_dir(), 'avatar') . '.png';
-    $image = imagecreatetruecolor(64, 64);
+    $image = imagecreatetruecolor(400, 300);
     imagefill($image, 0, 0, imagecolorallocate($image, 60, 158, 114));
     imagepng($image, $file);
 
@@ -377,7 +378,13 @@ try {
     $accepted = http('/api/friends/request.php', ['bearer' => $bram['token'], 'form' => ['user_id' => $sanne['id'], 'action' => 'accept']]);
     check('bram accepts sanne: the two are friends', $accepted['status'] === 200, summary($accepted));
 
-    $picture = (string) ($avatar['body']['avatar'] ?? '');
+    $upload  = (string) ($avatar['body']['avatar'] ?? '');
+    $picture = avatar_small($upload);   // what the boards and friends lists show: its small copy
+    $small   = @getimagesize($root . '/' . $picture);
+    check('the upload got its small copy at once: a square of ' . AVATAR_SMALL_SIDE . ' px beside the original',
+        $picture !== $upload && str_starts_with($picture, preg_replace('/\.[a-z]+$/', '', $upload) . '-s.')
+        && $small !== false && $small[0] === AVATAR_SMALL_SIDE && $small[1] === AVATAR_SMALL_SIDE
+        && is_file($root . '/' . $upload), $picture);
 
     /** Sanne's picture on each board $token's pages show her on: "scope/period" => path or null. */
     $sanneOnBoards = static function (string $token) use ($name): array {
@@ -433,7 +440,8 @@ try {
     check('off: nor on the ones she sees herself', array_unique(array_values($sanneOnBoards($sanne['token'])), SORT_REGULAR) === [null]);
     check('off: nor on her own line', $ownLine($sanne['token']) === null);
     check('off: the path is nowhere in bram\'s pages but his friends list',
-        substr_count(json_encode(http('/api/app/state.php', ['bearer' => $bram['token']])['body']['data']['community']['boards']), basename($picture)) === 0);
+        substr_count(json_encode(http('/api/app/state.php', ['bearer' => $bram['token']])['body']['data']['community']['boards']),
+            pathinfo($upload, PATHINFO_FILENAME)) === 0);
     $friendsOfBram = http('/api/app/state.php', ['bearer' => $bram['token']])['body']['data']['community']['friends'] ?? [];
     check('off: the friends list still has her picture — only the boards change', in_array($picture,
         array_map(static fn (array $p): ?string => $p['avatar'] ?? $p['avatar_path'] ?? null, $friendsOfBram), true), json_encode($friendsOfBram));
@@ -448,6 +456,16 @@ try {
         ['jar' => $jar, 'form' => ['leaderboard_avatar' => '1']])['status'] === 419
         && http('/api/profile/privacy.php', ['jar' => $jar, 'form' => ['leaderboard_avatar' => '1', 'csrf' => csrf($jar)]])['status'] === 200);
     check('on again: bram sees her picture again', array_unique(array_values($sanneOnBoards($bram['token']))) === [$picture]);
+
+    unlink($root . '/' . $picture);
+    check('a picture from before small copies gets one the first time it is shown',
+        array_unique(array_values($sanneOnBoards($bram['token']))) === [$picture] && is_file($root . '/' . $picture));
+
+    $replaced = http('/api/profile/avatar.php', ['bearer' => $sanne['token'], 'file' => ['avatar' => png()]]);
+    $newSmall = avatar_small((string) ($replaced['body']['avatar'] ?? ''));
+    check('a new picture: its own small copy on the boards, the old picture and its copy gone',
+        $replaced['status'] === 200 && array_unique(array_values($sanneOnBoards($bram['token']))) === [$newSmall]
+        && is_file($root . '/' . $newSmall) && !is_file($root . '/' . $picture) && !is_file($root . '/' . $upload), summary($replaced));
 
     section('disconnecting Health Connect from the app ends the app\'s own token too');
     $disconnect = http('/api/integrations/disconnect.php', ['bearer' => $bram['token'], 'form' => ['provider' => 'google_health_connect']]);

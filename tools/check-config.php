@@ -35,6 +35,7 @@ if (PHP_SAPI !== 'cli') {
 
 require_once dirname(__DIR__) . '/includes/db.php';
 require_once dirname(__DIR__) . '/includes/crypto.php';
+require_once dirname(__DIR__) . '/includes/user.php';
 
 $argvFlags = array_slice($argv ?? [], 1);
 
@@ -171,6 +172,14 @@ if (db_available()) {
         } else {
             line('warn', 'board pictures', 'user_profiles.leaderboard_avatar is missing, so "Profielfoto op de ranglijst" '
                 . 'cannot be switched off — import database/migrations/014-leaderboard-avatar-setting.sql');
+        }
+
+        /* Not fatal: without GD the boards and friends lists show each
+           picture as uploaded (up to 3 MB) instead of a small copy. */
+        if (!function_exists('imagecreatetruecolor')) {
+            line('warn', 'small pictures', 'PHP has no GD, so the boards show profile pictures at full size — enable the gd extension');
+        } else {
+            line('ok', 'small pictures', 'GD is there; small copies are written as ' . (str_ends_with(avatar_small_path('x.png'), '.webp') ? 'WebP' : 'JPEG'));
         }
 
         /* Not fatal: without it a day's steps, distance and calories are the

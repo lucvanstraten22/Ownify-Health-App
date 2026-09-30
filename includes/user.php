@@ -15,6 +15,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
+/** The side, in pixels, of the small copy of a profile picture the boards and friends lists show. */
+if (!defined('AVATAR_SMALL_SIDE')) {
+    define('AVATAR_SMALL_SIDE', 192);
+}
+
 if (!function_exists('user_validate_username')) {
 
     /* --------------------------------------------------------- username */
@@ -393,15 +398,187 @@ if (!function_exists('user_validate_username')) {
             [$userId, $path]
         );
 
-        // Tidy up the replaced file, but only inside our own avatar directory.
-        if (is_string($previous) && str_starts_with($previous, 'uploads/avatars/')) {
+        // The small copy the boards and friends lists show, made now.
+        avatar_small($path);
+
+        // Tidy up the replaced file and its small copy, but only inside our own avatar directory.
+        if (is_string($previous) && str_starts_with($previous, 'uploads/avatars/') && !str_contains($previous, '..')) {
             $old = dirname(__DIR__) . '/' . $previous;
-            if (is_file($old)) {
-                @unlink($old);
+            foreach ([$old, ...(glob(preg_replace('/\.[a-z]+$/', '', $old) . '-s.*') ?: [])] as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
             }
         }
 
         return ['ok' => true, 'error' => null, 'avatar' => $path];
+    }
+
+    /* ------------------------------------------------- the small copy */
+
+    /**
+     * Where a picture's small copy lives: beside it, same name plus "-s".
+     * WebP where this PHP can write it, JPEG otherwise.
+     */
+    function avatar_small_path(string $path): string
+    {
+        $webp = function_exists('imagewebp') && (imagetypes() & IMG_WEBP) !== 0;
+
+        return preg_replace('/\.[a-z]+$/', '', $path) . '-s.' . ($webp ? 'webp' : 'jpg');
+    }
+
+    /**
+     * The picture to show in a small circle — a board row, a friend — as a
+     * square copy of AVATAR_SMALL_SIDE pixels instead of the upload itself
+     * (up to 3 MB). Made at upload; a picture from before that gets its copy
+     * the first time it is shown. Whenever a copy cannot be made (no GD, a
+     * file it cannot read) the original is shown, as before.
+     */
+    function avatar_small(?string $path): ?string
+    {
+        static $known = [];
+
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        if (!str_starts_with($path, 'uploads/avatars/') || str_contains($path, '..')) {
+            return $path;
+        }
+
+        if (!array_key_exists($path, $known)) {
+            $root  = dirname(__DIR__) . '/';
+            $small = avatar_small_path($path);
+
+            $known[$path] = is_file($root . $small) || avatar_make_small($root . $path, $root . $small)
+                ? $small
+                : $path;
+        }
+
+        return $known[$path];
+    }
+
+    /** Every row's avatar_path as its small copy. */
+    function avatar_small_rows(array $rows): array
+    {
+        foreach ($rows as $i => $row) {
+            if (array_key_exists('avatar_path', $row)) {
+                $rows[$i]['avatar_path'] = avatar_small($row['avatar_path']);
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Writes the small copy: the centre square — what the round frames show
+     * of the original anyway — turned upright the way a phone photo says it
+     * should be, scaled down to AVATAR_SMALL_SIDE (never up).
+     */
+    function avatar_make_small(string $source, string $target): bool
+    {
+        if (!function_exists('imagecreatetruecolor') || !is_file($source)) {
+            return false;
+        }
+
+        $info = @getimagesize($source);
+        if ($info === false || $info[0] < 1 || $info[1] < 1 || $info[0] * $info[1] > 40_000_000) {
+            return false;
+        }
+
+        // A decoded picture takes about 5 bytes a pixel; make room, or leave it.
+        if (!avatar_memory_for((int) ($info[0] * $info[1] * 5) + 16 * 1024 * 1024)) {
+            return false;
+        }
+
+        $image = match ($info[2]) {
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($source),
+            IMAGETYPE_PNG  => @imagecreatefrompng($source),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($source) : false,
+            default        => false,
+        };
+
+        if ($image === false) {
+            return false;
+        }
+
+        if ($info[2] === IMAGETYPE_JPEG && function_exists('exif_read_data')) {
+            $exif = @exif_read_data($source);
+            $image = avatar_upright($image, (int) ($exif['Orientation'] ?? 1));
+        }
+
+        $width  = imagesx($image);
+        $height = imagesy($image);
+        $square = min($width, $height);
+        $side   = min(AVATAR_SMALL_SIDE, $square);
+        $webp   = str_ends_with($target, '.webp');
+
+        $small = imagecreatetruecolor($side, $side);
+        if ($webp) {
+            imagealphablending($small, false);
+            imagesavealpha($small, true);
+            imagefill($small, 0, 0, imagecolorallocatealpha($small, 0, 0, 0, 127));
+        } else {
+            imagefill($small, 0, 0, imagecolorallocate($small, 255, 255, 255));
+        }
+
+        imagecopyresampled($small, $image, 0, 0,
+            intdiv($width - $square, 2), intdiv($height - $square, 2), $side, $side, $square, $square);
+        imagedestroy($image);
+
+        // Written aside and moved into place, so nobody is ever sent half a file.
+        $partial = $target . '.' . bin2hex(random_bytes(4)) . '.part';
+        $written = $webp ? @imagewebp($small, $partial, 82) : @imagejpeg($small, $partial, 85);
+        imagedestroy($small);
+
+        if (!$written || !@rename($partial, $target)) {
+            @unlink($partial);
+            return false;
+        }
+
+        return true;
+    }
+
+    /** Turns a JPEG the way its EXIF orientation (1–8) says. */
+    function avatar_upright(\GdImage $image, int $orientation): \GdImage
+    {
+        $turned = match ($orientation) {
+            3, 4    => imagerotate($image, 180, 0),
+            5, 6    => imagerotate($image, -90, 0),
+            7, 8    => imagerotate($image, 90, 0),
+            default => $image,
+        };
+
+        if ($turned === false) {
+            return $image;
+        }
+
+        if (in_array($orientation, [2, 4, 5, 7], true)) {
+            imageflip($turned, IMG_FLIP_HORIZONTAL);
+        }
+
+        return $turned;
+    }
+
+    /** Whether $bytes more fit under memory_limit, raising it if that is allowed. */
+    function avatar_memory_for(int $bytes): bool
+    {
+        $limit = trim((string) ini_get('memory_limit'));
+        if ($limit === '' || $limit === '-1') {
+            return true;
+        }
+
+        $value = (int) $limit;
+        $value *= match (strtolower(substr($limit, -1))) {
+            'g'     => 1024 ** 3,
+            'm'     => 1024 ** 2,
+            'k'     => 1024,
+            default => 1,
+        };
+
+        $needed = memory_get_usage() + $bytes;
+
+        return $needed <= $value || ini_set('memory_limit', (string) $needed) !== false;
     }
 
     /* ---------------------------------------------------------- deleting */

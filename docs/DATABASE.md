@@ -359,6 +359,16 @@ friends list, are not touched. An existing database gets the column from
 `database/migrations/014-leaderboard-avatar-setting.sql`; until then every
 picture shows and the switch says it cannot be saved yet.
 
+**The boards and friends lists show a small copy** of each picture, not the
+upload itself (up to 3 MB): the centre square, turned upright, at 192 px, as
+WebP (JPEG where PHP cannot write WebP), beside the original in
+`uploads/avatars/` with `-s` added to its name (`avatar_small()`,
+`includes/user.php`). It is made at upload; a picture uploaded before this
+gets its copy the first time it is shown. Without GD, or for a file that
+cannot be read, the original is shown as before (`tools/check-config.php`
+says which). Replacing a picture removes the old one and its copy; deleting
+the account removes both.
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
@@ -677,7 +687,7 @@ private data is returned.
 | `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` — the Google identity waiting in the session |
 | `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file; then re-ranks every board it had points on |
 | `api/profile/username.php` | `users.username` |
-| `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/` |
+| `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/`, and its small copy |
 | `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |
 | `api/profile/onboarding.php` | `date_of_birth`, `gender` — once, then it refuses |
 | `api/health/sleep.php` | `sleep_sessions`; then that night's points and the Health Score |
