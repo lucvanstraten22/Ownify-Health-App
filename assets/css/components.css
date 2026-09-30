@@ -556,11 +556,9 @@
 
 .card--goal .icon-tile { color: var(--accent); }
 
-.icon-tile--accent { color: var(--attention); }
-
 /* A solid tile (icon_solid()): the tile in the colour, the icon white and
-   filled. The colour is the element's accent — a category's own, or the
-   app's green for what has none — or the attention gold for --accent. */
+   filled. The colour is the element's accent — a category's own — or, for
+   a card head without a category (--neutral), the neutral grey. */
 .icon-tile.icon-tile--solid {
     --tile: var(--accent);
     border-color: var(--tile);
@@ -568,7 +566,7 @@
     color: #ffffff;
 }
 
-.icon-tile--accent.icon-tile--solid { --tile: var(--attention); }
+.icon-tile--neutral.icon-tile--solid { --tile: var(--neutral); }
 
 .chip {
     display: inline-flex;

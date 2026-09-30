@@ -446,7 +446,7 @@ private fun PatternsCard(patterns: Patterns) {
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
     JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.solidSparkle, rec.title, tile = Ownify.Attention)
+        CompactHead(OwnifyIcons.solidSparkle, rec.title)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         CardHint(rec.note, icon = null, plain = true)
@@ -454,13 +454,13 @@ private fun RecommendationCard(rec: Recommendation) {
 }
 
 /**
- * `.card__head--compact`: a solid icon tile (`.icon-tile--solid`: [tile]
- * behind a white [icon] — the app's green, or the attention gold), the
+ * `.card__head--compact`: a solid icon tile (`.icon-tile--solid
+ * .icon-tile--neutral`: the neutral grey behind a white [icon]), the
  * card's eyebrow and — when there is one — a small line under it, 16 above
  * the body.
  */
 @Composable
-fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Health) {
+fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,

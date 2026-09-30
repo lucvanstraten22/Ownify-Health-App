@@ -61,8 +61,11 @@ object Ownify {
     /** `--health`: the positive state (connected, done, reached) and the accent of what has no category. */
     val Health = Color(0xFF3C9E72)
 
-    /** `--attention`: warnings, a confirmation that cannot be undone, the recommendation's spark. */
+    /** `--attention`: warnings, a confirmation that cannot be undone. */
     val Attention = Color(0xFFBFA863)
+
+    /** `--neutral`: the solid tile of a card head that has no category — grey, not a colour. */
+    val Neutral = Color(0xFF6B6769)
 
     /** The olive of the website's ambient backdrop washes — decoration, not a category. */
     val AmbientOlive = Color(0xFF78A560)

@@ -111,7 +111,7 @@ class ColourSystemTest {
             "nutrition" to Ownify.Nutrition, "nutrition-light" to Ownify.NutritionLight,
             "training" to Ownify.Training, "training-light" to Ownify.TrainingLight,
             "score-high" to Ownify.ScoreHigh, "score-mid" to Ownify.ScoreMid, "score-low" to Ownify.ScoreLow,
-            "health" to Ownify.Health, "attention" to Ownify.Attention,
+            "health" to Ownify.Health, "attention" to Ownify.Attention, "neutral" to Ownify.Neutral,
         )) {
             assertEquals("--$name", token(name), hex(colour))
         }

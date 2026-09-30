@@ -32,7 +32,7 @@ $height = 120.0;
 
     <div class="card__head">
         <div class="card__head-group">
-            <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
+            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
             <h2 class="card__eyebrow" id="trend-title-<?= e($suffix) ?>"><?= e($trend['title']) ?></h2>
         </div>
 

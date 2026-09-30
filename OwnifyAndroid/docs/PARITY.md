@@ -89,7 +89,8 @@ Colour has two separate meanings, identical on both sides:
   shades; `Ownify.Sleep` … / `Accent`): which part of health something is.
   Fixed per category, never changed by a score. `health` (`--health`) is the
   app's own green for positive states and for what has no category;
-  `--attention` / `Ownify.Attention` is warnings and the recommendation.
+  `--attention` / `Ownify.Attention` is warnings; `--neutral` /
+  `Ownify.Neutral` is the solid grey tile of a card head without a category.
 - Score (`--score-high/-mid/-low`; `Ownify.ScoreHigh/Mid/Low` / `ScoreBand`):
   how high a score is — only the dot beside each pillar on Overzicht. The
   band (80–100, 60–79, 0–59) is decided once on the server

@@ -212,7 +212,7 @@ fun TrendCard(data: AppData, only: String?) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
             ) {
-                IconTile(OwnifyIcons.chart)
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
                 T(trend.title, JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             RangeSwitch(

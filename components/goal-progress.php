@@ -14,7 +14,7 @@ $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 <section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid('flag') ?></span>
+        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('flag') ?></span>
         <h2 class="card__eyebrow" id="goal-title"><?= e($goal['title']) ?></h2>
     </div>
 

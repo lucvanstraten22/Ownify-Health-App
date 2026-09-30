@@ -7,7 +7,7 @@ $insights = $data['insights'];
 <section class="card card--insights reveal" aria-labelledby="insights-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid('pulse') ?></span>
+        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>
         <div class="card__headings">
             <h2 class="card__eyebrow" id="insights-title"><?= e($insights['title']) ?></h2>
             <p class="card__meta card__meta--small"><?= e($insights['subtitle']) ?></p>

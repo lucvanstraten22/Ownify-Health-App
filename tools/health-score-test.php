@@ -506,6 +506,7 @@ $expected = [
     'nutrition' => ['Nutrition', '477B61'], 'nutrition-light' => ['NutritionLight', '67997D'],
     'training' => ['Training', 'C97867'], 'training-light' => ['TrainingLight', 'D99586'],
     'score-high' => ['ScoreHigh', '4E9F70'], 'score-mid' => ['ScoreMid', 'AECA0F'], 'score-low' => ['ScoreLow', 'C99A45'],
+    'neutral' => ['Neutral', '6B6769'],
 ];
 foreach ($expected as $token => [$name, $hex]) {
     check("--{$token} is #{$hex} on the website and in the app",
