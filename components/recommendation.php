@@ -11,7 +11,7 @@ $rec = $data['recommendation'];
 <section class="card card--recommendation reveal is-empty" aria-labelledby="recommendation-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile icon-tile--accent" aria-hidden="true"><?= icon('sparkle') ?></span>
+        <span class="icon-tile icon-tile--accent icon-tile--solid" aria-hidden="true"><?= icon_solid('sparkle') ?></span>
         <h2 class="card__eyebrow" id="recommendation-title"><?= e($rec['title']) ?></h2>
     </div>
 

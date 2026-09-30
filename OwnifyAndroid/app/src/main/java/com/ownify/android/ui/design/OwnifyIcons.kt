@@ -356,6 +356,89 @@ object OwnifyIcons {
 
     /** The icon the server names, or null for a name this build does not know. */
     fun named(name: String?): ImageVector? = name?.let { byName[it] }
+
+    /** Solid `moon` (icon_solid()) */
+    val solidMoon: ImageVector by lazy {
+        solidIcon("moon",
+            Part("M20.2 14.4A8.4 8.4 0 0 1 9.6 3.8a8.4 8.4 0 1 0 10.6 10.6Z")
+        )
+    }
+
+    /** Solid `utensils` (icon_solid()) */
+    val solidUtensils: ImageVector by lazy {
+        solidIcon("utensils",
+            Part("M5 3.3a.7.7 0 0 1 1.4 0V8h1.1V3.3a.7.7 0 0 1 1.4 0V8H10V3.3a.7.7 0 0 1 1.4 0v5.5a3.2 3.2 0 0 1-2.3 3.1v8.4a1 1 0 0 1-2 0v-8.4A3.2 3.2 0 0 1 5 8.8Z"),
+            Part("M18.9 3.1c.5-.2 1 .1 1 .6v16.6a1 1 0 0 1-2 0v-5.1c-2.3-.4-3.7-2-3.7-4.4 0-3.4 1.7-6.2 4.7-7.7Z")
+        )
+    }
+
+    /** Solid `dumbbell` (icon_solid()) */
+    val solidDumbbell: ImageVector by lazy {
+        solidIcon("dumbbell",
+            Part("M8.2 10.8H15.8A0.6 0.6 0 0 1 16.4 11.4V12.6A0.6 0.6 0 0 1 15.8 13.2H8.2A0.6 0.6 0 0 1 7.6 12.6V11.4A0.6 0.6 0 0 1 8.2 10.8Z"),
+            Part("M6.3 5.6H7.1A1.3 1.3 0 0 1 8.4 6.9V17.1A1.3 1.3 0 0 1 7.1 18.4H6.3A1.3 1.3 0 0 1 5 17.1V6.9A1.3 1.3 0 0 1 6.3 5.6Z"),
+            Part("M16.9 5.6H17.7A1.3 1.3 0 0 1 19 6.9V17.1A1.3 1.3 0 0 1 17.7 18.4H16.9A1.3 1.3 0 0 1 15.6 17.1V6.9A1.3 1.3 0 0 1 16.9 5.6Z"),
+            Part("M3.1 8.4H3.5A1.1 1.1 0 0 1 4.6 9.5V14.5A1.1 1.1 0 0 1 3.5 15.6H3.1A1.1 1.1 0 0 1 2 14.5V9.5A1.1 1.1 0 0 1 3.1 8.4Z"),
+            Part("M20.5 8.4H20.9A1.1 1.1 0 0 1 22 9.5V14.5A1.1 1.1 0 0 1 20.9 15.6H20.5A1.1 1.1 0 0 1 19.4 14.5V9.5A1.1 1.1 0 0 1 20.5 8.4Z")
+        )
+    }
+
+    /** Solid `bolt` (icon_solid()) */
+    val solidBolt: ImageVector by lazy {
+        solidIcon("bolt",
+            Part("M13.2 2.8 5.6 13.2h5.3l-.9 8 7.6-10.4h-5.3l.9-8Z")
+        )
+    }
+
+    /** Solid `flag` (icon_solid()) */
+    val solidFlag: ImageVector by lazy {
+        solidIcon("flag",
+            Part("M6 3.2H6A0.9 0.9 0 0 1 6.9 4.1V20.5A0.9 0.9 0 0 1 6 21.4H6A0.9 0.9 0 0 1 5.1 20.5V4.1A0.9 0.9 0 0 1 6 3.2Z"),
+            Part("M6.9 5c4.4-2 8.6 2 13 0v8.6c-4.4 2-8.6-2-13 0Z")
+        )
+    }
+
+    /** Solid `sparkle` (icon_solid()) */
+    val solidSparkle: ImageVector by lazy {
+        solidIcon("sparkle",
+            Part("M12 3.6 13.7 9 19 10.8 13.7 12.6 12 18l-1.7-5.4L5 10.8 10.3 9 12 3.6Z"),
+            Part("M18.4 17.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z")
+        )
+    }
+
+    /** Solid `pulse` (icon_solid()) */
+    val solidPulse: ImageVector by lazy {
+        solidIcon("pulse",
+            Part("M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21", 2.4f)
+        )
+    }
+
+    /** Solid `chart` (icon_solid()) */
+    val solidChart: ImageVector by lazy {
+        solidIcon("chart",
+            Part("M4 4.5v15h15.5", 2.4f),
+            Part("M7.6 15.4 11 11.2l2.9 2.4 4.4-6", 2.4f)
+        )
+    }
+
+    val solidByName: Map<String, ImageVector> by lazy {
+        mapOf(
+        "moon" to solidMoon,
+        "utensils" to solidUtensils,
+        "dumbbell" to solidDumbbell,
+        "bolt" to solidBolt,
+        "flag" to solidFlag,
+        "sparkle" to solidSparkle,
+        "pulse" to solidPulse,
+        "chart" to solidChart,
+        )
+    }
+
+    /**
+     * `icon_solid()`: the solid version, for a coloured tile — its outline
+     * where the website has no solid one; null for a name this build does not know.
+     */
+    fun solid(name: String?): ImageVector? = name?.let { solidByName[it] ?: byName[it] }
 }
 
 /** [scale] about ([cx], [cy]), then back to the grid's centre — `translate(12 12) scale(s) translate(-cx -cy)`. */
@@ -401,5 +484,33 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
         builder.clearGroup()
     }
 
+    return builder.build()
+}
+
+/** One shape of a solid icon: filled, or — [line] > 0 — a line of that width. */
+private class Part(val data: String, val line: Float = 0f)
+
+private fun solidIcon(name: String, vararg parts: Part): ImageVector {
+    val builder = ImageVector.Builder(
+        name = "ownify.solid.$name",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    )
+    for (part in parts) {
+        if (part.line > 0f) {
+            builder.addPath(
+                pathData = addPathNodes(part.data),
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = part.line,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            )
+        } else {
+            builder.addPath(pathData = addPathNodes(part.data), fill = SolidColor(Color.Black))
+        }
+    }
     return builder.build()
 }

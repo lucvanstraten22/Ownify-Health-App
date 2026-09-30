@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -142,8 +143,8 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
                 ) {
-                    OwnifyIcons.named(area.icon)?.let {
-                        IconTile(it, size = if (narrow) 28.dp else 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
+                    OwnifyIcons.solid(area.icon)?.let {
+                        IconTile(it, size = if (narrow) 28.dp else 32.dp, radius = 11.dp, iconSize = 17.dp, color = Color.White, background = accent.color, border = accent.color)
                     }
 
                     // .score-value--centred: the number and "/100" on one baseline.

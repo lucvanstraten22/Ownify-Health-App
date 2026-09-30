@@ -202,3 +202,40 @@ if (!function_exists('icon')) {
         );
     }
 }
+
+if (!function_exists('icon_solid')) {
+    /**
+     * The solid version of an icon, for a coloured tile (`.icon-tile--solid`):
+     * the shape filled with currentColor instead of outlined. An icon that is
+     * only a line (pulse, chart) has nothing to fill, so it is the same line
+     * drawn heavier (fill="none" and its own stroke-width). An icon without a
+     * solid version here is its outline, as icon() draws it.
+     */
+    function icon_solid(string $name, string $class = ''): string
+    {
+        static $solid = [
+            'moon'     => '<path d="M20.2 14.4A8.4 8.4 0 0 1 9.6 3.8a8.4 8.4 0 1 0 10.6 10.6Z"/>',
+            'utensils' => '<path d="M5 3.3a.7.7 0 0 1 1.4 0V8h1.1V3.3a.7.7 0 0 1 1.4 0V8H10V3.3a.7.7 0 0 1 1.4 0v5.5a3.2 3.2 0 0 1-2.3 3.1v8.4a1 1 0 0 1-2 0v-8.4A3.2 3.2 0 0 1 5 8.8Z"/>'
+                . '<path d="M18.9 3.1c.5-.2 1 .1 1 .6v16.6a1 1 0 0 1-2 0v-5.1c-2.3-.4-3.7-2-3.7-4.4 0-3.4 1.7-6.2 4.7-7.7Z"/>',
+            'dumbbell' => '<rect x="7.6" y="10.8" width="8.8" height="2.4" rx=".6"/><rect x="5" y="5.6" width="3.4" height="12.8" rx="1.3"/>'
+                . '<rect x="15.6" y="5.6" width="3.4" height="12.8" rx="1.3"/><rect x="2" y="8.4" width="2.6" height="7.2" rx="1.1"/>'
+                . '<rect x="19.4" y="8.4" width="2.6" height="7.2" rx="1.1"/>',
+            'bolt'     => '<path d="M13.2 2.8 5.6 13.2h5.3l-.9 8 7.6-10.4h-5.3l.9-8Z"/>',
+            'flag'     => '<rect x="5.1" y="3.2" width="1.8" height="18.2" rx=".9"/><path d="M6.9 5c4.4-2 8.6 2 13 0v8.6c-4.4 2-8.6-2-13 0Z"/>',
+            'sparkle'  => '<path d="M12 3.6 13.7 9 19 10.8 13.7 12.6 12 18l-1.7-5.4L5 10.8 10.3 9 12 3.6Z"/><path d="M18.4 17.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/>',
+            'pulse'    => '<path fill="none" stroke-width="2.4" d="M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21"/>',
+            'chart'    => '<path fill="none" stroke-width="2.4" d="M4 4.5v15h15.5"/><path fill="none" stroke-width="2.4" d="M7.6 15.4 11 11.2l2.9 2.4 4.4-6"/>',
+        ];
+
+        if (!isset($solid[$name])) {
+            return icon($name, $class);
+        }
+
+        return sprintf(
+            '<svg class="icon icon--solid%s" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0"'
+            . ' stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true">%s</svg>',
+            $class !== '' ? ' ' . e($class) : '',
+            $solid[$name]
+        );
+    }
+}

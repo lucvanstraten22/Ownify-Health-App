@@ -7,7 +7,7 @@ $insights = $data['insights'];
 <section class="card card--insights reveal" aria-labelledby="insights-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile" aria-hidden="true"><?= icon('pulse') ?></span>
+        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid('pulse') ?></span>
         <div class="card__headings">
             <h2 class="card__eyebrow" id="insights-title"><?= e($insights['title']) ?></h2>
             <p class="card__meta card__meta--small"><?= e($insights['subtitle']) ?></p>
@@ -19,7 +19,7 @@ $insights = $data['insights'];
             $empty = ($item['state'] ?? 'empty') === 'empty';
             ?>
             <li class="insights__item<?= $empty ? ' is-empty' : '' ?>" data-accent="<?= e($item['accent']) ?>">
-                <span class="insights__marker" aria-hidden="true"><?= icon($item['icon']) ?></span>
+                <span class="insights__marker" aria-hidden="true"><?= icon_solid($item['icon']) ?></span>
                 <div class="insights__body">
                     <p class="insights__title"><?= e($item['title']) ?></p>
                     <p class="insights__text"><?= e($item['body']) ?></p>

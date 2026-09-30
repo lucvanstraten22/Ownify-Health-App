@@ -42,7 +42,6 @@
     width: 32px;
     height: 32px;
     border-radius: 11px;
-    color: var(--accent);
 }
 
 .health-card .icon-tile .icon { width: 17px; height: 17px; }

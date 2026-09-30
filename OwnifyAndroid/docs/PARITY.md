@@ -80,7 +80,8 @@ All from `assets/css/theme.css`, `components.css` and the page sheets; CSS
 px are dp, rem is 16 sp. Font: the web's stack is the system sans-serif,
 which on Android is Roboto — the app uses the platform default for the same
 reason. Icons are generated from `components/icons.php`
-(`tools/gen_icons.py`).
+(`tools/gen_icons.py`), the solid ones for coloured tiles (`icon_solid()`)
+included.
 
 Colour has two separate meanings, identical on both sides:
 

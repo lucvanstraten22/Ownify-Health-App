@@ -18,7 +18,7 @@ $ratio = score_ratio($score['value'], $score['max']);
             ? e((string) $score['value']) . ' van ' . e((string) $score['max'])
             : 'nog geen gegevens' ?>. Open details.">
 
-    <span class="icon-tile" aria-hidden="true"><?= icon($area['icon']) ?></span>
+    <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($area['icon']) ?></span>
 
     <span class="score-value score-value--centred">
         <span class="score-value__number" data-count-to="<?= has_value($score['value']) ? e((string) $score['value']) : '' ?>"><?= e(score_text($score['value'])) ?></span>

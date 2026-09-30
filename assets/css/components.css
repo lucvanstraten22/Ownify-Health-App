@@ -558,6 +558,18 @@
 
 .icon-tile--accent { color: var(--attention); }
 
+/* A solid tile (icon_solid()): the tile in the colour, the icon white and
+   filled. The colour is the element's accent — a category's own, or the
+   app's green for what has none — or the attention gold for --accent. */
+.icon-tile.icon-tile--solid {
+    --tile: var(--accent);
+    border-color: var(--tile);
+    background: var(--tile);
+    color: #ffffff;
+}
+
+.icon-tile--accent.icon-tile--solid { --tile: var(--attention); }
+
 .chip {
     display: inline-flex;
     align-items: center;
@@ -624,9 +636,8 @@
     height: 30px;
     flex: none;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.07);
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
 }
 
 .insights__marker .icon { width: 16px; height: 16px; }

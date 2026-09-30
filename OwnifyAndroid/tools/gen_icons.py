@@ -19,6 +19,9 @@ out_path = sys.argv[2]
 block = src[src.index("$icons = ["):src.index("];", src.index("$icons = ["))]
 entries = re.findall(r"'([a-z-]+)'\s*=>\s*((?:'[^']*'\s*(?:\.\s*)?)+),", block)
 
+solid_block = src[src.index("static $solid = ["):src.index("];", src.index("static $solid = ["))]
+solid_entries = re.findall(r"'([a-z-]+)'\s*=>\s*((?:'[^']*'\s*(?:\.\s*)?)+),", solid_block)
+
 optical_block = src[src.index("static $optical = ["):src.index("];", src.index("static $optical = ["))]
 optical = {m[0]: (float(m[1]), float(m[2]), float(m[3]))
            for m in re.findall(r"'([a-z-]+)'\s*=>\s*\[([\d.]+),\s*([\d.]+),\s*([\d.]+)\]", optical_block)}
@@ -79,6 +82,27 @@ for name, raw in entries:
     lines.append("    }")
     lines.append("")
 
+solid_lines = []
+solid_names = []
+for name, raw in solid_entries:
+    body = "".join(re.findall(r"'([^']*)'", raw))
+    solid_names.append(name)
+    solid_lines.append(f"    /** Solid `{name}` (icon_solid()) */")
+    solid_lines.append(f"    val {camel('solid-' + name)}: ImageVector by lazy {{")
+    solid_lines.append(f'        solidIcon("{name}",')
+    tags = re.findall(r"<(?:path|circle|rect)[^>]*/>", body)
+    for i, tag in enumerate(tags):
+        a = attrs(tag)
+        d = element_paths(tag)[0]
+        line = a.get("stroke-width") if a.get("fill") == "none" else None
+        sep = "," if i < len(tags) - 1 else ""
+        solid_lines.append(f'            Part("{d}", {line}f){sep}' if line else f'            Part("{d}"){sep}')
+    solid_lines.append("        )")
+    solid_lines.append("    }")
+    solid_lines.append("")
+
+solid_by_name = "\n".join(f'        "{n}" to {camel("solid-" + n)},' for n in solid_names)
+
 by_name = "\n".join(f'        "{n}" to {camel(n)},' for n in names)
 
 kotlin = f'''package com.ownify.android.ui.design
@@ -119,6 +143,19 @@ object OwnifyIcons {{
 
     /** The icon the server names, or null for a name this build does not know. */
     fun named(name: String?): ImageVector? = name?.let {{ byName[it] }}
+
+{chr(10).join(solid_lines)}
+    val solidByName: Map<String, ImageVector> by lazy {{
+        mapOf(
+{solid_by_name}
+        )
+    }}
+
+    /**
+     * `icon_solid()`: the solid version, for a coloured tile — its outline
+     * where the website has no solid one; null for a name this build does not know.
+     */
+    fun solid(name: String?): ImageVector? = name?.let {{ solidByName[it] ?: byName[it] }}
 }}
 
 /** [scale] about ([cx], [cy]), then back to the grid's centre — `translate(12 12) scale(s) translate(-cx -cy)`. */
@@ -166,6 +203,34 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
 
     return builder.build()
 }}
+
+/** One shape of a solid icon: filled, or — [line] > 0 — a line of that width. */
+private class Part(val data: String, val line: Float = 0f)
+
+private fun solidIcon(name: String, vararg parts: Part): ImageVector {{
+    val builder = ImageVector.Builder(
+        name = "ownify.solid.$name",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    )
+    for (part in parts) {{
+        if (part.line > 0f) {{
+            builder.addPath(
+                pathData = addPathNodes(part.data),
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = part.line,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            )
+        }} else {{
+            builder.addPath(pathData = addPathNodes(part.data), fill = SolidColor(Color.Black))
+        }}
+    }}
+    return builder.build()
+}}
 '''
 open(out_path, "w").write(kotlin)
-print(f"{len(names)} icons, {len(optical)} optical")
+print(f"{len(names)} icons, {len(optical)} optical, {len(solid_names)} solid")

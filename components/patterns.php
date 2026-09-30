@@ -11,7 +11,7 @@ $patterns = $data['patterns'];
 <section class="card card--patterns reveal is-empty" aria-labelledby="patterns-title">
 
     <div class="card__head card__head--compact">
-        <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
+        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid('chart') ?></span>
         <div class="card__headings">
             <h2 class="card__eyebrow" id="patterns-title"><?= e($patterns['title']) ?></h2>
             <p class="card__meta card__meta--small"><?= e($patterns['range']) ?></p>

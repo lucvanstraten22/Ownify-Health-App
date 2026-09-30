@@ -179,7 +179,7 @@ private fun GoalProgressCard(goal: GoalCard) {
     val set = goal.state != "unset" && goal.progress != null
 
     JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
-        CompactHead(OwnifyIcons.flag, goal.title, iconColor = Ownify.Health)
+        CompactHead(OwnifyIcons.solidFlag, goal.title)
 
         // .goal__headline
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -367,7 +367,7 @@ private val DOT = 7.dp
 @Composable
 private fun InsightsCard(insights: Insights) {
     JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.pulse, insights.title, meta = insights.subtitle)
+        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle)
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             for (item in insights.items) {
                 val accent = Accent.of(item.accent).color
@@ -383,10 +383,10 @@ private fun InsightsCard(insights: Insights) {
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                 ) {
                     Box(
-                        Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.16f)),
+                        Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(accent),
                         contentAlignment = Alignment.Center
                     ) {
-                        OwnifyIcons.named(item.icon)?.let { JIcon(it, size = 16.dp, color = accent) }
+                        OwnifyIcons.solid(item.icon)?.let { JIcon(it, size = 16.dp, color = Color.White) }
                     }
                     Column(Modifier.weight(1f)) {
                         T(item.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
@@ -403,7 +403,7 @@ private fun InsightsCard(insights: Insights) {
 @Composable
 private fun PatternsCard(patterns: Patterns) {
     JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.chart, patterns.title, meta = patterns.range)
+        CompactHead(OwnifyIcons.solidChart, patterns.title, meta = patterns.range)
 
         // .trend — equal heights on purpose: a shaped skeleton would read as data.
         Row(
@@ -446,7 +446,7 @@ private fun PatternsCard(patterns: Patterns) {
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
     JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.sparkle, rec.title, iconColor = Ownify.Attention)
+        CompactHead(OwnifyIcons.solidSparkle, rec.title, tile = Ownify.Attention)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         CardHint(rec.note, icon = null, plain = true)
@@ -454,17 +454,19 @@ private fun RecommendationCard(rec: Recommendation) {
 }
 
 /**
- * `.card__head--compact`: an icon tile, the card's eyebrow and — when
- * there is one — a small line under it, 16 above the body.
+ * `.card__head--compact`: a solid icon tile (`.icon-tile--solid`: [tile]
+ * behind a white [icon] — the app's green, or the attention gold), the
+ * card's eyebrow and — when there is one — a small line under it, 16 above
+ * the body.
  */
 @Composable
-fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, iconColor: Color = Ownify.TextSecondary) {
+fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Health) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon, color = iconColor)
+        IconTile(icon, color = Color.White, background = tile, border = tile)
         Column(Modifier.weight(1f)) {
             T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
             if (meta != null) T(meta, JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
