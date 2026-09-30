@@ -70,6 +70,7 @@ $addFriends = $scope === 'friends' && !empty($community['add_friends']);
                             'name'   => $community['you']['name'],
                             'points' => $you['points'],
                             'self'   => true,
+                            'avatar' => $community['you']['avatar'] ?? null,
                         ],
                         'entry_sticky' => true,
                     ]); ?>
@@ -92,6 +93,7 @@ $addFriends = $scope === 'friends' && !empty($community['add_friends']);
                         'name'   => $community['you']['name'],
                         'points' => $you['points'],
                         'self'   => true,
+                        'avatar' => $community['you']['avatar'] ?? null,
                     ],
                     'entry_sticky' => false,
                 ]); ?>

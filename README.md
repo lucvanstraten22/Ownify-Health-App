@@ -439,6 +439,14 @@ Everything is stored in MySQL (`friendships`, and
 through `api/friends/`, which takes who is asking from the session; a lookup
 returns a username and a picture and nothing else.
 
+**Pictures on the boards.** Every board shows each person's profile picture
+beside their name, or their initial when there is none. Instellingen → Privacy
+→ *Profielfoto op de ranglijst* switches your own picture off the boards:
+everybody, you included, then sees your initial. It is stored in
+`user_profiles.leaderboard_avatar` (`database/migrations/014-leaderboard-avatar-setting.sql`)
+and saved through `api/profile/privacy.php`; until the migration is imported,
+every picture shows and the switch says it cannot be saved yet.
+
 **Points are for what you did.** A night's sleep, a rated day, a workout, a
 step count, three workouts in a week — each earns points once, by the rules in
 `config/points.php`, and a phone that sends the same workout three times has
@@ -470,7 +478,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.0.4
+OVER         Over de app · Versie Beta 1.1.0
 
              [ Uitloggen ]
                Account verwijderen

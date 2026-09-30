@@ -12,7 +12,8 @@
  *   integrations  the health sources, expandable in place
  *   choice        pick one of several options
  *   states        read-only facts: label, value, one line of explanation
- *   toggles       switches, off and disabled while the feature does not exist
+ *   toggles       switches: one with a `key` saves (api/profile/privacy.php);
+ *                 the rest are off and disabled while the feature does not exist
  *   rows          plain label/value information
  *   note          one framed line of explanation
  */
@@ -251,6 +252,23 @@ foreach ($page['blocks'] as $block) {
 
                             <div class="card settings-card">
                                 <?php foreach ($block['items'] as $item): ?>
+                                    <?php if (!empty($item['key'])): ?>
+                                    <?php /* A switch that saves: the account's own value, and the note
+                                              that goes with it (settings_prepare()); settings.js saves it. */ ?>
+                                    <button type="button" class="settings-toggle settings-toggle--live" role="switch"
+                                            data-setting-toggle="<?= e($item['key']) ?>"
+                                            aria-checked="<?= !empty($item['on']) ? 'true' : 'false' ?>"
+                                            data-note-on="<?= e($item['note_on'] ?? '') ?>"
+                                            data-note-off="<?= e($item['note_off'] ?? '') ?>">
+                                        <span class="settings-toggle__text">
+                                            <span class="settings-toggle__label"><?= e($item['label']) ?></span>
+                                            <span class="settings-toggle__note" data-setting-toggle-note><?= e($item['note'] ?? '') ?></span>
+                                        </span>
+                                        <span class="switch<?= !empty($item['on']) ? ' is-on' : '' ?>" aria-hidden="true">
+                                            <span class="switch__knob"></span>
+                                        </span>
+                                    </button>
+                                    <?php else: ?>
                                     <?php /* Disabled on purpose: nothing behind these exists yet, and a
                                               switch that moves but changes nothing is a lie. */ ?>
                                     <button type="button" class="settings-toggle" disabled aria-disabled="true"
@@ -265,6 +283,7 @@ foreach ($page['blocks'] as $block) {
                                             <span class="switch__knob"></span>
                                         </span>
                                     </button>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
                         </section>

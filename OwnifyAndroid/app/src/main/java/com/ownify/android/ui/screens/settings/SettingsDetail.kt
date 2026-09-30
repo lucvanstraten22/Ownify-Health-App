@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -59,11 +60,14 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.ownify.android.data.AppData
 import com.ownify.android.data.Integration
+import com.ownify.android.data.Outcome
 import com.ownify.android.data.OwnifyActions
+import com.ownify.android.data.OwnifyAppState
 import com.ownify.android.data.ProfileField
 import com.ownify.android.data.SettingsBlock
 import com.ownify.android.data.SettingsPage
 import com.ownify.android.connection.OwnifyConnection
+import com.ownify.android.data.ToggleItem
 import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
@@ -660,6 +664,10 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
         InButton {
             SettingsCard {
                 block.items.forEachIndexed { i, item ->
+                    if (item.key != null) {
+                        LiveToggleRow(item, item.key, divided = i > 0)
+                        return@forEachIndexed
+                    }
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -682,6 +690,73 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
                 }
             }
         }
+    }
+}
+
+/**
+ * A switch that saves (`.settings-toggle--live`: a toggles item with a
+ * [key]). It moves when pressed, waits dimmed while the server answers
+ * (api/profile/privacy.php), and moves back — saying why — when it could not
+ * be saved; the boards follow once it is.
+ */
+@Composable
+private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val narrow = LocalScreen.current.narrow
+    var shown by remember(item.on) { mutableStateOf<Boolean?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val on = shown ?: item.on
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val fill by animateColorAsState(if (pressed) Ownify.white(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "toggle")
+
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .alpha(if (busy) 0.7f else 1f)
+            .settingsRow(divided, fill)
+            .clickable(interaction, indication = null, enabled = !busy, role = Role.Switch) {
+                val before = on
+                shown = !before
+                error = null
+                busy = true
+                scope.launch {
+                    val outcome = OwnifyActions.form(
+                        context, "api/profile/privacy.php",
+                        mapOf(key to if (before) "0" else "1"),
+                        "Dit kon niet worden opgeslagen.", reload = false
+                    )
+                    busy = false
+                    when (outcome) {
+                        is Outcome.Done -> {
+                            shown = outcome.body.optBoolean(key, !before)
+                            // The boards follow. A read already on its way may have left
+                            // before the save, so this waits for it and reads once more.
+                            OwnifyAppState.reload(context)
+                        }
+                        is Outcome.Refused -> {
+                            shown = before
+                            error = outcome.message
+                        }
+                        Outcome.SignedOut -> Unit
+                    }
+                }
+            }
+            .semantics(mergeDescendants = true) { toggleableState = ToggleableState(on) }
+            .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+    ) {
+        Column(Modifier.weight(1f)) {
+            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+            val note = error ?: (if (on) item.noteOn else item.noteOff) ?: item.note
+            if (!note.isNullOrEmpty()) {
+                T(note, OwnifyType.style(Ownify.FsTiny, color = if (error != null) Ownify.Attention else Ownify.TextMuted), Modifier.padding(top = 2.dp))
+            }
+        }
+        Toggle(on)
     }
 }
 

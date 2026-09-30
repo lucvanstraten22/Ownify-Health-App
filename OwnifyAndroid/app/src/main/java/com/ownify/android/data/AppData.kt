@@ -664,6 +664,8 @@ data class Community(
     val defaultScope: String,
     val defaultPeriod: String,
     val youName: String,
+    /** Your picture for your own line where a board's top does not reach you: as the boards show it, or null. */
+    val youAvatar: String?,
     val labels: Map<String, String>,
     val boards: Map<String, Map<String, Board>>,
     val friends: List<Person>,
@@ -685,6 +687,7 @@ data class Community(
             defaultScope = o.str("default_scope") ?: "friends",
             defaultPeriod = o.str("default_period") ?: "month",
             youName = o.obj("you").str("name") ?: "Jij",
+            youAvatar = o.obj("you").str("avatar"),
             labels = o.obj("labels").stringMap(),
             boards = o.obj("boards").entries { scope, periods ->
                 scope to periods.entries { period, b -> period to Board.parse(b) }.toMap()
@@ -815,7 +818,9 @@ sealed interface SettingsBlock {
                 )
                 "toggles" -> Toggles(
                     o.str("title").orEmpty(), o.str("lede"),
-                    o.arr("items").map { ToggleItem(it.str("label").orEmpty(), it.str("note"), it.bool("on")) }
+                    o.arr("items").map {
+                        ToggleItem(it.str("label").orEmpty(), it.str("note"), it.bool("on"), it.str("key"), it.str("note_on"), it.str("note_off"))
+                    }
                 )
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
                 "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty())
@@ -826,7 +831,19 @@ sealed interface SettingsBlock {
 
 data class ChoiceOption(val key: String, val label: String, val note: String?, val disabled: Boolean)
 data class StateItem(val label: String, val value: String?, val note: String?)
-data class ToggleItem(val label: String, val note: String?, val on: Boolean)
+/**
+ * A switch. With a [key] it saves (api/profile/privacy.php): [on] and [note]
+ * are the account's own, and [noteOn] / [noteOff] what it says either way;
+ * without one it is shown off and disabled, as the feature does not exist yet.
+ */
+data class ToggleItem(
+    val label: String,
+    val note: String?,
+    val on: Boolean,
+    val key: String? = null,
+    val noteOn: String? = null,
+    val noteOff: String? = null
+)
 
 /** A profile field: `state` is "editable" (true), "once", "locked" or "derived". */
 data class ProfileField(

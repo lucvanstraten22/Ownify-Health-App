@@ -51,6 +51,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import com.ownify.android.ui.app.AvatarPhoto
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.design.press
@@ -212,7 +213,7 @@ private fun Board(
                         GapRow(community.labels["outside"].orEmpty())
                         BoardRow(
                             community,
-                            BoardEntry(youRank ?: 0, community.youName, board?.youPoints, self = true, avatar = null),
+                            BoardEntry(youRank ?: 0, community.youName, board?.youPoints, self = true, avatar = community.youAvatar),
                             topThree = false,
                             sticky = stick,
                             rankText = youRank?.toString() ?: "—"
@@ -248,7 +249,7 @@ private fun Board(
                 Column(Modifier.width(screen.shell)) {
                     BoardRow(
                         community,
-                        BoardEntry(youRank ?: 0, community.youName, board?.youPoints, self = true, avatar = null),
+                        BoardEntry(youRank ?: 0, community.youName, board?.youPoints, self = true, avatar = community.youAvatar),
                         topThree = true,
                         sticky = null,
                         rankText = youRank?.toString() ?: "—"
@@ -287,8 +288,11 @@ private class Sticky(val scroll: ScrollState) {
 }
 
 /**
- * `components/leaderboard-row.php`: position, monogram, name, points. Your
- * own row is lit in the green; docked, it takes a solid glass of its own.
+ * `components/leaderboard-row.php`: position, picture, name, points. The
+ * picture is the person's profile picture when they show it on the boards —
+ * the server leaves it out otherwise — over their monogram, which is what
+ * shows while it loads. Your own row is lit in the green; docked, it takes a
+ * solid glass of its own.
  */
 @Composable
 private fun BoardRow(
@@ -368,6 +372,8 @@ private fun BoardRow(
             } else {
                 JIcon(OwnifyIcons.user, size = 16.dp, color = Ownify.TextMuted)
             }
+            // `.board-row__photo`: inside the hairline, over the monogram.
+            entry.avatar?.let { AvatarPhoto(it, Modifier.padding(1.dp).clip(CircleShape)) }
         }
         T(
             name ?: "—",

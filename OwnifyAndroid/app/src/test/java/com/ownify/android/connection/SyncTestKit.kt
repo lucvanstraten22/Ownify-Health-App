@@ -244,6 +244,13 @@ class FakeOwnifyServer {
     @Volatile
     var held = CountDownLatch(1)
 
+    /** Plain files the server serves, by path ("/uploads/avatars/…"): profile pictures. */
+    val files: MutableMap<String, ByteArray> = java.util.concurrent.ConcurrentHashMap()
+
+    /** Whether api/profile/privacy.php saves — as after migration 014 — or refuses, as before it (503). */
+    @Volatile
+    var privacySaves = true
+
     /** The account the last sign-in was for, whose profile profile.php answers with. */
     @Volatile
     var accountUsername = "sanne"
@@ -344,8 +351,44 @@ class FakeOwnifyServer {
                 if (works) reply(exchange, 200, """{"ok":true,"message":"Opgeslagen."}""")
                 else reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
             }
+            // Instellingen → Privacy's switch, with the account token: saved, and read back in the pages.
+            path.endsWith("/profile/privacy.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                val on = body.contains("leaderboard_avatar=1")
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    !privacySaves -> reply(exchange, 503, """{"ok":false,"error":"Deze instelling kan nog niet worden opgeslagen."}""")
+                    else -> {
+                        savePrivacy(on)
+                        reply(exchange, 200, """{"ok":true,"leaderboard_avatar":$on,"message":"Opgeslagen."}""")
+                    }
+                }
+            }
+            files.containsKey(path) -> {
+                val bytes = files.getValue(path)
+                exchange.responseHeaders.add("Content-Type", "image/png")
+                exchange.sendResponseHeaders(200, bytes.size.toLong())
+                exchange.responseBody.use { it.write(bytes) }
+            }
             else -> reply(exchange, 404, """{"ok":false}""")
         }
+    }
+
+    /** What settings_prepare() reads back after a save: the switch and its note, in the pages. */
+    private fun savePrivacy(on: Boolean) {
+        val state = JSONObject(stateBody)
+        val blocks = state.getJSONObject("data").getJSONObject("settings").getJSONObject("pages")
+            .getJSONObject("privacy").getJSONArray("blocks")
+        for (b in 0 until blocks.length()) {
+            val items = blocks.getJSONObject(b).optJSONArray("items") ?: continue
+            for (i in 0 until items.length()) {
+                val item = items.getJSONObject(i)
+                if (item.optString("key") == "leaderboard_avatar") {
+                    item.put("on", on).put("note", item.optString(if (on) "note_on" else "note_off"))
+                }
+            }
+        }
+        stateBody = state.toString()
     }
 
     private fun login(exchange: HttpExchange, bearer: String?) {

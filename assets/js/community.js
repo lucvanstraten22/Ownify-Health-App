@@ -69,6 +69,65 @@
         }
     });
 
+    /* ------------------------------------------------------------ refresh */
+
+    /**
+     * Puts the rows of a freshly rendered page into the boards. The boards
+     * keep their own elements — switching scope and period holds on to them —
+     * so only their rows change. For anything that changes what the boards
+     * show without a reload: a friendship (friends.js), your picture on the
+     * boards (settings.js).
+     */
+    function swap(fresh) {
+        boards.forEach(function (board) {
+            var next = fresh.querySelector('[data-board][data-scope="' + board.dataset.scope
+                + '"][data-period="' + board.dataset.period + '"]');
+            if (!next) { return; }
+
+            board.innerHTML = next.innerHTML;
+            Array.prototype.forEach.call(board.querySelectorAll('.reveal'), function (item) { item.classList.add('is-visible'); });
+            Array.prototype.forEach.call(board.querySelectorAll('.card'), function (item) { item.dataset.animated = 'true'; });
+        });
+    }
+
+    /** Fetches the page as the server now renders it, and swaps its board rows in. */
+    function refresh() {
+        return fetch(window.location.href.split('#')[0], {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Accept': 'text/html' }
+        })
+            .then(function (response) {
+                if (!response.ok) { throw new Error('HTTP ' + response.status); }
+                return response.text();
+            })
+            .then(function (html) {
+                var fresh = new DOMParser().parseFromString(html, 'text/html');
+                if (fresh.querySelector('[data-deck]')) { swap(fresh); }
+            })
+            .catch(function () { /* what was saved is saved; the next load shows it */ });
+    }
+
+    window.AppBoards = { swap: swap, refresh: refresh };
+
+    /* A picture that cannot be had (its file gone) leaves the row, so the
+       initial under it shows instead of a broken image: one that already
+       failed before this script ran, and any that fails later — errors do
+       not bubble, so they are caught on the way down, rows swapped in
+       included. */
+    function dropPhoto(photo) {
+        if (photo.parentNode) { photo.parentNode.removeChild(photo); }
+    }
+
+    Array.prototype.forEach.call(page.querySelectorAll('.board-row__photo'), function (photo) {
+        if (photo.complete && photo.naturalWidth === 0) { dropPhoto(photo); }
+    });
+
+    document.addEventListener('error', function (event) {
+        var photo = event.target;
+        if (photo && photo.classList && photo.classList.contains('board-row__photo')) { dropPhoto(photo); }
+    }, true);
+
     /* --------------------------------------------------------------- init */
 
     var firstActive = page.querySelector('[data-board].is-active') || boards[0];

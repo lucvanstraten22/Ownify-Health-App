@@ -4,6 +4,7 @@
  * Three small things, and nothing that pretends to save:
  *
  *   choices        pick one option; the tick moves, nothing is stored
+ *   switches       Privacy's switches that save, at once (api/profile/privacy.php)
  *   integrations   expand a health source in place
  *   account        sign out, and deleting the account — two confirmations,
  *                  then api/profile/delete.php, which really deletes it
@@ -38,6 +39,61 @@
                 other.setAttribute('aria-checked', isOn ? 'true' : 'false');
             }
         );
+    });
+
+    /* ------------------------------------------------- switches that save */
+
+    /**
+     * A switch with `data-setting-toggle` (Instellingen → Privacy) saves at
+     * once. It moves when pressed, waits while the server answers, and moves
+     * back — saying why — when it could not be saved. What it changes on the
+     * leaderboards is swapped in straight after.
+     */
+    function setSwitch(toggle, on, error) {
+        var mark = toggle.querySelector('.switch');
+        var note = toggle.querySelector('[data-setting-toggle-note]');
+
+        toggle.setAttribute('aria-checked', on ? 'true' : 'false');
+        if (mark) { mark.classList.toggle('is-on', on); }
+        if (note) {
+            note.textContent = error || toggle.getAttribute(on ? 'data-note-on' : 'data-note-off');
+            note.classList.toggle('is-error', !!error);
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        var toggle = event.target.closest('[data-setting-toggle]');
+        if (!toggle || toggle.disabled) { return; }
+
+        var key    = toggle.getAttribute('data-setting-toggle');
+        var before = toggle.getAttribute('aria-checked') === 'true';
+        var panel  = document.querySelector('[data-account]');
+        var body   = new FormData();
+
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append(key, before ? '0' : '1');
+
+        setSwitch(toggle, !before);
+        toggle.disabled = true;
+
+        fetch('api/profile/privacy.php', { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                });
+            })
+            .catch(function () { return { ok: false, error: 'De server is niet bereikbaar.' }; })
+            .then(function (answer) {
+                toggle.disabled = false;
+
+                if (!answer || !answer.ok) {
+                    setSwitch(toggle, before, (answer && answer.error) || 'Dit kon niet worden opgeslagen.');
+                    return;
+                }
+
+                setSwitch(toggle, !!answer[key]);
+                if (window.AppBoards) { window.AppBoards.refresh(); }
+            });
     });
 
     /* ------------------------------------------------------- integrations */

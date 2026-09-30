@@ -94,7 +94,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.0.4'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.1.0'],
             ],
         ],
     ],
@@ -238,9 +238,23 @@ return [
                         ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
                          'note' => 'Verder niets — geen scores, geen metingen'],
                         ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
-                         'note' => 'Geen onderliggende gegevens'],
+                         'note' => 'En je profielfoto, tenzij je die hieronder uitzet — nooit onderliggende gegevens'],
                         ['label' => 'Assistent',           'value' => 'Geen toegang',
                          'note' => 'De assistent bestaat nog niet en leest nog niets'],
+                    ],
+                ],
+
+                /* A switch with a `key` really saves (api/profile/privacy.php);
+                   `on` and `note` are the account's own, filled in by
+                   settings_prepare(). */
+                [
+                    'type'  => 'toggles',
+                    'title' => 'Ranglijst',
+                    'items' => [
+                        ['key' => 'leaderboard_avatar', 'label' => 'Profielfoto op de ranglijst',
+                         'note_on'  => 'Anderen zien je profielfoto naast je naam.',
+                         'note_off' => 'Op de ranglijst staat je initiaal in plaats van je foto.',
+                         'on' => true],
                     ],
                 ],
 
@@ -425,7 +439,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.0.4'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.1.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],

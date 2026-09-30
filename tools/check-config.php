@@ -159,6 +159,20 @@ if (db_available()) {
                 . 'cannot be switched off — import database/migrations/011-friend-requests-setting.sql');
         }
 
+        /* Not fatal: without it every picture shows on the boards, but
+           "Profielfoto op de ranglijst" cannot be switched off. */
+        $boardAvatar = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_profiles' AND column_name = 'leaderboard_avatar'"
+        );
+
+        if ($boardAvatar > 0) {
+            line('ok', 'board pictures', 'user_profiles.leaderboard_avatar is there');
+        } else {
+            line('warn', 'board pictures', 'user_profiles.leaderboard_avatar is missing, so "Profielfoto op de ranglijst" '
+                . 'cannot be switched off — import database/migrations/014-leaderboard-avatar-setting.sql');
+        }
+
         /* Not fatal: without it a day's steps, distance and calories are the
            plain sum of every record, so a walk the phone and a watch both
            counted is counted twice — as it always was. */

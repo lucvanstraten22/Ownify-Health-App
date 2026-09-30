@@ -372,6 +372,83 @@ try {
     check('without the CSRF token: 419', http('/api/friends/settings.php', ['jar' => $jar, 'form' => ['allow_requests' => '1']])['status'] === 419);
     check('with it: 200', http('/api/friends/settings.php', ['jar' => $jar, 'form' => ['allow_requests' => '1', 'csrf' => csrf($jar)]])['status'] === 200);
 
+    section('Profielfoto op de ranglijst: the picture on every board, unless its owner keeps it off');
+
+    $accepted = http('/api/friends/request.php', ['bearer' => $bram['token'], 'form' => ['user_id' => $sanne['id'], 'action' => 'accept']]);
+    check('bram accepts sanne: the two are friends', $accepted['status'] === 200, summary($accepted));
+
+    $picture = (string) ($avatar['body']['avatar'] ?? '');
+
+    /** Sanne's picture on each board $token's pages show her on: "scope/period" => path or null. */
+    $sanneOnBoards = static function (string $token) use ($name): array {
+        $found = [];
+        foreach (http('/api/app/state.php', ['bearer' => $token])['body']['data']['community']['boards'] ?? [] as $scope => $periods) {
+            foreach ($periods as $period => $board) {
+                foreach ($board['entries'] as $entry) {
+                    if ($entry['name'] === $name) {
+                        $found["$scope/$period"] = $entry['avatar'];
+                    }
+                }
+            }
+        }
+        return $found;
+    };
+
+    /** The account's own "Profielfoto op de ranglijst" switch, as its pages have it. */
+    $boardSwitch = static function (string $token): ?array {
+        foreach (http('/api/app/state.php', ['bearer' => $token])['body']['data']['settings']['pages']['privacy']['blocks'] ?? [] as $block) {
+            foreach ($block['items'] ?? [] as $item) {
+                if (($item['key'] ?? null) === 'leaderboard_avatar') {
+                    return $item;
+                }
+            }
+        }
+        return null;
+    };
+
+    $seenByBram = $sanneOnBoards($bram['token']);
+    check('on: bram sees sanne\'s picture on every Vrienden board', $picture !== ''
+        && count(array_filter($seenByBram, static fn (string $key): bool => str_starts_with($key, 'friends/'), ARRAY_FILTER_USE_KEY)) === 3
+        && array_unique(array_values($seenByBram)) === [$picture], json_encode($seenByBram));
+    check('on: sanne sees her own picture there too', array_unique(array_values($sanneOnBoards($sanne['token']))) === [$picture]);
+    $ownLine = static fn (string $token): ?string =>
+        http('/api/app/state.php', ['bearer' => $token])['body']['data']['community']['you']['avatar'] ?? null;
+    check('on: and on her own line where a board\'s top does not reach her', $ownLine($sanne['token']) === $picture);
+    $switch = $boardSwitch($sanne['token']);
+    check('on by default, with the note that says so', ($switch['on'] ?? null) === true
+        && ($switch['note'] ?? null) === 'Anderen zien je profielfoto naast je naam.', json_encode($switch));
+    check('the website draws it on her row', str_contains(http('/', ['get' => true, 'jar' => $jar])['raw'],
+        'class="board-row__photo" src="' . $picture . '"'));
+
+    $off = http('/api/profile/privacy.php', ['bearer' => $sanne['token'], 'form' => ['leaderboard_avatar' => '0']]);
+    check('profile/privacy: 200, off', $off['status'] === 200 && ($off['body']['leaderboard_avatar'] ?? null) === false, summary($off));
+    $sync = paired_phone($sanne['token']);   // the phone paired before was revoked above
+    $refused('/api/profile/privacy.php', ['leaderboard_avatar' => '1']);
+    check('profile/privacy: neither on nor off is 422', http('/api/profile/privacy.php',
+        ['bearer' => $sanne['token'], 'form' => ['leaderboard_avatar' => 'yes']])['status'] === 422);
+
+    $seenByBram = $sanneOnBoards($bram['token']);
+    check('off: every board bram sees has her row, and no picture on it', count($seenByBram) >= 3
+        && array_unique(array_values($seenByBram), SORT_REGULAR) === [null], json_encode($seenByBram));
+    check('off: nor on the ones she sees herself', array_unique(array_values($sanneOnBoards($sanne['token'])), SORT_REGULAR) === [null]);
+    check('off: nor on her own line', $ownLine($sanne['token']) === null);
+    check('off: the path is nowhere in bram\'s pages but his friends list',
+        substr_count(json_encode(http('/api/app/state.php', ['bearer' => $bram['token']])['body']['data']['community']['boards']), basename($picture)) === 0);
+    $friendsOfBram = http('/api/app/state.php', ['bearer' => $bram['token']])['body']['data']['community']['friends'] ?? [];
+    check('off: the friends list still has her picture — only the boards change', in_array($picture,
+        array_map(static fn (array $p): ?string => $p['avatar'] ?? $p['avatar_path'] ?? null, $friendsOfBram), true), json_encode($friendsOfBram));
+    $switch = $boardSwitch($sanne['token']);
+    check('off: her switch says off, with the other note', ($switch['on'] ?? null) === false
+        && ($switch['note'] ?? null) === 'Op de ranglijst staat je initiaal in plaats van je foto.', json_encode($switch));
+    $page = http('/', ['get' => true, 'jar' => $jar])['raw'];
+    check('off: the website draws her initial, no picture', !str_contains($page, 'class="board-row__photo" src="' . $picture . '"')
+        && str_contains($page, 'data-setting-toggle="leaderboard_avatar"') && str_contains($page, 'aria-checked="false"'));
+
+    check('the website saves it with its CSRF token, not without', http('/api/profile/privacy.php',
+        ['jar' => $jar, 'form' => ['leaderboard_avatar' => '1']])['status'] === 419
+        && http('/api/profile/privacy.php', ['jar' => $jar, 'form' => ['leaderboard_avatar' => '1', 'csrf' => csrf($jar)]])['status'] === 200);
+    check('on again: bram sees her picture again', array_unique(array_values($sanneOnBoards($bram['token']))) === [$picture]);
+
     section('disconnecting Health Connect from the app ends the app\'s own token too');
     $disconnect = http('/api/integrations/disconnect.php', ['bearer' => $bram['token'], 'form' => ['provider' => 'google_health_connect']]);
     check('integrations/disconnect: 200, its phones revoked', $disconnect['status'] === 200

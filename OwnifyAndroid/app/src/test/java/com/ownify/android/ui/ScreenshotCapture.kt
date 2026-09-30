@@ -101,6 +101,7 @@ class ScreenshotCapture {
             data.community.friends.forEach { add(it.avatar) }
             data.community.pending.forEach { add(it.avatar) }
             data.community.sent.forEach { add(it.avatar) }
+            data.community.boards.values.flatMap { it.values }.flatMap { it.entries }.forEach { add(it.avatar) }
         }.filterNotNull().distinct()
         paths.forEach { Avatars.load(it) }
     }

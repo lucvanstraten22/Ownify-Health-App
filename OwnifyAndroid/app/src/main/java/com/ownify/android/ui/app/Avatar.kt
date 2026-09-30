@@ -21,24 +21,62 @@ import androidx.compose.ui.unit.Dp
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.OwnifyIcons
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 
 /**
  * Profile pictures, as the website shows them: the server serves them as
  * plain files (uploads/avatars/…), fetched without the token and kept in
- * memory only, a few at a time.
+ * memory only — a board's worth at a time.
+ *
+ * A picture is stored as it was uploaded (up to 3 MB), and a board shows up
+ * to fifty of them in small circles, so each is decoded at a fraction of its
+ * size: never smaller than [MAX_SIDE] on its shorter side, which is more than
+ * the largest circle it is drawn in.
  */
 object Avatars {
-    private val cache = LruCache<String, ImageBitmap>(24)
+    private const val MAX_SIDE = 384
+
+    private val cache = LruCache<String, ImageBitmap>(64)
+
+    /**
+     * The downloads under way, one per picture: somebody on three boards is
+     * three rows asking at once, and one download answers all of them.
+     */
+    private val loading = HashMap<String, Deferred<ImageBitmap?>>()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun cached(path: String): ImageBitmap? = cache.get(path)
 
     suspend fun load(path: String): ImageBitmap? {
         cache.get(path)?.let { return it }
+        val download = synchronized(loading) {
+            loading[path] ?: scope.async(start = CoroutineStart.LAZY) { fetch(path) }.also { loading[path] = it }
+        }
+        download.start()
+        try {
+            return download.await()
+        } finally {
+            synchronized(loading) { if (loading[path] === download) loading.remove(path) }
+        }
+    }
+
+    private suspend fun fetch(path: String): ImageBitmap? {
         val bytes = OwnifyConnection.api.image(path) ?: return null
         val bitmap = withContext(Dispatchers.Default) {
-            runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull()
+            runCatching {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                var sample = 1
+                while (minOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= MAX_SIDE) sample *= 2
+                val options = BitmapFactory.Options().apply { inSampleSize = sample }
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)?.asImageBitmap()
+            }.getOrNull()
         } ?: return null
         cache.put(path, bitmap)
         return bitmap
@@ -68,4 +106,20 @@ fun Avatar(path: String?, iconSize: Dp, iconColor: Color, modifier: Modifier = M
             JIcon(OwnifyIcons.user, size = iconSize, color = iconColor)
         }
     }
+}
+
+/**
+ * Only the picture, once it is here (`.board-row__photo`): nothing while it
+ * is on its way or if it cannot be had, so whatever is drawn under it — the
+ * initial on a board row — shows until then.
+ */
+@Composable
+fun AvatarPhoto(path: String, modifier: Modifier = Modifier) {
+    var image by remember(path) { mutableStateOf(Avatars.cached(path)) }
+
+    LaunchedEffect(path) {
+        if (image == null) image = Avatars.load(path)
+    }
+
+    image?.let { Image(it, contentDescription = null, modifier = modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
 }

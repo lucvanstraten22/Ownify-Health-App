@@ -104,6 +104,74 @@ if (!function_exists('leaderboard_period_key')) {
 
     /* ------------------------------------------------------------ boards */
 
+    /**
+     * Whether user_profiles has "Profielfoto op de ranglijst" (migration 014).
+     * Until it does, every picture shows on the boards and the switch cannot
+     * be saved.
+     */
+    function leaderboard_avatar_setting_stored(): bool
+    {
+        static $stored = null;
+
+        return $stored ??= db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_profiles'
+                AND column_name = 'leaderboard_avatar'"
+        ) > 0;
+    }
+
+    /**
+     * The picture column of a board query (`p` is the person's user_profiles
+     * row): their picture, but only when they show it on the boards. Decided
+     * in the query itself, so the path of a picture somebody keeps off the
+     * boards never leaves the database — for anyone, themselves included.
+     */
+    function leaderboard_avatar_select(): string
+    {
+        return leaderboard_avatar_setting_stored()
+            ? 'CASE WHEN p.leaderboard_avatar = 1 THEN p.avatar_path END AS avatar_path'
+            : 'p.avatar_path';
+    }
+
+    /** This account's own picture as the boards show it: its path, or null when it has none or keeps it off. */
+    function leaderboard_avatar_of(int $userId): ?string
+    {
+        $path = db_value('SELECT ' . leaderboard_avatar_select() . ' FROM user_profiles p WHERE p.user_id = ?', [$userId]);
+
+        return is_string($path) && $path !== '' ? $path : null;
+    }
+
+    /** Whether this account's picture shows on the boards. On unless switched off. */
+    function leaderboard_avatar_shown(int $userId): bool
+    {
+        if (!leaderboard_avatar_setting_stored()) {
+            return true;
+        }
+
+        $value = db_value('SELECT leaderboard_avatar FROM user_profiles WHERE user_id = ?', [$userId]);
+
+        return $value === null || (int) $value === 1;
+    }
+
+    /** The account's own switch: its picture on the boards, or its initial. */
+    function leaderboard_set_avatar_shown(int $userId, bool $shown): array
+    {
+        if (!leaderboard_avatar_setting_stored()) {
+            error_log('[ownify] leaderboard: user_profiles has no leaderboard_avatar yet, so the switch cannot be saved — '
+                . 'import database/migrations/014-leaderboard-avatar-setting.sql');
+
+            return ['ok' => false, 'error' => 'Deze instelling kan nog niet worden opgeslagen.'];
+        }
+
+        db_run(
+            'INSERT INTO user_profiles (user_id, leaderboard_avatar) VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE leaderboard_avatar = VALUES(leaderboard_avatar)',
+            [$userId, $shown ? 1 : 0]
+        );
+
+        return ['ok' => true, 'error' => null, 'shown' => $shown];
+    }
+
     /** Top 50 of the Netherlands for a period. Public fields only. */
     function leaderboard_national(string $periodType, ?string $periodKey = null, int $limit = LEADERBOARD_LIMIT): array
     {
@@ -111,7 +179,7 @@ if (!function_exists('leaderboard_period_key')) {
         $limit = max(1, min($limit, LEADERBOARD_LIMIT));
 
         return db_all(
-            'SELECT pp.position, pp.points, u.id AS user_id, u.username, p.avatar_path
+            'SELECT pp.position, pp.points, u.id AS user_id, u.username, ' . leaderboard_avatar_select() . '
                FROM user_period_points pp
                JOIN users u ON u.id = pp.user_id AND u.status = ?
           LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -155,7 +223,7 @@ if (!function_exists('leaderboard_period_key')) {
 
         $rows = $friends === []
             ? db_all(
-                'SELECT pp.points, u.id AS user_id, u.username, p.avatar_path
+                'SELECT pp.points, u.id AS user_id, u.username, ' . leaderboard_avatar_select() . '
                    FROM user_period_points pp
                    JOIN users u ON u.id = pp.user_id AND u.status = ?
               LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -165,7 +233,7 @@ if (!function_exists('leaderboard_period_key')) {
                 ['active', $periodType, $periodKey, ...$ids]
             )
             : db_all(
-                'SELECT COALESCE(pp.points, 0) AS points, u.id AS user_id, u.username, p.avatar_path
+                'SELECT COALESCE(pp.points, 0) AS points, u.id AS user_id, u.username, ' . leaderboard_avatar_select() . '
                    FROM users u
               LEFT JOIN user_period_points pp
                      ON pp.user_id = u.id AND pp.period_type = ? AND pp.period_key = ?

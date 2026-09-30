@@ -349,6 +349,16 @@ are not touched. An existing database gets the column from
 `database/migrations/011-friend-requests-setting.sql`; until then everybody
 accepts requests and the switch says it cannot be saved yet.
 
+**Your picture on the boards** is `user_profiles.leaderboard_avatar`
+("Profielfoto op de ranglijst", Instellingen → Privacy), on unless the person
+switches it off. Off, every board shows their initial instead of their
+picture — to everybody, themselves included. It is decided in the board
+queries themselves (`leaderboard_avatar_select()`), so the path of a picture
+kept off the boards is never sent to anyone. The picture itself, and the
+friends list, are not touched. An existing database gets the column from
+`database/migrations/014-leaderboard-avatar-setting.sql`; until then every
+picture shows and the switch says it cannot be saved yet.
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
@@ -682,6 +692,7 @@ private data is returned.
 | `api/friends/search.php` | reads only: the one account with exactly that username (case does not matter), its username and picture, and where the two of you stand |
 | `api/friends/request.php` | `friendships`: send a request, accept or decline one sent to you, withdraw your own, or remove a friend (deletes the row) — each checked against the pair's own row |
 | `api/friends/settings.php` | `user_profiles.allow_friend_requests` of the signed-in account |
+| `api/profile/privacy.php` | `user_profiles.leaderboard_avatar` of the signed-in account |
 | `api/friends/block.php` | `user_blocks`, and deletes the pair's `friendships` row |
 
 "Points" means `point_events`, and the `user_period_points` rollup for the

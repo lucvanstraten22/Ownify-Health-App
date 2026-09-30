@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -65,6 +67,9 @@ import org.robolectric.annotation.Config
  * stand-ins; the connection, the token store's rules, the page read and
  * every screen are the app's own.
  */
+/** A 1×1 PNG: a profile picture as the server serves it. */
+private const val ONE_PIXEL_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
 class OwnifyAppFlowTest {
@@ -344,6 +349,54 @@ class OwnifyAppFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Vrienden") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Gebruikersnaam") and hasSetTextAction()).fetchSemanticsNodes().isNotEmpty() }
         field("Gebruikersnaam").assertIsFocused()
+    }
+
+    @Test
+    fun `Community - a row with a profile picture shows it, fetched from the server`() {
+        val path = "uploads/avatars/u776-ea125a85cccfbfc9.png"
+        server.files["/$path"] = android.util.Base64.decode(ONE_PIXEL_PNG, android.util.Base64.DEFAULT)
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Community").performClick()
+        waitFor("Vrienden")
+
+        compose.waitUntil(15_000) { com.ownify.android.ui.app.Avatars.cached(path) != null }
+        assertEquals("fetched once, as a plain file", 1, server.requests.count { it.path == "/$path" })
+    }
+
+    @Test
+    fun `Privacy - Profielfoto op de ranglijst saves at once, and moves back saying why when it cannot`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Instellingen").performClick()
+        // Activated as TalkBack activates them: whatever the dock floats over.
+        compose.onNode(hasContentDescription("Privacy —", substring = true) and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Profielfoto op de ranglijst")
+
+        val toggle = compose.onNode(hasText("Profielfoto op de ranglijst", substring = true) and hasClickAction())
+        toggle.assertIsOn()
+        compose.onAllNodesWithText("Anderen zien je profielfoto naast je naam.", substring = true).fetchSemanticsNodes().isNotEmpty().let(::assertTrue)
+
+        toggle.performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Op de ranglijst staat je initiaal in plaats van je foto.")
+        toggle.assertIsOff()
+        val saved = server.requestsTo("privacy.php").single()
+        assertEquals("Bearer $ACCOUNT_TOKEN", saved.headers["authorization"])
+        assertEquals("leaderboard_avatar=0", saved.body.optString("form"))
+
+        // The pages read again say the same: off stays off.
+        compose.waitUntil(15_000) { server.requestsTo("state.php").size >= 2 }
+        compose.waitForIdle()
+        toggle.assertIsOff()
+
+        // Before migration 014 the server cannot save it: back as it was, and why.
+        server.privacySaves = false
+        toggle.performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Deze instelling kan nog niet worden opgeslagen.")
+        toggle.assertIsOff()
     }
 
     @Test

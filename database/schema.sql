@@ -113,6 +113,8 @@ CREATE TABLE `user_profiles` (
     `locale`        VARCHAR(10)  NOT NULL DEFAULT 'nl',
     `allow_friend_requests` TINYINT(1) NOT NULL DEFAULT 1
                     COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
+    `leaderboard_avatar` TINYINT(1) NOT NULL DEFAULT 1
+                    COMMENT 'Profielfoto op de ranglijst: 0 = the boards show the initial, not the picture',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`),

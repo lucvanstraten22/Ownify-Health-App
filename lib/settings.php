@@ -96,6 +96,15 @@ if (!function_exists('settings_prepare')) {
             settings_last_sync_across($live)
         );
 
+        /* The Privacy switches that save: each as this account has it. */
+        require_once dirname(__DIR__) . '/includes/leaderboard.php';
+        $settings = settings_set_toggle(
+            $settings,
+            'privacy',
+            'leaderboard_avatar',
+            $userId === null || !db_available() || leaderboard_avatar_shown($userId)
+        );
+
         /* The account row names the person it belongs to. */
         $settings = settings_set_row_value(
             $settings,
@@ -423,6 +432,30 @@ if (!function_exists('settings_last_sync_across')) {
         }
 
         return settings_sync_label($newest);
+    }
+}
+
+if (!function_exists('settings_set_toggle')) {
+    /**
+     * Sets one saving switch (a `toggles` item with a `key`) of one detail
+     * page to the account's own value, with the note that goes with it.
+     */
+    function settings_set_toggle(array $settings, string $pageId, string $key, bool $on): array
+    {
+        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? null) !== 'toggles') {
+                continue;
+            }
+
+            foreach ($block['items'] as $i => $item) {
+                if (($item['key'] ?? null) === $key) {
+                    $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['on']   = $on;
+                    $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['note'] = $on ? ($item['note_on'] ?? null) : ($item['note_off'] ?? null);
+                }
+            }
+        }
+
+        return $settings;
     }
 }
 

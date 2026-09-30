@@ -447,19 +447,8 @@
                     }
                 }
 
-                /* The boards keep their own elements — community.js holds on
-                   to them to switch scope and period — so only their rows
-                   change. */
-                each(document, '[data-board]', function (board) {
-                    var nextBoard = fresh.querySelector('[data-board][data-scope="' + board.dataset.scope
-                        + '"][data-period="' + board.dataset.period + '"]');
-
-                    if (nextBoard) {
-                        board.innerHTML = nextBoard.innerHTML;
-                        each(board, '.reveal', function (item) { item.classList.add('is-visible'); });
-                        each(board, '.card', function (item) { item.dataset.animated = 'true'; });
-                    }
-                });
+                /* Every leaderboard's rows (community.js). */
+                if (window.AppBoards) { window.AppBoards.swap(fresh); }
             })
             .catch(function () { /* what was saved is saved; the next load shows it */ });
     }

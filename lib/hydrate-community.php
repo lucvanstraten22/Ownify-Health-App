@@ -35,6 +35,10 @@ if (!function_exists('hydrate_community')) {
             }
         }
 
+        /* Your own line where a board's top does not reach you: your picture,
+           as the boards show it. */
+        $community['you']['avatar'] = ($userId !== null && db_available()) ? leaderboard_avatar_of($userId) : null;
+
         /* What the account panel's Vrienden page shows: friends, requests
            both ways, and the account's own "Vriendverzoeken toestaan". */
         if ($userId !== null && db_available()) {

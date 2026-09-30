@@ -88,6 +88,24 @@ class AppDataParseTest {
         assertEquals("editable", fields.single { it.key == "first_name" }.state)
         assertEquals("api/profile/update.php", fields.single { it.key == "height" }.input!!.endpoint)
         assertNull(fields.single { it.key == "gender" }.input)
+        // Privacy's one switch that saves, as the account has it; the rest wait, disabled.
+        val switches = data.settings.page("privacy")!!.blocks.filterIsInstance<SettingsBlock.Toggles>().flatMap { it.items }
+        val board = switches.single { it.key != null }
+        assertEquals("leaderboard_avatar", board.key)
+        assertEquals("Profielfoto op de ranglijst", board.label)
+        assertTrue(board.on)
+        assertEquals("Anderen zien je profielfoto naast je naam.", board.note)
+        assertEquals(board.note, board.noteOn)
+        assertEquals("Op de ranglijst staat je initiaal in plaats van je foto.", board.noteOff)
+        assertEquals(3, switches.count { it.key == null })
+
+        // A board row carries the picture only when its owner shows it; otherwise none.
+        val rows = data.community.boards.values.flatMap { it.values }.flatMap { it.entries }
+        assertTrue(rows.any { it.avatar == "uploads/avatars/u776-ea125a85cccfbfc9.png" })
+        assertTrue(rows.any { it.avatar == null })
+        // …and your own line where a board's top does not reach you, the same way.
+        assertEquals("uploads/avatars/u776-ea125a85cccfbfc9.png", data.community.youAvatar)
+
         val hc = data.settings.integrations.single { it.key == "health_connect" }
         assertTrue(hc.connected)
         assertEquals("Demo Pixel", hc.devices.single().label)

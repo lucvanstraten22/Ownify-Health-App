@@ -453,6 +453,18 @@
 /* Off and unavailable are different things, and look it. */
 .settings-toggle:disabled .switch { opacity: 0.55; }
 
+/* A switch that saves: pressable, like a row. While it saves it waits,
+   dimmed as a whole, as the Vrienden switch does — not "unavailable". */
+.settings-toggle--live {
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.settings-toggle--live:active { background: rgba(255, 255, 255, 0.05); }
+.settings-toggle--live:disabled { cursor: progress; opacity: 0.7; }
+.settings-toggle--live:disabled .switch { opacity: 1; }
+.settings-toggle__note.is-error { color: var(--attention); }
+
 /* --------------------------------------------------------------------------
    Health integrations — a source, with its settings folded inside it
    -------------------------------------------------------------------------- */

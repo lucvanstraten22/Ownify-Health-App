@@ -41,9 +41,9 @@ as the website reloads or re-fetches the page after one.
 | `pages/goals.php` | `GoalsPage` | Actief / Behaald, primary slot, list, slots note, empty states, add button (disabled when full) |
 | `pages/goal-detail.php` | `GoalDetail` | hero, chips, meter, facts, day calendar, manual entry, Verloop chart (scrub), sources, recent, Beheer (promote, pause/resume, delete + confirm) |
 | `components/goal-wizard.php` | `GoalWizard` | six steps, per-step validation, source catalogue, targets, durations, summary, priority, done, errors |
-| `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board, Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
+| `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board (profile picture over the initial, when its owner shows it), Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
 | `pages/settings.php` | `SettingsPage` | identity card, five groups, logout, delete link |
-| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles, rows, notes, not-saved line |
+| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles (Privacy's "Profielfoto op de ranglijst" saves), rows, notes, not-saved line |
 | `components/settings-editor.php` | `FieldEditor` | text / date / choice / measure, once-warning, error |
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |
@@ -136,6 +136,7 @@ defaults:
 | After deleting an account with Google linked, the app shows the website's "revoke it yourself" notice instead of redirecting | the Google revoke is a browser redirect bound to a session the app does not have |
 | Backdrop blur only on Android 12+ | `RenderEffect` does not exist before API 31; older phones get the same translucent surfaces without blur, as the website does without `backdrop-filter` |
 | System back closes the frontmost layer | Android navigation; the website relies on Escape and the pills |
+| A profile picture is decoded at a fraction of its size (never below 384 px on its shorter side), one download shared by every row showing it | pictures are stored as uploaded, up to 3 MB; the browser scales an `<img>` itself, a phone decoding fifty full photos for one board would run out of memory. Drawn the same size either way |
 | The avatar is chosen with Android's photo picker (images only) | the website's `<input type="file" accept="image/jpeg,image/png,image/webp">`; the server checks the type and size as before |
 | Dates (Geboortedatum) are picked in the system date dialog | the website's `<input type="date">`, which on an Android browser opens the same kind of dialog |
 | The browser's own constraint bubbles (`required`, `minlength`) are not drawn | they are the browser's, not Ownify's; the form is sent and the server's message is shown in the panel's error box, as the website shows it when its checks fail. The website's own script messages ("Vul een waarde in.") are copied |
