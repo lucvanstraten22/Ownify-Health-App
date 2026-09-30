@@ -352,6 +352,20 @@ same "entering progress on someone else's goal -> 404" \
         --data-urlencode "csrf=$(csrf "$B")" --data-urlencode "goal_id=$GOAL_KM" --data-urlencode "value=99")" "404"
 same "  and it did not change" "$(q "percent:$GOAL_KM" "$USER_T")" "36"
 
+# ======================================================================
+LIMIT="$(php -r 'echo (require $argv[1])["limits"]["active"];' "$ROOT/config/goals.php")"
+echo "== the board holds $LIMIT active goals (config/goals.php), and no more =="
+for N in $(seq 1 "$LIMIT"); do
+    R="$(create "$B" "name=Doel $N" "category=other" "type=milestone" \
+        "target_value=10" "target_unit=keer" "direction=increase" "duration=month" "source_kind=manual")"
+    has "  goal $N of $LIMIT fits" "$R" '"ok":true'
+done
+R="$(create "$B" "name=Een te veel" "category=other" "type=milestone" \
+    "target_value=10" "target_unit=keer" "direction=increase" "duration=month" "source_kind=manual")"
+has "  one more is refused" "$R" '"ok":false'
+has "  saying how many fit" "$R" "Je hebt al $LIMIT actieve doelen"
+has "  and the board says it is full, with the same number" "$(page "$B")" "Je $LIMIT doelplekken zijn bezet"
+
 echo
 if [ -n "${KEEP:-}" ]; then
     echo "  Kept $USER_A, $USER_S, $USER_T and $USER_B."

@@ -225,14 +225,79 @@ return [
      * It is a sheet that pulls up over whichever page you are on, so its copy
      * never names a page to return to — closing returns you where you were.
      */
+    /**
+     * Ownify AI — the assistant in the sheet you swipe up. Both apps show
+     * these words as they are; the conversation itself comes from
+     * api/ai/state.php and api/ai/chat.php (includes/ai/).
+     *
+     * `consent` is what people say yes to before anything goes to Google
+     * Gemini. Change its substance and change `consent_version` in
+     * config/ai.php with it, so everybody is asked again.
+     */
     'ai' => [
-        'title'   => 'Assistent',
-        'status'  => 'Binnenkort beschikbaar',
-        'open'    => ['aria' => 'Assistent openen — of veeg omhoog'],
-        'close'   => ['label' => 'Sluiten', 'aria' => 'Assistent sluiten — of veeg omlaag'],
+        'title'   => 'Ownify AI',
+        'status'  => 'Je persoonlijke gezondheidsassistent',
+        'open'    => ['aria' => 'Ownify AI openen — of veeg omhoog'],
+        'close'   => ['label' => 'Sluiten', 'aria' => 'Ownify AI sluiten — of veeg omlaag'],
         'composer' => [
-            'note' => 'Hier komt je invoerveld',
-            'aria' => 'Gereserveerde ruimte voor het toekomstige invoerveld',
+            'placeholder' => 'Vraag iets over je gezondheid…',
+            'send'        => 'Versturen',
+            'aria'        => 'Je vraag aan Ownify AI',
+            'note'        => '',
+        ],
+        'new_chat'      => 'Nieuw gesprek',
+        'history'       => 'Gesprekken',
+        'history_empty' => 'Nog geen gesprekken.',
+        'delete_chat'   => 'Gesprek verwijderen',
+        'thinking'      => 'Ownify AI denkt na…',
+        'remaining'     => 'Nog %d van %d berichten vandaag',
+        'retry'         => 'Opnieuw proberen',
+
+        'empty' => [
+            'title'       => 'Je persoonlijke gezondheidsassistent',
+            'body'        => 'Stel een vraag over je slaap, voeding, training of voortgang — met je eigen Ownify-gegevens.',
+            'no_data'     => 'Je hebt nog geen gezondheidsgegevens. Koppel een bron of vul iets in, dan kan de assistent je er meer over vertellen. Algemene vragen kun je altijd stellen.',
+            'suggestions' => [
+                'Hoe was mijn gezondheid deze week?',
+                'Waarom veranderde mijn slaapscore?',
+                'Hoe gaat het met mijn doelen?',
+            ],
+        ],
+
+        'consent' => [
+            'title'  => 'Ownify AI gebruiken?',
+            'intro'  => 'Ownify AI is je persoonlijke gezondheidsassistent, gemaakt met Google Gemini. Voordat je begint, dit moet je weten:',
+            'points' => [
+                'Om je vragen te beantwoorden stuurt Ownify gegevens uit je account naar Google Gemini: je profiel (zoals je voornaam, leeftijd, geslacht, lengte en gewicht), je slaap, voeding en training, je doelen en je gezondheidsscores.',
+                'Dat gaat automatisch — je hoeft je gegevens niet zelf te typen. Er gaat alleen mee wat bij je vraag past.',
+                'Ownify gebruikt de gratis versie van de Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gegevens blijven dus niet alleen bij Ownify.',
+                'Je gesprekken worden bewaard in je Ownify-account, zodat je ze op je telefoon en op de website terugziet. Je kunt ze altijd wissen.',
+                'De assistent helpt je je gegevens te begrijpen. Hij stelt geen diagnoses en vervangt geen arts.',
+            ],
+            'accept'  => 'Toestaan en beginnen',
+            'decline' => 'Niet nu',
+            'footer'  => 'Je kunt dit altijd wijzigen in Instellingen → Privacy.',
+        ],
+
+        'declined' => [
+            'title'  => 'Ownify AI staat uit',
+            'body'   => 'Om Ownify AI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Google Gemini worden verwerkt. Zolang je dat niet doet, gaat er niets naar Gemini.',
+            'review' => 'Toestemming bekijken',
+        ],
+
+        'errors' => [
+            'unavailable' => 'De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
+            'quota'       => 'De AI-assistent is tijdelijk niet beschikbaar: de gratis gebruikslimiet is bereikt. Probeer het later opnieuw.',
+            'limit'       => 'Je hebt de gratis AI-berichten van vandaag gebruikt. Morgen kun je weer verder.',
+            'timeout'     => 'Het antwoord duurde te lang. Probeer het opnieuw.',
+            'blocked'     => 'Op deze vraag kan ik geen antwoord geven. Probeer het anders te formuleren.',
+            'consent'     => 'Om Ownify AI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Gemini worden verwerkt.',
+            'empty'       => 'Typ eerst een vraag.',
+            'too_long'    => 'Je vraag is te lang. Houd het onder de 2000 tekens.',
+            'not_found'   => 'Dit gesprek bestaat niet meer.',
+            'action_gone' => 'Dit voorstel is al afgehandeld.',
+            'network'     => 'Geen verbinding. Controleer je internet en probeer het opnieuw.',
+            'signed_out'  => 'Je bent niet meer ingelogd. Log opnieuw in om Ownify AI te gebruiken.',
         ],
     ],
 

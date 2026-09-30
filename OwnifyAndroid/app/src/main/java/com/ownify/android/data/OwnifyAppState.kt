@@ -87,11 +87,12 @@ object OwnifyAppState {
         read(context.applicationContext)
     }
 
-    /** Signed out, or another account: nothing of the last one stays in memory. */
+    /** Signed out, or another account: nothing of the last one stays in memory — its conversations neither. */
     fun clear() {
         job?.cancel()
         job = null
         load = AppLoad.Idle
+        OwnifyAssistant.clear()
     }
 
     /** Reads once more with the stored token when the first was refused for a token already replaced. */

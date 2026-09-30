@@ -10,6 +10,7 @@ VERSION
 /config/integrations.local.php
 /config/app.local.php
 /config/auth.local.php
+/config/ai.local.php
 
 # Android / Gradle / Android Studio output, at any depth and whatever the
 # Android project's folder is called — it is generated, never source, and

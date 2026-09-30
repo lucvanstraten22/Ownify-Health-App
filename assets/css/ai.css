@@ -1,9 +1,10 @@
 /* ==========================================================================
    ai.css — the AI extension layer.
 
-   No new colours, radii, spacing or type: every value below comes from the
-   tokens in theme.css. This file only arranges the one screen the assistant
-   will live on.
+   Almost every value below comes from the tokens in theme.css; the app's
+   green (60, 158, 114) and gold (191, 168, 99) appear as tints, as they do
+   elsewhere. This file arranges the one screen the assistant lives on: its
+   consent, the conversation and the composer.
    ========================================================================== */
 
 /* Same ground as the dashboard backdrop, mirrored, so the sheet reads as
@@ -29,10 +30,31 @@
    a future conversation below it keeps scrolling normally.
    -------------------------------------------------------------------------- */
 .ai-top {
+    position: sticky;
+    top: 0;
+    z-index: 3;
     flex: none;
     padding-top: max(var(--space-3), var(--safe-top));
     padding-bottom: var(--space-3);
     touch-action: none;
+}
+
+/* Pinned while the conversation scrolls under it: frosted, fading into the
+   sheet rather than ending in an edge, so it reads as the sheet's own top. */
+.ai-top::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 -20px;
+    z-index: -1;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--bg-main) 88%, transparent) 0%,
+        color-mix(in srgb, var(--bg-main) 72%, transparent) 70%,
+        transparent 100%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
+    mask-image: linear-gradient(180deg, #000 72%, transparent);
+    pointer-events: none;
 }
 
 /* The grabber: says "pull me down" in the same language as the dock handle. */
@@ -48,37 +70,120 @@
 .ai-top__row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     padding-top: var(--space-3);
 }
 
-/* --------------------------------------------------------------------------
-   Middle — intentionally empty
-   -------------------------------------------------------------------------- */
-.ai-main {
-    display: grid;
-    place-items: center;
-    flex: 1 1 auto;
-    padding-block: var(--space-6);
+.ai-top__actions {
+    display: flex;
+    gap: var(--space-2);
 }
 
-.ai-empty {
+.ai-top__actions[hidden] { display: none; }
+
+/* Round, icon-only pills: the same glass as the close pill, sized to it. */
+.pill--icon {
+    width: 42px;
+    justify-content: center;
+    padding-inline: 0;
+    cursor: pointer;
+}
+
+.pill--icon[aria-expanded="true"] {
+    border-color: rgba(60, 158, 114, 0.45);
+    color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Middle — consent, or the conversation
+   -------------------------------------------------------------------------- */
+.ai-main {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    flex: 1 1 auto;
+    padding-block: var(--space-4) var(--space-5);
 }
+
+.ai-main > [hidden] { display: none; }
+
+.ai-chat {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+/* Before the first message: the orb and what the assistant is for, centred
+   in whatever room the sheet has. */
+.ai-empty {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-block: var(--space-4);
+}
+
+.ai-empty[hidden] { display: none; }
 
 .ai-empty__title {
     margin-top: var(--space-6);
     font-size: var(--fs-brand);
     font-weight: 600;
     letter-spacing: -0.03em;
+    text-wrap: balance;
 }
 
 .ai-empty__status {
+    max-width: 30em;
     margin-top: var(--space-2);
     font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.ai-empty__note {
+    max-width: 30em;
+    margin-top: var(--space-3);
+    font-size: var(--fs-tiny);
+    line-height: 1.5;
     color: var(--text-muted);
+}
+
+.ai-empty__note[hidden] { display: none; }
+
+/* Three questions to start with: quiet glass chips, one per line on a
+   phone so none is cut off. */
+.ai-suggestions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    width: min(100%, 360px);
+    margin-top: var(--space-5);
+}
+
+.ai-suggestion {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-md);
+    background: var(--glass-soft);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    color: var(--text-secondary);
+    font-size: var(--fs-small);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.ai-suggestion:hover,
+.ai-suggestion:focus-visible {
+    border-color: var(--glass-border);
+    background: var(--glass);
+    color: var(--text-primary);
 }
 
 /* --------------------------------------------------------------------------
@@ -163,29 +268,514 @@
 }
 
 /* --------------------------------------------------------------------------
-   Bottom — space reserved for the future input interface.
-   Deliberately inert: no field, no caret, no send control.
+   The conversation
    -------------------------------------------------------------------------- */
-.ai-composer {
-    flex: none;
-    padding-bottom: max(var(--space-4), calc(var(--safe-bottom) + var(--space-4)));
-}
-
-.ai-composer__slot {
+.ai-thread {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 48px;
-    padding: var(--space-3) var(--space-4);
-    /* Outline only, never a filled field: this must not read as a usable box. */
-    border: 1px dashed rgba(255, 255, 255, 0.10);
-    border-radius: var(--radius-md);
-    background: none;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.ai-composer__note {
+.ai-thread[hidden] { display: none; }
+
+.ai-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    animation: ai-msg-in 320ms var(--ease-out) both;
+}
+
+/* The person: a tinted pane on the right, their words as typed. */
+.ai-msg--user { align-items: flex-end; }
+
+.ai-msg--user .ai-msg__bubble {
+    max-width: 85%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid rgba(60, 158, 114, 0.28);
+    border-radius: 20px 20px 6px 20px;
+    background: linear-gradient(180deg, rgba(60, 158, 114, 0.22), rgba(60, 158, 114, 0.14));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    color: var(--text-primary);
+    font-size: var(--fs-body);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* The assistant: glass across the column, read like a note rather than a
+   speech balloon. */
+.ai-msg--assistant .ai-msg__bubble {
+    padding: var(--space-4);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: 6px 20px 20px 20px;
+    background: var(--surface-gradient-quiet, var(--glass-soft));
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    box-shadow: var(--shadow-inset);
+    color: var(--text-primary);
+    font-size: var(--fs-body);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.ai-msg__bubble > * + * { margin-top: var(--space-3); }
+
+.ai-msg__bubble p { white-space: pre-wrap; }
+
+.ai-msg__bubble strong { font-weight: 600; color: var(--text-primary); }
+
+.ai-msg__bubble h3 {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
+}
+
+.ai-msg__bubble ul,
+.ai-msg__bubble ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-left: 1.2em;
+}
+
+.ai-msg__bubble ul { list-style: disc; }
+.ai-msg__bubble ol { list-style: decimal; }
+.ai-msg__bubble li::marker { color: var(--text-muted); }
+
+/* A note from Ownify itself — "Doel toegevoegd" — centred and small. */
+.ai-msg--system {
+    align-items: center;
+}
+
+.ai-msg--system .ai-msg__note {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 90%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-pill);
+    background: var(--glass-soft);
+    color: var(--text-secondary);
+    font-size: var(--fs-tiny);
+    line-height: 1.4;
+    text-align: center;
+}
+
+.ai-msg__note .icon { width: 14px; height: 14px; flex: none; color: var(--health); }
+
+/* A change the assistant prepared: what it is, and yes or not now. */
+.ai-action {
+    margin-top: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid rgba(60, 158, 114, 0.32);
+    border-radius: var(--radius-md);
+    background: rgba(60, 158, 114, 0.08);
+}
+
+.ai-action__title {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ai-action__summary {
+    margin-top: var(--space-1);
+    font-size: var(--fs-tiny);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.ai-action__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.ai-action__buttons .btn { min-height: 38px; }
+
+.ai-action__status {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.ai-action--done { border-color: var(--glass-border-soft); background: var(--glass-soft); }
+.ai-action--done .ai-action__status { color: var(--health); }
+
+.ai-btn--primary {
+    border-color: rgba(60, 158, 114, 0.55);
+    background: rgba(60, 158, 114, 0.26);
+    cursor: pointer;
+}
+
+.ai-btn--primary:hover,
+.ai-btn--primary:focus-visible { background: rgba(60, 158, 114, 0.34); }
+
+/* Thinking: three dots in the assistant's pane. */
+.ai-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 20px;
+}
+
+.ai-typing span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: ai-typing 1.2s ease-in-out infinite;
+}
+
+.ai-typing span:nth-child(2) { animation-delay: 0.15s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes ai-typing {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30%           { opacity: 1;   transform: translateY(-3px); }
+}
+
+@keyframes ai-msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Consent — before anything goes to Gemini
+   -------------------------------------------------------------------------- */
+.ai-consent,
+.ai-declined {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding-block: var(--space-2) var(--space-4);
+}
+
+.orb--small { width: clamp(84px, 24vw, 104px); }
+.orb--still .orb__ring { animation: none; opacity: 0.5; }
+.orb--still .orb__core { animation: none; }
+
+.ai-consent__title {
+    margin-top: var(--space-4);
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+.ai-consent__intro {
+    max-width: 32em;
+    margin-top: var(--space-2);
+    font-size: var(--fs-small);
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+.ai-consent__points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 100%;
+    max-width: 34em;
+    margin-top: var(--space-4);
+    padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 1.1em);
+    list-style: disc;
+    text-align: left;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.ai-consent__points li::marker { color: var(--health); }
+
+.ai-consent__error {
+    margin-top: var(--space-3);
+    font-size: var(--fs-small);
+    color: var(--attention);
+}
+
+.ai-consent__error[hidden] { display: none; }
+
+.ai-consent__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    margin-top: var(--space-5);
+}
+
+.ai-consent__actions .btn { flex: 1 1 160px; max-width: 260px; cursor: pointer; }
+
+.ai-consent__footer {
+    margin-top: var(--space-3);
     font-size: var(--fs-tiny);
     color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Bottom — the composer. Stays at the foot of the sheet while the
+   conversation scrolls under it, and above the keyboard on a phone:
+   ai-chat.js sets --ai-keyboard from the visual viewport.
+   -------------------------------------------------------------------------- */
+.screen__scroll--ai {
+    bottom: var(--ai-keyboard, 0px);
+    scroll-padding-bottom: 120px;
+}
+
+.ai-composer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex: none;
+    padding-top: var(--space-3);
+    padding-bottom: max(var(--space-3), calc(var(--safe-bottom) + var(--space-2)));
+}
+
+/* A soft floor under the composer, so the text scrolling past fades out
+   rather than being cut. */
+.ai-composer::before {
+    content: "";
+    position: absolute;
+    inset: -28px calc(-1 * var(--space-4)) 0;
+    z-index: -1;
+    background: linear-gradient(180deg, transparent, var(--bg-deep) 34px);
+    pointer-events: none;
+}
+
+.ai-composer[hidden] { display: none; }
+
+.ai-composer__form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    padding: 6px 6px 6px var(--space-4);
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    transition: border-color var(--transition-fast);
+}
+
+.ai-composer__form:focus-within { border-color: rgba(60, 158, 114, 0.5); }
+
+.ai-composer__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    max-height: 140px;
+    padding: 9px 0;
+    border: 0;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    /* 16px: iOS zooms into any field with smaller text. */
+    font-size: max(16px, var(--fs-body));
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+}
+
+.ai-composer__input::placeholder { color: var(--text-muted); }
+
+.ai-send {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--health);
+    color: #fff;
+    cursor: pointer;
+    transition: opacity var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast);
+}
+
+.ai-send .icon { width: 20px; height: 20px; stroke-width: 2; }
+
+.ai-send:disabled {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--text-muted);
+    cursor: default;
+}
+
+.ai-composer__meta {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.ai-composer__meta:empty { display: none; }
+
+/* Why the assistant cannot answer now — or what went wrong — above the field. */
+.ai-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid rgba(191, 168, 99, 0.32);
+    border-radius: var(--radius-md);
+    background: rgba(191, 168, 99, 0.10);
+    color: var(--text-primary);
+    font-size: var(--fs-small);
+    line-height: 1.45;
+}
+
+.ai-notice[hidden] { display: none; }
+
+.ai-notice__retry {
+    margin-left: auto;
+    flex: none;
+    border: 0;
+    background: none;
+    color: var(--health);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Conversations — a pane over the sheet
+   -------------------------------------------------------------------------- */
+.ai-history {
+    position: absolute;
+    inset: calc(max(var(--space-3), var(--safe-top)) + 72px) 0 0;
+    z-index: 5;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4) 0;
+    background: rgba(0, 0, 0, 0.42);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    animation: ai-msg-in 220ms var(--ease-out) both;
+}
+
+.ai-history[hidden] { display: none; }
+
+.ai-history__card {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, var(--page-max));
+    max-height: min(70%, 520px);
+    padding: var(--space-4);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-card);
+    /* The app's glass over the ground colour, not over the conversation:
+       a list you read, not one you read through. */
+    background: var(--surface-gradient), color-mix(in srgb, var(--bg-secondary) 94%, transparent);
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    box-shadow: var(--shadow-inset), var(--shadow-float);
+}
+
+.ai-history__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.ai-history__title { font-size: var(--fs-body); font-weight: 600; }
+
+.ai-history__new { gap: var(--space-2); min-height: 36px; cursor: pointer; }
+.ai-history__new .btn__icon { width: 16px; height: 16px; }
+
+.ai-history__list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 calc(-1 * var(--space-2));
+    padding: 0;
+    list-style: none;
+}
+
+.ai-history__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.ai-history__item.is-current { background: rgba(60, 158, 114, 0.12); }
+
+.ai-history__open {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    padding: var(--space-3) var(--space-2);
+    border: 0;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ai-history__name {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--fs-small);
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-history__when { font-size: var(--fs-tiny); color: var(--text-muted); }
+
+.ai-history__delete {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.ai-history__delete .icon { width: 18px; height: 18px; }
+
+.ai-history__delete:hover,
+.ai-history__delete:focus-visible,
+.ai-history__delete.is-armed { color: var(--text-primary); }
+
+.ai-history__delete.is-armed {
+    width: auto;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--miss) 24%, transparent);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+}
+
+.ai-history__empty {
+    padding: var(--space-4) var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-msg,
+    .ai-history { animation: none; }
+    .ai-typing span { animation: none; opacity: 0.6; }
 }
 
 /* --------------------------------------------------------------------------

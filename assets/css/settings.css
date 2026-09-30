@@ -933,3 +933,55 @@
     color: var(--text-muted);
     text-align: center;
 }
+
+/* --------------------------------------------------------------------------
+   A button that does one thing — asked about first, in place
+   (`actions` blocks: "AI-gesprekken wissen").
+   -------------------------------------------------------------------------- */
+.settings-action { padding: var(--space-3) var(--space-4); }
+
+.settings-action__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.settings-action__row .settings-toggle__text { flex: 1 1 auto; min-width: 0; }
+
+.settings-action__go {
+    flex: none;
+    min-height: 36px;
+    cursor: pointer;
+}
+
+.settings-action__go[hidden] { display: none; }
+
+.settings-action__go--danger,
+.settings-action__yes {
+    border-color: color-mix(in srgb, var(--miss) 60%, transparent);
+    background: color-mix(in srgb, var(--miss) 24%, transparent);
+}
+
+.settings-action__confirm {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.settings-action__confirm[hidden] { display: none; }
+
+.settings-action__question {
+    font-size: var(--fs-small);
+    color: var(--text-primary);
+}
+
+.settings-action__buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.settings-action__buttons .btn { min-height: 38px; cursor: pointer; }
+
+.settings-action .settings-toggle__note.is-error { color: var(--attention); }

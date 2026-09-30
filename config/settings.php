@@ -94,7 +94,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.1.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.2.0'],
             ],
         ],
     ],
@@ -142,6 +142,7 @@ return [
      *   choice        pick one of several options
      *   states        read-only facts: label, value, one line of explanation
      *   toggles       switches, disabled while the feature does not exist
+     *   actions       a button that does one thing after "are you sure?"
      *   rows          plain label/value information
      *   note          one framed line of explanation
      */
@@ -233,14 +234,20 @@ return [
                     'type'  => 'states',
                     'title' => 'Hoe het nu werkt',
                     'items' => [
+                        /* Both notes are the account's own, written by
+                           settings_prepare(): with Ownify AI on, data does
+                           leave the account — for Gemini, per question. */
                         ['label' => 'Gezondheidsgegevens', 'value' => 'Privé',
-                         'note' => 'Slaap, voeding, training en metingen verlaten je account niet'],
+                         'note' => 'Slaap, voeding, training en metingen verlaten je account niet',
+                         'note_ai' => 'Alleen wat bij je vraag past gaat naar Google Gemini, als je Ownify AI iets vraagt'],
                         ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
                          'note' => 'Verder niets — geen scores, geen metingen'],
                         ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
                          'note' => 'En je profielfoto, tenzij je die hieronder uitzet — nooit onderliggende gegevens'],
-                        ['label' => 'Assistent',           'value' => 'Geen toegang',
-                         'note' => 'De assistent bestaat nog niet en leest nog niets'],
+                        ['label' => 'Ownify AI',           'value' => 'Uit',
+                         'note' => 'Er gaat niets naar Google Gemini',
+                         'value_ai' => 'Aan',
+                         'note_ai' => 'Leest je gegevens om je vragen te beantwoorden, via Google Gemini'],
                     ],
                 ],
 
@@ -258,6 +265,41 @@ return [
                     ],
                 ],
 
+                /* Ownify AI: the same yes or no as in the assistant itself
+                   (api/ai/consent.php). Nothing goes to Gemini while it is
+                   off; the conversations stay until they are wiped below. */
+                [
+                    'type'  => 'toggles',
+                    'title' => 'Ownify AI',
+                    'lede'  => 'De assistent die je omhoog veegt, gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
+                    'items' => [
+                        ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
+                         'note_on'  => 'Bij elke vraag gaat wat erbij past naar Gemini: profiel, slaap, voeding, training, doelen en scores.',
+                         'note_off' => 'De assistent werkt niet, en er gaat niets naar Gemini.',
+                         'on' => false],
+                    ],
+                ],
+
+                ['type' => 'note', 'icon' => 'info',
+                 'text' => 'Ownify gebruikt de gratis Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gesprekken worden in je Ownify-account bewaard, tot je ze wist.'],
+
+                /* A button that does one thing once it is confirmed: see
+                   pages/settings-detail.php (`actions`) and settings.js. */
+                [
+                    'type'  => 'actions',
+                    'title' => 'AI-gesprekken',
+                    'items' => [
+                        ['key' => 'ai_clear_history', 'label' => 'AI-gesprekken wissen',
+                         'note'     => 'Verwijdert al je gesprekken met Ownify AI, op al je apparaten. Andere gegevens blijven staan.',
+                         'question' => 'Al je AI-gesprekken wissen? Dit kun je niet ongedaan maken.',
+                         'confirm'  => 'Alles wissen',
+                         'cancel'   => 'Annuleren',
+                         'endpoint' => 'api/ai/delete.php',
+                         'fields'   => ['all' => '1'],
+                         'danger'   => true],
+                    ],
+                ],
+
                 [
                     'type'  => 'toggles',
                     'title' => 'Later instelbaar',
@@ -265,7 +307,6 @@ return [
                     'items' => [
                         ['label' => 'Profiel vindbaar',        'note' => 'Anderen kunnen je op gebruikersnaam vinden', 'on' => true],
                         ['label' => 'Meedoen aan ranglijsten', 'note' => 'Zonder dit verschijn je nergens',           'on' => true],
-                        ['label' => 'Gegevens delen met de assistent', 'note' => 'Alleen wat je zelf aanwijst',       'on' => false],
                     ],
                 ],
 
@@ -439,7 +480,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.1.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.2.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],

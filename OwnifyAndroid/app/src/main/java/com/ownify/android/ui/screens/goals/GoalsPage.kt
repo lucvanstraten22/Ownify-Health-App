@@ -176,7 +176,7 @@ private fun CompletedView(data: AppData, board: Board) {
             Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 board.completed.forEach { goal -> key(goal.id) { BoardCard(data, goal, "completed", false) } }
             }
-            SlotNote("Behaalde doelen tellen niet mee voor je drie actieve plekken.")
+            SlotNote("Behaalde doelen tellen niet mee voor je ${data.goals.limits} actieve plekken.")
         }
     }
 }

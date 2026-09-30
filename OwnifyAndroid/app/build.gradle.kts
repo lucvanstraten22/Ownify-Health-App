@@ -13,8 +13,8 @@ android {
         applicationId = "com.ownify.android"
         minSdk = 28
         targetSdk = 37
-        versionCode = 6
-        versionName = "1.1.1"
+        versionCode = 7
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,8 +45,9 @@ android {
                 // The screenshots for the parity check with the website
                 // (ScreenshotCapture) are only taken when asked for:
                 // -Downify.shots=<dir> -Downify.state=<state.json> -Downify.server=<url>
-                // (-Downify.state.free: an account with a free goal slot, for the wizard)
-                for (key in listOf("ownify.shots", "ownify.state", "ownify.state.free", "ownify.server", "ownify.tree")) {
+                // (-Downify.state.free: an account with a free goal slot, for the wizard;
+                // -Downify.ai: an api/ai/state.php answer with a conversation, for the assistant)
+                for (key in listOf("ownify.shots", "ownify.state", "ownify.state.free", "ownify.server", "ownify.tree", "ownify.ai")) {
                     it.systemProperty(key, System.getProperty(key) ?: "")
                 }
                 // PixelCopy renders in hardware under Robolectric, so glass

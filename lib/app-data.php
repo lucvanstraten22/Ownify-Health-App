@@ -75,6 +75,12 @@ if (!function_exists('app_page_data')) {
         /* The Overzicht page's goal card follows whichever goal is primary. */
         $data['goal'] = hydrate_dashboard_goal($data['goal'], $data['goals']['primary'] ?? null);
 
+        /* Ownify AI at a glance — consent, whether it can answer, today's
+           limit — so the sheet opens on the right screen. The conversations
+           themselves are read when it opens (api/ai/state.php). */
+        require_once dirname(__DIR__) . '/includes/ai/assistant.php';
+        $data['ai']['session'] = ai_summary($userId);
+
         /* Settings: integrations resolved, profile read off the signed-in record. */
         $data['settings'] = settings_prepare(require $config . '/settings.php', $data['auth']);
 

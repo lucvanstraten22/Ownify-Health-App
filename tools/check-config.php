@@ -4,6 +4,7 @@
  *
  *     php tools/check-config.php
  *     php tools/check-config.php --generate-key
+ *     php tools/check-config.php --ai-ping        does the Gemini key work?
  *
  * Answers the questions you cannot answer by looking at the site: is the
  * database reachable with the credentials this checkout will actually use, and
@@ -48,6 +49,36 @@ if (in_array('--generate-key', $argvFlags, true)) {
     echo "Changing an existing key makes every token already encrypted with the\n";
     echo "old one unreadable, and everyone affected has to reconnect.\n";
     exit(0);
+}
+
+/* One request to Gemini, with nothing personal in it: does the key work, is
+   the model there, and is this project on the free tier's quota? Uses one
+   request of the free quota. */
+if (in_array('--ai-ping', $argvFlags, true)) {
+    require_once dirname(__DIR__) . '/includes/ai/gemini.php';
+
+    if (ai_api_key() === null) {
+        echo "No Gemini API key: set GEMINI_API_KEY or put it in config/ai.local.php (docs/AI.md).\n";
+        exit(1);
+    }
+
+    echo 'Asking ' . ai_model() . ' with the key from ' . ai_key_source() . " …\n";
+
+    $answer = ai_gemini_generate([
+        'contents'         => [['role' => 'user', 'parts' => [['text' => 'Reply with exactly: OK']]]],
+        'generationConfig' => ['maxOutputTokens' => 256],
+    ]);
+
+    echo match ($answer['outcome']) {
+        'ok'      => 'It works: Gemini answered "' . mb_substr((string) $answer['text'], 0, 40) . '" using '
+            . (int) ($answer['usage']['input_tokens'] ?? 0) . ' + ' . (int) ($answer['usage']['output_tokens'] ?? 0) . " tokens.\n",
+        'quota'   => "The key works, but the free quota is used up right now (HTTP 429). Try again later.\n",
+        'config'  => "Gemini refused the key or the model — the reason is in the PHP error log. Check GEMINI_API_KEY and GEMINI_MODEL.\n",
+        'timeout' => "No answer in time. Check the server's internet connection.\n",
+        default   => "Gemini could not be reached (" . $answer['outcome'] . "). The PHP error log says more.\n",
+    };
+
+    exit($answer['ok'] ? 0 : 1);
 }
 
 $problems = 0;
@@ -180,6 +211,22 @@ if (db_available()) {
             line('warn', 'small pictures', 'PHP has no GD, so the boards show profile pictures at full size — enable the gd extension');
         } else {
             line('ok', 'small pictures', 'GD is there; small copies are written as ' . (str_ends_with(avatar_small_path('x.png'), '.webp') ? 'WebP' : 'JPEG'));
+        }
+
+        /* Not fatal: Ownify AI says it is not available, nothing else changes.
+           The key is named by where it was found, never shown. */
+        require_once dirname(__DIR__) . '/includes/ai/config.php';
+        if (!ai_installed()) {
+            line('warn', 'ownify ai', 'its tables are missing, so the assistant says it is not available '
+                . '— import database/migrations/015-ai-assistant.sql');
+        } elseif (ai_api_key() === null) {
+            line('warn', 'ownify ai', 'no GEMINI_API_KEY, so the assistant says it is not available — see docs/AI.md');
+        } elseif (ai_model() === null) {
+            line('fail', 'ownify ai', 'GEMINI_MODEL is not a model name');
+        } else {
+            line('ok', 'ownify ai', 'key from ' . ai_key_source() . ', model ' . ai_model()
+                . ', ' . (int) ai_config()['daily_limit'] . ' messages a day each, '
+                . (int) ai_config()['global_daily_limit'] . ' Gemini requests a day in total');
         }
 
         /* Not fatal: without it a day's steps, distance and calories are the

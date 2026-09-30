@@ -90,6 +90,12 @@ if (!function_exists('icon')) {
                 // add a goal
                 'plus'     => '<path d="M12 5.4v13.2M5.4 12h13.2"/>',
 
+                // sending a message — an arrow up, the stroke the rest share
+                'arrow-up' => '<path d="M12 19.2V5.2M6.4 10.8 12 5.2l5.6 5.6"/>',
+
+                // conversations — one speech bubble, its tail on the left
+                'chat'     => '<path d="M7.6 4.6h8.8a2.8 2.8 0 0 1 2.8 2.8v6.2a2.8 2.8 0 0 1-2.8 2.8h-5.2l-4 3.2v-3.2h-.2A2.6 2.6 0 0 1 4.8 13.6V7.4a2.8 2.8 0 0 1 2.8-2.8Z"/>',
+
                 // confirmed / achieved
                 'check'    => '<path d="M5 12.6 9.8 17.4 19 6.9"/>',
 

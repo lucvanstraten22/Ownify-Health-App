@@ -27,6 +27,15 @@ and the website works exactly as before (without a bearer token it is the
 same CSRF + session check). After every write the app reads the state again,
 as the website reloads or re-fetches the page after one.
 
+Ownify AI, the assistant in the sheet, has endpoints of its own —
+`api/ai/state.php`, `chat.php`, `consent.php`, `action.php` and `delete.php`
+(`docs/AI.md`) — and the app uses exactly those, with its account token, as
+the website does with its session: the same conversations, the same daily
+count, the same consent. Neither talks to Gemini; the key never leaves the
+server. The sheet's copy comes with the pages (`data.ai`), and its answers
+arrive as paragraphs, headings and lists of text spans that both sides draw
+with bold only.
+
 ## Screens
 
 | Web | Android | States |
@@ -43,12 +52,12 @@ as the website reloads or re-fetches the page after one.
 | `components/goal-wizard.php` | `GoalWizard` | six steps, per-step validation, source catalogue, targets, durations, summary, priority, done, errors |
 | `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board (profile picture over the initial, when its owner shows it), Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
 | `pages/settings.php` | `SettingsPage` | identity card, five groups, logout, delete link |
-| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles (Privacy's "Profielfoto op de ranglijst" saves), rows, notes, not-saved line |
+| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles (Privacy's "Profielfoto op de ranglijst" and "Gegevens verwerken met Google Gemini" save), actions (Privacy's "AI-gesprekken wissen": Alles wissen, in-place confirm, done line, error), rows, notes, not-saved line |
 | `components/settings-editor.php` | `FieldEditor` | text / date / choice / measure, once-warning, error |
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |
 | `components/account-modal.php` (signed in) + `account-friends.php` | `AccountPanel` account + Vrienden views | identity, username, avatar, friends nav + badge, search, requests, sent, toggle, friends with in-place confirm |
-| `pages/ai.php` | `AssistantSheet` | handle, close pill, orb, "Binnenkort beschikbaar", composer slot |
+| `pages/ai.php` + `components/ai-consent.php`, `ai-empty-state.php`, `ai-composer.php` | `AssistantSheet` | handle, close pill, new-conversation and history buttons; consent (five points, Toestaan en beginnen / Niet nu, error), declined (Toestemming bekijken); empty (orb, name, no-data line, three suggestions); conversation (your bubble, the answer's paragraphs, headings and lists with bold, Ownify's own notes, a proposal card with its two buttons and then its outcome); thinking dots; notices (unavailable, free quota, today's limit, too slow, no connection — with Opnieuw proberen where it helps, the question kept in the field); composer (grows to five lines, send, "Nog 7 van 10 berichten vandaag"); history (list with Vandaag / Gisteren / date, open, delete with in-place confirm, empty) |
 
 ## Chrome and motion
 
@@ -57,6 +66,9 @@ as the website reloads or re-fetches the page after one.
   the back pill, or system back (predictive).
 - Assistant sheet above everything but the panels; opens by a swipe up from
   the dock or the handle, closes by a swipe down on its top or the pill.
+  Inside it the conversation scrolls to its newest message, and the composer
+  stays above the keyboard: the website follows `visualViewport`
+  (`--ai-keyboard`), the app the keyboard's insets.
 - One gesture resolver for all three (`navigation-core.js`): axis lock at
   8 dp, ratio 1.15, force at 24 dp; a flick (0.3 dp/ms after 16 dp)
   completes, a quick swipe (≤ 300 ms, ≥ 32 dp) completes, otherwise past a
@@ -141,6 +153,8 @@ defaults:
 | Dates (Geboortedatum) are picked in the system date dialog | the website's `<input type="date">`, which on an Android browser opens the same kind of dialog |
 | The browser's own constraint bubbles (`required`, `minlength`) are not drawn | they are the browser's, not Ownify's; the form is sent and the server's message is shown in the panel's error box, as the website shows it when its checks fail. The website's own script messages ("Vul een waarde in.") are copied |
 | Focus follows the website: a panel's first field is focused as it opens, the field in error after a failed check, and a tapped button takes focus from a field | what the website's script and the browser do; the keyboard therefore opens with the login and editor panels |
+| The assistant's state is read the first time the sheet opens, also when it opens on the consent question | the website renders the pages, and so the consent, fresh on every visit and only reads the conversation when it opens on it; the app keeps its pages in memory for long, so a yes or no given on the website since is picked up this way |
+| Enter in the assistant's field is a new line; the send button sends | as on a phone's browser: the website sends on Enter only with a mouse or trackpad (`pointer: fine`) |
 
 ## Verification
 

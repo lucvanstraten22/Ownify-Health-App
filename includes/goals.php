@@ -2,8 +2,8 @@
 /**
  * Goals — PRIVATE, scoped to the owner like health data.
  *
- * The rows and the board's rules: creating, the three-goal limit, the one
- * primary, pausing, deleting. Where a goal stands — its best result, its
+ * The rows and the board's rules: creating, the limit on active goals, the
+ * one primary, pausing, deleting. Where a goal stands — its best result, its
  * streak, its total, its percentage — is worked out in one place only,
  * includes/goal-progress.php, so nothing here calculates a percentage.
  */
@@ -13,9 +13,13 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 
-/** Three active goals: one primary and two secondaries. */
+/**
+ * Active goals at most, paused ones included: one primary, the rest
+ * secondary. The number is config/goals.php's ('limits' → 'active') — the one
+ * the Doelen page and the app show — so changing it there changes it here.
+ */
 if (!defined('GOAL_MAX_ACTIVE')) {
-    define('GOAL_MAX_ACTIVE', 3);
+    define('GOAL_MAX_ACTIVE', max(1, (int) (((array) require dirname(__DIR__) . '/config/goals.php')['limits']['active'] ?? 3)));
 }
 
 if (!function_exists('goals_for_user')) {
@@ -183,7 +187,7 @@ if (!function_exists('goals_for_user')) {
     /* ====================================================================
        THE BOARD'S RULES
        --------------------------------------------------------------------
-       Three active goals, exactly one of them primary. These are enforced
+       GOAL_MAX_ACTIVE active goals, exactly one of them primary. These are enforced
        here, on write, because a rule that only the interface knows is not a
        rule: the endpoints and any future import both come through this file.
        ==================================================================== */

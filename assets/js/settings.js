@@ -92,7 +92,86 @@
                 }
 
                 setSwitch(toggle, !!answer[key]);
-                if (window.AppBoards) { window.AppBoards.refresh(); }
+                if (key === 'leaderboard_avatar' && window.AppBoards) { window.AppBoards.refresh(); }
+
+                /* Told to whoever shows the same setting elsewhere — the
+                   Ownify AI sheet shows its consent too (ai-chat.js). */
+                document.dispatchEvent(new CustomEvent('ownify:setting', { detail: { key: key, on: !!answer[key] } }));
+            });
+    });
+
+    /** The same switch, moved from elsewhere (the Ownify AI sheet): no save, it already was. */
+    window.AppSettings = {
+        setSwitch: function (key, on) {
+            Array.prototype.forEach.call(document.querySelectorAll('[data-setting-toggle="' + key + '"]'), function (toggle) {
+                setSwitch(toggle, on);
+            });
+        }
+    };
+
+    /* ------------------------------------------- buttons that do one thing */
+
+    /**
+     * A row with `data-setting-action` ("AI-gesprekken wissen"): the button
+     * asks first, in place; yes posts to the row's endpoint and says what
+     * happened. Nothing happens on the first press.
+     */
+    document.addEventListener('click', function (event) {
+        var row = event.target.closest('[data-setting-action]');
+        if (!row) { return; }
+
+        var confirmBox = row.querySelector('[data-setting-action-confirm]');
+        var go         = row.querySelector('[data-setting-action-go]');
+        var note       = row.querySelector('[data-setting-action-note]');
+
+        if (event.target.closest('[data-setting-action-go]')) {
+            confirmBox.hidden = false;
+            go.hidden = true;
+            var yes = row.querySelector('[data-setting-action-yes]');
+            if (yes) { yes.focus(); }
+            return;
+        }
+
+        if (event.target.closest('[data-setting-action-no]')) {
+            confirmBox.hidden = true;
+            go.hidden = false;
+            go.focus();
+            return;
+        }
+
+        var yesButton = event.target.closest('[data-setting-action-yes]');
+        if (!yesButton || yesButton.disabled) { return; }
+
+        var panel  = document.querySelector('[data-account]');
+        var body   = new FormData();
+        var fields = {};
+        try { fields = JSON.parse(row.getAttribute('data-fields') || '{}'); } catch (e) { fields = {}; }
+
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        Object.keys(fields).forEach(function (name) { body.append(name, fields[name]); });
+
+        yesButton.disabled = true;
+
+        fetch(row.getAttribute('data-endpoint'), { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false, error: 'Onverwacht antwoord van de server.' }; });
+            })
+            .catch(function () { return { ok: false, error: 'De server is niet bereikbaar.' }; })
+            .then(function (answer) {
+                yesButton.disabled = false;
+                confirmBox.hidden = true;
+                go.hidden = false;
+
+                if (note) {
+                    note.textContent = answer && answer.ok
+                        ? (answer.message || '')
+                        : ((answer && answer.error) || 'Dit kon niet worden gedaan.');
+                    note.classList.toggle('is-error', !(answer && answer.ok));
+                }
+
+                if (answer && answer.ok) {
+                    document.dispatchEvent(new CustomEvent('ownify:setting-action', { detail: { key: row.getAttribute('data-setting-action') } }));
+                }
             });
     });
 

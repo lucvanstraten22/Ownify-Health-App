@@ -88,16 +88,45 @@ class AppDataParseTest {
         assertEquals("editable", fields.single { it.key == "first_name" }.state)
         assertEquals("api/profile/update.php", fields.single { it.key == "height" }.input!!.endpoint)
         assertNull(fields.single { it.key == "gender" }.input)
-        // Privacy's one switch that saves, as the account has it; the rest wait, disabled.
-        val switches = data.settings.page("privacy")!!.blocks.filterIsInstance<SettingsBlock.Toggles>().flatMap { it.items }
-        val board = switches.single { it.key != null }
-        assertEquals("leaderboard_avatar", board.key)
+        // Privacy's switches that save, as the account has them; the rest wait, disabled.
+        val privacy = data.settings.page("privacy")!!
+        val switches = privacy.blocks.filterIsInstance<SettingsBlock.Toggles>().flatMap { it.items }
+        assertEquals(listOf("leaderboard_avatar", "ai_consent"), switches.mapNotNull { it.key })
+        val board = switches.single { it.key == "leaderboard_avatar" }
         assertEquals("Profielfoto op de ranglijst", board.label)
         assertTrue(board.on)
         assertEquals("Anderen zien je profielfoto naast je naam.", board.note)
         assertEquals(board.note, board.noteOn)
         assertEquals("Op de ranglijst staat je initiaal in plaats van je foto.", board.noteOff)
-        assertEquals(3, switches.count { it.key == null })
+        // Ownify AI: off until the account says yes, and it says what off means.
+        val gemini = switches.single { it.key == "ai_consent" }
+        assertEquals("Gegevens verwerken met Google Gemini", gemini.label)
+        assertFalse(gemini.on)
+        assertEquals("De assistent werkt niet, en er gaat niets naar Gemini.", gemini.note)
+        assertEquals(2, switches.count { it.key == null })
+        // …the conversations can be wiped, asked first, through the server's own endpoint.
+        val wipe = privacy.blocks.filterIsInstance<SettingsBlock.Actions>().single().items.single()
+        assertEquals("ai_clear_history", wipe.key)
+        assertEquals("api/ai/delete.php", wipe.endpoint)
+        assertEquals(mapOf("all" to "1"), wipe.fields)
+        assertTrue(wipe.danger)
+        assertEquals("Al je AI-gesprekken wissen? Dit kun je niet ongedaan maken.", wipe.question)
+        // …and the facts at the top say where the assistant stands.
+        val facts = privacy.blocks.filterIsInstance<SettingsBlock.States>().single().items
+        assertEquals("Uit", facts.single { it.label == "Ownify AI" }.value)
+
+        // Ownify AI's words and the account's answer, before anything is fetched.
+        assertEquals("Ownify AI", data.ai.title)
+        assertEquals("Ownify AI gebruiken?", data.ai.consent.title)
+        assertEquals(5, data.ai.consent.points.size)
+        assertTrue(data.ai.consent.points.any { "verbeteren" in it })
+        assertEquals(3, data.ai.empty.suggestions.size)
+        assertEquals("unknown", data.ai.session.consent)
+        assertTrue(data.ai.session.available)
+        assertEquals(10, data.ai.session.usage.limit)
+        assertTrue(data.ai.session.hasData)
+        assertEquals("Nog 10 van 10 berichten vandaag", data.ai.remainingText(data.ai.session.usage))
+        assertTrue(data.ai.error("limit").startsWith("Je hebt de gratis AI-berichten van vandaag gebruikt"))
 
         // A board row carries the picture only when its owner shows it; otherwise none.
         val rows = data.community.boards.values.flatMap { it.values }.flatMap { it.entries }
@@ -127,5 +156,7 @@ class AppDataParseTest {
         assertEquals("no score yet: Gezondheid says how many days unlock one", "Je hebt nog 3 dagen data nodig om een score te ontgrendelen.", data.health.lede)
         assertFalse(data.health.trend.charts["sleep"]!!["week"]!!.hasData)
         assertTrue(data.community.friends.isEmpty())
+        // No data yet: the assistant's empty screen will say so.
+        assertFalse(data.ai.session.hasData)
     }
 }

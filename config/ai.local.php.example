@@ -1,0 +1,29 @@
+<?php
+/**
+ * Copy to config/ai.local.php and put your Gemini API key in it.
+ *
+ *     cp config/ai.local.php.example config/ai.local.php
+ *
+ * The copy is git-ignored, so it never reaches GitHub and never travels in a
+ * deploy — which means it has to be created once on each machine that runs
+ * the app, including the server. It survives deployments precisely because it
+ * is not part of the checkout that gets uploaded.
+ *
+ * Where the key comes from, and how to check it works without spending
+ * anything: docs/AI.md. In short: https://aistudio.google.com/apikey, in a
+ * Google Cloud project WITHOUT billing, so it can only ever use the free tier.
+ *
+ * The environment wins over this file (GEMINI_API_KEY), so a host that
+ * injects secrets needs no copy of it at all.
+ *
+ * Anything else from config/ai.php can be overridden here too, e.g.
+ *     'model'       => 'gemini-3.8-flash',
+ *     'daily_limit' => 10,
+ */
+
+declare(strict_types=1);
+
+return [
+    /** This example value is deliberately not a key. Never commit a real one. */
+    'api_key' => 'PUT-YOUR-GEMINI-API-KEY-HERE',
+];

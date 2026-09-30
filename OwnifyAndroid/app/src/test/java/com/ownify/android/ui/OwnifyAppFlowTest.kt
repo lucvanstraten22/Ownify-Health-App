@@ -48,6 +48,7 @@ import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.screens.OwnifyScreens
 import com.ownify.android.ui.screens.goals.GoalBoard
 import com.ownify.android.ui.theme.OwnifyTheme
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -270,8 +271,165 @@ class OwnifyAppFlowTest {
         compose.onNode(hasContentDescription("Sluiten") and hasClickAction()).performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Lid sinds", substring = true).fetchSemanticsNodes().isEmpty() }
 
-        compose.onNode(hasContentDescription("Assistent openen", substring = true)).performClick()
-        waitFor("Binnenkort beschikbaar")
+        compose.onNode(hasContentDescription("Ownify AI openen", substring = true)).performClick()
+        waitFor("Ownify AI gebruiken?")
+    }
+
+    // --------------------------------------------------------- Ownify AI
+
+    private fun openAssistant() =
+        compose.onNode(hasContentDescription("Ownify AI openen", substring = true)).performClick()
+
+    private fun send(question: String) {
+        field("Je vraag aan Ownify AI").performTextInput(question)
+        compose.onNode(hasContentDescription("Versturen") and hasClickAction()).performClick()
+    }
+
+    /** A form post's fields, as PHP reads them into $_POST. */
+    private fun form(request: FakeOwnifyServer.Request): Map<String, String> =
+        request.body.optString("form").split('&').filter { it.contains('=') }.associate {
+            java.net.URLDecoder.decode(it.substringBefore('='), "UTF-8") to java.net.URLDecoder.decode(it.substringAfter('='), "UTF-8")
+        }
+
+    @Test
+    fun `Ownify AI - nothing goes to Gemini before the yes, then a question is answered and the conversation stays`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        openAssistant()
+        waitFor("Ownify AI gebruiken?")
+        // What happens with the data, said before anything happens — the free tier's terms included.
+        waitFor("Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren")
+        assertTrue(server.requestsTo("chat.php").isEmpty())
+
+        button("Toestaan en beginnen").performClick()
+        waitFor("Je persoonlijke gezondheidsassistent")
+        assertEquals(mapOf("decision" to "accept"), form(server.requestsTo("consent.php").single()))
+        assertEquals("accepted", server.aiConsent)
+
+        server.aiAnswers += JSONObject().put("text", "Je sliep gemiddeld 7 u 35 min.").put(
+            "blocks",
+            org.json.JSONArray("""[{"type":"p","spans":[{"t":"Je sliep gemiddeld ","b":false},{"t":"7 u 35 min","b":true},{"t":".","b":false}]},{"type":"ul","items":[[{"t":"je bedtijd lag steeds rond 23:30","b":false}]]}]""")
+        )
+        button("Hoe was mijn gezondheid deze week?").performClick()
+        waitFor("7 u 35 min")
+        waitFor("je bedtijd lag steeds rond 23:30")
+        waitFor("Nog 9 van 10 berichten vandaag")
+        val asked = server.requestsTo("chat.php").single()
+        assertEquals("Bearer $ACCOUNT_TOKEN", asked.headers["authorization"])
+        assertEquals(mapOf("message" to "Hoe was mijn gezondheid deze week?"), form(asked))
+
+        // Pulled down and up again: the conversation is still there, nothing asked twice.
+        compose.onNode(hasContentDescription("Ownify AI sluiten", substring = true) and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("7 u 35 min", substring = true).fetchSemanticsNodes().isEmpty() }
+        openAssistant()
+        waitFor("7 u 35 min")
+        assertEquals(1, server.requestsTo("chat.php").size)
+
+        // The next question carries on in the same conversation.
+        send("En vorige week?")
+        waitFor("Standaardantwoord.")
+        assertEquals("7", form(server.requestsTo("chat.php").last())["conversation_id"])
+    }
+
+    @Test
+    fun `Ownify AI - a goal it prepares is added only on a yes, and Doelen is read again`() {
+        server.saveConsent("accepted")
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        openAssistant()
+        waitFor("Je persoonlijke gezondheidsassistent")
+        server.aiAnswers += JSONObject()
+            .put("text", "Ik kan hiervoor een mijlpaal toevoegen. Zal ik het toevoegen?")
+            .put("action", JSONObject().put("title", "Nieuw doel: 5 km onder 25 minuten").put("summary", "Mijlpaal · 25 min · lager is beter")
+                .put("state", "pending").put("confirm", "Doel toevoegen").put("decline", "Niet nu").put("status", JSONObject.NULL))
+        send("Maak een doel om 5 km onder de 25 minuten te lopen")
+        waitFor("Nieuw doel: 5 km onder 25 minuten")
+        waitFor("Doel toevoegen")
+        // Proposed, not done.
+        assertTrue(server.requestsTo("action.php").isEmpty())
+        val reads = server.requestsTo("app/state.php").size
+
+        button("Doel toevoegen").performClick()
+        waitFor("Doorgevoerd")
+        waitFor("toegevoegd. Je vindt het bij Doelen.")
+        assertEquals("confirm", form(server.requestsTo("action.php").single())["decision"])
+        // Doelen shows it: the pages are read again.
+        compose.waitUntil(10_000) { server.requestsTo("app/state.php").size > reads }
+        assertTrue(compose.onAllNodes(hasText("Doel toevoegen") and hasClickAction()).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun `Ownify AI - the free quota used up, or today's limit reached, in the server's words, the question kept`() {
+        server.saveConsent("accepted")
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openAssistant()
+        waitFor("Je persoonlijke gezondheidsassistent")
+
+        server.aiMode = FakeOwnifyServer.AiMode.QUOTA
+        send("Hoe sliep ik?")
+        waitFor("de gratis gebruikslimiet is bereikt")
+        // Not answered, not lost: the question is back in the field, and it can be sent again.
+        compose.onNode(hasText("Hoe sliep ik?") and hasSetTextAction()).assertExists()
+        server.aiMode = FakeOwnifyServer.AiMode.OK
+        button("Opnieuw proberen").performClick()
+        waitFor("Standaardantwoord.")
+        assertTrue(compose.onAllNodesWithText("gratis gebruikslimiet", substring = true).fetchSemanticsNodes().isEmpty())
+
+        server.aiMode = FakeOwnifyServer.AiMode.LIMIT
+        send("Nog een vraag")
+        waitFor("Morgen kun je weer verder")
+    }
+
+    @Test
+    fun `Ownify AI - said no, nothing is sent, and the question can be looked at again`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openAssistant()
+        waitFor("Ownify AI gebruiken?")
+
+        button("Niet nu").performClick()
+        waitFor("Ownify AI staat uit")
+        assertEquals("declined", server.aiConsent)
+        assertTrue(server.requestsTo("chat.php").isEmpty())
+
+        button("Toestemming bekijken").performClick()
+        waitFor("Ownify AI gebruiken?")
+    }
+
+    @Test
+    fun `Privacy - Ownify AI's switch is the same answer as in the sheet, and the conversations can be wiped`() {
+        server.saveConsent("accepted")
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Instellingen").performClick()
+        compose.onNode(hasContentDescription("Privacy —", substring = true) and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Gegevens verwerken met Google Gemini")
+
+        // Wiping asks first.
+        compose.onNode(hasText("AI-gesprekken wissen", substring = true)).assertExists()
+        compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Al je AI-gesprekken wissen?")
+        assertTrue(server.requestsTo("delete.php").isEmpty())
+        compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Je AI-gesprekken zijn gewist.")
+        assertEquals(mapOf("all" to "1"), form(server.requestsTo("delete.php").single()))
+
+        val toggle = compose.onNode(hasText("Gegevens verwerken met Google Gemini", substring = true) and hasClickAction())
+        toggle.assertIsOn()
+        toggle.performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("De assistent werkt niet, en er gaat niets naar Gemini.")
+        toggle.assertIsOff()
+        assertEquals("ai_consent=0", server.requestsTo("privacy.php").single().body.optString("form"))
+        assertEquals("declined", server.aiConsent)
     }
 
     @Test

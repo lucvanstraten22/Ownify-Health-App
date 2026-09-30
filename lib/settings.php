@@ -105,6 +105,16 @@ if (!function_exists('settings_prepare')) {
             $userId === null || !db_available() || leaderboard_avatar_shown($userId)
         );
 
+        /* Ownify AI: the switch, and the two facts at the top of Privacy
+           that are only true while it is off. */
+        require_once dirname(__DIR__) . '/includes/ai/config.php';
+        $aiOn     = $userId !== null && db_available() && ai_consented($userId);
+        $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
+
+        if ($aiOn) {
+            $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'Ownify AI']);
+        }
+
         /* The account row names the person it belongs to. */
         $settings = settings_set_row_value(
             $settings,
@@ -451,6 +461,35 @@ if (!function_exists('settings_set_toggle')) {
                 if (($item['key'] ?? null) === $key) {
                     $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['on']   = $on;
                     $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['note'] = $on ? ($item['note_on'] ?? null) : ($item['note_off'] ?? null);
+                }
+            }
+        }
+
+        return $settings;
+    }
+}
+
+if (!function_exists('settings_use_ai_state')) {
+    /**
+     * With Ownify AI on, the `states` items named in $labels say so: their
+     * `value_ai` / `note_ai` replace the value and note they have while it
+     * is off.
+     */
+    function settings_use_ai_state(array $settings, string $pageId, array $labels): array
+    {
+        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? null) !== 'states') {
+                continue;
+            }
+
+            foreach ($block['items'] as $i => $item) {
+                if (!in_array($item['label'] ?? null, $labels, true)) {
+                    continue;
+                }
+                foreach (['value', 'note'] as $field) {
+                    if (isset($item[$field . '_ai'])) {
+                        $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_ai'];
+                    }
                 }
             }
         }

@@ -27,7 +27,12 @@
 --
 --  PRIVATE (the owner and authorised services only)
 --      user_measurements, health_metrics, sleep_sessions, nutrition_entries,
---      workouts, workout_hr_zones, daily_scores, goals, goal_progress
+--      workouts, workout_hr_zones, daily_scores, goals, goal_progress,
+--      ai_conversations, ai_messages, ai_usage
+--
+--  The one authorised outside service is Google Gemini, for Ownify AI: it is
+--  sent the parts of a person's own data that fit their question, and only
+--  once they have allowed it (user_profiles.ai_consent). See includes/ai/.
 --
 --  Every private table carries user_id and every query against one MUST be
 --  scoped to the authenticated user's id. The database cannot enforce that on
@@ -42,6 +47,10 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `ai_service_state`;
+DROP TABLE IF EXISTS `ai_usage`;
+DROP TABLE IF EXISTS `ai_messages`;
+DROP TABLE IF EXISTS `ai_conversations`;
 DROP TABLE IF EXISTS `leaderboard_best_positions`;
 DROP TABLE IF EXISTS `user_period_points`;
 DROP TABLE IF EXISTS `point_events`;
@@ -115,6 +124,14 @@ CREATE TABLE `user_profiles` (
                     COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
     `leaderboard_avatar` TINYINT(1) NOT NULL DEFAULT 1
                     COMMENT 'Profielfoto op de ranglijst: 0 = the boards show the initial, not the picture',
+    -- Ownify AI (migration 015): nothing goes to Google Gemini until this is 1
+    -- for the wording in config/ai.php (consent_version).
+    `ai_consent`    TINYINT(1)   NULL DEFAULT NULL
+                    COMMENT 'Ownify AI: NULL never asked, 1 allowed, 0 declined or withdrawn',
+    `ai_consent_version` VARCHAR(32) NULL DEFAULT NULL
+                    COMMENT 'The consent wording that was answered (config/ai.php consent_version)',
+    `ai_consent_at` DATETIME     NULL DEFAULT NULL
+                    COMMENT 'When the Ownify AI consent was last answered',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`),
@@ -753,7 +770,74 @@ CREATE TABLE `leaderboard_best_positions` (
 
 
 -- ============================================================================
---  7. CATALOGUE ROWS
+--  7. OWNIFY AI — the assistant (migration 015)
+--  PRIVATE, like the health tables: every row is one person's, every query is
+--  scoped to the signed-in user. What was sent to Gemini is not stored — only
+--  what was said in the conversation.
+-- ============================================================================
+
+CREATE TABLE `ai_conversations` (
+    `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`    BIGINT UNSIGNED NOT NULL,
+    `title`      VARCHAR(120) NOT NULL DEFAULT '',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_ai_conversations_user` (`user_id`, `updated_at`),
+    CONSTRAINT `fk_ai_conversations_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- system = a note from Ownify itself ("Doel toegevoegd"). An assistant message
+-- can carry one proposed change that happens only once its owner confirms it.
+CREATE TABLE `ai_messages` (
+    `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `conversation_id` BIGINT UNSIGNED NOT NULL,
+    `user_id`         BIGINT UNSIGNED NOT NULL,
+    `role`            ENUM('system','user','assistant') NOT NULL,
+    `content`         MEDIUMTEXT NOT NULL,
+    `action_json`     TEXT NULL COMMENT 'A proposed change, done only once the owner confirms it',
+    `action_state`    ENUM('pending','running','done','declined','failed','expired') NULL,
+    `meta_json`       TEXT NULL COMMENT 'Model, token counts and the tools used — never health data',
+    `created_at`      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_ai_messages_conversation` (`conversation_id`, `id`),
+    KEY `idx_ai_messages_user` (`user_id`),
+    CONSTRAINT `fk_ai_messages_conversation` FOREIGN KEY (`conversation_id`)
+        REFERENCES `ai_conversations` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_ai_messages_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Per person per day. `messages` is what the daily limit counts; the sum of
+-- `gemini_calls` over everybody is what the project's shared free quota sees.
+CREATE TABLE `ai_usage` (
+    `user_id`       BIGINT UNSIGNED NOT NULL,
+    `usage_date`    DATE NOT NULL,
+    `messages`      INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Questions answered by Gemini: what the daily limit counts',
+    `gemini_calls`  INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Requests made to Gemini, a question with tools taking several',
+    `input_tokens`  INT UNSIGNED NOT NULL DEFAULT 0,
+    `output_tokens` INT UNSIGNED NOT NULL DEFAULT 0,
+    `errors`        INT UNSIGNED NOT NULL DEFAULT 0,
+    `limit_hits`    INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (`user_id`, `usage_date`),
+    KEY `idx_ai_usage_date` (`usage_date`),
+    CONSTRAINT `fk_ai_usage_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Facts about Gemini itself, about nobody: until when its free quota is used up.
+CREATE TABLE `ai_service_state` (
+    `name`       VARCHAR(40) NOT NULL,
+    `value`      VARCHAR(255) NULL,
+    `until`      DATETIME NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================================
+--  8. CATALOGUE ROWS
 --  Reference data, not user data: the app needs these to exist.
 -- ============================================================================
 

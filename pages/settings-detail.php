@@ -14,6 +14,7 @@
  *   states        read-only facts: label, value, one line of explanation
  *   toggles       switches: one with a `key` saves (api/profile/privacy.php);
  *                 the rest are off and disabled while the feature does not exist
+ *   actions       a button that does one thing after "are you sure?" in place
  *   rows          plain label/value information
  *   note          one framed line of explanation
  */
@@ -284,6 +285,37 @@ foreach ($page['blocks'] as $block) {
                                         </span>
                                     </button>
                                     <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
+
+                    <?php elseif ($block['type'] === 'actions'): ?>
+
+                        <?php /* One thing to do, asked about first, in place (settings.js). */ ?>
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <div class="card settings-card">
+                                <?php foreach ($block['items'] as $item): ?>
+                                    <div class="settings-action" data-setting-action="<?= e($item['key']) ?>"
+                                         data-endpoint="<?= e($item['endpoint']) ?>"
+                                         data-fields="<?= e(json_encode($item['fields'] ?? new stdClass())) ?>">
+                                        <div class="settings-action__row">
+                                            <span class="settings-toggle__text">
+                                                <span class="settings-toggle__label"><?= e($item['label']) ?></span>
+                                                <span class="settings-toggle__note" data-setting-action-note role="status"><?= e($item['note'] ?? '') ?></span>
+                                            </span>
+                                            <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' settings-action__go--danger' : '' ?>"
+                                                    data-setting-action-go><?= e($item['confirm']) ?></button>
+                                        </div>
+                                        <div class="settings-action__confirm" data-setting-action-confirm hidden>
+                                            <p class="settings-action__question"><?= e($item['question']) ?></p>
+                                            <div class="settings-action__buttons">
+                                                <button type="button" class="btn press" data-setting-action-no><?= e($item['cancel']) ?></button>
+                                                <button type="button" class="btn press settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 <?php endforeach; ?>
                             </div>
                         </section>

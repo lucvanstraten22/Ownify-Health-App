@@ -251,6 +251,32 @@ class FakeOwnifyServer {
     @Volatile
     var privacySaves = true
 
+    /* ------------------------------------------------------ Ownify AI */
+
+    /** How the assistant's chat.php answers: as normal, past today's limit (429), or with Gemini's free quota used up (503). */
+    enum class AiMode { OK, LIMIT, QUOTA }
+
+    @Volatile
+    var aiMode = AiMode.OK
+
+    /** The account's answer to the consent question, as user_profiles holds it. */
+    @Volatile
+    var aiConsent = "unknown"
+
+    /** What the assistant says next, in order: its text, blocks and — for a proposal — action. */
+    val aiAnswers = java.util.concurrent.ConcurrentLinkedQueue<JSONObject>()
+
+    /** The one conversation this account has, oldest message first. */
+    val aiMessages = CopyOnWriteArrayList<JSONObject>()
+
+    @Volatile
+    var aiConversation: JSONObject? = null
+
+    @Volatile
+    var aiUsed = 0
+
+    private val aiIds = java.util.concurrent.atomic.AtomicLong(100)
+
     /** The account the last sign-in was for, whose profile profile.php answers with. */
     @Volatile
     var accountUsername = "sanne"
@@ -351,18 +377,29 @@ class FakeOwnifyServer {
                 if (works) reply(exchange, 200, """{"ok":true,"message":"Opgeslagen."}""")
                 else reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
             }
-            // Instellingen → Privacy's switch, with the account token: saved, and read back in the pages.
+            // Instellingen → Privacy's switches, with the account token: saved, and read back in the pages.
             path.endsWith("/profile/privacy.php") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
-                val on = body.contains("leaderboard_avatar=1")
+                val key = if (body.startsWith("ai_consent=")) "ai_consent" else "leaderboard_avatar"
+                val on = body.contains("$key=1")
                 when {
                     !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
                     !privacySaves -> reply(exchange, 503, """{"ok":false,"error":"Deze instelling kan nog niet worden opgeslagen."}""")
+                    key == "ai_consent" -> {
+                        saveConsent(if (on) "accepted" else "declined")
+                        reply(exchange, 200, """{"ok":true,"ai_consent":$on,"message":"Opgeslagen."}""")
+                    }
                     else -> {
                         savePrivacy(on)
                         reply(exchange, 200, """{"ok":true,"leaderboard_avatar":$on,"message":"Opgeslagen."}""")
                     }
                 }
+            }
+            // Ownify AI (api/ai/…php), as the real one answers, with the account token only.
+            path.contains("/ai/") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Je bent niet ingelogd."}""")
+                else assistant(exchange, path.substringAfterLast('/'), form(body))
             }
             files.containsKey(path) -> {
                 val bytes = files.getValue(path)
@@ -372,6 +409,126 @@ class FakeOwnifyServer {
             }
             else -> reply(exchange, 404, """{"ok":false}""")
         }
+    }
+
+    /** A form body as PHP reads it into \$_POST. */
+    private fun form(body: String): Map<String, String> =
+        body.split('&').filter { it.contains('=') }.associate {
+            java.net.URLDecoder.decode(it.substringBefore('='), "UTF-8") to java.net.URLDecoder.decode(it.substringAfter('='), "UTF-8")
+        }
+
+    private fun aiUsage() = JSONObject().put("used", aiUsed).put("limit", 10).put("remaining", (10 - aiUsed).coerceAtLeast(0))
+
+    private fun aiFail(exchange: HttpExchange, status: Int, code: String, error: String) =
+        reply(exchange, status, JSONObject().put("ok", false).put("code", code).put("error", error).put("usage", aiUsage()).toString())
+
+    private fun aiMessage(role: String, text: String, extra: JSONObject? = null): JSONObject {
+        val message = JSONObject().put("id", aiIds.incrementAndGet()).put("role", role).put("text", text)
+            .put("blocks", JSONObject.NULL).put("created_at", "2026-09-30 12:00:00").put("action", JSONObject.NULL)
+        extra?.keys()?.forEach { message.put(it, extra.get(it)) }
+        aiMessages += message
+        return message
+    }
+
+    /** The api/ai endpoints: consent first; one conversation; the day's count; a proposal done only on a yes. */
+    private fun assistant(exchange: HttpExchange, endpoint: String, fields: Map<String, String>) {
+        val conversation = { aiConversation ?: JSONObject.NULL }
+        when (endpoint) {
+            "consent.php" -> {
+                val accepted = fields["decision"] == "accept"
+                saveConsent(if (accepted) "accepted" else "declined")
+                reply(exchange, 200, JSONObject().put("ok", true).put("consent", aiConsent).toString())
+            }
+
+            "state.php" -> {
+                val accepted = aiConsent == "accepted"
+                val open = accepted && fields["new"] != "1" && aiConversation != null
+                reply(exchange, 200, JSONObject()
+                    .put("ok", true).put("available", true).put("unavailable", JSONObject.NULL).put("notice", JSONObject.NULL)
+                    .put("consent", aiConsent).put("usage", aiUsage()).put("has_data", true)
+                    .put("conversations", org.json.JSONArray().apply { if (accepted) aiConversation?.let { put(it) } })
+                    .put("conversation", if (open) conversation() else JSONObject.NULL)
+                    .put("messages", org.json.JSONArray().apply { if (open) aiMessages.forEach { put(it) } })
+                    .toString())
+            }
+
+            "chat.php" -> {
+                val question = fields["message"].orEmpty().trim()
+                val pending = aiMessages.lastOrNull { it.optJSONObject("action")?.optString("state") == "pending" }
+                when {
+                    aiConsent != "accepted" -> aiFail(exchange, 403, "consent", "Om Ownify AI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Gemini worden verwerkt.")
+                    question.isEmpty() -> aiFail(exchange, 422, "empty", "Typ eerst een vraag.")
+                    pending != null && question.lowercase().trimEnd('!', '.') in setOf("ja", "ja graag", "nee") -> {
+                        val yes = !question.lowercase().startsWith("nee")
+                        val mine = aiMessage("user", question)
+                        pending.getJSONObject("action").put("state", if (yes) "done" else "declined").put("status", if (yes) "Doorgevoerd" else "Niet doorgevoerd")
+                        val note = aiMessage("system", if (yes) "Doel toegevoegd. Je vindt het bij Doelen." else "Niet doorgevoerd.")
+                        reply(exchange, 200, JSONObject().put("ok", true).put("conversation", conversation())
+                            .put("messages", org.json.JSONArray().put(mine).put(pending).put(note)).put("usage", aiUsage()).toString())
+                    }
+                    aiMode == AiMode.LIMIT || aiUsed >= 10 -> aiFail(exchange, 429, "limit", "Je hebt de gratis AI-berichten van vandaag gebruikt. Morgen kun je weer verder.")
+                    aiMode == AiMode.QUOTA -> aiFail(exchange, 503, "quota", "De AI-assistent is tijdelijk niet beschikbaar: de gratis gebruikslimiet is bereikt. Probeer het later opnieuw.")
+                    else -> {
+                        if (aiConversation == null) {
+                            aiConversation = JSONObject().put("id", 7).put("title", question.take(60)).put("label", "Vandaag 12:00")
+                        }
+                        aiMessages.forEach { m ->
+                            m.optJSONObject("action")?.takeIf { it.optString("state") == "pending" }?.put("state", "expired")?.put("status", "Verlopen")
+                        }
+                        aiUsed++
+                        val mine = aiMessage("user", question)
+                        val next = aiAnswers.poll() ?: JSONObject().put("text", "Standaardantwoord.")
+                        val answer = aiMessage("assistant", next.optString("text"), next)
+                        reply(exchange, 200, JSONObject().put("ok", true).put("conversation", conversation())
+                            .put("messages", org.json.JSONArray().put(mine).put(answer)).put("usage", aiUsage()).toString())
+                    }
+                }
+            }
+
+            "action.php" -> {
+                val id = fields["message_id"]?.toLongOrNull()
+                val message = aiMessages.firstOrNull { it.optLong("id") == id }
+                val action = message?.optJSONObject("action")
+                when {
+                    message == null -> aiFail(exchange, 404, "not_found", "Dit gesprek bestaat niet meer.")
+                    action?.optString("state") != "pending" -> aiFail(exchange, 409, "action_gone", "Dit voorstel is al afgehandeld.")
+                    else -> {
+                        val yes = fields["decision"] == "confirm"
+                        action.put("state", if (yes) "done" else "declined").put("status", if (yes) "Doorgevoerd" else "Niet doorgevoerd")
+                        val note = aiMessage("system", if (yes) "Doel ‘5 km onder 25 minuten’ toegevoegd. Je vindt het bij Doelen." else "Niet doorgevoerd: nieuw doel.")
+                        reply(exchange, 200, JSONObject().put("ok", true).put("messages", org.json.JSONArray().put(message).put(note)).toString())
+                    }
+                }
+            }
+
+            "delete.php" -> {
+                aiConversation = null
+                aiMessages.clear()
+                reply(exchange, 200, JSONObject().put("ok", true).put("deleted", 1).put("message", "Je AI-gesprekken zijn gewist.").toString())
+            }
+
+            else -> reply(exchange, 404, """{"ok":false}""")
+        }
+    }
+
+    /** The answer to the consent question, stored — and read back in the pages, as ai_summary() and settings_prepare() would. */
+    fun saveConsent(consent: String) {
+        aiConsent = consent
+        val state = JSONObject(stateBody)
+        val data = state.getJSONObject("data")
+        data.optJSONObject("ai")?.optJSONObject("session")?.put("consent", consent)
+        val blocks = data.getJSONObject("settings").getJSONObject("pages").getJSONObject("privacy").getJSONArray("blocks")
+        for (b in 0 until blocks.length()) {
+            val items = blocks.getJSONObject(b).optJSONArray("items") ?: continue
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                if (item.optString("key") == "ai_consent") {
+                    val on = consent == "accepted"
+                    item.put("on", on).put("note", item.optString(if (on) "note_on" else "note_off"))
+                }
+            }
+        }
+        stateBody = state.toString()
     }
 
     /** What settings_prepare() reads back after a save: the switch and its note, in the pages. */

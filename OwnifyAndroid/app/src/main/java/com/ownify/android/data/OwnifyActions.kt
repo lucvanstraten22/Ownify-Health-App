@@ -38,6 +38,15 @@ object OwnifyActions {
     suspend fun form(context: Context, path: String, fields: Map<String, String>, fallback: String, reload: Boolean = true): Outcome =
         run(context, fallback, reload) { token -> OwnifyConnection.api.form(path, fields, token) }
 
+    /**
+     * Ownify AI (the api/ai endpoints): the longer wait an answer can take. Nothing
+     * is read again after — the assistant keeps its own state
+     * ([OwnifyAssistant]) and reloads the pages itself when a change it
+     * carried out shows on them.
+     */
+    suspend fun assistant(context: Context, path: String, fields: Map<String, String>, fallback: String): Outcome =
+        run(context, fallback, reload = false) { token -> OwnifyConnection.api.assistant(path, fields, token) }
+
     /** A JSON post, for `api/goals/update.php`. */
     suspend fun json(context: Context, path: String, body: JSONObject, fallback: String, reload: Boolean = true): Outcome =
         run(context, fallback, reload) { token -> OwnifyConnection.api.json(path, body, token) }

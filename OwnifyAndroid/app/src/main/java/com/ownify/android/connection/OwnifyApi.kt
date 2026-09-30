@@ -224,6 +224,18 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
         return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, TIMEOUT_MS, MAX_RESPONSE_BYTES) { it }
     }
 
+    /**
+     * Ownify AI (the api/ai endpoints): a form like [form], with the wait an answer
+     * can take — one question may be three requests to Gemini behind it —
+     * and room for a whole conversation.
+     */
+    suspend fun assistant(path: String, fields: Map<String, String>, token: String): OwnifyResult<JSONObject> {
+        val body = fields.entries.joinToString("&") { (key, value) ->
+            URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
+        }
+        return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, ASSISTANT_TIMEOUT_MS, MAX_ASSISTANT_BYTES) { it }
+    }
+
     /** A JSON body to a write endpoint that reads one (api/goals/update.php). */
     suspend fun json(path: String, body: JSONObject, token: String): OwnifyResult<JSONObject> =
         post(path, body, token) { it }
@@ -452,6 +464,12 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
         /** A profile picture: the server takes up to 3 MB. */
         private const val MAX_IMAGE_BYTES = 4 * 1024 * 1024
         private const val UPLOAD_TIMEOUT_MS = 60_000
+
+        /** Ownify AI: the server waits up to 55 s for Gemini, a little longer for the rest. */
+        private const val ASSISTANT_TIMEOUT_MS = 90_000
+
+        /** A conversation of up to 200 messages, each with its blocks. */
+        private const val MAX_ASSISTANT_BYTES = 2 * 1024 * 1024
 
         /** The state's shape this app reads (api/app/state.php `version`). */
         private const val STATE_VERSION = 1

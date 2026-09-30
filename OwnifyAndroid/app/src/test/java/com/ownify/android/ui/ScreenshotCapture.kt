@@ -28,6 +28,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.ownify.android.data.AppData
+import com.ownify.android.data.OwnifyAssistant
 import com.ownify.android.connection.OwnifyApi
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.ui.app.AppShell
@@ -422,10 +423,50 @@ class ScreenshotCapture {
 
     @Test
     fun assistant() {
+        OwnifyAssistant.clear()
         app()
         compose.runOnUiThread { shell.openAi() }
         settle()
         shoot("assistant")
+    }
+
+    /**
+     * Ownify AI's screens, each from an answer api/ai/state.php gave
+     * (-Downify.ai: one with a conversation in it) — the consent question,
+     * the empty conversation, the conversation with a proposal waiting, the
+     * list of conversations, today's limit reached, and switched off.
+     */
+    @Test
+    fun assistantScreens() {
+        val answer = System.getProperty("ownify.ai").orEmpty()
+        assumeTrue("no api/ai/state.php answer given", answer.isNotEmpty())
+        fun read() = JSONObject(File(answer).readText())
+
+        OwnifyAssistant.clear()
+        app()
+        val copy = data().ai
+        compose.runOnUiThread { shell.openAi() }
+        settle()
+        shoot("assistant-consent")
+
+        val empty = read().put("conversations", org.json.JSONArray()).put("conversation", JSONObject.NULL).put("messages", org.json.JSONArray())
+        compose.runOnUiThread { OwnifyAssistant.show(empty, copy) }
+        shoot("assistant-empty")
+
+        compose.runOnUiThread { OwnifyAssistant.show(read(), copy) }
+        shoot("assistant-chat")
+
+        compose.runOnUiThread { OwnifyAssistant.historyOpen = true }
+        shoot("assistant-history")
+        compose.runOnUiThread { OwnifyAssistant.historyOpen = false }
+
+        val out = read().put("usage", JSONObject().put("used", 10).put("limit", 10).put("remaining", 0))
+        compose.runOnUiThread { OwnifyAssistant.show(out, copy) }
+        shoot("assistant-limit")
+
+        compose.runOnUiThread { OwnifyAssistant.show(JSONObject().put("consent", "declined").put("available", true), copy) }
+        shoot("assistant-declined")
+        OwnifyAssistant.clear()
     }
 
     // ------------------------------------------------------------- signed out

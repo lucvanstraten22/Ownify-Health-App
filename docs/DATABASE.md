@@ -80,11 +80,11 @@ whole procedure, including the switch-over.
 
 ## Secrets on the server
 
-Three things must exist on a machine running the app and must never exist in
-the repository: the database password, any OAuth client secret, and
-`OWNIFY_APP_KEY`. All three follow the same pattern — a git-ignored file next to
-a tracked `.example` that shows the shape, or an environment variable that
-wins over the file.
+Four things must exist on a machine running the app and must never exist in
+the repository: the database password, any OAuth client secret,
+`OWNIFY_APP_KEY` and the Gemini API key. All four follow the same pattern — a
+git-ignored file next to a tracked `.example` that shows the shape, or an
+environment variable that wins over the file.
 
 | Secret | File | Environment | Needed for |
 | --- | --- | --- | --- |
@@ -92,6 +92,7 @@ wins over the file.
 | App key | `config/app.local.php` | `OWNIFY_APP_KEY` | storing OAuth tokens |
 | Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` `_ANDROID_CLIENT_IDS` | signing in with Google (the last: in the Ownify app) |
 | Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
+| Gemini API key | `config/ai.local.php` | `GEMINI_API_KEY` | Ownify AI, the assistant — [AI.md](AI.md) |
 
 Check what a machine actually has, without printing any of it:
 
@@ -284,6 +285,15 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | `user_period_points` | points per period, plus the national position |
 | `leaderboard_best_positions` | best rank ever reached |
 
+**Ownify AI — private** ([AI.md](AI.md))
+
+| Table | Holds |
+| --- | --- |
+| `ai_conversations` | one row per conversation with the assistant: its owner, a title (the first question, shortened), when it was last used |
+| `ai_messages` | what was said, `user` / `assistant` / `system` (Ownify's own note, e.g. that a goal was added), and a proposed change with what became of it (`action_json`, `action_state`) — never the health data that was sent along |
+| `ai_usage` | per person per day: questions (the daily limit), Gemini requests, tokens, errors, times the limit was hit |
+| `ai_service_state` | facts about Gemini, not about anyone: until when its free quota is known to be used up |
+
 ## Relationships worth knowing
 
 **Height and weight are not profile columns.** They change, and overwriting
@@ -369,6 +379,16 @@ cannot be read, the original is shown as before (`tools/check-config.php`
 says which). Replacing a picture removes the old one and its copy; deleting
 the account removes both.
 
+**Whether Ownify AI may send someone's data to Gemini** is
+`user_profiles.ai_consent` — NULL never asked, 1 yes, 0 no or withdrawn — with
+`ai_consent_version` (the wording they answered, `consent_version` in
+`config/ai.php`) and `ai_consent_at`. The sheet's first question and the
+Privacy switch *Gegevens verwerken met Google Gemini* write the same columns.
+A yes to an older wording counts as never asked. An existing database gets the
+columns and the four `ai_` tables from
+`database/migrations/015-ai-assistant.sql`; until then the assistant says it is
+not available and nothing else changes. See [AI.md](AI.md#consent-and-privacy).
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
@@ -387,6 +407,7 @@ Two classes of data, and the boundary is deliberate.
 | `users.username` | every health table |
 | `user_profiles.avatar_path` | `user_measurements` |
 | `user_period_points.points`, `.position` | `goals`, `goal_progress` |
+| | `ai_conversations`, `ai_messages`, `ai_usage` |
 
 The rules:
 
@@ -408,7 +429,8 @@ ways of signing in (the password and the Google link), every browser it stays
 signed in on, health data, goals and
 their history, measurements, paired phones and their tokens, pairing codes,
 integrations, friendships in both directions, blocks, points and leaderboard
-positions all go in the same statement — rows removed, not marked. The profile
+positions, and every conversation with Ownify AI and its usage all go in the
+same statement — rows removed, not marked. The profile
 picture is a file and is removed from `uploads/avatars/` separately. The
 browser is signed out; a session still open on another device is turned away on
 its next request, and a paired phone's token stops working. The endpoint only
@@ -527,9 +549,11 @@ rating keeps working beside it.
 `week_starts_on` in `config/points.php` (Monday). Once Instellingen stores a
 person's own choice, `points_week_start()` is the one place that reads it.
 
-**The assistant.** It should read a user's own data through the same
-`includes/health-data.php` functions, with the id from the session. It must
-never be handed another user's records.
+**The assistant.** Built: Ownify AI ([AI.md](AI.md)) reads a user's own data
+through the same functions the pages use, with the id from the session, and is
+never handed another user's records. New areas of data reach it as a block in
+`includes/ai/context.php` and, for a longer stretch, a tool in
+`includes/ai/tools.php`.
 
 ## Health Score and points
 
@@ -694,7 +718,7 @@ private data is returned.
 | `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics`; a rating earns that day's points |
 | `api/health/rating.php` | the day's 1-10 nutrition rating, one `health_metrics` row per day (today or up to 6 days back, saving again replaces it); then that day's points and the Health Score |
 | `api/health/training.php` | `workouts`; then its points, the week's bonus and the Health Score |
-| `api/goals/create.php` | `goals`, subject to three active and one primary |
+| `api/goals/create.php` | `goals`, subject to the limit on active goals (`limits` in `config/goals.php`, five) and one primary |
 | `api/goals/update.php` | pause, resume, complete, re-prioritise |
 | `api/goals/delete.php` | deletes the goal and its history |
 | `api/goals/progress.php` | `goal_progress` the way the goal's type needs it, and completes a goal that reaches its target |
@@ -702,8 +726,13 @@ private data is returned.
 | `api/friends/search.php` | reads only: the one account with exactly that username (case does not matter), its username and picture, and where the two of you stand |
 | `api/friends/request.php` | `friendships`: send a request, accept or decline one sent to you, withdraw your own, or remove a friend (deletes the row) — each checked against the pair's own row |
 | `api/friends/settings.php` | `user_profiles.allow_friend_requests` of the signed-in account |
-| `api/profile/privacy.php` | `user_profiles.leaderboard_avatar` of the signed-in account |
+| `api/profile/privacy.php` | `user_profiles.leaderboard_avatar`, or `ai_consent` (with its version and time), of the signed-in account |
 | `api/friends/block.php` | `user_blocks`, and deletes the pair's `friendships` row |
+| `api/ai/consent.php` | `user_profiles.ai_consent`, `ai_consent_version`, `ai_consent_at` |
+| `api/ai/chat.php` | `ai_usage` (reserved before Gemini is asked, given back if it fails); on an answer, the question and the answer in `ai_messages`, a new `ai_conversations` row for a first question (the oldest beyond 50 are deleted), and a proposal still waiting in that conversation marked expired; `ai_service_state` when Gemini's free quota is used up. A "ja" or "nee" to a proposal does what `action.php` does |
+| `api/ai/action.php` | carries out or turns down one proposal: `goals` through the same code as `api/goals/create.php` and `update.php`, `ai_messages.action_state`, and a note from Ownify in `ai_messages` |
+| `api/ai/delete.php` | deletes one of the person's conversations, or all of them, with their messages |
+| `api/ai/state.php` | reads only |
 
 "Points" means `point_events`, and the `user_period_points` rollup for the
 periods they land in; "the Health Score" means `daily_scores`. Rendering

@@ -131,7 +131,7 @@ $copy = [
                             <?php endforeach; ?>
                         </div>
 
-                        <p class="goals-slots">Behaalde doelen tellen niet mee voor je drie actieve plekken.</p>
+                        <p class="goals-slots">Behaalde doelen tellen niet mee voor je <?= (int) $goals['limits']['active'] ?> actieve plekken.</p>
 
                     <?php endif; ?>
 

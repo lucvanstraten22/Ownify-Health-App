@@ -16,7 +16,7 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/includes/goals.php';
+require_once dirname(__DIR__, 2) . '/includes/goal-create.php';
 
 api_require_post();
 api_require_database();
@@ -36,18 +36,7 @@ if (goal_get($userId, $goalId) === null) {
     api_fail('Onbekend doel.', 404);
 }
 
-$ok = match ($action) {
-    'pause'     => goal_set_status($userId, $goalId, 'paused'),
-    'resume'    => goal_set_status($userId, $goalId, 'active'),
-    'complete'  => goal_set_status($userId, $goalId, 'completed'),
-    'primary'   => goal_set_primary($userId, $goalId),
-    'secondary' => (static function () use ($userId, $goalId): bool {
-        db_run("UPDATE goals SET priority = 'secondary' WHERE id = ? AND user_id = ?", [$goalId, $userId]);
-        goal_ensure_primary($userId);
-        return true;
-    })(),
-    default     => null,
-};
+$ok = goal_apply_action($userId, $goalId, $action);
 
 if ($ok === null) {
     api_fail('Onbekende actie.', 400);

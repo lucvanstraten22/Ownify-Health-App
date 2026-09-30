@@ -72,6 +72,12 @@ import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.design.Btn
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import com.ownify.android.data.ActionItem
+import com.ownify.android.data.OwnifyAssistant
+import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.CardStyle
 import com.ownify.android.ui.design.Chip
 import com.ownify.android.ui.design.Disclaimer
@@ -120,6 +126,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.Toggles -> TogglesBlock(block)
                 is SettingsBlock.Rows -> RowsBlock(block)
                 is SettingsBlock.Note -> SettingsNote(block.icon, block.text, Modifier.reveal())
+                is SettingsBlock.Actions -> ActionsBlock(block)
             }
         }
         if (page.blocks.any { it is SettingsBlock.Choice }) Disclaimer(data.settings.notSaved)
@@ -757,6 +764,91 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
             }
         }
         Toggle(on)
+    }
+}
+
+/**
+ * Buttons that do one thing (`.settings-action`): "AI-gesprekken wissen".
+ * The button asks first, in place; yes posts to the item's endpoint as the
+ * website does, and the note under the label says what happened.
+ */
+@Composable
+private fun ActionsBlock(block: SettingsBlock.Actions) {
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        InButton {
+            SettingsCard {
+                block.items.forEachIndexed { i, item -> ActionRow(item, divided = i > 0) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(item: ActionItem, divided: Boolean) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val narrow = LocalScreen.current.narrow
+    var asking by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    var said by remember { mutableStateOf<String?>(null) }
+    var failed by remember { mutableStateOf(false) }
+    val look = if (item.danger) BtnLook.Final else BtnLook()
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .settingsRow(divided)
+            .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            Column(Modifier.weight(1f)) {
+                T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+                val note = said ?: item.note
+                if (!note.isNullOrEmpty()) {
+                    T(
+                        note,
+                        OwnifyType.style(Ownify.FsTiny, color = if (failed) Ownify.Attention else Ownify.TextMuted),
+                        Modifier.padding(top = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                }
+            }
+            if (!asking) Btn(item.confirm, onClick = { asking = true }, look = look)
+        }
+
+        if (asking) {
+            Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
+                T(item.question, OwnifyType.style(Ownify.FsSmall), Modifier.padding(top = Ownify.Space3))
+                Row(
+                    Modifier.fillMaxWidth().padding(top = Ownify.Space3),
+                    horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End)
+                ) {
+                    Btn(item.cancel, onClick = { asking = false }, enabled = !busy)
+                    Btn(item.confirm, enabled = !busy, look = look, onClick = {
+                        busy = true
+                        scope.launch {
+                            val outcome = OwnifyActions.form(context, item.endpoint, item.fields, "Dit kon niet worden gedaan.", reload = false)
+                            busy = false
+                            asking = false
+                            when (outcome) {
+                                is Outcome.Done -> {
+                                    said = outcome.body.optString("message").ifEmpty { null }
+                                    failed = false
+                                    // The assistant's own list follows: none of them are left.
+                                    if (item.key == "ai_clear_history") OwnifyAssistant.cleared()
+                                }
+                                is Outcome.Refused -> {
+                                    said = outcome.message
+                                    failed = true
+                                }
+                                Outcome.SignedOut -> Unit
+                            }
+                        }
+                    })
+                }
+            }
+        }
     }
 }
 

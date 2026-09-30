@@ -206,6 +206,20 @@ object OwnifyIcons {
         )
     }
 
+    /** `arrow-up` */
+    val arrowUp: ImageVector by lazy {
+        icon("arrow-up", null,
+            "M12 19.2V5.2M6.4 10.8 12 5.2l5.6 5.6"
+        )
+    }
+
+    /** `chat` */
+    val chat: ImageVector by lazy {
+        icon("chat", null,
+            "M7.6 4.6h8.8a2.8 2.8 0 0 1 2.8 2.8v6.2a2.8 2.8 0 0 1-2.8 2.8h-5.2l-4 3.2v-3.2h-.2A2.6 2.6 0 0 1 4.8 13.6V7.4a2.8 2.8 0 0 1 2.8-2.8Z"
+        )
+    }
+
     /** `check` */
     val check: ImageVector by lazy {
         icon("check", null,
@@ -338,6 +352,8 @@ object OwnifyIcons {
         "chevron-right" to chevronRight,
         "lock" to lock,
         "plus" to plus,
+        "arrow-up" to arrowUp,
+        "chat" to chat,
         "check" to check,
         "pause" to pause,
         "play" to play,

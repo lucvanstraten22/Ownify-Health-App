@@ -94,21 +94,118 @@ data class NavItem(val id: String, val label: String, val icon: String, val acti
     }
 }
 
+/**
+ * Ownify AI's words (config/dashboard.php → 'ai'), and [session]: the
+ * account's answer to the consent question, whether the assistant can
+ * answer now, and today's limit — so the sheet opens on the right screen
+ * before anything is fetched. The conversation itself is api/ai/state.php
+ * ([OwnifyAssistant]).
+ */
 data class AiCopy(
     val title: String,
     val status: String,
     val openAria: String,
     val closeLabel: String,
     val closeAria: String,
-    val composerNote: String,
-    val composerAria: String
+    val placeholder: String,
+    val send: String,
+    val composerAria: String,
+    val newChat: String,
+    val history: String,
+    val historyEmpty: String,
+    val deleteChat: String,
+    val thinking: String,
+    val remaining: String,
+    val retry: String,
+    val empty: AiEmptyCopy,
+    val consent: AiConsentCopy,
+    val declined: AiDeclinedCopy,
+    val errors: Map<String, String>,
+    val session: AiSession
 ) {
+    /** One of the server's sentences for [code], or its general one. */
+    fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: "De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+
+    /** "Nog 7 van 10 berichten vandaag", or nothing without a limit. */
+    fun remainingText(usage: AiUsage): String =
+        if (usage.limit <= 0) "" else remaining.replaceFirst("%d", usage.remaining.toString()).replaceFirst("%d", usage.limit.toString())
+
     companion object {
         fun parse(o: JSONObject?) = AiCopy(
-            o.str("title").orEmpty(), o.str("status").orEmpty(),
-            o.obj("open").str("aria").orEmpty(),
-            o.obj("close").str("label").orEmpty(), o.obj("close").str("aria").orEmpty(),
-            o.obj("composer").str("note").orEmpty(), o.obj("composer").str("aria").orEmpty()
+            title = o.str("title").orEmpty(),
+            status = o.str("status").orEmpty(),
+            openAria = o.obj("open").str("aria").orEmpty(),
+            closeLabel = o.obj("close").str("label").orEmpty(),
+            closeAria = o.obj("close").str("aria").orEmpty(),
+            placeholder = o.obj("composer").str("placeholder").orEmpty(),
+            send = o.obj("composer").str("send") ?: "Versturen",
+            composerAria = o.obj("composer").str("aria").orEmpty(),
+            newChat = o.str("new_chat") ?: "Nieuw gesprek",
+            history = o.str("history") ?: "Gesprekken",
+            historyEmpty = o.str("history_empty") ?: "Nog geen gesprekken.",
+            deleteChat = o.str("delete_chat") ?: "Gesprek verwijderen",
+            thinking = o.str("thinking") ?: "Ownify AI denkt na…",
+            remaining = o.str("remaining") ?: "Nog %d van %d berichten vandaag",
+            retry = o.str("retry") ?: "Opnieuw proberen",
+            empty = AiEmptyCopy(
+                o.obj("empty").str("title").orEmpty(),
+                o.obj("empty").str("body").orEmpty(),
+                o.obj("empty").str("no_data").orEmpty(),
+                o.obj("empty").arr("suggestions").strings()
+            ),
+            consent = AiConsentCopy(
+                o.obj("consent").str("title").orEmpty(),
+                o.obj("consent").str("intro").orEmpty(),
+                o.obj("consent").arr("points").strings(),
+                o.obj("consent").str("accept").orEmpty(),
+                o.obj("consent").str("decline").orEmpty(),
+                o.obj("consent").str("footer").orEmpty()
+            ),
+            declined = AiDeclinedCopy(
+                o.obj("declined").str("title").orEmpty(),
+                o.obj("declined").str("body").orEmpty(),
+                o.obj("declined").str("review").orEmpty()
+            ),
+            errors = o.obj("errors").stringMap(),
+            session = AiSession.parse(o.obj("session"))
+        )
+    }
+}
+
+data class AiEmptyCopy(val title: String, val body: String, val noData: String, val suggestions: List<String>)
+data class AiConsentCopy(val title: String, val intro: String, val points: List<String>, val accept: String, val decline: String, val footer: String)
+data class AiDeclinedCopy(val title: String, val body: String, val review: String)
+
+/** Today's messages: [used] of [limit], [remaining] left. */
+data class AiUsage(val used: Int, val limit: Int, val remaining: Int) {
+    val out: Boolean get() = limit > 0 && remaining <= 0
+
+    companion object {
+        fun parse(o: JSONObject?) = AiUsage(o.int("used") ?: 0, o.int("limit") ?: 0, o.int("remaining") ?: 0)
+    }
+}
+
+/**
+ * The assistant at a glance (ai_summary() on the server): [consent] is
+ * accepted, declined or unknown; [available] false with [unavailable]
+ * ("unavailable" or "quota") and [notice] when it cannot answer now.
+ */
+data class AiSession(
+    val consent: String,
+    val available: Boolean,
+    val unavailable: String?,
+    val notice: String?,
+    val usage: AiUsage,
+    val hasData: Boolean
+) {
+    companion object {
+        fun parse(o: JSONObject?) = AiSession(
+            consent = o.str("consent") ?: "unknown",
+            available = o?.optBoolean("available", false) ?: false,
+            unavailable = o.str("unavailable"),
+            notice = o.str("notice"),
+            usage = AiUsage.parse(o.obj("usage")),
+            hasData = o.bool("has_data")
         )
     }
 }
@@ -800,6 +897,7 @@ sealed interface SettingsBlock {
     data class Toggles(val title: String, val lede: String?, val items: List<ToggleItem>) : SettingsBlock
     data class Rows(val title: String, val items: List<Pair<String, String>>) : SettingsBlock
     data class Note(val icon: String, val text: String) : SettingsBlock
+    data class Actions(val title: String, val items: List<ActionItem>) : SettingsBlock
 
     companion object {
         fun parse(o: JSONObject): SettingsBlock? =
@@ -824,12 +922,42 @@ sealed interface SettingsBlock {
                 )
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
                 "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty())
+                "actions" -> Actions(o.str("title").orEmpty(), o.arr("items").map(ActionItem::parse))
                 else -> null
             }
     }
 }
 
 data class ChoiceOption(val key: String, val label: String, val note: String?, val disabled: Boolean)
+
+/**
+ * A button that does one thing after "are you sure?" ("AI-gesprekken
+ * wissen"): posted to [endpoint] with [fields], as the website posts it.
+ */
+data class ActionItem(
+    val key: String,
+    val label: String,
+    val note: String?,
+    val question: String,
+    val confirm: String,
+    val cancel: String,
+    val endpoint: String,
+    val fields: Map<String, String>,
+    val danger: Boolean
+) {
+    companion object {
+        fun parse(o: JSONObject): ActionItem? {
+            val endpoint = o.str("endpoint") ?: return null
+            // Only the app's own endpoints, as a relative path — never anywhere else.
+            if (!endpoint.matches(Regex("^api/[a-z0-9/_-]+\\.php$"))) return null
+            return ActionItem(
+                o.str("key").orEmpty(), o.str("label").orEmpty(), o.str("note"),
+                o.str("question").orEmpty(), o.str("confirm").orEmpty(), o.str("cancel").orEmpty(),
+                endpoint, o.obj("fields").stringMap(), o.bool("danger")
+            )
+        }
+    }
+}
 data class StateItem(val label: String, val value: String?, val note: String?)
 /**
  * A switch. With a [key] it saves (api/profile/privacy.php): [on] and [note]

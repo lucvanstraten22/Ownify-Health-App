@@ -12,9 +12,9 @@ document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on. All five pages are built; the assistant is the room
-the future ChatGPT-based assistant will live in — only its screen and gestures
-exist today.
+whichever page you are on: **Ownify AI**, a health assistant that answers from
+the person's own data with Google Gemini on its free tier — see
+[docs/AI.md](docs/AI.md).
 
 ## Run it
 
@@ -45,17 +45,22 @@ database/
     schema.sql                the MySQL schema — repeatable, import and go
     seed-dev.sql              fake development data, never production
 includes/                     the data layer: db, session, auth, repositories
+    ai/                       Ownify AI: config and consent, the Gemini client, what goes
+                              along with a question, tools, prompt, the conversation store
 api/                          JSON endpoints for sign-in and profile edits
+    ai/                       the assistant: state, chat, consent, action, delete
 tools/
     check-config.php          what this machine is configured with; prints no secrets
     health-connect-test.sh    the whole phone-sync flow over curl, no phone needed
     hc-verify.php             that test's batch, and what each record must become
+    ai-test.php               Ownify AI end to end, against a stand-in for Gemini
+    ai-fake-gemini.php        that stand-in (PHP's built-in server only)
 pages/
     welcome.php               the opening screen, for everyone not signed in
     overview.php              the dashboard
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
-    goals.php                 Doelen — one primary goal and up to two others
+    goals.php                 Doelen — one primary goal and up to four others
     goal-detail.php           one goal in full, one per goal
     community.php             the leaderboard
     settings.php              Instellingen — categories, not settings
@@ -66,6 +71,8 @@ config/health.php             the health areas, their metrics and their trends
 config/community.php          leaderboard scopes, periods and copy
 config/goals.php              goal vocabulary, copy and the example goals
 config/settings.php           the settings tree, its screens and their copy
+config/ai.php                 Ownify AI: model, limits, consent version — no key
+config/ai-prompt.php          what the assistant is told about itself
 lib/render.php                escaping, page/component include, score formatting
 lib/health.php                demo handling, shared metrics, chart geometry
 lib/community.php             board assembly, formatting, the demo roster
@@ -85,8 +92,9 @@ components/
     scroll-top.php            floating glass control
     bottom-navigation.php     the five primary destinations (overview screen)
     app-dock.php              pull-up handle + tab bar, pinned above the rail
-    ai-empty-state.php        glass orb + name + status
-    ai-composer.php           reserved space for the future input interface
+    ai-consent.php            the question before anything goes to Gemini
+    ai-empty-state.php        glass orb + name + suggestions, and the conversation
+    ai-composer.php           the question field, send, today's count
     health-card.php           one of the three pillars, and the control that opens it
     health-trend.php          week / month chart, one or three series
     metric-tiles.php          level 2 — the few numbers that explain a score
@@ -123,6 +131,7 @@ assets/js/
     navigation-core.js        one gesture pipeline, routed by axis
     page-navigation.js        horizontal: the five-page rail
     ai-sheet.js               vertical: the assistant sheet
+    ai-chat.js                Ownify AI inside it: consent, conversation, history
     detail-layer.js           drilling into an item, and swiping back
     health-trend.js           week / month switch and the line draw-on
     community.js              scope and period switching
@@ -266,8 +275,7 @@ ever `preventDefault`ed once it is a gesture of ours — a swipe between pages,
 or the sheet being dragged — which stops the browser from starting to scroll
 halfway through it and a click from firing when it ends. So an upward drag in
 the page body scrolls the page and never opens the assistant, and a downward
-drag in the middle of the sheet is left free for a future conversation to
-scroll.
+drag in the middle of the sheet is left free for the conversation to scroll.
 
 **Why you always come back where you were.** The sheet sits *above* the rail
 and never touches it, so the page underneath keeps its state and scroll
@@ -335,7 +343,7 @@ single invented value ever reaching the shipped page. It is false by default.
 ## Doelen
 
 One question, answered in one screen: **what am I working toward, and how far
-am I?** One primary goal, up to two secondary ones, their progress, and when
+am I?** One primary goal, up to four secondary ones, their progress, and when
 each one ends. Everything deeper is one tap away.
 
 ```
@@ -350,11 +358,13 @@ PRIMAIR DOEL
 │ Nog 18 dagen · t/m 4 okt      ›  │
 └──────────────────────────────────┘
 
-OVERIGE DOELEN   ×2
+OVERIGE DOELEN   ×4
 ```
 
-**Three goals, one primary.** The limit is enforced in one place and shown in
-two: the `+` disables itself and the line under the board says why. A paused
+**Five goals, one primary.** The limit is one number, `limits` → `active` in
+`config/goals.php`; it is enforced in one place (`GOAL_MAX_ACTIVE`,
+`includes/goals.php`, read from that number) and shown in two: the `+`
+disables itself and the line under the board says why. A paused
 goal keeps its slot; only completing or deleting one frees it. There is always
 exactly one primary goal — promoting a secondary demotes the current primary in
 the same move, and deleting the primary hands the flag to the next goal, so the
@@ -478,7 +488,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.1.1
+OVER         Over de app · Versie Beta 1.2.0
 
              [ Uitloggen ]
                Account verwijderen
@@ -490,8 +500,8 @@ which is what lets "Apparaten & Gezondheid" and "Eerste dag van de week" keep
 their full names on a 320px phone.
 
 **One template, ten screens.** `pages/settings-detail.php` renders a screen
-from a list of blocks and knows eight kinds — `identity`, `fields`,
-`integrations`, `choice`, `states`, `toggles`, `rows`, `note`. Adding a
+from a list of blocks and knows ten kinds — `identity`, `fields`, `signin`,
+`integrations`, `choice`, `states`, `toggles`, `actions`, `rows`, `note`. Adding a
 settings screen is config, not another file. They use the same detail layer
 Gezondheid and Doelen use, so back is the same swipe everywhere.
 
@@ -542,8 +552,9 @@ MySQL schema behind them — see **[docs/DATABASE.md](docs/DATABASE.md)** for th
 tables, the privacy model and where the future integrations plug in.
 
 What works today: email/password sign-in, Google sign-in once it is
-configured, changing a username, uploading a profile picture. Failed sign-ins
-are limited to 5 per 15 minutes per name and network address.
+configured, changing a username, uploading a profile picture, and Ownify AI
+once its Gemini key is set ([docs/AI.md](docs/AI.md)). Failed sign-ins are
+limited to 5 per 15 minutes per name and network address.
 
 The Ownify app can sign in as an account too — its own token, never a cookie —
 through `api/auth/app-login.php`, `app-register.php`, `app-google.php` and
@@ -587,23 +598,32 @@ layout.
 
 ## The assistant layer
 
-Intentionally empty, and honest about it. There is **no model, no API, no
-conversation, no message history and no input field** — the screen is the room,
-not the assistant. It introduces no colours, radii, spacing or type of its own:
-`ai.css` only arranges tokens from `theme.css`, and the dotted ring around the
-orb is the same "no data yet" idiom the dashboard uses.
+**Ownify AI** lives in the sheet, on the website and in the Android app alike:
+a personal health assistant that answers from the person's own sleep,
+nutrition, training, activity, measurements, scores and goals, with Google
+Gemini on the free tier of its API. The whole setup — the migration, where to
+get a Gemini API key, where the key goes, the limits, consent and the tools —
+is in **[docs/AI.md](docs/AI.md)**.
 
-Reserved for the next stage: `.ai-main` (where the conversation will render)
-and `components/ai-composer.php` (where the input interface will go — currently
-an outline and a caption, deliberately nothing that could be mistaken for a
-working field).
+In short: both apps talk to the same endpoints (`api/ai/`), and only the
+server talks to Gemini, with a key that never leaves it. Nothing is sent
+before the person says yes, and they can say no again, or wipe their
+conversations, in Instellingen → Privacy. Everybody gets 10 questions a day,
+counted on the server. The assistant explains; it does not diagnose, and it
+can prepare a goal that is only added when the person confirms it.
+
+Screens: the consent question, *Ownify AI staat uit*, the empty state (the
+orb, the name, three suggestions), the conversation, the history, and a notice
+for every way it can fail — never Gemini's own text. `ai.css` only arranges
+tokens from `theme.css`, as before.
 
 ## Not in this version
 
-A working chatbot of any kind, ChatGPT or other API calls, AI responses,
-message history, an input field, prompt suggestions, persistent goal storage,
-automatic goal progress, stored settings, Apple Health / Health Connect
-integrations, notifications, a light theme, English, imperial units, real
-medical analysis and real personal recommendations.
+Live literature search and links to studies (the assistant answers research
+questions from general knowledge and says so), speech or images in the
+assistant, persistent goal storage, automatic goal progress, stored settings,
+Apple Health / Health Connect integrations, notifications, a light theme,
+English, imperial units, real medical analysis and real personal
+recommendations.
 The data layer, focus system, screen deck and component boundaries are
 prepared for them; none of them are implemented.
