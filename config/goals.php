@@ -127,7 +127,7 @@ return [
         'add_aria'       => 'Nieuw doel toevoegen',
         'slots_free'     => 'Nog %d van de 5 doelen vrij.',
         'slots_one'      => 'Nog 1 van de 5 doelen vrij.',
-        'slots_full'     => 'Je vijf doelplekken zijn bezet. Rond een doel af of verwijder er een om ruimte te maken.',
+        'slots_full'     => 'Je 5 doelplekken zijn bezet. Behaal een doel of verwijder er een om ruimte te maken.',
         'paused_counts'  => 'Een gepauzeerd doel houdt zijn plek.',
         'paused_line'    => 'Telt nu niet mee',
         'open_aria'      => 'Open details van %s',
