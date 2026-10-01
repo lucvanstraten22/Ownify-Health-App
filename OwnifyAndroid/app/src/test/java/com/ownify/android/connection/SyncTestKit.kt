@@ -251,6 +251,10 @@ class FakeOwnifyServer {
     @Volatile
     var privacySaves = true
 
+    /** Whether api/profile/delete.php fails on the server's side (500) instead of deleting. */
+    @Volatile
+    var deleteFails = false
+
     /* ------------------------------------------------------ Ownify AI */
 
     /** How the assistant's chat.php answers: as normal, past today's limit (429), or with Gemini's free quota used up (503). */
@@ -369,6 +373,18 @@ class FakeOwnifyServer {
                     !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
                     bearer == TEST_TOKEN -> reply(exchange, 403, """{"ok":false,"error":"Deze koppeling mag je account niet lezen."}""")
                     else -> reply(exchange, 200, stateBody)
+                }
+            }
+            // Deleting the account (api/profile/delete.php): the token goes with the account's rows.
+            path.endsWith("/profile/delete.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    deleteFails -> reply(exchange, 500, """{"ok":false,"error":"Je account kon niet worden verwijderd."}""")
+                    else -> {
+                        revoked += bearer!!
+                        reply(exchange, 200, """{"ok":true,"redirect":null,"message":"Je account is verwijderd, met alles wat erbij hoorde.","link":null}""")
+                    }
                 }
             }
             // Two of the app's writes, with the account token.

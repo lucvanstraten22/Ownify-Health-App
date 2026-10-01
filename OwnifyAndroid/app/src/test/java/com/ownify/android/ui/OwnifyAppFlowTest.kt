@@ -38,6 +38,7 @@ import com.ownify.android.connection.OwnifyApi
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyCredential
 import com.ownify.android.connection.OwnifyScope
+import com.ownify.android.connection.OwnifyState
 import com.ownify.android.connection.OwnifySyncRunner
 import com.ownify.android.connection.OwnifySyncStatusPrefs
 import com.ownify.android.connection.MemoryTokenStorage
@@ -205,6 +206,59 @@ class OwnifyAppFlowTest {
         assertNull(MemoryTokenStorage.load())
         assertEquals("Bearer $ACCOUNT_TOKEN", server.requestsTo("app-logout.php").single().headers["authorization"])
         assertTrue(ACCOUNT_TOKEN in server.revoked)
+    }
+
+    /** Instellingen → Account verwijderen, both confirmation steps, the final one tapped. */
+    private fun deleteTheAccount() {
+        button("Instellingen").performClick()
+        button("Account verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Account verwijderen?")
+        button("Ja, verwijderen").performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Weet je het zeker?")
+        button("Definitief verwijderen").performSemanticsAction(SemanticsActions.OnClick)
+    }
+
+    @Test
+    fun `deleting the account - back to the opening screen with Inloggen and Registreren, and reopening stays signed out`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        deleteTheAccount()
+
+        waitFor("Registreren")
+        compose.onAllNodes(hasText("Inloggen") and hasClickAction()).onLast().assertIsDisplayed()
+        compose.onAllNodes(hasText("Registreren") and hasClickAction()).onLast().assertIsDisplayed()
+        waitFor("Je account is verwijderd")
+        // Nothing of the account is left: not its pages, not its credential, not the sheet.
+        assertTrue(compose.onAllNodesWithText("Gezondheidsscore", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("Weet je het zeker?").fetchSemanticsNodes().isEmpty())
+        assertNull(MemoryTokenStorage.load())
+        assertNull(OwnifyAppState.data)
+        assertEquals("verwijderen", form(server.requestsTo("profile/delete.php").single())["confirm"])
+
+        // Reopening the app: nothing to restore.
+        val reads = server.requestsTo("app/state.php").size
+        OwnifyConnection.reset()
+        OwnifyConnection.start(context)
+        waitFor("Registreren")
+        assertTrue(OwnifyConnection.state is OwnifyState.NotConnected)
+        assertEquals(reads, server.requestsTo("app/state.php").size)
+    }
+
+    @Test
+    fun `deleting the account fails - the error in the sheet, still signed in, nothing forgotten`() {
+        server.deleteFails = true
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        deleteTheAccount()
+
+        waitFor("Je account kon niet worden verwijderd.")
+        compose.onAllNodes(hasText("Definitief verwijderen") and hasClickAction()).onLast().assertIsDisplayed()
+        assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
+        assertTrue(compose.onAllNodesWithText("Registreren").fetchSemanticsNodes().isEmpty())
     }
 
     @Test
@@ -428,6 +482,8 @@ class OwnifyAppFlowTest {
         toggle.performSemanticsAction(SemanticsActions.OnClick)
         waitFor("De assistent werkt niet, en er gaat niets naar Gemini.")
         toggle.assertIsOff()
+        // The switch moves at once; the save is on its way.
+        compose.waitUntil(10_000) { server.requestsTo("privacy.php").isNotEmpty() && server.aiConsent == "declined" }
         assertEquals("ai_consent=0", server.requestsTo("privacy.php").single().body.optString("form"))
         assertEquals("declined", server.aiConsent)
     }

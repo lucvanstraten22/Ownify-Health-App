@@ -3,6 +3,8 @@ package com.ownify.android.data
 import android.content.Context
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyResult
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 /** How a change the person asked for went. */
@@ -55,6 +57,11 @@ object OwnifyActions {
      * Deleting the account (api/profile/delete.php, with the confirmation the
      * endpoint insists on). Once the server says it is gone, the phone lets go
      * of the token that went with it and shows the server's words.
+     *
+     * The caller is the confirmation sheet, which leaves the screen with the
+     * account's pages: so the signing out is finished whatever happens to the
+     * sheet (NonCancellable), and the opening screen is chosen before the
+     * pages are emptied — never a moment of the signed-in app with nothing in it.
      */
     suspend fun deleteAccount(context: Context, fallback: String): Outcome =
         run(context, fallback, reload = false, after = { token, body ->
@@ -62,8 +69,10 @@ object OwnifyActions {
                 val href = l.optString("href")
                 if (href.startsWith("https://")) com.ownify.android.connection.OwnifyLink(href, l.optString("label")) else null
             }
-            OwnifyAppState.clear()
-            OwnifyConnection.accountDeleted(context.applicationContext, token, body.optString("message"), link)
+            withContext(NonCancellable) {
+                OwnifyConnection.accountDeleted(context.applicationContext, token, body.optString("message"), link)
+                OwnifyAppState.clear()
+            }
         }) { token -> OwnifyConnection.api.form("api/profile/delete.php", mapOf("confirm" to "verwijderen"), token) }
 
     /** The profile picture, as the website uploads it. */

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -126,6 +125,12 @@ fun OverlayFrame(
                 )
         )
 
+        /* The bottom is safeDrawing's, which already holds the software keyboard
+           (whichever is taller of it and the navigation bar): the panel sits
+           above the keys and, when there is not room for all of it, scrolls
+           (PanelColumn). The keyboard is counted once — adding imePadding() on
+           top left the panel the screen minus two keyboards, nothing at all
+           when the keyboard is a tall one. */
         val frame = when (placement) {
             Placement.Center -> Modifier
                 .fillMaxSize()
@@ -134,7 +139,6 @@ fun OverlayFrame(
                     top = insets.calculateTopPadding() + Ownify.Space4,
                     bottom = insets.calculateBottomPadding() + Ownify.Space4
                 )
-                .imePadding()
             Placement.UnderHeader -> Modifier.fillMaxSize()
         }
 
