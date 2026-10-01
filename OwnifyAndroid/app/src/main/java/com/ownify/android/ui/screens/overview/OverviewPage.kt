@@ -288,16 +288,16 @@ private const val HOLD_MS = 280L
 /** The reading bubble, for tests. */
 const val GoalReadingTag = "goal-reading"
 
-/** `.goal__tip`: the reading, in a small pill of dark glass. */
+/** `.goal__tip`: the reading, in a small near-solid pill (`--tip-surface`). */
 @Composable
 private fun ReadingBubble(text: String, modifier: Modifier) {
     val shape = RoundedCornerShape(50)
     Box(
         modifier
             .clearAndSetSemantics { testTag = GoalReadingTag }
-            .shadow(14.dp, shape, ambientColor = Color.Black.copy(alpha = 0.35f), spotColor = Color.Black.copy(alpha = 0.35f))
+            .shadow(14.dp, shape, ambientColor = Ownify.shade(0.35f), spotColor = Ownify.shade(0.35f))
             .clip(shape)
-            .background(Color(40, 40, 42).copy(alpha = 0.92f))
+            .background(Ownify.TipSurface)
             .border(1.dp, Ownify.GlassBorder, shape)
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
@@ -333,7 +333,7 @@ private fun Milestones(goal: GoalCard) {
                                     drawCircle(Ownify.Health.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
                                     drawCircle(Ownify.Health)
                                 } else {
-                                    drawCircle(Ownify.white(0.18f))
+                                    drawCircle(Ownify.ink(0.18f))
                                 }
                             }
                     )
@@ -377,7 +377,7 @@ private fun InsightsCard(insights: Insights) {
                     Modifier
                         .fillMaxWidth()
                         .clip(shape)
-                        .background(Ownify.white(0.035f))
+                        .background(Ownify.fill(0.035f))
                         .border(1.dp, Ownify.GlassHairline, shape)
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
@@ -482,14 +482,14 @@ fun Skeleton(modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = Rou
     Box(
         modifier
             .clip(shape)
-            .background(Ownify.white(0.07f))
+            .background(Ownify.fill(0.07f))
             .drawWithContent {
                 drawContent()
                 if (still) return@drawWithContent
                 val x = sweep * size.width
                 drawRect(
                     Brush.horizontalGradient(
-                        listOf(Color.White.copy(alpha = 0f), Color.White.copy(alpha = 0.11f), Color.White.copy(alpha = 0f)),
+                        listOf(Ownify.glint(0f), Ownify.glint(0.11f), Ownify.glint(0f)),
                         startX = x, endX = x + size.width
                     )
                 )
@@ -528,14 +528,14 @@ private fun ScrollTop(scroll: ScrollState) {
                     // --shadow-float
                     drawCircle(
                         Brush.radialGradient(
-                            0f to Color.Black.copy(alpha = 0.3f), 1f to Color.Black.copy(alpha = 0f),
+                            0f to Ownify.ShadowFloat, 1f to Ownify.ShadowFloat.copy(alpha = 0f),
                             center = center + Offset(0f, 12.dp.toPx()), radius = size.width / 2f + 28.dp.toPx()
                         ),
                         radius = size.width / 2f + 28.dp.toPx(), center = center + Offset(0f, 12.dp.toPx())
                     )
                 }
                 .clip(CircleShape)
-                .background(Color(48, 45, 47).copy(alpha = 0.72f))
+                .background(Ownify.ground(0.72f))
                 .border(1.dp, Ownify.GlassBorder, CircleShape)
                 .clickable(interaction, indication = null, role = Role.Button, enabled = show) {
                     scope.launch { scroll.animateScrollTo(0) }

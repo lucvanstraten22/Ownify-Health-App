@@ -25,10 +25,11 @@ $page     = $data['settings_page'];
 $id       = $data['settings_page_id'];
 $profile  = $settings['profile'];
 
-/* Any screen offering a choice says once, at the foot, that it is not saved. */
+/* Any screen offering a choice says once, at the foot, that it is not saved —
+   except for a choice that is (`saves`: the theme). */
 $hasChoice = false;
 foreach ($page['blocks'] as $block) {
-    if ($block['type'] === 'choice') { $hasChoice = true; }
+    if ($block['type'] === 'choice' && empty($block['saves'])) { $hasChoice = true; }
 }
 ?>
 <article class="detail settings-detail" data-detail="settings-<?= e($id) ?>" data-accent="health"

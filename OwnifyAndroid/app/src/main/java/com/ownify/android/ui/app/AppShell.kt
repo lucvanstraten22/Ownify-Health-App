@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ownify.android.data.AppData
+import com.ownify.android.data.withTheme
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.Ground
 import com.ownify.android.ui.design.GroundPlacement
@@ -73,7 +74,10 @@ class ShellScreens(
  * the panels in front of everything.
  */
 @Composable
-fun AppShell(data: AppData, screens: ShellScreens, onShell: ((ShellState) -> Unit)? = null) {
+fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> Unit)? = null) {
+    // The theme on this phone, where the settings name it (AppData.withTheme).
+    val theme = Ownify.mode.key
+    val data = remember(source, theme) { source.withTheme(theme) }
     val scope = rememberCoroutineScope()
     val pageIds = remember(data.navigation) { data.navigation.map { it.id } }
     val start = remember(data.navigation) { data.navigation.firstOrNull { it.active }?.id ?: "overview" }
@@ -174,7 +178,7 @@ fun AppShell(data: AppData, screens: ShellScreens, onShell: ((ShellState) -> Uni
                         Modifier
                             .fillMaxSize()
                             .graphicsLayer { alpha = shell.aiProgress * 0.5f }
-                            .background(Color.Black.copy(alpha = 0.42f))
+                            .background(Ownify.scrim(0.42f))
                     )
                 }
 
@@ -251,11 +255,11 @@ private fun DetailLayer(shell: ShellState, data: AppData, screens: ShellScreens)
                 // Lifted off the rail while it is anywhere but parked.
                 drawBoxShadows(
                     androidx.compose.ui.graphics.RectangleShape,
-                    listOf(BoxShadow(x = (-18).dp, y = 0.dp, blur = 42.dp, color = Color.Black.copy(alpha = 0.34f))),
+                    listOf(BoxShadow(x = (-18).dp, y = 0.dp, blur = 42.dp, color = Ownify.shade(0.34f))),
                     shadows
                 )
                 drawContent()
-                drawRect(Ownify.white(0.07f), size = size.copy(width = 1.dp.toPx()))
+                drawRect(Ownify.glint(0.07f), size = size.copy(width = 1.dp.toPx()))
             }
             .ground(ground)
             .then(if (shell.aiOpen || !shell.detailShown) Modifier.clearAndSetSemantics { } else Modifier)
@@ -281,7 +285,7 @@ private fun Sheet(shell: ShellState, content: @Composable () -> Unit) {
             .fillMaxSize()
             .graphicsLayer { translationY = (1f - shell.aiProgress) * with(density) { height.toPx() } }
             .drawWithContent {
-                drawBoxShadows(shape, listOf(BoxShadow(y = (-18).dp, blur = 42.dp, color = Color.Black.copy(alpha = 0.36f))), shadows)
+                drawBoxShadows(shape, listOf(BoxShadow(y = (-18).dp, blur = 42.dp, color = Ownify.shade(0.36f))), shadows)
                 drawContent()
             }
             .graphicsLayer {

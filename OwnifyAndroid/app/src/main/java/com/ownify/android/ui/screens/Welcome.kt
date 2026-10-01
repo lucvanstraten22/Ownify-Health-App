@@ -256,7 +256,7 @@ private fun WelcomeMark(size: Dp) {
             val r = 68f * unit
             val angle = if (still) 0f else turn
             rotate(angle) {
-                drawCircle(Color.White.copy(alpha = 0.07f), radius = r, style = Stroke(7f * unit))
+                drawCircle(Ownify.ink(0.07f), radius = r, style = Stroke(7f * unit))
                 val sweep = 270f * draw.value
                 if (sweep > 0f) {
                     val topLeft = Offset(center.x - r, center.y - r)
@@ -313,14 +313,14 @@ fun GlassOrb(size: Dp, scale: Float, backdrop: Backdrop?, ground: GroundPlacemen
             .drawBehind {
                 val r = this.size.minDimension / 2f
                 // box-shadow: 0 20px 42px rgba(0,0,0,.28) — around the sphere, never under it
-                drawBoxShadows(CircleShape, listOf(BoxShadow(y = 20.dp, blur = 42.dp, color = Color.Black.copy(alpha = 0.28f))), shadows)
+                drawBoxShadows(CircleShape, listOf(BoxShadow(y = 20.dp, blur = 42.dp, color = Ownify.shade(0.28f))), shadows)
                 // radial-gradient(120% 120% at 30% 22%, …)
                 drawCircle(
                     Brush.radialGradient(
-                        0f to Color.White.copy(alpha = 0.24f),
-                        0.34f to Color.White.copy(alpha = 0.09f),
-                        0.62f to Color.White.copy(alpha = 0.02f),
-                        1f to Color.White.copy(alpha = 0.06f),
+                        0f to Ownify.glint(0.24f),
+                        0.34f to Ownify.glint(0.09f),
+                        0.62f to Ownify.glint(0.02f),
+                        1f to Ownify.glint(0.06f),
                         center = Offset(this.size.width * 0.30f, this.size.height * 0.22f),
                         radius = this.size.width * 1.2f
                     ),
@@ -331,13 +331,13 @@ fun GlassOrb(size: Dp, scale: Float, backdrop: Backdrop?, ground: GroundPlacemen
                 drawBoxShadows(
                     CircleShape,
                     listOf(
-                        BoxShadow(y = 2.dp, blur = 1.dp, color = Color.White.copy(alpha = 0.24f), inset = true),
-                        BoxShadow(y = (-20).dp, blur = 30.dp, color = Color.Black.copy(alpha = 0.20f), inset = true)
+                        BoxShadow(y = 2.dp, blur = 1.dp, color = Ownify.glint(0.24f), inset = true),
+                        BoxShadow(y = (-20).dp, blur = 30.dp, color = Ownify.shade(0.20f), inset = true)
                     ),
                     shadows
                 )
                 // border: 1px solid rgba(255,255,255,.16)
-                drawCircle(Color.White.copy(alpha = 0.16f), radius = r - 0.5.dp.toPx(), style = Stroke(1.dp.toPx()))
+                drawCircle(Ownify.glint(0.16f), radius = r - 0.5.dp.toPx(), style = Stroke(1.dp.toPx()))
             }
     ) {
         // ::after — inset 9% 20% 54% 17%: the specular sheen, blurred 3px
@@ -370,11 +370,12 @@ private fun sheen(size: Size): Brush {
     val k = sqrt((maxOf(cx, size.width - cx) / sx).pow(2) + (maxOf(cy, size.height - cy) / sy).pow(2))
     val rx = sx * k
     val ry = sy * k
+    val light = intArrayOf(Ownify.glint(0.30f).toArgb(), Ownify.glint(0f).toArgb())
     return object : ShaderBrush() {
         override fun createShader(size: Size): Shader =
             android.graphics.RadialGradient(
                 cx, cy, rx,
-                intArrayOf(Color.White.copy(alpha = 0.30f).toArgb(), Color.White.copy(alpha = 0f).toArgb()),
+                light,
                 floatArrayOf(0f, 0.72f),
                 android.graphics.Shader.TileMode.CLAMP
             ).apply { setLocalMatrix(android.graphics.Matrix().apply { setScale(1f, ry / rx, cx, cy) }) }

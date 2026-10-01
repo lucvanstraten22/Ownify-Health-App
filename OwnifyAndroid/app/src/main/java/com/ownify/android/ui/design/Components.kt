@@ -97,25 +97,26 @@ import androidx.compose.ui.semantics.heading
 // Type — the website's text classes
 // ---------------------------------------------------------------------------
 
+/** The text classes, each in the theme on screen (so read when used, not kept). */
 object JStyle {
     /** `.card__title`, `.page-intro__title`, `.score-ring__label`. */
-    val Section = OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
+    val Section: TextStyle get() = OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
 
     /** `.card__eyebrow` (its own -0.01em). */
-    val Eyebrow = OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em)
+    val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em)
 
     /** `.card__caption`, `.settings-eyebrow`: small caps, spaced. */
-    val Caption = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
+    val Caption: TextStyle get() = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
 
     /** `.card__subtitle`, `.goal__name`, `.confirm__title`. */
-    val Subtitle = OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em)
+    val Subtitle: TextStyle get() = OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em)
 
-    val Meta = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)
-    val Lede = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary)
-    val Small = OwnifyType.style(Ownify.FsSmall)
-    val Label = OwnifyType.style(Ownify.FsLabel)
-    val Tiny = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
-    val Body = OwnifyType.Base
+    val Meta: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)
+    val Lede: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary)
+    val Small: TextStyle get() = OwnifyType.style(Ownify.FsSmall)
+    val Label: TextStyle get() = OwnifyType.style(Ownify.FsLabel)
+    val Tiny: TextStyle get() = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
+    val Body: TextStyle get() = OwnifyType.Base
 }
 
 /** Text in one of [JStyle]'s styles, without Material's defaults. */
@@ -310,7 +311,7 @@ fun IconTile(
     radius: Dp = Ownify.RadiusSm,
     iconSize: Dp = 18.dp,
     color: Color = Ownify.TextSecondary,
-    background: Color = Ownify.white(0.065f),
+    background: Color = Ownify.fill(0.065f),
     border: Color = Ownify.GlassHairline
 ) {
     val shape = RoundedCornerShape(radius)
@@ -343,7 +344,7 @@ fun Chip(
     dot: Boolean = false,
     quiet: Boolean = false,
     border: Color = Ownify.GlassHairline,
-    background: Color = Ownify.white(0.055f),
+    background: Color = Ownify.fill(0.055f),
     color: Color = if (muted) Ownify.TextMuted else Ownify.TextSecondary,
     leading: (@Composable () -> Unit)? = null
 ) {
@@ -372,7 +373,7 @@ fun Chip(
     }
 }
 
-/** `.chip--accent`: the chip in [accent] — its border at 34%, its fill at 16%, its text lightened. */
+/** `.chip--accent`: the chip in [accent] — its border at 34%, its fill at 16%, its text tinted (lighter in Dark Mode, deeper in White). */
 @Composable
 fun AccentChip(text: String, accent: Color, modifier: Modifier = Modifier) {
     Chip(
@@ -380,7 +381,7 @@ fun AccentChip(text: String, accent: Color, modifier: Modifier = Modifier) {
         modifier,
         border = Ownify.mix(accent, 0.34f, Color.Transparent),
         background = Ownify.mix(accent, 0.16f, Color.Transparent),
-        color = Ownify.mix(accent, 0.40f, Color.White)
+        color = Ownify.tint(accent, 0.40f)
     )
 }
 
@@ -431,7 +432,8 @@ data class BtnLook(
 ) {
     companion object {
         /** `.confirm__yes--final`: the step that cannot be undone, in the miss red; 60% while it works. */
-        val Final = BtnLook(border = Ownify.mix(Ownify.Miss, 0.60f, Color.Transparent), fill = Ownify.mix(Ownify.Miss, 0.24f, Color.Transparent), disabledAlpha = 0.6f)
+        val Final: BtnLook
+            get() = BtnLook(border = Ownify.mix(Ownify.Miss, 0.60f, Color.Transparent), fill = Ownify.mix(Ownify.Miss, 0.24f, Color.Transparent), disabledAlpha = 0.6f)
     }
 }
 
@@ -497,7 +499,7 @@ fun Meter(
     height: Dp = 6.dp,
     emptyHeight: Dp = 4.dp,
     fill: Brush? = null,
-    track: Color = Ownify.white(0.08f)
+    track: Color = Ownify.fill(0.08f)
 ) {
     val empty = share == null
     val shown = animatedShare((share ?: 0f).coerceIn(0f, 1f), play)
@@ -512,7 +514,7 @@ fun Meter(
                     val on = 2.dp.toPx()
                     val period = 8.dp.toPx()
                     while (x < size.width) {
-                        drawRect(Ownify.white(0.11f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
+                        drawRect(Ownify.ink(0.11f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
                         x += period
                     }
                     return@drawBehind
@@ -571,7 +573,7 @@ fun ScoreRing(
             val unit = this.size.width / 160f
             // ::before — inset 18%, a radial glow reaching transparent at 70% of the corner distance.
             val side = this.size.width * 0.64f
-            val glowColor = if (empty) Color.White.copy(alpha = 0.05f) else glow.copy(alpha = 0.16f)
+            val glowColor = if (empty) Ownify.glint(0.05f) else glow.copy(alpha = 0.16f)
             drawCircle(
                 brush = Brush.radialGradient(
                     0f to glowColor,
@@ -586,7 +588,7 @@ fun ScoreRing(
             val r = 68f * unit
             if (empty) {
                 drawCircle(
-                    color = Color.White.copy(alpha = 0.26f),
+                    color = Ownify.ink(0.26f),
                     radius = r,
                     style = Stroke(
                         width = 3.5f * unit,
@@ -597,7 +599,7 @@ fun ScoreRing(
                 return@Canvas
             }
 
-            drawCircle(color = Color.White.copy(alpha = 0.07f), radius = r, style = Stroke(10f * unit))
+            drawCircle(color = Ownify.ink(0.07f), radius = r, style = Stroke(10f * unit))
 
             if (shown > 0f) {
                 val topLeft = Offset(center.x - r, center.y - r)
@@ -655,7 +657,7 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
     val box = modifier
         .fillMaxWidth()
         .clip(shape)
-        .background(Ownify.white(0.035f))
+        .background(Ownify.fill(0.035f))
         .border(1.dp, Ownify.GlassHairline, shape)
         .cssPadding(PaddingValues(vertical = Ownify.Space3, horizontal = Ownify.Space2), border = 1.dp)
 
@@ -753,7 +755,7 @@ fun RangeSwitch(
             modifier
                 .then(if (wide) Modifier.fillMaxWidth() else Modifier)
                 .clip(shape)
-                .background(Ownify.white(0.04f))
+                .background(Ownify.fill(0.04f))
                 .border(1.dp, Ownify.GlassHairline, shape)
                 .cssPadding(PaddingValues(3.dp), border = 1.dp)
                 .semantics { if (label != null) contentDescription = label },
@@ -774,8 +776,8 @@ fun RangeSwitch(
                             if (active) {
                                 val outline = shape.createOutline(size, layoutDirection, this)
                                 val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
-                                drawPath(path, Brush.verticalGradient(listOf(Ownify.white(0.12f), Ownify.white(0.03f))))
-                                drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.08f), inset = true)), shadows, outline)
+                                drawPath(path, Brush.verticalGradient(listOf(Ownify.glint(0.12f), Ownify.glint(0.03f))))
+                                drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows, outline)
                                 drawBorder(outline, Ownify.GlassHairline)
                             }
                             drawContent()
@@ -794,12 +796,12 @@ fun RangeSwitch(
     }
 }
 
-/** `.switch`: 42 × 25, the knob 17; on, the health green at 34% and a white knob moved 17. */
+/** `.switch`: 42 × 25, the knob 17 (`--switch-knob`); on, the health green at 34% and a white knob moved 17. */
 @Composable
 fun Toggle(on: Boolean, modifier: Modifier = Modifier, dimmed: Boolean = false) {
     val shape = RoundedCornerShape(50)
     val x by animateDpAsState(if (on) 17.dp else 0.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "knob")
-    val fill = if (on) Ownify.Health.copy(alpha = 0.34f) else Ownify.white(0.07f)
+    val fill = if (on) Ownify.Health.copy(alpha = 0.34f) else Ownify.fill(0.07f)
     val border = if (on) Ownify.Health.copy(alpha = 0.34f) else Ownify.GlassBorderSoft
     Box(
         modifier
@@ -814,7 +816,7 @@ fun Toggle(on: Boolean, modifier: Modifier = Modifier, dimmed: Boolean = false) 
                 // top: 3px; left: 3px — inside the 1 px border.
                 .offset { IntOffset((4.dp + x).roundToPx(), 4.dp.roundToPx()) }
                 .size(17.dp)
-                .background(if (on) Color.White else Ownify.white(0.55f), CircleShape)
+                .background(if (on) Color.White else Ownify.SwitchKnob, CircleShape)
         )
     }
 }
@@ -841,7 +843,7 @@ fun JInput(
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(radius)
     val border = if (focused) Ownify.Health.copy(alpha = 0.5f) else Ownify.GlassBorderSoft
-    val fill = if (focused) Ownify.white(0.07f) else Ownify.white(0.05f)
+    val fill = if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f)
     // A field's text, like a button's, keeps `letter-spacing: normal`.
     val style = OwnifyType.style(textSize, color = Ownify.TextPrimary, lineHeight = 1.3.em, tracking = 0.sp)
 

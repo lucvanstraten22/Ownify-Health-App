@@ -314,7 +314,7 @@ fun AvatarCircle(path: String?, size: Dp, iconSize: Dp, modifier: Modifier = Mod
         modifier
             .size(size)
             .clip(CircleShape)
-            .background(Ownify.white(0.07f))
+            .background(Ownify.fill(0.07f))
             .border(1.dp, Ownify.GlassHairline, CircleShape)
     ) {
         Avatar(path, iconSize = iconSize, iconColor = Ownify.TextMuted)
@@ -322,7 +322,7 @@ fun AvatarCircle(path: String?, size: Dp, iconSize: Dp, modifier: Modifier = Mod
 }
 
 /** The field look the panel's inputs share: at least 44 high, the soft border, `.05`. */
-private fun Modifier.fieldBox(fill: Color = Ownify.white(0.05f)): Modifier {
+private fun Modifier.fieldBox(fill: Color = Ownify.fill(0.05f)): Modifier {
     val shape = RoundedCornerShape(Ownify.RadiusSm)
     return this
         .heightIn(min = 44.dp)
@@ -356,7 +356,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
                 OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary),
                 Modifier
                     .clip(shape)
-                    .background(Ownify.white(0.08f))
+                    .background(Ownify.fill(0.08f))
                     .border(1.dp, Ownify.GlassBorderSoft, shape)
                     .cssPadding(PaddingValues(horizontal = Ownify.Space2, vertical = 3.dp), border = 1.dp),
                 maxLines = 1
@@ -379,7 +379,7 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
         val interaction = remember { MutableInteractionSource() }
         val pressed by interaction.collectIsPressedAsState()
         val fill by animateColorAsState(
-            if (pressed) Ownify.white(0.08f) else Ownify.white(0.05f),
+            if (pressed) Ownify.fill(0.08f) else Ownify.fill(0.05f),
             tween(Ownify.FastMs, easing = Ownify.Ease),
             label = "nav"
         )
@@ -587,7 +587,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                     .fillMaxWidth()
                     .padding(top = Ownify.Space3)
                     .clip(shape)
-                    .background(Ownify.white(0.04f))
+                    .background(Ownify.fill(0.04f))
                     .border(1.dp, Ownify.GlassHairline, shape)
                     .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }
@@ -630,7 +630,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
             .alpha(if (toggleBusy) 0.7f else 1f)
             .heightIn(min = 56.dp)
             .clip(shape)
-            .background(Ownify.white(0.05f))
+            .background(Ownify.fill(0.05f))
             .border(1.dp, Ownify.GlassBorderSoft, shape)
             .clickable(enabled = !toggleBusy, role = Role.Switch) {
                 val before = allowed
@@ -759,7 +759,7 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Ownify.white(0.04f))
+            .background(Ownify.fill(0.04f))
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)

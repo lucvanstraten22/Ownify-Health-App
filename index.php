@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/includes/bootstrap.php';
 require __DIR__ . '/lib/render.php';
+require __DIR__ . '/lib/theme.php';
 require __DIR__ . '/lib/app-data.php';
 require __DIR__ . '/components/icons.php';
 
@@ -30,6 +31,10 @@ $data['auth'] = app_auth();
    the app to somebody who has since logged out, and not the opening screen to
    somebody who has since logged in. */
 header('Cache-Control: no-store, private');
+
+/* Dark or White Mode is this browser's choice (lib/theme.php): sent back with
+   a year to run, before anything is written. */
+app_theme_renew();
 
 /* Who is asking also decides which screen this is, and only that decides it:
    the session, checked against the database by app_auth() — never anything
@@ -68,7 +73,7 @@ foreach ($data['navigation'] as $position => $item) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?= e($app['locale']) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
+<html lang="<?= e($app['locale']) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'community',

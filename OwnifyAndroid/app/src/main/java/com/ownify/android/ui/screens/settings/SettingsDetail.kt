@@ -100,6 +100,8 @@ import com.ownify.android.ui.screens.account.LinkButton
 import com.ownify.android.ui.screens.devices.StatusDot
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
+import com.ownify.android.ui.theme.OwnifyMode
+import com.ownify.android.ui.theme.OwnifyThemeStore
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.CompositionLocalProvider
@@ -108,8 +110,8 @@ import com.ownify.android.ui.theme.LocalTracking
 /**
  * One settings screen (pages/settings-detail.php), built from the blocks
  * the server lists for it — identity, fields, sign-in, sources, choices,
- * facts, switches, rows and notes — and, when it offers a choice, the line
- * that says choices are not kept.
+ * facts, switches, rows and notes — and, when it offers a choice that is
+ * not kept, the line that says so (the theme's is kept).
  */
 @Composable
 fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
@@ -129,7 +131,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.Actions -> ActionsBlock(block)
             }
         }
-        if (page.blocks.any { it is SettingsBlock.Choice }) Disclaimer(data.settings.notSaved)
+        if (page.blocks.any { it is SettingsBlock.Choice && !it.saves }) Disclaimer(data.settings.notSaved)
     }
 }
 
@@ -194,8 +196,8 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
         val pressed by interaction.collectIsPressedAsState()
         val fill by animateColorAsState(
             when {
-                live && pressed -> Ownify.white(0.05f)
-                !live -> Ownify.white(0.022f)
+                live && pressed -> Ownify.fill(0.05f)
+                !live -> Ownify.fill(0.022f)
                 else -> Color.Transparent
             },
             tween(Ownify.FastMs, easing = Ownify.Ease),
@@ -385,7 +387,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
     val thisPhone = item.key == "health_connect"
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val headFill by animateColorAsState(if (pressed) Ownify.white(0.04f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "head")
+    val headFill by animateColorAsState(if (pressed) Ownify.fill(0.04f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "head")
     val turn by animateFloatAsState(if (open) 180f else 0f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "chevron")
     val border by animateColorAsState(
         if (connected) Ownify.mix(Ownify.Health, 0.28f, Color.Transparent) else Ownify.GlassBorderSoft,
@@ -567,11 +569,18 @@ private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vec
     }
 }
 
-/** A choice: one option ticked. The tick moves; nothing is stored (settings.js). */
+/**
+ * A choice: one option ticked. The tick moves; nothing is stored (settings.js)
+ * — except the theme's, which turns the app Dark or White at once and is kept
+ * on this phone (OwnifyThemeStore); its tick is the theme on screen.
+ */
 @Composable
 private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice) {
     val narrow = LocalScreen.current.narrow
-    var selected by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
+    val context = LocalContext.current
+    val theme = block.name == "theme"
+    var picked by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
+    val selected = if (theme) Ownify.mode.key else picked
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
         InButton {
@@ -580,14 +589,16 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                     val on = option.key == selected
                     val interaction = remember { MutableInteractionSource() }
                     val pressed by interaction.collectIsPressedAsState()
-                    val fill by animateColorAsState(if (pressed && !option.disabled) Ownify.white(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "option")
+                    val fill by animateColorAsState(if (pressed && !option.disabled) Ownify.fill(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "option")
                     val mark by animateFloatAsState(if (on) 1f else 0f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "mark")
                     Row(
                         Modifier
                             .press(interaction, enabled = !option.disabled)
                             .fillMaxWidth()
                             .settingsRow(i > 0, fill)
-                            .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) { selected = option.key }
+                            .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) {
+                                if (theme) OwnifyThemeStore.choose(context, OwnifyMode.of(option.key)) else picked = option.key
+                            }
                             .semantics(mergeDescendants = true) {
                                 this.selected = on
                                 if (option.disabled) disabled()
@@ -647,7 +658,7 @@ private fun StatesBlock(block: SettingsBlock.States) {
                             OwnifyType.style(
                                 Ownify.FsSmall,
                                 if (item.value != null) FontWeight.SemiBold else FontWeight.Medium,
-                                if (item.value != null) Ownify.mix(Ownify.Health, 0.34f, Color.White) else Ownify.TextMuted
+                                if (item.value != null) Ownify.tint(Ownify.Health, 0.34f) else Ownify.TextMuted
                             ),
                             Modifier.alignByBaseline(),
                             align = TextAlign.End
@@ -717,7 +728,7 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
     val on = shown ?: item.on
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val fill by animateColorAsState(if (pressed) Ownify.white(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "toggle")
+    val fill by animateColorAsState(if (pressed) Ownify.fill(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "toggle")
 
     Row(
         Modifier
@@ -871,7 +882,7 @@ fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Ownify.white(0.035f))
+            .background(Ownify.lift(0.035f))
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)

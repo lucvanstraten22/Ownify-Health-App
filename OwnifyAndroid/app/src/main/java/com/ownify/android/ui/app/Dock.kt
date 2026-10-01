@@ -143,7 +143,7 @@ private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val grip by animateDpAsState(if (pressed) 50.dp else 38.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "grip")
-    val tone by animateColorAsState(if (pressed) Ownify.white(0.42f) else Ownify.white(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
+    val tone by animateColorAsState(if (pressed) Ownify.ink(0.42f) else Ownify.ink(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
 
     Box(
         modifier
@@ -272,14 +272,14 @@ internal const val TabGlassTag = "tab-glass"
 private fun DrawScope.drawTabGlass(shadows: androidx.compose.ui.graphics.shadow.ShadowContext) {
     val pill = RoundedCornerShape(50)
     val outline = pill.createOutline(size, layoutDirection, this)
-    drawBoxShadows(pill, listOf(BoxShadow(y = 2.dp, blur = 7.dp, color = Color.Black.copy(alpha = 0.20f))), shadows, outline)
+    drawBoxShadows(pill, listOf(BoxShadow(y = 2.dp, blur = 7.dp, color = Ownify.shade(0.20f))), shadows, outline)
     val path = Path().apply { addOutline(outline) }
-    drawPath(path, cssLinearGradient(178f, size, Stop(0f, Ownify.white(0.20f)), Stop(0.48f, Ownify.white(0.115f)), Stop(1f, Ownify.white(0.085f))))
+    drawPath(path, cssLinearGradient(178f, size, Stop(0f, Ownify.glint(0.20f)), Stop(0.48f, Ownify.glint(0.115f)), Stop(1f, Ownify.glint(0.085f))))
     drawBoxShadows(
         pill,
         listOf(
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.28f), inset = true),
-            BoxShadow(y = (-1).dp, blur = 0.dp, color = Ownify.white(0.05f), inset = true)
+            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.28f), inset = true),
+            BoxShadow(y = (-1).dp, blur = 0.dp, color = Ownify.glint(0.05f), inset = true)
         ),
         shadows, outline
     )
@@ -298,12 +298,12 @@ private fun DrawScope.drawSheen(shape: androidx.compose.ui.graphics.Shape) {
         translate(-over, -over) {
             cssRadialGradient(
                 0.57f, 0.94f, 0.242f, 0f,
-                Stop(0f, Ownify.white(0.20f)), Stop(0.40f, Ownify.white(0.06f)), Stop(0.68f, Ownify.white(0f)),
+                Stop(0f, Ownify.glint(0.20f)), Stop(0.40f, Ownify.glint(0.06f)), Stop(0.68f, Ownify.glint(0f)),
                 box = box
             )
             cssRadialGradient(
                 0.44f, 0.82f, 0.85f, 0.99f,
-                Stop(0f, Ownify.white(0.10f)), Stop(0.62f, Ownify.white(0f)),
+                Stop(0f, Ownify.glint(0.10f)), Stop(0.62f, Ownify.glint(0f)),
                 box = box
             )
         }

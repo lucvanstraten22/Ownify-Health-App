@@ -138,7 +138,7 @@ fun Notice(text: String, link: OwnifyLink? = null) {
             .fillMaxWidth()
             .padding(bottom = Ownify.Space4)
             .clip(shape)
-            .background(Ownify.white(0.04f))
+            .background(Ownify.fill(0.04f))
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
@@ -173,8 +173,8 @@ fun ErrorBox(text: String, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Ownify.Attention.copy(alpha = 0.10f))
-            .border(1.dp, Ownify.Attention.copy(alpha = 0.34f), shape)
+            .background(Ownify.AttentionWash.copy(alpha = 0.10f))
+            .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.34f), shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )

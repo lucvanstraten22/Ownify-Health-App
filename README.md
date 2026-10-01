@@ -55,6 +55,8 @@ tools/
     hc-verify.php             that test's batch, and what each record must become
     ai-test.php               Ownify AI end to end, against a stand-in for Gemini
     ai-fake-gemini.php        that stand-in (PHP's built-in server only)
+    theme-test.php            Dark and White Mode: the cookie, the settings, the
+                              tokens, contrast, the page served in each
 pages/
     welcome.php               the opening screen, for everyone not signed in
     overview.php              the dashboard
@@ -78,6 +80,7 @@ lib/health.php                demo handling, shared metrics, chart geometry
 lib/community.php             board assembly, formatting, the demo roster
 lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
+lib/theme.php                 Dark or White Mode: this browser's choice, read before the page
 components/
     document-head.php         the <head> the app and the opening screen share
     icons.php                 one icon family (24px grid, 1.6 stroke)
@@ -114,7 +117,7 @@ components/
     account-modal.php         sign-in when signed out, account when signed in
     devices-popup.php         what is linked, behind the header's devices button
 assets/css/
-    theme.css                 tokens, reset, typography, screen deck
+    theme.css                 tokens for both themes, reset, typography, screen deck
     components.css            the UI kit
     dashboard.css             overview layout, focus states, breakpoints
     ai.css                    the assistant layer (tokens only, no new values)
@@ -488,7 +491,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.2.1
+OVER         Over de app · Versie Beta 1.3.0
 
              [ Uitloggen ]
                Account verwijderen
@@ -506,12 +509,13 @@ settings screen is config, not another file. They use the same detail layer
 Gezondheid and Doelen use, so back is the same swipe everywhere.
 
 **Three kinds of value, never mixed up.** A *fact* is how the app genuinely
-behaves — the theme is dark, the interface is Dutch, measurements are metric,
-health data never leaves the owner's account. *Not set* is exactly that:
-nothing is connected and no profile data is entered, so the row says so rather
-than showing a number. A *preference* is a choice you will make later —
-selectable now so the design can be judged, with every such screen saying at
-its foot that it is not yet saved.
+behaves — the interface is Dutch, measurements are metric, health data never
+leaves the owner's account. *Not set* is exactly that: nothing is connected
+and no profile data is entered, so the row says so rather than showing a
+number. A *preference* is a choice you will make later — selectable now so the
+design can be judged, with every such screen saying at its foot that it is not
+yet saved. The theme is the exception: Donker or Licht is kept from the moment
+it is chosen (see "Dark Mode and White Mode" below).
 
 **Profile fields carry their own behaviour.** `edit` is `true`, `'locked'` or
 `'derived'`, and the row shows which without needing a legend: an editable
@@ -617,13 +621,31 @@ orb, the name, three suggestions), the conversation, the history, and a notice
 for every way it can fail — never Gemini's own text. `ai.css` only arranges
 tokens from `theme.css`, as before.
 
+## Dark Mode and White Mode
+
+Two themes, one design. **Dark Mode** is the original and the default;
+**White Mode** is the same design in a light environment — the same layout,
+glass, accents, type, motion and interactions, on a warm off-white ground with
+the same washes of colour. Instellingen → Thema & uiterlijk switches it at
+once, on the website and in the Android app alike, and it is kept: on the
+website in a cookie the server reads before it writes the page (so nothing is
+drawn in the wrong theme first), in the app on the phone. It belongs to the
+device, not the account, so the opening screen is in it too.
+
+Every colour a component writes is a token or a *role* in `theme.css` — ink,
+fill, lift, glint, shade, scrim, ground, pane-body, tint — mirrored one for
+one in the app's `OwnifyPalette`. In Dark Mode each role is exactly the white
+or black it replaced, so Dark Mode is pixel-for-pixel what it was. The roles,
+the colours that change, the three accents that deepen and why, the contrast
+figures and the rules for adding something are in
+**[docs/THEME.md](docs/THEME.md)**.
+
 ## Not in this version
 
 Live literature search and links to studies (the assistant answers research
 questions from general knowledge and says so), speech or images in the
 assistant, persistent goal storage, automatic goal progress, stored settings,
-Apple Health / Health Connect integrations, notifications, a light theme,
-English, imperial units, real medical analysis and real personal
-recommendations.
+Apple Health / Health Connect integrations, notifications, English, imperial
+units, real medical analysis and real personal recommendations.
 The data layer, focus system, screen deck and component boundaries are
 prepared for them; none of them are implemented.

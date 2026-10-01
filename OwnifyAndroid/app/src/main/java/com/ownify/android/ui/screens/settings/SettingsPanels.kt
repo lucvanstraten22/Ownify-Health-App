@@ -73,6 +73,7 @@ import com.ownify.android.ui.design.press
 import com.ownify.android.ui.screens.health.EditorError
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
+import com.ownify.android.ui.theme.OwnifyThemeStore
 import com.ownify.android.ui.theme.OwnifyType
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -81,7 +82,8 @@ import com.ownify.android.ui.design.rememberFocusOnOpen
 import com.ownify.android.ui.design.blurring
 
 /** `.confirm__yes`: the answer that goes ahead, in the caution colour. */
-private val YesLook = BtnLook(border = Ownify.Attention.copy(alpha = 0.45f), fill = Ownify.Attention.copy(alpha = 0.18f))
+private val YesLook: BtnLook
+    get() = BtnLook(border = Ownify.AttentionWash.copy(alpha = 0.45f), fill = Ownify.AttentionWash.copy(alpha = 0.18f))
 
 /** `.confirm__scrim` is a little darker than the account panel's. */
 private const val CONFIRM_SCRIM = 0.55f
@@ -234,7 +236,7 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
                 val shape = RoundedCornerShape(Ownify.RadiusSm)
                 val fast = tween<Color>(Ownify.FastMs, easing = Ownify.Ease)
                 val border by animateColorAsState(if (active) Ownify.Health.copy(alpha = 0.5f) else Ownify.GlassBorderSoft, fast, label = "border")
-                val fill by animateColorAsState(if (active) Ownify.Health.copy(alpha = 0.14f) else Ownify.white(0.04f), fast, label = "fill")
+                val fill by animateColorAsState(if (active) Ownify.Health.copy(alpha = 0.14f) else Ownify.fill(0.04f), fast, label = "fill")
                 Row(
                     Modifier
                         .press(interaction)
@@ -273,11 +275,11 @@ private fun DateControl(input: FieldInput, value: String, label: String, onPick:
                 .fillMaxWidth()
                 .heightIn(min = 44.dp)
                 .clip(shape)
-                .background(Ownify.white(0.05f))
+                .background(Ownify.fill(0.05f))
                 .border(1.dp, Ownify.GlassBorderSoft, shape)
                 .clickable(interaction, indication = null, role = Role.Button, onClickLabel = label) {
                     val start = date ?: LocalDate.now().minusYears(30)
-                    DatePickerDialog(context, { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toString()) }, start.year, start.monthValue - 1, start.dayOfMonth).apply {
+                    DatePickerDialog(OwnifyThemeStore.dialogContext(context), { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toString()) }, start.year, start.monthValue - 1, start.dayOfMonth).apply {
                         input.min?.let { runCatching { datePicker.minDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
                         input.max?.let { runCatching { datePicker.maxDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
                     }.show()
@@ -311,7 +313,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
 
     ConfirmFrame(overlay, title = if (step == 1) copy["title"].orEmpty() else copy["final_title"].orEmpty()) {
         if (step == 1) {
-            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.Attention.copy(alpha = 0.16f))
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionWash.copy(alpha = 0.16f))
             ConfirmTitle(copy["title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
             ConfirmRow(
@@ -339,8 +341,8 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .fillMaxWidth()
                         .padding(top = Ownify.Space3)
                         .clip(shape)
-                        .background(Ownify.Attention.copy(alpha = 0.10f))
-                        .border(1.dp, Ownify.Attention.copy(alpha = 0.34f), shape)
+                        .background(Ownify.AttentionWash.copy(alpha = 0.10f))
+                        .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.34f), shape)
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )

@@ -169,7 +169,7 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
         val meta = row.value ?: row.hint
         val interaction = remember { MutableInteractionSource() }
         val pressed by interaction.collectIsPressedAsState()
-        val fill by animateColorAsState(if (pressed) Ownify.white(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "row")
+        val fill by animateColorAsState(if (pressed) Ownify.fill(0.05f) else Color.Transparent, tween(Ownify.FastMs, easing = Ownify.Ease), label = "row")
         val nudge by animateDpAsState(if (pressed) 2.dp else 0.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "chevron")
 
         Row(
@@ -205,7 +205,7 @@ private fun Mark(icon: ImageVector?) {
         Modifier
             .size(30.dp)
             .clip(shape)
-            .background(Ownify.white(0.055f))
+            .background(Ownify.fill(0.055f))
             .border(1.dp, Ownify.GlassHairline, shape),
         contentAlignment = Alignment.Center
     ) {

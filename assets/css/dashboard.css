@@ -100,7 +100,7 @@
     .card:hover {
         transform: translateY(-2px);
         border-color: var(--glass-border);
-        box-shadow: var(--shadow-inset), 0 18px 40px rgba(0, 0, 0, 0.22);
+        box-shadow: var(--shadow-inset), 0 18px 40px rgba(var(--shade), calc(0.22 * var(--shade-k)));
     }
 
     .pill:hover,
@@ -114,7 +114,7 @@
     .tab.is-active:hover { color: var(--text-primary); }
 
     .fab:hover {
-        background: rgba(255, 255, 255, 0.11);
+        background: rgba(var(--fill), calc(0.11 * var(--fill-k)));
         color: var(--text-primary);
     }
 

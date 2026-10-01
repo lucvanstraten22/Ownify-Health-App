@@ -46,26 +46,28 @@ data class CardStyle(
 ) {
     companion object {
         /** `.card`: `--surface-gradient`, `--glass-border`, `--shadow-inset`, `--shadow-card`. */
-        val Default = CardStyle(
-            from = Ownify.white(0.11f),
-            to = Ownify.white(0.04f),
-            border = Ownify.GlassBorder,
-            shadows = listOf(
-                BoxShadow(y = 15.dp, blur = 35.dp, color = Color.Black.copy(alpha = 0.18f)),
-                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.08f), inset = true)
+        val Default: CardStyle
+            get() = CardStyle(
+                from = Ownify.SurfaceFrom,
+                to = Ownify.SurfaceTo,
+                border = Ownify.GlassBorder,
+                shadows = listOf(
+                    BoxShadow(y = 15.dp, blur = 35.dp, color = Ownify.ShadowCard),
+                    BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)
+                )
             )
-        )
 
         /** `.card--patterns / --recommendation / --leaderboard`: `--surface-gradient-quiet`. */
-        val Quiet = CardStyle(
-            from = Ownify.white(0.075f),
-            to = Ownify.white(0.028f),
-            border = Ownify.GlassBorderSoft,
-            shadows = listOf(
-                BoxShadow(y = 10.dp, blur = 24.dp, color = Color.Black.copy(alpha = 0.14f)),
-                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.08f), inset = true)
+        val Quiet: CardStyle
+            get() = CardStyle(
+                from = Ownify.SurfaceQuietFrom,
+                to = Ownify.SurfaceQuietTo,
+                border = Ownify.GlassBorderSoft,
+                shadows = listOf(
+                    BoxShadow(y = 10.dp, blur = 24.dp, color = Ownify.shade(0.14f)),
+                    BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)
+                )
             )
-        )
     }
 }
 
@@ -116,9 +118,9 @@ fun Modifier.cardSurface(
                 val y = 1.dp.toPx()
                 drawRect(
                     brush = Brush.horizontalGradient(
-                        0f to Color.White.copy(alpha = 0f),
-                        0.5f to Color.White.copy(alpha = 0.28f),
-                        1f to Color.White.copy(alpha = 0f),
+                        0f to Ownify.glint(0f),
+                        0.5f to Ownify.glint(0.28f),
+                        1f to Ownify.glint(0f),
                         startX = inset,
                         endX = size.width - inset
                     ),
@@ -215,73 +217,84 @@ data class PaneStyle(
 
 object Panes {
     /** `.tabbar`. */
-    val Tabbar = PaneStyle(
-        tint = Color(30, 28, 29).copy(alpha = 0.62f),
-        faceMiddle = 0.44f,
-        shadows = listOf(
-            BoxShadow(y = 18.dp, blur = 44.dp, color = Color.Black.copy(alpha = 0.46f)),
-            BoxShadow(y = 5.dp, blur = 14.dp, color = Color.Black.copy(alpha = 0.30f)),
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.14f), inset = true),
-            BoxShadow(y = (-1).dp, blur = 0.dp, color = Ownify.white(0.04f), inset = true)
+    val Tabbar: PaneStyle
+        get() = PaneStyle(
+            tint = Ownify.paneBody(0.62f),
+            faceMiddle = 0.44f,
+            shadows = listOf(
+                BoxShadow(y = 18.dp, blur = 44.dp, color = Ownify.shade(0.46f)),
+                BoxShadow(y = 5.dp, blur = 14.dp, color = Ownify.shade(0.30f)),
+                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.14f), inset = true),
+                BoxShadow(y = (-1).dp, blur = 0.dp, color = Ownify.glint(0.04f), inset = true)
+            )
         )
-    )
 
     /** `.pill--devices` / `.pill--account`. */
-    val HeaderButton = PaneStyle(
-        tint = Color(30, 28, 29).copy(alpha = 0.46f),
-        faceMiddle = 0.46f,
-        shadows = listOf(
-            BoxShadow(y = 8.dp, blur = 20.dp, color = Color.Black.copy(alpha = 0.30f)),
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.13f), inset = true)
+    val HeaderButton: PaneStyle
+        get() = PaneStyle(
+            tint = Ownify.paneBody(0.46f),
+            faceMiddle = 0.46f,
+            shadows = listOf(
+                BoxShadow(y = 8.dp, blur = 20.dp, color = Ownify.shade(0.30f)),
+                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.13f), inset = true)
+            )
         )
-    )
 
     /** `.pill--devices:active`: the pane settles. */
-    val HeaderButtonPressed = HeaderButton.copy(
-        shadows = listOf(
-            BoxShadow(y = 3.dp, blur = 10.dp, color = Color.Black.copy(alpha = 0.26f)),
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.10f), inset = true)
+    val HeaderButtonPressed: PaneStyle
+        get() = HeaderButton.copy(
+            shadows = listOf(
+                BoxShadow(y = 3.dp, blur = 10.dp, color = Ownify.shade(0.26f)),
+                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.10f), inset = true)
+            )
         )
-    )
 
     /** `.welcome__button`. */
-    val WelcomeButton = PaneStyle(
-        tint = Color(30, 28, 29).copy(alpha = 0.46f),
-        faceMiddle = 0.46f,
-        shadows = listOf(
-            BoxShadow(y = 12.dp, blur = 28.dp, color = Color.Black.copy(alpha = 0.34f)),
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.13f), inset = true)
+    val WelcomeButton: PaneStyle
+        get() = PaneStyle(
+            tint = Ownify.paneBody(0.46f),
+            faceMiddle = 0.46f,
+            shadows = listOf(
+                BoxShadow(y = 12.dp, blur = 28.dp, color = Ownify.shade(0.34f)),
+                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.13f), inset = true)
+            )
         )
-    )
 
     /** `.welcome__button--primary`: the same pane with the app's green in it. */
-    val WelcomePrimary = WelcomeButton.copy(
-        extra = { size ->
-            Brush.verticalGradient(
-                listOf(Ownify.Health.copy(alpha = 0.30f), Ownify.Health.copy(alpha = 0.18f)),
-                startY = 0f,
-                endY = size.height
-            )
-        }
-    )
+    val WelcomePrimary: PaneStyle
+        get() = WelcomeButton.copy(
+            extra = PrimaryWash
+        )
+
+    /** Its green: one function, so two looks of the primary button compare equal. */
+    private val PrimaryWash: (Size) -> Brush = { size ->
+        Brush.verticalGradient(
+            listOf(Ownify.Health.copy(alpha = 0.30f), Ownify.Health.copy(alpha = 0.18f)),
+            startY = 0f,
+            endY = size.height
+        )
+    }
 }
 
 /** `--pane-rim`: 152°, bright at the top-left, a little back at the bottom-right. */
-fun paneRim(size: Size): Brush = cssLinearGradient(
-    152f, size,
-    Stop(0f, Ownify.white(0.46f)),
-    Stop(0.22f, Ownify.white(0.13f)),
-    Stop(0.52f, Ownify.white(0.045f)),
-    Stop(0.78f, Ownify.white(0.10f)),
-    Stop(1f, Ownify.white(0.26f))
-)
+fun paneRim(size: Size): Brush {
+    val rim = Ownify.PaneRim
+    return cssLinearGradient(
+        152f, size,
+        Stop(0f, rim[0]),
+        Stop(0.22f, rim[1]),
+        Stop(0.52f, rim[2]),
+        Stop(0.78f, rim[3]),
+        Stop(1f, rim[4])
+    )
+}
 
 /** The 177° face of a pane: `.115` at the top, [middle] `.042`, `.06` at the bottom. */
 fun paneFace(size: Size, middle: Float, primary: Boolean = false): Brush = cssLinearGradient(
     177f, size,
-    Stop(0f, Ownify.white(if (primary) 0.13f else 0.115f)),
-    Stop(middle, Ownify.white(if (primary) 0.045f else 0.042f)),
-    Stop(1f, Ownify.white(0.06f))
+    Stop(0f, Ownify.glint(if (primary) 0.13f else 0.115f)),
+    Stop(middle, Ownify.glint(if (primary) 0.045f else 0.042f)),
+    Stop(1f, Ownify.glint(0.06f))
 )
 
 /**

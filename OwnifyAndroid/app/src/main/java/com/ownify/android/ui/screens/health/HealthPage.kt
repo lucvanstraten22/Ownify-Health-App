@@ -299,7 +299,7 @@ private fun Chart(
                 // .chart__grid at a quarter, half and three quarters of the plot.
                 for (line in listOf(0.25f, 0.5f, 0.75f)) {
                     val y = (12f + line * (viewBox.height - 24f)) * sy
-                    drawLine(Ownify.white(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                    drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                 }
                 series.forEachIndexed { i, (_, chart, color) ->
                     washes[i].forEach { drawPath(it.stretched(viewBox, size), color.copy(alpha = 0.10f)) }

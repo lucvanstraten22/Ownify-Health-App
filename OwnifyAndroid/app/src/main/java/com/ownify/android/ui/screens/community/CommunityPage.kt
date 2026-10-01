@@ -326,19 +326,19 @@ private fun BoardRow(
             .drawWithContent {
                 val outline = shape.createOutline(size, layoutDirection, this)
                 if (sticky != null) {
-                    drawBoxShadows(shape, listOf(BoxShadow(y = 10.dp, blur = 26.dp, color = Color.Black.copy(alpha = 0.32f))), shadows, outline)
+                    drawBoxShadows(shape, listOf(BoxShadow(y = 10.dp, blur = 26.dp, color = Ownify.shade(0.32f))), shadows, outline)
                 }
                 val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
                 drawPath(
                     path,
                     when {
-                        sticky != null -> Brush.verticalGradient(listOf(Color(46, 57, 52).copy(alpha = 0.97f), Color(42, 52, 48).copy(alpha = 0.96f)))
+                        sticky != null -> Brush.verticalGradient(listOf(Ownify.BoardYouFrom, Ownify.BoardYouTo))
                         you -> Brush.verticalGradient(listOf(Ownify.Health.copy(alpha = 0.10f), Ownify.Health.copy(alpha = 0.045f)))
-                        else -> androidx.compose.ui.graphics.SolidColor(Ownify.white(0.035f))
+                        else -> androidx.compose.ui.graphics.SolidColor(Ownify.lift(0.035f))
                     }
                 )
                 if (sticky != null) {
-                    drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.08f), inset = true)), shadows, outline)
+                    drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows, outline)
                 }
                 if (you) drawBorder(outline, Ownify.Health.copy(alpha = 0.30f))
                 drawContent()
@@ -363,12 +363,12 @@ private fun BoardRow(
             Modifier
                 .size(if (narrow) 30.dp else 34.dp)
                 .clip(CircleShape)
-                .background(Ownify.white(0.07f))
+                .background(Ownify.fill(0.07f))
                 .border(1.dp, Ownify.GlassHairline, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             if (name != null) {
-                T(initial(name), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.mix(accent, 0.78f, Color.White)), maxLines = 1)
+                T(initial(name), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
             } else {
                 JIcon(OwnifyIcons.user, size = 16.dp, color = Ownify.TextMuted)
             }
@@ -421,7 +421,7 @@ private fun AddFriendsRow(label: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 52.dp)
             .clip(shape)
-            .background(Ownify.white(0.035f))
+            .background(Ownify.lift(0.035f))
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = label
@@ -437,7 +437,7 @@ private fun AddFriendsRow(label: String, onClick: () -> Unit) {
             Modifier
                 .size(if (narrow) 30.dp else 34.dp)
                 .clip(CircleShape)
-                .background(Ownify.white(0.07f))
+                .background(Ownify.fill(0.07f))
                 .border(1.dp, Ownify.GlassHairline, CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -477,7 +477,7 @@ private fun Dots(modifier: Modifier) {
                 val on = 2.dp.toPx()
                 val period = 8.dp.toPx()
                 while (x < size.width) {
-                    drawRect(Ownify.white(0.16f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
+                    drawRect(Ownify.ink(0.16f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
                     x += period
                 }
             }

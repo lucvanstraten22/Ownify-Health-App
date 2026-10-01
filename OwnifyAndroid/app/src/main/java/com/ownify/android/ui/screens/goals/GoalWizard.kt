@@ -212,7 +212,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                     Row(Modifier.fillMaxWidth().clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
                         for (n in 1..TOTAL) {
                             val lit by animateColorAsState(
-                                if (done || n <= step) Ownify.Health else Ownify.white(0.10f),
+                                if (done || n <= step) Ownify.Health else Ownify.fill(0.10f),
                                 tween(Ownify.SlowMs, easing = Ownify.EaseOut),
                                 label = "bar"
                             )
@@ -751,7 +751,7 @@ private fun WizardNote(text: String, icon: androidx.compose.ui.graphics.vector.I
             .fillMaxWidth()
             .padding(top = Ownify.Space4)
             .clip(shape)
-            .background(Ownify.white(0.04f))
+            .background(Ownify.fill(0.04f))
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
@@ -773,7 +773,7 @@ private fun Suggestion(text: String, onClick: () -> Unit) {
             Modifier
                 .press(interaction)
                 .clip(shape)
-                .background(Ownify.white(0.05f))
+                .background(Ownify.fill(0.05f))
                 .border(1.dp, Ownify.GlassHairline, shape)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
@@ -818,7 +818,7 @@ private fun Choice(
             if (chosen) Ownify.mix(accent, 0.40f, Color.Transparent) else Ownify.GlassHairline, fast, label = "border"
         )
         val fill by animateColorAsState(
-            if (chosen) Ownify.mix(accent, if (green) 0.12f else 0.14f, Color.Transparent) else Ownify.white(0.035f), fast, label = "fill"
+            if (chosen) Ownify.mix(accent, if (green) 0.12f else 0.14f, Color.Transparent) else Ownify.fill(0.035f), fast, label = "fill"
         )
         CompositionLocalProvider(LocalAccent provides LocalAccent.current) {
             Column(

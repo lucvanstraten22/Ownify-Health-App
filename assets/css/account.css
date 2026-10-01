@@ -19,7 +19,7 @@
 .account__scrim {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.52);
+    background: rgba(var(--scrim), calc(0.52 * var(--scrim-k)));
     -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
     opacity: 0;
@@ -59,7 +59,7 @@
     height: 34px;
     border: 1px solid var(--glass-hairline);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.055);
+    background: rgba(var(--fill), calc(0.055 * var(--fill-k)));
     color: var(--text-secondary);
 }
 
@@ -72,7 +72,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
     font-size: var(--fs-small);
     color: var(--text-secondary);
 }
@@ -93,7 +93,7 @@
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
-    text-decoration-color: rgba(255, 255, 255, 0.35);
+    text-decoration-color: rgba(var(--ink), 0.35);
 }
 
 .account__notice code {
@@ -118,7 +118,7 @@
     overflow: hidden;
     border: 1px solid var(--glass-hairline);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
     color: var(--text-muted);
 }
 
@@ -168,7 +168,7 @@
     padding: 0 var(--space-3);
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-label);
@@ -186,7 +186,7 @@
 .account__file:focus-visible {
     outline: none;
     border-color: rgba(60, 158, 114, 0.5);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
 }
 
 .account__submit,
@@ -293,7 +293,7 @@
     padding: 0 var(--space-3);
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-label);
@@ -301,7 +301,7 @@
     transition: background-color var(--transition-fast);
 }
 
-.account__nav:active { background: rgba(255, 255, 255, 0.08); }
+.account__nav:active { background: rgba(var(--fill), calc(0.08 * var(--fill-k))); }
 
 .account__nav-text {
     display: flex;
@@ -366,7 +366,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
 }
 
 /* ---------------------------------------------------------------- person */
@@ -453,7 +453,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
 }
 
 .friend__confirm[hidden] { display: none; }
@@ -477,7 +477,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     text-align: left;
 }

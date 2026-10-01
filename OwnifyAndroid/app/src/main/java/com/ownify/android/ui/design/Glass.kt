@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.ownify.android.ui.theme.Ownify
 import kotlin.math.ceil
 
 /**
@@ -82,7 +83,9 @@ fun rememberBackdrop(): Pair<Backdrop, GraphicsLayer> {
 /** What a glass surface does to what is behind it: `blur(b) saturate(s) brightness(l)`. */
 data class GlassFilter(val blur: Dp, val saturate: Float = 1f, val brightness: Float = 1f)
 
-val PaneFilter = GlassFilter(10.dp, saturate = 1.9f, brightness = 1.08f)
+/** `--pane-blur`, `--pane-saturate`, `--pane-brightness`: softer in White Mode. */
+val PaneFilter: GlassFilter
+    get() = GlassFilter(Ownify.PaneBlur, saturate = Ownify.PaneSaturate, brightness = Ownify.PaneBrightness)
 val CardFilter = GlassFilter(24.dp, saturate = 1.3f)
 
 /** The backdrops a surface can look through, innermost first; provided by the shell. */

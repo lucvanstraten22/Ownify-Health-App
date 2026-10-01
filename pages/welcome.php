@@ -18,7 +18,7 @@ $app     = $data['app'];
 $welcome = $data['welcome'];
 ?>
 <!DOCTYPE html>
-<html lang="<?= e($app['locale']) ?>" data-focus="<?= e($data['focus']) ?>">
+<html lang="<?= e($app['locale']) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'account', 'welcome',

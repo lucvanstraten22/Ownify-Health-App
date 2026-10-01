@@ -8,14 +8,16 @@ declare(strict_types=1);
 
 $app    = $data['app'];
 $styles = $data['styles'] ?? [];
+$theme  = app_theme_head($app);     // lib/theme.php
 ?>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="<?= e($app['theme_color']) ?>">
-    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="<?= e($theme['theme_color']) ?>"
+          data-theme-dark="<?= e($app['theme_color']) ?>" data-theme-light="<?= e($app['theme_color_light'] ?? '#FBFAFA') ?>">
+    <meta name="color-scheme" content="<?= e($theme['color_scheme']) ?>">
     <meta name="description" content="<?= e($app['name']) ?> — dagelijks overzicht van slaap, voeding en sport.">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="<?= e($theme['status_bar']) ?>">
     <meta name="mobile-web-app-capable" content="yes">
 
     <title><?= e($app['name']) ?> — <?= e($app['tagline']) ?></title>

@@ -892,7 +892,18 @@ sealed interface SettingsBlock {
     data class Fields(val title: String, val lede: String?, val fields: List<ProfileField>) : SettingsBlock
     data class Signin(val title: String) : SettingsBlock
     data class Integrations(val title: String) : SettingsBlock
-    data class Choice(val title: String, val selected: String?, val options: List<ChoiceOption>) : SettingsBlock
+    /**
+     * One option of several. [name] is the setting's (`theme`, `language`…);
+     * [saves] marks the one choice that is kept — the theme, on this phone
+     * (OwnifyThemeStore) — so its screen does not say choices are not kept.
+     */
+    data class Choice(
+        val title: String,
+        val selected: String?,
+        val options: List<ChoiceOption>,
+        val name: String? = null,
+        val saves: Boolean = false
+    ) : SettingsBlock
     data class States(val title: String, val lede: String?, val items: List<StateItem>) : SettingsBlock
     data class Toggles(val title: String, val lede: String?, val items: List<ToggleItem>) : SettingsBlock
     data class Rows(val title: String, val items: List<Pair<String, String>>) : SettingsBlock
@@ -908,7 +919,9 @@ sealed interface SettingsBlock {
                 "integrations" -> Integrations(o.str("title").orEmpty())
                 "choice" -> Choice(
                     o.str("title").orEmpty(), o.str("selected"),
-                    o.arr("options").map { ChoiceOption(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("note"), it.bool("disabled")) }
+                    o.arr("options").map { ChoiceOption(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("note"), it.bool("disabled")) },
+                    name = o.str("name"),
+                    saves = o.bool("saves")
                 )
                 "states" -> States(
                     o.str("title").orEmpty(), o.str("lede"),
@@ -929,6 +942,36 @@ sealed interface SettingsBlock {
 }
 
 data class ChoiceOption(val key: String, val label: String, val note: String?, val disabled: Boolean)
+
+/**
+ * The settings with [theme] ("dark" or "light") as the theme: Thema &
+ * uiterlijk's choice ticked on it, and the row on Instellingen that names it
+ * saying so — lib/settings.php's settings_use_theme(). On the website the
+ * server knows the browser's choice from its cookie; asked by the app it has
+ * none and always says Dark, so the app puts this phone's choice in its place.
+ */
+fun Settings.withTheme(theme: String): Settings {
+    val page = page("theme") ?: return this
+    var label: String? = null
+    val blocks = page.blocks.map { block ->
+        if (block is SettingsBlock.Choice && block.name == "theme") {
+            block.options.firstOrNull { it.key == theme }?.let { label = it.label }
+            block.copy(selected = theme)
+        } else {
+            block
+        }
+    }
+    val named = label
+    return copy(
+        pages = pages.map { if (it.id == page.id) it.copy(blocks = blocks) else it },
+        groups = if (named == null) groups else groups.map { group ->
+            group.copy(rows = group.rows.map { row -> if (row.id == "theme") row.copy(value = named) else row })
+        }
+    )
+}
+
+/** The same, for the whole of what the server sent. */
+fun AppData.withTheme(theme: String): AppData = copy(settings = settings.withTheme(theme))
 
 /**
  * A button that does one thing after "are you sure?" ("AI-gesprekken

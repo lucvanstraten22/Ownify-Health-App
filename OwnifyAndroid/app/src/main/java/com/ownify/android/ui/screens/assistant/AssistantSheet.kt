@@ -197,7 +197,7 @@ private fun SheetTop(ai: AiCopy, view: AiView) {
             Modifier
                 .padding(top = Ownify.Space2)
                 .size(38.dp, 4.dp)
-                .background(Ownify.white(0.20f), RoundedCornerShape(50))
+                .background(Ownify.ink(0.20f), RoundedCornerShape(50))
         )
         Row(Modifier.width(screen.shell).padding(top = Ownify.Space3), verticalAlignment = Alignment.CenterVertically) {
             Pill(ai.closeLabel, onClick = shell::closeAi, icon = OwnifyIcons.chevronDown, contentDescription = ai.closeAria)
@@ -240,7 +240,8 @@ private fun IconPill(icon: ImageVector, label: String, active: Boolean = false, 
 
 /* ------------------------------------------------------------- consent */
 
-private val PrimaryLook = BtnLook(border = Ownify.Health.copy(alpha = 0.55f), fill = Ownify.Health.copy(alpha = 0.26f))
+private val PrimaryLook: BtnLook
+    get() = BtnLook(border = Ownify.Health.copy(alpha = 0.55f), fill = Ownify.Health.copy(alpha = 0.26f))
 
 @Composable
 private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
@@ -436,7 +437,7 @@ private fun AssistantPane(content: @Composable () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Brush.linearGradient(listOf(Ownify.white(0.075f), Ownify.white(0.028f))))
+            .background(Brush.linearGradient(listOf(Ownify.SurfaceQuietFrom, Ownify.SurfaceQuietTo)))
             .border(1.dp, Ownify.GlassBorderSoft, shape)
             .padding(Ownify.Space4),
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
@@ -466,7 +467,8 @@ private fun SystemNote(text: String) {
     }
 }
 
-private val AnswerStyle = OwnifyType.style(Ownify.FsBody, lineHeight = 1.55.em)
+private val AnswerStyle: TextStyle
+    get() = OwnifyType.style(Ownify.FsBody, lineHeight = 1.55.em)
 
 /** The server's blocks: paragraphs, a short heading, bullets and steps — text and bold only. */
 @Composable
@@ -641,7 +643,7 @@ private fun SendButton(label: String, enabled: Boolean, onClick: () -> Unit) {
             .press(interaction, enabled = enabled)
             .size(40.dp)
             .clip(CircleShape)
-            .background(if (enabled) Ownify.Health else Ownify.white(0.10f))
+            .background(if (enabled) Ownify.Health else Ownify.fill(0.10f))
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
@@ -660,8 +662,8 @@ private fun NoticeCard(ai: AiCopy, notice: AiNotice) {
             .fillMaxWidth()
             .padding(bottom = Ownify.Space2)
             .clip(shape)
-            .background(Ownify.Attention.copy(alpha = 0.10f))
-            .border(1.dp, Ownify.Attention.copy(alpha = 0.32f), shape)
+            .background(Ownify.AttentionWash.copy(alpha = 0.10f))
+            .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.32f), shape)
             .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3)
             .semantics { liveRegion = LiveRegionMode.Polite },
         verticalAlignment = Alignment.Top
@@ -695,7 +697,7 @@ private fun HistoryPane(ai: AiCopy) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.42f))
+            .background(Ownify.scrim(0.42f))
             .clickable(dismiss, indication = null) { a.historyOpen = false },
         contentAlignment = Alignment.TopCenter
     ) {
@@ -796,7 +798,7 @@ private fun AssistantOrb(small: Boolean = false, still: Boolean = false) {
                 val unit = this.size.width / 160f
                 rotate(if (stillMotion) 0f else turn) {
                     drawCircle(
-                        Color.White.copy(alpha = if (still) 0.13f else 0.26f),
+                        Ownify.ink(if (still) 0.13f else 0.26f),
                         radius = 74f * unit,
                         style = Stroke(3.5f * unit, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(0.5f * unit, 9f * unit)))
                     )

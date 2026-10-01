@@ -249,7 +249,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
     Column(
         modifier
             .clip(shape)
-            .background(Ownify.white(0.035f))
+            .background(Ownify.fill(0.035f))
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .clearAndSetSemantics {
@@ -326,7 +326,7 @@ private fun SleepTimeline(timeline: Timeline) {
                         val on = 2.dp.toPx()
                         val period = 8.dp.toPx()
                         while (x < size.width) {
-                            drawRect(Ownify.white(0.11f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
+                            drawRect(Ownify.ink(0.11f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
                             x += period
                         }
                     }
@@ -366,11 +366,11 @@ private fun SleepTimeline(timeline: Timeline) {
     }
 }
 
-/** The stage tones: deep in sleep's colour, REM in its lighter shade, light and awake in white. */
+/** The stage tones: deep in sleep's colour, REM in its lighter shade, light and awake in the text colour. */
 private fun stageColor(tone: String): Color = when (tone) {
     "rem" -> Ownify.SleepLight
-    "light" -> Ownify.white(0.26f)
-    "awake" -> Ownify.white(0.13f)
+    "light" -> Ownify.ink(0.26f)
+    "awake" -> Ownify.ink(0.13f)
     else -> Ownify.Sleep
 }
 
@@ -403,7 +403,7 @@ private fun MetricGroupCard(group: MetricGroup) {
                     Modifier
                         .size(28.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Ownify.white(0.055f))
+                        .background(Ownify.fill(0.055f))
                         .clearAndSetSemantics { },
                     contentAlignment = Alignment.Center
                 ) {

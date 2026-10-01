@@ -251,7 +251,7 @@ private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {
             .press(interaction, scale = 0.94f, enabled = enabled)
             .size(44.dp)
             .drawWithContent {
-                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 6.dp, blur = 16.dp, color = Color.Black.copy(alpha = 0.22f))), shadows)
+                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 6.dp, blur = 16.dp, color = Ownify.shade(0.22f))), shadows)
                 drawContent()
             }
             .clip(CircleShape)
@@ -261,7 +261,7 @@ private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {
             )
             .drawBehind {
                 // --shadow-inset: the top light, over the fill and under the icon.
-                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.white(0.08f), inset = true)), shadows)
+                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows)
             }
             .border(1.dp, if (enabled) Ownify.mix(Ownify.Health, 0.30f, Ownify.GlassBorder) else Ownify.GlassBorderSoft, CircleShape)
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
@@ -448,7 +448,7 @@ fun GoalCard(
                         accent = accent.color,
                         height = if (primary) 10.dp else 8.dp,
                         emptyHeight = if (primary) 10.dp else 8.dp,
-                        fill = if (model.paused) SolidColor(Ownify.white(0.22f)) else null
+                        fill = if (model.paused) SolidColor(Ownify.ink(0.22f)) else null
                     )
 
                     // .goal-card__foot

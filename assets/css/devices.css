@@ -22,7 +22,7 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.52);
+    background: rgba(var(--scrim), calc(0.52 * var(--scrim-k)));
     -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
     opacity: 0;
@@ -111,7 +111,7 @@
     background: var(--text-faint);
 }
 
-.devices__item.is-connected .devices__status { color: color-mix(in srgb, var(--health) 34%, #ffffff); }
+.devices__item.is-connected .devices__status { color: color-mix(in srgb, var(--health) calc(100% - 66% * var(--tint-keep)), var(--tint-base)); }
 
 .devices__item.is-connected .devices__dot {
     background: var(--health);

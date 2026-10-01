@@ -16,10 +16,19 @@ each platform's own implementation (CSS/JS on the web, Compose on Android)
 to reach the same result. Do not ask whether a request also applies to the
 other platform unless a genuine technical ambiguity prevents implementing it.
 
+## Two themes
+
+Ownify has Dark Mode (the default) and White Mode, on both apps. Every colour
+goes through the theme: a token or a role in `assets/css/theme.css` (`:root`
+for Dark, `:root[data-theme="light"]` for White) and `OwnifyPalette` /
+`Ownify.ink(…)`, `fill(…)`… in `OwnifyAndroid/app/src/main/java/com/ownify/android/ui/theme/OwnifyTheme.kt`
+— never a literal white, black or ground grey in a component. Anything new
+must look right in both themes. `docs/THEME.md` explains the roles.
+
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 1.2.1**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 1.3.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher:
@@ -30,4 +39,4 @@ every change that is shipped, in the same commit, and keep the Android
 
 Every commit title starts with the new version number, then the
 description: `1.0.2 Show the version in commit titles`.
-The next version is 1.2.2 for a small update, or 1.3.0 for a bigger change.
+The next version is 1.3.1 for a small update, or 1.4.0 for a bigger change.

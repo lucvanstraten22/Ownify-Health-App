@@ -110,6 +110,56 @@
     --shadow-card: 0 15px 35px rgba(0, 0, 0, 0.18);
     --shadow-float: 0 12px 28px rgba(0, 0, 0, 0.3);
 
+    /* --- roles -----------------------------------------------------------
+       Every colour a component writes for itself is one of these roles, so
+       a theme changes the role and never the component. Here, in the dark
+       theme, each is exactly the value the components used to write out.
+
+         --ink       marks in the text colour: tracks, grips, dots, dashes,
+                     grid lines, underlines, focus rings
+         --fill      wells and controls inside a surface: rows, chips,
+                     fields, tiles, the meter's track (× --fill-k)
+         --lift      faint panels that sit on the page itself, not in a
+                     surface: the board's rows, a framed note (× --lift-k)
+         glint       white light on glass — lit edges, reflections, the
+                     sheen — written rgba(255, 255, 255, calc(a × --glint-k)):
+                     white in both themes, stronger on light glass
+         --shade     shadows (× --shade-k)
+         --scrim     what dims the page behind a panel (× --scrim-k)
+         --ground    --bg-main as channels, for veils of the page itself
+         --pane-body the floating glass's own tint under its sheen
+
+       Used as rgba(var(--ink), 0.07) or rgba(var(--fill), calc(0.05 *
+       var(--fill-k))). The light theme's values are at the end of this file. */
+    --ink: 255, 255, 255;
+    --fill: 255, 255, 255;
+    --fill-k: 1;
+    --lift: 255, 255, 255;
+    --lift-k: 1;
+    --glint-k: 1;
+    --shade: 0, 0, 0;
+    --shade-k: 1;
+    --scrim: 0, 0, 0;
+    --scrim-k: 1;
+    --ground: 48, 45, 47;
+    --pane-body: 30, 28, 29;
+
+    /* Text tinted by an accent (a chip, a status): the accent mixed with
+       --tint-base, keeping that share of the base the rule names times
+       --tint-keep — so the light theme deepens the accent instead of
+       paling it, without each rule knowing which theme it is in. */
+    --tint-base: #ffffff;
+    --tint-keep: 1;
+
+    /* The few surfaces that are near-solid rather than glass. */
+    --tip-surface: rgba(40, 40, 42, 0.92);          /* a value floating over a bar */
+    --tip-surface-solid: rgba(46, 42, 44, 0.97);    /* the chart's reading */
+    --board-you-surface: linear-gradient(180deg, rgba(46, 57, 52, 0.97), rgba(42, 52, 48, 0.96));
+    --switch-knob: rgba(255, 255, 255, 0.55);
+
+    /* The error red of the wizard, the editor and the rating. */
+    --error: #ff8b8b;
+
     /* --- typography ------------------------------------------------------ */
 
     /* SF Pro, by the route Apple actually ships it.
@@ -286,7 +336,7 @@ button {
 }
 
 :focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.55);
+    outline: 2px solid rgba(var(--ink), 0.55);
     outline-offset: 3px;
     border-radius: var(--radius-sm);
 }
@@ -373,14 +423,14 @@ button {
 /* The lifted edge only exists while the sheet is off its rest position. */
 .deck[data-ai-state="moving"] .sheet,
 .deck[data-ai-state="open"] .sheet {
-    box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    box-shadow: 0 -18px 42px rgba(var(--shade), calc(0.36 * var(--shade-k))), inset 0 1px 0 rgba(255, 255, 255, calc(0.07 * var(--glint-k)));
 }
 
 .sheet-scrim {
     position: absolute;
     inset: 0;
     z-index: 35;
-    background: rgba(0, 0, 0, 0.42);
+    background: rgba(var(--scrim), calc(0.42 * var(--scrim-k)));
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--screen-duration) ease;
@@ -471,7 +521,7 @@ button {
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
 }
 
 .skeleton::after {
@@ -479,7 +529,7 @@ button {
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.11), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, calc(0.11 * var(--glint-k))), transparent);
     animation: shimmer 2.4s var(--ease-out) infinite;
 }
 
@@ -505,4 +555,99 @@ button {
     }
 
     .js .reveal { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   White Mode — the same design in a light environment.
+
+   Set by <html data-theme="light"> (the server writes it from the person's
+   choice in Instellingen → Thema & uiterlijk; settings.js switches it in
+   place). Only roles and tokens change here: no component, size, space,
+   type or motion does. Mirrored in OwnifyTheme.kt (OwnifyPalette.Light).
+
+   The translation, role by role:
+     ground      the dark theme's warm grey, as a warm off-white — lightest at
+                 the top, as the dark one is — under the same accent washes
+     surfaces    glass that sits on the ground (cards, panels, the tab bar,
+                 a tooltip) is white and translucent, lifted off the ground as
+                 the dark theme's is: lighter than what is behind it
+     wells       what sits inside a surface (rows, chips, fields, tracks) is
+                 a faint warm-dark tint, set into the white the way the dark
+                 theme's lighter wells are set into its glass
+     lift        a faint panel on the page itself stays white light, as it is
+                 in the dark theme — only more of it, on a light ground
+     ink         marks drawn in the text colour turn dark with the text
+     glint       highlights stay white light, stronger on white glass
+     shade       shadows soften and warm: depth comes from the glass
+     accents     unchanged, except the three that fall below 3:1 on white
+                 (score-mid, score-low, attention): the same hue, deeper —
+                 attention, which is also small text, to 4.5:1
+   ========================================================================== */
+:root[data-theme="light"] {
+    color-scheme: light;
+
+    --bg-main: #FBFAFA;
+    --bg-deep: #F0EDEE;
+    --bg-secondary: #FFFFFF;
+
+    --glass: rgba(36, 28, 32, 0.06);
+    --glass-strong: rgba(36, 28, 32, 0.085);
+    --glass-soft: rgba(36, 28, 32, 0.04);
+    --glass-border: rgba(36, 28, 32, 0.10);
+    --glass-border-soft: rgba(36, 28, 32, 0.075);
+    --glass-hairline: rgba(36, 28, 32, 0.07);
+
+    /* Below 3:1 on white as they were: the same hue and saturation, deeper.
+       The score colours are only ever graphics (a dot, a ring), so 3:1 is
+       their mark; attention is also small text — a warning, an error note —
+       so it goes to 4.5:1 on every light ground, bg-deep included. The
+       washes and borders written in its gold (rgba(191, 168, 99, …)) keep
+       the original. Everything else — the categories, score-high, the app's
+       green, the grey tile, the missed day — keeps its exact value. */
+    --score-mid: #7D910B;
+    --score-low: #AC8032;
+    --attention: #7D6A33;
+
+    /* The same three tiers, with the contrast the dark theme gives them:
+       secondary 6.7–7.3:1, muted 5.0–5.5:1, faint (graphics only) ~3.3:1. */
+    --text-primary: #1D1A1C;
+    --text-secondary: rgba(29, 26, 28, 0.74);
+    --text-muted: rgba(29, 26, 28, 0.66);
+    --text-faint: rgba(29, 26, 28, 0.48);
+
+    --pane-saturate: 170%;
+    --pane-brightness: 104%;
+    --pane-rim: linear-gradient(152deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.55) 22%,
+        rgba(29, 26, 28, 0.06) 52%,
+        rgba(29, 26, 28, 0.09) 78%,
+        rgba(255, 255, 255, 0.70) 100%);
+    --surface-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.60));
+    --surface-gradient-quiet: linear-gradient(135deg, rgba(255, 255, 255, 0.70), rgba(255, 255, 255, 0.46));
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    --shadow-card: 0 15px 35px rgba(62, 46, 54, 0.07);
+    --shadow-float: 0 12px 28px rgba(62, 46, 54, 0.12);
+
+    --ink: 29, 26, 28;
+    --fill: 36, 28, 32;
+    --fill-k: 1;
+    --lift: 255, 255, 255;
+    --lift-k: 16;
+    --glint-k: 3;
+    --shade: 62, 46, 54;
+    --shade-k: 0.38;
+    --scrim: 38, 30, 34;
+    --scrim-k: 0.5;
+    --ground: 251, 250, 250;
+    --pane-body: 214, 210, 212;
+
+    --tint-base: #1D1A1C;
+    --tint-keep: 0.4;
+
+    --tip-surface: rgba(255, 255, 255, 0.94);
+    --tip-surface-solid: rgba(255, 255, 255, 0.97);
+    --board-you-surface: linear-gradient(180deg, rgba(234, 245, 239, 0.97), rgba(226, 240, 233, 0.96));
+    --switch-knob: #FFFFFF;
+    --error: #C2453E;
 }

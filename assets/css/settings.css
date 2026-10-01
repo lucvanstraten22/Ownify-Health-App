@@ -63,7 +63,7 @@
     transition: background-color var(--transition-fast);
 }
 
-.settings-row:active { background: rgba(255, 255, 255, 0.05); }
+.settings-row:active { background: rgba(var(--fill), calc(0.05 * var(--fill-k))); }
 
 .settings-row__mark {
     display: grid;
@@ -73,7 +73,7 @@
     flex: none;
     border: 1px solid var(--glass-hairline);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.055);
+    background: rgba(var(--fill), calc(0.055 * var(--fill-k)));
     color: var(--text-secondary);
 }
 
@@ -132,7 +132,7 @@
     overflow: hidden;
     border: 1px solid var(--glass-hairline);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
     color: var(--text-muted);
 }
 
@@ -194,7 +194,7 @@
     color: var(--text-muted);
     text-decoration: underline;
     text-underline-offset: 3px;
-    text-decoration-color: rgba(255, 255, 255, 0.22);
+    text-decoration-color: rgba(var(--ink), 0.22);
     transition: color var(--transition-fast);
 }
 
@@ -218,7 +218,7 @@
 }
 
 .settings-field.is-editable { transition: background-color var(--transition-fast); }
-.settings-field.is-editable:active:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
+.settings-field.is-editable:active:not(:disabled) { background: rgba(var(--fill), calc(0.05 * var(--fill-k))); }
 
 .settings-field__text { min-width: 0; }
 
@@ -259,7 +259,7 @@
     overflow: hidden;
     border: 1px solid var(--glass-hairline);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
     color: var(--text-muted);
 }
 
@@ -275,7 +275,7 @@
 
 /* A locked field is not a broken one: the lock says it was answered once. */
 .settings-field.is-locked,
-.settings-field.is-derived { background: rgba(255, 255, 255, 0.022); }
+.settings-field.is-derived { background: rgba(var(--fill), calc(0.022 * var(--fill-k))); }
 
 .settings-field.is-locked .settings-field__mark { color: var(--text-muted); }
 
@@ -312,7 +312,7 @@
     transition: background-color var(--transition-fast);
 }
 
-.settings-option:active:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
+.settings-option:active:not(:disabled) { background: rgba(var(--fill), calc(0.05 * var(--fill-k))); }
 
 .settings-option__text { min-width: 0; }
 
@@ -378,7 +378,7 @@
     font-size: var(--fs-small);
     font-weight: 600;
     color: var(--health);
-    color: color-mix(in srgb, var(--health) 34%, #ffffff);
+    color: color-mix(in srgb, var(--health) calc(100% - 66% * var(--tint-keep)), var(--tint-base));
     text-align: right;
 }
 
@@ -425,7 +425,7 @@
     flex: none;
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -436,7 +436,7 @@
     width: 17px;
     height: 17px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.55);
+    background: var(--switch-knob);
     transition: transform var(--transition-fast), background-color var(--transition-fast);
 }
 
@@ -460,7 +460,7 @@
     transition: background-color var(--transition-fast);
 }
 
-.settings-toggle--live:active { background: rgba(255, 255, 255, 0.05); }
+.settings-toggle--live:active { background: rgba(var(--fill), calc(0.05 * var(--fill-k))); }
 .settings-toggle--live:disabled { cursor: progress; opacity: 0.7; }
 .settings-toggle--live:disabled .switch { opacity: 1; }
 .settings-toggle__note.is-error { color: var(--attention); }
@@ -480,7 +480,7 @@
     background: var(--surface-gradient-quiet);
     -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
     backdrop-filter: blur(var(--blur-card)) saturate(130%);
-    box-shadow: var(--shadow-inset), 0 10px 24px rgba(0, 0, 0, 0.14);
+    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
     overflow: hidden;
     transition: border-color var(--transition-slow);
 }
@@ -499,7 +499,7 @@
     transition: background-color var(--transition-fast);
 }
 
-.integration__head:active { background: rgba(255, 255, 255, 0.04); }
+.integration__head:active { background: rgba(var(--fill), calc(0.04 * var(--fill-k))); }
 
 .integration .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
 .integration .icon-tile .icon { width: 17px; height: 17px; }
@@ -543,7 +543,7 @@
     background: var(--text-faint);
 }
 
-.integration.is-connected .integration__status { color: color-mix(in srgb, var(--health) 34%, #ffffff); }
+.integration.is-connected .integration__status { color: color-mix(in srgb, var(--health) calc(100% - 66% * var(--tint-keep)), var(--tint-base)); }
 
 .integration.is-connected .integration__dot {
     background: var(--health);
@@ -660,7 +660,7 @@
     padding: var(--space-4);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(var(--lift), calc(0.035 * var(--lift-k)));
     font-size: var(--fs-small);
     color: var(--text-secondary);
 }
@@ -696,7 +696,7 @@
 .confirm__scrim {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(var(--scrim), calc(0.55 * var(--scrim-k)));
     -webkit-backdrop-filter: blur(3px);
     backdrop-filter: blur(3px);
     opacity: 0;
@@ -848,7 +848,7 @@
     padding: 0 var(--space-3);
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-label);
@@ -857,7 +857,7 @@
 .field-editor__input:focus-visible {
     outline: none;
     border-color: rgba(60, 158, 114, 0.5);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
 }
 
 /* A number field that carries its unit, so the unit is not left to a label. */
@@ -888,7 +888,7 @@
     padding: 0 var(--space-3);
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
     color: var(--text-secondary);
     font-size: var(--fs-label);
     text-align: left;
@@ -902,7 +902,7 @@
 
 .field-editor__error {
     margin-top: var(--space-3);
-    color: #ff8b8b;
+    color: var(--error);
     font-size: var(--fs-small);
     line-height: 1.4;
 }

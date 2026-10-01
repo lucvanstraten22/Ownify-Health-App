@@ -115,7 +115,7 @@ fun OverlayFrame(
                 .fillMaxSize()
                 .graphicsLayer { alpha = shown.value }
                 .glassBackdrop(backdrop, RectangleShape, GlassFilter(3.dp), scrimBlur)
-                .background(Color.Black.copy(alpha = scrim))
+                .background(Ownify.scrim(scrim))
                 .then(
                     if (dismissible && !leaving) Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -177,7 +177,7 @@ fun Modifier.panelGlass(shape: Shape = cardShape(), scrim: Float = 0.52f, style:
         .glassBackdrop(backdrop, shape, GlassFilter(24.dp, saturate = 1.3f), layer)
         .drawBehind {
             val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawBehind)) }
-            clipPath(path, ClipOp.Intersect) { drawRect(Color.Black.copy(alpha = scrim)) }
+            clipPath(path, ClipOp.Intersect) { drawRect(Ownify.scrim(scrim)) }
         }
         .cardSurface(shape, style, ground = null, shadows = shadows)
 }
@@ -238,7 +238,7 @@ fun RoundButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier:
             .press(interaction)
             .size(34.dp)
             .clip(CircleShape)
-            .background(Ownify.white(0.055f))
+            .background(Ownify.fill(0.055f))
             .border(1.dp, Ownify.GlassHairline, CircleShape)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },

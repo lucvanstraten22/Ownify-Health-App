@@ -122,6 +122,34 @@ if (!function_exists('settings_prepare')) {
             $auth['signed_in'] ? (string) $auth['user']['username'] : 'Niet ingelogd'
         );
 
+        /* Dark or White Mode, as this browser chose it (lib/theme.php). The
+           app sends no cookie, so it gets Dark and shows the phone's own
+           choice in its place. */
+        require_once __DIR__ . '/theme.php';
+        $settings = settings_use_theme($settings, app_theme());
+
+        return $settings;
+    }
+}
+
+if (!function_exists('settings_use_theme')) {
+    /** The theme screen's choice and the main page's row, both as $theme. */
+    function settings_use_theme(array $settings, string $theme): array
+    {
+        foreach ($settings['pages']['theme']['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? '') !== 'choice' || ($block['name'] ?? '') !== 'theme') {
+                continue;
+            }
+
+            $settings['pages']['theme']['blocks'][$b]['selected'] = $theme;
+
+            foreach ($block['options'] as $option) {
+                if ($option['key'] === $theme) {
+                    $settings = settings_set_row_value($settings, 'theme', (string) $option['label']);
+                }
+            }
+        }
+
         return $settings;
     }
 }

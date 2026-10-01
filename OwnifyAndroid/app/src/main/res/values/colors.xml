@@ -2,4 +2,6 @@
 <resources>
     <!-- Ownify bg-deep: the window behind the app before its first frame. -->
     <color name="ownify_bg_deep">#FF252223</color>
+    <!-- The same in White Mode (theme.css, :root[data-theme="light"]). -->
+    <color name="ownify_bg_deep_light">#FFF0EDEE</color>
 </resources>

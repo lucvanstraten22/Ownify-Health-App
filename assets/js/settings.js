@@ -3,7 +3,8 @@
  *
  * Three small things, and nothing that pretends to save:
  *
- *   choices        pick one option; the tick moves, nothing is stored
+ *   choices        pick one option; the tick moves, nothing is stored —
+ *                  except the theme, which saves on this device at once
  *   switches       Privacy's switches that save, at once (api/profile/privacy.php)
  *   integrations   expand a health source in place
  *   account        sign out, and deleting the account — two confirmations,
@@ -11,6 +12,7 @@
  *
  * Every screen that offers a choice says at its foot that the choice is not
  * kept, so the interaction can be judged without the page claiming otherwise.
+ * The theme's screen does not: that choice is kept (see useTheme()).
  */
 
 (function () {
@@ -39,7 +41,41 @@
                 other.setAttribute('aria-checked', isOn ? 'true' : 'false');
             }
         );
+
+        if (name === 'theme') {
+            useTheme(option.getAttribute('data-choice-key') === 'light' ? 'light' : 'dark',
+                option.querySelector('.settings-option__label'));
+        }
     });
+
+    /* --------------------------------------------------------- the theme */
+
+    /**
+     * Thema & uiterlijk is the one choice that saves, and on this device:
+     * the page changes in place (theme.css reads data-theme on <html>), the
+     * browser's own bars follow, and a cookie keeps it — lib/theme.php reads
+     * that when the next page is drawn, so no page is painted in the other
+     * theme first. The row on the main page says the new one.
+     */
+    function useTheme(theme, label) {
+        var root = document.documentElement;
+        root.setAttribute('data-theme', theme);
+
+        var bar = document.querySelector('meta[name="theme-color"]');
+        if (bar) { bar.setAttribute('content', bar.getAttribute(theme === 'light' ? 'data-theme-light' : 'data-theme-dark')); }
+        var scheme = document.querySelector('meta[name="color-scheme"]');
+        if (scheme) { scheme.setAttribute('content', theme); }
+
+        document.cookie = 'ownify_theme=' + theme + '; Max-Age=31536000; Path=/; SameSite=Lax'
+            + (location.protocol === 'https:' ? '; Secure' : '');
+
+        var row = document.querySelector('[data-detail-open="settings-theme"]');
+        var value = row && row.querySelector('.settings-row__value');
+        if (value && label) {
+            value.textContent = label.textContent;
+            row.setAttribute('aria-label', row.getAttribute('aria-label').replace(/ — [^.]*\./, ' — ' + label.textContent + '.'));
+        }
+    }
 
     /* ------------------------------------------------- switches that save */
 

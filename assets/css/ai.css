@@ -64,7 +64,7 @@
     height: 4px;
     margin: var(--space-2) auto 0;
     border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.20);
+    background: rgba(var(--ink), 0.20);
 }
 
 .ai-top__row {
@@ -209,7 +209,7 @@
 
 .orb__ring circle {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.26);
+    stroke: rgba(var(--ink), 0.26);
     stroke-width: 3.5;
     stroke-linecap: round;
     stroke-dasharray: 0.5 9;
@@ -233,18 +233,18 @@
     inset: 16%;
     border-radius: 50%;
     background: radial-gradient(120% 120% at 30% 22%,
-        rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.09) 34%,
-        rgba(255, 255, 255, 0.02) 62%,
-        rgba(255, 255, 255, 0.06) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+        rgba(255, 255, 255, calc(0.24 * var(--glint-k))) 0%,
+        rgba(255, 255, 255, calc(0.09 * var(--glint-k))) 34%,
+        rgba(255, 255, 255, calc(0.02 * var(--glint-k))) 62%,
+        rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%);
+    border: 1px solid rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
     -webkit-backdrop-filter: blur(14px) saturate(125%);
     backdrop-filter: blur(14px) saturate(125%);
     /* Rim light on top, depth underneath: reads as a sphere of glass. */
     box-shadow:
-        inset 0 2px 1px rgba(255, 255, 255, 0.24),
-        inset 0 -20px 30px rgba(0, 0, 0, 0.20),
-        0 20px 42px rgba(0, 0, 0, 0.28);
+        inset 0 2px 1px rgba(255, 255, 255, calc(0.24 * var(--glint-k))),
+        inset 0 -20px 30px rgba(var(--shade), calc(0.20 * var(--shade-k))),
+        0 20px 42px rgba(var(--shade), calc(0.28 * var(--shade-k)));
     animation: orb-breathe 7s ease-in-out infinite;
 }
 
@@ -254,7 +254,7 @@
     position: absolute;
     inset: 9% 20% 54% 17%;
     border-radius: 50%;
-    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, 0.30), transparent 72%);
+    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, calc(0.30 * var(--glint-k))), transparent 72%);
     filter: blur(3px);
 }
 
@@ -563,7 +563,7 @@
     background: var(--glass);
     -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
     backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    box-shadow: 0 10px 28px rgba(var(--shade), calc(0.28 * var(--shade-k))), inset 0 1px 0 rgba(255, 255, 255, calc(0.09 * var(--glint-k)));
     transition: border-color var(--transition-fast);
 }
 
@@ -605,7 +605,7 @@
 .ai-send .icon { width: 20px; height: 20px; stroke-width: 2; }
 
 .ai-send:disabled {
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(var(--fill), calc(0.10 * var(--fill-k)));
     color: var(--text-muted);
     cursor: default;
 }
@@ -658,7 +658,7 @@
     align-items: flex-start;
     justify-content: center;
     padding: var(--space-2) var(--space-4) 0;
-    background: rgba(0, 0, 0, 0.42);
+    background: rgba(var(--scrim), calc(0.42 * var(--scrim-k)));
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     animation: ai-msg-in 220ms var(--ease-out) both;

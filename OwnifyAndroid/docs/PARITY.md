@@ -52,7 +52,7 @@ with bold only.
 | `components/goal-wizard.php` | `GoalWizard` | six steps, per-step validation, source catalogue, targets, durations, summary, priority, done, errors |
 | `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board (profile picture over the initial, when its owner shows it), Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
 | `pages/settings.php` | `SettingsPage` | identity card, five groups, logout, delete link |
-| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice, states, toggles (Privacy's "Profielfoto op de ranglijst" and "Gegevens verwerken met Google Gemini" save), actions (Privacy's "AI-gesprekken wissen": Alles wissen, in-place confirm, done line, error), rows, notes, not-saved line |
+| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice (Thema's Donker / Licht saves and switches at once; no not-saved line under it), states, toggles (Privacy's "Profielfoto op de ranglijst" and "Gegevens verwerken met Google Gemini" save), actions (Privacy's "AI-gesprekken wissen": Alles wissen, in-place confirm, done line, error), rows, notes, not-saved line |
 | `components/settings-editor.php` | `FieldEditor` | text / date / choice / measure, once-warning, error |
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |
@@ -110,6 +110,19 @@ Colour has two separate meanings, identical on both sides:
   neither client works it out. `tools/health-score-test.php` and
   `ColourSystemTest` check the hex values match on both sides.
 
+Two themes, one design (`docs/THEME.md`). Dark Mode (`:root` in theme.css)
+and White Mode (`:root[data-theme="light"]`) are `OwnifyPalette.Dark` and
+`OwnifyPalette.Light`, token for token, and the screens read them through
+`Ownify` — so a change of theme redraws everything at once. Every colour a
+component writes for itself is one of the website's roles, under the same
+name: `Ownify.ink(a)` is `rgba(var(--ink), a)`, and so on for `fill`, `lift`,
+`glint`, `shade`, `scrim`, `ground`, `paneBody` and `tint`. In Dark Mode each
+role is exactly the white or black it replaced. `ColourSystemTest` reads both
+blocks of theme.css and compares every token; the categories and the score
+bands keep their meaning in both, and only `--score-mid`, `--score-low` and
+`--attention` (text and icons; its washes keep the original gold) deepen in
+White Mode.
+
 Text is laid out the way the browser lays it out, not with Compose's
 defaults:
 
@@ -155,6 +168,9 @@ defaults:
 | Focus follows the website: a panel's first field is focused as it opens, the field in error after a failed check, and a tapped button takes focus from a field | what the website's script and the browser do; the keyboard therefore opens with the login and editor panels |
 | The assistant's state is read the first time the sheet opens, also when it opens on the consent question | the website renders the pages, and so the consent, fresh on every visit and only reads the conversation when it opens on it; the app keeps its pages in memory for long, so a yes or no given on the website since is picked up this way |
 | Enter in the assistant's field is a new line; the send button sends | as on a phone's browser: the website sends on Enter only with a mouse or trackpad (`pointer: fine`) |
+| The theme is kept on the phone (`shared_prefs/ownify_theme.xml`); the website keeps the browser's in a cookie. Each remembers its own | a choice of the device, on both; the app sends no cookie, so the server's state always names Dark and the app puts its own choice there (`withTheme()`, as `settings_use_theme()` does on the website) |
+| The system bars follow the theme — light icons over Dark Mode, dark ones over White — and the system's date picker and the Health Connect rationale open in the app's theme | the website sets the browser's `theme-color`, `color-scheme` and the iPhone status-bar style instead |
+| On Android 12 and older a cold start in White Mode shows the system's starting window in the manifest's dark theme for a moment | the platform draws it before the app runs; from Android 13 the next start's splash follows the choice (`setSplashScreenTheme`). The website arrives in its theme from the first byte |
 
 ## Verification
 
@@ -166,6 +182,13 @@ hardware rendering, motion still), each from the same `api/app/state.php`
 answer of the same day. Each text's position, width, line count, size,
 weight and letter spacing is compared, then the shots are compared by eye
 and by sampled colour.
+
+Both themes. Dark Mode was captured on both sides before White Mode existed
+and again once it was finished: all 67 app shots and 59 of the 61 website
+shots are identical to the pixel — the two others are Thema & uiterlijk's new
+copy and the opening screen's turning ring, which differs between any two
+captures. White Mode (`-Downify.theme=light`, and the website with its
+cookie) is compared side by side, scenario by scenario, as Dark Mode is.
 
 What is left, and why:
 

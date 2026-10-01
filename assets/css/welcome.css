@@ -59,7 +59,7 @@
 
 .welcome__track {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.07);
+    stroke: rgba(var(--ink), 0.07);
     stroke-width: 7;
 }
 
@@ -92,17 +92,17 @@
     inset: 21%;
     border-radius: 50%;
     background: radial-gradient(120% 120% at 30% 22%,
-        rgba(255, 255, 255, 0.24) 0%,
-        rgba(255, 255, 255, 0.09) 34%,
-        rgba(255, 255, 255, 0.02) 62%,
-        rgba(255, 255, 255, 0.06) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+        rgba(255, 255, 255, calc(0.24 * var(--glint-k))) 0%,
+        rgba(255, 255, 255, calc(0.09 * var(--glint-k))) 34%,
+        rgba(255, 255, 255, calc(0.02 * var(--glint-k))) 62%,
+        rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%);
+    border: 1px solid rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
     -webkit-backdrop-filter: blur(14px) saturate(125%);
     backdrop-filter: blur(14px) saturate(125%);
     box-shadow:
-        inset 0 2px 1px rgba(255, 255, 255, 0.24),
-        inset 0 -20px 30px rgba(0, 0, 0, 0.20),
-        0 20px 42px rgba(0, 0, 0, 0.28);
+        inset 0 2px 1px rgba(255, 255, 255, calc(0.24 * var(--glint-k))),
+        inset 0 -20px 30px rgba(var(--shade), calc(0.20 * var(--shade-k))),
+        0 20px 42px rgba(var(--shade), calc(0.28 * var(--shade-k)));
     animation: welcome-breathe 7s ease-in-out 1.6s infinite;
 }
 
@@ -112,7 +112,7 @@
     position: absolute;
     inset: 9% 20% 54% 17%;
     border-radius: 50%;
-    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, 0.30), transparent 72%);
+    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, calc(0.30 * var(--glint-k))), transparent 72%);
     filter: blur(3px);
 }
 
@@ -158,15 +158,15 @@
     border-radius: var(--radius-pill);
     background:
         linear-gradient(177deg,
-            rgba(255, 255, 255, 0.115) 0%,
-            rgba(255, 255, 255, 0.042) 46%,
-            rgba(255, 255, 255, 0.06) 100%),
-        rgba(30, 28, 29, 0.46);
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), 0.46);
     -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     box-shadow:
-        0 12px 28px rgba(0, 0, 0, 0.34),
-        inset 0 1px 0 rgba(255, 255, 255, 0.13);
+        0 12px 28px rgba(var(--shade), calc(0.34 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
     color: var(--text-primary);
     font-size: var(--fs-body);
     font-weight: 600;
@@ -179,13 +179,13 @@
 .welcome__button--primary {
     background:
         linear-gradient(177deg,
-            rgba(255, 255, 255, 0.13) 0%,
-            rgba(255, 255, 255, 0.045) 46%,
-            rgba(255, 255, 255, 0.06) 100%),
+            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
         linear-gradient(180deg,
             rgba(60, 158, 114, 0.30) 0%,
             rgba(60, 158, 114, 0.18) 100%),
-        rgba(30, 28, 29, 0.46);
+        rgba(var(--pane-body), 0.46);
 }
 
 /* The rim: a hairline that catches the light, as on the tab bar. */
@@ -209,7 +209,7 @@
 }
 
 .welcome__button:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.55);
+    outline: 2px solid rgba(var(--ink), 0.55);
     outline-offset: 3px;
     border-radius: var(--radius-pill);
 }

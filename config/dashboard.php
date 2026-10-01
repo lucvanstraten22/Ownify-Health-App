@@ -28,6 +28,8 @@ return [
         'tagline'     => 'Gezondheidsoverzicht',
         'locale'      => 'nl',
         'theme_color' => '#302D2F',
+        /* The same, in White Mode (lib/theme.php): its --bg-main. */
+        'theme_color_light' => '#FBFAFA',
     ],
 
     /* -------------------------------------------------- opening screen */

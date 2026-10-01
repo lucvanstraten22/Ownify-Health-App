@@ -498,9 +498,22 @@ check('... and never the category colour', array_column($low, 'accent') === arra
 check('no data: no band, category colour still its own', array_column($none, 'score_band') === [null, null, null]
     && array_column($none, 'accent') === array_values($accents));
 
-/* The same colours on the website and in the app. */
+/* The same colours on the website and in the app. Most are one value in both
+   themes (`val Sleep = Color(…)` beside `--sleep`); the mid and low bands are
+   deeper in White Mode, so they are kept per theme: OwnifyPalette.Dark and
+   .Light beside :root and :root[data-theme="light"]. */
 $css = (string) file_get_contents(dirname(__DIR__) . '/assets/css/theme.css');
 $kt  = (string) file_get_contents(dirname(__DIR__) . '/OwnifyAndroid/app/src/main/java/com/ownify/android/ui/theme/OwnifyTheme.kt');
+$between = static function (string $text, string $from, string $to): string {
+    $start = strpos($text, $from);
+    $end   = $start === false ? false : strpos($text, $to, $start);
+
+    return $start === false || $end === false ? '' : substr($text, $start, $end - $start);
+};
+$cssDark  = $between($css, ':root {', "\n}");
+$cssLight = $between($css, ':root[data-theme="light"] {', "\n}");
+$ktDark   = $between($kt, 'val Dark = OwnifyPalette(', 'val Light = OwnifyPalette(');
+$ktLight  = $between($kt, 'val Light = OwnifyPalette(', 'fun of(');
 $expected = [
     'sleep' => ['Sleep', '5B64C7'], 'sleep-light' => ['SleepLight', '747CDA'],
     'nutrition' => ['Nutrition', '477B61'], 'nutrition-light' => ['NutritionLight', '67997D'],
@@ -509,9 +522,15 @@ $expected = [
     'neutral' => ['Neutral', '6B6769'],
 ];
 foreach ($expected as $token => [$name, $hex]) {
+    $inApp = preg_match('/val ' . $name . ' = Color\(0xFF' . $hex . '\)/i', $kt) === 1
+        || preg_match('/\b' . lcfirst($name) . ' = Color\(0xFF' . $hex . '\)/', $ktDark) === 1;
     check("--{$token} is #{$hex} on the website and in the app",
-        preg_match('/--' . preg_quote($token, '/') . ':\s*#' . $hex . '\s*;/i', $css) === 1
-        && preg_match('/val ' . $name . ' = Color\(0xFF' . $hex . '\)/i', $kt) === 1);
+        preg_match('/--' . preg_quote($token, '/') . ':\s*#' . $hex . '\s*;/i', $cssDark) === 1 && $inApp);
+}
+foreach (['score-mid' => ['scoreMid', '7D910B'], 'score-low' => ['scoreLow', 'AC8032']] as $token => [$field, $hex]) {
+    check("--{$token} is #{$hex} in White Mode, on the website and in the app",
+        preg_match('/--' . preg_quote($token, '/') . ':\s*#' . $hex . '\s*;/i', $cssLight) === 1
+        && preg_match('/\b' . $field . ' = Color\(0xFF' . $hex . '\)/', $ktLight) === 1);
 }
 
 echo str_repeat('-', 72) . "\n";

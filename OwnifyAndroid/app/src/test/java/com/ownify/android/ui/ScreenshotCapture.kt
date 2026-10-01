@@ -40,6 +40,8 @@ import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.screens.OwnifyScreens
+import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyTheme
 import java.io.File
 import java.io.FileOutputStream
@@ -47,6 +49,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -65,6 +68,7 @@ import org.robolectric.Shadows.shadowOf
  *   gradlew :app:testDebugUnitTest --tests '*ScreenshotCapture*' \
  *     -Downify.shots=<dir> -Downify.state=<state.json> -Downify.server=<url> \
  *     -Downify.state.free=<state.json of an account with a free goal slot>
+ *     [-Downify.theme=light: in White Mode]
  *
  * 412 × 915 dp at 420 dpi (2.625 px to the dp, a common phone), and the
  * browser at the same size and device pixel ratio, so both round to the
@@ -90,7 +94,11 @@ class ScreenshotCapture {
         assumeTrue("screenshots not asked for", out.isNotEmpty() && state.isNotEmpty())
         File(out).mkdirs()
         if (server.isNotEmpty()) OwnifyConnection.api = OwnifyApi(server)
+        Ownify.use(OwnifyMode.of(System.getProperty("ownify.theme")))
     }
+
+    @After
+    fun dark() = Ownify.use(OwnifyMode.DARK)
 
     private fun data(file: String = state): AppData = AppData.parse(JSONObject(File(file).readText()).getJSONObject("data"))
 

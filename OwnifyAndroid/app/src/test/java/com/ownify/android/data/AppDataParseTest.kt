@@ -21,6 +21,31 @@ import org.robolectric.annotation.Config
 @Config(sdk = [36])
 class AppDataParseTest {
 
+    @Test
+    fun `the theme - the one choice that saves, and this phone's choice where the settings name it`() {
+        val data = fixture("state-demo.json")
+        val choice = data.settings.page("theme")!!.blocks.filterIsInstance<SettingsBlock.Choice>().single()
+        assertEquals("theme", choice.name)
+        assertTrue(choice.saves)
+        // Asked by the app, the server has no cookie: Dark.
+        assertEquals("dark", choice.selected)
+        assertEquals(listOf("dark" to "Donker", "light" to "Licht"), choice.options.map { it.key to it.label })
+        assertFalse(choice.options.any { it.disabled })
+        val others = data.settings.pages.flatMap { it.blocks }.filterIsInstance<SettingsBlock.Choice>().filter { it.name != "theme" }
+        assertTrue(others.isNotEmpty())
+        assertTrue("the other choices are not kept", others.none { it.saves })
+
+        fun row(d: AppData) = d.settings.groups.flatMap { it.rows }.single { it.id == "theme" }.value
+        assertEquals("Donker", row(data))
+
+        val light = data.withTheme("light")
+        assertEquals("light", light.settings.page("theme")!!.blocks.filterIsInstance<SettingsBlock.Choice>().single().selected)
+        assertEquals("Licht", row(light))
+        // Nothing else moves.
+        assertEquals(data.copy(settings = data.settings.copy(pages = light.settings.pages, groups = light.settings.groups)), light)
+        assertEquals(data, data.withTheme("dark"))
+    }
+
     private fun fixture(name: String): AppData {
         val text = javaClass.classLoader!!.getResource(name).readText()
         return AppData.parse(JSONObject(text).getJSONObject("data"))

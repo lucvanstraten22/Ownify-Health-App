@@ -150,7 +150,7 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
                 val sy = size.height / 96f
                 for (line in listOf(0.25f, 0.5f, 0.75f)) {
                     val y = (12f + line * (96f - 24f)) * sy
-                    drawLine(Ownify.white(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                    drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                 }
             }
             Axis(listOf(goal.startLabel.ifEmpty { "Start" }, if (goal.isCompleted) "Behaald" else "Nu"), Modifier.padding(top = Ownify.Space2))
@@ -303,7 +303,7 @@ private fun PlotDrawing(chart: GoalChart, accent: Color, reading: Int) {
         val sy = size.height / viewBox.height
         for (tick in chart.yTicks) {
             val y = tick.top / 100f * viewBox.height * sy
-            drawLine(Ownify.white(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+            drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
         }
         chart.target?.let { target ->
             val y = target.top / 100f * viewBox.height * sy
@@ -335,7 +335,7 @@ private fun PlotDrawing(chart: GoalChart, accent: Color, reading: Int) {
         // The reading: the crosshair and the focused point.
         chart.points.getOrNull(reading)?.let { point ->
             val x = point.x / 100f * size.width
-            drawRect(Ownify.white(0.28f), topLeft = Offset(x - 0.5.dp.toPx(), 0f), size = Size(1.dp.toPx(), size.height))
+            drawRect(Ownify.ink(0.28f), topLeft = Offset(x - 0.5.dp.toPx(), 0f), size = Size(1.dp.toPx(), size.height))
             val c = Offset(x, point.y / 100f * size.height)
             drawCircle(Ownify.mix(accent, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
             drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
@@ -460,10 +460,10 @@ private fun Reading(point: ChartPoint, accent: Color) {
             Column(
                 Modifier
                     .drawBehind {
-                        drawBoxShadows(shape, listOf(BoxShadow(y = 10.dp, blur = 28.dp, color = Color.Black.copy(alpha = 0.32f))), shadows)
+                        drawBoxShadows(shape, listOf(BoxShadow(y = 10.dp, blur = 28.dp, color = Ownify.shade(0.32f))), shadows)
                     }
                     .clip(shape)
-                    .background(Color(46, 42, 44).copy(alpha = 0.97f))
+                    .background(Ownify.TipSurfaceSolid)
                     .border(1.dp, Ownify.GlassBorder, shape)
                     .cssPadding(PaddingValues(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp), border = 1.dp),
                 horizontalAlignment = Alignment.CenterHorizontally

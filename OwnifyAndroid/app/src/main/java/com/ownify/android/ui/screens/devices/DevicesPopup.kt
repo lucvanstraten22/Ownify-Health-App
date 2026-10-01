@@ -144,7 +144,7 @@ fun StatusDot(text: String, connected: Boolean) {
         )
         T(
             text,
-            OwnifyType.style(Ownify.FsTiny, color = if (connected) Ownify.mix(Ownify.Health, 0.34f, androidx.compose.ui.graphics.Color.White) else Ownify.TextMuted),
+            OwnifyType.style(Ownify.FsTiny, color = if (connected) Ownify.tint(Ownify.Health, 0.34f) else Ownify.TextMuted),
             maxLines = 1
         )
     }

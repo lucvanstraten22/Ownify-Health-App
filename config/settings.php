@@ -12,10 +12,10 @@
  * That said, not every value on this page is a placeholder. Three kinds of
  * value appear, and the page never mixes them up:
  *
- *   FACT         The app genuinely behaves this way today. The theme is dark,
- *                the interface is Dutch, measurements are metric, and health
- *                data never leaves the owner's account. These are read off
- *                the app as built, not invented.
+ *   FACT         The app genuinely behaves this way today. The interface is
+ *                Dutch, measurements are metric, and health data never leaves
+ *                the owner's account. These are read off the app as built,
+ *                not invented.
  *
  *   NOT SET      Nothing is connected and no profile data has been entered,
  *                so the row says exactly that rather than showing a number.
@@ -94,7 +94,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.2.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.3.0'],
             ],
         ],
     ],
@@ -351,21 +351,26 @@ return [
         'theme' => [
             'title' => 'Thema & uiterlijk',
             'icon'  => 'moon',
-            'lede'  => 'De app is ontworpen voor donker.',
+            'lede'  => 'Hetzelfde ontwerp, op een donkere of een lichte ondergrond.',
             'blocks' => [
                 [
                     'type'     => 'choice',
                     'title'    => 'Thema',
                     'name'     => 'theme',
+                    /* This browser's choice (lib/theme.php) replaces it in
+                       settings_prepare(); the app replaces it with the phone's. */
                     'selected' => 'dark',
+                    /* Saved, at once, on this device — not one of the
+                       choices the foot of the screen says are not kept. */
+                    'saves'    => true,
                     'options'  => [
-                        ['key' => 'dark',  'label' => 'Donker', 'note' => 'Het enige thema dat de app nu heeft'],
-                        ['key' => 'light', 'label' => 'Licht',  'note' => 'Nog niet beschikbaar', 'disabled' => true],
+                        ['key' => 'dark',  'label' => 'Donker', 'note' => 'Het oorspronkelijke ontwerp'],
+                        ['key' => 'light', 'label' => 'Licht',  'note' => 'Hetzelfde glas, in het licht'],
                     ],
                 ],
 
-                ['type' => 'note', 'icon' => 'lock',
-                 'text' => 'Het hele ontwerp — de glaslagen, de accenten, het contrast — is op de donkere ondergrond afgestemd. Een lichte variant is een eigen ontwerp, geen omgekeerde kleur.'],
+                ['type' => 'note', 'icon' => 'info',
+                 'text' => 'Je keuze geldt op dit apparaat en blijft bewaard, ook als je de app sluit. Alleen de kleuren veranderen: de glaslagen, de accenten en de indeling blijven hetzelfde.'],
             ],
         ],
 
@@ -480,7 +485,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.2.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.3.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],
