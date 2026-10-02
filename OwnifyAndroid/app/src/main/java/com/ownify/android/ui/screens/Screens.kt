@@ -31,6 +31,7 @@ import com.ownify.android.ui.screens.goals.GoalsPage
 import com.ownify.android.ui.screens.health.HealthDetail
 import com.ownify.android.ui.screens.health.HealthPage
 import com.ownify.android.ui.screens.overview.OverviewPage
+import com.ownify.android.ui.screens.overview.ScoreCompassDetail
 import com.ownify.android.ui.screens.settings.DeleteConfirm
 import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
@@ -60,6 +61,7 @@ object OwnifyScreens {
         },
         detail = { detail, data, scroll ->
             when (detail) {
+                Detail.ScoreCompass -> ScoreCompassDetail(data, scroll)
                 is Detail.HealthArea -> data.health.area(detail.id)?.let { HealthDetail(data, it, scroll) }
                 is Detail.GoalPage -> data.goals.goal(detail.id)?.let { GoalDetail(data, it, scroll) }
                 is Detail.SettingsPage -> data.settings.page(detail.id)?.let { SettingsDetail(data, it, scroll) }

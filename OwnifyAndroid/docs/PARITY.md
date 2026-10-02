@@ -44,7 +44,8 @@ with bold only.
 | `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, the Google mark (`.social`: 46 round soft glass, the G at 21, pressed 0.94, disabled at 50 % + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
 | `components/header.php` | `AppHeader` (shared, over the rail) | clear / scrolled (gradient + blur), devices dot |
 | `components/devices-popup.php` | `DevicesPopup` | list, empty, "Apparaat koppelen" → Instellingen › Apparaten |
-| `pages/overview.php` | `OverviewPage` | score ring (value / empty), legend, lock hint; goal card unset / active / reached; insights; patterns; recommendation; disclaimer |
+| `pages/overview.php` | `OverviewPage` | score ring (value / empty), legend, lock hint, the direction under the score (Stijgend / Stabiel / Dalend, or none); the whole score card opens the Scorekompas (pressed 0.97; for TalkBack the label is the button, as on the website); goal card unset / active / reached; insights; patterns; recommendation; disclaimer |
+| `pages/score-compass.php` + `components/score-direction.php` | `ScoreCompassDetail` (`Detail.ScoreCompass`) | hero ring in Overzicht's gradient, direction; Waar je score uit bestaat (categories in their colour, scores with their band's dot, components with their weight now, 4 dp meters in the band's colour, "Telt nu niet mee", Voeding's one sentence); Wat er verandert (direction, sentences, the 30-day line drawn on, axis; collecting / empty); Vergeleken met jezelf (four rows, "Nog niet genoeg gegevens", the difference); Grootste kans (component, what was measured, what goes with a higher score, room; empty / none); footnote |
 | `pages/health.php` | `HealthPage` | three area cards (score / empty), combined trend Week / Maand |
 | `pages/health-detail.php` ×3 | `HealthDetail` | hero ring in the area's accent, nutrition rating card, tiles, sleep timeline, groups (locked when device-only), area trend |
 | `pages/goals.php` | `GoalsPage` | Actief / Behaald, primary slot, list, slots note, empty states, add button (disabled when full) |
@@ -199,6 +200,7 @@ What is left, and why:
 | Texts sit on average 0.9 dp lower or higher than on the website, at most about 5 dp far down a long scrolled page | Compose lays out on whole pixels; box edges are rounded as the browser rounds them, but a line of text, a meter or a picture still rounds its own height |
 | The page under the scrolled header is blurred in the app and sharp in the website shots | the app draws `.app-header.is-scrolled` as written (a 30 px backdrop blur, saturate 140 %, the tint); the test browser draws a 30 px backdrop blur there as none at all (an 8 px one it does draw). What a phone's browser draws was not checked |
 | The website's detail layer throws a shadow band at the screen's right edge while closed | a website bug (the hidden layer keeps its `box-shadow`); the app does not copy it |
+| Until 1.4.0 the website's trend lines stopped about a tenth short of their last point once drawn on | `health-trend.js` dashed a line by its length in the chart's 300 × 120 units while the stroke's dashes are screen pixels (`non-scaling-stroke`) on a stretched chart; it now measures the line as drawn. The app always drew the whole line |
 | "calorieÃ«n" in a metric label in the local test data | the label was stored double-encoded by a test import; both sides show what the server sends |
 
 Not verified here: nothing ran on a physical phone or an emulator (the

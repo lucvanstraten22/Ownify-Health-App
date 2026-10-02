@@ -57,9 +57,12 @@ tools/
     ai-fake-gemini.php        that stand-in (PHP's built-in server only)
     theme-test.php            Dark and White Mode: the cookie, the settings, the
                               tokens, contrast, the page served in each
+    score-compass-test.php    the Scorekompas: directions, sentences, averages, the
+                              biggest opportunity, empty states, wording — no database
 pages/
     welcome.php               the opening screen, for everyone not signed in
     overview.php              the dashboard
+    score-compass.php         the Scorekompas, behind the score on Overzicht
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
     goals.php                 Doelen — one primary goal and up to four others
@@ -73,6 +76,7 @@ config/health.php             the health areas, their metrics and their trends
 config/community.php          leaderboard scopes, periods and copy
 config/goals.php              goal vocabulary, copy and the example goals
 config/settings.php           the settings tree, its screens and their copy
+config/compass.php            the Scorekompas: its words, and when it may say something
 config/ai.php                 Ownify AI: model, limits, consent version — no key
 config/ai-prompt.php          what the assistant is told about itself
 lib/render.php                escaping, page/component include, score formatting
@@ -81,11 +85,13 @@ lib/community.php             board assembly, formatting, the demo roster
 lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
 lib/theme.php                 Dark or White Mode: this browser's choice, read before the page
+lib/hydrate-compass.php       the Scorekompas for the signed-in user, and its line
 components/
     document-head.php         the <head> the app and the opening screen share
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account — one, shared by the five pages
-    health-score.php          primary score ring + composition legend
+    health-score.php          primary score ring + composition legend; opens the Scorekompas
+    score-direction.php       Stijgend / Stabiel / Dalend, under the score
     secondary-scores.php      Slaap and Voeding & Sport (one card system)
     goal-progress.php         personal goal progress
     insights.php              useful insights
@@ -122,6 +128,7 @@ assets/css/
     dashboard.css             overview layout, focus states, breakpoints
     ai.css                    the assistant layer (tokens only, no new values)
     health.css                Gezondheid and its detail pages (tokens only)
+    compass.css               the Scorekompas and the score card that opens it (tokens only)
     community.css             the leaderboard (tokens only)
     goals.css                 Doelen, goal details and the wizard (tokens only)
     settings.css              Instellingen and its ten screens (tokens only)
@@ -304,10 +311,10 @@ Gezondheid ──┬── Slaap      duur · timing · fasen · onderbrekingen 
 A detail page is a layer above the rail and below the dock, so the tab bar and
 the assistant stay reachable from inside one. It opens on a tap and closes
 with a rightward swipe, the back pill or Escape — safe to use that direction
-because the rail stands down while a detail is in front of it. Doelen uses the
-same layer and the same controller (`detail-layer.js`, opened by anything
-carrying `data-detail-open`), because drilling in is the same movement on both
-pages.
+because the rail stands down while a detail is in front of it. Doelen and
+Overzicht's Scorekompas use the same layer and the same controller
+(`detail-layer.js`, opened by anything carrying `data-detail-open`), because
+drilling in is the same movement everywhere.
 
 Each detail page runs three levels deep: the score, the handful of numbers
 that explain it, then the long tail in groups. Which metrics exist is entirely
@@ -342,6 +349,32 @@ Voeding beoordeeld") and updates the scores and the leaderboard in place.
 has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
 into the charts and tiles so the design can be looked at with data, without a
 single invented value ever reaching the shipped page. It is false by default.
+
+## Scorekompas
+
+The score on Overzicht explained. Tapping its card opens a detail page, the
+Scorekompas, and the card says where the score is heading: **↑ Stijgend**,
+**→ Stabiel** or **↓ Dalend**. The page answers four questions:
+
+```
+Scorekompas ──┬── Waar je score uit bestaat   the categories, each component with the
+              │                               weight it has now and what it rests on
+              ├── Wat er verandert            30 days: a line, and dated sentences
+              ├── Vergeleken met jezelf       now, and the daily score's average over
+              │                               7 days, 30 days and the 30 before
+              └── Grootste kans               the component with the most room
+```
+
+It reads the Health Score and never scores: `includes/score-compass.php`
+works from `health_score_history()` — the engine's own result at the end of
+each of the last 60 days, recalculated from the records — and nothing it does
+changes a weight, a curve, the window, the minimum or a band. It says what
+happened and when ("sinds", "in dezelfde periode"), never why; an opportunity
+says what a higher score would go together with, never what to do; the only
+comparison is with the person's own past; too few days is an empty state,
+never a zero. The website and the app show the same block, worked out once
+on the server. The rules, the thresholds and the limits are in
+[docs/SCORE-COMPASS.md](docs/SCORE-COMPASS.md).
 
 ## Doelen
 
@@ -491,7 +524,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.3.0
+OVER         Over de app · Versie Beta 1.4.0
 
              [ Uitloggen ]
                Account verwijderen

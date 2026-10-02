@@ -1,0 +1,357 @@
+{
+ "title": "Scorekompas",
+ "lede": "Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.",
+ "back": "Overzicht",
+ "open": "Open het Scorekompas",
+ "footnote": "Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
+ "score": {
+  "value": 81,
+  "max": 100,
+  "band": "high"
+ },
+ "direction": {
+  "key": "down",
+  "label": "Dalend"
+ },
+ "composition": {
+  "title": "Waar je score uit bestaat",
+  "note": "Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen 90 dagen. Elk telt even zwaar.",
+  "categories": [
+   {
+    "id": "sleep",
+    "label": "Slaap",
+    "accent": "sleep",
+    "icon": "moon",
+    "value": 84,
+    "band": "high",
+    "meta": "36 dagen met gegevens",
+    "summary": null,
+    "parts": [
+     {
+      "id": "duration",
+      "label": "Slaapduur",
+      "value": 76,
+      "band": "mid",
+      "weight": 45,
+      "counted": true,
+      "note": "Gemiddeld 6:39 per nacht"
+     },
+     {
+      "id": "regularity",
+      "label": "Regelmaat",
+      "value": 93,
+      "band": "high",
+      "weight": 30,
+      "counted": true,
+      "note": "Bedtijd wisselt ±15 min, opstaan ±31 min"
+     },
+     {
+      "id": "quality",
+      "label": "Kwaliteit",
+      "value": 89,
+      "band": "high",
+      "weight": 25,
+      "counted": true,
+      "note": "Gemeten in 36 nachten"
+     }
+    ]
+   },
+   {
+    "id": "nutrition",
+    "label": "Voeding",
+    "accent": "nutrition",
+    "icon": "utensils",
+    "value": 74,
+    "band": "mid",
+    "meta": "7 dagen met gegevens",
+    "summary": "Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.",
+    "parts": []
+   },
+   {
+    "id": "training",
+    "label": "Sport",
+    "accent": "training",
+    "icon": "dumbbell",
+    "value": 86,
+    "band": "high",
+    "meta": "18 dagen met gegevens",
+    "summary": null,
+    "parts": [
+     {
+      "id": "volume",
+      "label": "Volume",
+      "value": 76,
+      "band": "mid",
+      "weight": 36,
+      "counted": true,
+      "note": "Gemiddeld 168 min per week"
+     },
+     {
+      "id": "intensity",
+      "label": "Intensiteit",
+      "value": null,
+      "band": null,
+      "weight": null,
+      "counted": false,
+      "note": "Telt nu niet mee · Nog te weinig trainingen met hartslag of ervaren inspanning"
+     },
+     {
+      "id": "progression",
+      "label": "Progressie",
+      "value": null,
+      "band": null,
+      "weight": null,
+      "counted": false,
+      "note": "Telt nu niet mee · Nog niets om mee te vergelijken"
+     },
+     {
+      "id": "balance",
+      "label": "Balans",
+      "value": 92,
+      "band": "high",
+      "weight": 64,
+      "counted": true,
+      "note": "Gemiddeld 3,2 trainingsdagen per week"
+     }
+    ]
+   }
+  ]
+ },
+ "trend": {
+  "title": "Wat er verandert",
+  "state": "filled",
+  "direction": {
+   "key": "down",
+   "label": "Dalend"
+  },
+  "text": [
+   "Je score daalde van gemiddeld 86 in de week van 3 september naar 82 in de afgelopen week.",
+   "Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.",
+   "In dezelfde periode ging je score voor trainingsvolume van gemiddeld 80 naar 78."
+  ],
+  "empty": "Nog niet genoeg gegevens.",
+  "values": [
+   86,
+   86,
+   86,
+   86,
+   87,
+   87,
+   86,
+   86,
+   86,
+   86,
+   86,
+   86,
+   86,
+   86,
+   87,
+   86,
+   87,
+   86,
+   87,
+   86,
+   81,
+   81,
+   82,
+   82,
+   82,
+   82,
+   82,
+   82,
+   81,
+   81
+  ],
+  "axis": [
+   "3 sep",
+   "Vandaag"
+  ],
+  "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen: dalend, van 86 naar 82",
+  "chart": {
+   "line": [
+    "M 0 25.44 C 1.72 25.44, 6.89 25.44, 10.34 25.44 C 13.79 25.44, 17.24 25.44, 20.69 25.44 C 24.14 25.44, 27.58 25.6, 31.03 25.44 C 34.48 25.28, 37.93 24.64, 41.38 24.48 C 44.83 24.32, 48.27 24.32, 51.72 24.48 C 55.17 24.64, 58.62 25.28, 62.07 25.44 C 65.52 25.6, 68.96 25.44, 72.41 25.44 C 75.86 25.44, 79.31 25.44, 82.76 25.44 C 86.21 25.44, 89.65 25.44, 93.1 25.44 C 96.55 25.44, 100 25.44, 103.45 25.44 C 106.9 25.44, 110.34 25.44, 113.79 25.44 C 117.24 25.44, 120.69 25.44, 124.14 25.44 C 127.59 25.44, 131.03 25.6, 134.48 25.44 C 137.93 25.28, 141.38 24.48, 144.83 24.48 C 148.28 24.48, 151.72 25.44, 155.17 25.44 C 158.62 25.44, 162.07 24.48, 165.52 24.48 C 168.97 24.48, 172.41 25.44, 175.86 25.44 C 179.31 25.44, 182.76 24.48, 186.21 24.48 C 189.66 24.48, 193.1 24.48, 196.55 25.44 C 200 26.4, 203.45 29.44, 206.9 30.24 C 210.35 31.04, 213.79 30.4, 217.24 30.24 C 220.69 30.08, 224.14 29.44, 227.59 29.28 C 231.04 29.12, 234.48 29.28, 237.93 29.28 C 241.38 29.28, 244.83 29.28, 248.28 29.28 C 251.73 29.28, 255.17 29.28, 258.62 29.28 C 262.07 29.28, 265.52 29.28, 268.97 29.28 C 272.42 29.28, 275.86 29.12, 279.31 29.28 C 282.76 29.44, 286.21 30.08, 289.66 30.24 C 293.11 30.4, 298.28 30.24, 300 30.24"
+   ],
+   "area": [
+    "M 0 25.44 C 1.72 25.44, 6.89 25.44, 10.34 25.44 C 13.79 25.44, 17.24 25.44, 20.69 25.44 C 24.14 25.44, 27.58 25.6, 31.03 25.44 C 34.48 25.28, 37.93 24.64, 41.38 24.48 C 44.83 24.32, 48.27 24.32, 51.72 24.48 C 55.17 24.64, 58.62 25.28, 62.07 25.44 C 65.52 25.6, 68.96 25.44, 72.41 25.44 C 75.86 25.44, 79.31 25.44, 82.76 25.44 C 86.21 25.44, 89.65 25.44, 93.1 25.44 C 96.55 25.44, 100 25.44, 103.45 25.44 C 106.9 25.44, 110.34 25.44, 113.79 25.44 C 117.24 25.44, 120.69 25.44, 124.14 25.44 C 127.59 25.44, 131.03 25.6, 134.48 25.44 C 137.93 25.28, 141.38 24.48, 144.83 24.48 C 148.28 24.48, 151.72 25.44, 155.17 25.44 C 158.62 25.44, 162.07 24.48, 165.52 24.48 C 168.97 24.48, 172.41 25.44, 175.86 25.44 C 179.31 25.44, 182.76 24.48, 186.21 24.48 C 189.66 24.48, 193.1 24.48, 196.55 25.44 C 200 26.4, 203.45 29.44, 206.9 30.24 C 210.35 31.04, 213.79 30.4, 217.24 30.24 C 220.69 30.08, 224.14 29.44, 227.59 29.28 C 231.04 29.12, 234.48 29.28, 237.93 29.28 C 241.38 29.28, 244.83 29.28, 248.28 29.28 C 251.73 29.28, 255.17 29.28, 258.62 29.28 C 262.07 29.28, 265.52 29.28, 268.97 29.28 C 272.42 29.28, 275.86 29.12, 279.31 29.28 C 282.76 29.44, 286.21 30.08, 289.66 30.24 C 293.11 30.4, 298.28 30.24, 300 30.24 L 300 120 L 0 120 Z"
+   ],
+   "dots": [],
+   "points": [
+    [
+     0,
+     25.44
+    ],
+    [
+     10.34,
+     25.44
+    ],
+    [
+     20.69,
+     25.44
+    ],
+    [
+     31.03,
+     25.44
+    ],
+    [
+     41.38,
+     24.48
+    ],
+    [
+     51.72,
+     24.48
+    ],
+    [
+     62.07,
+     25.44
+    ],
+    [
+     72.41,
+     25.44
+    ],
+    [
+     82.76,
+     25.44
+    ],
+    [
+     93.1,
+     25.44
+    ],
+    [
+     103.45,
+     25.44
+    ],
+    [
+     113.79,
+     25.44
+    ],
+    [
+     124.14,
+     25.44
+    ],
+    [
+     134.48,
+     25.44
+    ],
+    [
+     144.83,
+     24.48
+    ],
+    [
+     155.17,
+     25.44
+    ],
+    [
+     165.52,
+     24.48
+    ],
+    [
+     175.86,
+     25.44
+    ],
+    [
+     186.21,
+     24.48
+    ],
+    [
+     196.55,
+     25.44
+    ],
+    [
+     206.9,
+     30.24
+    ],
+    [
+     217.24,
+     30.24
+    ],
+    [
+     227.59,
+     29.28
+    ],
+    [
+     237.93,
+     29.28
+    ],
+    [
+     248.28,
+     29.28
+    ],
+    [
+     258.62,
+     29.28
+    ],
+    [
+     268.97,
+     29.28
+    ],
+    [
+     279.31,
+     29.28
+    ],
+    [
+     289.66,
+     30.24
+    ],
+    [
+     300,
+     30.24
+    ]
+   ],
+   "width": 300,
+   "height": 120,
+   "has_data": true
+  }
+ },
+ "comparison": {
+  "title": "Vergeleken met jezelf",
+  "note": "Gemiddelden van je Gezondheidsscore per dag.",
+  "rows": [
+   {
+    "id": "now",
+    "label": "Nu",
+    "value": 81,
+    "band": "high",
+    "note": "Over de afgelopen 90 dagen"
+   },
+   {
+    "id": "week",
+    "label": "Laatste 7 dagen",
+    "value": 82,
+    "band": "high",
+    "note": "Gemiddeld"
+   },
+   {
+    "id": "period",
+    "label": "Laatste 30 dagen",
+    "value": 85,
+    "band": "high",
+    "note": "Gemiddeld"
+   },
+   {
+    "id": "previous",
+    "label": "30 dagen daarvoor",
+    "value": null,
+    "band": null,
+    "note": "Nog niet genoeg gegevens"
+   }
+  ],
+  "delta": null
+ },
+ "opportunity": {
+  "title": "Grootste kans",
+  "state": "filled",
+  "empty": null,
+  "category": "nutrition",
+  "label": "Voeding",
+  "accent": "nutrition",
+  "icon": "utensils",
+  "part": "rating",
+  "name": "Dagcijfer voor voeding",
+  "value": 74,
+  "band": "mid",
+  "fact": "Je gemiddelde dagcijfer voor voeding is 7,4, over 7 dagen.",
+  "relation": "Hogere dagcijfers zouden samengaan met een hogere voedingsscore.",
+  "gain": 9,
+  "gain_text": "Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 9 punten verhogen."
+ }
+}

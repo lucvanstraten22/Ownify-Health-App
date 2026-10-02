@@ -14,8 +14,17 @@ $focusLabel   = $data['focus_labels'][$focus] ?? $data['focus_labels']['general'
 $today  = today_parts();
 $ratio  = score_ratio($overall['value'], $overall['max']);
 $state  = state_class($overall['value']);
+
+/* The card opens the Scorekompas (pages/score-compass.php): the whole card
+   is the button's target, and says where the score is heading. */
+$compass   = $data['compass'] ?? null;
+$direction = $compass['direction'] ?? null;
+$openLabel = $compass === null ? '' : $overall['label'] . ': '
+    . (has_value($overall['value']) ? $overall['value'] . ' van ' . $overall['max'] : mb_strtolower($overall['caption']))
+    . ($direction !== null ? ', ' . mb_strtolower($direction['label']) : '')
+    . '. ' . $compass['open'] . '.';
 ?>
-<section class="card card--hero reveal <?= $state ?>" aria-labelledby="overview-title">
+<section class="card card--hero reveal <?= $state ?><?= $compass !== null ? ' card--opens' : '' ?>" aria-labelledby="overview-title">
 
     <div class="card__head">
         <div>
@@ -53,7 +62,18 @@ $state  = state_class($overall['value']);
         </div>
     </div>
 
-    <h2 class="score-ring__label"><?= e($overall['label']) ?></h2>
+    <h2 class="score-ring__label">
+        <?php if ($compass !== null): ?>
+            <button type="button" class="card__open" data-detail-open="score-compass" aria-label="<?= e($openLabel) ?>">
+                <?= e($overall['label']) ?><?= icon('chevron-right', 'card__open-chevron') ?>
+            </button>
+        <?php else: ?>
+            <?= e($overall['label']) ?>
+        <?php endif; ?>
+    </h2>
+    <?php if ($direction !== null): ?>
+        <?php component('score-direction', ['direction' => $direction]); ?>
+    <?php endif; ?>
     <p class="card__lede"><?= e($overall['description']) ?></p>
 
     <?php /* The three pillars the score averages, each with its own score. The

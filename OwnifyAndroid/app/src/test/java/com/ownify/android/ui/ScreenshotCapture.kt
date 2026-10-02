@@ -339,6 +339,7 @@ class ScreenshotCapture {
         }
     }
 
+    @Test fun scoreCompass() = detail("overview", Detail.ScoreCompass, "compass", 700, 1400, 2100)
     @Test fun detailSleep() = detail("health", Detail.HealthArea("sleep"), "detail-sleep", 760, 1520)
     @Test fun detailNutrition() = detail("health", Detail.HealthArea("nutrition"), "detail-nutrition", 760, 1520)
     @Test fun detailTraining() = detail("health", Detail.HealthArea("training"), "detail-training", 760, 1520)

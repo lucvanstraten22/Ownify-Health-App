@@ -225,7 +225,7 @@ try {
         && ($state['body']['version'] ?? null) === 1, summary($state));
     check('every part of the page is there', array_diff(
         ['app', 'header', 'overview', 'scores', 'goal', 'insights', 'patterns', 'recommendation', 'navigation', 'ai',
-         'disclaimer', 'auth', 'health', 'community', 'goals', 'settings', 'today'],
+         'disclaimer', 'auth', 'health', 'community', 'goals', 'settings', 'today', 'compass'],
         array_keys($data)) === []);
     check('signed in as this account', ($data['auth']['signed_in'] ?? null) === true
         && ($data['auth']['user']['username'] ?? null) === $sanne['username']);
@@ -241,6 +241,16 @@ try {
         isset($data['health']['trend']['charts']['sleep']['week']['has_data'])
         && ($data['goals']['wizard_sources'][0]['sources'][0]['types'] ?? null) === ['milestone']
         && array_key_exists('state', $data['settings']['pages']['account']['blocks'][1]['fields'][0] ?? []));
+    $compass = $data['compass'] ?? [];
+    check('the Scorekompas of a new account: no score, no direction, nothing made up',
+        array_key_exists('value', $compass['score'] ?? []) && $compass['score']['value'] === null
+        && array_key_exists('direction', $compass) && $compass['direction'] === null
+        && ($compass['trend']['state'] ?? null) === 'empty' && ($compass['trend']['chart']['has_data'] ?? true) === false
+        && array_column($compass['comparison']['rows'] ?? [], 'value') === [null, null, null, null]
+        && ($compass['opportunity']['state'] ?? null) === 'empty');
+    check('…and what the score will be made of: three categories, Slaap\'s components weighed 45 / 30 / 25',
+        array_column($compass['composition']['categories'] ?? [], 'id') === ['sleep', 'nutrition', 'training']
+        && array_column($compass['composition']['categories'][0]['parts'] ?? [], 'weight') === [45, 30, 25]);
     check('dates are text', !str_contains($state['raw'], '"timezone_type"'));
     check('not cached', stripos(http('/api/app/state.php', ['bearer' => $sanne['token']])['raw'], '"ok":true') !== false);
 
@@ -274,6 +284,14 @@ try {
     }
     check('the page shows the day\'s cijfer the app reads (' . var_export($rated, true) . ')',
         $rated === 8 && preg_match('/data-detail="nutrition".*?card--tiles.*?data-count-to="8"/s', $page['raw']) === 1);
+    check('the session and the token read the same Scorekompas',
+        isset($app['body']['data']['compass']) && ($web['body']['data']['compass'] ?? 1) === ($app['body']['data']['compass'] ?? 2));
+    check('the score card opens it, and the page is there to open',
+        str_contains($page['raw'], 'data-detail-open="score-compass"') && str_contains($page['raw'], 'data-detail="score-compass"'));
+    $ring = $app['body']['data']['scores']['overall'] ?? [];
+    $held = $app['body']['data']['compass']['score'] ?? [];
+    check('its score is the ring\'s (' . var_export($ring['value'] ?? null, true) . ')',
+        array_key_exists('value', $ring) && array_key_exists('value', $held) && $held['value'] === $ring['value']);
 
     section('Vrienden toevoegen: on every Vrienden board, above #1 — on no Nederland board');
     preg_match_all('/data-board data-scope="([a-z]+)" data-period="([a-z]+)"(.*?)(?=data-board data-scope=|<\/section>)/s', $page['raw'], $boards, PREG_SET_ORDER);

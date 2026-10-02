@@ -19,6 +19,31 @@
         return chart.querySelector('.chart__range.is-active');
     }
 
+    /**
+     * The line's length as it is drawn. Its stroke does not scale with the
+     * stretched chart (vector-effect: non-scaling-stroke), so its dashes are
+     * screen pixels while getTotalLength() is the 300 × 120 box's units — a
+     * dash that long ended the line about a tenth short of its last point.
+     */
+    function drawnLength(line) {
+        var total = line.getTotalLength();
+        var matrix = line.getScreenCTM && line.getScreenCTM();
+        if (!matrix || !total) { return total; }
+
+        var steps = 64;
+        var length = 0;
+        var previous = null;
+
+        for (var i = 0; i <= steps; i++) {
+            var point = line.getPointAtLength(total * i / steps).matrixTransform(matrix);
+            if (previous) { length += Math.sqrt(Math.pow(point.x - previous.x, 2) + Math.pow(point.y - previous.y, 2)); }
+            previous = point;
+        }
+
+        // A dash longer than the line is harmless; a shorter one is the bug.
+        return Math.ceil(length * 1.02) + 1;
+    }
+
     /** Dashes each line by its own length, then releases it. */
     function draw(range) {
         if (!range) { return; }
@@ -28,7 +53,7 @@
 
         Array.prototype.forEach.call(lines, function (line) {
             var length = 0;
-            try { length = line.getTotalLength(); } catch (e) { return; }
+            try { length = drawnLength(line); } catch (e) { return; }
             if (!length) { return; }
 
             line.style.setProperty('--length', length);

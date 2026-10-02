@@ -601,7 +601,10 @@ Scores are calculated from the records whenever they are read, and every
 calculation is written to `daily_scores` — the score, `data_days` and the
 components as JSON in `inputs` — one row per category and one for the overall
 score per day, rewritten only when something changed. The Gezondheid trend is
-the same score, day by day.
+the same score, day by day. Each result also carries the `facts` its
+components were worked out from (each night's length, the spreads, minutes a
+week…) for the Scorekompas to put into words ([SCORE-COMPASS.md](SCORE-COMPASS.md));
+they are never stored and never scored.
 
 ### Points
 

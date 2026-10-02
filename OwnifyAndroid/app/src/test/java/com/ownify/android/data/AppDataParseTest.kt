@@ -168,6 +168,90 @@ class AppDataParseTest {
         assertFalse(data.auth.hasGoogle)
     }
 
+    /** The Scorekompas block as the server sent it (includes/score-compass.php). */
+    private fun compass(name: String): Compass =
+        Compass.parse(JSONObject(javaClass.classLoader!!.getResource(name).readText()))
+
+    @Test
+    fun `the Scorekompas - every number and sentence read as the server sent it`() {
+        val c = compass("compass-demo.json")
+
+        assertTrue(c.available)
+        assertEquals("Scorekompas", c.title)
+        assertEquals("Overzicht", c.back)
+        assertEquals(81, c.score)
+        assertEquals("high", c.band)
+        assertEquals(CompassDirection("down", "Dalend"), c.direction)
+
+        // 1 — each category with its colour (which) and its band (how high); its components with their weights.
+        val (sleep, food, sport) = c.composition.categories
+        assertEquals(listOf("Slaap", "Voeding", "Sport"), c.composition.categories.map { it.label })
+        assertEquals(listOf("sleep", "nutrition", "training"), c.composition.categories.map { it.accent })
+        assertEquals(listOf("high", "mid", "high"), c.composition.categories.map { it.band })
+        assertEquals(listOf(45, 30, 25), sleep.parts.map { it.weight })
+        assertEquals("Gemiddeld 6:39 per nacht", sleep.parts.first().note)
+        assertTrue(food.parts.isEmpty())
+        assertEquals("Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.", food.summary)
+        val intensity = sport.parts.single { it.id == "intensity" }
+        assertFalse("a component without data does not count", intensity.counted)
+        assertNull(intensity.value)
+        assertNull(intensity.weight)
+        assertEquals("the others share its weight", listOf(36, 64), sport.parts.filter { it.counted }.map { it.weight })
+
+        // 2 — what is changing.
+        assertEquals("filled", c.trend.state)
+        assertEquals(CompassDirection("down", "Dalend"), c.trend.direction)
+        assertEquals("Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.", c.trend.text[1])
+        assertEquals(listOf("3 sep", "Vandaag"), c.trend.axis)
+        assertTrue(c.trend.chart.hasData)
+        assertEquals(1, c.trend.chart.line.size)
+        assertEquals(300f, c.trend.width)
+
+        // 3 — compared with yourself: too few earlier days, so no average for them and no difference.
+        assertEquals(listOf(81, 82, 85, null), c.comparison.rows.map { it.value })
+        assertEquals("Over de afgelopen 90 dagen", c.comparison.rows.first().note)
+        assertEquals("Nog niet genoeg gegevens", c.comparison.rows.last().note)
+        assertNull(c.comparison.delta)
+
+        // 4 — the biggest opportunity.
+        val o = c.opportunity
+        assertTrue(o.filled)
+        assertEquals("Dagcijfer voor voeding", o.name)
+        assertEquals("nutrition", o.accent)
+        assertEquals("mid", o.band)
+        assertEquals("Je gemiddelde dagcijfer voor voeding is 7,4, over 7 dagen.", o.fact)
+        assertEquals("Hogere dagcijfers zouden samengaan met een hogere voedingsscore.", o.relation)
+        assertEquals("Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 9 punten verhogen.", o.gainText)
+    }
+
+    @Test
+    fun `the Scorekompas of a new account - empty states, never a zero`() {
+        val c = compass("compass-new-account.json")
+
+        assertTrue(c.available)
+        assertNull(c.score)
+        assertNull(c.direction)
+        assertEquals("empty", c.trend.state)
+        assertFalse(c.trend.chart.hasData)
+        assertEquals("Nog niet genoeg gegevens.", c.trend.empty)
+        assertTrue(c.comparison.rows.all { it.value == null && it.note == "Nog niet genoeg gegevens" })
+        assertNull(c.comparison.delta)
+        assertFalse(c.opportunity.filled)
+        assertEquals("Nog niet genoeg gegevens om een kans aan te wijzen.", c.opportunity.empty)
+        // What the score will be made of, before there is one: the weights it will have.
+        assertEquals(listOf(45, 30, 25), c.composition.categories.first().parts.map { it.weight })
+        assertTrue(c.composition.categories.flatMap { it.parts }.all { it.value == null })
+    }
+
+    @Test
+    fun `a server without the Scorekompas - nothing to open, nothing to say`() {
+        val data = fixture("state-demo.json")
+
+        assertFalse(data.compass.available)
+        assertNull(data.compass.direction)
+        assertFalse(data.compass.opportunity.filled)
+    }
+
     @Test
     fun `a new account - empty scores, no goals, the "no data yet" line`() {
         val data = fixture("state-new-account.json")

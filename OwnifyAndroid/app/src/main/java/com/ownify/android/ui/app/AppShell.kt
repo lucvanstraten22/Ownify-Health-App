@@ -101,6 +101,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             is Detail.GoalPage -> data.goals.goal(detail.id) != null
             is Detail.HealthArea -> data.health.area(detail.id) != null
             is Detail.SettingsPage -> data.settings.page(detail.id) != null
+            Detail.ScoreCompass -> data.compass.available
         }
         if (!exists) shell.closeDetail()
     }
@@ -242,6 +243,7 @@ private fun DetailLayer(shell: ShellState, data: AppData, screens: ShellScreens)
         is Detail.HealthArea -> Accent.of(data.health.area(detail.id)?.accent)
         is Detail.GoalPage -> Accent.of(data.goals.goal(detail.id)?.accent)
         is Detail.SettingsPage -> Accent.HEALTH
+        Detail.ScoreCompass -> Accent.HEALTH
     }
     val ground = remember(detail.key, accent) { GroundPlacement(Ground.detail(accent)) }
     val progress = shell.detailProgress

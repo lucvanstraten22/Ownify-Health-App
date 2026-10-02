@@ -14,6 +14,8 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -336,6 +338,68 @@ class OwnifyAppFlowTest {
 
         compose.onNode(hasContentDescription("Ownify AI openen", substring = true)).performClick()
         waitFor("Ownify AI gebruiken?")
+    }
+
+    // ------------------------------------------------------------ Scorekompas
+
+    /** The demo pages with the Scorekompas the server adds to them (another day's: nothing here compares the two). */
+    private fun withCompass() {
+        val state = JSONObject(server.stateBody)
+        state.getJSONObject("data").put("compass", JSONObject(javaClass.classLoader!!.getResource("compass-demo.json").readText()))
+        server.stateBody = state.toString()
+    }
+
+    private val scoreButton get() = compose.onNode(hasContentDescription("Gezondheidsscore:", substring = true) and hasClickAction())
+
+    private fun backToOverview() {
+        compose.onNode(hasContentDescription("Terug naar Overzicht") and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isEmpty() }
+        compose.onNode(hasText("Vandaag") and isHeading()).assertExists()
+    }
+
+    @Test
+    fun `Scorekompas - the score card opens it, its four parts are the server's, and back returns to Overzicht`() {
+        withCompass()
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        // Overzicht says where the score is heading; the label is the button.
+        compose.onNode(hasText("Dalend")).assertIsDisplayed()
+        scoreButton.performClick()
+
+        compose.onNode(hasText("Scorekompas") and isHeading()).assertExists()
+        // The page under it is out of reach, as the website makes it inert.
+        compose.onAllNodes(hasText("Vandaag") and isHeading()).assertCountEquals(0)
+
+        for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf", "Grootste kans")) {
+            compose.onNode(hasText(title) and isHeading()).performScrollTo().assertIsDisplayed()
+        }
+        compose.onNode(hasText("Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("30 dagen daarvoor", substring = true)).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Hogere dagcijfers zouden samengaan met een hogere voedingsscore.")).performScrollTo().assertIsDisplayed()
+        // The page's end, scrolled to as TalkBack scrolls (performScrollTo() keeps
+        // trying on the last line of a column, in this version of Compose's test kit).
+        compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("Het Scorekompas beschrijft", substring = true)))
+            .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100_000f) }
+        compose.onNode(hasText("Het Scorekompas beschrijft", substring = true)).assertIsDisplayed()
+
+        backToOverview()
+
+        // As TalkBack opens it: the button's own action.
+        scoreButton.performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        backToOverview()
+    }
+
+    @Test
+    fun `Scorekompas - a server without it leaves the score card a card`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        compose.onAllNodes(hasContentDescription("Gezondheidsscore:", substring = true) and hasClickAction()).assertCountEquals(0)
+        compose.onAllNodes(hasText("Dalend")).assertCountEquals(0)
     }
 
     // --------------------------------------------------------- Ownify AI

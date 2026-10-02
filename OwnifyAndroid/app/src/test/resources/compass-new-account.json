@@ -1,0 +1,253 @@
+{
+ "title": "Scorekompas",
+ "lede": "Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.",
+ "back": "Overzicht",
+ "open": "Open het Scorekompas",
+ "footnote": "Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
+ "score": {
+  "value": null,
+  "max": 100,
+  "band": null
+ },
+ "direction": null,
+ "composition": {
+  "title": "Waar je score uit bestaat",
+  "note": "Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Sport over de afgelopen 90 dagen, zodra er gegevens zijn.",
+  "categories": [
+   {
+    "id": "sleep",
+    "label": "Slaap",
+    "accent": "sleep",
+    "icon": "moon",
+    "value": null,
+    "band": null,
+    "meta": "Koppel een bron om je slaapscore te berekenen.",
+    "summary": null,
+    "parts": [
+     {
+      "id": "duration",
+      "label": "Slaapduur",
+      "value": null,
+      "band": null,
+      "weight": 45,
+      "counted": false,
+      "note": null
+     },
+     {
+      "id": "regularity",
+      "label": "Regelmaat",
+      "value": null,
+      "band": null,
+      "weight": 30,
+      "counted": false,
+      "note": null
+     },
+     {
+      "id": "quality",
+      "label": "Kwaliteit",
+      "value": null,
+      "band": null,
+      "weight": 25,
+      "counted": false,
+      "note": null
+     }
+    ]
+   },
+   {
+    "id": "nutrition",
+    "label": "Voeding",
+    "accent": "nutrition",
+    "icon": "utensils",
+    "value": null,
+    "band": null,
+    "meta": "Geef je voeding een dagcijfer om je voedingsscore te berekenen.",
+    "summary": null,
+    "parts": []
+   },
+   {
+    "id": "training",
+    "label": "Sport",
+    "accent": "training",
+    "icon": "dumbbell",
+    "value": null,
+    "band": null,
+    "meta": "Koppel een bron om je trainingsscore te berekenen.",
+    "summary": null,
+    "parts": [
+     {
+      "id": "volume",
+      "label": "Volume",
+      "value": null,
+      "band": null,
+      "weight": 20,
+      "counted": false,
+      "note": null
+     },
+     {
+      "id": "intensity",
+      "label": "Intensiteit",
+      "value": null,
+      "band": null,
+      "weight": 20,
+      "counted": false,
+      "note": null
+     },
+     {
+      "id": "progression",
+      "label": "Progressie",
+      "value": null,
+      "band": null,
+      "weight": 25,
+      "counted": false,
+      "note": null
+     },
+     {
+      "id": "balance",
+      "label": "Balans",
+      "value": null,
+      "band": null,
+      "weight": 35,
+      "counted": false,
+      "note": null
+     }
+    ]
+   }
+  ]
+ },
+ "trend": {
+  "title": "Wat er verandert",
+  "state": "empty",
+  "direction": null,
+  "text": [],
+  "empty": "Nog niet genoeg gegevens.",
+  "values": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "axis": [
+   "3 sep",
+   "Vandaag"
+  ],
+  "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen",
+  "chart": {
+   "line": [],
+   "area": [],
+   "dots": [],
+   "points": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "width": 300,
+   "height": 120,
+   "has_data": false
+  }
+ },
+ "comparison": {
+  "title": "Vergeleken met jezelf",
+  "note": "Gemiddelden van je Gezondheidsscore per dag.",
+  "rows": [
+   {
+    "id": "now",
+    "label": "Nu",
+    "value": null,
+    "band": null,
+    "note": "Nog niet genoeg gegevens"
+   },
+   {
+    "id": "week",
+    "label": "Laatste 7 dagen",
+    "value": null,
+    "band": null,
+    "note": "Nog niet genoeg gegevens"
+   },
+   {
+    "id": "period",
+    "label": "Laatste 30 dagen",
+    "value": null,
+    "band": null,
+    "note": "Nog niet genoeg gegevens"
+   },
+   {
+    "id": "previous",
+    "label": "30 dagen daarvoor",
+    "value": null,
+    "band": null,
+    "note": "Nog niet genoeg gegevens"
+   }
+  ],
+  "delta": null
+ },
+ "opportunity": {
+  "title": "Grootste kans",
+  "state": "empty",
+  "empty": "Nog niet genoeg gegevens om een kans aan te wijzen.",
+  "category": null,
+  "label": null,
+  "accent": null,
+  "icon": null,
+  "part": null,
+  "name": null,
+  "value": null,
+  "band": null,
+  "fact": null,
+  "relation": null,
+  "gain": null,
+  "gain_text": null
+ }
+}

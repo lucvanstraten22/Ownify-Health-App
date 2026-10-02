@@ -1,0 +1,287 @@
+/* ==========================================================================
+   compass.css — the Scorekompas (pages/score-compass.php), and the way in:
+   the score card on Overzicht, which opens it.
+   Colours are the theme's tokens and roles only (docs/THEME.md): a
+   category's colour says which category, a score band says how high.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   The way in — the whole score card is one button
+   The label is the button; its ::after covers the card, so a tap anywhere on
+   the card opens the Scorekompas, and the card presses in like a goal card.
+   -------------------------------------------------------------------------- */
+.card--opens {
+    transition: transform var(--transition-fast), border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.card--opens:has(.card__open:active) { transform: scale(0.97); }
+
+.card__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    padding: 0;
+    letter-spacing: inherit;
+}
+
+.card__open::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+/* Focus rings the card it opens, not the word. */
+.card__open:focus-visible { outline: none; }
+
+.card--opens:has(.card__open:focus-visible) {
+    outline: 2px solid rgba(var(--ink), 0.55);
+    outline-offset: 3px;
+}
+
+.card__open-chevron {
+    width: 15px;
+    height: 15px;
+    color: var(--text-muted);
+    transition: transform var(--transition-fast);
+}
+
+.card--opens:has(.card__open:active) .card__open-chevron { transform: translateX(1px); }
+
+/* --------------------------------------------------------------------------
+   Direction — Stijgend, Stabiel, Dalend: one arrow, turned
+   -------------------------------------------------------------------------- */
+.score-direction {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-2);
+}
+
+.score-direction__chip { gap: 6px; }
+
+.score-direction__icon {
+    width: 13px;
+    height: 13px;
+    transition: transform var(--transition-fast);
+}
+
+[data-direction="flat"] .score-direction__icon { transform: rotate(90deg); }
+[data-direction="down"] .score-direction__icon { transform: rotate(180deg); }
+
+/* --------------------------------------------------------------------------
+   The page — the overall score's ring and glow, as on Overzicht
+   -------------------------------------------------------------------------- */
+.detail--compass .score-ring__value { stroke: url(#compassRingGradient); }
+
+.compass-note {
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.compass-empty {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+/* The sentences: what happened and when. */
+.compass-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+/* A score with its band's dot: the colour says how high, never which category. */
+.compass-score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.compass-score__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--score-color, var(--text-faint));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--score-color, var(--text-faint)) 18%, transparent);
+}
+
+.compass-score:not([data-score="high"]):not([data-score="mid"]):not([data-score="low"]) {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   1 — What the score is made of
+   -------------------------------------------------------------------------- */
+.compass-cats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.compass-cat {
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+}
+
+.compass-cat__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.compass-cat__head .icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+}
+
+.compass-cat__head .icon-tile .icon { width: 17px; height: 17px; }
+
+.compass-cat__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.compass-cat__label {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.compass-cat__meta {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.compass-cat__summary {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.compass-rows {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.compass-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-block: var(--space-3) 0;
+}
+
+.compass-row__top {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-size: var(--fs-small);
+}
+
+.compass-row__label {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-secondary);
+}
+
+.compass-row__weight {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.compass-row__value {
+    min-width: 2ch;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.compass-row.is-empty .compass-row__value {
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* The meter in the component's band: how high, and how far from 100. */
+.compass-row__meter {
+    height: 4px;
+    margin-top: 0;
+}
+
+.compass-row .meter__fill { background: var(--score-color, var(--text-faint)); }
+
+.compass-row.is-empty .compass-row__meter { height: 4px; }
+
+.compass-row__note {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   3 — Compared with yourself
+   -------------------------------------------------------------------------- */
+.compass-compare { margin-top: var(--space-4); }
+
+.compass-compare__label {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.compass-compare__note {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.compass-delta {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   4 — Where the most room is
+   -------------------------------------------------------------------------- */
+.compass-chance__head {
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+}
+
+.compass-chance .compass-text { margin-top: var(--space-4); }
+
+.compass-chance .compass-text p:first-child { color: var(--text-primary); }
+
+/* --------------------------------------------------------------------------
+   Very small phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .compass-cat { padding: var(--space-3) var(--space-2); }
+    .compass-chance__head { padding: var(--space-3) var(--space-2); }
+}

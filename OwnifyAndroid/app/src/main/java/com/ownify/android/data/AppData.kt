@@ -22,7 +22,9 @@ data class AppData(
     val goals: Goals,
     val community: Community,
     val settings: Settings,
-    val auth: Auth
+    val auth: Auth,
+    /** The Scorekompas behind the Overzicht score (includes/score-compass.php). */
+    val compass: Compass = Compass.parse(null)
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -42,7 +44,8 @@ data class AppData(
                 goals = Goals.parse(data.obj("goals")),
                 community = Community.parse(data.obj("community")),
                 settings = Settings.parse(data.obj("settings")),
-                auth = Auth.parse(data.obj("auth"))
+                auth = Auth.parse(data.obj("auth")),
+                compass = Compass.parse(data.obj("compass"))
             )
         }
     }
@@ -264,6 +267,197 @@ data class Contributor(val area: String, val label: String, val accent: String, 
     companion object {
         fun parse(o: JSONObject) = Contributor(
             o.str("area").orEmpty(), o.str("label").orEmpty(), o.str("accent").orEmpty(), o.int("value"), o.str("score_band")
+        )
+    }
+}
+
+// ----------------------------------------------------------- scorekompas
+
+/**
+ * The Scorekompas (pages/score-compass.php): the Health Score explained —
+ * what it is made of, what is changing, the person's own earlier scores and
+ * where the most room is. Every number and sentence is the server's
+ * (includes/score-compass.php); the app only lays them out. Without a
+ * `compass` in the state (an older server) everything reads as empty and
+ * Overzicht's card does not open it.
+ */
+data class Compass(
+    val available: Boolean,
+    val title: String,
+    val lede: String,
+    val back: String,
+    val open: String,
+    val footnote: String,
+    val score: Int?,
+    val max: Int,
+    val band: String?,
+    /** Stijgend / Stabiel / Dalend, or null while there is too little to say. */
+    val direction: CompassDirection?,
+    val composition: CompassComposition,
+    val trend: CompassTrend,
+    val comparison: CompassComparison,
+    val opportunity: CompassOpportunity
+) {
+    companion object {
+        fun parse(o: JSONObject?) = Compass(
+            available = o != null,
+            title = o.str("title").orEmpty(),
+            lede = o.str("lede").orEmpty(),
+            back = o.str("back").orEmpty(),
+            open = o.str("open").orEmpty(),
+            footnote = o.str("footnote").orEmpty(),
+            score = o.obj("score").int("value"),
+            max = o.obj("score").int("max") ?: 100,
+            band = o.obj("score").str("band"),
+            direction = CompassDirection.parse(o.obj("direction")),
+            composition = CompassComposition.parse(o.obj("composition")),
+            trend = CompassTrend.parse(o.obj("trend")),
+            comparison = CompassComparison.parse(o.obj("comparison")),
+            opportunity = CompassOpportunity.parse(o.obj("opportunity"))
+        )
+    }
+}
+
+/** [key] `up`, `flat` or `down` — which way the arrow turns; [label] what it says. */
+data class CompassDirection(val key: String, val label: String) {
+    companion object {
+        fun parse(o: JSONObject?): CompassDirection? {
+            val key = o.str("key") ?: return null
+            return CompassDirection(key, o.str("label").orEmpty())
+        }
+    }
+}
+
+data class CompassComposition(val title: String, val note: String, val categories: List<CompassCategory>) {
+    companion object {
+        fun parse(o: JSONObject?) = CompassComposition(
+            o.str("title").orEmpty(), o.str("note").orEmpty(), o.arr("categories").map(CompassCategory::parse)
+        )
+    }
+}
+
+/**
+ * One category of the score: its colour ([accent], which category) and its
+ * score's band ([band], how high); [meta] its days, or what it still needs;
+ * [summary] for a category of one component (Voeding), [parts] for the rest.
+ */
+data class CompassCategory(
+    val id: String,
+    val label: String,
+    val accent: String,
+    val icon: String,
+    val value: Int?,
+    val band: String?,
+    val meta: String,
+    val summary: String?,
+    val parts: List<CompassPart>
+) {
+    companion object {
+        fun parse(o: JSONObject) = CompassCategory(
+            o.str("id").orEmpty(), o.str("label").orEmpty(), o.str("accent").orEmpty(), o.str("icon").orEmpty(),
+            o.int("value"), o.str("band"), o.str("meta").orEmpty(), o.str("summary"), o.arr("parts").map(CompassPart::parse)
+        )
+    }
+}
+
+/** A component: [weight] its share of the category in % (null when it does not count), [note] what it rests on. */
+data class CompassPart(
+    val id: String,
+    val label: String,
+    val value: Int?,
+    val band: String?,
+    val weight: Int?,
+    val counted: Boolean,
+    val note: String?
+) {
+    companion object {
+        fun parse(o: JSONObject) = CompassPart(
+            o.str("id").orEmpty(), o.str("label").orEmpty(), o.int("value"), o.str("band"),
+            o.int("weight"), o.bool("counted"), o.str("note")
+        )
+    }
+}
+
+/**
+ * The last 30 days: [state] `empty`, `collecting` or `filled`; [text] the
+ * sentences; the line in the 300 × 120 box, as on Gezondheid.
+ */
+data class CompassTrend(
+    val title: String,
+    val state: String,
+    val direction: CompassDirection?,
+    val text: List<String>,
+    val empty: String,
+    val axis: List<String>,
+    val aria: String,
+    val chart: TrendChart,
+    val width: Float,
+    val height: Float
+) {
+    companion object {
+        fun parse(o: JSONObject?): CompassTrend {
+            val chart = o.obj("chart")
+            return CompassTrend(
+                title = o.str("title").orEmpty(),
+                state = o.str("state") ?: "empty",
+                direction = CompassDirection.parse(o.obj("direction")),
+                text = o.arr("text").strings(),
+                empty = o.str("empty").orEmpty(),
+                axis = o.arr("axis").strings(),
+                aria = o.str("aria").orEmpty(),
+                chart = if (chart == null) TrendChart(emptyList(), emptyList(), emptyList(), false) else TrendChart.parse(chart),
+                width = (chart.num("width") ?: 300.0).toFloat(),
+                height = (chart.num("height") ?: 120.0).toFloat()
+            )
+        }
+    }
+}
+
+data class CompassComparison(val title: String, val note: String, val rows: List<CompassRow>, val delta: String?) {
+    companion object {
+        fun parse(o: JSONObject?) = CompassComparison(
+            o.str("title").orEmpty(), o.str("note").orEmpty(), o.arr("rows").map(CompassRow::parse), o.obj("delta").str("text")
+        )
+    }
+}
+
+data class CompassRow(val id: String, val label: String, val value: Int?, val band: String?, val note: String) {
+    companion object {
+        fun parse(o: JSONObject) = CompassRow(
+            o.str("id").orEmpty(), o.str("label").orEmpty(), o.int("value"), o.str("band"), o.str("note").orEmpty()
+        )
+    }
+}
+
+/** The component with the most room, or [empty] saying why there is none. */
+data class CompassOpportunity(
+    val title: String,
+    val filled: Boolean,
+    val empty: String?,
+    val label: String?,
+    val accent: String?,
+    val icon: String?,
+    val name: String?,
+    val value: Int?,
+    val band: String?,
+    val fact: String?,
+    val relation: String?,
+    val gainText: String?
+) {
+    companion object {
+        fun parse(o: JSONObject?) = CompassOpportunity(
+            title = o.str("title").orEmpty(),
+            filled = o.str("state") == "filled",
+            empty = o.str("empty"),
+            label = o.str("label"),
+            accent = o.str("accent"),
+            icon = o.str("icon"),
+            name = o.str("name"),
+            value = o.int("value"),
+            band = o.str("band"),
+            fact = o.str("fact"),
+            relation = o.str("relation"),
+            gainText = o.str("gain_text")
         )
     }
 }

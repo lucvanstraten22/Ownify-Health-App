@@ -23,6 +23,7 @@ require_once __DIR__ . '/settings.php';
 require_once __DIR__ . '/hydrate-health.php';
 require_once __DIR__ . '/hydrate-goals.php';
 require_once __DIR__ . '/hydrate-community.php';
+require_once __DIR__ . '/hydrate-compass.php';
 
 if (!function_exists('app_page_data')) {
 
@@ -55,6 +56,11 @@ if (!function_exists('app_page_data')) {
             $data['scores']['contributors'],
             $data['health']
         );
+
+        /* The Scorekompas behind the ring: what the score is made of, what
+           is changing, the person's own earlier scores and where the most
+           room is — read from the same engine, never scored again. */
+        $data['compass'] = hydrate_compass(require $config . '/compass.php', $data, $userId);
 
         /* Real accounts and real points, or an empty board. */
         $data['community'] = hydrate_community(require $config . '/community.php', $userId);

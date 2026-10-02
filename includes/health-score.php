@@ -112,6 +112,19 @@ if (!function_exists('health_score_now')) {
      */
     function health_score_trend(int $userId, int $days = 28, ?DateTimeImmutable $now = null): array
     {
+        return array_map('health_score_summary', health_score_history($userId, $days, $now));
+    }
+
+    /**
+     * health_score_trend() in full: each day's complete result — categories
+     * with their days, components and facts — as health_score_at() gives it,
+     * for the Scorekompas (includes/score-compass.php), which explains a
+     * score's movement by its parts. The same records, the same moments.
+     *
+     * @return array<string,array> date => health_score_at() result, oldest first
+     */
+    function health_score_history(int $userId, int $days = 28, ?DateTimeImmutable $now = null): array
+    {
         $now ??= new DateTimeImmutable('now');
         $firstDay = $now->setTime(0, 0)->modify('-' . ($days - 1) . ' days');
 
@@ -121,7 +134,7 @@ if (!function_exists('health_score_now')) {
             $now
         );
 
-        $trend = [];
+        $history = [];
 
         for ($i = 0; $i < $days; $i++) {
             $day  = $firstDay->modify('+' . $i . ' days');
@@ -131,17 +144,10 @@ if (!function_exists('health_score_now')) {
                 $asOf = $now;
             }
 
-            $at = health_score_at($data, $asOf);
-
-            $trend[$day->format('Y-m-d')] = [
-                'sleep'     => $at['sleep']['score'],
-                'nutrition' => $at['nutrition']['score'],
-                'training'  => $at['training']['score'],
-                'overall'   => $at['overall']['score'],
-            ];
+            $history[$day->format('Y-m-d')] = health_score_at($data, $asOf);
         }
 
-        return $trend;
+        return $history;
     }
 
     /* ==================================================================
@@ -296,13 +302,21 @@ if (!function_exists('health_score_now')) {
         ];
     }
 
-    /** A category's result: the score, the days it rests on, and its parts. */
-    function health_score_result(?float $score, int $days, array $components): array
+    /**
+     * A category's result: the score, the days it rests on, and its parts.
+     *
+     * `facts` are what the components were worked out from — an average
+     * night, how much bedtime varies, minutes a week — for the Scorekompas
+     * to explain them in words. Nothing reads them to score, and they are
+     * not stored: daily_scores keeps the components only.
+     */
+    function health_score_result(?float $score, int $days, array $components, array $facts = []): array
     {
         return [
             'score'      => $score === null ? null : (int) round(max(0.0, min(100.0, $score))),
             'days'       => $days,
             'components' => array_map(static fn ($v) => $v === null ? null : round($v, 1), $components),
+            'facts'      => $facts,
         ];
     }
 
@@ -338,11 +352,12 @@ if (!function_exists('health_score_now')) {
         $durSd  = health_sd(array_map(static fn ($n) => $n['minutes'], $nights));
 
         $r = $s['regularity'];
-        $regularity = health_weighted([
+        $regularityParts = [
             'bedtime'   => $bedSd === null ? null : health_curve($r['timing_curve'], $bedSd),
             'wake_time' => $wakeSd === null ? null : health_curve($r['timing_curve'], $wakeSd),
             'duration'  => $durSd === null ? null : health_curve($r['duration_curve'], $durSd),
-        ], $r['weights']);
+        ];
+        $regularity = health_weighted($regularityParts, $r['weights']);
 
         $qualities = array_values(array_filter(
             array_map('health_night_quality', $nights),
@@ -352,7 +367,31 @@ if (!function_exists('health_score_now')) {
 
         $components = ['duration' => $duration, 'regularity' => $regularity, 'quality' => $quality];
 
-        return health_score_result(health_weighted($components, $s['weights']), $days, $components);
+        /* What the components were worked out from: each night's length, the
+           three spreads and their scores, and each quality measurement on
+           average over the nights that had it. */
+        $measured = array_map('health_night_quality_parts', $nights);
+        $qualityFacts = [];
+        foreach (array_keys($s['quality']['weights']) as $part) {
+            $readings = array_values(array_filter(array_column($measured, $part)));
+            $qualityFacts[$part] = $readings === [] ? null : [
+                'value'  => health_mean(array_column($readings, 'value')),
+                'score'  => health_mean(array_column($readings, 'score')),
+                'nights' => count($readings),
+            ];
+        }
+
+        $facts = [
+            'minutes'        => array_map(static fn ($n) => (float) $n['minutes'], $nights),
+            'bedtime_sd'     => $bedSd,
+            'wake_sd'        => $wakeSd,
+            'duration_sd'    => $durSd,
+            'regularity'     => $regularityParts,
+            'quality_nights' => count($qualities),
+            'quality'        => $qualityFacts,
+        ];
+
+        return health_score_result(health_weighted($components, $s['weights']), $days, $components, $facts);
     }
 
     /* -------------------------------------------------------- nutrition */
@@ -381,7 +420,8 @@ if (!function_exists('health_score_now')) {
         $daily = array_map(static fn ($values) => health_mean($values) * $scale, $byDay);
         $mean  = health_mean(array_values($daily));
 
-        return health_score_result($mean, $days, ['rating' => $mean]);
+        /* The average cijfer itself, on its own 1-10 scale. */
+        return health_score_result($mean, $days, ['rating' => $mean], ['rating' => $scale > 0 ? $mean / $scale : null]);
     }
 
     /* --------------------------------------------------------- training */
@@ -420,14 +460,17 @@ if (!function_exists('health_score_now')) {
         /* Intensity: the share of hard sessions among those measured. */
         $known = array_values(array_filter($workouts, static fn ($w) => $w['effort']['class'] !== null));
         $intensity = null;
+        $hard = null;
 
         if (count($known) >= (int) $t['intensity']['min_workouts']) {
             $hard = count(array_filter($known, static fn ($w) => $w['effort']['class'] === 'hard'));
             $intensity = health_curve($t['intensity']['hard_share_curve'], $hard / count($known));
         }
 
-        $progression = health_score_progression($workouts, $vo2, $goals);
-        $balance     = health_score_balance($workouts, $nights, array_keys($dates), $first, $to, $weeks);
+        $progressionFacts = [];
+        $balanceFacts     = [];
+        $progression = health_score_progression($workouts, $vo2, $goals, $progressionFacts);
+        $balance     = health_score_balance($workouts, $nights, array_keys($dates), $first, $to, $weeks, $balanceFacts);
 
         $components = [
             'volume'      => $volume,
@@ -436,7 +479,17 @@ if (!function_exists('health_score_now')) {
             'balance'     => $balance,
         ];
 
-        return health_score_result(health_weighted($components, $t['weights']), $days, $components);
+        /* What the components were worked out from. */
+        $facts = [
+            'workouts'         => count($workouts),
+            'minutes_per_week' => $minutes / $weeks,
+            'known'            => count($known),
+            'hard'             => $hard,
+            'progression'      => $progressionFacts,
+            'balance'          => $balanceFacts,
+        ];
+
+        return health_score_result(health_weighted($components, $t['weights']), $days, $components, $facts);
     }
 
     /**
@@ -444,12 +497,16 @@ if (!function_exists('health_score_now')) {
      * a relative change, recent half against earlier half of the window:
      * pace per kind of distance activity, VO2max, and results on their own
      * strength or performance goals. Null when there is nothing to compare.
+     *
+     * $facts, when given, receives how many signals of each kind were
+     * compared and their average change, as the score used it.
      */
-    function health_score_progression(array $workouts, array $vo2, array $goals): ?float
+    function health_score_progression(array $workouts, array $vo2, array $goals, ?array &$facts = null): ?float
     {
         $p       = health_scoring_config()['training']['progression'];
         $min     = (int) $p['min_samples'];
         $changes = [];
+        $signals = ['pace' => 0, 'vo2' => 0, 'goals' => 0];
 
         /* Pace, per kind of activity with a distance. */
         $byType = [];
@@ -467,6 +524,7 @@ if (!function_exists('health_score_now')) {
 
                 if ($earlier > 0) {
                     $changes[] = $recent / $earlier - 1;
+                    $signals['pace']++;
                 }
             }
         }
@@ -480,6 +538,7 @@ if (!function_exists('health_score_now')) {
 
             if ($earlier > 0) {
                 $changes[] = $recent / $earlier - 1;
+                $signals['vo2']++;
             }
         }
 
@@ -500,14 +559,17 @@ if (!function_exists('health_score_now')) {
             } else {
                 $changes[] = max($recent) / max($earlier) - 1;
             }
+            $signals['goals']++;
         }
 
         if ($changes === []) {
+            $facts = ['signals' => $signals, 'change' => null];
             return null;
         }
 
         $cap     = (float) $p['max_change'];
         $changes = array_map(static fn ($c) => max(-$cap, min($cap, $c)), $changes);
+        $facts   = ['signals' => $signals, 'change' => health_mean($changes)];
 
         return health_curve($p['change_curve'], health_mean($changes));
     }
@@ -518,9 +580,12 @@ if (!function_exists('health_score_now')) {
      * the nights after training went. Each part only where there is data for
      * it; frequency and rest always are.
      *
+     * $facts, when given, receives each part as the score used it: what
+     * was measured, and its score — null for a part without the data.
+     *
      * @param string[] $dates training days, any order
      */
-    function health_score_balance(array $workouts, array $nights, array $dates, int $first, int $to, float $weeks): ?float
+    function health_score_balance(array $workouts, array $nights, array $dates, int $first, int $to, float $weeks, ?array &$facts = null): ?float
     {
         $b = health_scoring_config()['training']['balance'];
         $s = health_scoring_config()['sleep'];
@@ -599,14 +664,24 @@ if (!function_exists('health_score_now')) {
            it ends, so the night after a workout on day D is night D + 1. */
         $trained = array_flip($numbers);
         $after   = [];
+        $afterMinutes = [];
 
         foreach ($nights as $night) {
             if (isset($trained[$dayNumber($night['date']) - 1])) {
                 $after[] = health_curve($s['duration_curve'], $night['minutes'] / 60);
+                $afterMinutes[] = (float) $night['minutes'];
             }
         }
 
         $sleep = count($after) >= (int) $b['sleep_min_nights'] ? health_mean($after) : null;
+
+        $facts = [
+            'frequency' => ['value' => count($numbers) / $weeks, 'score' => $frequency],
+            'rest'      => ['value' => $longest, 'score' => $rest],
+            'spikes'    => $spikeScore === null ? null : ['value' => $spikes, 'of' => $evaluated, 'score' => $spikeScore],
+            'hard_days' => $hardDays === null ? null : ['value' => $following, 'of' => count($heavy), 'score' => $hardDays],
+            'sleep'     => $sleep === null ? null : ['value' => health_mean($afterMinutes), 'of' => count($after), 'score' => $sleep],
+        ];
 
         return health_weighted([
             'frequency' => $frequency,

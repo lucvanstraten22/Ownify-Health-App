@@ -490,6 +490,24 @@ if (!function_exists('health_scoring_config')) {
     {
         $cfg = health_scoring_config()['sleep']['quality'];
 
+        return health_weighted(
+            array_map(static fn ($part) => $part === null ? null : $part['score'], health_night_quality_parts($night)),
+            $cfg['weights']
+        );
+    }
+
+    /**
+     * health_night_quality(), measurement by measurement: each one the
+     * device took — efficiency and deep and REM sleep in %, time awake in
+     * minutes — with its score on its curve; null where it took none.
+     *
+     * @return array{efficiency: ?array{value: float, score: float}, awake: ?array{value: float, score: float},
+     *               deep: ?array{value: float, score: float}, rem: ?array{value: float, score: float}}
+     */
+    function health_night_quality_parts(array $night): array
+    {
+        $cfg = health_scoring_config()['sleep']['quality'];
+
         $parts = ['efficiency' => null, 'awake' => null, 'deep' => null, 'rem' => null];
 
         $efficiency = $night['efficiency'];
@@ -497,21 +515,23 @@ if (!function_exists('health_scoring_config')) {
             $efficiency = min(100.0, $night['minutes'] / $night['in_bed'] * 100);
         }
         if ($efficiency !== null) {
-            $parts['efficiency'] = health_curve($cfg['efficiency_curve'], $efficiency);
+            $parts['efficiency'] = ['value' => (float) $efficiency, 'score' => health_curve($cfg['efficiency_curve'], $efficiency)];
         }
 
         if ($night['awake'] !== null) {
-            $parts['awake'] = health_curve($cfg['awake_curve'], $night['awake']);
+            $parts['awake'] = ['value' => (float) $night['awake'], 'score' => health_curve($cfg['awake_curve'], $night['awake'])];
         }
 
         /* Stage shares only mean something when the stages were measured. */
         $asleep = ($night['light'] ?? 0) + ($night['deep'] ?? 0) + ($night['rem'] ?? 0);
         if ($asleep > 0 && $night['deep'] !== null && $night['rem'] !== null) {
-            $parts['deep'] = health_curve($cfg['deep_curve'], $night['deep'] / $asleep * 100);
-            $parts['rem']  = health_curve($cfg['rem_curve'], $night['rem'] / $asleep * 100);
+            $deep = $night['deep'] / $asleep * 100;
+            $rem  = $night['rem'] / $asleep * 100;
+            $parts['deep'] = ['value' => (float) $deep, 'score' => health_curve($cfg['deep_curve'], $deep)];
+            $parts['rem']  = ['value' => (float) $rem, 'score' => health_curve($cfg['rem_curve'], $rem)];
         }
 
-        return health_weighted($parts, $cfg['weights']);
+        return $parts;
     }
 
     /* ==================================================================

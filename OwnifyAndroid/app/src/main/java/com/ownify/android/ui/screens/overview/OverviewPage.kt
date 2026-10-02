@@ -19,6 +19,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,10 +60,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.ownify.android.data.AppData
@@ -70,6 +75,7 @@ import com.ownify.android.data.GoalCard
 import com.ownify.android.data.Insights
 import com.ownify.android.data.Patterns
 import com.ownify.android.data.Recommendation
+import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.PageColumn
 import com.ownify.android.ui.app.dockClearance
@@ -124,15 +130,42 @@ fun OverviewPage(data: AppData, scroll: ScrollState) {
     }
 }
 
-/** `components/health-score.php`: the dominant block — the ring, its number and what it is made of. */
+/**
+ * `components/health-score.php`: the dominant block — the ring, its number
+ * and what it is made of. The whole card opens the Scorekompas
+ * ([ScoreCompassDetail]), and says where the score is heading.
+ */
 @Composable
 private fun HealthScoreCard(data: AppData) {
     val overall = data.overview.overall
+    val compass = data.compass
     val screen = LocalScreen.current
+    val shell = LocalShell.current
     val (play, sight) = rememberPlayOnSight()
     val empty = overall.value == null
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val nudge by animateDpAsState(if (pressed) 1.dp else 0.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "chevron")
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
+    val open = { shell.openDetail(Detail.ScoreCompass) }
+
+    // `.card--opens`: a tap anywhere on the card opens it, and the card presses
+    // in — as the label's button covers the card on the website. Only the
+    // label is the button for TalkBack, so the rest of the card reads as before.
+    val opens = if (!compass.available) Modifier else Modifier
+        .press(interaction)
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onPress = { at ->
+                    val press = PressInteraction.Press(at)
+                    interaction.emit(press)
+                    interaction.emit(if (tryAwaitRelease()) PressInteraction.Release(press) else PressInteraction.Cancel(press))
+                },
+                onTap = { open() }
+            )
+        }
+
+    JCard(Modifier.fillMaxWidth().reveal().then(sight).then(opens)) {
         // .card__head: the day and the chosen focus.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
@@ -154,7 +187,22 @@ private fun HealthScoreCard(data: AppData) {
                 .padding(top = Ownify.Space4, bottom = Ownify.Space3)
         )
 
-        T(overall.label, JStyle.Section, Modifier.fillMaxWidth(), align = TextAlign.Center)
+        // The label, with the way in beside it (`.card__open-chevron`): the button,
+        // still reading as its word, described as the website's button is.
+        val label = if (!compass.available) Modifier else Modifier.semantics(mergeDescendants = true) {
+            role = Role.Button
+            contentDescription = overall.label + ": " +
+                (if (empty) overall.caption.lowercase() else "${overall.value} van ${overall.max}") +
+                (compass.direction?.let { ", " + it.label.lowercase() } ?: "")
+            onClick(label = compass.open) { open(); true }
+        }
+        Row(Modifier.fillMaxWidth().then(label), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            T(overall.label, JStyle.Section)
+            if (compass.available) {
+                JIcon(OwnifyIcons.chevronRight, Modifier.padding(start = 1.dp).offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextMuted)
+            }
+        }
+        compass.direction?.let { DirectionChip(it, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space2)) }
         T(
             overall.description,
             JStyle.Lede,

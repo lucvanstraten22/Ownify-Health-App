@@ -76,7 +76,7 @@ foreach ($data['navigation'] as $position => $item) {
 <html lang="<?= e($app['locale']) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
-        'theme', 'components', 'dashboard', 'ai', 'health', 'community',
+        'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community',
         'goals', 'settings', 'account', 'devices',
     ]]); ?>
 </head>
@@ -146,9 +146,13 @@ foreach ($data['navigation'] as $position => $item) {
         </div>
 
         <!-- Detail pages: above the rail, below the dock, so the tab bar and
-             the assistant stay reachable from inside one. Gezondheid and Doelen
-             share this layer because drilling in is the same movement on both. -->
+             the assistant stay reachable from inside one. Overzicht, Gezondheid
+             and Doelen share this layer because drilling in is the same movement
+             on each. -->
         <div class="detail-stack" data-detail-stack>
+            <?php /* Overzicht's one: the Scorekompas behind the score. */ ?>
+            <?php page('score-compass', $data); ?>
+
             <?php foreach ($data['health']['areas'] as $areaId => $area): ?>
                 <?php page('health-detail', $data + ['area' => $area + ['id' => $areaId]]); ?>
             <?php endforeach; ?>

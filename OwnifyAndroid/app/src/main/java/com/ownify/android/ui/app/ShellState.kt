@@ -17,9 +17,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/** A page drilled into: a health area, a goal, a settings screen. */
+/** A page drilled into: the Scorekompas, a health area, a goal, a settings screen. */
 sealed interface Detail {
     val key: String
+
+    /** Overzicht's one: the Scorekompas behind the score. */
+    data object ScoreCompass : Detail {
+        override val key get() = "compass"
+    }
 
     data class HealthArea(val id: String) : Detail {
         override val key get() = "health:$id"

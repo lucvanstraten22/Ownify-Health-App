@@ -94,7 +94,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.3.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.4.0'],
             ],
         ],
     ],
@@ -485,7 +485,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.3.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.4.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],
