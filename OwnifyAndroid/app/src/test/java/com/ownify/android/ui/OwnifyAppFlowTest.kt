@@ -22,6 +22,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -340,6 +342,198 @@ class OwnifyAppFlowTest {
         waitFor("Ownify AI gebruiken?")
     }
 
+    // ------------------------------------------------------------ the first days
+
+    @Test
+    fun `setup - a new account opens on it, every step but the focus can be skipped, and finishing opens the app for good`() {
+        server.setupPending = true
+        server.setupFresh = true
+        MemoryTokenStorage.signedIn()
+        show()
+
+        waitFor("Wat wil je het liefst begrijpen?")
+        // None of the pages before the setup is finished.
+        assertTrue(compose.onAllNodesWithText("Gezondheidsscore").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("Stap 1 van 4 · Focus").assertExists()
+        // One answer first: Verder waits for it.
+        button("Verder").assertIsNotEnabled()
+
+        compose.onNode(hasText("Slaap") and hasClickAction()).performClick()
+        button("Verder").performClick()
+        waitFor("Gebruik wat je al meet")
+        assertEquals("sleep", form(server.requestsTo("update.php").single())["focus"])
+        compose.onNodeWithText("Stap 2 van 4 · Gegevens").assertExists()
+
+        button("Doorgaan zonder koppelen").performClick()
+        waitFor("Een paar gegevens over jou")
+        button("Overslaan").performClick()
+        waitFor("Wil je meteen een doel stellen?")
+        // Back finds every answer where it was.
+        button("Terug").performClick()
+        waitFor("Een paar gegevens over jou")
+        button("Overslaan").performClick()
+        waitFor("Wil je meteen een doel stellen?")
+        button("Naar Ownify").performClick()
+
+        waitForPages()
+        assertEquals(1, server.requestsTo("finish.php").size)
+        // Nothing was saved that was not answered.
+        assertTrue(server.requestsTo("onboarding.php").isEmpty())
+        assertTrue(server.requestsTo("create.php").isEmpty())
+        assertTrue(compose.onAllNodesWithText("Wat wil je het liefst begrijpen?").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun `setup - a restart opens past a focus already chosen, and the setup is the server's to end, not the phone's`() {
+        server.setupPending = true
+        val state = JSONObject(javaClass.classLoader!!.getResource("setup-pending.json").readText())
+        assertEquals("connect", state.getString("resume"))
+        MemoryTokenStorage.signedIn()
+        show()
+
+        // The fixture's account chose Energie on its way through: it opens on Gegevens.
+        waitFor("Gebruik wat je al meet")
+        // Signing out from the setup: the opening screen, the token forgotten.
+        compose.onNode(hasText("Uitloggen") and hasClickAction()).performClick()
+        waitFor("Registreren")
+        assertNull(MemoryTokenStorage.load())
+    }
+
+    @Test
+    fun `setup - a birth date, a height and a weight go to the endpoints that always save them`() {
+        server.setupPending = true
+        MemoryTokenStorage.signedIn()
+        show()
+
+        waitFor("Gebruik wat je al meet")
+        button("Doorgaan zonder koppelen").performClick()
+        waitFor("Een paar gegevens over jou")
+        // Each fact says why it is asked.
+        compose.onNodeWithText("Met je leeftijd schat Ownify je maximale hartslag, en daarmee hoe zwaar een training was.").assertExists()
+        field("Lengte").performTextInput("180")
+        field("Gewicht").performTextInput("82,4")
+        button("Opslaan en verder").performClick()
+
+        waitFor("Wil je meteen een doel stellen?")
+        val saved = form(server.requestsTo("update.php").single())
+        assertEquals("180", saved["height"])
+        assertEquals("82,4", saved["weight"])
+        assertTrue(server.requestsTo("onboarding.php").isEmpty())
+    }
+
+    @Test
+    fun `setup - a first goal from the person's own data, added through the normal goal endpoint`() {
+        server.setupPending = true
+        MemoryTokenStorage.signedIn()
+        show()
+
+        waitFor("Gebruik wat je al meet")
+        button("Doorgaan zonder koppelen").performClick()
+        waitFor("Een paar gegevens over jou")
+        button("Overslaan").performClick()
+
+        waitFor("5 nachten van minstens 7 uur")
+        compose.onNodeWithText("Een mogelijk eerste doel", ignoreCase = true).assertExists()
+        compose.onNodeWithText("Je sliep de afgelopen 4 nachten gemiddeld 6:41.").assertExists()
+        button("Toevoegen").performClick()
+
+        waitFor("Doel toegevoegd: 5 nachten van minstens 7 uur. Je vindt het bij Doelen.")
+        val goal = form(server.requestsTo("create.php").single())
+        assertEquals("accumulate", goal["type"])
+        assertEquals("sleep_duration", goal["source_key"])
+        assertEquals("7", goal["daily_target"])
+        assertEquals("5", goal["target_value"])
+        // A suggestion is a possibility, never a claim.
+        assertTrue(compose.onAllNodesWithText("realistisch", substring = true, ignoreCase = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("Een mogelijk eerste doel", ignoreCase = true).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun `setup - a suggestion can be left, and the normal wizard is there instead`() {
+        server.setupPending = true
+        MemoryTokenStorage.signedIn()
+        show()
+
+        waitFor("Gebruik wat je al meet")
+        button("Doorgaan zonder koppelen").performClick()
+        waitFor("Een paar gegevens over jou")
+        button("Overslaan").performClick()
+        waitFor("5 nachten van minstens 7 uur")
+        button("Niet nu").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("5 nachten van minstens 7 uur").fetchSemanticsNodes().isEmpty() }
+
+        button("Zelf een doel instellen").performClick()
+        waitFor("Waar gaat je doel over?")
+        assertTrue(server.requestsTo("create.php").isEmpty())
+    }
+
+    @Test
+    fun `first days - Overzicht opens on the baseline being built, in the server's words`() {
+        server.calibration = JSONObject(javaClass.classLoader!!.getResource("calibration-building.json").readText())
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        compose.onNodeWithText("Je basislijn wordt opgebouwd").assertExists()
+        compose.onNodeWithText("Dag 2 van 3", ignoreCase = true).assertExists()
+        compose.onNodeWithText("1 van 3 nachten").assertExists()
+        compose.onNodeWithText("Je laatste nacht", substring = true).assertExists()
+    }
+
+    @Test
+    fun `first days - the first score is the engine's own, with its components, and opens the Scorekompas`() {
+        withCompass()
+        server.calibration = JSONObject(javaClass.classLoader!!.getResource("calibration-first.json").readText())
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        compose.onNodeWithText("Je eerste slaapscore").assertExists()
+        compose.onNodeWithText("Slaapduur").assertExists()
+        compose.onNodeWithText("Regelmaat").assertExists()
+        compose.onNodeWithText("Je gezondheidsscore rust voorlopig alleen op slaap.", substring = true).assertExists()
+        compose.onNode(hasContentDescription("Bekijk de opbouw in het Scorekompas") and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun `first days - the starting point shows only what has enough data, and an account without the first days has no card`() {
+        server.calibration = JSONObject(javaClass.classLoader!!.getResource("calibration-baseline.json").readText())
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        compose.onNodeWithText("Je startpunt").assertExists()
+        compose.onNodeWithText("Voeding en sport komen erbij zodra er 3 dagen van zijn.").assertExists()
+    }
+
+    @Test
+    fun `Instellingen - the focus is changed later in the editor every field has, saved where the setup saves it`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Instellingen").performClick()
+        compose.onNode(hasContentDescription("Account openen") and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Focus")
+
+        compose.onAllNodes(hasText("Focus") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Fitheid")
+        compose.onAllNodes(hasText("Slaap") and hasClickAction()).onLast().performClick()
+        button("Opslaan").performClick()
+
+        compose.waitUntil(5_000) { server.requestsTo("update.php").isNotEmpty() }
+        assertEquals(mapOf("focus" to "sleep"), form(server.requestsTo("update.php").single()))
+    }
+
+    @Test
+    fun `first days - an existing account sees neither the setup nor the card`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        assertTrue(compose.onAllNodesWithText("Je basislijn", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("Wat wil je het liefst begrijpen?").fetchSemanticsNodes().isEmpty())
+    }
+
     // ------------------------------------------------------------ Scorekompas
 
     /** The demo pages with the Scorekompas the server adds to them (another day's: nothing here compares the two). */
@@ -565,14 +759,14 @@ class OwnifyAppFlowTest {
     fun `Gezondheid's intro is the server's - how many more days unlock a score, then the three pillars once there is one`() {
         val demo = server.stateBody
         server.stateBody = org.json.JSONObject(demo).apply {
-            getJSONObject("data").getJSONObject("health").put("lede", "Je hebt nog 2 dagen data nodig om een score te ontgrendelen.")
+            getJSONObject("data").getJSONObject("health").put("lede", "Je eerste score volgt na 3 dagen met gegevens: nog 2 dagen.")
         }.toString()
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
 
         button("Gezondheid").performClick()
-        waitFor("Je hebt nog 2 dagen data nodig om een score te ontgrendelen.")
+        waitFor("Je eerste score volgt na 3 dagen met gegevens: nog 2 dagen.")
 
         // New data on the server (a sync, a rating): the app's next read of its pages brings the pillars back.
         server.stateBody = demo

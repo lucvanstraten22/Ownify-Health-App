@@ -205,6 +205,22 @@ if (db_available()) {
                 . 'cannot be switched off — import database/migrations/014-leaderboard-avatar-setting.sql');
         }
 
+        /* Not fatal: without it a new account opens on the app as before —
+           no setup, no first days — and everybody's focus is Alles. */
+        $setupColumns = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'user_profiles'
+                AND column_name IN ('focus', 'setup_state', 'setup_done_at')"
+        );
+
+        if ($setupColumns === 3) {
+            line('ok', 'first days', 'user_profiles.focus, setup_state and setup_done_at are there');
+        } else {
+            line('warn', 'first days', 'user_profiles.focus, setup_state or setup_done_at is missing, so a new account '
+                . 'gets no setup and no first days, and nobody can choose a focus '
+                . '— import database/migrations/016-setup-and-focus.sql');
+        }
+
         /* Not fatal: without GD the boards and friends lists show each
            picture as uploaded (up to 3 MB) instead of a small copy. */
         if (!function_exists('imagecreatetruecolor')) {

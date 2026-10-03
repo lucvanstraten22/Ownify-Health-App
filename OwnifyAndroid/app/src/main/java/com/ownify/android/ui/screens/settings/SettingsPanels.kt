@@ -262,7 +262,7 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
  * the system's date picker, between the earliest and latest the server allows.
  */
 @Composable
-private fun DateControl(input: FieldInput, value: String, label: String, onPick: (String) -> Unit) {
+internal fun DateControl(input: FieldInput, value: String, label: String, onPick: (String) -> Unit) {
     InButton {
         val context = LocalContext.current
         val interaction = remember { MutableInteractionSource() }

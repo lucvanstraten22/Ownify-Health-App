@@ -65,7 +65,9 @@ class ShellScreens(
     val assistant: @Composable (data: AppData) -> Unit,
     val overlay: @Composable (overlay: Overlay, data: AppData) -> Unit,
     /** The page whose header stays clear because its head never scrolls (Community). */
-    val fixedHead: Set<String> = setOf("community")
+    val fixedHead: Set<String> = setOf("community"),
+    /** A new account's setup, shown instead of everything above while the server says it is pending. */
+    val setup: @Composable (data: AppData) -> Unit = {}
 )
 
 /**

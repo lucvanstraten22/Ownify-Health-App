@@ -614,7 +614,9 @@
     /* The token is minted server-side and rendered on the account panel; the
        endpoints reject anything without it. */
     function csrf() {
-        var panel = document.querySelector('[data-account]');
+        /* The account panel's, or — on the setup, which has no account
+           panel — the page's own (pages/setup.php). */
+        var panel = document.querySelector('[data-account]') || document.querySelector('[data-csrf]');
         return panel ? (panel.getAttribute('data-csrf') || '') : '';
     }
 
@@ -778,6 +780,13 @@
            save; closing a wizard the user abandoned should cost them nothing. */
         if (saved) {
             saved = false;
+
+            /* For whoever opened it outside Doelen — the setup's goal step —
+               which goal was made. */
+            document.dispatchEvent(new CustomEvent('goalwizard:saved', {
+                detail: { id: createdId, name: draft.name }
+            }));
+
             showNewGoal(createdId);
         }
     }

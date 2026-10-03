@@ -110,15 +110,18 @@ import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 
 /**
- * Overzicht (pages/overview.php): the day's score, the personal goal, the
- * insights, the patterns and the one suggestion — and the line under them
- * when there is one to say. The scroll-to-top control appears 360 dp down.
+ * Overzicht (pages/overview.php): in a new account's first days the card of
+ * its baseline, then the day's score, the personal goal, the insights, the
+ * patterns and the one suggestion — and the line under them when there is
+ * one to say. The scroll-to-top control appears 360 dp down.
  */
 @Composable
 fun OverviewPage(data: AppData, scroll: ScrollState) {
     val overview = data.overview
     Box {
         PageColumn(scroll) {
+            // The first days of a new account (docs/FIRST-DAYS.md); nothing outside them.
+            CalibrationCard(data)
             HealthScoreCard(data)
             GoalProgressCard(overview.goal)
             InsightsCard(overview.insights)

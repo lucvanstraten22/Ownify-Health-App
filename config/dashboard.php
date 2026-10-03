@@ -42,17 +42,20 @@ return [
     ],
 
     /**
-     * Onboarding focus. Drives which block gets visual priority.
-     * general | sleep | nutrition | mobility | mental
-     * Set to 'general' until onboarding exists.
+     * The focus: what the person most wants to understand, chosen in the setup
+     * a new account starts with and changeable in Instellingen → Account
+     * (includes/setup.php, docs/FIRST-DAYS.md). app_page_data() fills in the
+     * account's own; `general` until there is one. It decides what comes
+     * first — the ring's legend, the Scorekompas, the first days — never
+     * what is shown. The chip on the score card says it.
      */
     'focus'        => 'general',
     'focus_labels' => [
-        'general'   => 'Algemeen',
-        'sleep'     => 'Slaap',
-        'nutrition' => 'Voeding',
-        'mobility'  => 'Mobiliteit',
-        'mental'    => 'Mentaal',
+        'general' => 'Alles',
+        'sleep'   => 'Slaap',
+        'energy'  => 'Energie',
+        'fitness' => 'Fitheid',
+        'weight'  => 'Gewicht',
     ],
 
     /* -------------------------------------------------- header */
@@ -88,6 +91,9 @@ return [
             'value'       => null,
             'max'         => 100,
             'caption'     => 'Nog geen gegevens',
+            /* Instead, once some data is in but not yet enough for a score;
+               the hint then says how many days are still needed. */
+            'caption_collecting' => 'Nog geen score',
             'description' => 'Je score bundelt slaap, voeding en beweging over de afgelopen 90 dagen.',
             'empty_hint'  => 'Verbind een bron om je gezondheidsscore te berekenen.',
         ],
@@ -117,7 +123,7 @@ return [
         'progress'    => null,              // 0–100, null while unset
         'unit'        => 'van je weekdoel',
         'headline'    => 'Nog geen doel ingesteld',
-        'description' => 'Tijdens de onboarding kies je één doel. Je voortgang van deze week verschijnt hier.',
+        'description' => 'Je voortgang van deze week verschijnt hier zodra je een doel instelt.',
         /* A goal exists but has nothing measured against it yet — true the
            moment one is created, and until something is recorded. */
         'pending'     => 'Je voortgang verschijnt zodra je iets vastlegt voor dit doel.',

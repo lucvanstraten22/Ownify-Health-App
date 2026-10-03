@@ -16,6 +16,9 @@ declare(strict_types=1);
         <main class="app__main" id="main" tabindex="-1">
             <div class="shell stack">
                 <?php
+                /* The first days of a new account: the baseline being built,
+                   the first score, the starting point (docs/FIRST-DAYS.md). */
+                component('calibration', $data);
                 component('health-score', $data);
                 component('goal-progress', $data);
                 component('insights', $data);

@@ -28,8 +28,10 @@ return [
     'lede'  => 'Je drie pijlers. Tik op een onderdeel voor de details.',
 
     /* Instead of the lede while there is no score at all yet (see
-       lib/hydrate-health.php). %s = "3 dagen", "1 dag". */
-    'lede_collecting' => 'Je hebt nog %s data nodig om een score te ontgrendelen.',
+       lib/hydrate-health.php): %1$s how many more days ("1 dag", "2 dagen"),
+       %2$d the days a first score needs (config/scoring.php min_days). The
+       same sentence under Overzicht's ring once some data is in. */
+    'lede_collecting' => 'Je eerste score volgt na %2$d dagen met gegevens: nog %1$s.',
 
     /* ============================================================ metrics */
     'metrics' => [

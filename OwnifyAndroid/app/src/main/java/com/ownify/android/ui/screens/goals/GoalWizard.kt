@@ -346,7 +346,7 @@ private fun Foot(
 
 /** `wizard-in`: a step arrives from 14 dp to the side it came from, and fades in. */
 @Composable
-private fun StepIn(direction: Int, content: @Composable ColumnScope.() -> Unit) {
+internal fun StepIn(direction: Int, content: @Composable ColumnScope.() -> Unit) {
     val still = LocalStillMotion.current
     val progress = remember { Animatable(if (still) 1f else 0f) }
     LaunchedEffect(Unit) { progress.animateTo(1f, tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) }

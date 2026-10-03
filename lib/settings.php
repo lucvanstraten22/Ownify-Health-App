@@ -411,6 +411,9 @@ if (!function_exists('settings_field_input')) {
                                              'non_binary' => 'Non-binair',
                                              'other'      => 'Anders',
                                           ]],
+            /* What the person most wants to understand (includes/setup.php):
+               the choices come with the profile, from config/setup.php. */
+            'focus'                   => ['type' => 'choice', 'options' => $profile['focus_options'] ?? []],
             'height'                  => ['type' => 'number', 'min' => 50, 'max' => 260, 'step' => '0.1'],
             'weight'                  => ['type' => 'number', 'min' => 20, 'max' => 400, 'step' => '0.1'],
             default                   => ['type' => 'text', 'maxlength' => 120],

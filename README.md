@@ -59,8 +59,11 @@ tools/
                               tokens, contrast, the page served in each
     score-compass-test.php    the Scorekompas: directions, sentences, averages, the
                               biggest opportunity, empty states, wording — no database
+    first-days-test.php       the first days: every day of the baseline card, the focus,
+                              the suggested first goal, the tone — no database
 pages/
     welcome.php               the opening screen, for everyone not signed in
+    setup.php                 the setup a new account starts with, before the app
     overview.php              the dashboard
     score-compass.php         the Scorekompas, behind the score on Overzicht
     health.php                Gezondheid — three scores and a trend
@@ -77,6 +80,7 @@ config/community.php          leaderboard scopes, periods and copy
 config/goals.php              goal vocabulary, copy and the example goals
 config/settings.php           the settings tree, its screens and their copy
 config/compass.php            the Scorekompas: its words, and when it may say something
+config/setup.php              the first days: the setup's and the baseline card's words
 config/ai.php                 Ownify AI: model, limits, consent version — no key
 config/ai-prompt.php          what the assistant is told about itself
 lib/render.php                escaping, page/component include, score formatting
@@ -86,12 +90,15 @@ lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
 lib/theme.php                 Dark or White Mode: this browser's choice, read before the page
 lib/hydrate-compass.php       the Scorekompas for the signed-in user, and its line
+lib/hydrate-setup.php         the setup and the first days for the signed-in user
 components/
     document-head.php         the <head> the app and the opening screen share
     icons.php                 one icon family (24px grid, 1.6 stroke)
     header.php                devices · app name · account — one, shared by the five pages
     health-score.php          primary score ring + composition legend; opens the Scorekompas
     score-direction.php       Stijgend / Stabiel / Dalend, under the score
+    compass-category.php      one category as the Scorekompas shows it, also the first score
+    calibration.php           the first days on Overzicht: baseline, first score, starting point
     secondary-scores.php      Slaap and Voeding & Sport (one card system)
     goal-progress.php         personal goal progress
     insights.php              useful insights
@@ -129,6 +136,7 @@ assets/css/
     ai.css                    the assistant layer (tokens only, no new values)
     health.css                Gezondheid and its detail pages (tokens only)
     compass.css               the Scorekompas and the score card that opens it (tokens only)
+    setup.css                 the setup a new account starts with (tokens only)
     community.css             the leaderboard (tokens only)
     goals.css                 Doelen, goal details and the wizard (tokens only)
     settings.css              Instellingen and its ten screens (tokens only)
@@ -147,6 +155,7 @@ assets/js/
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
     goal-wizard.js            the five-step create-a-goal flow
+    setup.js                  the setup's four steps, each saved where it always is
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
     devices.js                the devices quick look, and its way to the devices screen
@@ -173,7 +182,8 @@ open the same account panel as the app's account button, with the same forms
 and endpoints, each on its own flow only: logging in shows username and
 password, registering adds the e-mail address, and neither offers the other.
 Google stays under both. Signing in, registering, or finishing a
-Google sign-in reloads the page, which the server now renders as the app.
+Google sign-in reloads the page, which the server now renders as the app —
+for a new account, the setup before it (see *The first days*).
 Signing out — from the account panel or from Instellingen — reloads onto the
 opening screen.
 
@@ -524,7 +534,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.4.0
+OVER         Over de app · Versie Beta 1.5.0
 
              [ Uitloggen ]
                Account verwijderen
@@ -552,7 +562,7 @@ it is chosen (see "Dark Mode and White Mode" below).
 
 **Profile fields carry their own behaviour.** `edit` is `true`, `'locked'` or
 `'derived'`, and the row shows which without needing a legend: an editable
-field gets a chevron, a field set once at onboarding gets a lock, and a
+field gets a chevron, a field that can be set only once gets a lock, and a
 calculated one says where it comes from. Gender and date of birth are locked.
 Age is derived, not editable — the schema stores a date of birth and computes
 age from it, so an age you could type would be a second, contradictory fact
@@ -624,14 +634,37 @@ output of a repository or service that returns the same shape. The markup, CSS
 and JavaScript do not change: components read `has_value()` / `score_ratio()`
 and the browser gets the target through `data-progress` / `data-count-to`.
 
-## Onboarding focus
+## The first days
 
-`config/dashboard.php` has a `focus` key (`general`, `sleep`, `nutrition`,
-`mobility`, `mental`). `general` shows the broad overview. A specific focus
-promotes that category card to full width, swaps in its extra detail rows
-(sleep: duration, bedtime, wake time) and tightens the primary ring — all
-through `[data-focus]` and `.is-focused` in `dashboard.css`, without a second
-layout.
+A new account starts with a short setup, **Hoe moet Ownify voor jou
+werken?**, before the app, on the website and in the Android app alike. It
+has four steps:
+
+1. **The focus**: Slaap, Energie, Fitheid, Gewicht or Alles.
+2. **Health data**: Health Connect, always skippable.
+3. **A few profile facts**: birth date, height and weight, only the ones
+   something uses, each with why.
+4. **An optional first goal**: through the normal goal wizard, or suggested
+   from the person's own last two weeks when one can be worked out.
+
+Each answer is saved by the endpoint that always saves it, and
+`api/setup/finish.php` ends the setup. The database decides whether it is
+still waiting, so a reload, another browser, the phone or signing in again
+never brings it back. Accounts that existed before it never see it.
+
+For the first five days Overzicht then opens with a card that follows the
+baseline being built:
+
+- how far each category is, in its own unit, with one plain fact a day;
+- the first score, the day it appears, exactly as the Scorekompas shows it;
+- after that, the starting point, with only what has enough data.
+
+It never scores: the Health Score stays the engine's own, over 90 days, and
+a category still needs 3 days of data. The focus orders things (the ring's
+legend, the Scorekompas, the card) and never hides any of them. It can be
+changed later in Instellingen → Account. Everything, including the migration
+an existing database needs (`016-setup-and-focus.sql`), is in
+**[docs/FIRST-DAYS.md](docs/FIRST-DAYS.md)**.
 
 ## The assistant layer
 

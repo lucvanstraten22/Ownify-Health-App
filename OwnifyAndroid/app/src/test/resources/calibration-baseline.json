@@ -1,0 +1,23 @@
+{
+ "phase": "baseline",
+ "title": "Je startpunt",
+ "lede": "Geen oordeel, maar een vertrekpunt: vanaf hier zie je wat er verandert.",
+ "baseline": [
+  {
+   "id": "sleep",
+   "label": "Slaap",
+   "accent": "sleep",
+   "icon": "moon",
+   "value": 92,
+   "band": "high",
+   "fact": "Gemiddeld 7:02 per nacht"
+  }
+ ],
+ "note": "Voeding en sport komen erbij zodra er 3 dagen van zijn.",
+ "open": "Bekijk je score in het Scorekompas",
+ "day": 3,
+ "eyebrow": "Dag 3 van 3",
+ "progress": [],
+ "observation": null,
+ "first": null
+}

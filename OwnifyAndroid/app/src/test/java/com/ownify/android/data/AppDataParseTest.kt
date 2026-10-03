@@ -262,10 +262,82 @@ class AppDataParseTest {
         assertTrue(data.goals.all.isEmpty())
         assertTrue(data.goals.canAdd)
         assertNull(data.health.area("sleep")!!.score.value)
-        assertEquals("no score yet: Gezondheid says how many days unlock one", "Je hebt nog 3 dagen data nodig om een score te ontgrendelen.", data.health.lede)
+        assertEquals("no score yet: Gezondheid says how many days unlock one", "Je eerste score volgt na 3 dagen met gegevens: nog 3 dagen.", data.health.lede)
         assertFalse(data.health.trend.charts["sleep"]!!["week"]!!.hasData)
         assertTrue(data.community.friends.isEmpty())
         // No data yet: the assistant's empty screen will say so.
         assertFalse(data.ai.session.hasData)
     }
+
+    // -------------------------------------------------------- the first days
+
+    private fun resource(name: String) = JSONObject(javaClass.classLoader!!.getResource(name).readText())
+
+    @Test
+    fun `a new account's setup - four steps, every word the server's, and what was already answered`() {
+        val setup = Setup.parse(resource("setup-pending.json"))
+
+        assertTrue(setup.pending)
+        assertEquals(listOf("focus", "connect", "profile", "goal"), setup.order)
+        assertEquals("Stap 2 van 4", setup.countText(1))
+        assertEquals("Wat wil je het liefst begrijpen?", setup.focus.title)
+        assertEquals(listOf("sleep", "energy", "fitness", "weight", "general"), setup.focus.options.map { it.key })
+        assertEquals("Alles", setup.focus.options.last().label)
+        // This account already chose Energie: a restart opens past it.
+        assertEquals("energy", setup.focus.options.single { it.chosen }.key)
+        assertEquals("connect", setup.resume)
+        assertEquals("Doorgaan zonder koppelen", setup.connect.skip)
+        // The server's own state: this account has a phone signed in, so it counts as connected…
+        assertTrue(setup.connect.source.connected)
+        // …and the phone says what its own Health Connect allows, in the server's words.
+        assertEquals("Verbonden", setup.connect.source.connectedLabel)
+        assertEquals("Nog niet verbonden", setup.connect.source.notConnectedLabel)
+        // Only what Ownify uses, each with why — and Instellingen's own inputs and endpoints.
+        assertEquals(listOf("date_of_birth", "height", "weight"), setup.profile.fields.map { it.key })
+        assertTrue(setup.profile.fields.all { it.reason.isNotEmpty() })
+        assertEquals("api/profile/onboarding.php", setup.profile.fields[0].input!!.endpoint)
+        assertEquals("api/profile/update.php", setup.profile.fields[2].input!!.endpoint)
+        assertEquals("kg", setup.profile.fields[2].input!!.unit)
+        // A first goal from the person's own data: the normal goal model's fields.
+        val suggestion = setup.goal.suggestion!!
+        assertEquals("5 nachten van minstens 7 uur", suggestion.name)
+        assertEquals("accumulate", suggestion.input["type"])
+        assertEquals("sleep_duration", suggestion.input["source_key"])
+        assertEquals("Doel toegevoegd: X. Je vindt het bij Doelen.", setup.goal.addedText("X"))
+    }
+
+    @Test
+    fun `an older server, or an account past its setup - not pending, and no card`() {
+        val data = fixture("state-demo.json")
+        assertFalse(data.setup.pending)
+        assertNull(data.calibration)
+        assertFalse(Setup.parse(null).pending)
+        assertNull(Calibration.parse(null))
+    }
+
+    @Test
+    fun `the first days - building, the first score with its components, and the starting point`() {
+        val building = Calibration.parse(resource("calibration-building.json"))!!
+        assertEquals("building", building.phase)
+        assertEquals(2, building.day)
+        assertEquals(listOf("sleep", "nutrition", "training"), building.progress.map { it.id })
+        assertEquals(1, building.progress.first().days)
+        assertEquals(3, building.progress.first().needed)
+        assertNotNull(building.observation)
+        assertNull(building.first)
+
+        val first = Calibration.parse(resource("calibration-first.json"))!!
+        assertEquals("first_score", first.phase)
+        assertEquals("Je eerste slaapscore", first.title)
+        assertEquals("sleep", first.first!!.id)
+        assertEquals(listOf("duration", "regularity", "quality"), first.first!!.parts.map { it.id })
+        assertNotNull(first.open)
+
+        val baseline = Calibration.parse(resource("calibration-baseline.json"))!!
+        assertEquals("baseline", baseline.phase)
+        assertEquals("Je startpunt", baseline.title)
+        assertTrue(baseline.baseline.isNotEmpty())
+        assertTrue(baseline.progress.isEmpty())
+    }
 }
+

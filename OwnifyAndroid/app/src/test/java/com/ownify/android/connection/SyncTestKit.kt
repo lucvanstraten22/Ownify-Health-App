@@ -230,6 +230,50 @@ class FakeOwnifyServer {
     var stateBody: String = FakeOwnifyServer::class.java.classLoader!!.getResource("state-demo.json").readText()
 
     /**
+     * A new account's setup is waiting (includes/setup.php): the pages carry
+     * `setup` from setup-pending.json until api/setup/finish.php, as the
+     * real server's do. [setupGoals] are the active goals the setup shows as
+     * added.
+     */
+    @Volatile
+    var setupPending = false
+    val setupGoals = CopyOnWriteArrayList<String>()
+
+    /** A setup just begun: nothing chosen yet, so it opens on the focus. */
+    @Volatile
+    var setupFresh = false
+
+    /** Overzicht's card of the first days, put into the pages (a calibration-*.json), or none. */
+    @Volatile
+    var calibration: JSONObject? = null
+
+    /** The pages as the server would send them now: [stateBody], with the setup and the first days. */
+    private fun currentState(): String {
+        if (!setupPending && calibration == null) return stateBody
+        val state = JSONObject(stateBody)
+        val data = state.getJSONObject("data")
+        if (setupPending) {
+            val setup = JSONObject(FakeOwnifyServer::class.java.classLoader!!.getResource("setup-pending.json").readText())
+            if (setupFresh) setup.put("resume", "focus")
+            val steps = setup.getJSONArray("steps")
+            for (i in 0 until steps.length()) {
+                val step = steps.getJSONObject(i)
+                if (step.optString("id") == "focus" && setupFresh) {
+                    val options = step.getJSONArray("options")
+                    for (o in 0 until options.length()) options.getJSONObject(o).put("chosen", false)
+                }
+                if (step.optString("id") == "goal" && setupGoals.isNotEmpty()) {
+                    step.put("goals", org.json.JSONArray(setupGoals.toList()))
+                    step.put("suggestion", JSONObject.NULL)
+                }
+            }
+            data.put("setup", setup)
+        }
+        calibration?.let { data.put("calibration", it) }
+        return state.toString()
+    }
+
+    /**
      * An endpoint ("state.php", "rating.php", …) whose requests are held after
      * they arrive — until [holdGate] opens — and only then answered, by the
      * tokens as they are at that moment: a read or a write caught mid-flight.
@@ -372,7 +416,29 @@ class FakeOwnifyServer {
                 when {
                     !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
                     bearer == TEST_TOKEN -> reply(exchange, 403, """{"ok":false,"error":"Deze koppeling mag je account niet lezen."}""")
-                    else -> reply(exchange, 200, stateBody)
+                    else -> reply(exchange, 200, currentState())
+                }
+            }
+            // The setup's own writes (pages/setup.php): each to the endpoint that always saves it.
+            path.endsWith("/profile/update.php") || path.endsWith("/profile/onboarding.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (works) reply(exchange, 200, """{"ok":true,"saved":[]}""")
+                else reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+            }
+            path.endsWith("/goals/create.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else {
+                    form(body)["name"]?.let { setupGoals += it }
+                    reply(exchange, 200, """{"ok":true,"goal_id":900}""")
+                }
+            }
+            path.endsWith("/setup/finish.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else {
+                    setupPending = false
+                    reply(exchange, 200, """{"ok":true,"pending":false}""")
                 }
             }
             // Deleting the account (api/profile/delete.php): the token goes with the account's rows.

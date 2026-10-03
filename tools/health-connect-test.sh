@@ -116,6 +116,11 @@ if [ "$(echo "$BODY" | field ok)" != "1" ]; then
     exit 1
 fi
 
+# A new account starts with its setup (includes/setup.php): finished at once,
+# so the pages below are the app's. Without migration 016 there is none (503).
+curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/setup/finish.php" \
+    --data-urlencode "csrf=$(csrf)" > /dev/null
+
 # --------------------------------------------------- 1. the pairing code
 
 echo "== 1. the website mints a pairing code =="

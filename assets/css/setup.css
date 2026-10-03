@@ -1,0 +1,455 @@
+/* ==========================================================================
+   setup.css — the setup a new account starts with (pages/setup.php).
+
+   No new tokens and no new shapes: the ground is the app's, the progress is
+   the goal wizard's, a choice is a wizard tile laid out as a row, and the
+   way on is the wizard's footer. Every colour is a theme token or role, so
+   Dark Mode and White Mode both follow (docs/THEME.md); a category's colour
+   says which focus, never how good.
+   ========================================================================== */
+
+.setup {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(92vw, 30rem);
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin-inline: auto;
+    padding-top: calc(var(--safe-top) + var(--space-3));
+    padding-bottom: calc(var(--safe-bottom) + var(--space-4));
+}
+
+/* --------------------------------------------------------------------------
+   Top — the app's name, and a way out
+   -------------------------------------------------------------------------- */
+.setup__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 44px;
+}
+
+.setup__brand {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+/* Quiet: a full-height tap target that reads as a word. */
+.setup__link {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-inline: var(--space-2);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    transition: color var(--transition-fast);
+}
+
+.setup__logout { margin-right: calc(-1 * var(--space-2)); }
+
+.setup__link:hover,
+.setup__link:focus-visible { color: var(--text-primary); }
+
+/* --------------------------------------------------------------------------
+   Progress and steps — the goal wizard's
+   -------------------------------------------------------------------------- */
+.setup__progress { margin-top: var(--space-3); }
+
+.setup__body {
+    flex: 1 0 auto;
+    margin-top: var(--space-6);
+}
+
+.setup__step[hidden] { display: none; }
+
+.setup__step.is-active { animation: wizard-in var(--screen-duration) var(--screen-ease) both; }
+
+.setup__body[data-dir="back"] .setup__step.is-active { animation-name: wizard-in-back; }
+
+.setup__title {
+    font-size: var(--fs-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+.setup__lede {
+    margin-top: var(--space-2);
+    font-size: var(--fs-body);
+    color: var(--text-secondary);
+}
+
+.setup__error {
+    margin-top: var(--space-4);
+    color: var(--error);
+    font-size: var(--fs-small);
+    line-height: 1.4;
+}
+
+.setup__error[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   1 — Focus: one answer, a row each
+   -------------------------------------------------------------------------- */
+.setup__choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+
+.setup-choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 64px;
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    color: var(--text-primary);
+    text-align: left;
+    transition: border-color var(--transition-fast), background-color var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.setup-choice .icon-tile {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    color: var(--accent);
+}
+
+.setup-choice__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.setup-choice__label {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.setup-choice__line {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* The answer's mark: an empty ring, filled in the focus's colour. */
+.setup-choice__mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--glass-border);
+    border-radius: 50%;
+    color: var(--accent);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.setup-choice__mark .icon {
+    width: 13px;
+    height: 13px;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.setup-choice[aria-checked="true"] {
+    border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.setup-choice[aria-checked="true"] .setup-choice__mark {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.setup-choice[aria-checked="true"] .setup-choice__mark .icon {
+    opacity: 1;
+    transform: none;
+}
+
+.setup-choice:focus-visible {
+    outline: 2px solid rgba(var(--ink), 0.55);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   2 — Health data
+   -------------------------------------------------------------------------- */
+.setup-source {
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    transition: border-color var(--transition-slow);
+}
+
+.setup-source.is-connected { border-color: color-mix(in srgb, var(--health) 30%, transparent); }
+
+.setup-source__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.setup-source__head .icon-tile {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+}
+
+.setup-source.is-connected .icon-tile { color: var(--health); }
+
+.setup-source__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.setup-source__label {
+    font-size: var(--fs-label);
+    font-weight: 600;
+}
+
+.setup-source__note {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.setup-source__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.setup-source__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-faint);
+}
+
+.setup-source.is-connected .setup-source__dot {
+    background: var(--health);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--health) 18%, transparent);
+}
+
+.setup-source__body {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.setup-source__sync {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.setup__quiet,
+.setup__done {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
+.setup__quiet + .setup__quiet { margin-top: var(--space-3); }
+
+.setup__quiet-icon {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    margin-top: 2px;
+}
+
+.setup__done {
+    padding: var(--space-3);
+    border: 1px solid color-mix(in srgb, var(--health) 30%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--health) 9%, transparent);
+    color: var(--text-secondary);
+}
+
+.setup__done .setup__quiet-icon { color: var(--health); }
+
+.setup__done[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   3 — About you: each field says why it is asked
+   -------------------------------------------------------------------------- */
+.setup__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    margin-top: var(--space-5);
+}
+
+.setup-field__reason {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.setup-field__note,
+.setup-field__value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.setup-field__note {
+    margin-top: var(--space-1);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.setup-field__value {
+    min-height: 44px;
+    font-size: var(--fs-label);
+    font-weight: 600;
+}
+
+.setup-field__lock {
+    flex: none;
+    width: 13px;
+    height: 13px;
+    color: var(--text-muted);
+}
+
+/* A date field draws its picker in the theme's own scheme. */
+.setup .wizard__input[type="date"] {
+    color-scheme: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   4 — A first goal
+   -------------------------------------------------------------------------- */
+.setup-suggestion {
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--health) 28%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--health) 8%, transparent);
+}
+
+.setup-suggestion[hidden] { display: none; }
+
+.setup-suggestion__name {
+    margin-top: var(--space-2);
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.setup-suggestion__basis {
+    margin-top: var(--space-1);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.setup-suggestion__summary {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.setup-suggestion__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.setup-suggestion__actions .setup__primary { flex: 0 0 auto; padding-inline: var(--space-5); }
+
+.setup__own {
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 48px;
+    margin-top: var(--space-4);
+}
+
+.setup__own[hidden] { display: none; }
+
+.setup__own-icon { width: 16px; height: 16px; }
+
+/* --------------------------------------------------------------------------
+   The way on — the goal wizard's footer
+   -------------------------------------------------------------------------- */
+.setup__foot {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.setup__foot [hidden] { display: none; }
+
+.setup__back,
+.setup__skip { flex: 0 0 auto; }
+
+.setup__primary {
+    flex: 1;
+    min-height: 48px;
+    border-color: color-mix(in srgb, var(--health) 38%, transparent);
+    background: color-mix(in srgb, var(--health) 16%, transparent);
+}
+
+.setup__primary:disabled {
+    border-color: var(--glass-border-soft);
+    background: var(--glass-soft);
+}
+
+.setup__foot .btn { min-height: 48px; }
+
+/* --------------------------------------------------------------------------
+   Very small phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 359px) {
+    .setup-choice { padding: var(--space-3) var(--space-3) var(--space-3) var(--space-2); }
+    .setup-source { padding: var(--space-3); }
+    .setup-suggestion { padding: var(--space-3); }
+
+    /* Three ways on (Over jou) do not fit one row here: the primary takes a
+       row of its own, on top, and Terug and Overslaan share the one below. */
+    .setup__foot:has(.setup__skip:not([hidden])) { flex-wrap: wrap; }
+    .setup__foot:has(.setup__skip:not([hidden])) .setup__primary { flex-basis: 100%; order: -1; }
+    .setup__foot:has(.setup__skip:not([hidden])) .setup__back,
+    .setup__foot:has(.setup__skip:not([hidden])) .setup__skip { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .setup__step.is-active { animation: none; }
+}
+
+/* Focus is moved to a new step's title for screen readers; it is not a control. */
+.setup__title:focus { outline: none; }

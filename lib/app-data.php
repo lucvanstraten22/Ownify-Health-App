@@ -25,6 +25,14 @@ require_once __DIR__ . '/hydrate-goals.php';
 require_once __DIR__ . '/hydrate-community.php';
 require_once __DIR__ . '/hydrate-compass.php';
 
+/* The first days (includes/setup.php). Guarded as persistent-login.php is in
+   includes/bootstrap.php: a deploy lands one file at a time, and this file
+   can arrive before the ones it would require. Until they are there, the app
+   runs as it did — no setup, no first days, everybody's focus general. */
+if (is_file(__DIR__ . '/hydrate-setup.php') && is_file(dirname(__DIR__) . '/includes/setup.php')) {
+    require_once __DIR__ . '/hydrate-setup.php';
+}
+
 if (!function_exists('app_page_data')) {
 
     /**
@@ -37,6 +45,15 @@ if (!function_exists('app_page_data')) {
     function app_page_data(array $data, int $userId): array
     {
         $config = dirname(__DIR__) . '/config';
+
+        /* The account's focus and where its setup stands (includes/setup.php):
+           the focus decides what comes first, never what is shown. */
+        $firstDays = function_exists('hydrate_setup') && is_file($config . '/setup.php');
+        $setup     = $firstDays
+            ? setup_state($userId)
+            : ['focus' => 'general', 'chosen' => false, 'state' => null, 'done_at' => null];
+
+        $data['focus'] = $setup['focus'];
 
         /* The config files describe the shape of each page — which areas
            exist, what they are called, in what unit. The values come from
@@ -56,6 +73,21 @@ if (!function_exists('app_page_data')) {
             $data['scores']['contributors'],
             $data['health']
         );
+
+        /* The focus's category first in the legend — and so in the
+           Scorekompas, which names the categories in the legend's order. */
+        if ($firstDays) {
+            $data['scores']['contributors'] = setup_order_rows($data['scores']['contributors'], $data['focus']);
+        }
+
+        /* Some data in, but not yet enough for a score: the ring says so, in
+           the same sentence Gezondheid's intro uses, instead of "Nog geen
+           gegevens" and a request for a source the person may already have. */
+        if ($data['scores']['overall']['value'] === null && ($data['health']['collecting']['days'] ?? 0) > 0) {
+            $data['scores']['overall']['caption']    = $data['scores']['overall']['caption_collecting']
+                ?? $data['scores']['overall']['caption'];
+            $data['scores']['overall']['empty_hint'] = (string) $data['health']['lede'];
+        }
 
         /* The Scorekompas behind the ring: what the score is made of, what
            is changing, the person's own earlier scores and where the most
@@ -89,6 +121,20 @@ if (!function_exists('app_page_data')) {
 
         /* Settings: integrations resolved, profile read off the signed-in record. */
         $data['settings'] = settings_prepare(require $config . '/settings.php', $data['auth']);
+
+        /* The first days: the setup a new account starts with, and the card
+           Overzicht opens with until the baseline is there. Read from the
+           same engine and records as everything above; nothing is scored. */
+        if ($firstDays) {
+            $copy = require $config . '/setup.php';
+
+            $data['settings']    = hydrate_settings_focus($data['settings'], $copy, $setup, $data['focus_labels']);
+            $data['setup']       = hydrate_setup($copy, $data, $userId, $setup);
+            $data['calibration'] = hydrate_calibration($copy, $data, $userId, $setup);
+        } else {
+            $data['setup']       = ['pending' => false];
+            $data['calibration'] = null;
+        }
 
         return $data;
     }

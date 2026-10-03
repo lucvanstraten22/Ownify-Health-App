@@ -40,6 +40,7 @@ import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.screens.OwnifyScreens
+import com.ownify.android.ui.screens.setup.SetupScreen
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyTheme
@@ -477,6 +478,45 @@ class ScreenshotCapture {
         shoot("assistant-declined")
         OwnifyAssistant.clear()
     }
+
+    // ------------------------------------------------------- the first days
+
+    /**
+     * The first days, from api/app/state.php answers in -Downify.firstdays=<dir>:
+     * the setup a new account starts with, step by step (setup-suggest.json —
+     * an account whose phone already synced a few nights, so the goal step
+     * has its suggestion), and Overzicht's card in each of its states.
+     */
+    private val firstDays = System.getProperty("ownify.firstdays").orEmpty()
+
+    private fun setupStep(step: String, name: String, then: () -> Unit = {}) {
+        assumeTrue("no first-days states given (-Downify.firstdays)", firstDays.isNotEmpty())
+        val data = data("$firstDays/setup-suggest.json")
+        frame { SetupScreen(data, start = step) }
+        settle()
+        then()
+        shoot(name)
+    }
+
+    @Test fun setupFocus() = setupStep("focus", "setup-focus")
+    @Test fun setupFocusChosen() = setupStep("focus", "setup-focus-chosen") { tap("Slaap") }
+    @Test fun setupConnect() = setupStep("connect", "setup-connect")
+    @Test fun setupProfile() = setupStep("profile", "setup-profile")
+    @Test fun setupGoal() = setupStep("goal", "setup-goal")
+
+    private fun firstDay(name: String) {
+        assumeTrue("no first-days states given (-Downify.firstdays)", firstDays.isNotEmpty())
+        app("$firstDays/$name.json")
+        shoot("first-$name")
+    }
+
+    @Test fun firstDay1() = firstDay("day1-empty")
+    @Test fun firstDay2() = firstDay("day2-one-night")
+    @Test fun firstDay3() = firstDay("day3-two-nights")
+    @Test fun firstDay4() = firstDay("day4-first-score")
+    @Test fun firstBaseline() = firstDay("day3-baseline")
+    @Test fun firstNothing() = firstDay("day5-nothing")
+    @Test fun firstWeight() = firstDay("day1-weight")
 
     // ------------------------------------------------------------- signed out
 

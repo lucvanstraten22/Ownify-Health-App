@@ -1,0 +1,51 @@
+{
+ "phase": "first_score",
+ "title": "Je eerste slaapscore",
+ "first": {
+  "id": "sleep",
+  "label": "Slaap",
+  "accent": "sleep",
+  "icon": "moon",
+  "value": 91,
+  "band": "high",
+  "meta": "3 dagen met gegevens",
+  "summary": null,
+  "parts": [
+   {
+    "id": "duration",
+    "label": "Slaapduur",
+    "value": 82,
+    "band": "high",
+    "weight": 45,
+    "counted": true,
+    "note": "Gemiddeld 6:54 per nacht"
+   },
+   {
+    "id": "regularity",
+    "label": "Regelmaat",
+    "value": 98,
+    "band": "high",
+    "weight": 30,
+    "counted": true,
+    "note": "Bedtijd wisselt ±22 min, opstaan ±1 min"
+   },
+   {
+    "id": "quality",
+    "label": "Kwaliteit",
+    "value": 98,
+    "band": "high",
+    "weight": 25,
+    "counted": true,
+    "note": "Gemeten in 3 nachten"
+   }
+  ]
+ },
+ "note": "Je gezondheidsscore rust voorlopig alleen op slaap. Voeding en sport tellen mee zodra er 3 dagen van zijn.",
+ "open": "Bekijk de opbouw in het Scorekompas",
+ "day": 4,
+ "eyebrow": "Je basislijn",
+ "lede": null,
+ "progress": [],
+ "observation": null,
+ "baseline": []
+}

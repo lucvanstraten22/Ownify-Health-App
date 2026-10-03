@@ -24,7 +24,11 @@ data class AppData(
     val settings: Settings,
     val auth: Auth,
     /** The Scorekompas behind the Overzicht score (includes/score-compass.php). */
-    val compass: Compass = Compass.parse(null)
+    val compass: Compass = Compass.parse(null),
+    /** The setup a new account starts with (includes/setup.php); `pending` routes the app to it. */
+    val setup: Setup = Setup.parse(null),
+    /** Overzicht's card of the first days, or null outside them. */
+    val calibration: Calibration? = null
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -45,7 +49,9 @@ data class AppData(
                 community = Community.parse(data.obj("community")),
                 settings = Settings.parse(data.obj("settings")),
                 auth = Auth.parse(data.obj("auth")),
-                compass = Compass.parse(data.obj("compass"))
+                compass = Compass.parse(data.obj("compass")),
+                setup = Setup.parse(data.obj("setup")),
+                calibration = Calibration.parse(data.obj("calibration"))
             )
         }
     }
@@ -1316,3 +1322,265 @@ data class Auth(
         }
     }
 }
+
+// ------------------------------------------------------------ the first days
+
+/**
+ * The setup a new account starts with (`setup`, lib/hydrate-setup.php):
+ * while [pending], the app shows it instead of the pages, as the website
+ * does. Its four steps arrive with every word and what the account has
+ * already answered; an older server sends nothing, which reads as not
+ * pending.
+ */
+data class Setup(
+    val pending: Boolean,
+    val title: String,
+    /** "Stap %1\$d van %2\$d". */
+    val count: String,
+    val back: String,
+    val next: String,
+    val logout: String,
+    /** The step to open on after a restart: past the focus once it is chosen. */
+    val resume: String,
+    val focus: SetupFocusStep,
+    val connect: SetupConnectStep,
+    val profile: SetupProfileStep,
+    val goal: SetupGoalStep
+) {
+    /** The steps in their order, as ids: focus, connect, profile, goal. */
+    val order: List<String> get() = listOf("focus", "connect", "profile", "goal")
+
+    fun countText(index: Int): String = count.replace("%1\$d", (index + 1).toString()).replace("%2\$d", order.size.toString())
+
+    fun label(step: String): String = when (step) {
+        "focus" -> focus.label
+        "connect" -> connect.label
+        "profile" -> profile.label
+        else -> goal.label
+    }
+
+    companion object {
+        fun parse(o: JSONObject?): Setup {
+            val steps = o.arr("steps")
+            fun step(id: String): JSONObject? = steps.map { it }.firstOrNull { it.str("id") == id }
+            return Setup(
+                pending = o.bool("pending"),
+                title = o.str("title").orEmpty(),
+                count = o.str("count") ?: "%1\$d / %2\$d",
+                back = o.str("back").orEmpty(),
+                next = o.str("next").orEmpty(),
+                logout = o.str("logout").orEmpty(),
+                resume = o.str("resume") ?: "focus",
+                focus = SetupFocusStep.parse(step("focus")),
+                connect = SetupConnectStep.parse(step("connect")),
+                profile = SetupProfileStep.parse(step("profile")),
+                goal = SetupGoalStep.parse(step("goal"))
+            )
+        }
+    }
+}
+
+data class SetupFocusStep(val label: String, val title: String, val lede: String, val options: List<SetupFocusOption>, val error: String) {
+    companion object {
+        fun parse(o: JSONObject?) = SetupFocusStep(
+            o.str("label").orEmpty(), o.str("title").orEmpty(), o.str("lede").orEmpty(),
+            o.arr("options").map(SetupFocusOption::parse), o.str("error").orEmpty()
+        )
+    }
+}
+
+data class SetupFocusOption(val key: String, val label: String, val line: String, val icon: String, val accent: String, val chosen: Boolean) {
+    companion object {
+        fun parse(o: JSONObject): SetupFocusOption? {
+            val key = o.str("key") ?: return null
+            return SetupFocusOption(key, o.str("label").orEmpty(), o.str("line").orEmpty(), o.str("icon").orEmpty(), o.str("accent").orEmpty(), o.bool("chosen"))
+        }
+    }
+}
+
+/** Health Connect as the setup offers it: [app] is the phone's own sentence, [web] the website's. */
+data class SetupSource(
+    val label: String,
+    val note: String,
+    val icon: String,
+    val app: String,
+    val connected: Boolean,
+    val status: String,
+    /**
+     * The status in this phone's own terms. The server counts Health Connect
+     * as connected the moment a phone signs in — on this phone always true —
+     * so the app says whether its own Health Connect lets Ownify read.
+     */
+    val connectedLabel: String,
+    val notConnectedLabel: String,
+    val lastSync: String?
+) {
+    companion object {
+        fun parse(o: JSONObject?) = SetupSource(
+            o.str("label").orEmpty(), o.str("note").orEmpty(), o.str("icon") ?: "pulse", o.str("app").orEmpty(),
+            o.bool("connected"), o.str("status").orEmpty(),
+            o.str("connected_label") ?: o.str("status").orEmpty(),
+            o.str("not_connected_label") ?: o.str("status").orEmpty(),
+            o.str("last_sync")
+        )
+    }
+}
+
+data class SetupConnectStep(
+    val label: String,
+    val title: String,
+    val lede: String,
+    val source: SetupSource,
+    val connected: Boolean,
+    val manual: String,
+    val later: String,
+    val skip: String
+) {
+    companion object {
+        fun parse(o: JSONObject?) = SetupConnectStep(
+            o.str("label").orEmpty(), o.str("title").orEmpty(), o.str("lede").orEmpty(), SetupSource.parse(o.obj("source")),
+            o.bool("connected"), o.str("manual").orEmpty(), o.str("later").orEmpty(), o.str("skip").orEmpty()
+        )
+    }
+}
+
+/** A profile fact the setup asks for, with [reason] — why Ownify uses it — and Instellingen's own input. */
+data class SetupField(val key: String, val label: String, val reason: String, val note: String?, val locked: Boolean, val value: String?, val input: FieldInput?) {
+    companion object {
+        fun parse(o: JSONObject): SetupField? {
+            val key = o.str("key") ?: return null
+            return SetupField(
+                key, o.str("label").orEmpty(), o.str("reason").orEmpty(), o.str("note"), o.bool("locked"), o.str("value"),
+                o.obj("input")?.let(FieldInput::parse)
+            )
+        }
+    }
+}
+
+data class SetupProfileStep(val label: String, val title: String, val lede: String, val fields: List<SetupField>, val skip: String, val save: String, val error: String) {
+    companion object {
+        fun parse(o: JSONObject?) = SetupProfileStep(
+            o.str("label").orEmpty(), o.str("title").orEmpty(), o.str("lede").orEmpty(), o.arr("fields").map(SetupField::parse),
+            o.str("skip").orEmpty(), o.str("save").orEmpty(), o.str("error").orEmpty()
+        )
+    }
+}
+
+/**
+ * A first goal worked out from the person's own data: [input] is the goal
+ * exactly as api/goals/create.php takes it, checked by the server with the
+ * wizard's own rules.
+ */
+data class SetupSuggestion(val eyebrow: String, val basis: String, val name: String, val summary: String, val input: Map<String, String>, val add: String, val decline: String) {
+    companion object {
+        fun parse(o: JSONObject?): SetupSuggestion? {
+            if (o == null) return null
+            val input = o.obj("input").stringMap()
+            if (input.isEmpty()) return null
+            return SetupSuggestion(
+                o.str("eyebrow").orEmpty(), o.str("basis").orEmpty(), o.str("name").orEmpty(), o.str("summary").orEmpty(),
+                input, o.str("add").orEmpty(), o.str("decline").orEmpty()
+            )
+        }
+    }
+}
+
+data class SetupGoalStep(
+    val label: String,
+    val title: String,
+    val lede: String,
+    val own: String,
+    /** "Doel toegevoegd: %s. …" */
+    val added: String,
+    val finish: String,
+    val error: String,
+    val canAdd: Boolean,
+    /** The account's active goals by name: one made during the setup shows as added. */
+    val goals: List<String>,
+    val suggestion: SetupSuggestion?
+) {
+    fun addedText(name: String): String = added.replace("%s", name)
+
+    companion object {
+        fun parse(o: JSONObject?) = SetupGoalStep(
+            o.str("label").orEmpty(), o.str("title").orEmpty(), o.str("lede").orEmpty(), o.str("own").orEmpty(),
+            o.str("added") ?: "%s", o.str("finish").orEmpty(), o.str("error").orEmpty(), o.bool("can_add"),
+            o.arr("goals").strings(), SetupSuggestion.parse(o.obj("suggestion"))
+        )
+    }
+}
+
+/**
+ * Overzicht's card of the first days (`calibration`, includes/setup.php):
+ * [phase] `building` (how far each category is, and one fact), `first_score`
+ * (the first category that scored, as the Scorekompas shows it) or
+ * `baseline` (the starting point; empty without any data). Every word and
+ * number is the server's — the engine's own scores, never the phone's.
+ */
+data class Calibration(
+    val phase: String,
+    val day: Int,
+    val eyebrow: String,
+    val title: String,
+    val lede: String?,
+    val progress: List<CalibrationProgress>,
+    val observation: String?,
+    val first: CompassCategory?,
+    val baseline: List<CalibrationStart>,
+    val note: String?,
+    val open: String?
+) {
+    companion object {
+        fun parse(o: JSONObject?): Calibration? {
+            val phase = o.str("phase") ?: return null
+            return Calibration(
+                phase = phase,
+                day = o.int("day") ?: 1,
+                eyebrow = o.str("eyebrow").orEmpty(),
+                title = o.str("title").orEmpty(),
+                lede = o.str("lede")?.takeIf { it.isNotEmpty() },
+                progress = o.arr("progress").map(CalibrationProgress::parse),
+                observation = o.str("observation"),
+                first = o.obj("first")?.let(CompassCategory::parse),
+                baseline = o.arr("baseline").map(CalibrationStart::parse),
+                note = o.str("note"),
+                open = o.str("open")
+            )
+        }
+    }
+}
+
+/** One category on its way to a first score: [days] of [needed], in [count]'s words. */
+data class CalibrationProgress(
+    val id: String,
+    val label: String,
+    val accent: String,
+    val icon: String,
+    val days: Int,
+    val needed: Int,
+    val count: String,
+    val detail: String?,
+    val how: String?
+) {
+    companion object {
+        fun parse(o: JSONObject): CalibrationProgress? {
+            val id = o.str("id") ?: return null
+            return CalibrationProgress(
+                id, o.str("label").orEmpty(), o.str("accent").orEmpty(), o.str("icon").orEmpty(),
+                o.int("days") ?: 0, o.int("needed") ?: 3, o.str("count").orEmpty(), o.str("detail"), o.str("how")
+            )
+        }
+    }
+}
+
+/** A category in the starting point: its score, its band, and one fact. */
+data class CalibrationStart(val id: String, val label: String, val accent: String, val icon: String, val value: Int, val band: String?, val fact: String?) {
+    companion object {
+        fun parse(o: JSONObject): CalibrationStart? {
+            val id = o.str("id") ?: return null
+            val value = o.int("value") ?: return null
+            return CalibrationStart(id, o.str("label").orEmpty(), o.str("accent").orEmpty(), o.str("icon").orEmpty(), value, o.str("band"), o.str("fact"))
+        }
+    }
+}
+

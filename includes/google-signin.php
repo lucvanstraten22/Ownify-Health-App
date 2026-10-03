@@ -994,6 +994,13 @@ if (!function_exists('google_signin_config')) {
 
             db_run('INSERT INTO user_profiles (user_id) VALUES (?)', [$userId]);
 
+            /* A new account starts with its setup (includes/setup.php): the
+               only place `pending` is written, so no existing account sees it. */
+            if (is_file(__DIR__ . '/setup.php')) {
+                require_once __DIR__ . '/setup.php';
+                setup_begin($userId);
+            }
+
             db_run(
                 'INSERT INTO user_auth_identities
                     (user_id, provider, provider_subject, email, email_verified_at, last_login_at)

@@ -94,6 +94,11 @@ for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B"; do
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/auth/register.php" \
         --data-urlencode "csrf=$(csrf "$JAR")" --data-urlencode "username=$NAME" \
         --data-urlencode "email=$NAME@ownify-test.invalid" --data-urlencode "password=$PASSWORD" > /dev/null
+    # A new account starts with its setup (includes/setup.php); finished at
+    # once here, so the pages under test are the app's. A server without
+    # migration 016 answers 503 and has no setup to finish.
+    curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/setup/finish.php" \
+        --data-urlencode "csrf=$(csrf "$JAR")" > /dev/null
 done
 ok "four test accounts exist"
 

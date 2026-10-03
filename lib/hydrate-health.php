@@ -64,8 +64,13 @@ if (!function_exists('hydrate_health')) {
 
             $health['lede'] = sprintf(
                 (string) $health['lede_collecting'],
-                $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen')
+                $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen'),
+                $minDays
             );
+
+            /* Overzicht's ring says the same while some data is in
+               (app_page_data): "Nog geen gegevens" would not be true. */
+            $health['collecting'] = ['days' => $closest, 'needed' => $needed];
         }
 
         foreach ($health['areas'] as $areaKey => $area) {

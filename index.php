@@ -59,6 +59,15 @@ $userId = current_user_id();
    See lib/app-data.php. */
 $data = app_page_data($data, $userId);
 
+/* A new account starts with its setup — "Hoe moet Ownify voor jou werken?"
+   (pages/setup.php, includes/setup.php) — and the app only after it. The
+   database says whether it is still waiting, so a reload, another browser
+   and the Ownify app all agree, and it never comes back once finished. */
+if (!empty($data['setup']['pending']) && is_file(__DIR__ . '/pages/setup.php')) {
+    page('setup', $data);
+    exit;
+}
+
 $app   = $data['app'];
 $focus = $data['focus'];
 

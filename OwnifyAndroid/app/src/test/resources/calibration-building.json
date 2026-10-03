@@ -1,0 +1,47 @@
+{
+ "phase": "building",
+ "title": "Je basislijn wordt opgebouwd",
+ "lede": "Ownify leert je ritme kennen. Dit is er tot nu toe bij gekomen.",
+ "progress": [
+  {
+   "id": "sleep",
+   "label": "Slaap",
+   "accent": "sleep",
+   "icon": "moon",
+   "days": 1,
+   "needed": 3,
+   "count": "1 van 3 nachten",
+   "detail": "6:52 geslapen",
+   "how": null
+  },
+  {
+   "id": "nutrition",
+   "label": "Voeding",
+   "accent": "nutrition",
+   "icon": "utensils",
+   "days": 0,
+   "needed": 3,
+   "count": "0 van 3 dagen met een cijfer",
+   "detail": null,
+   "how": "Geef je voeding een cijfer op Gezondheid"
+  },
+  {
+   "id": "training",
+   "label": "Sport",
+   "accent": "training",
+   "icon": "dumbbell",
+   "days": 0,
+   "needed": 3,
+   "count": "0 van 3 trainingsdagen",
+   "detail": null,
+   "how": "Komt binnen via je koppeling"
+  }
+ ],
+ "observation": "Je laatste nacht: 6:52 geslapen, van 23:40 tot 06:32.",
+ "day": 2,
+ "eyebrow": "Dag 2 van 3",
+ "first": null,
+ "baseline": [],
+ "note": null,
+ "open": null
+}

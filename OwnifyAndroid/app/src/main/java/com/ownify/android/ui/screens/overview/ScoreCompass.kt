@@ -181,7 +181,7 @@ private fun CompositionCard(composition: CompassComposition) {
 
 /** `.compass-cat`: a quiet box per category — its head, then its summary or its components. */
 @Composable
-private fun CategoryBox(category: CompassCategory, play: Boolean) {
+internal fun CategoryBox(category: CompassCategory, play: Boolean) {
     Column(Modifier.fillMaxWidth().quietBox()) {
         CategoryHead(category.label, category.meta, category.icon, category.accent, category.value, category.band)
 
@@ -437,7 +437,7 @@ private fun OpportunityCard(opportunity: CompassOpportunity) {
  * says how high, never which category. No score: a faint dot and "—".
  */
 @Composable
-private fun ScoreValue(value: Int?, band: String?) {
+internal fun ScoreValue(value: Int?, band: String?) {
     val scored = ScoreBand.of(band)
     val dot = scored?.color ?: Ownify.TextFaint
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {

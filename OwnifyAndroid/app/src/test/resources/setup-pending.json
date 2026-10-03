@@ -1,0 +1,177 @@
+{
+ "pending": true,
+ "title": "Hoe moet Ownify voor jou werken?",
+ "count": "Stap %1$d van %2$d",
+ "back": "Terug",
+ "next": "Verder",
+ "logout": "Uitloggen",
+ "resume": "connect",
+ "steps": [
+  {
+   "id": "focus",
+   "label": "Focus",
+   "title": "Wat wil je het liefst begrijpen?",
+   "lede": "Ownify stemt je overzicht hierop af. Al je gegevens blijven zichtbaar.",
+   "options": [
+    {
+     "key": "sleep",
+     "label": "Slaap",
+     "line": "Hoe je slaapt, en wat je nachten verandert",
+     "icon": "moon",
+     "accent": "sleep",
+     "chosen": false
+    },
+    {
+     "key": "energy",
+     "label": "Energie",
+     "line": "Hoe slaap, voeding en beweging samen je dag vormen",
+     "icon": "bolt",
+     "accent": "health",
+     "chosen": true
+    },
+    {
+     "key": "fitness",
+     "label": "Fitheid",
+     "line": "Je trainingen, je belasting en je vooruitgang",
+     "icon": "dumbbell",
+     "accent": "training",
+     "chosen": false
+    },
+    {
+     "key": "weight",
+     "label": "Gewicht",
+     "line": "Je gewicht, en wat je eet en beweegt",
+     "icon": "chart",
+     "accent": "nutrition",
+     "chosen": false
+    },
+    {
+     "key": "general",
+     "label": "Alles",
+     "line": "Een breed beeld van slaap, voeding en sport",
+     "icon": "rings",
+     "accent": "health",
+     "chosen": false
+    }
+   ],
+   "error": "Je keuze kon niet worden bewaard. Probeer het opnieuw."
+  },
+  {
+   "id": "connect",
+   "label": "Gegevens",
+   "title": "Gebruik wat je al meet",
+   "lede": "Ownify kan je bestaande gezondheidsgegevens gebruiken voor een persoonlijker beeld, zonder dat je alles zelf hoeft bij te houden.",
+   "source": {
+    "provider": "google_health_connect",
+    "label": "Health Connect",
+    "note": "Android",
+    "icon": "pulse",
+    "web": "Log in de Ownify-app op je Android-telefoon in met dit account en geef toegang tot Health Connect. Je slaap, stappen en trainingen komen dan vanzelf binnen.",
+    "app": "Ownify leest je slaap, stappen en trainingen uit Health Connect. Je kiest zelf wat het mag lezen.",
+    "connected": true,
+    "status": "Verbonden",
+    "connected_label": "Verbonden",
+    "last_sync": null,
+    "not_connected_label": "Nog niet verbonden"
+   },
+   "connected": true,
+   "manual": "Liever zelf bijhouden? Op Gezondheid geef je je voeding elke dag een cijfer.",
+   "later": "Je kunt dit later altijd doen in Instellingen → Apparaten & Gezondheid.",
+   "skip": "Doorgaan zonder koppelen"
+  },
+  {
+   "id": "profile",
+   "label": "Over jou",
+   "title": "Een paar gegevens over jou",
+   "lede": "Alleen wat Ownify echt gebruikt. Alles is optioneel.",
+   "fields": [
+    {
+     "key": "date_of_birth",
+     "label": "Geboortedatum",
+     "reason": "Met je leeftijd schat Ownify je maximale hartslag, en daarmee hoe zwaar een training was.",
+     "note": "Je geboortedatum staat daarna vast.",
+     "locked": false,
+     "value": null,
+     "input": {
+      "type": "date",
+      "max": "2026-10-03",
+      "min": "1906-10-03",
+      "value": "",
+      "unit": "",
+      "endpoint": "api/profile/onboarding.php"
+     }
+    },
+    {
+     "key": "height",
+     "label": "Lengte",
+     "reason": "Met je gewicht en leeftijd berekent Ownify AI je energiebehoefte.",
+     "note": null,
+     "locked": false,
+     "value": null,
+     "input": {
+      "type": "number",
+      "min": 50,
+      "max": 260,
+      "step": "0.1",
+      "value": "",
+      "unit": "cm",
+      "endpoint": "api/profile/update.php"
+     }
+    },
+    {
+     "key": "weight",
+     "label": "Gewicht",
+     "reason": "Het beginpunt van een gewichtsdoel, en nodig voor je energiebehoefte.",
+     "note": null,
+     "locked": false,
+     "value": null,
+     "input": {
+      "type": "number",
+      "min": 20,
+      "max": 400,
+      "step": "0.1",
+      "value": "",
+      "unit": "kg",
+      "endpoint": "api/profile/update.php"
+     }
+    }
+   ],
+   "skip": "Overslaan",
+   "save": "Opslaan en verder",
+   "error": "Dit kon niet worden opgeslagen. Probeer het opnieuw."
+  },
+  {
+   "id": "goal",
+   "label": "Doel",
+   "title": "Wil je meteen een doel stellen?",
+   "lede": "Een doel geeft je voortgang een richting. Het hoeft niet nu: je kunt het altijd instellen bij Doelen.",
+   "own": "Zelf een doel instellen",
+   "added": "Doel toegevoegd: %s. Je vindt het bij Doelen.",
+   "finish": "Naar Ownify",
+   "error": "De setup kon niet worden afgerond. Probeer het opnieuw.",
+   "can_add": true,
+   "goals": [],
+   "suggestion": {
+    "eyebrow": "Een mogelijk eerste doel",
+    "basis": "Je sliep de afgelopen 4 nachten gemiddeld 6:41.",
+    "name": "5 nachten van minstens 7 uur",
+    "summary": "Optellen · 5 dagen · per dag minstens 7 uur · uit je gegevens: slaapduur · looptijd: week · primair doel",
+    "input": {
+     "name": "5 nachten van minstens 7 uur",
+     "category": "habit",
+     "type": "accumulate",
+     "measure": "days",
+     "duration": "week",
+     "source_kind": "metric",
+     "source_key": "sleep_duration",
+     "daily_target": "7",
+     "target_value": "5",
+     "direction": "increase",
+     "priority": "primary"
+    },
+    "add": "Toevoegen",
+    "decline": "Niet nu"
+   }
+  }
+ ]
+}

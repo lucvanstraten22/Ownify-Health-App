@@ -156,8 +156,12 @@ $run      = substr(bin2hex(random_bytes(3)), 0, 6);
 $password = 'app-state-test-password';
 $made     = [];
 
-/** An account made in the app; returns its account token. */
-function app_account(string $who): array
+/**
+ * An account made in the app; returns its account token. A new account
+ * starts with its setup (includes/setup.php); unless [$setup], it is
+ * finished here at once, so the app's pages are what the account reads.
+ */
+function app_account(string $who, bool $setup = false): array
 {
     global $run, $made, $password;
 
@@ -174,7 +178,13 @@ function app_account(string $who): array
         exit(1);
     }
 
-    return ['username' => $username, 'token' => (string) $r['body']['token'], 'id' => (int) db_value('SELECT id FROM users WHERE username = ?', [$username])];
+    $token = (string) $r['body']['token'];
+
+    if (!$setup) {
+        http('/api/setup/finish.php', ['bearer' => $token, 'form' => []]);
+    }
+
+    return ['username' => $username, 'token' => $token, 'id' => (int) db_value('SELECT id FROM users WHERE username = ?', [$username])];
 }
 
 /** A second phone, paired with a code the app asked for: its sync token. */
@@ -225,7 +235,8 @@ try {
         && ($state['body']['version'] ?? null) === 1, summary($state));
     check('every part of the page is there', array_diff(
         ['app', 'header', 'overview', 'scores', 'goal', 'insights', 'patterns', 'recommendation', 'navigation', 'ai',
-         'disclaimer', 'auth', 'health', 'community', 'goals', 'settings', 'today', 'compass'],
+         'disclaimer', 'auth', 'health', 'community', 'goals', 'settings', 'today', 'compass', 'setup', 'calibration',
+         'focus', 'focus_labels'],
         array_keys($data)) === []);
     check('signed in as this account', ($data['auth']['signed_in'] ?? null) === true
         && ($data['auth']['user']['username'] ?? null) === $sanne['username']);
@@ -490,6 +501,146 @@ try {
     check('integrations/disconnect: 200, its phones revoked', $disconnect['status'] === 200
         && ($disconnect['body']['devices_revoked'] ?? 0) >= 1, summary($disconnect));
     check('the app\'s token was one of them: 401 from now on', http('/api/app/state.php', ['bearer' => $bram['token']])['status'] === 401);
+
+    /* ==================================================================
+       THE FIRST DAYS (includes/setup.php, docs/FIRST-DAYS.md)
+       ================================================================== */
+
+    section('the first days: a new account starts with its setup, until it finishes it');
+    require_once $root . '/includes/setup.php';
+    require_once $root . '/includes/health-data.php';
+
+    if (!setup_stored()) {
+        check('migration 016 is imported', false, 'import database/migrations/016-setup-and-focus.sql');
+    } else {
+        $read = static fn (array $who): array => http('/api/app/state.php', ['bearer' => $who['token']])['body']['data'] ?? [];
+
+        $new = app_account('setup', true);
+        $s   = $read($new);
+        check('a new account: its setup is pending, on the focus', ($s['setup']['pending'] ?? null) === true
+            && ($s['setup']['resume'] ?? null) === 'focus');
+        check('four steps, in order', array_column($s['setup']['steps'] ?? [], 'id') === ['focus', 'connect', 'profile', 'goal']);
+        check('no card of the first days while the setup waits', array_key_exists('calibration', $s) && $s['calibration'] === null);
+        $fields = $s['setup']['steps'][2]['fields'] ?? [];
+        check('only what Ownify uses is asked, each with its reason', array_column($fields, 'key') === ['date_of_birth', 'height', 'weight']
+            && array_filter(array_column($fields, 'reason'), static fn ($r) => $r === '') === []);
+        check('their inputs and endpoints are Instellingen\'s own', ($fields[0]['input']['endpoint'] ?? null) === 'api/profile/onboarding.php'
+            && ($fields[2]['input']['endpoint'] ?? null) === 'api/profile/update.php');
+        check('no suggestion without data', array_key_exists('suggestion', $s['setup']['steps'][3] ?? []) && $s['setup']['steps'][3]['suggestion'] === null);
+        check('the database says pending', db_value('SELECT setup_state FROM user_profiles WHERE user_id = ?', [$new['id']]) === 'pending');
+
+        $bad = http('/api/profile/update.php', ['bearer' => $new['token'], 'form' => ['focus' => 'mental']]);
+        check('a focus that does not exist: 422', $bad['status'] === 422, summary($bad));
+        $ok = http('/api/profile/update.php', ['bearer' => $new['token'], 'form' => ['focus' => 'fitness']]);
+        check('the focus, saved by profile/update: 200', $ok['status'] === 200 && in_array('focus', $ok['body']['saved'] ?? [], true), summary($ok));
+        $s = $read($new);
+        check('a restart opens past it, with the answer kept', ($s['setup']['resume'] ?? null) === 'connect'
+            && array_column(array_filter($s['setup']['steps'][0]['options'] ?? [], static fn ($o) => $o['chosen']), 'key') === ['fitness']);
+        check('the focus puts its category first in the legend', array_column($s['scores']['contributors'] ?? [], 'area') === ['training', 'sleep', 'nutrition']);
+        check('and in the Scorekompas, which follows the legend', array_column($s['compass']['composition']['categories'] ?? [], 'id') === ['training', 'sleep', 'nutrition']);
+        check('the chip says it', ($s['focus_labels'][$s['focus'] ?? ''] ?? null) === 'Fitheid');
+
+        $profile = http('/api/profile/update.php', ['bearer' => $new['token'], 'form' => ['weight' => '82,4']]);
+        check('a weight from the setup is a measurement like any other', $profile['status'] === 200
+            && (float) db_value("SELECT value FROM user_measurements WHERE user_id = ? AND measurement_type = 'weight' ORDER BY id DESC LIMIT 1", [$new['id']]) === 82.4);
+
+        $jar  = tempnam(sys_get_temp_dir(), 'jar');
+        $web  = http('/api/auth/login.php', ['jar' => $jar, 'form' => ['csrf' => csrf($jar), 'username' => $new['username'], 'password' => $password]]);
+        $page = http('/', ['get' => true, 'jar' => $jar]);
+        check('the website opens on the same setup, past the focus', $web['status'] === 200 && str_contains($page['raw'], 'data-setup ')
+            && str_contains($page['raw'], 'data-resume="connect"') && !str_contains($page['raw'], 'data-deck'));
+
+        $fin = http('/api/setup/finish.php', ['bearer' => $new['token'], 'form' => []]);
+        check('finish: 200, no longer pending', $fin['status'] === 200 && ($fin['body']['pending'] ?? null) === false, summary($fin));
+        $s = $read($new);
+        check('the app now — day 1 of the baseline', ($s['setup']['pending'] ?? null) === false
+            && ($s['calibration']['phase'] ?? null) === 'building' && ($s['calibration']['day'] ?? null) === 1
+            && ($s['calibration']['eyebrow'] ?? null) === 'Dag 1 van 3');
+        check('the card orders by the focus too', array_column($s['calibration']['progress'] ?? [], 'id') === ['training', 'sleep', 'nutrition']);
+        $page = http('/', ['get' => true, 'jar' => $jar]);
+        check('the website: the app, opening on the card', str_contains($page['raw'], 'data-deck') && str_contains($page['raw'], 'card--calibration')
+            && !str_contains($page['raw'], 'data-setup '));
+
+        $doneAt = db_value('SELECT setup_done_at FROM user_profiles WHERE user_id = ?', [$new['id']]);
+        http('/api/setup/finish.php', ['bearer' => $new['token'], 'form' => []]);
+        check('finishing twice changes nothing — not even the day', db_value('SELECT setup_done_at FROM user_profiles WHERE user_id = ?', [$new['id']]) === $doneAt);
+
+        http('/api/auth/logout.php', ['jar' => $jar, 'form' => ['csrf' => csrf($jar)]]);
+        http('/api/auth/login.php', ['jar' => $jar, 'form' => ['csrf' => csrf($jar), 'username' => $new['username'], 'password' => $password]]);
+        $page = http('/', ['get' => true, 'jar' => $jar]);
+        check('signed out and in again: still the app, never the setup again', str_contains($page['raw'], 'data-deck') && !str_contains($page['raw'], 'data-setup '));
+
+        section('the first days: the first score is the engine\'s own, then the starting point, then nothing');
+        /* Three nights, the last this morning, and the setup finished three days ago: day 4. */
+        foreach ([2, 1, 0] as $ago) {
+            $wake  = (new DateTimeImmutable('today'))->modify("-$ago days");
+            $start = $wake->modify('-1 day')->setTime(23, 20);
+            health_record_sleep($new['id'], ['started_at' => $start->format('Y-m-d H:i:s'), 'ended_at' => $start->modify('+430 minutes')->format('Y-m-d H:i:s')], 'manual');
+        }
+        db_run('UPDATE user_profiles SET setup_done_at = ? WHERE user_id = ?', [(new DateTimeImmutable('today'))->modify('-3 days')->format('Y-m-d 09:00:00'), $new['id']]);
+        $s = $read($new);
+        $sleep = null;
+        foreach ($s['scores']['contributors'] ?? [] as $row) {
+            if ($row['area'] === 'sleep') {
+                $sleep = $row['value'];
+            }
+        }
+        check('day 4: the first score — the slaapscore', ($s['calibration']['phase'] ?? null) === 'first_score'
+            && ($s['calibration']['title'] ?? null) === 'Je eerste slaapscore', json_encode($s['calibration']['phase'] ?? null));
+        check('its number is the ring\'s own category score (' . var_export($sleep, true) . ')', $sleep !== null
+            && ($s['calibration']['first']['value'] ?? null) === $sleep);
+        check('with the Scorekompas\'s own components', array_column($s['calibration']['first']['parts'] ?? [], 'id') === ['duration', 'regularity', 'quality']);
+        check('and the overall score says it rests on slaap alone',
+            str_starts_with((string) ($s['calibration']['note'] ?? ''), 'Je gezondheidsscore rust voorlopig alleen op slaap.'));
+
+        /* One night earlier: the third night now woke yesterday, so the
+           first score appeared yesterday (day 3). */
+        $night = static function (int $ago) use ($new): void {
+            $start = (new DateTimeImmutable('today'))->modify('-' . ($ago + 1) . ' days')->setTime(23, 20);
+            health_record_sleep($new['id'], ['started_at' => $start->format('Y-m-d H:i:s'), 'ended_at' => $start->modify('+430 minutes')->format('Y-m-d H:i:s')], 'manual');
+        };
+        $night(3);
+        $s = $read($new);
+        check('the day after the first score appeared: still the first score', ($s['calibration']['phase'] ?? null) === 'first_score',
+            json_encode($s['calibration']['phase'] ?? null));
+
+        /* And one more: the first score appeared two days ago (day 2). */
+        $night(4);
+        $s = $read($new);
+        $sleep = null;
+        foreach ($s['scores']['contributors'] ?? [] as $row) {
+            if ($row['area'] === 'sleep') {
+                $sleep = $row['value'];
+            }
+        }
+        $start = $s['calibration']['baseline'] ?? [];
+        check('two days after it: the starting point', ($s['calibration']['phase'] ?? null) === 'baseline'
+            && ($s['calibration']['title'] ?? null) === 'Je startpunt', json_encode($s['calibration']['phase'] ?? null));
+        check('only what has a score, with the ring\'s own number (' . var_export($sleep, true) . ')',
+            array_column($start, 'id') === ['sleep'] && $sleep !== null && ($start[0]['value'] ?? null) === $sleep);
+        check('and what it was worked out from', str_starts_with((string) ($start[0]['fact'] ?? ''), 'Gemiddeld 7:10 per nacht'),
+            json_encode($start[0]['fact'] ?? null));
+        check('the rest is named as still to come, in the focus\'s order (Fitheid)', ($s['calibration']['note'] ?? null) === 'Sport en voeding komen erbij zodra er 3 dagen van zijn.',
+            json_encode($s['calibration']['note'] ?? null));
+
+        db_run('UPDATE user_profiles SET setup_done_at = ? WHERE user_id = ?', [(new DateTimeImmutable('today'))->modify('-5 days')->format('Y-m-d 09:00:00'), $new['id']]);
+        check('day 6: no card — the normal app', array_key_exists('calibration', $read($new)) && $read($new)['calibration'] === null);
+
+        section('the first days: only new accounts');
+        $old = app_account('old');
+        db_run('UPDATE user_profiles SET setup_state = NULL, setup_done_at = NULL WHERE user_id = ?', [$old['id']]);
+        $s = $read($old);
+        check('an account from before the setup: no setup, no card', ($s['setup']['pending'] ?? null) === false && $s['calibration'] === null);
+        check('its focus is Alles, as before', ($s['focus'] ?? null) === 'general' && ($s['focus_labels']['general'] ?? null) === 'Alles');
+        db_run('INSERT IGNORE INTO user_profiles (user_id) VALUES (?)', [$old['id']]);
+        check('a profile row made later keeps it so', $read($old)['setup']['pending'] === false);
+
+        $pending = app_account('pending-delete', true);
+        $gone = http('/api/profile/delete.php', ['bearer' => $pending['token'], 'form' => ['confirm' => 'verwijderen']]);
+        check('an account deleted in the middle of its setup is gone, not stuck', $gone['status'] === 200
+            && db_value('SELECT id FROM users WHERE id = ?', [$pending['id']]) === null
+            && http('/api/app/state.php', ['bearer' => $pending['token']])['status'] === 401);
+    }
 
     section('deleting the account from the app');
     $sync = paired_phone($sanne['token']);

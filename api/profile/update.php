@@ -34,6 +34,28 @@ if ($fields !== []) {
     $saved = array_merge($saved, array_keys($fields));
 }
 
+/* ------------------------------------------------------------- focus */
+
+/* What the person most wants to understand — chosen in the setup, changed
+   in Instellingen (includes/setup.php). */
+if (array_key_exists('focus', $_POST)) {
+    $setup = dirname(__DIR__, 2) . '/includes/setup.php';
+
+    if (!is_file($setup)) {
+        api_fail('Je focus kan nog niet worden bewaard.', 503);
+    }
+
+    require_once $setup;
+
+    $result = setup_set_focus($userId, (string) $_POST['focus']);
+
+    if (!$result['ok']) {
+        api_fail((string) $result['error'], 422);
+    }
+
+    $saved[] = 'focus';
+}
+
 /* ------------------------------------------------------ measurements */
 
 $limits = [

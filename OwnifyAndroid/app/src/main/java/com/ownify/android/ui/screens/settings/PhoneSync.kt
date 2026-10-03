@@ -314,6 +314,9 @@ internal fun outcomeText(kind: OwnifySyncOutcomeKind): String = when (kind) {
 }
 
 /** Health Connect's own page in the Play Store: to install it, or bring it up to date. */
+/** Health Connect in the Play Store — to install or update it (also the setup's Gegevens step). */
+internal fun openHealthConnectStore(context: Context) = openStore(context)
+
 private fun openStore(context: Context) {
     val uri = "market://details?id=$HEALTH_CONNECT_PACKAGE&url=healthconnect%3A%2F%2Fonboarding".toUri()
     val intent = Intent(Intent.ACTION_VIEW, uri).apply {

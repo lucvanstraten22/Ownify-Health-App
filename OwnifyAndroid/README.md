@@ -160,6 +160,12 @@ and device transfers, as the token is.
 | `android.permission.INTERNET` | the Ownify server |
 | `WAKE_LOCK`, `ACCESS_NETWORK_STATE`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` | added by WorkManager's own manifest; Ownify starts no foreground service |
 
+The Health Connect permissions are asked for in two places, with the same
+system screen: the **Gegevens** step of the setup a new account starts with
+(`SetupScreen`, `docs/FIRST-DAYS.md` at the repository's root), and this
+phone's Health Connect card in Instellingen → Apparaten & Gezondheid, which
+also asks for background access.
+
 ### Background access
 
 Health Connect only lets an app read while it is in the foreground. To read
@@ -221,7 +227,11 @@ Android jar.
 - `ui/OwnifyAppFlowTest` — the whole app: sign in, a wrong password, register,
   restore, sign out, offline and retry, a revoked session, a paired phone,
   the tabs, a detail and back, the panels, and accessibility (46 dp targets,
-  headings, the navigation's name).
+  headings, the navigation's name). It also covers the setup a new account
+  starts with: every step, skipping, a restart, a first goal suggested or
+  made in the wizard, and finishing for good. It also covers the first days
+  on Overzicht (baseline, first score, starting point), and changing the
+  focus in Instellingen.
 - `ui/GoogleSignInFlowTest` — Doorgaan met Google on screen: from Inloggen
   and Registreren into the account's pages, the username step and its
   Annuleren, the server's reasons in the panel, the disabled button when the

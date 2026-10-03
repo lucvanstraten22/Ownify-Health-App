@@ -33,7 +33,8 @@
  * `edit` says how a field behaves, and the UI reads it rather than guessing:
  *
  *   true        an ordinary editable field
- *   'locked'    set once during onboarding — gender and date of birth
+ *   'locked'    set only once — gender, and the date of birth (in the setup
+ *               a new account starts with, or here)
  *   'derived'   calculated from another field, so it is never typed in
  *
  * Age is 'derived', not editable: the schema stores a date of birth and
@@ -94,7 +95,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.4.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.5.0'],
             ],
         ],
     ],
@@ -168,6 +169,10 @@ return [
                         ['key' => 'username',   'label' => 'Gebruikersnaam',  'edit' => true, 'opens' => 'account'],
                         ['key' => 'first_name', 'label' => 'Voornaam',        'edit' => true],
                         ['key' => 'last_name',  'label' => 'Achternaam',      'edit' => true],
+                        /* Chosen in the setup a new account starts with; what
+                           Overzicht puts first (docs/FIRST-DAYS.md). Left out
+                           until migration 016 can keep it. */
+                        ['key' => 'focus',      'label' => 'Focus',           'edit' => true],
                     ],
                 ],
 
@@ -485,7 +490,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.4.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.5.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
                     ],
                 ],

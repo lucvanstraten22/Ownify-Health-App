@@ -12,14 +12,152 @@
 }
 
 /* --------------------------------------------------------------------------
-   Onboarding focus
-   The score card is what focus shapes now: the two category cards it used to
-   promote have gone, and their scores live in the ring's own legend.
+   The focus
+   What the person most wants to understand (includes/setup.php) decides
+   what comes first — the ring's legend and the Scorekompas are ordered on
+   the server — and never how big anything is: every focus gets the same
+   Overzicht. `data-focus` on <html> stays as the hook.
    -------------------------------------------------------------------------- */
 
-/* A sleep-focused dashboard keeps the general score, but tightens it. */
-[data-focus="sleep"] .card--hero .score-ring { width: min(48vw, 168px); }
-[data-focus="sleep"] .card--hero .score-ring__number { font-size: 2.35rem; }
+/* --------------------------------------------------------------------------
+   The first days (components/calibration.php)
+   The baseline being built, the first score, the starting point. A
+   category's colour says which category; how far it is, the steps say.
+   -------------------------------------------------------------------------- */
+.calibration__title { margin-top: var(--space-1); }
+
+.calibration__lede {
+    margin-top: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.calibration__rows,
+.calibration__baseline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+}
+
+.calibration-row,
+.calibration-start {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.calibration-row .icon-tile,
+.calibration-start .icon-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+}
+
+.calibration-row .icon-tile .icon,
+.calibration-start .icon-tile .icon { width: 17px; height: 17px; }
+
+.calibration-row__text,
+.calibration-start__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.calibration-row__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.calibration-row__label,
+.calibration-start__label {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.calibration-row__count {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* One step per day a first score needs — the goal wizard's bars, in the
+   category's own colour. */
+.calibration-row__steps {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.calibration-row__step {
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: rgba(var(--fill), calc(0.10 * var(--fill-k)));
+    transition: background-color var(--transition-slow);
+}
+
+.calibration-row__step.is-done { background: var(--accent); }
+
+.calibration-row__detail,
+.calibration-row__how,
+.calibration-start__fact {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.calibration-row__detail { color: var(--text-secondary); }
+
+.calibration-start__fact { margin-top: 2px; }
+
+.calibration-start { align-items: center; }
+
+.calibration__first { margin-top: var(--space-4); }
+
+.calibration__first .compass-cat { background: rgba(var(--fill), calc(0.025 * var(--fill-k))); }
+
+.calibration__fact { line-height: 1.45; }
+
+.calibration__note {
+    margin-top: var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.calibration__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    margin-top: var(--space-2);
+    margin-bottom: calc(-1 * var(--space-2));
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: var(--fs-small);
+    font-weight: 600;
+}
+
+.calibration__open-icon {
+    width: 15px;
+    height: 15px;
+    color: var(--text-muted);
+}
+
+.calibration__open:focus-visible {
+    outline: 2px solid rgba(var(--ink), 0.55);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
 
 /* --------------------------------------------------------------------------
    Very small phones — stop forcing two columns

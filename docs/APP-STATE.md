@@ -31,6 +31,18 @@ card), `insights`, `patterns`, `recommendation`, `leaderboard`,
 `community`, `goals`, `settings` — plus:
 
 - `today` — `today_parts()`, the date the Overzicht header prints;
+- `focus` — the account's focus (`general` when it never chose one), named
+  by `focus_labels`. The order it gives the categories is applied on the
+  server, in `scores.contributors` and everything that follows them
+  ([FIRST-DAYS.md](FIRST-DAYS.md#the-focus));
+- `compass` — the Scorekompas ([SCORE-COMPASS.md](SCORE-COMPASS.md));
+- `setup` — `{ pending: false }`, or, for a new account that has not
+  finished its setup, `pending: true` with its four steps and what the
+  account already has filled in. While it is pending the app shows the setup
+  instead of the shell, as the website does
+  ([FIRST-DAYS.md](FIRST-DAYS.md#who-sees-it-once));
+- `calibration` — the card Overzicht opens with in the first days (the
+  baseline being built, the first score, the starting point), or `null`;
 - the values the templates work out while they render, worked out by the
   same functions (`app_state_rendered()`):
   - `health.areas.*.highlights` and `health.areas.*.groups.*.metrics` —
@@ -68,6 +80,7 @@ picture), as the website sends them; `api/goals/update.php` takes JSON too.
 
 | Page | Endpoints |
 | --- | --- |
+| The setup | `profile/update` (the focus, height, weight), `profile/onboarding` (the birth date), `goals/create`, `setup/finish` |
 | Doelen | `goals/create`, `goals/update`, `goals/progress`, `goals/delete` |
 | Voeding | `health/rating` |
 | Instellingen, account | `profile/update`, `profile/onboarding`, `profile/username`, `profile/avatar`, `profile/delete` |
@@ -76,6 +89,12 @@ picture), as the website sends them; `api/goals/update.php` takes JSON too.
 
 After a write the app reads `state.php` again, as the website reloads or
 re-fetches the page.
+
+`setup/finish` takes no fields and answers `{ ok, pending: false }`: the
+setup is over, and today is day 1 of the baseline. Asking twice changes
+nothing. It is `503` until `database/migrations/016-setup-and-focus.sql` is
+imported; until then `profile/update` refuses a `focus` with a sentence
+(`422`).
 
 Two answers differ for the app:
 

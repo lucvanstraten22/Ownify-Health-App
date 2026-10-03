@@ -132,6 +132,16 @@ CREATE TABLE `user_profiles` (
                     COMMENT 'The consent wording that was answered (config/ai.php consent_version)',
     `ai_consent_at` DATETIME     NULL DEFAULT NULL
                     COMMENT 'When the Ownify AI consent was last answered',
+    -- The first days (migration 016, docs/FIRST-DAYS.md): what the person
+    -- most wants to understand, and the setup a new account starts with.
+    -- Only registration writes 'pending'; an account from before the setup
+    -- existed keeps NULL and never sees it.
+    `focus`         ENUM('general','sleep','energy','fitness','weight') NULL DEFAULT NULL
+                    COMMENT 'What the person most wants to understand; NULL = never chosen (general)',
+    `setup_state`   ENUM('pending','done') NULL DEFAULT NULL
+                    COMMENT 'First setup: NULL = account from before it existed, pending = not finished, done',
+    `setup_done_at` DATETIME     NULL DEFAULT NULL
+                    COMMENT 'When the first setup was finished: day 1 of the baseline',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`),

@@ -358,3 +358,33 @@ if (!function_exists('goals_slot_note')) {
         return sprintf($goals['labels']['slots_free'], $left);
     }
 }
+
+if (!function_exists('goals_script_copy')) {
+    /**
+     * The words goals.js and goal-wizard.js build their sentences from, as
+     * the page embeds them (`[data-goals-copy]`): the Doelen page's, and the
+     * setup's, which opens the same wizard (pages/setup.php).
+     */
+    function goals_script_copy(array $goals): array
+    {
+        return [
+            'labels'    => $goals['labels'],
+            'detail'    => $goals['detail'],
+            'limits'    => $goals['limits'],
+            'views'     => array_map(static fn (array $v): string => $v['label'], $goals['views']),
+            'categories'=> array_map(
+                static fn (array $c): array => ['label' => $c['label'], 'accent' => $c['accent'], 'units' => $c['units']],
+                $goals['categories']
+            ),
+            'types'     => array_map(
+                static fn (array $t): array => ['label' => $t['label'], 'hint' => $t['hint']],
+                $goals['types']
+            ),
+            'durations' => array_map(
+                static fn (array $d): array => ['label' => $d['label'], 'days' => $d['days']],
+                $goals['durations']
+            ),
+            'wizard'    => $goals['wizard'],
+        ];
+    }
+}

@@ -19,26 +19,8 @@ $view    = $goals['default_view'];
 $hasAny  = $goals['active'] !== [];
 
 /* Everything the two scripts need to build a sentence, in one place, so no
-   Dutch copy is ever written a second time in JavaScript. */
-$copy = [
-    'labels'    => $labels,
-    'detail'    => $goals['detail'],
-    'limits'    => $goals['limits'],
-    'views'     => array_map(static fn (array $v): string => $v['label'], $goals['views']),
-    'categories'=> array_map(
-        static fn (array $c): array => ['label' => $c['label'], 'accent' => $c['accent'], 'units' => $c['units']],
-        $goals['categories']
-    ),
-    'types'     => array_map(
-        static fn (array $t): array => ['label' => $t['label'], 'hint' => $t['hint']],
-        $goals['types']
-    ),
-    'durations' => array_map(
-        static fn (array $d): array => ['label' => $d['label'], 'days' => $d['days']],
-        $goals['durations']
-    ),
-    'wizard'    => $goals['wizard'],
-];
+   Dutch copy is ever written a second time in JavaScript (goals_script_copy()). */
+$copy = goals_script_copy($goals);
 ?>
 <section class="screen page" data-page="goals" aria-label="Doelen"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>

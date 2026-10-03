@@ -37,6 +37,7 @@ import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
 import com.ownify.android.ui.screens.settings.SettingsDetail
 import com.ownify.android.ui.screens.settings.SettingsPage
+import com.ownify.android.ui.screens.setup.SetupScreen
 import com.ownify.android.ui.screens.welcome.PairedStatus
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,7 +78,8 @@ object OwnifyScreens {
                 is Overlay.EditField -> FieldEditor(overlay, data)
                 is Overlay.Pairing -> PairingPanel(overlay, data)
             }
-        }
+        },
+        setup = { data -> SetupScreen(data) }
     )
 
     val signedOut = SignedOutScreens { paired -> WelcomeRoute(paired) }

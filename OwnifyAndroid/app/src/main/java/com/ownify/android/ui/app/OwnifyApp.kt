@@ -1,5 +1,7 @@
 package com.ownify.android.ui.app
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ownify.android.data.AppData
 import com.ownify.android.data.AppLoad
 import com.ownify.android.data.OwnifyAppState
 import com.ownify.android.connection.OwnifyConnection
@@ -36,6 +39,7 @@ import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.ground
@@ -118,18 +122,35 @@ private fun SignedInApp(screens: ShellScreens) {
         if (sync is OwnifySyncState.Synced && sync.summary.result.written > 0) OwnifyAppState.refresh(context)
     }
 
-    when (val load = OwnifyAppState.load) {
-        is AppLoad.Ready -> AppShell(load.data, screens)
-        is AppLoad.Failed -> {
-            val data = load.data
-            if (data != null) AppShell(data, screens)
-            else Unreachable(load.message) {
-                OwnifyConnection.retry(context)
-                OwnifyAppState.refresh(context)
-            }
+    // The pages from one place whatever the last read did, so a read that
+    // fails keeps what is on screen — the setup's step among it — as it is.
+    val load = OwnifyAppState.load
+    val data = when (load) {
+        is AppLoad.Ready -> load.data
+        is AppLoad.Failed -> load.data
+        else -> null
+    }
+
+    when {
+        data != null -> ShellOrSetup(data, screens)
+        load is AppLoad.Failed -> Unreachable(load.message) {
+            OwnifyConnection.retry(context)
+            OwnifyAppState.refresh(context)
         }
-        AppLoad.Idle, AppLoad.Loading, AppLoad.SyncOnly ->
-            Box(Modifier.fillMaxSize().ground(remember { GroundPlacement(Ground.App) }))
+        else -> Box(Modifier.fillMaxSize().ground(remember { GroundPlacement(Ground.App) }))
+    }
+}
+
+/**
+ * A new account's setup while the server says it is pending (`setup`,
+ * includes/setup.php) — as the website shows pages/setup.php — and the app
+ * once it is finished, the one fading into the other.
+ */
+@Composable
+private fun ShellOrSetup(data: AppData, screens: ShellScreens) {
+    val still = LocalStillMotion.current
+    Crossfade(data.setup.pending, animationSpec = tween(if (still) 0 else Ownify.ScreenMs, easing = Ownify.ScreenEase), label = "setup") { pending ->
+        if (pending) screens.setup(data) else AppShell(data, screens)
     }
 }
 

@@ -243,7 +243,7 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | Table | Holds |
 | --- | --- |
 | `users` | the account: id, unique username, status, timestamps |
-| `user_profiles` | the person: name, date of birth, gender, avatar, locale |
+| `user_profiles` | the person: name, date of birth, gender, avatar, locale, focus, and where the setup a new account starts with stands |
 | `user_auth_identities` | one row per way of signing in |
 | `user_login_tokens` | one row per browser that signed in and has not signed out: a selector and the SHA-256 of a validator |
 
@@ -388,6 +388,22 @@ A yes to an older wording counts as never asked. An existing database gets the
 columns and the four `ai_` tables from
 `database/migrations/015-ai-assistant.sql`; until then the assistant says it is
 not available and nothing else changes. See [AI.md](AI.md#consent-and-privacy).
+
+**The setup a new account starts with** is `user_profiles.setup_state`:
+
+- `NULL` is an account from before the setup existed, which never sees it;
+- `pending` is a new account that has not finished it, which opens on it on
+  the website and the phone;
+- `done` is finished, and `setup_done_at` is day 1 of the first days.
+
+Only registration writes `pending`, inside its transaction, so nothing had
+to be filled in for the accounts that exist. `user_profiles.focus` is what
+the person most wants to understand (`general` for *Alles*, `sleep`,
+`energy`, `fitness`, `weight`; `NULL` never chosen, shown as *Alles*). It
+orders the categories and never hides one. An existing database gets the
+three columns from `database/migrations/016-setup-and-focus.sql`; until then
+nobody gets the setup and everybody's focus is *Alles*. See
+[FIRST-DAYS.md](FIRST-DAYS.md).
 
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
@@ -708,14 +724,15 @@ private data is returned.
 
 | Endpoint | Writes |
 | --- | --- |
-| `api/auth/register.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` |
+| `api/auth/register.php` | `users`, `user_profiles` (its setup `pending`), `user_auth_identities`, `user_login_tokens` |
 | `api/auth/login.php` / `logout.php` | this browser's `user_login_tokens` row, added or deleted; login touches `last_login_at` |
 | `api/auth/google-callback.php` | a Google identity on the signed-in account (linking); otherwise this browser's `user_login_tokens` row |
-| `api/auth/google-username.php` | `users`, `user_profiles`, `user_auth_identities`, `user_login_tokens` — the Google identity waiting in the session |
+| `api/auth/google-username.php` | `users`, `user_profiles` (its setup `pending`), `user_auth_identities`, `user_login_tokens` — the Google identity waiting in the session |
 | `api/profile/delete.php` | deletes the signed-in account and everything of it (see *Privacy*), and its avatar file; then re-ranks every board it had points on |
 | `api/profile/username.php` | `users.username` |
 | `api/profile/avatar.php` | `user_profiles.avatar_path` + the file under `uploads/`, and its small copy |
-| `api/profile/update.php` | names, activity level, and height/weight as `user_measurements` |
+| `api/profile/update.php` | names, activity level, `user_profiles.focus`, and height/weight as `user_measurements` |
+| `api/setup/finish.php` | `user_profiles.setup_state` → `done` and `setup_done_at`, once: only a pending setup finishes |
 | `api/profile/onboarding.php` | `date_of_birth`, `gender` — once, then it refuses |
 | `api/health/sleep.php` | `sleep_sessions`; then that night's points and the Health Score |
 | `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics`; a rating earns that day's points |
