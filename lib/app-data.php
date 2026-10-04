@@ -206,6 +206,12 @@ if (!function_exists('app_page_data')) {
            same today the scores and goals above were worked out for. */
         $data['today'] = today_parts();
 
+        /* Instellingen in the app's own words where the website's would not
+           be true on a phone (`value_app`, `note_app`). */
+        if (isset($data['settings']) && function_exists('settings_for_app')) {
+            $data['settings'] = settings_for_app($data['settings']);
+        }
+
         return app_state_plain(app_state_rendered($data));
     }
 

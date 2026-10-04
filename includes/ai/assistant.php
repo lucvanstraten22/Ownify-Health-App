@@ -9,7 +9,9 @@
  *                               out here, without Gemini and without counting
  *   5. the daily limit          one of today's messages is taken (and given
  *                               back when no answer comes)
- *   6. the person's data        fetched now, only what fits the question
+ *   6. the person's data        fetched now: the profile, the scores, the
+ *                               goals and two weeks in brief every time, the
+ *                               rest by the question's topic
  *   7. the conversation         the recent messages, the older ones in brief
  *   8. Gemini                   one request — or a few, when it looks things
  *                               up with its tools — from this server only

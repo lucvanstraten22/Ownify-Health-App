@@ -33,6 +33,12 @@ if (($meta['transport'] ?? null) !== 'device') {
     api_fail('Deze bron wordt niet met een koppelcode verbonden.', 400);
 }
 
+/* No code for a source no app can receive it for (`app_available` in
+   config/integrations.php): it could never be used. */
+if (!integration_configured($provider)) {
+    api_fail((string) integration_blocked_reason($provider), 409);
+}
+
 $code = device_create_pairing_code($userId, $provider);
 
 if ($code === null) {

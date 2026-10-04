@@ -118,7 +118,7 @@
                     return { ok: false, error: 'Onverwacht antwoord van de server.' };
                 });
             })
-            .catch(function () { return { ok: false, error: 'De server is niet bereikbaar.' }; })
+            .catch(function () { return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' }; })
             .then(function (answer) {
                 toggle.disabled = false;
 
@@ -192,7 +192,7 @@
             .then(function (response) {
                 return response.json().catch(function () { return { ok: false, error: 'Onverwacht antwoord van de server.' }; });
             })
-            .catch(function () { return { ok: false, error: 'De server is niet bereikbaar.' }; })
+            .catch(function () { return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' }; })
             .then(function (answer) {
                 yesButton.disabled = false;
                 confirmBox.hidden = true;
@@ -565,7 +565,7 @@
                     });
                 })
                 .catch(function () {
-                    return { ok: false, error: 'De server is niet bereikbaar.' };
+                    return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
                 })
                 .then(function (result) {
                     saveBtn.disabled = false;
@@ -673,7 +673,7 @@
                 return response.json().catch(function () { return { ok: false }; });
             })
             .catch(function () {
-                return { ok: false, error: 'De server is niet bereikbaar. Er is niets verwijderd.' };
+                return { ok: false, error: 'Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.' };
             })
             .then(function (result) {
                 if (result && result.ok) {

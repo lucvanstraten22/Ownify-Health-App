@@ -23,9 +23,13 @@
  *   PREFERENCE   A choice the user will make later. Selectable now so the
  *                design can be judged; each screen says it is not yet saved.
  *
- * `demo` turns on a review-only connected integration, so the connected
- * state of the devices screen can be looked at without the app ever claiming
- * a device is attached. It ships false.
+ * `demo` is left over from before the devices screen showed real
+ * connections; nothing reads it any more.
+ *
+ * A `value_app` or `note_app` beside an item's `value` or `note` is what the
+ * Ownify app shows instead, where the website's words would not be true on a
+ * phone; settings_for_app() puts it in place in the app's state
+ * (api/app/state.php). The website shows `value` and `note`.
  *
  * ------------------------------------------------------------------
  * PROFILE FIELDS
@@ -76,7 +80,9 @@ return [
             'label' => 'Privacy',
             'rows'  => [
                 ['id' => 'privacy', 'icon' => 'shield', 'label' => 'Privacy',
-                 'value' => 'Gezondheidsdata privé'],
+                 'value' => 'Gezondheidsdata privé',
+                 /* While Ownify AI is on (settings_prepare()). */
+                 'value_ai' => 'Privé, behalve wat Ownify AI naar Gemini stuurt'],
             ],
         ],
 
@@ -95,7 +101,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.5.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.5.1'],
             ],
         ],
     ],
@@ -244,7 +250,7 @@ return [
                            leave the account — for Gemini, per question. */
                         ['label' => 'Gezondheidsgegevens', 'value' => 'Privé',
                          'note' => 'Slaap, voeding, training en metingen verlaten je account niet',
-                         'note_ai' => 'Alleen wat bij je vraag past gaat naar Google Gemini, als je Ownify AI iets vraagt'],
+                         'note_ai' => 'Als je Ownify AI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini'],
                         ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
                          'note' => 'Verder niets — geen scores, geen metingen'],
                         ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
@@ -279,7 +285,7 @@ return [
                     'lede'  => 'De assistent die je omhoog veegt, gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
                     'items' => [
                         ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
-                         'note_on'  => 'Bij elke vraag gaat wat erbij past naar Gemini: profiel, slaap, voeding, training, doelen en scores.',
+                         'note_on'  => 'Bij elke vraag gaan je profiel, scores, doelen en een samenvatting van twee weken naar Gemini, en per onderwerp meer, zoals slaap, voeding of training.',
                          'note_off' => 'De assistent werkt niet, en er gaat niets naar Gemini.',
                          'on' => false],
                     ],
@@ -460,7 +466,8 @@ return [
                         ['label' => 'Minder beweging', 'value' => 'Volgt je systeem',
                          'note' => 'Staat dit aan op je toestel, dan vervallen alle animaties'],
                         ['label' => 'Tekstgrootte',    'value' => 'Volgt je systeem',
-                         'note' => 'De app schaalt mee met de tekstgrootte van je browser'],
+                         'note' => 'De app schaalt mee met de tekstgrootte van je browser',
+                         'note_app' => 'De app schaalt mee met de lettergrootte van je telefoon'],
                         ['label' => 'Contrast',        'value' => 'Verhoogd',
                          'note' => 'Elke tekstkleur haalt minimaal WCAG AA op zijn eigen ondergrond'],
                     ],
@@ -489,9 +496,10 @@ return [
                     'type'  => 'rows',
                     'title' => 'App',
                     'items' => [
-                        ['label' => 'Naam',    'value' => 'Ownify Health App'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.5.0'],
-                        ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS'],
+                        ['label' => 'Naam',    'value' => 'Ownify'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.5.1'],
+                        ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS',
+                         'value_app' => 'Kotlin · Jetpack Compose'],
                     ],
                 ],
 
@@ -501,7 +509,8 @@ return [
                     'items' => [
                         ['label' => 'Privacyverklaring', 'value' => 'Binnenkort'],
                         ['label' => 'Voorwaarden',       'value' => 'Binnenkort'],
-                        ['label' => 'Licenties',         'value' => 'Geen externe pakketten'],
+                        ['label' => 'Licenties',         'value' => 'Geen externe pakketten',
+                         'value_app' => 'AndroidX, Kotlin en Google Play-services'],
                     ],
                 ],
 
@@ -514,14 +523,15 @@ return [
                 ],
 
                 ['type' => 'note', 'icon' => 'info',
-                 'text' => 'Ownify Health App is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
+                 'text' => 'Ownify is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
             ],
         ],
     ],
 
     /* ========================================================= integrations
-     * Every entry ships disconnected, because none of them is implemented.
-     * `demo` fills in a connected state so that design can be reviewed.
+     * Each card shows the account's real state (settings_prepare()). Health
+     * Connect can be connected through the Ownify Android app; the others say
+     * why they cannot.
      */
     /**
      * The sources Ownify can take data from.

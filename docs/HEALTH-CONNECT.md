@@ -18,8 +18,8 @@ Connect, which is the phone, and the Google Health API, which is the cloud but
 returns **Fitbit and Pixel Watch data only** — nothing from a plain Android
 phone.
 
-So: an app on the phone reads Health Connect and posts to Ownify. That app is the
-only part that does not exist yet.
+So: an app on the phone reads Health Connect and posts to Ownify. That app is
+the Ownify Android app, `OwnifyAndroid/` in this repository.
 
 ## How the app proves whose data it is sending
 
@@ -277,7 +277,9 @@ is one night.
 1. Declare the Health Connect permissions it needs, and ask for them. Users
    grant **per category**, so assume you will get some and not others — a
    missing category is a category with no data, never a zero.
-2. On first run, ask for the pairing code and exchange it.
+2. Get a token: sign in with the account (an account token, see
+   [APP-AUTH.md](APP-AUTH.md)), or, on a phone that only syncs, exchange a
+   pairing code (a sync token).
 3. Sync periodically, in the background. Ownify Android does this with
    WorkManager: every hour while the phone is paired, on a network and with a
    battery that is not low, plus once right after pairing, after Health
@@ -294,7 +296,7 @@ is one night.
    automatic sync still runs whenever the app is open, and skips (sending
    nothing) when it is not. See `OwnifyAndroid/README.md`.
 5. On `401` from any call, clear the stored token, stop the automatic sync and
-   prompt to pair again — an invalid token is never used a second time.
+   ask to sign in or pair again — an invalid token is never used a second time.
    Offline or a server error keeps the token and retries with backoff.
 
 A thin Kotlin sketch of the sync:
@@ -402,34 +404,34 @@ walk sent twice, two apps over the same hour, partly overlapping and apart, a
 full re-sync, records crossing midnight, three apps, a reading typed in by
 hand, and rows from before migration 012.
 
-**One thing worth knowing:** `pairing-code.php` issues a code even while
-`app_available` is `false`. That is deliberate, not a gap. The flag decides
-whether the *devices screen* offers pairing; the endpoint behind it is
-session-authenticated and CSRF-checked, and a code only ever grants access to
-the account that asked for it. It is what lets the flow be tested without
-flipping a production switch.
+**One thing worth knowing:** `pairing-code.php` refuses a phone source whose
+app is not available (`409`, with the reason the devices screen shows), so no
+code is ever minted that nothing could receive.
 
-## Turning it on
+## Which phone sources can be connected
 
-The devices screen says Health Connect needs an app that does not exist yet,
-rather than handing out a code with nothing to type it into. One switch changes
-that, in `config/integrations.php`:
+`app_available` in `config/integrations.php` decides it, per source:
 
 ```php
 'google_health_connect' => [
-    'app_available' => true,        // was false
-    'store_url'     => 'https://play.google.com/store/apps/details?id=…',
+    'app_available' => true,        // the Ownify Android app reads it
+    'store_url'     => '',
+],
+'apple_health' => [
+    'app_available' => false,       // needs an iPhone app, which Ownify does not have
+    'store_url'     => '',
 ],
 ```
 
-The server half is finished and tested; nothing else needs to change.
+A source with `false` is shown on the devices screen with the reason it cannot
+be connected, and no pairing code is offered or issued for it.
 
 ## What you still have to do outside the code
 
-- **Build and publish the Android app.** Health Connect access requires a
-  declaration form about which data types you read and why, and health data has
-  its own Play Store policy. Check the current requirements when you submit —
-  they change, and they are stricter than for an ordinary app.
+- **Publish the Android app.** Health Connect access requires a declaration
+  form about which data types you read and why, and health data has its own
+  Play Store policy. Check the current requirements when you submit — they
+  change, and they are stricter than for an ordinary app.
 - **Set `OWNIFY_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
   on Hestia*, has the exact commands. None of this flow needs it: a device
   token is hashed, not encrypted, and the test above passes on a server with no

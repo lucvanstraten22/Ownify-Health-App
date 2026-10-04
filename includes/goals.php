@@ -19,7 +19,7 @@ require_once __DIR__ . '/health-data.php';
  * the Doelen page and the app show — so changing it there changes it here.
  */
 if (!defined('GOAL_MAX_ACTIVE')) {
-    define('GOAL_MAX_ACTIVE', max(1, (int) (((array) require dirname(__DIR__) . '/config/goals.php')['limits']['active'] ?? 3)));
+    define('GOAL_MAX_ACTIVE', max(1, (int) (((array) require dirname(__DIR__) . '/config/goals.php')['limits']['active'])));
 }
 
 if (!function_exists('goals_for_user')) {

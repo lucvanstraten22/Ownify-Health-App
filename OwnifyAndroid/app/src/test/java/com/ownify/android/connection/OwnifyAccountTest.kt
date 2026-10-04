@@ -195,7 +195,7 @@ class OwnifyAccountTest {
         assertEquals("Er ging iets mis op de server. Probeer het opnieuw.", signInFails())
 
         OwnifyConnection.api = OwnifyApi("http://127.0.0.1:1/")
-        assertTrue(signInFails().startsWith("Kan Ownify niet bereiken"))
+        assertTrue(signInFails().startsWith("Ownify is niet bereikbaar"))
         OwnifyConnection.api = OwnifyApi(server.url)
 
         assertEquals("still the paired phone, untouched", OwnifyCredential(TEST_TOKEN, OwnifyScope.SYNC), stored())

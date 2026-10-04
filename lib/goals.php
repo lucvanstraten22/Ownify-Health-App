@@ -17,7 +17,8 @@ declare(strict_types=1);
 if (!function_exists('goals_prepare')) {
     /**
      * Builds the page model: expanded goals, split by view, in priority order,
-     * plus everything the header needs to know about the three-goal limit.
+     * plus everything the header needs to know about the goal limit (`limits`
+     * → `active` in config/goals.php).
      */
     function goals_prepare(array $config, ?DateTimeImmutable $today = null): array
     {
@@ -342,20 +343,25 @@ if (!function_exists('goals_date_short')) {
 }
 
 if (!function_exists('goals_slot_note')) {
-    /** What the page says about the three-goal limit, in its current state. */
+    /**
+     * What the page says about the goal limit, in its current state: the
+     * places left and the limit itself (`limits` → `active`), so the words
+     * follow the configured number.
+     */
     function goals_slot_note(array $goals): string
     {
-        $left = $goals['slots_left'];
+        $left  = $goals['slots_left'];
+        $limit = (int) $goals['limits']['active'];
 
         if ($left === 0) {
-            return $goals['labels']['slots_full'];
+            return sprintf($goals['labels']['slots_full'], $left, $limit);
         }
 
         if ($left === 1) {
-            return $goals['labels']['slots_one'];
+            return sprintf($goals['labels']['slots_one'], $left, $limit);
         }
 
-        return sprintf($goals['labels']['slots_free'], $left);
+        return sprintf($goals['labels']['slots_free'], $left, $limit);
     }
 }
 

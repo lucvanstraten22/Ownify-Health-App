@@ -55,7 +55,8 @@
 
 .goals-add:active { transform: scale(0.94); }
 
-/* At three goals the button is genuinely unavailable, and says so below. */
+/* With every place taken (`limits` → `active` in config/goals.php) the button
+   is genuinely unavailable, and says so below. */
 .goals-add:disabled {
     border-color: var(--glass-border-soft);
     background: var(--glass-soft);
@@ -80,8 +81,8 @@
    -------------------------------------------------------------------------- */
 .goals-view { display: none; }
 
-/* Tight on purpose: three goals, two labels and a note should land on one
-   screen, which is the whole promise of the overview. */
+/* Tight on purpose: the goals, two labels and a note should take as little
+   room as they can, which is the whole promise of the overview. */
 .goals-view.is-active {
     display: flex;
     flex-direction: column;

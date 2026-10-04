@@ -571,9 +571,10 @@ CREATE TABLE `goals` (
     `source_kind`    ENUM('metric','measurement','workout','manual') NOT NULL DEFAULT 'manual'
                      COMMENT 'which table the value comes from',
     `source_key`     VARCHAR(60) NULL COMMENT 'metric code, measurement type, or workout aspect',
-    -- The board allows one primary and two secondaries. That limit is a rule
-    -- the application enforces on write; this column only records which a
-    -- goal is, so the ordering survives a reload.
+    -- One active goal is primary and the rest are secondary, up to the limit
+    -- in config/goals.php (`limits` → `active`). That limit is a rule the
+    -- application enforces on write; this column only records which a goal
+    -- is, so the ordering survives a reload.
     `priority`       ENUM('primary','secondary') NOT NULL DEFAULT 'secondary',
     `metric_type_id` SMALLINT UNSIGNED NULL COMMENT 'Set when progress can be read from health data',
     `target_value`   DECIMAL(14,4) NULL,

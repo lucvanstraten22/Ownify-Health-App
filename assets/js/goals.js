@@ -6,13 +6,13 @@
  * boards use.
  *
  * Priority, pause and delete work on the cards and detail pages that are
- * already rendered. There is no goal storage yet, so a change lives for one
- * page view and the page says so; what matters for this version is that the
- * interaction, the ordering rules and the transitions are real.
+ * already rendered: a change shows straight away and is saved through
+ * api/goals/, and a refusal brings back what is stored (see persistence
+ * below).
  *
  * Two rules are enforced here rather than assumed:
  *   exactly one primary goal, always
- *   at most three active goals, paused ones included
+ *   at most `limits` → `active` active goals (config/goals.php), paused ones included
  */
 
 (function () {
@@ -25,7 +25,7 @@
 
     /* ---------------------------------------------------------------- copy */
 
-    var copy = { labels: {}, detail: {}, limits: { active: 3 } };
+    var copy = { labels: {}, detail: {} };
     var source = page.querySelector('[data-goals-copy]');
     if (source) {
         try { copy = JSON.parse(source.textContent); } catch (e) { /* defaults stand */ }
@@ -94,8 +94,10 @@
     /** Keeps the heading, the empty state, the slot note and + in agreement. */
     function sync() {
         var active = cards().length;
-        var limit = (copy.limits && copy.limits.active) || 3;
-        var left = Math.max(0, limit - active);
+        /* The limit is config/goals.php's, sent with the copy; without it the
+           note and the buttons keep what the server rendered. */
+        var limit = copy.limits ? copy.limits.active : null;
+        var left = limit ? Math.max(0, limit - active) : null;
 
         var secondaryEyebrow = page.querySelector('[data-goal-eyebrow="secondary"]');
         var primaryEyebrow = page.querySelector('[data-goal-eyebrow="primary"]');
@@ -108,10 +110,10 @@
 
         if (slotsNote) {
             slotsNote.hidden = active === 0;
-            if (left === 0) { slotsNote.textContent = copy.labels.slots_full; }
-            else if (left === 1) { slotsNote.textContent = copy.labels.slots_one; }
-            else { slotsNote.textContent = (copy.labels.slots_free || '').replace('%d', left); }
+            if (left !== null) { slotsNote.textContent = slotText(left, limit); }
         }
+
+        if (left === null) { return; }
 
         Array.prototype.forEach.call(addButtons, function (button) {
             var full = left === 0;
@@ -119,6 +121,12 @@
             if (full) { button.setAttribute('aria-disabled', 'true'); }
             else { button.removeAttribute('aria-disabled'); }
         });
+    }
+
+    /** goals_slot_note() in lib/goals.php: %1$d places left, %2$d the limit. */
+    function slotText(left, limit) {
+        var key = left === 0 ? 'slots_full' : (left === 1 ? 'slots_one' : 'slots_free');
+        return (copy.labels[key] || '').replace('%1$d', left).replace('%2$d', limit);
     }
 
     /* ---------------------------------------------------------- priority */

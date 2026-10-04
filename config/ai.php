@@ -108,8 +108,12 @@ $settings = [
      * The wording people said yes to. Change it when the consent text in
      * config/dashboard.php changes in substance — another tier, another
      * provider, other terms — and everybody is asked again.
+     *
+     * 2026-10: the text now says what goes along with every question (the
+     * profile, the scores, the goals, two weeks in brief, the conversation)
+     * instead of "only what fits the question", so everybody is asked again.
      */
-    'consent_version' => '2026-09-gemini-free',
+    'consent_version' => '2026-10-gemini-free',
 ];
 
 $local = __DIR__ . '/ai.local.php';

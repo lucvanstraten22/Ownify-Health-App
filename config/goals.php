@@ -39,10 +39,12 @@ return [
     'lede'  => 'Waar je aan werkt, en hoe ver je bent.',
 
     /* ------------------------------------------------------------ limits */
+    /* Active goals at most, paused ones included: one primary, the rest
+       secondary. `active` is the one number the pages, the app, the assistant
+       and the server read (GOAL_MAX_ACTIVE in includes/goals.php). */
     'limits' => [
         'active'    => 5,
         'primary'   => 1,
-        'secondary' => 4,
     ],
 
     /* ------------------------------------------------------------- views */
@@ -125,9 +127,10 @@ return [
         'paused_chip'    => 'Gepauzeerd',
         'add'            => 'Nieuw doel',
         'add_aria'       => 'Nieuw doel toevoegen',
-        'slots_free'     => 'Nog %d van de 5 doelen vrij.',
-        'slots_one'      => 'Nog 1 van de 5 doelen vrij.',
-        'slots_full'     => 'Je 5 doelplekken zijn bezet. Behaal een doel of verwijder er een om ruimte te maken.',
+        /* %1$d places left, %2$d the limit (`limits` → `active` above). */
+        'slots_free'     => 'Nog %1$d van de %2$d doelen vrij.',
+        'slots_one'      => 'Nog 1 van de %2$d doelen vrij.',
+        'slots_full'     => 'Je %2$d doelplekken zijn bezet. Behaal een doel of verwijder er een om ruimte te maken.',
         'paused_counts'  => 'Een gepauzeerd doel houdt zijn plek.',
         'paused_line'    => 'Telt nu niet mee',
         'open_aria'      => 'Open details van %s',

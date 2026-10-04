@@ -98,6 +98,8 @@ object OwnifyConnection {
     const val EXPIRED_MESSAGE = "De koppeling met Ownify is verlopen. Koppel deze telefoon opnieuw."
     const val SESSION_EXPIRED_MESSAGE = "Je sessie is verlopen. Log opnieuw in."
     const val LOGGED_OUT_MESSAGE = "Je bent uitgelogd."
+    /** No answer from Ownify at all: offline, or the server out of reach — the website's words too. */
+    const val UNREACHABLE_MESSAGE = "Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw."
     const val LOGGED_OUT_UNREACHED_MESSAGE =
         "Je bent uitgelogd op deze telefoon. Ownify was niet bereikbaar; " +
             "verwijder dit apparaat zo nodig via Instellingen op de website."
@@ -691,7 +693,7 @@ object OwnifyConnection {
                 "Ownify is nu niet beschikbaar (HTTP ${failure.status}). Probeer het later opnieuw."
 
             OwnifyResult.NetworkError ->
-                "Kan Ownify niet bereiken. Controleer je internetverbinding en probeer het opnieuw."
+                UNREACHABLE_MESSAGE
 
             OwnifyResult.InvalidResponse ->
                 "Ownify gaf een onverwacht antwoord. Probeer het later opnieuw."
@@ -715,7 +717,7 @@ object OwnifyConnection {
                 }
 
             OwnifyResult.NetworkError ->
-                "Kan Ownify niet bereiken. Controleer je internetverbinding en probeer het opnieuw."
+                UNREACHABLE_MESSAGE
 
             OwnifyResult.InvalidResponse ->
                 "Ownify gaf een onverwacht antwoord. Probeer het later opnieuw."

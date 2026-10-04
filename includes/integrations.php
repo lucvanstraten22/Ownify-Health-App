@@ -55,6 +55,9 @@ if (!function_exists('integration_providers')) {
                 'label'     => 'Apple Health',
                 'transport' => 'device',
                 'note'      => 'iPhone — vereist de Ownify-app op je telefoon',
+                /* Why it cannot be connected while there is no app for it
+                   (`app_available` in config/integrations.php). */
+                'unavailable' => 'Apple Health kan alleen worden gelezen door een app op je iPhone, en Ownify heeft geen iPhone-app. Koppelen is daarom niet mogelijk.',
             ],
         ];
     }
@@ -72,7 +75,12 @@ if (!function_exists('integration_providers')) {
         static $all = null;
 
         if ($all === null) {
-            $all = (array) require dirname(__DIR__) . '/config/integrations.php';
+            /* In a scope of its own: the file's loops assign `$provider`, which
+               would otherwise overwrite this function's argument on its first
+               call, and answer for a different provider. */
+            $all = (array) (static function (): mixed {
+                return require dirname(__DIR__) . '/config/integrations.php';
+            })();
         }
 
         return $all[$provider] ?? [];
@@ -126,7 +134,7 @@ if (!function_exists('integration_providers')) {
 
         if ($meta['transport'] === 'device') {
             return empty(integration_config($provider)['app_available'])
-                ? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.'
+                ? ($meta['unavailable'] ?? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.')
                 : null;
         }
 

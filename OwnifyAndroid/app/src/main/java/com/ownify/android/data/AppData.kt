@@ -704,10 +704,14 @@ data class Goals(
             // One object per goal: the lists name the goals `all` holds in full.
             val all = o.arr("all").map(Goal::parse)
             fun same(goal: Goal?): Goal? = goal?.let { g -> all.firstOrNull { it.id == g.id } ?: g }
+            val used = o.int("used") ?: 0
+            val slotsLeft = o.int("slots_left") ?: 0
             return Goals(
                 title = o.str("title").orEmpty(),
                 lede = o.str("lede").orEmpty(),
-                limits = o.obj("limits").int("active") ?: 3,
+                // The server's limit (config/goals.php `limits` → `active`); an
+                // answer without it still says what is used and what is left.
+                limits = o.obj("limits").int("active") ?: (used + slotsLeft),
                 views = o.obj("views").entries { key, v -> key to v.str("label").orEmpty() },
                 defaultView = o.str("default_view") ?: "active",
                 categories = o.obj("categories").entries { key, c ->
@@ -725,8 +729,8 @@ data class Goals(
                 completed = o.arr("completed").map { same(Goal.parse(it)) },
                 primary = same(o.obj("primary")?.let(Goal::parse)),
                 secondary = o.arr("secondary").map { same(Goal.parse(it)) },
-                used = o.int("used") ?: 0,
-                slotsLeft = o.int("slots_left") ?: 0,
+                used = used,
+                slotsLeft = slotsLeft,
                 canAdd = o.bool("can_add"),
                 all = all
             )

@@ -304,6 +304,39 @@ try {
     check('its score is the ring\'s (' . var_export($ring['value'] ?? null, true) . ')',
         array_key_exists('value', $ring) && array_key_exists('value', $held) && $held['value'] === $ring['value']);
 
+    /* Instellingen in each platform's own words (`value_app`, `note_app`). */
+    $appSays = [];
+    $variant = false;
+    foreach ($app['body']['data']['settings']['pages'] ?? [] as $settingsPage) {
+        foreach ($settingsPage['blocks'] ?? [] as $block) {
+            foreach ($block['items'] ?? [] as $item) {
+                $appSays[(string) ($item['label'] ?? '')] = [$item['value'] ?? null, $item['note'] ?? null];
+                $variant = $variant || array_key_exists('value_app', $item) || array_key_exists('note_app', $item);
+            }
+        }
+    }
+    check('Over de app in the app\'s words: Ownify, built with Kotlin and Compose, and what it uses',
+        ($appSays['Naam'][0] ?? null) === 'Ownify'
+        && ($appSays['Gebouwd met'][0] ?? null) === 'Kotlin · Jetpack Compose'
+        && ($appSays['Licenties'][0] ?? null) === 'AndroidX, Kotlin en Google Play-services', json_encode($appSays['Licenties'] ?? null));
+    check('…its text follows the phone, not a browser, and no variant is left for the app to choose',
+        ($appSays['Tekstgrootte'][1] ?? null) === 'De app schaalt mee met de lettergrootte van je telefoon' && !$variant);
+    check('the website keeps its own: PHP, no external packages, the browser\'s text size',
+        str_contains($page['raw'], 'PHP · HTML · CSS · JS') && str_contains($page['raw'], 'Geen externe pakketten')
+        && str_contains($page['raw'], 'tekstgrootte van je browser') && !str_contains($page['raw'], 'Jetpack Compose'));
+
+    /* Apple Health: no iPhone app, so nothing to pair with on either side. */
+    $apple = null;
+    foreach ($app['body']['data']['settings']['integrations'] ?? [] as $integration) {
+        if (($integration['provider'] ?? null) === 'apple_health') {
+            $apple = $integration;
+        }
+    }
+    check('Apple Health cannot be connected, and says why', $apple !== null && ($apple['available'] ?? true) === false
+        && str_contains((string) ($apple['blocked'] ?? ''), 'Ownify heeft geen iPhone-app'));
+    check('…and no pairing code is minted for it', http('/api/integrations/pairing-code.php',
+        ['bearer' => $sanne['token'], 'form' => ['provider' => 'apple_health']])['status'] === 409);
+
     section('Vrienden toevoegen: on every Vrienden board, above #1 — on no Nederland board');
     preg_match_all('/data-board data-scope="([a-z]+)" data-period="([a-z]+)"(.*?)(?=data-board data-scope=|<\/section>)/s', $page['raw'], $boards, PREG_SET_ORDER);
     $seen = [];

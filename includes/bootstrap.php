@@ -3,7 +3,7 @@
  * Request bootstrap: session, database, and who is signed in.
  *
  * Included once from index.php and from every API endpoint. If the database
- * is unreachable the app still renders — signed out, on placeholder data —
+ * is unreachable the app still renders — signed out, on the opening screen —
  * rather than failing, so a fresh checkout works before schema.sql is imported.
  */
 

@@ -126,7 +126,7 @@ environment — so the model or a limit changes without a code change:
 | `timeout` | 45 | `GEMINI_TIMEOUT` | seconds to wait for Gemini |
 | `max_output_tokens` | 2048 | — | the ceiling on an answer, thinking included |
 | `thinking_level` | `low` | `AI_THINKING_LEVEL` | how hard the model thinks; `low` is fastest and cheapest on quota |
-| `consent_version` | `2026-09-gemini-free` | — | the consent wording people said yes to (see *Consent*) |
+| `consent_version` | `2026-10-gemini-free` | — | the consent wording people said yes to (see *Consent*) |
 
 ## Free, and staying free
 
@@ -163,9 +163,11 @@ The frontends only display these numbers; the server enforces all three.
 
 **Nothing goes to Gemini before the person says yes.** The first time the sheet
 opens it asks *Ownify AI gebruiken?* and says, in five points: which of their
-data is sent to Google Gemini; that it goes automatically and only what fits
-the question; that this is the free Gemini API, so Google may use it to improve
-its products and people at Google may read it; that conversations are kept in
+data is sent to Google Gemini; that it goes automatically — with every question
+the profile, the scores, the goals, a summary of the last two weeks and the
+conversation so far, and more about the topic the question is about (the list
+below); that this is the free Gemini API, so Google may use it to improve its
+products and people at Google may read it; that conversations are kept in
 their account and can be wiped; and that the assistant does not diagnose or
 replace a doctor. Two buttons: *Toestaan en beginnen* and *Niet nu*.
 

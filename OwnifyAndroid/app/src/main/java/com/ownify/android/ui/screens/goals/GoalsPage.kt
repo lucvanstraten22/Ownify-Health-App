@@ -155,16 +155,19 @@ private fun ActiveView(data: AppData, board: Board, onAdd: () -> Unit) {
             board.secondary.forEach { goal -> key(goal.id) { BoardCard(data, goal, "secondary", goal.id in board.leaving) } }
         }
 
-        if (any) SlotNote(slotNote(board.slotsLeft, labels))
+        if (any) SlotNote(slotNote(board.slotsLeft, data.goals.limits, labels))
     }
 }
 
-/** `goals_slot_note()`: the slot note in the page's own words, as goals.js writes it after a change. */
-internal fun slotNote(left: Int, labels: Map<String, String>): String = when (left) {
-    0 -> labels["slots_full"].orEmpty()
-    1 -> labels["slots_one"].orEmpty()
-    else -> labels["slots_free"].orEmpty().replace("%d", left.toString())
-}
+/**
+ * `goals_slot_note()`: the slot note in the page's own words, as goals.js
+ * writes it after a change — %1$d places left, %2$d the limit.
+ */
+internal fun slotNote(left: Int, limit: Int, labels: Map<String, String>): String = when (left) {
+    0 -> labels["slots_full"]
+    1 -> labels["slots_one"]
+    else -> labels["slots_free"]
+}.orEmpty().replace("%1\$d", left.toString()).replace("%2\$d", limit.toString())
 
 /** `.goals-view[data-goal-panel="completed"]`. */
 @Composable
@@ -240,7 +243,7 @@ private fun EmptyCard(copy: GoalsEmpty, icon: androidx.compose.ui.graphics.vecto
 
 /**
  * `.goals-add`: the green 44 circle beside the title; quiet and inert while
- * all three places are taken.
+ * every place is taken.
  */
 @Composable
 private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {

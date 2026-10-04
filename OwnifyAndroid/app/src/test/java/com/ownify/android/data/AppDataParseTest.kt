@@ -96,6 +96,11 @@ class AppDataParseTest {
         assertEquals("8 sep · gehaald", streak.days[1].title)
         assertTrue(data.goals.wizardSources.isNotEmpty())
         assertEquals(6, data.goals.wizard.steps.size)
+        // The limit is the server's own (config/goals.php), never one of the app's:
+        // this recorded answer was made with a limit of 3, so 3 is what the app shows.
+        assertEquals(3, data.goals.limits)
+        assertEquals(7, Goals.parse(JSONObject("""{"limits":{"active":7},"used":2,"slots_left":5}""")).limits)
+        assertEquals(5, Goals.parse(JSONObject("""{"used":2,"slots_left":3}""")).limits)
 
         // Community
         val friendsMonth = data.community.boards["friends"]!!["month"]!!

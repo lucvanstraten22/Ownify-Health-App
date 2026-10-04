@@ -25,8 +25,9 @@ php -S localhost:8000
 Then open <http://localhost:8000> — best viewed at phone width.
 
 For accounts, import `database/schema.sql` through phpMyAdmin and check
-`config/database.php`. Without a database the app still runs: signed out, on
-placeholder data. See [docs/DATABASE.md](docs/DATABASE.md).
+`config/database.php`. Without a database the site still runs: everyone gets
+the opening screen, which says the database cannot be reached. See
+[docs/DATABASE.md](docs/DATABASE.md).
 
 To see what a machine is actually configured with — which database credentials
 are in force, whether they connect, whether `OWNIFY_APP_KEY` is set and where it
@@ -68,7 +69,7 @@ pages/
     score-compass.php         the Scorekompas, behind the score on Overzicht
     health.php                Gezondheid — three scores and a trend
     health-detail.php         one health area in full, ×3
-    goals.php                 Doelen — one primary goal and up to four others
+    goals.php                 Doelen — the active goals, one of them primary
     goal-detail.php           one goal in full, one per goal
     community.php             the leaderboard
     settings.php              Instellingen — categories, not settings
@@ -84,8 +85,8 @@ config/setup.php              the first days: the setup's and the baseline card'
 config/ai.php                 Ownify AI: model, limits, consent version — no key
 config/ai-prompt.php          what the assistant is told about itself
 lib/render.php                escaping, page/component include, score formatting
-lib/health.php                demo handling, shared metrics, chart geometry
-lib/community.php             board assembly, formatting, the demo roster
+lib/health.php                the overall score and its legend, shared metrics, chart geometry
+lib/community.php             points, ranks and initials as the boards write them
 lib/goals.php                 goal expansion, dates and priority ordering
 lib/settings.php              integration status, profile values, row summaries
 lib/theme.php                 Dark or White Mode: this browser's choice, read before the page
@@ -99,7 +100,6 @@ components/
     score-direction.php       Stijgend / Stabiel / Dalend, under the score
     compass-category.php      one category as the Scorekompas shows it, also the first score
     calibration.php           the first days on Overzicht: baseline, first score, starting point
-    secondary-scores.php      Slaap and Voeding & Sport (one card system)
     goal-progress.php         personal goal progress
     insights.php              useful insights
     patterns.php              patterns + research placeholder
@@ -121,7 +121,7 @@ components/
     leaderboard-row.php       position · avatar · name · points
     community-badges.php      reserved space for badges and milestones
     goal-card.php             one goal: name · percentage · bar · target · deadline
-    goal-wizard.php           the five-step create-a-goal flow
+    goal-wizard.php           the six-step create-a-goal flow
     settings-group.php        one label, one card, hairline-separated rows
     settings-row.php          icon · label · current value · chevron
     settings-field.php        a profile field: editable, locked or derived
@@ -154,7 +154,7 @@ assets/js/
     health-trend.js           week / month switch and the line draw-on
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
-    goal-wizard.js            the five-step create-a-goal flow
+    goal-wizard.js            the six-step create-a-goal flow
     setup.js                  the setup's four steps, each saved where it always is
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
@@ -355,10 +355,10 @@ earn leaderboard points.
 again the same day, and saving it answers with what it earned ("+40 punten —
 Voeding beoordeeld") and updates the scores and the leaderboard in place.
 
-**Seeing the design populated.** Every value ships as null. `config/health.php`
-has a `demo` flag: turn it on and `health_prepare()` copies review-only numbers
-into the charts and tiles so the design can be looked at with data, without a
-single invented value ever reaching the shipped page. It is false by default.
+**Only real values.** `config/health.php` holds the shape of the pages and no
+values; `lib/hydrate-health.php` fills them from the signed-in person's own
+records. A metric nobody recorded stays `null` and renders as an empty state —
+there is no demo or example data.
 
 ## Scorekompas
 
@@ -389,8 +389,9 @@ on the server. The rules, the thresholds and the limits are in
 ## Doelen
 
 One question, answered in one screen: **what am I working toward, and how far
-am I?** One primary goal, up to four secondary ones, their progress, and when
-each one ends. Everything deeper is one tap away.
+am I?** The active goals — one primary, the rest secondary, up to the limit
+below — their progress, and when each one ends. Everything deeper is one tap
+away.
 
 ```
 [ Actief ] [ Behaald ]
@@ -409,8 +410,9 @@ OVERIGE DOELEN   ×4
 
 **Five goals, one primary.** The limit is one number, `limits` → `active` in
 `config/goals.php`; it is enforced in one place (`GOAL_MAX_ACTIVE`,
-`includes/goals.php`, read from that number) and shown in two: the `+`
-disables itself and the line under the board says why. A paused
+`includes/goals.php`, read from that number), and the pages, the app and the
+assistant all read the same number: the `+` disables itself and the line under
+the board says why, with the limit in it. A paused
 goal keeps its slot; only completing or deleting one frees it. There is always
 exactly one primary goal — promoting a secondary demotes the current primary in
 the same move, and deleting the primary hands the flag to the next goal, so the
@@ -421,37 +423,37 @@ the primary, the secondaries and the completed ones; `--primary` is more room,
 a stronger surface and a three-pixel accent edge, and nothing else. That is
 what lets a promotion be a class change rather than a different card.
 
-**Not every goal is a number.** A goal carries a `type` — `value`, `habit`,
-`streak` or `milestone` — and its current and target readings are *text*, so
-"86 kg / 100 kg" and "19 van 30 dagen / 30 dagen" render through the same
-component without the UI knowing the difference. The create flow asks a
-different question at step 3 for each type rather than forcing one number
-field on all of them.
+**Three types, three calculations.** A goal is a **Mijlpaal** (`milestone`: the
+best result counts), a **Streak** (`streak`: successful days in a row) or
+**Optellen** (`accumulate`: everything added up, an amount or a number of
+days). The type decides the arithmetic in `includes/goal-progress.php`; its
+current and target readings are text, so "86 kg van 100 kg" and "19 van 30
+dagen" render through the same component.
 
-**Creating a goal is five steps, not one form:** category → definition →
-target → duration (week / maand / half jaar / jaar) → confirmation. It lives
-outside the deck, next to the account panel, so the deck's pointer pipeline
-never sees it and nothing in it can be mistaken for a swipe. Every step is in
-the document from the start and switched with a class, so stepping back still
-has your answers. The button to continue stays disabled until the step has an
-answer — that is the whole of the validation.
+**Creating a goal is six steps, not one form:** category → name and type →
+where progress comes from → what counts as done → period (week / maand / half
+jaar / jaar) → a last look, with the priority. It lives outside the deck, next
+to the account panel, so the deck's pointer pipeline never sees it and nothing
+in it can be mistaken for a swipe. Every step is in the document from the start
+and switched with a class, so stepping back still has your answers. The button
+to continue stays disabled until the step has an answer; the server checks the
+same rules again (`includes/goal-create.php`).
 
-**Progress is designed to arrive on its own.** Each goal names the health data
-that would keep it current (`sleep`, `nutrition`, `training`, `activity`,
-`body`, `manual`), and the detail page lists them under *Wat telt mee*. Goals
-that no sensor can see get a once-a-day confirmation instead, deliberately
-low-friction. None of it is wired: this version is the design and the shape the
-data has to arrive in.
+**Progress comes from the data, or from you.** A goal read from health data
+(sleep, steps, workouts, measurements and the rest of the metric catalogue)
+works itself out from the person's own records; a goal kept by hand gets an
+entry on its detail page — a tick for the day, or an amount to add. Either way
+`includes/goal-progress.php` recalculates it from the rows underneath and
+stores where it stands on the goal. The detail page shows the chart, the last
+six weeks day by day, what counts (*Wat telt mee*) and the recent entries.
 
-**Placeholder contract.** `config/goals.php` has the same `demo` flag as health
-and community — with one difference: it ships **true**, because a goal board is
-its progress and an empty one cannot be judged. The example goals belong to
-nobody, the page says so above the first card, and priority, pause and delete
-change them for one page view only, which is also stated on screen. Set `demo`
-to false and fill `goals` when real ones arrive; the page needs no change.
+**Real goals only.** Goals are rows in the `goals` table, read for the
+signed-in person by `lib/hydrate-goals.php`; an account without goals gets the
+empty state, never an example.
 
-**No gamification.** No badges, streak counters, XP, points, leaderboards or
-challenges live here. Progress toward the thing you chose is the motivation.
+**No gamification here.** No badges, XP or challenges live on Doelen, and points
+and leaderboards belong to Community. Progress toward the thing you chose is
+the motivation.
 
 ## Community
 
@@ -515,11 +517,9 @@ the scores work and nothing earns points, and `php tools/check-config.php`
 says so. After importing it, `php tools/points-backfill.php` awards the points
 for what was recorded before — once, however often it runs.
 
-**Placeholder contract.** Shipped, both boards are empty and no name appears:
-`config/community.php` has the same `demo` flag as health. Turn it on and
-`community_prepare()` builds a deterministic roster — defined in
-`lib/community.php`, belonging to nobody — so the design and the floating
-behaviour can be reviewed with a full board. It is false by default.
+**Real accounts only.** The boards are built by `lib/hydrate-community.php`
+from real accounts and the points they earned in that period; there is no
+generated roster. A board with nobody on it shows its empty state.
 
 ## Instellingen
 
@@ -534,7 +534,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.5.0
+OVER         Over de app · Versie Beta 1.5.1
 
              [ Uitloggen ]
                Account verwijderen
@@ -552,13 +552,13 @@ settings screen is config, not another file. They use the same detail layer
 Gezondheid and Doelen use, so back is the same swipe everywhere.
 
 **Three kinds of value, never mixed up.** A *fact* is how the app genuinely
-behaves — the interface is Dutch, measurements are metric, health data never
-leaves the owner's account. *Not set* is exactly that: nothing is connected
-and no profile data is entered, so the row says so rather than showing a
-number. A *preference* is a choice you will make later — selectable now so the
-design can be judged, with every such screen saying at its foot that it is not
-yet saved. The theme is the exception: Donker or Licht is kept from the moment
-it is chosen (see "Dark Mode and White Mode" below).
+behaves — the interface is Dutch, measurements are metric. *Not set* is
+exactly that: nothing is connected or no profile data is entered, so the row
+says so rather than showing a number. A *preference* is a choice you will make
+later — selectable now so the design can be judged, with every such screen
+saying at its foot that it is not yet saved. The theme is the exception: Donker
+or Licht is kept from the moment it is chosen (see "Dark Mode and White Mode"
+below), and so are the Privacy switches that say they save.
 
 **Profile fields carry their own behaviour.** `edit` is `true`, `'locked'` or
 `'derived'`, and the row shows which without needing a legend: an editable
@@ -568,21 +568,24 @@ Age is derived, not editable — the schema stores a date of birth and computes
 age from it, so an age you could type would be a second, contradictory fact
 about the same person.
 
-**Only what can really save is live.** Profielfoto and Gebruikersnaam open the
-account panel, which has a working endpoint behind it. Every other field
-carries the same affordance and is plainly disabled, rather than moving and
-quietly discarding what you typed. Uitloggen really signs you out. Account
-verwijderen really deletes: two confirmations — what goes, then "Weet je het
-zeker?" — and then every row of the account, its picture, its paired phones
+**Every field saves.** Profielfoto and Gebruikersnaam open the account panel;
+the other editable fields — names, focus, height, weight — open an editor that
+saves through `api/profile/update.php`, and date of birth and gender can be
+filled in once (`api/profile/onboarding.php`). Uitloggen really signs you out.
+Account verwijderen really deletes: two confirmations — what goes, then "Weet je
+het zeker?" — and then every row of the account, its picture, its paired phones
 and its Google link are gone. An account that had Google also asks Google to
 forget Ownify.
 
 **Health sources expand in place.** The app has one detail layer, so a
-source's settings — status, last sync, permissions, categories, connect and
-disconnect — open inside its card rather than pushing a third screen onto a
-stack that does not exist. `config/settings.php` has the same `demo` flag as
-the rest of the app: it fills in a connected state so that design can be
-reviewed, and ships false, because nothing is connected.
+source's settings — status, last sync, the phones paired to it, categories,
+connect and disconnect — open inside its card rather than pushing a third
+screen onto a stack that does not exist. What can be connected today:
+**Health Connect**, through the Ownify app on an Android phone (signing in to
+the app with the account, or a pairing code from this screen). **Apple Health**
+needs an app on the iPhone, which Ownify does not have, and **Google Health**
+in the cloud needs OAuth credentials on the server and a connect flow that is
+not built; both cards say why they cannot be connected.
 
 **The header's device button is not this.** That button is a status glance;
 this is where the configuration lives. They are deliberately not the same
@@ -598,18 +601,19 @@ Sign-in, profiles, health data, goals, friendships and leaderboards have a real
 MySQL schema behind them — see **[docs/DATABASE.md](docs/DATABASE.md)** for the
 tables, the privacy model and where the future integrations plug in.
 
-What works today: email/password sign-in, Google sign-in once it is
-configured, changing a username, uploading a profile picture, and Ownify AI
-once its Gemini key is set ([docs/AI.md](docs/AI.md)). Failed sign-ins are
-limited to 5 per 15 minutes per name and network address.
+Email/password sign-in, Google sign-in once it is configured, the profile,
+health data from the Android app, scores, goals, points, friends and the
+leaderboards all read and write the database; Ownify AI works once its Gemini
+key is set ([docs/AI.md](docs/AI.md)). Failed sign-ins are limited to 5 per 15
+minutes per name and network address.
 
 The Ownify app can sign in as an account too — its own token, never a cookie —
 through `api/auth/app-login.php`, `app-register.php`, `app-google.php` and
 `app-logout.php`; see **[docs/APP-AUTH.md](docs/APP-AUTH.md)**. Needs
 `database/migrations/013-app-tokens.sql`.
 
-The pages still render placeholder data. The database is the foundation under
-them, not yet their source.
+The pages are filled from the signed-in person's own rows (`app_page_data()` in
+`lib/app-data.php`); see *Empty states* below for what a missing value does.
 
 **Privacy in one line:** every health query takes the authenticated user id as
 its first argument and filters on it, no endpoint accepts a user id from the
@@ -617,22 +621,19 @@ request, and anything rendering another person goes through
 `user_public_profile()`, which returns a username and an avatar and nothing
 else.
 
-## Placeholder contract
+## Empty states
 
-No device integration exists yet and nothing reads health data from the
-database, so every metric in `config/dashboard.php` is `null` and the UI
-renders an honest empty state. Nothing on the page is an invented user
-measurement.
+The files in `config/` describe the shape of each page and hold no values; the
+hydrators in `lib/` fill in the signed-in person's own. A value nobody
+recorded stays `null`, and nothing on a page is an invented measurement.
 
-| Value in config | What the UI renders                            |
-| --------------- | ---------------------------------------------- |
-| `null`          | `—`, dotted ring / track, empty-state caption   |
-| `int`           | number, filled ring or bar, animated count-up   |
+| Value              | What the UI renders                            |
+| ------------------ | ---------------------------------------------- |
+| `null`             | `—`, dotted ring / track, empty-state caption   |
+| `int`              | number, filled ring or bar, animated count-up   |
 
-To connect real data, replace the arrays in `config/dashboard.php` with the
-output of a repository or service that returns the same shape. The markup, CSS
-and JavaScript do not change: components read `has_value()` / `score_ratio()`
-and the browser gets the target through `data-progress` / `data-count-to`.
+Components read `has_value()` / `score_ratio()`, and the browser gets the
+target through `data-progress` / `data-count-to`.
 
 ## The first days
 
@@ -710,8 +711,7 @@ figures and the rules for adding something are in
 
 Live literature search and links to studies (the assistant answers research
 questions from general knowledge and says so), speech or images in the
-assistant, persistent goal storage, automatic goal progress, stored settings,
-Apple Health / Health Connect integrations, notifications, English, imperial
-units, real medical analysis and real personal recommendations.
-The data layer, focus system, screen deck and component boundaries are
-prepared for them; none of them are implemented.
+assistant, an iPhone app (and so Apple Health), the Google Health cloud
+connection, notifications, English, imperial units, stored preferences other
+than the theme and the Privacy switches, real medical analysis and real
+personal recommendations.

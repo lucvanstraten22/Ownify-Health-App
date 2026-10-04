@@ -50,7 +50,7 @@ sealed interface AppLoad {
  */
 object OwnifyAppState {
 
-    const val UNREACHABLE = "De server is niet bereikbaar."
+    const val UNREACHABLE = OwnifyConnection.UNREACHABLE_MESSAGE
     const val SERVER_TROUBLE = "Er ging iets mis op de server. Probeer het opnieuw."
     const val UNEXPECTED = "Onverwacht antwoord van de server."
 

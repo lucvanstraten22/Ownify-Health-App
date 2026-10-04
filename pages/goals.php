@@ -1,6 +1,7 @@
 <?php
 /**
- * Doelen — one primary goal, up to two secondary ones, and their progress.
+ * Doelen — one primary goal, the rest secondary up to the limit in
+ * config/goals.php, and their progress.
  *
  * Kept deliberately short: the page answers four questions (what am I working
  * toward, which one matters most, how far am I, when does it end) and then

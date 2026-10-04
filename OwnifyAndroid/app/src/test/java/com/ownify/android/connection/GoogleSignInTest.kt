@@ -375,7 +375,7 @@ class GoogleSignInTest {
         openApp()
 
         OwnifyConnection.api = OwnifyApi("http://127.0.0.1:9/")
-        assertEquals("Kan Ownify niet bereiken. Controleer je internetverbinding en probeer het opnieuw.", googleRefused())
+        assertEquals("Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.", googleRefused())
         assertTrue("Google is not asked when Ownify cannot be reached", FakeGoogle.asked.isEmpty())
 
         OwnifyConnection.api = OwnifyApi(server.url)

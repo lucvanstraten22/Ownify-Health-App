@@ -549,12 +549,14 @@ sync token and sign-ins are not counted.
 
 ## Where the future work goes
 
-**Apple Health / Health Connect sync.** Write an importer that calls
-`health_record_metric()`, `user_record_measurement()` and inserts into
-`sleep_sessions` / `workouts` with the matching `data_sources` row. Nothing in
-the schema needs to change: a metric the platform reports that we do not know
-yet is a new `health_metric_types` row. Add the importer under `includes/` as
-its own file; keep the raw platform payloads out of these tables.
+**Health Connect sync** is built: the Ownify Android app posts to
+`api/integrations/ingest.php`, and `includes/health-import.php` writes the
+records into `sleep_sessions`, `workouts` and `health_metrics` with the
+matching `data_sources` row ([HEALTH-CONNECT.md](HEALTH-CONNECT.md)). The
+server also accepts an `apple_health` source, but nothing can send one: that
+needs an iPhone app, which Ownify does not have. A metric a platform reports
+that we do not know yet is a new `health_metric_types` row; the raw platform
+payloads stay out of these tables.
 
 **Nutrition from real food data.** The nutrition score is the daily 1-10
 rating for now. Logged meals can become a second component in
@@ -806,15 +808,12 @@ Honest list, so nobody goes looking for wiring that is not there.
   `api/health/training.php` accepts today. Strength sets are not stored at
   all, so strength progress is read from the person's own strength goals.
   A night without sleep stages earns no quality bonus.
-- **Steps counted twice inside Health Connect.** When two apps on one phone
-  both write steps to Health Connect, both arrive as separate records and are
-  added up; which app wrote a record is not stored, so they cannot be told
-  apart yet.
-- **App preferences** — theme, language, units, first day of the week,
+- **App preferences** — language, units, first day of the week,
   accessibility, notifications. These have no columns and no endpoints; the
-  settings screens say so rather than pretending. Profile data on those same
-  screens *is* persisted. Until the first day of the week is stored, weeks
-  start on Monday for the weekly bonus.
+  settings screens say so rather than pretending. The theme is kept per
+  device (a cookie on the website, the phone's own storage in the app), and
+  profile data on those same screens *is* persisted. Until the first day of
+  the week is stored, weeks start on Monday for the weekly bonus.
 - **Entry screens for sleep and training.** The endpoints and the tables are
   complete and tested, but the app has no UI that posts to them yet —
   building those screens is design work, not wiring. Nutrition has one: the

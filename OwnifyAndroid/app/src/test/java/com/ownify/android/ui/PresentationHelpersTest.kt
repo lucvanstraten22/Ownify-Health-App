@@ -65,15 +65,17 @@ class PresentationHelpersTest {
     }
 
     @Test
-    fun `slot note - goals_slot_note() in the page's own words`() {
+    fun `slot note - goals_slot_note() in the page's own words, with the configured limit`() {
         val labels = mapOf(
-            "slots_full" to "Je drie doelplekken zijn bezet.",
-            "slots_one" to "Nog één doelplek vrij.",
-            "slots_free" to "Nog %d doelplekken vrij."
+            "slots_full" to "Je %2\$d doelplekken zijn bezet.",
+            "slots_one" to "Nog 1 van de %2\$d doelen vrij.",
+            "slots_free" to "Nog %1\$d van de %2\$d doelen vrij."
         )
-        assertEquals("Je drie doelplekken zijn bezet.", slotNote(0, labels))
-        assertEquals("Nog één doelplek vrij.", slotNote(1, labels))
-        assertEquals("Nog 3 doelplekken vrij.", slotNote(3, labels))
+        assertEquals("Je 5 doelplekken zijn bezet.", slotNote(0, 5, labels))
+        assertEquals("Nog 1 van de 5 doelen vrij.", slotNote(1, 5, labels))
+        assertEquals("Nog 3 van de 5 doelen vrij.", slotNote(3, 5, labels))
+        // The words follow the number in config/goals.php, whatever it is.
+        assertEquals("Nog 6 van de 7 doelen vrij.", slotNote(6, 7, labels))
     }
 
     @Test

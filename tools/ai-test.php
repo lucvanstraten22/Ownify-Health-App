@@ -16,7 +16,8 @@
  *                the same answer
  *   chat         the answer comes back and both messages are stored; a
  *                reload shows them; a follow-up carries the conversation;
- *                the real data goes along — only what fits the question
+ *                the real data goes along — the same few blocks every time,
+ *                the rest only when the question is about it
  *   isolation    one account cannot read, write to, delete or confirm in
  *                another's conversations, or have the assistant touch its goals
  *   limit        counted per person, refused past the limit without asking

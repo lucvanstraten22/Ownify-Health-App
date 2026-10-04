@@ -139,6 +139,12 @@ has "google_health refuses a code" \
         --data-urlencode "csrf=$(csrf)" --data-urlencode "provider=google_health")" \
     '"ok":false'
 
+echo "== nor does a phone source without an app (config/integrations.php) =="
+BODY="$(curl -s -w '\n%{http_code}' -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/integrations/pairing-code.php" \
+    --data-urlencode "csrf=$(csrf)" --data-urlencode "provider=apple_health")"
+has "apple_health refuses a code" "$BODY" '"ok":false'
+has "  409, saying why" "$BODY" 'Ownify heeft geen iPhone-app'
+
 # ----------------------------------------------- 2,3. pair, get the token
 
 echo "== 2. the phone exchanges it — no session, no CSRF =="

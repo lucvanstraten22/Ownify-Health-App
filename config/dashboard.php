@@ -229,9 +229,8 @@ return [
     ],
 
     /* -------------------------------------------------- AI assistant layer
-     * The assistant itself does not exist yet: no model, no API, no messages.
-     * It is a sheet that pulls up over whichever page you are on, so its copy
-     * never names a page to return to — closing returns you where you were.
+     * A sheet that pulls up over whichever page you are on, so its copy never
+     * names a page to return to — closing returns you where you were.
      */
     /**
      * Ownify AI — the assistant in the sheet you swipe up. Both apps show
@@ -277,7 +276,7 @@ return [
             'intro'  => 'Ownify AI is je persoonlijke gezondheidsassistent, gemaakt met Google Gemini. Voordat je begint, dit moet je weten:',
             'points' => [
                 'Om je vragen te beantwoorden stuurt Ownify gegevens uit je account naar Google Gemini: je profiel (zoals je voornaam, leeftijd, geslacht, lengte en gewicht), je slaap, voeding en training, je doelen en je gezondheidsscores.',
-                'Dat gaat automatisch — je hoeft je gegevens niet zelf te typen. Er gaat alleen mee wat bij je vraag past.',
+                'Dat gaat automatisch — je hoeft je gegevens niet zelf te typen. Bij elke vraag gaan je profiel, je gezondheidsscores, je doelen, een samenvatting van de afgelopen twee weken en het gesprek tot nu toe mee. Gaat je vraag over slaap, voeding, training, beweging of je metingen, dan gaan daar meer gegevens over mee.',
                 'Ownify gebruikt de gratis versie van de Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gegevens blijven dus niet alleen bij Ownify.',
                 'Je gesprekken worden bewaard in je Ownify-account, zodat je ze op je telefoon en op de website terugziet. Je kunt ze altijd wissen.',
                 'De assistent helpt je je gegevens te begrijpen. Hij stelt geen diagnoses en vervangt geen arts.',
@@ -304,7 +303,7 @@ return [
             'too_long'    => 'Je vraag is te lang. Houd het onder de 2000 tekens.',
             'not_found'   => 'Dit gesprek bestaat niet meer.',
             'action_gone' => 'Dit voorstel is al afgehandeld.',
-            'network'     => 'Geen verbinding. Controleer je internet en probeer het opnieuw.',
+            'network'     => 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.',
             'signed_out'  => 'Je bent niet meer ingelogd. Log opnieuw in om Ownify AI te gebruiken.',
         ],
     ],

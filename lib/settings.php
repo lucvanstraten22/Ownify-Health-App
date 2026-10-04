@@ -113,6 +113,15 @@ if (!function_exists('settings_prepare')) {
 
         if ($aiOn) {
             $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'Ownify AI']);
+
+            /* The Privacy row on the main page says the same. */
+            foreach ($settings['groups'] as $group) {
+                foreach ($group['rows'] as $row) {
+                    if ($row['id'] === 'privacy' && isset($row['value_ai'])) {
+                        $settings = settings_set_row_value($settings, 'privacy', (string) $row['value_ai']);
+                    }
+                }
+            }
         }
 
         /* The account row names the person it belongs to. */
@@ -520,6 +529,35 @@ if (!function_exists('settings_use_ai_state')) {
                 foreach (['value', 'note'] as $field) {
                     if (isset($item[$field . '_ai'])) {
                         $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_ai'];
+                    }
+                }
+            }
+        }
+
+        return $settings;
+    }
+}
+
+if (!function_exists('settings_for_app')) {
+    /**
+     * The Ownify app's own words: every item with a `value_app` or `note_app`
+     * (config/settings.php) shows that instead of the website's `value` or
+     * `note`, which would not be true on a phone — what it is built with,
+     * what it uses, what its text follows. For the app's state only.
+     */
+    function settings_for_app(array $settings): array
+    {
+        foreach ($settings['pages'] ?? [] as $pageId => $page) {
+            foreach ($page['blocks'] ?? [] as $b => $block) {
+                foreach ($block['items'] ?? [] as $i => $item) {
+                    if (!is_array($item)) {
+                        continue;
+                    }
+                    foreach (['value', 'note'] as $field) {
+                        if (array_key_exists($field . '_app', $item)) {
+                            $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_app'];
+                            unset($settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field . '_app']);
+                        }
                     }
                 }
             }

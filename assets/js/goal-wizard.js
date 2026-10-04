@@ -685,7 +685,7 @@
                 });
             })
             .catch(function () {
-                return { ok: false, error: 'De server is niet bereikbaar.' };
+                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
             })
             .then(function (result) {
                 nextBtn.disabled = false;

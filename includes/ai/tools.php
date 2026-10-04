@@ -413,7 +413,7 @@ if (!function_exists('ai_tool_declarations')) {
     /**
      * Carries out a proposal its owner has just confirmed — checked again
      * now, with the rules as they stand now: the goal may have been deleted
-     * or the three places filled since it was proposed.
+     * or every place filled since it was proposed.
      *
      * @return array{ok: bool, message: string}
      */

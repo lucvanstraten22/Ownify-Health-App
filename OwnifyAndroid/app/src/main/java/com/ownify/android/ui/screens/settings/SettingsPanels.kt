@@ -360,7 +360,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                                 if (outcome is Outcome.Refused) {
                                     // The website's words for the two ways there is no answer.
                                     error = when (outcome.message) {
-                                        OwnifyAppState.UNREACHABLE -> "De server is niet bereikbaar. Er is niets verwijderd."
+                                        OwnifyAppState.UNREACHABLE -> "Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw."
                                         OwnifyAppState.UNEXPECTED -> "Je account kon niet worden verwijderd."
                                         else -> outcome.message
                                     }

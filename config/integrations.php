@@ -52,19 +52,20 @@ $settings = [
      * api/integrations/ingest.php with a device token. No Google Cloud project,
      * no OAuth client, no API key.
      *
-     * `app_available` is the one switch. While it is false the devices screen
-     * says Health Connect needs an app that does not exist yet, rather than
-     * handing out a pairing code with nothing to type it into. Flip it the day
-     * the Android app is published; the server side is already finished and
-     * tested.
+     * `app_available` is the one switch: true, because the Ownify Android app
+     * reads Health Connect. A phone source with false is shown with the reason
+     * it cannot be connected, and no pairing code is offered or issued for it.
      */
     'google_health_connect' => [
         'app_available' => true,
         'store_url'     => '',
     ],
 
+    /* Apple Health can only be read by an app on the iPhone itself, and
+       Ownify has no iPhone app: false, so the devices screen says so instead
+       of handing out a pairing code nothing can receive. */
     'apple_health' => [
-        'app_available' => true,
+        'app_available' => false,
         'store_url'     => '',
     ],
 ];

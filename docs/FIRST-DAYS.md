@@ -85,12 +85,14 @@ Apparaten & Gezondheid).
 | Lengte | the energy needs (`includes/nutrition-targets.php`), which Ownify AI uses |
 | Gewicht | the energy needs, and the start of a weight goal |
 
-Without any one of the three there are no energy needs at all. The rest of
-the profile stays in Instellingen:
+Without any one of the three there are no energy needs at all. The setup
+asks nothing else:
 
 - **Gender and activity level** only refine the energy needs. Without them
   the formula takes its neutral midpoint and the lowest level, and says so.
-- **Names** are the person's to add when they like.
+  Gender can be filled in once in Instellingen; activity level has no field
+  on either app.
+- **Names** are the person's to add in Instellingen when they like.
 
 A value the account already has is shown as it is. A birth date is set once,
 in the setup as in Instellingen, and a birth date already given is shown,
