@@ -152,16 +152,18 @@
             var box = bar.getBoundingClientRect();
             var glow = tabs[0].querySelector('.tab__glow');
             var inset = glow ? parseFloat(getComputedStyle(glow).top) || 0 : 0;
+            // Sideways the pane reaches past its tab (--tab-glow-reach).
+            var side = glow ? parseFloat(getComputedStyle(glow).left) || 0 : 0;
             var first = tabs[0].getBoundingClientRect();
             // The pane is placed inside the bar's border (the desktop bar has one).
             var originX = box.left + bar.clientLeft;
             var originY = box.top + bar.clientTop;
 
             slots = tabs.map(function (tab) {
-                return tab.getBoundingClientRect().left - originX + inset;
+                return tab.getBoundingClientRect().left - originX + side;
             });
             pane.style.top = (first.top - originY + inset) + 'px';
-            pane.style.width = Math.max(0, first.width - 2 * inset) + 'px';
+            pane.style.width = Math.max(0, first.width - 2 * side) + 'px';
             pane.style.height = Math.max(0, first.height - 2 * inset) + 'px';
             draw();
         }

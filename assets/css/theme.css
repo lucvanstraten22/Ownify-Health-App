@@ -236,6 +236,11 @@
     --tab-gap: 3px;
     --tab-label: 0.625rem;
     --tab-glow-inset: 4px;
+    /* How much wider the selected pane is on each side than its inset, so the
+       longest labels (Gezondheid, Community, Instellingen) sit inside its
+       rounded ends. It may run into a neighbour's empty space, never onto
+       its icon or label. */
+    --tab-glow-reach: 6px;
 
     /* The one correction left, in label ems so it follows the type: the icon
        box is a square frame around marks that are mostly wider than they are

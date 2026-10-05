@@ -1123,7 +1123,7 @@
 
 .tab__glow {
     position: absolute;
-    inset: var(--tab-glow-inset);
+    inset: var(--tab-glow-inset) calc(var(--tab-glow-inset) - var(--tab-glow-reach));
     opacity: 0;
     transform: scale(0.94);
     transition: opacity var(--transition-slow), transform var(--transition-slow);

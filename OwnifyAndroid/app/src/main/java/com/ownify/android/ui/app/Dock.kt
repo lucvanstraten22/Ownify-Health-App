@@ -243,16 +243,18 @@ private fun TabGlass(count: Int, at: () -> Float, modifier: Modifier) {
         modifier
             .layout { measurable, constraints ->
                 val inset = Ownify.TabGlowInset.roundToPx()
+                // Sideways it reaches past the inset (--tab-glow-reach), so long labels sit inside it.
+                val side = inset - Ownify.TabGlowReach.roundToPx()
                 val cell = constraints.maxWidth / count.toFloat()
                 val pane = measurable.measure(
                     Constraints.fixed(
-                        (cell - 2 * inset).roundToInt().coerceAtLeast(0),
+                        (cell - 2 * side).roundToInt().coerceAtLeast(0),
                         (constraints.maxHeight - 2 * inset).coerceAtLeast(0)
                     )
                 )
                 layout(constraints.maxWidth, constraints.maxHeight) {
                     // Placed by its layer alone: a frame moves and stretches it, nothing is measured again.
-                    pane.placeWithLayer(inset, inset) {
+                    pane.placeWithLayer(side, inset) {
                         val long = 1f + GlassStretch * (1f - exp(-abs(v) / GlassStretchSpeed))
                         translationX = x * cell
                         scaleX = long

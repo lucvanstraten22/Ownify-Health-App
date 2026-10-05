@@ -534,7 +534,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.5.1
+OVER         Over de app · Versie Beta 1.5.2
 
              [ Uitloggen ]
                Account verwijderen

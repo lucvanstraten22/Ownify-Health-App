@@ -430,6 +430,8 @@ object Ownify {
     val TabIcon = 24.dp
     val TabGap = 3.dp
     val TabGlowInset = 4.dp
+    /** `--tab-glow-reach`: the chosen tab's pane is this much wider on each side than its inset. */
+    val TabGlowReach = 6.dp
     val HeaderButton = 46.dp
     val HeaderIcon = 24.dp
     val SheenOverhang = 16.dp
