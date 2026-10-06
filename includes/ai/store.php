@@ -113,7 +113,7 @@ if (!function_exists('ai_conversation_get')) {
     function ai_messages(int $userId, int $conversationId, int $limit = 200): array
     {
         $rows = db_all(
-            'SELECT id, role, content, action_json, action_state, created_at
+            'SELECT id, role, content, action_json, action_state, meta_json, created_at
                FROM ai_messages
               WHERE conversation_id = ? AND user_id = ?
            ORDER BY id DESC LIMIT ' . max(1, min($limit, 500)),

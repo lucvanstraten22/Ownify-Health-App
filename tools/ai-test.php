@@ -15,7 +15,8 @@
  *                yes to older terms, stops it again; the Privacy switch is
  *                the same answer
  *   chat         the answer comes back and both messages are stored; a
- *                reload shows them; a follow-up carries the conversation;
+ *                reload shows them; a follow-up carries the conversation,
+ *                each earlier answer with its thought signature;
  *                the real data goes along — the same few blocks every time,
  *                the rest only when the question is about it
  *   isolation    one account cannot read, write to, delete or confirm in
@@ -212,10 +213,11 @@ function forget_sent(): void
     @unlink($fakeDir . '/requests.jsonl');
 }
 
+/** A text answer, with the thought signature Gemini 3 puts on it. */
 function says(string $text, array $usage = ['promptTokenCount' => 1500, 'candidatesTokenCount' => 120, 'thoughtsTokenCount' => 30]): array
 {
     return ['status' => 200, 'body' => [
-        'candidates'    => [['content' => ['role' => 'model', 'parts' => [['text' => $text]]], 'finishReason' => 'STOP']],
+        'candidates'    => [['content' => ['role' => 'model', 'parts' => [['text' => $text, 'thoughtSignature' => 'YW50d29vcmQ']]], 'finishReason' => 'STOP']],
         'usageMetadata' => $usage,
     ]];
 }
@@ -457,6 +459,8 @@ try {
     check('Gemini got what was said before: question, answer, question', count($contents) === 3
         && ($contents[0]['role'] ?? null) === 'user' && ($contents[1]['role'] ?? null) === 'model'
         && str_contains((string) ($contents[1]['parts'][0]['text'] ?? ''), '6 u 55 min'), json_encode($contents));
+    check('the earlier answer went back as Gemini sent it, thought signature and all (a model turn without one is refused)',
+        ($contents[1]['parts'][0]['thoughtSignature'] ?? null) === 'YW50d29vcmQ' && count($contents[1]['parts']) === 1, json_encode($contents[1] ?? null));
     check('"daarmee" points back, so the sleep data came along again',
         str_contains((string) (sent()[0]['body']['systemInstruction']['parts'][0]['text'] ?? ''), '"asleep_minutes":455'));
 

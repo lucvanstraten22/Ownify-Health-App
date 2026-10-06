@@ -275,6 +275,14 @@ if (!function_exists('ai_chat')) {
             'tools'  => array_values(array_unique($turn['tools'])),
         ];
 
+        /* The answer as Gemini sent it, thought signature included: the next
+           question sends it back unchanged (ai_history()). Only the answer's
+           own parts — never a look-up's result, which holds health data. */
+        $parts = ai_replay_parts($answer['content'] ?? null);
+        if ($parts !== null && strlen((string) json_encode($meta + ['parts' => $parts], JSON_UNESCAPED_UNICODE)) < 60000) {
+            $meta['parts'] = $parts;
+        }
+
         $userMessageId      = ai_message_add($userId, $conversationId, 'user', $message);
         $assistantMessageId = ai_message_add($userId, $conversationId, 'assistant', (string) $answer['text'], $turn['proposal'], $meta);
         ai_conversation_touch($userId, $conversationId);
@@ -430,12 +438,23 @@ if (!function_exists('ai_chat')) {
                 $previous = $text;
                 $contents = ai_contents_append($contents, 'user', [['text' => $text]]);
             } elseif ($row['role'] === 'assistant') {
+                /* Gemini 3 takes an earlier answer back only as it sent it, with
+                   its thought signature; a model turn rebuilt from the text
+                   alone is refused (HTTP 400). An answer stored before its
+                   parts were kept goes along as a quote on the person's side. */
+                $meta  = $row['meta_json'] === null ? null : json_decode((string) $row['meta_json'], true);
+                $parts = is_array($meta) ? ai_replay_parts($meta['parts'] ?? null) : null;
+
+                $contents = $parts !== null
+                    ? ai_contents_append($contents, 'model', $parts)
+                    : ai_contents_append($contents, 'user', [['text' => "[Your earlier answer in this conversation:]\n" . $text]]);
+
                 $action = $row['action_json'] === null ? null : json_decode((string) $row['action_json'], true);
                 if (is_array($action)) {
-                    $text .= "\n\n[Proposal shown to the user: " . ($action['title'] ?? '') . ' — ' . ($action['summary'] ?? '')
-                        . '. Status: ' . ai_action_state_word((string) $row['action_state']) . '.]';
+                    $contents = ai_contents_append($contents, 'user', [['text' => '[Ownify: proposal shown to the user: '
+                        . ($action['title'] ?? '') . ' — ' . ($action['summary'] ?? '')
+                        . '. Status: ' . ai_action_state_word((string) $row['action_state']) . '.]']]);
                 }
-                $contents = ai_contents_append($contents, 'model', [['text' => $text]]);
             } else {
                 $contents = ai_contents_append($contents, 'user', [['text' => '[Ownify: ' . $text . ']']]);
             }
@@ -458,6 +477,32 @@ if (!function_exists('ai_chat')) {
             'failed'   => 'confirmed, but it could not be carried out',
             default    => 'not answered; no longer valid',
         };
+    }
+
+    /**
+     * An answer's parts as they can go back to Gemini: text parts, with their
+     * thought signature, exactly as received. Null when there is nothing to
+     * send back, or when the answer holds anything but text (a function
+     * call belongs to its own turn and is never replayed later).
+     */
+    function ai_replay_parts(mixed $content): ?array
+    {
+        $content = json_decode((string) json_encode($content), true);
+        $parts   = is_array($content) && array_is_list($content) ? $content : ($content['parts'] ?? null);
+
+        if (!is_array($parts) || $parts === []) {
+            return null;
+        }
+
+        $text = false;
+        foreach ($parts as $part) {
+            if (!is_array($part) || !is_string($part['text'] ?? null) || array_diff(array_keys($part), ['text', 'thought', 'thoughtSignature']) !== []) {
+                return null;
+            }
+            $text = $text || (($part['thought'] ?? false) !== true && trim($part['text']) !== '');
+        }
+
+        return $text ? $parts : null;
     }
 
     /** Adds parts to the conversation; two turns of the same role in a row become one. */

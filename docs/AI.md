@@ -120,7 +120,7 @@ environment — so the model or a limit changes without a code change:
 | `global_daily_limit` | 250 | `AI_GLOBAL_DAILY_LIMIT` | Gemini requests per day, everybody together |
 | `max_rounds` | 3 | — | Gemini requests one question may take (look-ups included) |
 | `max_message_chars` | 2000 | — | the longest question |
-| `history_messages` | 12 | — | recent messages sent along with a question |
+| `history_messages` | 12 | — | recent messages sent along with a question; each earlier answer goes back exactly as Gemini sent it, thought signature included (Gemini 3 refuses a model turn without one) |
 | `history_digest` | 8 | — | earlier questions of the conversation, listed as a reminder |
 | `max_conversations` | 50 | — | conversations kept per person; the oldest go |
 | `timeout` | 45 | `GEMINI_TIMEOUT` | seconds to wait for Gemini |

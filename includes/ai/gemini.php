@@ -76,7 +76,7 @@ if (!function_exists('ai_gemini_generate')) {
         $json = json_decode((string) $raw, true);
 
         if ($status !== 200) {
-            return ai_gemini_failure($status, is_array($json) ? $json : []);
+            return ai_gemini_failure($status, is_array($json) ? $json : [], $model, ai_gemini_outline($body));
         }
 
         if (!is_array($json)) {
@@ -179,8 +179,51 @@ if (!function_exists('ai_gemini_generate')) {
         ];
     }
 
+    /**
+     * What a request held, for the server log when Gemini refuses it: each
+     * turn's role and its parts' kinds — text with its length, a thought
+     * signature, a function call or response by name. Never a word of the
+     * text itself, never the key.
+     *
+     *   contents=3 [user: text(21) | model: text(212)+sig | user: text(18)]
+     *   system=yes tools=9
+     */
+    function ai_gemini_outline(array $body): string
+    {
+        $turns = [];
+
+        foreach ((array) ($body['contents'] ?? []) as $content) {
+            $content = (array) $content;
+            $kinds   = [];
+
+            foreach ((array) ($content['parts'] ?? []) as $part) {
+                $part = (array) $part;
+                $kind = match (true) {
+                    isset($part['functionCall'])     => 'call:' . (string) (((array) $part['functionCall'])['name'] ?? '?'),
+                    isset($part['functionResponse']) => 'response:' . (string) (((array) $part['functionResponse'])['name'] ?? '?'),
+                    isset($part['text'])             => (($part['thought'] ?? false) === true ? 'thought' : 'text')
+                                                        . '(' . mb_strlen((string) $part['text']) . ')',
+                    default                          => 'other',
+                };
+                $kinds[] = $kind . (isset($part['thoughtSignature']) ? '+sig' : '');
+            }
+
+            $turns[] = (string) ($content['role'] ?? '?') . ': ' . ($kinds === [] ? 'NO PARTS' : implode(', ', $kinds));
+        }
+
+        $tools = 0;
+        foreach ((array) ($body['tools'] ?? []) as $tool) {
+            $tools += count((array) (((array) $tool)['functionDeclarations'] ?? []));
+        }
+
+        return 'contents=' . count($turns) . ' [' . implode(' | ', $turns) . ']'
+            . ' system=' . (isset($body['systemInstruction']) ? 'yes' : 'no')
+            . ' tools=' . $tools
+            . ' config=' . json_encode($body['generationConfig'] ?? null);
+    }
+
     /** Anything but a 200, reduced to an outcome. */
-    function ai_gemini_failure(int $status, array $json): array
+    function ai_gemini_failure(int $status, array $json, string $model = '?', string $outline = ''): array
     {
         $error   = is_array($json['error'] ?? null) ? $json['error'] : [];
         $code    = (string) ($error['status'] ?? '');
@@ -223,12 +266,15 @@ if (!function_exists('ai_gemini_generate')) {
         if (in_array($status, [400, 401, 403, 404], true)) {
             error_log('[ownify] ai: Gemini refused the request: HTTP ' . $status . ' ' . $code
                 . ($message === '' ? '' : ' — ' . $message)
-                . ' (check GEMINI_API_KEY and GEMINI_MODEL; see docs/AI.md)');
+                . ' (model ' . $model . '; check GEMINI_API_KEY and GEMINI_MODEL; see docs/AI.md)'
+                . ($outline === '' ? '' : ' — request: ' . $outline));
 
             return ['ok' => false, 'outcome' => 'config'];
         }
 
-        error_log('[ownify] ai: Gemini request failed: HTTP ' . $status . ($code === '' ? '' : ' ' . $code));
+        error_log('[ownify] ai: Gemini request failed: HTTP ' . $status . ($code === '' ? '' : ' ' . $code)
+            . ($message === '' ? '' : ' — ' . $message) . ' (model ' . $model . ')'
+            . ($outline === '' ? '' : ' — request: ' . $outline));
 
         return ['ok' => false, 'outcome' => 'unavailable'];
     }
