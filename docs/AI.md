@@ -194,8 +194,9 @@ CASCADE`).
 - always: the date and time; the profile as far as the person filled it in —
   first name, age (never the date of birth), gender, height, weight, activity
   level, member since, language — plus a list of what is unknown, so nothing is
-  guessed; the Health Score now; the last 7 days against the 7 before; the
-  goals;
+  guessed; the Health Score now (the last 168 hours; a category without new
+  data for 3 days is left out, never zero); the last 7 days against the 7
+  before; the goals;
 - only when the question is about it: the nights (14), training (28 days),
   daily activity (14 days), nutrition (7-14 days), body measurements (30 days),
   and the person's **own** place and points on the boards;
@@ -242,7 +243,7 @@ with the id from the session — never an id Gemini names.
 
 | Function | Does |
 | --- | --- |
-| `get_health_summary` | the Health Score and its parts, day by day, up to 90 days |
+| `get_health_summary` | the Health Score and its parts as recorded day by day, up to 90 days back |
 | `get_sleep_summary` | nights, averages and sleep-time measurements, up to 90 days |
 | `get_training_summary` | workouts, weekly totals, VO2max and load, up to 90 days |
 | `get_recent_activity` | steps, distance, active minutes, calories, floors per day |

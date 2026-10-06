@@ -341,11 +341,16 @@ marked with a lock and a line saying so — never hidden, never filled with
 invented numbers.
 
 **The Health Score.** Slaap, Voeding and Training each get their own score,
-0-100, over the last 90 days — rolling, not a calendar week or month — and
-only once a category has 3 distinct days of data; before that the card says
-how many days are still missing, and Gezondheid's intro says how many more
-unlock a score. The score on Overzicht is the average of the ones that
-exist, and there is no score at all rather than a `0`. Every weight and curve
+0-100, over the last 168 hours — rolling, not a calendar week — and only once
+a category has 3 distinct days of data; before that the card says how many
+days are still missing, and Gezondheid's intro says how many more unlock a
+score. Three days in a row without a new night or cijfer and Slaap or Voeding
+stops counting until new data comes in — left out, never a zero. The score on
+Overzicht is the average of the ones that exist, and there is no score at all
+rather than a `0`. Each day's score is stored once and kept as it was: the
+Scorekompas shows that history over 7 days, 30, 90 or a year
+([docs/SCORE-COMPASS.md](docs/SCORE-COMPASS.md)); an existing database needs
+`database/migrations/017-score-history.sql` for it. Every weight and curve
 is in `config/scoring.php`; the formulas are in
 [docs/DATABASE.md](docs/DATABASE.md#health-score-and-points). Scores never
 earn leaderboard points.
@@ -534,7 +539,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.5.4
+OVER         Over de app · Versie Beta 1.6.0
 
              [ Uitloggen ]
                Account verwijderen
@@ -660,8 +665,8 @@ baseline being built:
 - the first score, the day it appears, exactly as the Scorekompas shows it;
 - after that, the starting point, with only what has enough data.
 
-It never scores: the Health Score stays the engine's own, over 90 days, and
-a category still needs 3 days of data. The focus orders things (the ring's
+It never scores: the Health Score stays the engine's own, over 168 hours,
+and a category still needs 3 days of data. The focus orders things (the ring's
 legend, the Scorekompas, the card) and never hides any of them. It can be
 changed later in Instellingen → Account. Everything, including the migration
 an existing database needs (`016-setup-and-focus.sql`), is in

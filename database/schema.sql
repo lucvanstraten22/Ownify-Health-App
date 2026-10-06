@@ -440,16 +440,19 @@ CREATE TABLE `health_metric_day_totals` (
 
 -- What the Health Score was on a day, and what it was calculated from. The
 -- score itself is always calculated from the health records over the rolling
--- 90-day window (includes/health-score.php); this is the record of each day's
--- result, written whenever it is recalculated. algorithm_version lets the
--- formula change without invalidating what is already stored.
+-- 168-hour window (includes/health-score.php); this is the record of each
+-- day's result — one row per person, day and category, written whenever the
+-- score is calculated that day and never again once the day has passed. It is
+-- the history the Scorekompas shows. algorithm_version lets the formula change
+-- without invalidating what is already stored.
 CREATE TABLE `daily_scores` (
     `user_id`           BIGINT UNSIGNED NOT NULL,
     `score_date`        DATE NOT NULL,
     `domain`            ENUM('overall','sleep','nutrition','training') NOT NULL,
     `score`             TINYINT UNSIGNED NULL COMMENT '0-100, null while there is not enough data',
-    `data_days`         SMALLINT UNSIGNED NULL COMMENT 'Days with data in the 90-day window the score was calculated over',
+    `data_days`         SMALLINT UNSIGNED NULL COMMENT 'Days with data in the window the score was calculated over',
     `inputs`            TEXT NULL COMMENT 'JSON: each component of the score, null where there was no data',
+    `valid_until`       DATE NULL COMMENT 'The last day this score holds without new input; null: not carried',
     `algorithm_version` VARCHAR(20) NULL,
     `computed_at`       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`user_id`, `score_date`, `domain`),

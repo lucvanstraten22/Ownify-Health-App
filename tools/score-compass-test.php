@@ -260,8 +260,9 @@ $collect($c);
 $rows = array_column($c['comparison']['rows'], 'value', 'id');
 check('now, 7 days, 30 days and the 30 before', $rows === ['now' => 80, 'week' => 80, 'period' => 80, 'previous' => 75], json_encode($rows));
 check('the difference, from the numbers shown', $c['comparison']['delta']['text'] === '+5 ten opzichte van de 30 dagen daarvoor');
-check('"now" says the window it is calculated over, from config/scoring.php',
-    $c['comparison']['rows'][0]['note'] === 'Over de afgelopen ' . (int) $cfg['window_days'] . ' dagen');
+check('"now" says the window it is calculated over, from config/scoring.php: 7 days',
+    $c['comparison']['rows'][0]['note'] === 'Over de afgelopen ' . health_score_window_days() . ' dagen'
+    && health_score_window_days() === 7);
 
 $c = $compass(history(60, static fn ($i) => flat_day($i < 30 ? 82 : 79)));
 check('a fall is written with a minus', $c['comparison']['delta']['text'] === '−3 ten opzichte van de 30 dagen daarvoor');
@@ -306,13 +307,14 @@ check('…and what a higher score would go together with, from the curve\'s top 
 check('…in the category\'s colour, with the component\'s score band', $c['opportunity']['accent'] === 'sleep' && $c['opportunity']['band'] === 'low');
 
 $c = $compass(history(1, static fn () => [
-    result(73, 5, ['duration' => 40.0, 'regularity' => 100.0, 'quality' => 100.0]),
-    result(95, 20, ['rating' => 95.0], ['rating' => 9.5]),
-    result(65, 30, ['volume' => 65.0, 'intensity' => 65.0, 'progression' => 65.0, 'balance' => 65.0]),
+    result(73, 2, ['duration' => 40.0, 'regularity' => 100.0, 'quality' => 100.0]),
+    result(95, 7, ['rating' => 95.0], ['rating' => 9.5]),
+    result(65, 4, ['volume' => 65.0, 'intensity' => 65.0, 'progression' => 65.0, 'balance' => 65.0]),
 ]));
-check('a category with 5 days is not pointed at, however much room', $c['opportunity']['category'] === 'training',
+check('a category with fewer than 3 days is not pointed at, however much room', $c['opportunity']['category'] === 'training',
     json_encode($c['opportunity']['category']));
-check('…Sport\'s balance instead: the most weight', $c['opportunity']['part'] === 'balance');
+check('…Sport\'s balance instead, with 4 of its 7 days: the most weight', $c['opportunity']['part'] === 'balance');
+check('the minimum is the score\'s own: 3 days of its 7', (int) $copy['rules']['opportunity_min_days'] === 3);
 
 $c = $compass(history(1, static fn () => [
     result(98, 40, ['duration' => 98.0, 'regularity' => 98.0, 'quality' => 98.0]),
@@ -405,7 +407,7 @@ $c = $compass(history(1, static fn () => [
 $collect($c);
 [$sleep, $food, $sport] = $c['composition']['categories'];
 check('three categories, each counting equally, over the configured window',
-    $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen ' . (int) $cfg['window_days'] . ' dagen. Elk telt even zwaar.',
+    $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen 7 dagen. Elk telt even zwaar.',
     $c['composition']['note']);
 check('Slaap: its three components with the weights config/scoring.php gives them',
     array_column($sleep['parts'], 'weight', 'id') === ['duration' => 45, 'regularity' => 30, 'quality' => 25]);
@@ -495,6 +497,90 @@ check('no window is written into the words: it is filled in from config/scoring.
 /* ======================================================================
    Pure
    ====================================================================== */
+section('History: one score, seen over 7, 30, 90 and 365 days');
+
+/* A year of history, of which only the last 18 days have a score: an account
+   that started on 15 September. */
+$young = history(365, static fn ($i) => $i < 347 ? flat_day(null) : flat_day(70 + ($i % 5)));
+$c = $compass($young);
+$collect($c);
+$periods = array_column($c['trend']['periods'], null, 'key');
+check('four periods, the score\'s own week first', array_column($c['trend']['periods'], 'key') === ['7', '30', '90', '365'] && $c['trend']['default'] === '7'
+    && array_column($c['trend']['periods'], 'label') === ['7 dagen', '30 dagen', '90 dagen', '1 jaar']);
+check('a new account: the days start at its first score — 18 days, no placeholders before them',
+    count($c['trend']['days']) === 18 && $c['trend']['days'][0]['date'] === '2026-09-15'
+    && array_filter($c['trend']['days'], static fn ($d) => $d['value'] === null) === []);
+check('…a year shows those 18 days, and says when the history begins',
+    count($periods['365']['values']) === 18 && $periods['365']['start'] === 0
+    && $periods['365']['since'] === 'Je geschiedenis begint op 15 september.', json_encode($periods['365']['since']));
+check('…30 and 90 days the same 18; 7 days its last week, with nothing to explain',
+    count($periods['30']['values']) === 18 && count($periods['90']['values']) === 18
+    && count($periods['7']['values']) === 7 && $periods['7']['start'] === 11 && $periods['7']['since'] === null);
+check('…its year\'s dates are where those 18 days are, never before them',
+    $periods['365']['axis'][0] === ['label' => '15 sep', 'x' => 0.0] && end($periods['365']['axis']) === ['label' => 'Vandaag', 'x' => 100.0],
+    json_encode($periods['365']['axis']));
+
+$c = $compass(history(365, static fn ($i) => flat_day(60 + intdiv($i, 20))));
+$periods = array_column($c['trend']['periods'], null, 'key');
+check('a full year: 365 days, each period the end of it',
+    count($c['trend']['days']) === 365 && count($periods['365']['values']) === 365 && $periods['365']['since'] === null
+    && $periods['90']['start'] === 275 && count($periods['90']['values']) === 90 && $periods['30']['start'] === 335);
+check('the periods are views of the stored scores, not scores of their own: each day the same number in every period',
+    array_slice($periods['365']['values'], -7) === $periods['7']['values'] && array_slice($periods['90']['values'], -30) === $periods['30']['values']);
+check('a year\'s axis: five dates a quarter apart, the first with its year — it is not this October',
+    array_column($periods['365']['axis'], 'label') === ['3 okt 2025', '2 jan', '3 apr', '3 jul', 'Vandaag']
+    && array_column($periods['365']['axis'], 'x') === [0.0, 25.0, 50.0, 75.0, 100.0], json_encode($periods['365']['axis']));
+check('a week: four dates two days apart, and a dot for every day',
+    array_column($periods['7']['axis'], 'x') === [0.0, 33.33, 66.67, 100.0] && $periods['7']['day_dots'] === true
+    && $periods['365']['day_dots'] === false && count($periods['30']['axis']) === 3, json_encode($periods['7']['axis']));
+check('the reading names each category once, in the legend\'s order and colours',
+    $c['trend']['readout']['categories'] === [
+        ['id' => 'sleep', 'label' => 'Slaap', 'accent' => 'sleep'],
+        ['id' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition'],
+        ['id' => 'training', 'label' => 'Sport', 'accent' => 'training'],
+    ] && array_column($c['trend']['days'][0]['categories'], 'id') === ['sleep', 'nutrition', 'training']);
+check('the spoken label says the period in words', $periods['365']['aria'] === 'Je Gezondheidsscore per dag, het afgelopen jaar: stijgend',
+    $periods['365']['aria']);
+check('the direction under the score is still the one over 30 days',
+    $c['direction'] === $periods['30']['direction'] && $periods['30']['text'] === $c['trend']['text']);
+check('a year has a direction and sentences of its own', $periods['365']['direction']['key'] === 'up'
+    && str_contains($periods['365']['text'][0], 'in de week van 3 oktober'), json_encode($periods['365']['text']));
+
+$c = $compass(history(30, static fn ($i) => flat_day($i < 23 ? 70 : [74, 79, 76, 75, 77, 78, 76][$i - 23])));
+$week = array_column($c['trend']['periods'], null, 'key')['7'];
+check('7 days: too short to compare two weeks, so it says what the week held', $week['text'] === ['De afgelopen 7 dagen lag je score tussen 74 en 79.']
+    && $week['direction'] === null && $week['state'] === 'filled', json_encode($week['text']));
+$c = $compass(history(30, static fn ($i) => flat_day(76)));
+check('…or that it stayed put', array_column($c['trend']['periods'], null, 'key')['7']['text'] === ['De afgelopen 7 dagen stond je score op 76.']);
+check('no score at all: no days, every period empty',
+    ($e = $compass(history(365, static fn () => flat_day(null)))['trend']['days']) === []
+    && array_unique(array_column($compass(history(365, static fn () => flat_day(null)))['trend']['periods'], 'state')) === ['empty']);
+
+/* One day read closely: its categories and their parts, as recorded. */
+$closer = history(3, static fn ($i) => [
+    result(68, 3, ['duration' => 72.4, 'regularity' => 60.0, 'quality' => 70.2]),
+    result(77, 3, ['rating' => 77.0]),
+    result(null, 1, ['volume' => null, 'intensity' => null, 'progression' => null, 'balance' => null]),
+]);
+$closer['2026-10-01']['state'] = 'carried';
+$closer['2026-10-01']['from']  = '2026-09-30';
+$closer['2026-10-02']['state'] = 'today';
+$c    = $compass($closer);
+$days = $c['trend']['days'];
+check('a day: its date, its Health Score and its band', $days[0]['label'] === '30 september' && $days[0]['value'] === 73 && $days[0]['band'] === 'mid');
+check('…each category with its score and band, Sport without one', array_column($days[0]['categories'], 'value', 'id') === ['sleep' => 68, 'nutrition' => 77, 'training' => null]
+    && $days[0]['categories'][0]['band'] === 'mid');
+check('…and its parts, as the score weighed them that day',
+    $days[0]['categories'][0]['parts'] === 'Slaapduur 72 · Regelmaat 60 · Kwaliteit 70' && $days[0]['categories'][1]['parts'] === 'Dagcijfer 7,7'
+    && $days[0]['categories'][2]['parts'] === null, json_encode(array_column($days[0]['categories'], 'parts')));
+check('a day with no score of its own says which day\'s score still held', $days[1]['note'] === 'Geen nieuwe gegevens: de score van 30 september gold nog.'
+    && $days[1]['state'] === 'carried');
+check('today is called today', $days[2]['label'] === 'Vandaag' && $days[2]['note'] === null);
+$gap = history(3, static fn ($i) => $i === 1 ? flat_day(null) : flat_day(70));
+check('a day without any score says so — never a 0', $compass($gap)['trend']['days'][1]['value'] === null
+    && $compass($gap)['trend']['days'][1]['note'] === 'Geen score op deze dag.');
+
+/* ====================================================================== */
 section('It only reads');
 
 $before = serialize($two);

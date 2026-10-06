@@ -2,6 +2,7 @@ package com.ownify.android.ui
 
 import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
@@ -543,6 +544,13 @@ class OwnifyAppFlowTest {
         server.stateBody = state.toString()
     }
 
+    /** A node's own action by its label, as TalkBack's actions menu runs it. */
+    private fun customAction(matcher: SemanticsMatcher, label: String) {
+        val actions = compose.onNode(matcher).fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        compose.runOnIdle { actions.first { it.label == label }.action() }
+        compose.waitForIdle()
+    }
+
     private val scoreButton get() = compose.onNode(hasContentDescription("Gezondheidsscore:", substring = true) and hasClickAction())
 
     private fun backToOverview() {
@@ -569,8 +577,20 @@ class OwnifyAppFlowTest {
         for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf", "Grootste kans")) {
             compose.onNode(hasText(title) and isHeading()).performScrollTo().assertIsDisplayed()
         }
-        compose.onNode(hasText("Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.")).performScrollTo().assertIsDisplayed()
-        compose.onNode(hasText("30 dagen daarvoor", substring = true)).performScrollTo().assertIsDisplayed()
+        // What is changing: the score's own week first, today read closely under it.
+        compose.onNode(hasText("De afgelopen 7 dagen lag je score tussen 68 en 73.")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Dagcijfer 7,3")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Tik of schuif over de lijn om een dag te bekijken.")).performScrollTo().assertIsDisplayed()
+        // Another period: its own sentences, the same score's history.
+        compose.onNode(hasText("30 dagen") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("1 jaar") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("Je geschiedenis begint op 23 augustus.")).performScrollTo().assertIsDisplayed()
+        // A screen reader steps through the days as the arrow keys do: the panel follows.
+        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per dag, het afgelopen jaar", substring = true), "Vorige dag") }
+        compose.onNode(hasText("5 oktober")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Slaapduur 68 · Regelmaat 57 · Kwaliteit 66")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("−1 ten opzichte van de 30 dagen daarvoor")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Hogere dagcijfers zouden samengaan met een hogere voedingsscore.")).performScrollTo().assertIsDisplayed()
         // The page's end, scrolled to as TalkBack scrolls (performScrollTo() keeps
         // trying on the last line of a column, in this version of Compose's test kit).

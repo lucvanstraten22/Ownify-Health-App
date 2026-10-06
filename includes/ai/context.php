@@ -284,8 +284,11 @@ if (!function_exists('ai_topics')) {
         $now = health_score_now($userId);
 
         $block = [
-            'about'   => 'Rolling 90-day scores, 0-100; a category needs at least '
-                . (int) health_scoring_config()['min_days'] . ' days of data. Components are 0-100 sub-scores.',
+            'about'   => 'Scores over the last 168 hours (7 days), 0-100; a category needs at least '
+                . (int) health_scoring_config()['min_days'] . ' days of data in that window, and sleep and nutrition'
+                . ' stop counting after ' . (int) (health_scoring_config()['expiry_days']['sleep'] ?? 3)
+                . ' days without new data (left out, never zero). Components are 0-100'
+                . ' sub-scores. The trend is the score as it was recorded each day.',
             'overall' => $now['overall']['score'],
         ];
 

@@ -40,7 +40,7 @@ if (!function_exists('hydrate_health')) {
         $date   = $date ?? date('Y-m-d');
         $values = hydrate_health_values($userId, $date);
 
-        /* Area scores come from the Health Score engine — the rolling 90 days
+        /* Area scores come from the Health Score engine — the last 168 hours
            up to this moment — never from the values map: one place decides
            what a score is. Rendering also writes down today's result. */
         $scores  = health_score_now($userId);
@@ -54,7 +54,14 @@ if (!function_exists('hydrate_health')) {
            so it counts the category closest to that — the engine's own
            distinct days, not a guess — and the lede returns by itself once a
            score exists. */
-        if ($scores['overall']['score'] === null && !empty($health['lede_collecting'])) {
+        $expired = !empty($scores['sleep']['expired']) || !empty($scores['nutrition']['expired'])
+            || !empty($scores['training']['expired']);
+
+        if ($scores['overall']['score'] === null && $expired && !empty($health['lede_expired'])) {
+            /* Data, but nothing recent enough: no "days still needed". */
+            $health['lede']       = (string) $health['lede_expired'];
+            $health['collecting'] = ['days' => 0, 'needed' => 0, 'expired' => true];
+        } elseif ($scores['overall']['score'] === null && !empty($health['lede_collecting'])) {
             $closest = max(
                 (int) ($scores['sleep']['days'] ?? 0),
                 (int) ($scores['nutrition']['days'] ?? 0),
@@ -82,6 +89,17 @@ if (!function_exists('hydrate_health')) {
 
             $health['areas'][$areaKey]['score']['value'] = $result['score'];
             $health['areas'][$areaKey]['score']['days']  = $result['days'];
+
+            /* Enough data once, but nothing new for too long: it is left out
+               of the score until new data comes in, and says since when. */
+            if ($result['score'] === null && !empty($result['expired']) && !empty($area['expired'])) {
+                require_once dirname(__DIR__) . '/includes/score-compass.php';
+                $health['areas'][$areaKey]['empty'] = sprintf(
+                    (string) $area['expired'],
+                    score_compass_date((string) $result['last_input'])
+                );
+                continue;
+            }
 
             /* Some days of data but not enough for a score yet: the empty
                state says how many more, rather than asking for a source the
@@ -286,9 +304,9 @@ if (!function_exists('hydrate_health')) {
     }
 
     /**
-     * The trend chart: the Health Score per category as it stood at the end of
-     * each day (today: now) — so the line shows how the rolling 90-day score
-     * moved, not one day's readings.
+     * The trend chart: the Health Score per category as it was recorded each
+     * day (today: now; health_score_history()) — so the line shows how the
+     * 168-hour score moved, not one day's readings.
      *
      * Days without a score stay null, which is what the chart already draws as
      * a gap rather than as a drop to zero.

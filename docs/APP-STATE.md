@@ -35,7 +35,15 @@ card), `insights`, `patterns`, `recommendation`, `leaderboard`,
   by `focus_labels`. The order it gives the categories is applied on the
   server, in `scores.contributors` and everything that follows them
   ([FIRST-DAYS.md](FIRST-DAYS.md#the-focus));
-- `compass` — the Scorekompas ([SCORE-COMPASS.md](SCORE-COMPASS.md));
+- `compass` — the Scorekompas ([SCORE-COMPASS.md](SCORE-COMPASS.md)). Its
+  `trend` carries the score's history: `periods` (7, 30, 90, 365 — each with
+  its sentences, direction, `since`, `axis` ticks `{label, x}`, `day_dots`,
+  `start` into `days`, and its `chart` with `at`, every day's `[x, y|null]` in
+  % of the box), `days` (every recorded day from the first with a score:
+  label, value, band, state `stored`/`carried`/`none`/`today`, note, and
+  each category's value, band and parts), `readout` (the categories' names
+  and colours, once) and `default`. Its older fields — the 30 days' `text`,
+  `chart`, `axis` — stay for an app from before the periods;
 - `setup` — `{ pending: false }`, or, for a new account that has not
   finished its setup, `pending: true` with its four steps and what the
   account already has filled in. While it is pending the app shows the setup

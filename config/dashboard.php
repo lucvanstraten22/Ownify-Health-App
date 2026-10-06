@@ -94,7 +94,9 @@ return [
             /* Instead, once some data is in but not yet enough for a score;
                the hint then says how many days are still needed. */
             'caption_collecting' => 'Nog geen score',
-            'description' => 'Je score bundelt slaap, voeding en beweging over de afgelopen 90 dagen.',
+            /* Instead, when there is data but none of it is recent enough. */
+            'caption_expired'    => 'Geen recente gegevens',
+            'description' => 'Je score bundelt slaap, voeding en beweging over de afgelopen 7 dagen.',
             'empty_hint'  => 'Verbind een bron om je gezondheidsscore te berekenen.',
         ],
 

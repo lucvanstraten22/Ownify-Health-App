@@ -7,10 +7,11 @@
  * ---------------------------------------------------------------------------
  * How healthy somebody's recent pattern is, per category — sleep, nutrition,
  * training — each 0-100, over a rolling window: the moment of calculation
- * minus 90 days. Not this week, not this month: the window moves with the
- * clock, so tomorrow's score has one day more at the front and one day less
- * at the back. The overall score is the average of the categories that have
- * one.
+ * minus 168 hours. Not this calendar week: the window moves with the clock,
+ * so an hour from now it has an hour more at the front and an hour less at
+ * the back. The overall score is the average of the categories that have
+ * one. This is the only Health Score; the longer periods the Scorekompas
+ * shows are its history — one stored score a day — never other scores.
  *
  * Every number that decides a score is in config/scoring.php.
  *
@@ -26,8 +27,11 @@
  *   - fewer than `min_days` (3) distinct days with data in the window: no
  *     score, and the number of days so far, so the page can say how many are
  *     still needed;
- *   - days without data are not days of zero: 24 nights in 90 days are
- *     averaged over 24;
+ *   - days without data are not days of zero: 5 nights in 7 days are
+ *     averaged over 5;
+ *   - no new input for `expiry_days` days in a row (Slaap, Voeding): the
+ *     category stops counting — `expired`, left out of the overall score
+ *     rather than counted as zero, until new data comes in;
  *   - a component nobody's device measures is left out and the rest weigh
  *     more, rather than counting as a zero;
  *   - no category with a score: no overall score, never a 0.
@@ -38,7 +42,17 @@
  * Scores are calculated from the records whenever they are read, so a new
  * night, rating or workout is in the next score without anybody pressing
  * anything. Each calculation is also written to daily_scores (with the days
- * and components it used) as the record of that day's result.
+ * and components it used, and until when it holds without new input) as
+ * the record of that day's result — today's row only, so a day that has
+ * passed keeps the score it had.
+ *
+ * ---------------------------------------------------------------------------
+ * HISTORY IS WHAT WAS STORED, NEVER RECALCULATED
+ * ---------------------------------------------------------------------------
+ * health_score_history() reads those daily rows back. A day without a row of
+ * its own keeps the last stored score only while that score still holds
+ * (`valid_until`); after that it has none. Old days are never scored again
+ * from today's records.
  */
 
 declare(strict_types=1);
@@ -47,7 +61,7 @@ require_once __DIR__ . '/health-signals.php';
 require_once __DIR__ . '/scoring.php';
 
 if (!defined('HEALTH_SCORE_VERSION')) {
-    define('HEALTH_SCORE_VERSION', 'rolling90-v1');
+    define('HEALTH_SCORE_VERSION', 'rolling168-v1');
 }
 
 if (!function_exists('health_score_now')) {
@@ -86,10 +100,16 @@ if (!function_exists('health_score_now')) {
         ];
     }
 
-    /** The start of the window that ends at $asOf: exactly `window_days` earlier. */
+    /** The start of the window that ends at $asOf: exactly `window_hours` earlier, by the clock. */
     function health_score_window_start(DateTimeImmutable $asOf): DateTimeImmutable
     {
-        return $asOf->modify('-' . (int) health_scoring_config()['window_days'] . ' days');
+        return $asOf->setTimestamp($asOf->getTimestamp() - 3600 * (int) health_scoring_config()['window_hours']);
+    }
+
+    /** The window in whole days, as people read it: 168 hours is 7 days. */
+    function health_score_window_days(): int
+    {
+        return max(1, intdiv((int) health_scoring_config()['window_hours'], 24));
     }
 
     /**
@@ -105,8 +125,8 @@ if (!function_exists('health_score_now')) {
     }
 
     /**
-     * One score per day for the last `$days` days, each as of the end of its
-     * day (today: as of now) — the trend chart. The records are read once.
+     * One score per day for the last `$days` days, oldest first — the
+     * categories and the overall score, null where there was none.
      *
      * @return array<string,array{sleep: ?int, nutrition: ?int, training: ?int, overall: ?int}> date => scores, oldest first
      */
@@ -116,38 +136,157 @@ if (!function_exists('health_score_now')) {
     }
 
     /**
-     * health_score_trend() in full: each day's complete result — categories
-     * with their days, components and facts — as health_score_at() gives it,
-     * for the Scorekompas (includes/score-compass.php), which explains a
-     * score's movement by its parts. The same records, the same moments.
+     * The Health Score of each of the last `$days` days, as it was recorded
+     * (daily_scores) — for the Scorekompas, the Gezondheid trend and Ownify
+     * AI. Never calculated again from the records: a day that has passed
+     * keeps the score it had, whatever came in or aged out since.
      *
-     * @return array<string,array> date => health_score_at() result, oldest first
+     * Each day, as health_score_at() gives a result (categories with their
+     * score, days and components; overall), plus:
+     *
+     *   state  `today`   now: the score as it stands ($today, or calculated)
+     *          `stored`  the score recorded that day
+     *          `carried` no score recorded that day: each category of the
+     *                    last recorded day that still held then (its
+     *                    `valid_until`), combined again; `from` is that day
+     *          `none`    nothing recorded, and nothing that still held —
+     *                    before the history began, or after it all expired
+     *
+     * @return array<string,array> date => day, oldest first; the last is today
      */
-    function health_score_history(int $userId, int $days = 28, ?DateTimeImmutable $now = null): array
+    function health_score_history(int $userId, int $days = 28, ?DateTimeImmutable $now = null, ?array $today = null): array
     {
-        $now ??= new DateTimeImmutable('now');
-        $firstDay = $now->setTime(0, 0)->modify('-' . ($days - 1) . ' days');
+        $now      ??= new DateTimeImmutable('now');
+        $todayDate = $now->format('Y-m-d');
+        $first     = $now->setTime(0, 0)->modify('-' . max(0, $days - 1) . ' days');
+        /* A score holds at most a window's days without input, so the days
+           before the first one shown are read for what they carry into it. */
+        $lookback  = $first->modify('-' . health_score_window_days() . ' days');
 
-        $data = health_score_data(
-            $userId,
-            health_score_window_start($firstDay->setTime(23, 59, 59)),
-            $now
-        );
+        $stored = health_score_stored($userId, $lookback->format('Y-m-d'), $now->modify('-1 day')->format('Y-m-d'));
 
         $history = [];
+        $source  = null;
 
-        for ($i = 0; $i < $days; $i++) {
-            $day  = $firstDay->modify('+' . $i . ' days');
-            $asOf = $day->setTime(23, 59, 59);
+        for ($day = $lookback; $day->format('Y-m-d') < $todayDate; $day = $day->modify('+1 day')) {
+            $date = $day->format('Y-m-d');
 
-            if ($asOf > $now) {
-                $asOf = $now;
+            if (isset($stored[$date])) {
+                $source = $stored[$date];
+                $entry  = $source;
+            } else {
+                $entry = health_score_carried($source, $date);
             }
 
-            $history[$day->format('Y-m-d')] = health_score_at($data, $asOf);
+            if ($day >= $first) {
+                $history[$date] = $entry;
+            }
         }
 
+        $live = $today ?? health_score_now($userId, $now);
+        $history[$todayDate] = $live + ['date' => $todayDate, 'state' => 'today', 'from' => null];
+
         return $history;
+    }
+
+    /**
+     * The recorded days between two dates, each as a day of
+     * health_score_history() with state `stored`.
+     *
+     * @return array<string,array> date => day
+     */
+    function health_score_stored(int $userId, string $from, string $to): array
+    {
+        if ($from > $to) {
+            return [];
+        }
+
+        $rich  = health_score_store_rich();
+        $until = health_score_store_until();
+
+        $rows = db_all(
+            'SELECT score_date, domain, score' . ($rich ? ', data_days, inputs' : '') . ($until ? ', valid_until' : '') . '
+               FROM daily_scores
+              WHERE user_id = ? AND score_date BETWEEN ? AND ?
+           ORDER BY score_date',
+            [$userId, $from, $to]
+        );
+
+        $days = [];
+
+        foreach ($rows as $row) {
+            $date   = (string) $row['score_date'];
+            $domain = (string) $row['domain'];
+            $score  = $row['score'] === null ? null : (int) $row['score'];
+
+            $days[$date] ??= health_score_blank_day($date, 'stored');
+
+            if ($domain === 'overall') {
+                $days[$date]['overall']['score'] = $score;
+                continue;
+            }
+
+            $components = $rich && $row['inputs'] !== null ? json_decode((string) $row['inputs'], true) : null;
+
+            $days[$date][$domain] = [
+                'score'       => $score,
+                'days'        => $rich && $row['data_days'] !== null ? (int) $row['data_days'] : 0,
+                'components'  => is_array($components) ? $components : [],
+                'facts'       => [],
+                'expired'     => false,
+                'valid_until' => $until && $row['valid_until'] !== null ? (string) $row['valid_until'] : null,
+            ];
+        }
+
+        return $days;
+    }
+
+    /**
+     * A day without a recorded score: each category of the last recorded
+     * day ($source) that still held on $date, and the overall score of
+     * those again — or nothing.
+     */
+    function health_score_carried(?array $source, string $date): array
+    {
+        $day = health_score_blank_day($date, 'none');
+
+        if ($source === null) {
+            return $day;
+        }
+
+        $scores = [];
+        foreach (SCORE_DOMAINS as $domain) {
+            $category = $source[$domain] ?? null;
+
+            if ($category !== null && $category['score'] !== null
+                && $category['valid_until'] !== null && $category['valid_until'] >= $date) {
+                $day[$domain] = $category;
+                $scores[$domain] = $category['score'];
+            }
+        }
+
+        if ($scores !== []) {
+            $day['overall']['score'] = score_combine($scores);
+            $day['state'] = 'carried';
+            $day['from']  = $source['date'];
+        }
+
+        return $day;
+    }
+
+    function health_score_blank_day(string $date, string $state): array
+    {
+        $none = ['score' => null, 'days' => 0, 'components' => [], 'facts' => [], 'expired' => false, 'valid_until' => null];
+
+        return [
+            'sleep'     => $none,
+            'nutrition' => $none,
+            'training'  => $none,
+            'overall'   => ['score' => null],
+            'date'      => $date,
+            'state'     => $state,
+            'from'      => null,
+        ];
     }
 
     /* ==================================================================
@@ -284,19 +423,31 @@ if (!function_exists('health_score_now')) {
             }
         }
 
-        $sleep     = health_score_sleep($nights);
-        $nutrition = health_score_nutrition($ratings);
-        $training  = health_score_training($workouts, $nights, $vo2, $goals, $to);
+        $today     = $asOf->format('Y-m-d');
+        $sleep     = health_score_validity(health_score_sleep($nights), 'sleep', array_column($nights, 'date'), $today);
+        $nutrition = health_score_validity(health_score_nutrition($ratings), 'nutrition', array_column($ratings, 'date'), $today);
+        $training  = health_score_validity(
+            health_score_training($workouts, $nights, $vo2, $goals, $to),
+            'training',
+            array_map(static fn ($w) => date('Y-m-d', $w['start']), $workouts),
+            $today
+        );
+
+        $until = array_filter([$sleep['valid_until'], $nutrition['valid_until'], $training['valid_until']]);
 
         return [
             'sleep'        => $sleep,
             'nutrition'    => $nutrition,
             'training'     => $training,
-            'overall'      => ['score' => score_combine([
-                'sleep'     => $sleep['score'],
-                'nutrition' => $nutrition['score'],
-                'training'  => $training['score'],
-            ])],
+            'overall'      => [
+                'score'       => score_combine([
+                    'sleep'     => $sleep['score'],
+                    'nutrition' => $nutrition['score'],
+                    'training'  => $training['score'],
+                ]),
+                /* It holds as long as any category in it does. */
+                'valid_until' => $until === [] ? null : max($until),
+            ],
             'as_of'        => $asOf->format('Y-m-d H:i:s'),
             'window_start' => $start->format('Y-m-d H:i:s'),
         ];
@@ -318,6 +469,67 @@ if (!function_exists('health_score_now')) {
             'components' => array_map(static fn ($v) => $v === null ? null : round($v, 1), $components),
             'facts'      => $facts,
         ];
+    }
+
+    /**
+     * Whether a category's result still counts, and until when it would
+     * without new input. $dates are the days its data in the window fell on
+     * (a night: the morning it ended; a cijfer: its day; a workout: the day
+     * it started).
+     *
+     *   last_input   the newest of them
+     *   expired      `expiry_days` days or more since then (config/scoring.php):
+     *                the category is left out — no score, no components —
+     *                never counted as zero
+     *   valid_until  the last day it keeps its score if nothing new comes in:
+     *                until it expires, or until the window has dropped so
+     *                many of its days that fewer than `min_days` are left —
+     *                whichever comes first. Null without a score.
+     */
+    function health_score_validity(array $result, string $category, array $dates, string $today): array
+    {
+        $cfg    = health_scoring_config();
+        $expiry = $cfg['expiry_days'][$category] ?? null;
+        $min    = (int) $cfg['min_days'];
+
+        $dates = array_values(array_unique(array_filter($dates)));
+        rsort($dates);
+
+        $last    = $dates[0] ?? null;
+        $expired = $expiry !== null && $last !== null
+            && health_score_day_gap($last, $today) >= (int) $expiry;
+
+        if ($expired && $result['score'] !== null) {
+            $result['score']      = null;
+            $result['components'] = array_map(static fn () => null, $result['components']);
+            $result['facts']      = [];
+        }
+
+        $until = null;
+        if ($result['score'] !== null && count($dates) >= $min) {
+            /* The window keeps a day for `window_days` days, today included. */
+            $until = health_score_add_days($dates[$min - 1], health_score_window_days() - 1);
+            if ($expiry !== null) {
+                $until = min($until, health_score_add_days($last, (int) $expiry - 1));
+            }
+        }
+
+        return $result + [
+            'last_input'  => $last,
+            'expired'     => $expired && $result['score'] === null && $result['days'] >= $min,
+            'valid_until' => $until,
+        ];
+    }
+
+    /** Whole calendar days from one Y-m-d to another. */
+    function health_score_day_gap(string $from, string $to): int
+    {
+        return (int) round((strtotime($to . ' 12:00:00') - strtotime($from . ' 12:00:00')) / 86400);
+    }
+
+    function health_score_add_days(string $date, int $days): string
+    {
+        return date('Y-m-d', (int) strtotime($date . ' 12:00:00') + $days * 86400);
     }
 
     /* ------------------------------------------------------------ sleep */
@@ -610,7 +822,7 @@ if (!function_exists('health_score_now')) {
            before it — only where all four lie after the first workout, so
            the weeks before somebody started tracking are not read as rest. */
         $week   = 7 * 86400;
-        $blocks = intdiv((int) health_scoring_config()['window_days'], 7);
+        $blocks = intdiv((int) health_scoring_config()['window_hours'], 168);
         $loads  = array_fill(0, $blocks, 0.0);
 
         foreach ($workouts as $workout) {
@@ -698,24 +910,36 @@ if (!function_exists('health_score_now')) {
 
     /**
      * Writes the scores to daily_scores under the date they were calculated
-     * for, with the days and components behind them — only what changed, so
-     * rendering a page does not write four rows every time.
+     * for, with the days and components behind them and until when they hold
+     * — only what changed, so rendering a page does not write four rows
+     * every time. One row per person, day and category (the primary key):
+     * calculating again the same day updates that day's row.
+     *
+     * Only today: a result for a day that has passed is never written, so
+     * the record of that day stays what it was (health_score_history()).
      */
     function health_score_store(int $userId, array $scores): void
     {
         $date = substr((string) $scores['as_of'], 0, 10);
-        $rich = health_score_store_rich();
+
+        if ($date < date('Y-m-d')) {
+            return;
+        }
+
+        $rich  = health_score_store_rich();
+        $until = health_score_store_until();
 
         $rows = [
             'sleep'     => $scores['sleep'],
             'nutrition' => $scores['nutrition'],
             'training'  => $scores['training'],
-            'overall'   => ['score' => $scores['overall']['score'], 'days' => null, 'components' => []],
+            'overall'   => ['score' => $scores['overall']['score'], 'days' => null, 'components' => [],
+                            'valid_until' => $scores['overall']['valid_until'] ?? null],
         ];
 
         $stored = [];
         foreach (db_all(
-            'SELECT domain, score' . ($rich ? ', data_days, inputs' : '') . ', algorithm_version
+            'SELECT domain, score' . ($rich ? ', data_days, inputs' : '') . ($until ? ', valid_until' : '') . ', algorithm_version
                FROM daily_scores WHERE user_id = ? AND score_date = ?',
             [$userId, $date]
         ) as $row) {
@@ -725,17 +949,29 @@ if (!function_exists('health_score_now')) {
         try {
             foreach ($rows as $domain => $result) {
                 $inputs = $result['components'] === [] ? null : json_encode($result['components']);
+                $holds  = $result['valid_until'] ?? null;
                 $old    = $stored[$domain] ?? null;
 
                 if ($old !== null
                     && $old['algorithm_version'] === HEALTH_SCORE_VERSION
                     && ($old['score'] === null ? null : (int) $old['score']) === $result['score']
                     && (!$rich || ((($old['data_days'] === null ? null : (int) $old['data_days']) === $result['days'])
-                                   && $old['inputs'] === $inputs))) {
+                                   && $old['inputs'] === $inputs))
+                    && (!$until || ($old['valid_until'] === null ? null : (string) $old['valid_until']) === $holds)) {
                     continue;
                 }
 
-                if ($rich) {
+                if ($rich && $until) {
+                    db_run(
+                        'INSERT INTO daily_scores (user_id, score_date, domain, score, data_days, inputs, valid_until, algorithm_version)
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                         ON DUPLICATE KEY UPDATE score = VALUES(score), data_days = VALUES(data_days),
+                                                 inputs = VALUES(inputs), valid_until = VALUES(valid_until),
+                                                 algorithm_version = VALUES(algorithm_version),
+                                                 computed_at = NOW()',
+                        [$userId, $date, $domain, $result['score'], $result['days'], $inputs, $holds, HEALTH_SCORE_VERSION]
+                    );
+                } elseif ($rich) {
                     db_run(
                         'INSERT INTO daily_scores (user_id, score_date, domain, score, data_days, inputs, algorithm_version)
                               VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -771,6 +1007,21 @@ if (!function_exists('health_score_now')) {
         return $rich ??= db_value(
             "SELECT COUNT(*) FROM information_schema.columns
               WHERE table_schema = DATABASE() AND table_name = 'daily_scores' AND column_name = 'inputs'"
+        ) > 0;
+    }
+
+    /**
+     * Whether daily_scores has `valid_until` (migration 017). Without it the
+     * scores are stored and read as before, and a day without a row of its
+     * own is simply empty: nothing is carried that cannot be checked.
+     */
+    function health_score_store_until(): bool
+    {
+        static $until = null;
+
+        return $until ??= db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'daily_scores' AND column_name = 'valid_until'"
         ) > 0;
     }
 }

@@ -228,11 +228,13 @@ order that has some. It says what happened, never what to do:
 
 ## It reads the score, it never scores
 
-**The Health Score is unchanged.** It is calculated over a rolling 90 days
-(`window_days` in `config/scoring.php`), not 168 hours or 7 days. A category
-gets a score after 3 days with data (`min_days`), and the Health Score is the
-average of the categories that have one. The first days add no formula for
-new accounts and change no weight, curve, window or minimum:
+**The Health Score is the engine's own.** It is calculated over the last
+168 hours (`window_hours` in `config/scoring.php`; 90 days before 1.6.0). A
+category gets a score after 3 days with data (`min_days`), stops counting
+after 3 days in a row without new data (`expiry_days`, Slaap and Voeding),
+and the Health Score is the average of the categories that have one. The
+first days add no formula for new accounts and change no weight, curve,
+window or minimum:
 
 - the progress counts the days the engine counts (`health_score_at()`, on
   the records it reads);

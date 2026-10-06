@@ -184,26 +184,95 @@ class AppDataParseTest {
         assertTrue(c.available)
         assertEquals("Scorekompas", c.title)
         assertEquals("Overzicht", c.back)
-        assertEquals(81, c.score)
-        assertEquals("high", c.band)
+        assertEquals(73, c.score)
+        assertEquals("mid", c.band)
         assertEquals(CompassDirection("down", "Dalend"), c.direction)
 
-        // 1 — each category with its colour (which) and its band (how high); its components with their weights.
-        val (sleep, food, sport) = c.composition.categories
+        // 1 — each category with its colour (which); the score is the last 168 hours.
         assertEquals(listOf("Slaap", "Voeding", "Sport"), c.composition.categories.map { it.label })
         assertEquals(listOf("sleep", "nutrition", "training"), c.composition.categories.map { it.accent })
-        assertEquals(listOf("high", "mid", "high"), c.composition.categories.map { it.band })
+        assertTrue(c.composition.note.contains("over de afgelopen 7 dagen"))
+
+        // 2 — what is changing: one score, seen over four periods, the score's own week first.
+        val t = c.trend
+        assertEquals(listOf("7", "30", "90", "365"), t.periods.map { it.key })
+        assertEquals(listOf("7 dagen", "30 dagen", "90 dagen", "1 jaar"), t.periods.map { it.label })
+        assertEquals("7", t.defaultPeriod)
+        assertEquals("Periode kiezen", t.switchLabel)
+        val (week, month, quarter, year) = t.periods
+        assertNull("a week is too short for a direction", week.direction)
+        assertEquals(listOf("De afgelopen 7 dagen lag je score tussen 68 en 73."), week.text)
+        assertTrue("every day of a week is a dot", week.dayDots)
+        assertFalse(year.dayDots)
+        assertEquals(listOf(0f, 33.33f, 66.67f, 100f), week.axis.map { it.x })
+        assertEquals("Vandaag", week.axis.last().label)
+        assertEquals(CompassDirection("down", "Dalend"), month.direction)
+        assertEquals("the hero's direction is the 30 days'", c.direction, month.direction)
+        assertEquals("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.", month.text.first())
+        assertEquals("Je geschiedenis begint op 23 augustus.", quarter.since)
+        assertNull(month.since)
+        assertEquals("Je Gezondheidsscore per dag, het afgelopen jaar: stabiel", year.aria)
+
+        // The days: only the real ones, from the first with a score — 45, not 365.
+        assertEquals(45, t.days.size)
+        assertEquals("2026-08-23", t.days.first().date)
+        assertEquals("Vandaag", t.days.last().label)
+        assertEquals("today", t.days.last().state)
+        assertEquals(listOf(38, 15, 0, 0), t.periods.map { it.start })
+        assertEquals(listOf(7, 30, 45, 45), t.periods.map { it.at.size })
+        assertEquals(100f, week.at.last().first)
+
+        // A day carried from an earlier one: its score, and why.
+        val carried = t.days.first { it.date == "2026-09-12" }
+        assertEquals("carried", carried.state)
+        assertEquals(70, carried.value)
+        assertEquals("Geen nieuwe gegevens: de score van 10 september gold nog.", carried.note)
+        // A day after it expired: no score — never a 0 — and a gap in the line.
+        val gap = t.days.indexOfFirst { it.date == "2026-09-14" }
+        assertNull(t.days[gap].value)
+        assertEquals("Geen score op deze dag.", t.days[gap].note)
+        assertNull(quarter.at[gap - quarter.start].second)
+
+        // A day read closely: each category with its band and its parts.
+        val day = t.days.first { it.date == "2026-10-05" }
+        assertEquals(listOf("sleep", "nutrition", "training"), day.categories.map { it.id })
+        assertEquals("Slaapduur 68 · Regelmaat 57 · Kwaliteit 66", day.categories[0].parts)
+        assertEquals("Dagcijfer 7,6", day.categories[1].parts)
+        assertEquals("mid", day.categories[2].band)
+        assertEquals("Gezondheidsscore", t.readout.score)
+        assertEquals("Tik of schuif over de lijn om een dag te bekijken.", t.readout.hint)
+        assertEquals(listOf(CompassName("sleep", "Slaap", "sleep"), CompassName("nutrition", "Voeding", "nutrition"), CompassName("training", "Sport", "training")), t.readout.categories)
+
+        // 3 — compared with yourself: now is the last 168 hours.
+        assertEquals(listOf(73, 69, 69, 70), c.comparison.rows.map { it.value })
+        assertEquals("Over de afgelopen 7 dagen", c.comparison.rows.first().note)
+        assertEquals("−1 ten opzichte van de 30 dagen daarvoor", c.comparison.delta)
+
+        // 4 — the biggest opportunity.
+        val o = c.opportunity
+        assertTrue(o.filled)
+        assertEquals("Dagcijfer voor voeding", o.name)
+        assertEquals("nutrition", o.accent)
+        assertEquals("Je gemiddelde dagcijfer voor voeding is 7,3, over 3 dagen.", o.fact)
+    }
+
+    @Test
+    fun `a Scorekompas from before the periods - its 30 days, as they were shown`() {
+        val c = compass("compass-legacy.json")
+
+        assertTrue(c.available)
+        assertEquals(81, c.score)
+        assertEquals(CompassDirection("down", "Dalend"), c.direction)
+        val (sleep, food, sport) = c.composition.categories
         assertEquals(listOf(45, 30, 25), sleep.parts.map { it.weight })
-        assertEquals("Gemiddeld 6:39 per nacht", sleep.parts.first().note)
         assertTrue(food.parts.isEmpty())
-        assertEquals("Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.", food.summary)
         val intensity = sport.parts.single { it.id == "intensity" }
         assertFalse("a component without data does not count", intensity.counted)
-        assertNull(intensity.value)
-        assertNull(intensity.weight)
         assertEquals("the others share its weight", listOf(36, 64), sport.parts.filter { it.counted }.map { it.weight })
 
-        // 2 — what is changing.
+        // No periods and no days: the card draws the 30 days it was sent.
+        assertTrue(c.trend.periods.isEmpty())
+        assertTrue(c.trend.days.isEmpty())
         assertEquals("filled", c.trend.state)
         assertEquals(CompassDirection("down", "Dalend"), c.trend.direction)
         assertEquals("Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.", c.trend.text[1])
@@ -211,22 +280,6 @@ class AppDataParseTest {
         assertTrue(c.trend.chart.hasData)
         assertEquals(1, c.trend.chart.line.size)
         assertEquals(300f, c.trend.width)
-
-        // 3 — compared with yourself: too few earlier days, so no average for them and no difference.
-        assertEquals(listOf(81, 82, 85, null), c.comparison.rows.map { it.value })
-        assertEquals("Over de afgelopen 90 dagen", c.comparison.rows.first().note)
-        assertEquals("Nog niet genoeg gegevens", c.comparison.rows.last().note)
-        assertNull(c.comparison.delta)
-
-        // 4 — the biggest opportunity.
-        val o = c.opportunity
-        assertTrue(o.filled)
-        assertEquals("Dagcijfer voor voeding", o.name)
-        assertEquals("nutrition", o.accent)
-        assertEquals("mid", o.band)
-        assertEquals("Je gemiddelde dagcijfer voor voeding is 7,4, over 7 dagen.", o.fact)
-        assertEquals("Hogere dagcijfers zouden samengaan met een hogere voedingsscore.", o.relation)
-        assertEquals("Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 9 punten verhogen.", o.gainText)
     }
 
     @Test
@@ -239,6 +292,10 @@ class AppDataParseTest {
         assertEquals("empty", c.trend.state)
         assertFalse(c.trend.chart.hasData)
         assertEquals("Nog niet genoeg gegevens.", c.trend.empty)
+        // Four periods, every one empty, and no days at all: no placeholder history.
+        assertEquals(listOf("empty", "empty", "empty", "empty"), c.trend.periods.map { it.state })
+        assertTrue(c.trend.periods.none { it.chart.hasData })
+        assertTrue(c.trend.days.isEmpty())
         assertTrue(c.comparison.rows.all { it.value == null && it.note == "Nog niet genoeg gegevens" })
         assertNull(c.comparison.delta)
         assertFalse(c.opportunity.filled)

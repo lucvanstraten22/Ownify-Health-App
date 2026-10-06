@@ -221,6 +221,21 @@ if (db_available()) {
                 . '— import database/migrations/016-setup-and-focus.sql');
         }
 
+        /* Not fatal: without it the scores are stored and shown as before,
+           but a day without a stored score of its own shows none, rather
+           than the last score while it still held. */
+        $scoreHistory = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'daily_scores' AND column_name = 'valid_until'"
+        );
+
+        if ($scoreHistory > 0) {
+            line('ok', 'score history', 'daily_scores.valid_until is there');
+        } else {
+            line('warn', 'score history', 'daily_scores.valid_until is missing, so a day without its own stored score '
+                . 'shows none in the Scorekompas — import database/migrations/017-score-history.sql');
+        }
+
         /* Not fatal: without GD the boards and friends lists show each
            picture as uploaded (up to 3 MB) instead of a small copy. */
         if (!function_exists('imagecreatetruecolor')) {

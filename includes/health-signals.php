@@ -6,8 +6,8 @@
  * ONE READING OF THE DATA, FOR TWO SYSTEMS THAT MUST NOT MIX
  * ---------------------------------------------------------------------------
  * The Health Score (includes/health-score.php) and the leaderboard points
- * (includes/points.php) are separate on purpose: one measures a 90-day
- * pattern, the other pays for what was done. They must still agree on what
+ * (includes/points.php) are separate on purpose: one measures the pattern
+ * of the last 168 hours, the other pays for what was done. They must still agree on what
  * the data says — which night was the main sleep, which workouts count, how
  * hard a workout was — or the same workout could be one thing on the Health
  * page and another on the board. So that reading lives here, once, and both

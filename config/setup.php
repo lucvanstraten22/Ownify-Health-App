@@ -193,7 +193,20 @@ return [
             'only'    => 'Je gezondheidsscore rust voorlopig alleen op %1$s. %2$s tellen mee zodra er 3 dagen van zijn.',
             'only_one'=> 'Je gezondheidsscore rust voorlopig alleen op %1$s. %2$s telt mee zodra er 3 dagen van zijn.',
             'all'     => 'Je gezondheidsscore is nu %1$d: het gemiddelde van %2$s.',
+            'alone'   => 'Je gezondheidsscore rust nu alleen op %s.',
             'open'    => 'Bekijk de opbouw in het Scorekompas',
+        ],
+
+        /* A category with enough days once, but nothing new for three
+           (config/scoring.php, expiry_days): it does not count now — which
+           is not the same as too little data. */
+        'expired' => [
+            'title'    => 'Geen nieuwe gegevens',
+            'lede'     => 'Er zijn al een paar dagen geen nieuwe gegevens, dus je eerdere tellen nu niet mee. Je score komt terug zodra er weer gegevens binnenkomen.',
+            /* In the category's row; %s = "op 30 september". */
+            'detail'   => 'Laatste gegevens %s, telt nu niet mee',
+            'note_one' => '%s telt weer mee zodra er nieuwe gegevens zijn.',
+            'note'     => '%s tellen weer mee zodra er nieuwe gegevens zijn.',
         ],
 
         /* The end of the first days: where the person starts from. */

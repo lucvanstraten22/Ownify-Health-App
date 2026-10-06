@@ -45,7 +45,7 @@ if ($sleepId === null) {
 }
 
 /* A night is filed under the morning it ended. Its points first, then the
-   Health Score over the 90 days that now include it — separately. */
+   Health Score over the 168 hours that now include it — separately. */
 $night  = (new DateTimeImmutable($session['ended_at']))->format('Y-m-d');
 $awards = points_process($userId, ['nights' => [$night]]);
 $scores = health_score_summary(health_score_refresh($userId));

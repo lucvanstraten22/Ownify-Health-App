@@ -7,8 +7,9 @@
  * Every score in Ownify comes out of includes/health-score.php, with its
  * numbers in config/scoring.php; every point value out of includes/points.php
  * and config/points.php. This checks the arithmetic on made-up records held in
- * memory — the curves, the 90-day window, the 3-day minimum, missing data
- * that must not count as zero, re-weighting, the overall average, and the
+ * memory — the curves, the 168-hour window, the 3-day minimum, missing data
+ * that must not count as zero, three days without new input, re-weighting,
+ * the overall average, and the
  * point tiers — so tuning a number and running this says at once whether the
  * behaviour still holds. Nothing here touches the database or an account.
  *
@@ -189,16 +190,16 @@ check('3 nights and nothing else: the overall score is the sleep score — the o
 /* ====================================================================== */
 section('missing days are not zero');
 
-$spread = array_map(static fn ($i) => rating($now - $i * 12 * $day, 7), range(0, 7));   // 8 days over 84
-check('8 ratings of 7 spread over 84 days score 70, not 8 x 70 / 90',
+$spread = array_map(static fn ($i) => rating($now - $i * 36 * 3600, 7), range(0, 3));   // 4 days in a week
+check('4 ratings of 7 in a week score 70, not 4 x 70 / 7',
     health_score_nutrition($spread)['score'] === 70);
 
 $sparse = [];
-foreach (range(1, 10) as $i) {
-    $sparse[] = night($asOf->setTime(7, 0)->modify('-' . ($i * 8) . ' days')->getTimestamp(), 8.0);
+foreach ([1, 3, 5, 6] as $i) {
+    $sparse[] = night($asOf->setTime(7, 0)->modify('-' . $i . ' days')->getTimestamp(), 8.0);
 }
 $r = health_score_sleep($sparse);
-check('10 nights of 8 hours in 90 days: duration stays at the top', $r['components']['duration'] >= 99,
+check('4 nights of 8 hours in 7 days: duration stays at the top', $r['components']['duration'] >= 99,
     json_encode($r['components']));
 
 /* ====================================================================== */
@@ -383,31 +384,97 @@ check('all missing -> no score, not 0', score_combine(['sleep' => null, 'nutriti
 check('a real 0 is a score', score_combine(['sleep' => 0, 'nutrition' => null, 'training' => null]) === 0);
 
 /* ====================================================================== */
-section('the window is the last 90 days, moving with the clock');
+section('the window is the last 168 hours, moving with the clock');
 
 $start = health_score_window_start($asOf);
-check('the window starts exactly 90 days before the moment', $start->format('Y-m-d H:i:s') === '2026-06-27 15:00:00',
+check('the window starts exactly 168 hours before the moment', $start->format('Y-m-d H:i:s') === '2026-09-18 15:00:00',
     $start->format('Y-m-d H:i:s'));
+check('7 days as people read it', health_score_window_days() === 7 && (int) $cfg['window_hours'] === 168);
+check('no 90-day window is left in the configuration', !isset($cfg['window_days']));
 
-$edge = nights(7, 8);
+$edge = nights(5, 8);
 $edge[] = night($start->getTimestamp() + 60, 8);     // ended a minute inside the window
 $edge[] = night($start->getTimestamp() - 60, 8);     // ended a minute before it
 usort($edge, static fn ($a, $b) => $a['end'] <=> $b['end']);
 
 $data = ['nights' => $edge, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []];
 check('a night one minute inside the window counts, one minute outside does not',
-    health_score_at($data, $asOf)['sleep']['days'] === 8, (string) health_score_at($data, $asOf)['sleep']['days']);
+    health_score_at($data, $asOf)['sleep']['days'] === 6, (string) health_score_at($data, $asOf)['sleep']['days']);
 check('an hour later the window has moved past the older of the two',
-    health_score_at($data, $asOf->modify('+1 hour'))['sleep']['days'] === 7);
+    health_score_at($data, $asOf->modify('+1 hour'))['sleep']['days'] === 5);
 
 $monthEdge = new DateTimeImmutable('2026-10-01 09:00:00');
-$lateSept  = array_map(static fn ($i) => night((new DateTimeImmutable('2026-09-30 07:00'))->modify('-' . $i . ' days')->getTimestamp(), 8), range(0, 6));
+$lateSept  = array_map(static fn ($i) => night((new DateTimeImmutable('2026-09-30 07:00'))->modify('-' . $i . ' days')->getTimestamp(), 8), range(0, 2));
 check('on the 1st of a month last month still counts — no calendar reset',
     is_int(health_score_at(['nights' => $lateSept, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []], $monthEdge)['sleep']['score']));
 
-$old = array_map(static fn ($i) => night($asOf->modify('-' . (91 + $i) . ' days')->getTimestamp(), 8), range(0, 9));
-check('data older than 90 days gives no score at all',
+$old = array_map(static fn ($i) => night($asOf->modify('-' . (8 + $i) . ' days')->getTimestamp(), 8), range(0, 9));
+check('data older than 168 hours gives no score at all',
     health_score_at(['nights' => $old, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []], $asOf)['sleep']['score'] === null);
+
+$month = array_map(static fn ($i) => night($asOf->setTime(7, 0)->modify('-' . $i . ' days')->getTimestamp(), 8), range(10, 80));
+$recent = [rating($now - 3600, 6), rating($now - 30 * 3600, 6), rating($now - 54 * 3600, 6)];
+$both = health_score_at(['nights' => $month, 'ratings' => $recent, 'workouts' => [], 'vo2' => [], 'goals' => []], $asOf);
+check('70 nights 10 to 80 days ago count for nothing now: the current score no longer reaches back 90 days',
+    $both['sleep']['score'] === null && $both['sleep']['days'] === 0 && $both['overall']['score'] === 60,
+    json_encode([$both['sleep']['days'], $both['overall']['score']]));
+
+/* ====================================================================== */
+section('three days without new input: the category stops counting, it does not become zero');
+
+/* Day 1: 20 September. Nights end on the mornings of 18, 19 and 20 September;
+   cijfers are given on the same days; workouts on 16, 17 and 18 September. */
+$day1  = new DateTimeImmutable('2026-09-20 15:00:00');
+$at    = static fn (string $date, string $time) => (new DateTimeImmutable($date . ' ' . $time))->getTimestamp();
+$rest  = ['vo2' => [], 'goals' => []];
+$sleepNights = [night($at('2026-09-18', '07:00'), 7.5), night($at('2026-09-19', '07:05'), 8.0), night($at('2026-09-20', '06:55'), 7.8)];
+$cijfers     = [rating($at('2026-09-18', '20:00'), 7), rating($at('2026-09-19', '20:00'), 8), rating($at('2026-09-20', '12:00'), 7)];
+$sessions    = [workout(1, $at('2026-09-16', '18:00'), 45, 'moderate'), workout(2, $at('2026-09-17', '18:00'), 40, 'hard'),
+                workout(3, $at('2026-09-18', '18:00'), 50, 'moderate')];
+$expiryData  = ['nights' => $sleepNights, 'ratings' => $cijfers, 'workouts' => $sessions] + $rest;
+
+$d1 = health_score_at($expiryData, $day1);
+$d2 = health_score_at($expiryData, $day1->modify('+1 day'));
+$d3 = health_score_at($expiryData, $day1->modify('+2 days'));
+$d4 = health_score_at($expiryData, $day1->modify('+3 days'));
+
+check('day 1: all three count', is_int($d1['sleep']['score']) && is_int($d1['nutrition']['score']) && is_int($d1['training']['score']));
+check('day 2 and day 3 without new input: Slaap keeps the score it had — not zero, not gone',
+    $d2['sleep']['score'] === $d1['sleep']['score'] && $d3['sleep']['score'] === $d1['sleep']['score']
+    && $d3['sleep']['expired'] === false, json_encode([$d1['sleep']['score'], $d2['sleep']['score'], $d3['sleep']['score']]));
+check('day 4, three days in a row without a night: Slaap no longer counts',
+    $d4['sleep']['score'] === null && $d4['sleep']['expired'] === true && $d4['sleep']['last_input'] === '2026-09-20',
+    json_encode([$d4['sleep']['score'], $d4['sleep']['expired'], $d4['sleep']['last_input']]));
+check('…and nothing of it is kept: no components, never a 0',
+    array_filter($d4['sleep']['components'], static fn ($v) => $v !== null) === [] && $d4['sleep']['days'] === 3);
+check('Voeding the same: counting on day 3, left out on day 4',
+    $d3['nutrition']['score'] === $d1['nutrition']['score'] && $d4['nutrition']['score'] === null && $d4['nutrition']['expired'] === true);
+check('Sport has no expiry: rest days are rest, it still counts on day 4',
+    is_int($d4['training']['score']) && $d4['training']['expired'] === false);
+check('the overall score is recalculated from what still counts, by the same rule',
+    $d1['overall']['score'] === score_combine(['sleep' => $d1['sleep']['score'], 'nutrition' => $d1['nutrition']['score'], 'training' => $d1['training']['score']])
+    && $d4['overall']['score'] === $d4['training']['score'],
+    json_encode([$d1['overall']['score'], $d4['overall']['score'], $d4['training']['score']]));
+$fresh = $expiryData;
+$fresh['nights'][] = night($at('2026-09-23', '07:00'), 8.0);
+check('one new night and Slaap counts again', is_int(health_score_at($fresh, $day1->modify('+3 days'))['sleep']['score']));
+check('expiry is configured per category: Slaap 3, Voeding 3, Sport none',
+    $cfg['expiry_days'] === ['sleep' => 3, 'nutrition' => 3, 'training' => null]);
+
+/* ====================================================================== */
+section('until when a score holds without new input');
+
+check('Slaap: its last night (20 Sep) plus two days — expiry comes before the window',
+    $d1['sleep']['valid_until'] === '2026-09-22', (string) $d1['sleep']['valid_until']);
+check('Voeding the same', $d1['nutrition']['valid_until'] === '2026-09-22');
+check('Sport: until the window leaves fewer than 3 training days — the 3rd newest (16 Sep) plus six',
+    $d1['training']['valid_until'] === '2026-09-22', (string) $d1['training']['valid_until']);
+$spreadNights = [night($at('2026-09-14', '07:00'), 8), night($at('2026-09-17', '07:00'), 8), night($at('2026-09-20', '07:00'), 8)];
+$spreadAt = health_score_at(['nights' => $spreadNights, 'ratings' => [], 'workouts' => []] + $rest, $day1);
+check('nights spread over the week: the window drops the oldest first (14 Sep + 6 = 20 Sep)',
+    $spreadAt['sleep']['valid_until'] === '2026-09-20', (string) $spreadAt['sleep']['valid_until']);
+check('the overall score holds as long as any category does', $d1['overall']['valid_until'] === '2026-09-22');
+check('no score, no date', $d4['sleep']['valid_until'] === null);
 
 /* ====================================================================== */
 section('points: one tier, never the sum of the tiers');

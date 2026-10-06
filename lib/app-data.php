@@ -87,6 +87,11 @@ if (!function_exists('app_page_data')) {
             $data['scores']['overall']['caption']    = $data['scores']['overall']['caption_collecting']
                 ?? $data['scores']['overall']['caption'];
             $data['scores']['overall']['empty_hint'] = (string) $data['health']['lede'];
+        } elseif ($data['scores']['overall']['value'] === null && !empty($data['health']['collecting']['expired'])) {
+            /* Data, but none new for three days: it said so on Gezondheid. */
+            $data['scores']['overall']['caption']    = $data['scores']['overall']['caption_expired']
+                ?? $data['scores']['overall']['caption'];
+            $data['scores']['overall']['empty_hint'] = (string) $data['health']['lede'];
         }
 
         /* The Scorekompas behind the ring: what the score is made of, what

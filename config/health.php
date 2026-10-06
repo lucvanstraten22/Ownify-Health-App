@@ -33,6 +33,10 @@ return [
        same sentence under Overzicht's ring once some data is in. */
     'lede_collecting' => 'Je eerste score volgt na %2$d dagen met gegevens: nog %1$s.',
 
+    /* Instead of the lede when there is data, but none new for three days in
+       any category (config/scoring.php, expiry_days): nothing counts now. */
+    'lede_expired' => 'Er zijn al een paar dagen geen nieuwe gegevens: je score komt terug zodra die er zijn.',
+
     /* ============================================================ metrics */
     'metrics' => [
         /* --- sleep ----------------------------------------------------- */
@@ -104,6 +108,9 @@ return [
             'empty'   => 'Koppel een bron om je slaapscore te berekenen.',
             /* Some nights recorded, fewer than the score needs. %s = "3 dagen". */
             'collecting' => 'Nog %s met slaapgegevens nodig voor je slaapscore.',
+            /* Enough nights, but none new for three days (config/scoring.php,
+               expiry_days). %s = the last one's day, "3 oktober". */
+            'expired'    => 'Je laatste slaapgegevens zijn van %s: je slaapscore telt nu niet mee.',
 
             'highlights' => [
                 ['key' => 'sleep_duration',   'value' => null],
@@ -162,6 +169,7 @@ return [
             'summary' => 'Wat je eet en drinkt, en hoe regelmatig je dat doet.',
             'empty'   => 'Geef je voeding een dagcijfer om je voedingsscore te berekenen.',
             'collecting' => 'Nog %s met een dagcijfer nodig voor je voedingsscore.',
+            'expired'    => 'Je laatste dagcijfer is van %s: je voedingsscore telt nu niet mee.',
 
             /* The daily self-assessment the Nutrition score is built from.
                One cijfer per day; saving again replaces it. */
@@ -220,6 +228,8 @@ return [
             'summary' => 'Wat je hebt bewogen, hoe zwaar het was en hoe je herstelt.',
             'empty'   => 'Koppel een bron om je trainingsscore te berekenen.',
             'collecting' => 'Nog %s met een training nodig voor je trainingsscore.',
+            /* Only if Sport is ever given an expiry (config/scoring.php). */
+            'expired'    => 'Je laatste training is van %s: je trainingsscore telt nu niet mee.',
 
             'highlights' => [
                 ['key' => 'steps',            'value' => null],

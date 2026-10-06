@@ -6,7 +6,7 @@
  *
  * Four questions, in the order they are asked:
  *   1  what the score is made of     the categories and their components
- *   2  what is changing              30 days, in a line and in sentences
+ *   2  what is changing              its history: 7 days, 30, 90 or a year
  *   3  how it compares with you      the score now and its earlier averages
  *   4  where the most room is        one component, and what goes with it
  *
@@ -24,7 +24,6 @@ $parts       = $compass['composition'];
 $trend       = $compass['trend'];
 $comparison  = $compass['comparison'];
 $opportunity = $compass['opportunity'];
-$chart       = $trend['chart'];
 ?>
 <article class="detail detail--compass" data-detail="score-compass" data-accent="health"
          aria-label="<?= e($compass['title']) ?>" aria-hidden="true" inert>
@@ -92,67 +91,8 @@ $chart       = $trend['chart'];
                     </div>
                 </section>
 
-                <?php /* 2 — What is changing. */ ?>
-                <section class="card card--trend reveal compass-card <?= $chart['has_data'] ? 'is-filled' : 'is-empty' ?>" aria-labelledby="compass-trend-title">
-                    <div class="card__head">
-                        <div class="card__head-group">
-                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
-                            <h2 class="card__eyebrow" id="compass-trend-title"><?= e($trend['title']) ?></h2>
-                        </div>
-                        <?php if ($trend['direction'] !== null): ?>
-                            <span class="chip chip--quiet score-direction__chip" data-direction="<?= e($trend['direction']['key']) ?>">
-                                <?= icon('arrow-up', 'score-direction__icon') ?><?= e($trend['direction']['label']) ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
-
-                    <?php if ($trend['text'] !== []): ?>
-                        <div class="compass-text">
-                            <?php foreach ($trend['text'] as $sentence): ?>
-                                <p><?= e($sentence) ?></p>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="chart" data-chart>
-                        <div class="chart__range is-active" data-range="compass">
-                            <svg class="chart__svg" viewBox="0 0 <?= (int) $chart['width'] ?> <?= (int) $chart['height'] ?>"
-                                 preserveAspectRatio="none" role="img" aria-label="<?= e($trend['aria']) ?>">
-                                <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
-                                    <line class="chart__grid" x1="0" x2="<?= (int) $chart['width'] ?>"
-                                          y1="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"
-                                          y2="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"/>
-                                <?php endforeach; ?>
-
-                                <g class="chart__series" data-accent="health">
-                                    <?php foreach ($chart['area'] as $path): ?>
-                                        <path class="chart__area" d="<?= e($path) ?>"/>
-                                    <?php endforeach; ?>
-                                    <?php foreach ($chart['line'] as $path): ?>
-                                        <path class="chart__line" d="<?= e($path) ?>" data-draw/>
-                                    <?php endforeach; ?>
-                                    <?php foreach ($chart['dots'] as $dot): ?>
-                                        <circle class="chart__dot" cx="<?= e((string) $dot[0]) ?>" cy="<?= e((string) $dot[1]) ?>" r="2.5"/>
-                                    <?php endforeach; ?>
-                                </g>
-                            </svg>
-
-                            <ul class="chart__axis" role="list">
-                                <?php
-                                $ticks = count($trend['axis']);
-                                foreach ($trend['axis'] as $tick => $label):
-                                    $left = $ticks > 1 ? ($tick / ($ticks - 1)) * 100 : 50;
-                                    ?>
-                                    <li class="chart__tick" style="left: <?= e((string) round($left, 2)) ?>%;"><?= e($label) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-
-                        <?php if (!$chart['has_data']): ?>
-                            <p class="chart__empty"><?= e($trend['empty']) ?></p>
-                        <?php endif; ?>
-                    </div>
-                </section>
+                <?php /* 2 — What is changing: the score's history, over a period. */ ?>
+                <?php component('compass-history', ['trend' => $trend]); ?>
 
                 <?php /* 3 — Compared with yourself, and nobody else. */ ?>
                 <section class="card reveal compass-card" aria-labelledby="compass-self-title">

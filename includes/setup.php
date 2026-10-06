@@ -233,6 +233,12 @@ if (!function_exists('setup_stored')) {
             $order,
             static fn (string $id): bool => ($in['results'][$id]['score'] ?? null) !== null
         ));
+        /* Enough days once, but nothing new for three (config/scoring.php,
+           expiry_days): not counted now, and not "too little data" either. */
+        $expired = array_values(array_filter(
+            $order,
+            static fn (string $id): bool => !empty($in['results'][$id]['expired'])
+        ));
 
         $base = [
             'day'         => $day,
@@ -250,6 +256,16 @@ if (!function_exists('setup_stored')) {
 
         /* ------------------------------------------------ nothing scored */
         if ($scored === []) {
+            if ($expired !== []) {
+                return [
+                    'phase'       => 'building',
+                    'title'       => $c['expired']['title'],
+                    'lede'        => $c['expired']['lede'],
+                    'progress'    => calibration_progress($in, $c, $order),
+                    'observation' => calibration_observation($in, $c),
+                ] + $base;
+            }
+
             $anyData = false;
             foreach ($order as $id) {
                 $anyData = $anyData || (int) ($in['results'][$id]['days'] ?? 0) > 0;
@@ -307,17 +323,20 @@ if (!function_exists('setup_stored')) {
             ];
         }
 
-        $missing = array_values(array_diff($order, $scored));
+        $missing = array_values(array_diff($order, $scored, $expired));
+        $note    = trim(
+            ($missing === [] ? '' : sprintf(
+                count($missing) === 1 ? $c['baseline']['missing_one'] : $c['baseline']['missing'],
+                setup_ucfirst(calibration_names($missing, $c))
+            )) . ' ' . calibration_expired_note($expired, $c)
+        );
 
         return [
             'phase'    => 'baseline',
             'title'    => $c['baseline']['title'],
             'lede'     => $c['baseline']['lede'],
             'baseline' => $rows,
-            'note'     => $missing === [] ? null : sprintf(
-                count($missing) === 1 ? $c['baseline']['missing_one'] : $c['baseline']['missing'],
-                setup_ucfirst(calibration_names($missing, $c))
-            ),
+            'note'     => $note === '' ? null : $note,
             'open'     => $c['baseline']['open'],
         ] + $base;
     }
@@ -381,6 +400,14 @@ if (!function_exists('setup_stored')) {
                 };
             }
 
+            $detail = $days > 0 ? calibration_detail($id, $in['records'] ?? [], $p['detail']) : null;
+            if (!empty($in['results'][$id]['expired']) && !empty($in['results'][$id]['last_input'])) {
+                $detail = sprintf(
+                    $c['expired']['detail'],
+                    setup_day_ref((string) $in['results'][$id]['last_input'], (string) ($in['today'] ?? ''), $c['observation'])
+                );
+            }
+
             $rows[] = [
                 'id'     => $id,
                 'label'  => (string) ($in['areas'][$id]['label'] ?? $id),
@@ -389,7 +416,7 @@ if (!function_exists('setup_stored')) {
                 'days'   => min($days, $need),
                 'needed' => $need,
                 'count'  => sprintf($p['count'], min($days, $need), $need, $need === 1 ? $unit[0] : $unit[1]),
-                'detail' => $days > 0 ? calibration_detail($id, $in['records'] ?? [], $p['detail']) : null,
+                'detail' => $detail,
                 'how'    => $how,
             ];
         }
@@ -516,17 +543,36 @@ if (!function_exists('setup_stored')) {
      */
     function calibration_overall_note(array $in, array $c, array $order, array $scored): ?string
     {
-        $missing = array_values(array_diff($order, $scored));
+        $expired = array_values(array_filter($order, static fn (string $id): bool => !empty($in['results'][$id]['expired'])));
+        $missing = array_values(array_diff($order, $scored, $expired));
+        $overall = $in['results']['overall']['score'] ?? null;
 
-        if ($missing === []) {
-            $overall = $in['results']['overall']['score'] ?? null;
-            return $overall === null ? null : sprintf($c['first']['all'], (int) $overall, calibration_names($scored, $c));
+        $text = match (true) {
+            $missing !== [] => sprintf(
+                count($missing) === 1 ? $c['first']['only_one'] : $c['first']['only'],
+                calibration_names($scored, $c),
+                setup_ucfirst(calibration_names($missing, $c))
+            ),
+            $overall === null => '',
+            count($scored) === 1 => sprintf($c['first']['alone'], calibration_names($scored, $c)),
+            default => sprintf($c['first']['all'], (int) $overall, calibration_names($scored, $c)),
+        };
+
+        $text = trim($text . ' ' . calibration_expired_note($expired, $c));
+
+        return $text === '' ? null : $text;
+    }
+
+    /** "Voeding telt weer mee zodra er nieuwe gegevens zijn." — or nothing. */
+    function calibration_expired_note(array $expired, array $c): string
+    {
+        if ($expired === []) {
+            return '';
         }
 
         return sprintf(
-            count($missing) === 1 ? $c['first']['only_one'] : $c['first']['only'],
-            calibration_names($scored, $c),
-            setup_ucfirst(calibration_names($missing, $c))
+            count($expired) === 1 ? $c['expired']['note_one'] : $c['expired']['note'],
+            setup_ucfirst(calibration_names($expired, $c))
         );
     }
 

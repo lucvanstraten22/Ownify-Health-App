@@ -97,7 +97,7 @@ if (!function_exists('health_import_records')) {
 
         /* What the batch earned, the moment it arrived — each night, workout,
            rating and day of steps once, however often it is sent — and the
-           Health Score recalculated over the 90 days that now include it.
+           Health Score recalculated over the 168 hours that now include it.
            Two separate things: the score does not pay out. */
         $awards = $written > 0 ? points_process($userId, $touched) : [];
         $scores = $written > 0 ? health_score_refresh($userId) : null;

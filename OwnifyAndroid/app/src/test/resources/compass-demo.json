@@ -1,357 +1,2501 @@
 {
- "title": "Scorekompas",
- "lede": "Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.",
- "back": "Overzicht",
- "open": "Open het Scorekompas",
- "footnote": "Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
- "score": {
-  "value": 81,
-  "max": 100,
-  "band": "high"
- },
- "direction": {
-  "key": "down",
-  "label": "Dalend"
- },
- "composition": {
-  "title": "Waar je score uit bestaat",
-  "note": "Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen 90 dagen. Elk telt even zwaar.",
-  "categories": [
-   {
-    "id": "sleep",
-    "label": "Slaap",
-    "accent": "sleep",
-    "icon": "moon",
-    "value": 84,
-    "band": "high",
-    "meta": "36 dagen met gegevens",
-    "summary": null,
-    "parts": [
-     {
-      "id": "duration",
-      "label": "Slaapduur",
-      "value": 76,
-      "band": "mid",
-      "weight": 45,
-      "counted": true,
-      "note": "Gemiddeld 6:39 per nacht"
-     },
-     {
-      "id": "regularity",
-      "label": "Regelmaat",
-      "value": 93,
-      "band": "high",
-      "weight": 30,
-      "counted": true,
-      "note": "Bedtijd wisselt ±15 min, opstaan ±31 min"
-     },
-     {
-      "id": "quality",
-      "label": "Kwaliteit",
-      "value": 89,
-      "band": "high",
-      "weight": 25,
-      "counted": true,
-      "note": "Gemeten in 36 nachten"
-     }
-    ]
-   },
-   {
-    "id": "nutrition",
-    "label": "Voeding",
-    "accent": "nutrition",
-    "icon": "utensils",
-    "value": 74,
-    "band": "mid",
-    "meta": "7 dagen met gegevens",
-    "summary": "Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.",
-    "parts": []
-   },
-   {
-    "id": "training",
-    "label": "Sport",
-    "accent": "training",
-    "icon": "dumbbell",
-    "value": 86,
-    "band": "high",
-    "meta": "18 dagen met gegevens",
-    "summary": null,
-    "parts": [
-     {
-      "id": "volume",
-      "label": "Volume",
-      "value": 76,
-      "band": "mid",
-      "weight": 36,
-      "counted": true,
-      "note": "Gemiddeld 168 min per week"
-     },
-     {
-      "id": "intensity",
-      "label": "Intensiteit",
-      "value": null,
-      "band": null,
-      "weight": null,
-      "counted": false,
-      "note": "Telt nu niet mee · Nog te weinig trainingen met hartslag of ervaren inspanning"
-     },
-     {
-      "id": "progression",
-      "label": "Progressie",
-      "value": null,
-      "band": null,
-      "weight": null,
-      "counted": false,
-      "note": "Telt nu niet mee · Nog niets om mee te vergelijken"
-     },
-     {
-      "id": "balance",
-      "label": "Balans",
-      "value": 92,
-      "band": "high",
-      "weight": 64,
-      "counted": true,
-      "note": "Gemiddeld 3,2 trainingsdagen per week"
-     }
-    ]
-   }
-  ]
- },
- "trend": {
-  "title": "Wat er verandert",
-  "state": "filled",
-  "direction": {
-   "key": "down",
-   "label": "Dalend"
-  },
-  "text": [
-   "Je score daalde van gemiddeld 86 in de week van 3 september naar 82 in de afgelopen week.",
-   "Op 23 september ging je score van 86 naar 81; die dag ging Voeding meetellen, met 70.",
-   "In dezelfde periode ging je score voor trainingsvolume van gemiddeld 80 naar 78."
-  ],
-  "empty": "Nog niet genoeg gegevens.",
-  "values": [
-   86,
-   86,
-   86,
-   86,
-   87,
-   87,
-   86,
-   86,
-   86,
-   86,
-   86,
-   86,
-   86,
-   86,
-   87,
-   86,
-   87,
-   86,
-   87,
-   86,
-   81,
-   81,
-   82,
-   82,
-   82,
-   82,
-   82,
-   82,
-   81,
-   81
-  ],
-  "axis": [
-   "3 sep",
-   "Vandaag"
-  ],
-  "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen: dalend, van 86 naar 82",
-  "chart": {
-   "line": [
-    "M 0 25.44 C 1.72 25.44, 6.89 25.44, 10.34 25.44 C 13.79 25.44, 17.24 25.44, 20.69 25.44 C 24.14 25.44, 27.58 25.6, 31.03 25.44 C 34.48 25.28, 37.93 24.64, 41.38 24.48 C 44.83 24.32, 48.27 24.32, 51.72 24.48 C 55.17 24.64, 58.62 25.28, 62.07 25.44 C 65.52 25.6, 68.96 25.44, 72.41 25.44 C 75.86 25.44, 79.31 25.44, 82.76 25.44 C 86.21 25.44, 89.65 25.44, 93.1 25.44 C 96.55 25.44, 100 25.44, 103.45 25.44 C 106.9 25.44, 110.34 25.44, 113.79 25.44 C 117.24 25.44, 120.69 25.44, 124.14 25.44 C 127.59 25.44, 131.03 25.6, 134.48 25.44 C 137.93 25.28, 141.38 24.48, 144.83 24.48 C 148.28 24.48, 151.72 25.44, 155.17 25.44 C 158.62 25.44, 162.07 24.48, 165.52 24.48 C 168.97 24.48, 172.41 25.44, 175.86 25.44 C 179.31 25.44, 182.76 24.48, 186.21 24.48 C 189.66 24.48, 193.1 24.48, 196.55 25.44 C 200 26.4, 203.45 29.44, 206.9 30.24 C 210.35 31.04, 213.79 30.4, 217.24 30.24 C 220.69 30.08, 224.14 29.44, 227.59 29.28 C 231.04 29.12, 234.48 29.28, 237.93 29.28 C 241.38 29.28, 244.83 29.28, 248.28 29.28 C 251.73 29.28, 255.17 29.28, 258.62 29.28 C 262.07 29.28, 265.52 29.28, 268.97 29.28 C 272.42 29.28, 275.86 29.12, 279.31 29.28 C 282.76 29.44, 286.21 30.08, 289.66 30.24 C 293.11 30.4, 298.28 30.24, 300 30.24"
-   ],
-   "area": [
-    "M 0 25.44 C 1.72 25.44, 6.89 25.44, 10.34 25.44 C 13.79 25.44, 17.24 25.44, 20.69 25.44 C 24.14 25.44, 27.58 25.6, 31.03 25.44 C 34.48 25.28, 37.93 24.64, 41.38 24.48 C 44.83 24.32, 48.27 24.32, 51.72 24.48 C 55.17 24.64, 58.62 25.28, 62.07 25.44 C 65.52 25.6, 68.96 25.44, 72.41 25.44 C 75.86 25.44, 79.31 25.44, 82.76 25.44 C 86.21 25.44, 89.65 25.44, 93.1 25.44 C 96.55 25.44, 100 25.44, 103.45 25.44 C 106.9 25.44, 110.34 25.44, 113.79 25.44 C 117.24 25.44, 120.69 25.44, 124.14 25.44 C 127.59 25.44, 131.03 25.6, 134.48 25.44 C 137.93 25.28, 141.38 24.48, 144.83 24.48 C 148.28 24.48, 151.72 25.44, 155.17 25.44 C 158.62 25.44, 162.07 24.48, 165.52 24.48 C 168.97 24.48, 172.41 25.44, 175.86 25.44 C 179.31 25.44, 182.76 24.48, 186.21 24.48 C 189.66 24.48, 193.1 24.48, 196.55 25.44 C 200 26.4, 203.45 29.44, 206.9 30.24 C 210.35 31.04, 213.79 30.4, 217.24 30.24 C 220.69 30.08, 224.14 29.44, 227.59 29.28 C 231.04 29.12, 234.48 29.28, 237.93 29.28 C 241.38 29.28, 244.83 29.28, 248.28 29.28 C 251.73 29.28, 255.17 29.28, 258.62 29.28 C 262.07 29.28, 265.52 29.28, 268.97 29.28 C 272.42 29.28, 275.86 29.12, 279.31 29.28 C 282.76 29.44, 286.21 30.08, 289.66 30.24 C 293.11 30.4, 298.28 30.24, 300 30.24 L 300 120 L 0 120 Z"
-   ],
-   "dots": [],
-   "points": [
-    [
-     0,
-     25.44
-    ],
-    [
-     10.34,
-     25.44
-    ],
-    [
-     20.69,
-     25.44
-    ],
-    [
-     31.03,
-     25.44
-    ],
-    [
-     41.38,
-     24.48
-    ],
-    [
-     51.72,
-     24.48
-    ],
-    [
-     62.07,
-     25.44
-    ],
-    [
-     72.41,
-     25.44
-    ],
-    [
-     82.76,
-     25.44
-    ],
-    [
-     93.1,
-     25.44
-    ],
-    [
-     103.45,
-     25.44
-    ],
-    [
-     113.79,
-     25.44
-    ],
-    [
-     124.14,
-     25.44
-    ],
-    [
-     134.48,
-     25.44
-    ],
-    [
-     144.83,
-     24.48
-    ],
-    [
-     155.17,
-     25.44
-    ],
-    [
-     165.52,
-     24.48
-    ],
-    [
-     175.86,
-     25.44
-    ],
-    [
-     186.21,
-     24.48
-    ],
-    [
-     196.55,
-     25.44
-    ],
-    [
-     206.9,
-     30.24
-    ],
-    [
-     217.24,
-     30.24
-    ],
-    [
-     227.59,
-     29.28
-    ],
-    [
-     237.93,
-     29.28
-    ],
-    [
-     248.28,
-     29.28
-    ],
-    [
-     258.62,
-     29.28
-    ],
-    [
-     268.97,
-     29.28
-    ],
-    [
-     279.31,
-     29.28
-    ],
-    [
-     289.66,
-     30.24
-    ],
-    [
-     300,
-     30.24
-    ]
-   ],
-   "width": 300,
-   "height": 120,
-   "has_data": true
-  }
- },
- "comparison": {
-  "title": "Vergeleken met jezelf",
-  "note": "Gemiddelden van je Gezondheidsscore per dag.",
-  "rows": [
-   {
-    "id": "now",
-    "label": "Nu",
-    "value": 81,
-    "band": "high",
-    "note": "Over de afgelopen 90 dagen"
-   },
-   {
-    "id": "week",
-    "label": "Laatste 7 dagen",
-    "value": 82,
-    "band": "high",
-    "note": "Gemiddeld"
-   },
-   {
-    "id": "period",
-    "label": "Laatste 30 dagen",
-    "value": 85,
-    "band": "high",
-    "note": "Gemiddeld"
-   },
-   {
-    "id": "previous",
-    "label": "30 dagen daarvoor",
-    "value": null,
-    "band": null,
-    "note": "Nog niet genoeg gegevens"
-   }
-  ],
-  "delta": null
- },
- "opportunity": {
-  "title": "Grootste kans",
-  "state": "filled",
-  "empty": null,
-  "category": "nutrition",
-  "label": "Voeding",
-  "accent": "nutrition",
-  "icon": "utensils",
-  "part": "rating",
-  "name": "Dagcijfer voor voeding",
-  "value": 74,
-  "band": "mid",
-  "fact": "Je gemiddelde dagcijfer voor voeding is 7,4, over 7 dagen.",
-  "relation": "Hogere dagcijfers zouden samengaan met een hogere voedingsscore.",
-  "gain": 9,
-  "gain_text": "Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 9 punten verhogen."
- }
+    "title": "Scorekompas",
+    "lede": "Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.",
+    "back": "Overzicht",
+    "open": "Open het Scorekompas",
+    "footnote": "Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
+    "score": {
+        "value": 73,
+        "max": 100,
+        "band": "mid"
+    },
+    "direction": {
+        "key": "down",
+        "label": "Dalend"
+    },
+    "composition": {
+        "title": "Waar je score uit bestaat",
+        "note": "Je Gezondheidsscore is nu je score voor Voeding, over de afgelopen 7 dagen: de andere categorieën tellen nog niet mee.",
+        "categories": [
+            {
+                "id": "sleep",
+                "label": "Slaap",
+                "accent": "sleep",
+                "icon": "moon",
+                "value": null,
+                "band": null,
+                "meta": "Koppel een bron om je slaapscore te berekenen.",
+                "summary": null,
+                "parts": [
+                    {
+                        "id": "duration",
+                        "label": "Slaapduur",
+                        "value": null,
+                        "band": null,
+                        "weight": 45,
+                        "counted": false,
+                        "note": null
+                    },
+                    {
+                        "id": "regularity",
+                        "label": "Regelmaat",
+                        "value": null,
+                        "band": null,
+                        "weight": 30,
+                        "counted": false,
+                        "note": null
+                    },
+                    {
+                        "id": "quality",
+                        "label": "Kwaliteit",
+                        "value": null,
+                        "band": null,
+                        "weight": 25,
+                        "counted": false,
+                        "note": null
+                    }
+                ]
+            },
+            {
+                "id": "nutrition",
+                "label": "Voeding",
+                "accent": "nutrition",
+                "icon": "utensils",
+                "value": 73,
+                "band": "mid",
+                "meta": "3 dagen met gegevens",
+                "summary": "Je voedingsscore is je gemiddelde dagcijfer (7,3) keer tien.",
+                "parts": []
+            },
+            {
+                "id": "training",
+                "label": "Sport",
+                "accent": "training",
+                "icon": "dumbbell",
+                "value": null,
+                "band": null,
+                "meta": "Koppel een bron om je trainingsscore te berekenen.",
+                "summary": null,
+                "parts": [
+                    {
+                        "id": "volume",
+                        "label": "Volume",
+                        "value": null,
+                        "band": null,
+                        "weight": 20,
+                        "counted": false,
+                        "note": null
+                    },
+                    {
+                        "id": "intensity",
+                        "label": "Intensiteit",
+                        "value": null,
+                        "band": null,
+                        "weight": 20,
+                        "counted": false,
+                        "note": null
+                    },
+                    {
+                        "id": "progression",
+                        "label": "Progressie",
+                        "value": null,
+                        "band": null,
+                        "weight": 25,
+                        "counted": false,
+                        "note": null
+                    },
+                    {
+                        "id": "balance",
+                        "label": "Balans",
+                        "value": null,
+                        "band": null,
+                        "weight": 35,
+                        "counted": false,
+                        "note": null
+                    }
+                ]
+            }
+        ]
+    },
+    "trend": {
+        "title": "Wat er verandert",
+        "state": "filled",
+        "direction": {
+            "key": "down",
+            "label": "Dalend"
+        },
+        "text": [
+            "Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.",
+            "Sinds 6 oktober telt Slaap niet meer mee in je score.",
+            "De grootste verandering in één dag was op 6 oktober: van 68 naar 73.",
+            "In dezelfde periode ging je score voor slaapduur van gemiddeld 80 naar 68."
+        ],
+        "empty": "Nog niet genoeg gegevens.",
+        "values": [
+            71,
+            71,
+            71,
+            70,
+            70,
+            70,
+            null,
+            null,
+            null,
+            null,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            69,
+            68,
+            68,
+            68,
+            68,
+            68,
+            68,
+            68,
+            68,
+            73
+        ],
+        "axis": [
+            "7 sep",
+            "Vandaag"
+        ],
+        "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen: dalend, van 71 naar 69",
+        "default": "7",
+        "switch": "Periode kiezen",
+        "readout": {
+            "score": "Gezondheidsscore",
+            "hint": "Tik of schuif over de lijn om een dag te bekijken.",
+            "categories": [
+                {
+                    "id": "sleep",
+                    "label": "Slaap",
+                    "accent": "sleep"
+                },
+                {
+                    "id": "nutrition",
+                    "label": "Voeding",
+                    "accent": "nutrition"
+                },
+                {
+                    "id": "training",
+                    "label": "Sport",
+                    "accent": "training"
+                }
+            ]
+        },
+        "periods": [
+            {
+                "key": "7",
+                "label": "7 dagen",
+                "days": 7,
+                "state": "filled",
+                "direction": null,
+                "text": [
+                    "De afgelopen 7 dagen lag je score tussen 68 en 73."
+                ],
+                "empty": "Nog niet genoeg gegevens.",
+                "since": null,
+                "start": 38,
+                "values": [
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    73
+                ],
+                "day_dots": true,
+                "axis": [
+                    {
+                        "label": "30 sep",
+                        "x": 0
+                    },
+                    {
+                        "label": "2 okt",
+                        "x": 33.33
+                    },
+                    {
+                        "label": "4 okt",
+                        "x": 66.67
+                    },
+                    {
+                        "label": "Vandaag",
+                        "x": 100
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per dag, de afgelopen 7 dagen",
+                "chart": {
+                    "line": [
+                        "M 0 42.72 C 8.33 42.72, 33.33 42.72, 50 42.72 C 66.67 42.72, 83.33 42.72, 100 42.72 C 116.67 42.72, 133.33 42.72, 150 42.72 C 166.67 42.72, 183.33 42.72, 200 42.72 C 216.67 42.72, 233.33 43.52, 250 42.72 C 266.67 41.92, 291.67 38.72, 300 37.92"
+                    ],
+                    "area": [
+                        "M 0 42.72 C 8.33 42.72, 33.33 42.72, 50 42.72 C 66.67 42.72, 83.33 42.72, 100 42.72 C 116.67 42.72, 133.33 42.72, 150 42.72 C 166.67 42.72, 183.33 42.72, 200 42.72 C 216.67 42.72, 233.33 43.52, 250 42.72 C 266.67 41.92, 291.67 38.72, 300 37.92 L 300 120 L 0 120 Z"
+                    ],
+                    "dots": [],
+                    "width": 300,
+                    "height": 120,
+                    "has_data": true,
+                    "at": [
+                        [
+                            0,
+                            35.6
+                        ],
+                        [
+                            16.67,
+                            35.6
+                        ],
+                        [
+                            33.33,
+                            35.6
+                        ],
+                        [
+                            50,
+                            35.6
+                        ],
+                        [
+                            66.67,
+                            35.6
+                        ],
+                        [
+                            83.33,
+                            35.6
+                        ],
+                        [
+                            100,
+                            31.6
+                        ]
+                    ]
+                }
+            },
+            {
+                "key": "30",
+                "label": "30 dagen",
+                "days": 30,
+                "state": "filled",
+                "direction": {
+                    "key": "down",
+                    "label": "Dalend"
+                },
+                "text": [
+                    "Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.",
+                    "Sinds 6 oktober telt Slaap niet meer mee in je score.",
+                    "De grootste verandering in één dag was op 6 oktober: van 68 naar 73.",
+                    "In dezelfde periode ging je score voor slaapduur van gemiddeld 80 naar 68."
+                ],
+                "empty": "Nog niet genoeg gegevens.",
+                "since": null,
+                "start": 15,
+                "values": [
+                    71,
+                    71,
+                    71,
+                    70,
+                    70,
+                    70,
+                    null,
+                    null,
+                    null,
+                    null,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    73
+                ],
+                "day_dots": false,
+                "axis": [
+                    {
+                        "label": "7 sep",
+                        "x": 0
+                    },
+                    {
+                        "label": "22 sep",
+                        "x": 51.72
+                    },
+                    {
+                        "label": "Vandaag",
+                        "x": 100
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen: dalend",
+                "chart": {
+                    "line": [
+                        "M 0 39.84 C 1.72 39.84, 6.89 39.84, 10.34 39.84 C 13.79 39.84, 17.24 39.68, 20.69 39.84 C 24.14 40, 27.58 40.64, 31.03 40.8 C 34.48 40.96, 37.93 40.8, 41.38 40.8 C 44.83 40.8, 50 40.8, 51.72 40.8",
+                        "M 103.45 41.76 C 105.17 41.76, 110.34 41.76, 113.79 41.76 C 117.24 41.76, 120.69 41.76, 124.14 41.76 C 127.59 41.76, 131.03 41.76, 134.48 41.76 C 137.93 41.76, 141.38 41.76, 144.83 41.76 C 148.28 41.76, 151.72 41.76, 155.17 41.76 C 158.62 41.76, 162.07 41.76, 165.52 41.76 C 168.97 41.76, 172.41 41.76, 175.86 41.76 C 179.31 41.76, 182.76 41.76, 186.21 41.76 C 189.66 41.76, 193.1 41.76, 196.55 41.76 C 200 41.76, 203.45 41.6, 206.9 41.76 C 210.35 41.92, 213.79 42.56, 217.24 42.72 C 220.69 42.88, 224.14 42.72, 227.59 42.72 C 231.04 42.72, 234.48 42.72, 237.93 42.72 C 241.38 42.72, 244.83 42.72, 248.28 42.72 C 251.73 42.72, 255.17 42.72, 258.62 42.72 C 262.07 42.72, 265.52 42.72, 268.97 42.72 C 272.42 42.72, 275.86 42.72, 279.31 42.72 C 282.76 42.72, 286.21 43.52, 289.66 42.72 C 293.11 41.92, 298.28 38.72, 300 37.92"
+                    ],
+                    "area": [
+                        "M 0 39.84 C 1.72 39.84, 6.89 39.84, 10.34 39.84 C 13.79 39.84, 17.24 39.68, 20.69 39.84 C 24.14 40, 27.58 40.64, 31.03 40.8 C 34.48 40.96, 37.93 40.8, 41.38 40.8 C 44.83 40.8, 50 40.8, 51.72 40.8 L 51.72 120 L 0 120 Z",
+                        "M 103.45 41.76 C 105.17 41.76, 110.34 41.76, 113.79 41.76 C 117.24 41.76, 120.69 41.76, 124.14 41.76 C 127.59 41.76, 131.03 41.76, 134.48 41.76 C 137.93 41.76, 141.38 41.76, 144.83 41.76 C 148.28 41.76, 151.72 41.76, 155.17 41.76 C 158.62 41.76, 162.07 41.76, 165.52 41.76 C 168.97 41.76, 172.41 41.76, 175.86 41.76 C 179.31 41.76, 182.76 41.76, 186.21 41.76 C 189.66 41.76, 193.1 41.76, 196.55 41.76 C 200 41.76, 203.45 41.6, 206.9 41.76 C 210.35 41.92, 213.79 42.56, 217.24 42.72 C 220.69 42.88, 224.14 42.72, 227.59 42.72 C 231.04 42.72, 234.48 42.72, 237.93 42.72 C 241.38 42.72, 244.83 42.72, 248.28 42.72 C 251.73 42.72, 255.17 42.72, 258.62 42.72 C 262.07 42.72, 265.52 42.72, 268.97 42.72 C 272.42 42.72, 275.86 42.72, 279.31 42.72 C 282.76 42.72, 286.21 43.52, 289.66 42.72 C 293.11 41.92, 298.28 38.72, 300 37.92 L 300 120 L 103.45 120 Z"
+                    ],
+                    "dots": [],
+                    "width": 300,
+                    "height": 120,
+                    "has_data": true,
+                    "at": [
+                        [
+                            0,
+                            33.2
+                        ],
+                        [
+                            3.45,
+                            33.2
+                        ],
+                        [
+                            6.9,
+                            33.2
+                        ],
+                        [
+                            10.34,
+                            34
+                        ],
+                        [
+                            13.79,
+                            34
+                        ],
+                        [
+                            17.24,
+                            34
+                        ],
+                        [
+                            20.69,
+                            null
+                        ],
+                        [
+                            24.14,
+                            null
+                        ],
+                        [
+                            27.59,
+                            null
+                        ],
+                        [
+                            31.03,
+                            null
+                        ],
+                        [
+                            34.48,
+                            34.8
+                        ],
+                        [
+                            37.93,
+                            34.8
+                        ],
+                        [
+                            41.38,
+                            34.8
+                        ],
+                        [
+                            44.83,
+                            34.8
+                        ],
+                        [
+                            48.28,
+                            34.8
+                        ],
+                        [
+                            51.72,
+                            34.8
+                        ],
+                        [
+                            55.17,
+                            34.8
+                        ],
+                        [
+                            58.62,
+                            34.8
+                        ],
+                        [
+                            62.07,
+                            34.8
+                        ],
+                        [
+                            65.52,
+                            34.8
+                        ],
+                        [
+                            68.97,
+                            34.8
+                        ],
+                        [
+                            72.41,
+                            35.6
+                        ],
+                        [
+                            75.86,
+                            35.6
+                        ],
+                        [
+                            79.31,
+                            35.6
+                        ],
+                        [
+                            82.76,
+                            35.6
+                        ],
+                        [
+                            86.21,
+                            35.6
+                        ],
+                        [
+                            89.66,
+                            35.6
+                        ],
+                        [
+                            93.1,
+                            35.6
+                        ],
+                        [
+                            96.55,
+                            35.6
+                        ],
+                        [
+                            100,
+                            31.6
+                        ]
+                    ]
+                }
+            },
+            {
+                "key": "90",
+                "label": "90 dagen",
+                "days": 90,
+                "state": "filled",
+                "direction": {
+                    "key": "flat",
+                    "label": "Stabiel"
+                },
+                "text": [
+                    "Je score bleef sinds 23 augustus tussen 67 en 73.",
+                    "Sinds 6 oktober telt Slaap niet meer mee in je score."
+                ],
+                "empty": "Nog niet genoeg gegevens.",
+                "since": "Je geschiedenis begint op 23 augustus.",
+                "start": 0,
+                "values": [
+                    67,
+                    68,
+                    68,
+                    69,
+                    70,
+                    70,
+                    70,
+                    70,
+                    70,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    70,
+                    70,
+                    70,
+                    null,
+                    null,
+                    null,
+                    null,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    73
+                ],
+                "day_dots": false,
+                "axis": [
+                    {
+                        "label": "23 aug",
+                        "x": 0
+                    },
+                    {
+                        "label": "7 sep",
+                        "x": 34.09
+                    },
+                    {
+                        "label": "21 sep",
+                        "x": 65.91
+                    },
+                    {
+                        "label": "Vandaag",
+                        "x": 100
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per dag, de afgelopen 90 dagen: stabiel",
+                "chart": {
+                    "line": [
+                        "M 0 43.68 C 1.14 43.52, 4.55 42.88, 6.82 42.72 C 9.09 42.56, 11.37 42.88, 13.64 42.72 C 15.91 42.56, 18.18 42.08, 20.45 41.76 C 22.72 41.44, 25 40.96, 27.27 40.8 C 29.54 40.64, 31.82 40.8, 34.09 40.8 C 36.36 40.8, 38.64 40.8, 40.91 40.8 C 43.18 40.8, 45.46 40.8, 47.73 40.8 C 50 40.8, 52.28 40.96, 54.55 40.8 C 56.82 40.64, 59.09 40, 61.36 39.84 C 63.63 39.68, 65.91 39.84, 68.18 39.84 C 70.45 39.84, 72.73 39.84, 75 39.84 C 77.27 39.84, 79.55 39.84, 81.82 39.84 C 84.09 39.84, 86.37 39.84, 88.64 39.84 C 90.91 39.84, 93.18 39.84, 95.45 39.84 C 97.72 39.84, 100 39.84, 102.27 39.84 C 104.54 39.84, 106.82 39.84, 109.09 39.84 C 111.36 39.84, 113.64 39.68, 115.91 39.84 C 118.18 40, 120.46 40.64, 122.73 40.8 C 125 40.96, 127.28 40.8, 129.55 40.8 C 131.82 40.8, 135.23 40.8, 136.36 40.8",
+                        "M 170.45 41.76 C 171.59 41.76, 175 41.76, 177.27 41.76 C 179.54 41.76, 181.82 41.76, 184.09 41.76 C 186.36 41.76, 188.64 41.76, 190.91 41.76 C 193.18 41.76, 195.46 41.76, 197.73 41.76 C 200 41.76, 202.28 41.76, 204.55 41.76 C 206.82 41.76, 209.09 41.76, 211.36 41.76 C 213.63 41.76, 215.91 41.76, 218.18 41.76 C 220.45 41.76, 222.73 41.76, 225 41.76 C 227.27 41.76, 229.55 41.76, 231.82 41.76 C 234.09 41.76, 236.37 41.6, 238.64 41.76 C 240.91 41.92, 243.18 42.56, 245.45 42.72 C 247.72 42.88, 250 42.72, 252.27 42.72 C 254.54 42.72, 256.82 42.72, 259.09 42.72 C 261.36 42.72, 263.64 42.72, 265.91 42.72 C 268.18 42.72, 270.46 42.72, 272.73 42.72 C 275 42.72, 277.28 42.72, 279.55 42.72 C 281.82 42.72, 284.09 42.72, 286.36 42.72 C 288.63 42.72, 290.91 43.52, 293.18 42.72 C 295.45 41.92, 298.86 38.72, 300 37.92"
+                    ],
+                    "area": [
+                        "M 0 43.68 C 1.14 43.52, 4.55 42.88, 6.82 42.72 C 9.09 42.56, 11.37 42.88, 13.64 42.72 C 15.91 42.56, 18.18 42.08, 20.45 41.76 C 22.72 41.44, 25 40.96, 27.27 40.8 C 29.54 40.64, 31.82 40.8, 34.09 40.8 C 36.36 40.8, 38.64 40.8, 40.91 40.8 C 43.18 40.8, 45.46 40.8, 47.73 40.8 C 50 40.8, 52.28 40.96, 54.55 40.8 C 56.82 40.64, 59.09 40, 61.36 39.84 C 63.63 39.68, 65.91 39.84, 68.18 39.84 C 70.45 39.84, 72.73 39.84, 75 39.84 C 77.27 39.84, 79.55 39.84, 81.82 39.84 C 84.09 39.84, 86.37 39.84, 88.64 39.84 C 90.91 39.84, 93.18 39.84, 95.45 39.84 C 97.72 39.84, 100 39.84, 102.27 39.84 C 104.54 39.84, 106.82 39.84, 109.09 39.84 C 111.36 39.84, 113.64 39.68, 115.91 39.84 C 118.18 40, 120.46 40.64, 122.73 40.8 C 125 40.96, 127.28 40.8, 129.55 40.8 C 131.82 40.8, 135.23 40.8, 136.36 40.8 L 136.36 120 L 0 120 Z",
+                        "M 170.45 41.76 C 171.59 41.76, 175 41.76, 177.27 41.76 C 179.54 41.76, 181.82 41.76, 184.09 41.76 C 186.36 41.76, 188.64 41.76, 190.91 41.76 C 193.18 41.76, 195.46 41.76, 197.73 41.76 C 200 41.76, 202.28 41.76, 204.55 41.76 C 206.82 41.76, 209.09 41.76, 211.36 41.76 C 213.63 41.76, 215.91 41.76, 218.18 41.76 C 220.45 41.76, 222.73 41.76, 225 41.76 C 227.27 41.76, 229.55 41.76, 231.82 41.76 C 234.09 41.76, 236.37 41.6, 238.64 41.76 C 240.91 41.92, 243.18 42.56, 245.45 42.72 C 247.72 42.88, 250 42.72, 252.27 42.72 C 254.54 42.72, 256.82 42.72, 259.09 42.72 C 261.36 42.72, 263.64 42.72, 265.91 42.72 C 268.18 42.72, 270.46 42.72, 272.73 42.72 C 275 42.72, 277.28 42.72, 279.55 42.72 C 281.82 42.72, 284.09 42.72, 286.36 42.72 C 288.63 42.72, 290.91 43.52, 293.18 42.72 C 295.45 41.92, 298.86 38.72, 300 37.92 L 300 120 L 170.45 120 Z"
+                    ],
+                    "dots": [],
+                    "width": 300,
+                    "height": 120,
+                    "has_data": true,
+                    "at": [
+                        [
+                            0,
+                            36.4
+                        ],
+                        [
+                            2.27,
+                            35.6
+                        ],
+                        [
+                            4.55,
+                            35.6
+                        ],
+                        [
+                            6.82,
+                            34.8
+                        ],
+                        [
+                            9.09,
+                            34
+                        ],
+                        [
+                            11.36,
+                            34
+                        ],
+                        [
+                            13.64,
+                            34
+                        ],
+                        [
+                            15.91,
+                            34
+                        ],
+                        [
+                            18.18,
+                            34
+                        ],
+                        [
+                            20.45,
+                            33.2
+                        ],
+                        [
+                            22.73,
+                            33.2
+                        ],
+                        [
+                            25,
+                            33.2
+                        ],
+                        [
+                            27.27,
+                            33.2
+                        ],
+                        [
+                            29.55,
+                            33.2
+                        ],
+                        [
+                            31.82,
+                            33.2
+                        ],
+                        [
+                            34.09,
+                            33.2
+                        ],
+                        [
+                            36.36,
+                            33.2
+                        ],
+                        [
+                            38.64,
+                            33.2
+                        ],
+                        [
+                            40.91,
+                            34
+                        ],
+                        [
+                            43.18,
+                            34
+                        ],
+                        [
+                            45.45,
+                            34
+                        ],
+                        [
+                            47.73,
+                            null
+                        ],
+                        [
+                            50,
+                            null
+                        ],
+                        [
+                            52.27,
+                            null
+                        ],
+                        [
+                            54.55,
+                            null
+                        ],
+                        [
+                            56.82,
+                            34.8
+                        ],
+                        [
+                            59.09,
+                            34.8
+                        ],
+                        [
+                            61.36,
+                            34.8
+                        ],
+                        [
+                            63.64,
+                            34.8
+                        ],
+                        [
+                            65.91,
+                            34.8
+                        ],
+                        [
+                            68.18,
+                            34.8
+                        ],
+                        [
+                            70.45,
+                            34.8
+                        ],
+                        [
+                            72.73,
+                            34.8
+                        ],
+                        [
+                            75,
+                            34.8
+                        ],
+                        [
+                            77.27,
+                            34.8
+                        ],
+                        [
+                            79.55,
+                            34.8
+                        ],
+                        [
+                            81.82,
+                            35.6
+                        ],
+                        [
+                            84.09,
+                            35.6
+                        ],
+                        [
+                            86.36,
+                            35.6
+                        ],
+                        [
+                            88.64,
+                            35.6
+                        ],
+                        [
+                            90.91,
+                            35.6
+                        ],
+                        [
+                            93.18,
+                            35.6
+                        ],
+                        [
+                            95.45,
+                            35.6
+                        ],
+                        [
+                            97.73,
+                            35.6
+                        ],
+                        [
+                            100,
+                            31.6
+                        ]
+                    ]
+                }
+            },
+            {
+                "key": "365",
+                "label": "1 jaar",
+                "days": 365,
+                "state": "filled",
+                "direction": {
+                    "key": "flat",
+                    "label": "Stabiel"
+                },
+                "text": [
+                    "Je score bleef sinds 23 augustus tussen 67 en 73.",
+                    "Sinds 6 oktober telt Slaap niet meer mee in je score."
+                ],
+                "empty": "Nog niet genoeg gegevens.",
+                "since": "Je geschiedenis begint op 23 augustus.",
+                "start": 0,
+                "values": [
+                    67,
+                    68,
+                    68,
+                    69,
+                    70,
+                    70,
+                    70,
+                    70,
+                    70,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    71,
+                    70,
+                    70,
+                    70,
+                    null,
+                    null,
+                    null,
+                    null,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    69,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    68,
+                    73
+                ],
+                "day_dots": false,
+                "axis": [
+                    {
+                        "label": "23 aug",
+                        "x": 0
+                    },
+                    {
+                        "label": "3 sep",
+                        "x": 25
+                    },
+                    {
+                        "label": "14 sep",
+                        "x": 50
+                    },
+                    {
+                        "label": "25 sep",
+                        "x": 75
+                    },
+                    {
+                        "label": "Vandaag",
+                        "x": 100
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per dag, het afgelopen jaar: stabiel",
+                "chart": {
+                    "line": [
+                        "M 0 43.68 C 1.14 43.52, 4.55 42.88, 6.82 42.72 C 9.09 42.56, 11.37 42.88, 13.64 42.72 C 15.91 42.56, 18.18 42.08, 20.45 41.76 C 22.72 41.44, 25 40.96, 27.27 40.8 C 29.54 40.64, 31.82 40.8, 34.09 40.8 C 36.36 40.8, 38.64 40.8, 40.91 40.8 C 43.18 40.8, 45.46 40.8, 47.73 40.8 C 50 40.8, 52.28 40.96, 54.55 40.8 C 56.82 40.64, 59.09 40, 61.36 39.84 C 63.63 39.68, 65.91 39.84, 68.18 39.84 C 70.45 39.84, 72.73 39.84, 75 39.84 C 77.27 39.84, 79.55 39.84, 81.82 39.84 C 84.09 39.84, 86.37 39.84, 88.64 39.84 C 90.91 39.84, 93.18 39.84, 95.45 39.84 C 97.72 39.84, 100 39.84, 102.27 39.84 C 104.54 39.84, 106.82 39.84, 109.09 39.84 C 111.36 39.84, 113.64 39.68, 115.91 39.84 C 118.18 40, 120.46 40.64, 122.73 40.8 C 125 40.96, 127.28 40.8, 129.55 40.8 C 131.82 40.8, 135.23 40.8, 136.36 40.8",
+                        "M 170.45 41.76 C 171.59 41.76, 175 41.76, 177.27 41.76 C 179.54 41.76, 181.82 41.76, 184.09 41.76 C 186.36 41.76, 188.64 41.76, 190.91 41.76 C 193.18 41.76, 195.46 41.76, 197.73 41.76 C 200 41.76, 202.28 41.76, 204.55 41.76 C 206.82 41.76, 209.09 41.76, 211.36 41.76 C 213.63 41.76, 215.91 41.76, 218.18 41.76 C 220.45 41.76, 222.73 41.76, 225 41.76 C 227.27 41.76, 229.55 41.76, 231.82 41.76 C 234.09 41.76, 236.37 41.6, 238.64 41.76 C 240.91 41.92, 243.18 42.56, 245.45 42.72 C 247.72 42.88, 250 42.72, 252.27 42.72 C 254.54 42.72, 256.82 42.72, 259.09 42.72 C 261.36 42.72, 263.64 42.72, 265.91 42.72 C 268.18 42.72, 270.46 42.72, 272.73 42.72 C 275 42.72, 277.28 42.72, 279.55 42.72 C 281.82 42.72, 284.09 42.72, 286.36 42.72 C 288.63 42.72, 290.91 43.52, 293.18 42.72 C 295.45 41.92, 298.86 38.72, 300 37.92"
+                    ],
+                    "area": [
+                        "M 0 43.68 C 1.14 43.52, 4.55 42.88, 6.82 42.72 C 9.09 42.56, 11.37 42.88, 13.64 42.72 C 15.91 42.56, 18.18 42.08, 20.45 41.76 C 22.72 41.44, 25 40.96, 27.27 40.8 C 29.54 40.64, 31.82 40.8, 34.09 40.8 C 36.36 40.8, 38.64 40.8, 40.91 40.8 C 43.18 40.8, 45.46 40.8, 47.73 40.8 C 50 40.8, 52.28 40.96, 54.55 40.8 C 56.82 40.64, 59.09 40, 61.36 39.84 C 63.63 39.68, 65.91 39.84, 68.18 39.84 C 70.45 39.84, 72.73 39.84, 75 39.84 C 77.27 39.84, 79.55 39.84, 81.82 39.84 C 84.09 39.84, 86.37 39.84, 88.64 39.84 C 90.91 39.84, 93.18 39.84, 95.45 39.84 C 97.72 39.84, 100 39.84, 102.27 39.84 C 104.54 39.84, 106.82 39.84, 109.09 39.84 C 111.36 39.84, 113.64 39.68, 115.91 39.84 C 118.18 40, 120.46 40.64, 122.73 40.8 C 125 40.96, 127.28 40.8, 129.55 40.8 C 131.82 40.8, 135.23 40.8, 136.36 40.8 L 136.36 120 L 0 120 Z",
+                        "M 170.45 41.76 C 171.59 41.76, 175 41.76, 177.27 41.76 C 179.54 41.76, 181.82 41.76, 184.09 41.76 C 186.36 41.76, 188.64 41.76, 190.91 41.76 C 193.18 41.76, 195.46 41.76, 197.73 41.76 C 200 41.76, 202.28 41.76, 204.55 41.76 C 206.82 41.76, 209.09 41.76, 211.36 41.76 C 213.63 41.76, 215.91 41.76, 218.18 41.76 C 220.45 41.76, 222.73 41.76, 225 41.76 C 227.27 41.76, 229.55 41.76, 231.82 41.76 C 234.09 41.76, 236.37 41.6, 238.64 41.76 C 240.91 41.92, 243.18 42.56, 245.45 42.72 C 247.72 42.88, 250 42.72, 252.27 42.72 C 254.54 42.72, 256.82 42.72, 259.09 42.72 C 261.36 42.72, 263.64 42.72, 265.91 42.72 C 268.18 42.72, 270.46 42.72, 272.73 42.72 C 275 42.72, 277.28 42.72, 279.55 42.72 C 281.82 42.72, 284.09 42.72, 286.36 42.72 C 288.63 42.72, 290.91 43.52, 293.18 42.72 C 295.45 41.92, 298.86 38.72, 300 37.92 L 300 120 L 170.45 120 Z"
+                    ],
+                    "dots": [],
+                    "width": 300,
+                    "height": 120,
+                    "has_data": true,
+                    "at": [
+                        [
+                            0,
+                            36.4
+                        ],
+                        [
+                            2.27,
+                            35.6
+                        ],
+                        [
+                            4.55,
+                            35.6
+                        ],
+                        [
+                            6.82,
+                            34.8
+                        ],
+                        [
+                            9.09,
+                            34
+                        ],
+                        [
+                            11.36,
+                            34
+                        ],
+                        [
+                            13.64,
+                            34
+                        ],
+                        [
+                            15.91,
+                            34
+                        ],
+                        [
+                            18.18,
+                            34
+                        ],
+                        [
+                            20.45,
+                            33.2
+                        ],
+                        [
+                            22.73,
+                            33.2
+                        ],
+                        [
+                            25,
+                            33.2
+                        ],
+                        [
+                            27.27,
+                            33.2
+                        ],
+                        [
+                            29.55,
+                            33.2
+                        ],
+                        [
+                            31.82,
+                            33.2
+                        ],
+                        [
+                            34.09,
+                            33.2
+                        ],
+                        [
+                            36.36,
+                            33.2
+                        ],
+                        [
+                            38.64,
+                            33.2
+                        ],
+                        [
+                            40.91,
+                            34
+                        ],
+                        [
+                            43.18,
+                            34
+                        ],
+                        [
+                            45.45,
+                            34
+                        ],
+                        [
+                            47.73,
+                            null
+                        ],
+                        [
+                            50,
+                            null
+                        ],
+                        [
+                            52.27,
+                            null
+                        ],
+                        [
+                            54.55,
+                            null
+                        ],
+                        [
+                            56.82,
+                            34.8
+                        ],
+                        [
+                            59.09,
+                            34.8
+                        ],
+                        [
+                            61.36,
+                            34.8
+                        ],
+                        [
+                            63.64,
+                            34.8
+                        ],
+                        [
+                            65.91,
+                            34.8
+                        ],
+                        [
+                            68.18,
+                            34.8
+                        ],
+                        [
+                            70.45,
+                            34.8
+                        ],
+                        [
+                            72.73,
+                            34.8
+                        ],
+                        [
+                            75,
+                            34.8
+                        ],
+                        [
+                            77.27,
+                            34.8
+                        ],
+                        [
+                            79.55,
+                            34.8
+                        ],
+                        [
+                            81.82,
+                            35.6
+                        ],
+                        [
+                            84.09,
+                            35.6
+                        ],
+                        [
+                            86.36,
+                            35.6
+                        ],
+                        [
+                            88.64,
+                            35.6
+                        ],
+                        [
+                            90.91,
+                            35.6
+                        ],
+                        [
+                            93.18,
+                            35.6
+                        ],
+                        [
+                            95.45,
+                            35.6
+                        ],
+                        [
+                            97.73,
+                            35.6
+                        ],
+                        [
+                            100,
+                            31.6
+                        ]
+                    ]
+                }
+            }
+        ],
+        "days": [
+            {
+                "date": "2026-08-23",
+                "label": "23 augustus",
+                "value": 67,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Slaapduur 71 · Regelmaat 60 · Kwaliteit 69"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 59,
+                        "band": "low",
+                        "parts": "Volume 64 · Intensiteit 56 · Balans 59"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-24",
+                "label": "24 augustus",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Slaapduur 72 · Regelmaat 61 · Kwaliteit 70"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 60,
+                        "band": "mid",
+                        "parts": "Volume 65 · Intensiteit 57 · Balans 60"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-25",
+                "label": "25 augustus",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Slaapduur 73 · Regelmaat 62 · Kwaliteit 71"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 61,
+                        "band": "mid",
+                        "parts": "Volume 66 · Intensiteit 58 · Balans 61"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-26",
+                "label": "26 augustus",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Slaapduur 74 · Regelmaat 63 · Kwaliteit 72"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 62,
+                        "band": "mid",
+                        "parts": "Volume 67 · Intensiteit 59 · Balans 62"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-27",
+                "label": "27 augustus",
+                "value": 70,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Slaapduur 75 · Regelmaat 64 · Kwaliteit 73"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 63,
+                        "band": "mid",
+                        "parts": "Volume 68 · Intensiteit 60 · Balans 63"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-28",
+                "label": "28 augustus",
+                "value": 70,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Slaapduur 76 · Regelmaat 65 · Kwaliteit 74"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 74,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,4"
+                    },
+                    {
+                        "id": "training",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Volume 69 · Intensiteit 61 · Balans 64"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-29",
+                "label": "29 augustus",
+                "value": 70,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Slaapduur 77 · Regelmaat 66 · Kwaliteit 75"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,3"
+                    },
+                    {
+                        "id": "training",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Volume 69 · Intensiteit 61 · Balans 64"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-30",
+                "label": "30 augustus",
+                "value": 70,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Slaapduur 77 · Regelmaat 66 · Kwaliteit 75"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,2"
+                    },
+                    {
+                        "id": "training",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Volume 70 · Intensiteit 62 · Balans 65"
+                    }
+                ]
+            },
+            {
+                "date": "2026-08-31",
+                "label": "31 augustus",
+                "value": 70,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 30 augustus gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Slaapduur 77 · Regelmaat 66 · Kwaliteit 75"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,2"
+                    },
+                    {
+                        "id": "training",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Volume 70 · Intensiteit 62 · Balans 65"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-01",
+                "label": "1 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,1"
+                    },
+                    {
+                        "id": "training",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Volume 72 · Intensiteit 64 · Balans 67"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-02",
+                "label": "2 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,0"
+                    },
+                    {
+                        "id": "training",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Volume 72 · Intensiteit 64 · Balans 67"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-03",
+                "label": "3 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,9"
+                    },
+                    {
+                        "id": "training",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Volume 73 · Intensiteit 65 · Balans 68"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-04",
+                "label": "4 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,8"
+                    },
+                    {
+                        "id": "training",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Volume 74 · Intensiteit 66 · Balans 69"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-05",
+                "label": "5 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,8"
+                    },
+                    {
+                        "id": "training",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Volume 74 · Intensiteit 66 · Balans 69"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-06",
+                "label": "6 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,7"
+                    },
+                    {
+                        "id": "training",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Volume 75 · Intensiteit 67 · Balans 70"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-07",
+                "label": "7 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Volume 75 · Intensiteit 67 · Balans 70"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-08",
+                "label": "8 september",
+                "value": 71,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-09",
+                "label": "9 september",
+                "value": 71,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 8 september gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Slaapduur 80 · Regelmaat 69 · Kwaliteit 78"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-10",
+                "label": "10 september",
+                "value": 70,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-11",
+                "label": "11 september",
+                "value": 70,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 10 september gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-12",
+                "label": "12 september",
+                "value": 70,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 10 september gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Slaapduur 79 · Regelmaat 68 · Kwaliteit 77"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-13",
+                "label": "13 september",
+                "value": null,
+                "band": null,
+                "state": "none",
+                "note": "Geen score op deze dag.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "training",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-14",
+                "label": "14 september",
+                "value": null,
+                "band": null,
+                "state": "none",
+                "note": "Geen score op deze dag.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "training",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-15",
+                "label": "15 september",
+                "value": null,
+                "band": null,
+                "state": "none",
+                "note": "Geen score op deze dag.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "training",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-16",
+                "label": "16 september",
+                "value": null,
+                "band": null,
+                "state": "none",
+                "note": "Geen score op deze dag.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "training",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-17",
+                "label": "17 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Slaapduur 75 · Regelmaat 64 · Kwaliteit 73"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Volume 77 · Intensiteit 69 · Balans 72"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-18",
+                "label": "18 september",
+                "value": 69,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 17 september gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Slaapduur 75 · Regelmaat 64 · Kwaliteit 73"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Volume 77 · Intensiteit 69 · Balans 72"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-19",
+                "label": "19 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Slaapduur 74 · Regelmaat 63 · Kwaliteit 72"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-20",
+                "label": "20 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Slaapduur 73 · Regelmaat 62 · Kwaliteit 71"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,7"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-21",
+                "label": "21 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Slaapduur 72 · Regelmaat 61 · Kwaliteit 70"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,8"
+                    },
+                    {
+                        "id": "training",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Volume 76 · Intensiteit 68 · Balans 71"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-22",
+                "label": "22 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Slaapduur 72 · Regelmaat 61 · Kwaliteit 70"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 68,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,8"
+                    },
+                    {
+                        "id": "training",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Volume 75 · Intensiteit 67 · Balans 70"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-23",
+                "label": "23 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Slaapduur 71 · Regelmaat 60 · Kwaliteit 69"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Dagcijfer 6,9"
+                    },
+                    {
+                        "id": "training",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Volume 75 · Intensiteit 67 · Balans 70"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-24",
+                "label": "24 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Slaapduur 70 · Regelmaat 59 · Kwaliteit 68"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,0"
+                    },
+                    {
+                        "id": "training",
+                        "value": 70,
+                        "band": "mid",
+                        "parts": "Volume 75 · Intensiteit 67 · Balans 70"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-25",
+                "label": "25 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Slaapduur 70 · Regelmaat 59 · Kwaliteit 68"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 71,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,1"
+                    },
+                    {
+                        "id": "training",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Volume 74 · Intensiteit 66 · Balans 69"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-26",
+                "label": "26 september",
+                "value": 69,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Slaapduur 69 · Regelmaat 58 · Kwaliteit 67"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,2"
+                    },
+                    {
+                        "id": "training",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Volume 74 · Intensiteit 66 · Balans 69"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-27",
+                "label": "27 september",
+                "value": 69,
+                "band": "mid",
+                "state": "carried",
+                "note": "Geen nieuwe gegevens: de score van 26 september gold nog.",
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Slaapduur 69 · Regelmaat 58 · Kwaliteit 67"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 72,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,2"
+                    },
+                    {
+                        "id": "training",
+                        "value": 69,
+                        "band": "mid",
+                        "parts": "Volume 74 · Intensiteit 66 · Balans 69"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-28",
+                "label": "28 september",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,3"
+                    },
+                    {
+                        "id": "training",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Volume 72 · Intensiteit 64 · Balans 67"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-29",
+                "label": "29 september",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 74,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,4"
+                    },
+                    {
+                        "id": "training",
+                        "value": 67,
+                        "band": "mid",
+                        "parts": "Volume 72 · Intensiteit 64 · Balans 67"
+                    }
+                ]
+            },
+            {
+                "date": "2026-09-30",
+                "label": "30 september",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Volume 71 · Intensiteit 63 · Balans 66"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-01",
+                "label": "1 oktober",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 66,
+                        "band": "mid",
+                        "parts": "Volume 71 · Intensiteit 63 · Balans 66"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-02",
+                "label": "2 oktober",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 75,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,5"
+                    },
+                    {
+                        "id": "training",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Volume 70 · Intensiteit 62 · Balans 65"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-03",
+                "label": "3 oktober",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 65,
+                        "band": "mid",
+                        "parts": "Volume 70 · Intensiteit 62 · Balans 65"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-04",
+                "label": "4 oktober",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Volume 69 · Intensiteit 61 · Balans 64"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-05",
+                "label": "5 oktober",
+                "value": 68,
+                "band": "mid",
+                "state": "stored",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": 64,
+                        "band": "mid",
+                        "parts": "Slaapduur 68 · Regelmaat 57 · Kwaliteit 66"
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 76,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,6"
+                    },
+                    {
+                        "id": "training",
+                        "value": 63,
+                        "band": "mid",
+                        "parts": "Volume 68 · Intensiteit 60 · Balans 63"
+                    }
+                ]
+            },
+            {
+                "date": "2026-10-06",
+                "label": "Vandaag",
+                "value": 73,
+                "band": "mid",
+                "state": "today",
+                "note": null,
+                "categories": [
+                    {
+                        "id": "sleep",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    },
+                    {
+                        "id": "nutrition",
+                        "value": 73,
+                        "band": "mid",
+                        "parts": "Dagcijfer 7,3"
+                    },
+                    {
+                        "id": "training",
+                        "value": null,
+                        "band": null,
+                        "parts": null
+                    }
+                ]
+            }
+        ],
+        "chart": {
+            "line": [
+                "M 0 39.84 C 1.72 39.84, 6.89 39.84, 10.34 39.84 C 13.79 39.84, 17.24 39.68, 20.69 39.84 C 24.14 40, 27.58 40.64, 31.03 40.8 C 34.48 40.96, 37.93 40.8, 41.38 40.8 C 44.83 40.8, 50 40.8, 51.72 40.8",
+                "M 103.45 41.76 C 105.17 41.76, 110.34 41.76, 113.79 41.76 C 117.24 41.76, 120.69 41.76, 124.14 41.76 C 127.59 41.76, 131.03 41.76, 134.48 41.76 C 137.93 41.76, 141.38 41.76, 144.83 41.76 C 148.28 41.76, 151.72 41.76, 155.17 41.76 C 158.62 41.76, 162.07 41.76, 165.52 41.76 C 168.97 41.76, 172.41 41.76, 175.86 41.76 C 179.31 41.76, 182.76 41.76, 186.21 41.76 C 189.66 41.76, 193.1 41.76, 196.55 41.76 C 200 41.76, 203.45 41.6, 206.9 41.76 C 210.35 41.92, 213.79 42.56, 217.24 42.72 C 220.69 42.88, 224.14 42.72, 227.59 42.72 C 231.04 42.72, 234.48 42.72, 237.93 42.72 C 241.38 42.72, 244.83 42.72, 248.28 42.72 C 251.73 42.72, 255.17 42.72, 258.62 42.72 C 262.07 42.72, 265.52 42.72, 268.97 42.72 C 272.42 42.72, 275.86 42.72, 279.31 42.72 C 282.76 42.72, 286.21 43.52, 289.66 42.72 C 293.11 41.92, 298.28 38.72, 300 37.92"
+            ],
+            "area": [
+                "M 0 39.84 C 1.72 39.84, 6.89 39.84, 10.34 39.84 C 13.79 39.84, 17.24 39.68, 20.69 39.84 C 24.14 40, 27.58 40.64, 31.03 40.8 C 34.48 40.96, 37.93 40.8, 41.38 40.8 C 44.83 40.8, 50 40.8, 51.72 40.8 L 51.72 120 L 0 120 Z",
+                "M 103.45 41.76 C 105.17 41.76, 110.34 41.76, 113.79 41.76 C 117.24 41.76, 120.69 41.76, 124.14 41.76 C 127.59 41.76, 131.03 41.76, 134.48 41.76 C 137.93 41.76, 141.38 41.76, 144.83 41.76 C 148.28 41.76, 151.72 41.76, 155.17 41.76 C 158.62 41.76, 162.07 41.76, 165.52 41.76 C 168.97 41.76, 172.41 41.76, 175.86 41.76 C 179.31 41.76, 182.76 41.76, 186.21 41.76 C 189.66 41.76, 193.1 41.76, 196.55 41.76 C 200 41.76, 203.45 41.6, 206.9 41.76 C 210.35 41.92, 213.79 42.56, 217.24 42.72 C 220.69 42.88, 224.14 42.72, 227.59 42.72 C 231.04 42.72, 234.48 42.72, 237.93 42.72 C 241.38 42.72, 244.83 42.72, 248.28 42.72 C 251.73 42.72, 255.17 42.72, 258.62 42.72 C 262.07 42.72, 265.52 42.72, 268.97 42.72 C 272.42 42.72, 275.86 42.72, 279.31 42.72 C 282.76 42.72, 286.21 43.52, 289.66 42.72 C 293.11 41.92, 298.28 38.72, 300 37.92 L 300 120 L 103.45 120 Z"
+            ],
+            "dots": [],
+            "width": 300,
+            "height": 120,
+            "has_data": true,
+            "at": [
+                [
+                    0,
+                    33.2
+                ],
+                [
+                    3.45,
+                    33.2
+                ],
+                [
+                    6.9,
+                    33.2
+                ],
+                [
+                    10.34,
+                    34
+                ],
+                [
+                    13.79,
+                    34
+                ],
+                [
+                    17.24,
+                    34
+                ],
+                [
+                    20.69,
+                    null
+                ],
+                [
+                    24.14,
+                    null
+                ],
+                [
+                    27.59,
+                    null
+                ],
+                [
+                    31.03,
+                    null
+                ],
+                [
+                    34.48,
+                    34.8
+                ],
+                [
+                    37.93,
+                    34.8
+                ],
+                [
+                    41.38,
+                    34.8
+                ],
+                [
+                    44.83,
+                    34.8
+                ],
+                [
+                    48.28,
+                    34.8
+                ],
+                [
+                    51.72,
+                    34.8
+                ],
+                [
+                    55.17,
+                    34.8
+                ],
+                [
+                    58.62,
+                    34.8
+                ],
+                [
+                    62.07,
+                    34.8
+                ],
+                [
+                    65.52,
+                    34.8
+                ],
+                [
+                    68.97,
+                    34.8
+                ],
+                [
+                    72.41,
+                    35.6
+                ],
+                [
+                    75.86,
+                    35.6
+                ],
+                [
+                    79.31,
+                    35.6
+                ],
+                [
+                    82.76,
+                    35.6
+                ],
+                [
+                    86.21,
+                    35.6
+                ],
+                [
+                    89.66,
+                    35.6
+                ],
+                [
+                    93.1,
+                    35.6
+                ],
+                [
+                    96.55,
+                    35.6
+                ],
+                [
+                    100,
+                    31.6
+                ]
+            ]
+        }
+    },
+    "comparison": {
+        "title": "Vergeleken met jezelf",
+        "note": "Gemiddelden van je Gezondheidsscore per dag.",
+        "rows": [
+            {
+                "id": "now",
+                "label": "Nu",
+                "value": 73,
+                "band": "mid",
+                "note": "Over de afgelopen 7 dagen"
+            },
+            {
+                "id": "week",
+                "label": "Laatste 7 dagen",
+                "value": 69,
+                "band": "mid",
+                "note": "Gemiddeld"
+            },
+            {
+                "id": "period",
+                "label": "Laatste 30 dagen",
+                "value": 69,
+                "band": "mid",
+                "note": "Gemiddeld"
+            },
+            {
+                "id": "previous",
+                "label": "30 dagen daarvoor",
+                "value": 70,
+                "band": "mid",
+                "note": "Gemiddeld"
+            }
+        ],
+        "delta": {
+            "value": -1,
+            "text": "−1 ten opzichte van de 30 dagen daarvoor"
+        }
+    },
+    "opportunity": {
+        "title": "Grootste kans",
+        "state": "filled",
+        "empty": null,
+        "category": "nutrition",
+        "label": "Voeding",
+        "accent": "nutrition",
+        "icon": "utensils",
+        "part": "rating",
+        "name": "Dagcijfer voor voeding",
+        "value": 73,
+        "band": "mid",
+        "fact": "Je gemiddelde dagcijfer voor voeding is 7,3, over 3 dagen.",
+        "relation": "Hogere dagcijfers zouden samengaan met een hogere voedingsscore.",
+        "gain": 27,
+        "gain_text": "Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 27 punten verhogen."
+    }
 }

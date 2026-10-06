@@ -7,8 +7,9 @@
  * ---------------------------------------------------------------------------
  *   1  What is my score made of?      the categories, and each one's
  *                                     components with the weight they have
- *   2  What is changing?              the last 30 days, in a line and in
- *                                     dated sentences
+ *   2  What is changing?              its history over 7, 30, 90 or 365
+ *                                     days, in a line, in dated sentences,
+ *                                     and day by day with its categories
  *   3  How does it compare with me?   the score now, and the average of the
  *                                     daily score over earlier periods
  *   4  Where is the most room?        the component with the most points on
@@ -18,10 +19,11 @@
  * IT NEVER SCORES
  * ---------------------------------------------------------------------------
  * Everything is read from health_score_history() (includes/health-score.php):
- * the Health Score as it stood at the end of each day, with every category's
- * days, components and facts. The weights come from config/scoring.php,
- * exactly as the engine uses them. No score is calculated, adjusted or stored
- * here, and the score shown is the engine's score — over its own window.
+ * the Health Score now — over its 168 hours, with every category's days,
+ * components and facts — and as it was recorded on each earlier day. The
+ * weights come from config/scoring.php, exactly as the engine uses them. No
+ * score is calculated, adjusted or stored here. The longer periods are the
+ * same score's history, never other scores.
  *
  * ---------------------------------------------------------------------------
  * IT NEVER GUESSES
@@ -54,7 +56,11 @@ if (!function_exists('score_compass')) {
         $now = $history === [] ? null : $history[array_key_last($history)];
 
         $overall = $now['overall']['score'] ?? null;
-        $trend   = score_compass_trend($history, $copy, $areas);
+
+        /* The direction under the score, here and on Overzicht, is the one
+           over `trend_days`; the periods below each say their own. */
+        $trend = score_compass_trend($history, $copy, $areas, (int) $copy['rules']['trend_days'])
+            + score_compass_periods($history, $copy, $areas);
 
         return [
             'title'       => $copy['title'],
@@ -78,7 +84,7 @@ if (!function_exists('score_compass')) {
     function score_compass_composition(?array $now, array $copy, array $areas, array $cfg): array
     {
         $c       = $copy['composition'];
-        $window  = (int) $cfg['window_days'];
+        $window  = health_score_window_days();
         $counted = [];
         $rows    = [];
 
@@ -98,9 +104,13 @@ if (!function_exists('score_compass')) {
                 'icon'    => $area['icon'],
                 'value'   => $score,
                 'band'    => score_colour_band($score),
-                'meta'    => $score !== null
-                    ? sprintf(score_compass_plural($c['days'], $days), $days)
-                    : score_compass_collecting($area, $days, (int) $cfg['min_days']),
+                'meta'    => match (true) {
+                    $score !== null => sprintf(score_compass_plural($c['days'], $days), $days),
+                    /* Data, but none new for too long: it is left out. */
+                    !empty($result['expired']) && !empty($result['last_input'])
+                        => sprintf($c['expired'], score_compass_date((string) $result['last_input'])),
+                    default => score_compass_collecting($area, $days, (int) $cfg['min_days']),
+                },
                 'summary' => $score !== null && $id === 'nutrition' && isset($result['facts']['rating'])
                     ? sprintf($c['rating'], score_compass_decimal((float) $result['facts']['rating']))
                     : null,
@@ -251,12 +261,12 @@ if (!function_exists('score_compass')) {
      * them: a recovery needs a dip and a climb of `recovery_points` each,
      * "weeks in a row" needs every week's average to have moved the same way.
      */
-    function score_compass_trend(array $history, array $copy, array $areas): array
+    function score_compass_trend(array $history, array $copy, array $areas, int $days): array
     {
         $r = $copy['rules'];
         $t = $copy['trend'];
 
-        $window = array_slice($history, -(int) $r['trend_days'], null, true);
+        $window = array_slice($history, -$days, null, true);
         $dates  = array_keys($window);
         $values = array_map(static fn ($at) => $at['overall']['score'], array_values($window));
         $scored = array_keys(array_filter($values, static fn ($v) => $v !== null));
@@ -383,6 +393,213 @@ if (!function_exists('score_compass')) {
         $out['aria']      = sprintf($t['aria'], count($dates), ': ' . mb_strtolower($copy['directions'][$key]) . ', van ' . $from . ' naar ' . $to);
 
         return $out;
+    }
+
+    /**
+     * The history the trend card switches between: one entry per period of
+     * config/compass.php (`history.periods`: 7, 30, 90 and 365 days), each
+     * with its own sentences, axis and line, over ONE list of days — the
+     * Health Score of each day as it was recorded, with its categories and
+     * their parts, for reading the line day by day.
+     *
+     * The list starts at the first day with a score, so a new account's year
+     * is the days it has had and never a row of placeholders; a period that
+     * reaches back further says when the history begins (`since`). Without
+     * any score at all there are no days, and every period is empty.
+     */
+    function score_compass_periods(array $history, array $copy, array $areas): array
+    {
+        $h     = $copy['history'];
+        $t     = $copy['trend'];
+        $dates = array_keys($history);
+        $count = count($dates);
+
+        $firstAt = null;
+        foreach ($dates as $i => $date) {
+            if (($history[$date]['overall']['score'] ?? null) !== null) {
+                $firstAt = $i;
+                break;
+            }
+        }
+
+        $longest = max(array_map(static fn ($p) => (int) $p['days'], $h['periods']));
+        $listAt  = $firstAt === null ? $count : max($firstAt, $count - $longest);
+        $year    = $count === 0 ? '' : substr((string) $dates[$count - 1], 0, 4);
+
+        $days = [];
+        for ($i = $listAt; $i < $count; $i++) {
+            $days[] = score_compass_day($history[$dates[$i]] + ['date' => (string) $dates[$i]], $copy, $areas, $year);
+        }
+
+        $periods = [];
+        foreach ($h['periods'] as $period) {
+            $length = (int) $period['days'];
+            $from   = max(0, $count - $length);
+            $at     = $firstAt === null ? $count : max($from, $firstAt);
+            $values = array_map(static fn ($d) => $d['overall']['score'] ?? null, array_slice(array_values($history), $at));
+
+            $entry = [
+                'key'       => (string) $length,
+                'label'     => (string) $period['label'],
+                'days'      => $length,
+                'state'     => 'empty',
+                'direction' => null,
+                'text'      => [],
+                'empty'     => $t['empty'],
+                'since'     => $firstAt !== null && $firstAt > $from
+                    ? sprintf($h['since'], score_compass_date_in((string) $dates[$firstAt], $year))
+                    : null,
+                /* Where this period's line starts in `days`. */
+                'start'     => $at - $listAt,
+                'values'    => $values,
+                'day_dots'  => !empty($period['day_dots']),
+                'axis'      => score_compass_ticks(array_slice($dates, $at), (int) ($period['ticks'] ?? 2), $year, $t['today']),
+                'aria'      => sprintf($h['aria'], (string) ($period['spoken'] ?? $period['label']), ''),
+            ];
+
+            $scored = array_values(array_filter($values, static fn ($v) => $v !== null));
+
+            if ($scored !== []) {
+                if ($length < 2 * (int) $copy['rules']['segment_days']) {
+                    /* Too short to compare a first and a last week: what it held. */
+                    $entry['state'] = count($scored) >= 2 ? 'filled' : 'collecting';
+                    $entry['text']  = count($scored) >= 2
+                        ? [min($scored) === max($scored)
+                            ? sprintf($h['week_same'], min($scored))
+                            : sprintf($h['week'], min($scored), max($scored))]
+                        : [$t['collecting']];
+                } else {
+                    $analysis = score_compass_trend($history, $copy, $areas, $length);
+                    $entry['state']     = $analysis['state'];
+                    $entry['direction'] = $analysis['direction'];
+                    $entry['text']      = $analysis['text'];
+                    if ($analysis['direction'] !== null) {
+                        $entry['aria'] = sprintf($h['aria'], (string) ($period['spoken'] ?? $period['label']),
+                            ': ' . mb_strtolower($analysis['direction']['label']));
+                    }
+                }
+            }
+
+            $periods[] = $entry;
+        }
+
+        $names = [];
+        foreach ($areas as $id => $area) {
+            $names[] = ['id' => (string) $id, 'label' => (string) $area['label'], 'accent' => (string) $area['accent']];
+        }
+
+        return [
+            'default' => (string) $h['default'],
+            'switch'  => $h['switch'],
+            /* What a day's reading is called, and its categories' names and
+               colours once — each day lists them by id only. */
+            'readout' => ['score' => $h['score'], 'hint' => $h['hint'], 'categories' => $names],
+            'periods' => $periods,
+            'days'    => $days,
+        ];
+    }
+
+    /**
+     * The dates under a period's line: `$count` of them, spread over its
+     * days — the first, the last as "Vandaag" — each with where it stands,
+     * in % from the left, on the day it names.
+     *
+     * @param string[] $dates the period's days, oldest first
+     * @return array<int,array{label: string, x: float}>
+     */
+    function score_compass_ticks(array $dates, int $count, string $year, string $today): array
+    {
+        $n = count($dates);
+
+        if ($n === 0) {
+            return [];
+        }
+        if ($n === 1) {
+            return [['label' => $today, 'x' => 0.0]];
+        }
+
+        $count = max(2, min($count, $n));
+        $ticks = [];
+
+        for ($k = 0; $k < $count; $k++) {
+            $i = (int) round($k * ($n - 1) / ($count - 1));
+            $ticks[] = [
+                'label' => $i === $n - 1 ? $today : score_compass_date_in((string) $dates[$i], $year, true),
+                'x'     => round($i / ($n - 1) * 100, 2),
+            ];
+        }
+
+        return $ticks;
+    }
+
+    /**
+     * One day of the history as the reading shows it: the date, the Health
+     * Score and how it came to be there, and each category with its parts.
+     */
+    function score_compass_day(array $day, array $copy, array $areas, string $year): array
+    {
+        $h     = $copy['history'];
+        $value = $day['overall']['score'] ?? null;
+        $state = (string) ($day['state'] ?? 'stored');
+
+        $categories = [];
+        foreach ($areas as $id => $area) {
+            $result = $day[$id] ?? [];
+            $score  = $result['score'] ?? null;
+
+            $categories[] = [
+                'id'    => $id,
+                'value' => $score,
+                'band'  => score_colour_band($score),
+                'parts' => $score === null ? null : score_compass_part_line($id, (array) ($result['components'] ?? []), $copy),
+            ];
+        }
+
+        return [
+            'date'       => (string) $day['date'],
+            'label'      => $state === 'today' ? $copy['trend']['today'] : score_compass_date_in((string) $day['date'], $year),
+            'value'      => $value,
+            'band'       => score_colour_band($value),
+            'state'      => $state,
+            'note'       => match (true) {
+                $state === 'carried' && !empty($day['from']) => sprintf($h['carried'], score_compass_date_in((string) $day['from'], $year)),
+                $value === null                              => $h['none'],
+                default                                      => null,
+            },
+            'categories' => $categories,
+        ];
+    }
+
+    /**
+     * A category's parts on one line, as recorded that day: "Slaapduur 72 ·
+     * Regelmaat 60 · Kwaliteit 70"; Voeding's one part as its cijfer,
+     * "Dagcijfer 7,7". Null when none was recorded.
+     */
+    function score_compass_part_line(string $category, array $components, array $copy): ?string
+    {
+        $defs  = $copy['composition']['parts'][$category] ?? [];
+        $items = [];
+
+        foreach ($defs as $key => $def) {
+            $value = $components[$key] ?? null;
+            if ($value === null) {
+                continue;
+            }
+
+            $items[] = $def['label'] . ' ' . (count($defs) < 2
+                ? score_compass_decimal((float) $value / 10)
+                : (string) (int) round((float) $value));
+        }
+
+        return $items === [] ? null : implode(' · ', $items);
+    }
+
+    /** A date, with its year when that is not the current one: "7 okt 2025". */
+    function score_compass_date_in(string $date, string $year, bool $short = false): string
+    {
+        $text = score_compass_date($date, $short);
+
+        return substr($date, 0, 4) === $year ? $text : $text . ' ' . substr($date, 0, 4);
     }
 
     /** The values at the given positions that have a score. */
@@ -662,7 +879,7 @@ if (!function_exists('score_compass')) {
             'title' => $c['title'],
             'note'  => $c['note'],
             'rows'  => [
-                $row('now', $now, sprintf($c['rows']['now']['note'], (int) $cfg['window_days'])),
+                $row('now', $now, sprintf($c['rows']['now']['note'], health_score_window_days())),
                 $row('week', $week, $c['rows']['week']['note']),
                 $row('period', $current, $c['rows']['period']['note']),
                 $row('previous', $previous, $c['rows']['previous']['note']),

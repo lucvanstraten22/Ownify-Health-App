@@ -243,16 +243,35 @@ $history = [
 $h1 = card(1, ['nights' => $history]);
 check('day 1: the first score, on day 1', $h1['phase'] === 'first_score' && $h1['eyebrow'] === 'Dag 1 van 3');
 check('day 2: still the first score', card(2, ['nights' => $history])['phase'] === 'first_score');
-$h3 = card(3, ['nights' => $history]);
+/* The nights after it come in through the link, as they do. */
+$synced = array_merge($history, [night('2026-10-02', '23:20', 410), night('2026-10-03', '23:35', 425)]);
+$h3 = card(3, ['nights' => $synced]);
 check('day 3: the starting point', $h3['phase'] === 'baseline' && $h3['title'] === $cal['baseline']['title']
     && $h3['lede'] === $cal['baseline']['lede']);
 check('day 3: only the category with enough data', count($h3['baseline']) === 1 && $h3['baseline'][0]['id'] === 'sleep'
-    && $h3['baseline'][0]['value'] === health_score_at(['nights' => $history, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []],
+    && $h3['baseline'][0]['value'] === health_score_at(['nights' => $synced, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []],
         (new DateTimeImmutable(SETUP_DAY))->modify('+2 days')->setTime(21, 0))['sleep']['score']);
-check('day 3: its fact, from the engine\'s own facts', $h3['baseline'][0]['fact'] === 'Gemiddeld 6:55 per nacht', (string) $h3['baseline'][0]['fact']);
+check('day 3: its fact, from the engine\'s own facts', $h3['baseline'][0]['fact'] === 'Gemiddeld 6:56 per nacht', (string) $h3['baseline'][0]['fact']);
 check('day 3: what is still missing', $h3['note'] === 'Voeding en sport komen erbij zodra er 3 dagen van zijn.', (string) $h3['note']);
-check('day 5: still the starting point', card(5, ['nights' => $history])['phase'] === 'baseline');
-check('day 6: no card', card(6, ['nights' => $history]) === null);
+check('day 5: still the starting point', card(5, ['nights' => $synced])['phase'] === 'baseline');
+check('day 6: no card', card(6, ['nights' => $synced]) === null);
+
+/* --------------------------------------------------------------------- */
+section('history imported, then nothing new: three days on, it no longer counts');
+
+$stale = card(3, ['nights' => $history]);
+check('day 3, last night 30 September: no score, and not "too little data"', $stale['phase'] === 'building'
+    && $stale['title'] === $cal['expired']['title'] && $stale['lede'] === $cal['expired']['lede']
+    && $stale['first'] === null && $stale['baseline'] === [], json_encode([$stale['title'], $stale['lede']], JSON_UNESCAPED_UNICODE));
+check('  the sleep row says since when, and that it does not count', $stale['progress'][0]['detail'] === 'Laatste gegevens op 30 september, telt nu niet mee',
+    (string) $stale['progress'][0]['detail']);
+check('  a category that never had enough still says where its data comes from',
+    $stale['progress'][1]['detail'] === null && $stale['progress'][1]['how'] === $cal['progress']['how']['nutrition']);
+$lapsed = card(4, ['nights' => $history, 'workouts' => [workout('2026-09-28', 30), workout('2026-09-30', 50), workout('2026-10-01', 40)]], 'fitness');
+check('a starting point without the lapsed category, and what brings it back',
+    $lapsed['phase'] === 'baseline' && array_column($lapsed['baseline'], 'id') === ['training']
+    && $lapsed['note'] === 'Voeding komt erbij zodra er 3 dagen van zijn. Slaap telt weer mee zodra er nieuwe gegevens zijn.',
+    (string) $lapsed['note']);
 
 /* --------------------------------------------------------------------- */
 section('a daily cijfer, by hand');
@@ -279,7 +298,7 @@ check('both scored on day 1: the first is the focus\'s first (general: sleep)', 
 check('both scored: the overall score is their average, said', str_starts_with((string) $both['note'], 'Je gezondheidsscore'), (string) $both['note']);
 $fit = card(1, ['nights' => $history, 'workouts' => $workouts], 'fitness');
 check('fitness focus: the trainingsscore comes first', $fit['first']['id'] === 'training' && $fit['title'] === 'Je eerste trainingsscore');
-$tb = card(3, ['nights' => $history, 'workouts' => $workouts], 'fitness');
+$tb = card(3, ['nights' => $synced, 'workouts' => $workouts], 'fitness');
 check('starting point in the focus\'s order', array_column($tb['baseline'], 'id') === ['training', 'sleep']);
 check('training fact from the engine\'s balance', str_starts_with((string) $tb['baseline'][0]['fact'], 'Gemiddeld '), (string) $tb['baseline'][0]['fact']);
 $w2 = card(2, ['workouts' => [workout('2026-10-01', 40), workout('2026-10-02', 25, '07:30')]], 'fitness');

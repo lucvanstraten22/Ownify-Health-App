@@ -2,11 +2,11 @@
 /**
  * Fills the Scorekompas for the signed-in user (includes/score-compass.php).
  *
- * The history is the engine's own: the Health Score at the end of each of the
- * last 60 days — the trend's 30 and the 30 before them, for "Vergeleken met
- * jezelf" — recalculated from the records, never read back from a stored
- * number. The categories are named and coloured as Overzicht names them; the
- * line is drawn here, once, for the website and the app alike.
+ * The history is the Health Score as it was recorded each day (daily_scores,
+ * via health_score_history()) over the longest period the compass shows, a
+ * year — never recalculated from today's records — and today's score as it
+ * stands. The categories are named and coloured as Overzicht names them; the
+ * lines are drawn here, once, for the website and the app alike.
  */
 
 declare(strict_types=1);
@@ -23,19 +23,52 @@ if (!function_exists('hydrate_compass')) {
      */
     function hydrate_compass(array $copy, array $data, int $userId): array
     {
-        $days    = 2 * (int) $copy['rules']['period_days'];
+        $days    = max(
+            2 * (int) $copy['rules']['period_days'],
+            ...array_map(static fn ($p) => (int) $p['days'], $copy['history']['periods'])
+        );
         $history = db_available() ? health_score_history($userId, $days) : [];
         $compass = score_compass($history, $copy, hydrate_compass_areas($data));
 
-        /* The line in the same 300 × 120 box as Gezondheid's trend. */
-        $values = $compass['trend']['values'];
-        $compass['trend']['chart'] = health_chart($values, 300.0, 120.0, 100.0, 0.0) + [
-            'width'    => 300.0,
-            'height'   => 120.0,
-            'has_data' => health_series_has_data($values),
-        ];
+        /* The 30 days of the direction (what an older app draws), and each
+           period's line, in the same 300 × 120 box as Gezondheid's trend. */
+        $compass['trend']['chart'] = hydrate_compass_chart($compass['trend']['values']);
+
+        foreach ($compass['trend']['periods'] as $i => $period) {
+            $compass['trend']['periods'][$i]['chart'] = hydrate_compass_chart($period['values']);
+        }
 
         return $compass;
+    }
+
+    /**
+     * One line: the paths, and every day's place in it in % of the box —
+     * x left to right, y top to bottom, null for a day without a score — so
+     * a finger on the line can find the day under it.
+     */
+    function hydrate_compass_chart(array $values): array
+    {
+        $width  = 300.0;
+        $height = 120.0;
+        $chart  = health_chart($values, $width, $height, 100.0, 0.0);
+        $count  = count($values);
+
+        $at = [];
+        foreach ($values as $i => $value) {
+            $point = $chart['points'][$i] ?? null;
+            /* Where health_chart() put it: a single day at the left edge. */
+            $x     = $count > 1 ? $i / ($count - 1) * 100 : 0.0;
+            $at[]  = [round($x, 2), $point === null ? null : round($point[1] / $height * 100, 2)];
+        }
+
+        unset($chart['points']);
+
+        return $chart + [
+            'width'    => $width,
+            'height'   => $height,
+            'has_data' => health_series_has_data($values),
+            'at'       => $at,
+        ];
     }
 
     /**

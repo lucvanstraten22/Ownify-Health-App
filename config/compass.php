@@ -74,8 +74,10 @@ return [
         'period_min'       => 15,
 
         /* An opportunity: a category with at least this many days of data,
-           and at least this many points of room on the Health Score. */
-        'opportunity_min_days'   => 7,
+           and at least this many points of room on the Health Score. Days in
+           the score's own 7-day window: as many as a category needs to have
+           a score at all (min_days, config/scoring.php). */
+        'opportunity_min_days'   => 3,
         'opportunity_min_points' => 2,
 
         /* Where a scoring curve counts as at its top (config/scoring.php):
@@ -93,6 +95,8 @@ return [
         'note_one'    => 'Je Gezondheidsscore is nu je score voor %1$s, over de afgelopen %2$d dagen: de andere categorieën tellen nog niet mee.',
         'none'        => 'Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Sport over de afgelopen %2$d dagen, zodra er gegevens zijn.',
         'days'        => ['%d dag met gegevens', '%d dagen met gegevens'],
+        /* A category with data, but none new for three days. %s its last day. */
+        'expired'     => 'Telt nu niet mee: laatste gegevens van %s',
         'not_counted' => 'Telt nu niet mee',
         'empty_value' => 'Nog geen gegevens',
         /* Voeding has one part: a sentence instead of a list. %s the average cijfer. */
@@ -158,6 +162,39 @@ return [
         'joined_step_again' => 'Op %1$s ging je score van %4$d naar %5$d; die dag ging %2$s weer meetellen, met %3$d.',
         'step'      => 'De grootste verandering in één dag was op %1$s: van %2$d naar %3$d.',
         'part'      => 'In dezelfde periode ging je score voor %1$s van gemiddeld %2$d naar %3$d.',
+    ],
+
+    /* ------------------------------------------------------------------
+       2b  DE GESCHIEDENIS
+       The same Health Score as it was recorded each day, over a period the
+       person picks. The periods are views of one score's history, never
+       scores of their own: the score itself is always the last 168 hours.
+       ------------------------------------------------------------------ */
+    'history' => [
+        /* `spoken` goes into the chart's spoken label; `ticks` is how many
+           dates the axis names; `day_dots` marks every day — only where
+           there are few enough days to tell them apart. */
+        'periods' => [
+            ['days' => 7,   'label' => '7 dagen',  'spoken' => 'de afgelopen 7 dagen',  'ticks' => 4, 'day_dots' => true],
+            ['days' => 30,  'label' => '30 dagen', 'spoken' => 'de afgelopen 30 dagen', 'ticks' => 3, 'day_dots' => false],
+            ['days' => 90,  'label' => '90 dagen', 'spoken' => 'de afgelopen 90 dagen', 'ticks' => 4, 'day_dots' => false],
+            ['days' => 365, 'label' => '1 jaar',   'spoken' => 'het afgelopen jaar',    'ticks' => 5, 'day_dots' => false],
+        ],
+        /* The period the card opens on: the score's own week. */
+        'default'   => 7,
+        'switch'    => 'Periode kiezen',
+        /* The period reaches back before the first score. %s that day. */
+        'since'     => 'Je geschiedenis begint op %s.',
+        /* The week: too short to compare a first and a last week. */
+        'week'      => 'De afgelopen 7 dagen lag je score tussen %1$d en %2$d.',
+        'week_same' => 'De afgelopen 7 dagen stond je score op %d.',
+        /* The chart's spoken label. %1$s the period, %2$s its direction. */
+        'aria'      => 'Je Gezondheidsscore per dag, %1$s%2$s',
+        /* The reading of one day. */
+        'score'     => 'Gezondheidsscore',
+        'carried'   => 'Geen nieuwe gegevens: de score van %s gold nog.',
+        'none'      => 'Geen score op deze dag.',
+        'hint'      => 'Tik of schuif over de lijn om een dag te bekijken.',
     ],
 
     /* ------------------------------------------------------------------

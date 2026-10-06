@@ -6,7 +6,7 @@
  * ONE PLACE, ON PURPOSE
  * ---------------------------------------------------------------------------
  * The three category scores are calculated in includes/health-score.php, over
- * a rolling 90-day window, from the numbers in config/scoring.php. This file
+ * the last 168 hours, from the numbers in config/scoring.php. This file
  * keeps the one rule for combining them, and the few functions the endpoints
  * call to ask "what are my scores now?".
  *
@@ -110,13 +110,22 @@ if (!function_exists('score_combine')) {
 
     /**
      * The three category scores, nulls included so a caller can tell which
-     * are missing — now, or as of the end of an earlier day.
+     * are missing — now, or as recorded on an earlier day (never calculated
+     * again from today's records: health_score_history()).
      *
      * @return array<string,int|null>
      */
     function score_domains(int $userId, ?string $date = null): array
     {
-        $scores = health_score_now($userId, score_as_of($date));
+        $today = date('Y-m-d');
+
+        if ($date !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1 && $date < $today) {
+            $days    = health_score_day_gap($date, $today) + 1;
+            $history = $days <= 366 ? health_score_history($userId, $days) : [];
+            $scores  = $history[$date] ?? health_score_blank_day($date, 'none');
+        } else {
+            $scores = health_score_now($userId);
+        }
 
         return [
             'sleep'     => $scores['sleep']['score'],
@@ -131,19 +140,4 @@ if (!function_exists('score_combine')) {
         return score_combine(score_domains($userId, $date));
     }
 
-    /** Today, or not given: now. An earlier day: the end of that day. */
-    function score_as_of(?string $date): DateTimeImmutable
-    {
-        $now = new DateTimeImmutable('now');
-
-        if ($date === null || $date === '' || $date >= $now->format('Y-m-d')) {
-            return $now;
-        }
-
-        try {
-            return (new DateTimeImmutable($date))->setTime(23, 59, 59);
-        } catch (Exception $e) {
-            return $now;
-        }
-    }
 }

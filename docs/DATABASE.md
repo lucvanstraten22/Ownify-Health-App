@@ -13,8 +13,8 @@ calls with the id from the session. A key nothing fills stays `null`, and
 `null` is what the components already draw as an empty state.
 
 **Scores.** Every Health Score in the app comes out of
-`includes/health-score.php`: sleep, nutrition and training, each 0-100 over a
-rolling 90 days, and none until a category has 3 days of data. The overall
+`includes/health-score.php`: sleep, nutrition and training, each 0-100 over
+the last 168 hours, and none until a category has 3 days of data. The overall
 score is the average of whichever of the three exist, in `score_combine()`
 (`includes/scoring.php`): a missing pillar is skipped, never counted as a zero,
 and when all three are missing there is no score rather than a `0`. See
@@ -576,7 +576,7 @@ never handed another user's records. New areas of data reach it as a block in
 ## Health Score and points
 
 Two systems that never touch. The Health Score **measures a pattern** — how
-healthy the last 90 days were. Points **pay for actions** — a night, a rated
+healthy the last 168 hours (7 days) were. Points **pay for actions** — a night, a rated
 day, a workout — and put people on the leaderboard. Nothing that awards points
 reads a Health Score, and a score of 91 is never 91 points. Every number either
 of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
@@ -586,15 +586,23 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
 `includes/health-score.php`, reading the records through
 `includes/health-signals.php`.
 
-- **Window.** The moment of calculation minus 90 days. Not this week, not this
-  month: tomorrow's score has a day more at the front and a day less at the
-  back.
+- **Window.** The moment of calculation minus 168 hours (`window_hours`). Not
+  this calendar week: an hour from now the score has an hour more at the
+  front and an hour less at the back. There is one Health Score; the longer
+  periods the Scorekompas shows are its stored history, never other scores.
+  Until 1.6.0 the window was 90 days (`rolling90-v1`).
 - **At least 3 days.** A category needs 3 distinct days of its own data in the
   window (`min_days` in `config/scoring.php`). Below that it has no score, and
   the page says how many days are still needed — on the card, and, while no
   category has a score yet, in Gezondheid's intro ("Je hebt nog 2 dagen data
-  nodig om een score te ontgrendelen."). A day without data is not a day of zero: 24 nights in 90 days
-  are averaged over 24.
+  nodig om een score te ontgrendelen."). A day without data is not a day of zero: 5 nights in 7 days
+  are averaged over 5.
+- **No new data does not last.** After `expiry_days` (3) days in a row without
+  a new night, Slaap stops counting; without a new cijfer, Voeding. The
+  category is `expired`: left out of the overall score — which is then the
+  average of the categories still current — never counted as zero, until new
+  data comes in. Sport does not expire: rest days are part of what it scores,
+  and workouts older than 168 hours drop out of the window by themselves.
 - **Missing parts.** A component the person's device does not measure is left
   out and the other components' weights are scaled up (`health_weighted()`),
   rather than it counting as a zero.
@@ -606,7 +614,7 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
 | --- | --- |
 | Sleep | 45% duration + 30% regularity + 25% quality. **Duration**: each night's main sleep on the duration curve (95 at 7:30, 100 at 8:00, 96 at 8:30, 84 at 7:00, 62 at 6:00), averaged over the nights. **Regularity**: the night-to-night standard deviation of bedtime and wake time (40% each, measured on the clock, so 23:50 and 00:10 are 20 minutes apart) and of the duration (20%), each on its curve (15 min or less is 100, an hour 56 for the times). **Quality**: each night's efficiency, time awake, deep and REM share on their curves — only what the device measured — averaged over at least 3 such nights. |
 | Nutrition | The day's rating × 10 (several on one day count as their average), averaged over the rated days. |
-| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity, VO2max and the person's own strength and performance goal results; holding steady is 60. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before), heavy days back to back, and sleep in the nights after training. |
+| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity, VO2max and the person's own strength and performance goal results; holding steady is 60 — in 168 hours there are often too few results for it, and then it is left out and the others weigh more. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before — which a 7-day window does not hold, so they are not scored), heavy days back to back, and sleep in the nights after training. |
 | Overall | The average of the categories that have a score (`score_combine()`). None of them: no score, never a 0. |
 
 What counts as one night or one workout is decided once, in
@@ -616,10 +624,17 @@ longer), and two recordings of one workout that overlap by more than half are
 one workout (the longer). A workout counts from 10 minutes to 8 hours.
 
 Scores are calculated from the records whenever they are read, and every
-calculation is written to `daily_scores` — the score, `data_days` and the
-components as JSON in `inputs` — one row per category and one for the overall
-score per day, rewritten only when something changed. The Gezondheid trend is
-the same score, day by day. Each result also carries the `facts` its
+calculation is written to `daily_scores` — the score, `data_days`, the
+components as JSON in `inputs` and `valid_until`, the last day it holds
+without new input — one row per category and one for the overall score per
+day, rewritten only when something changed, and **only for today**: a day
+that has passed keeps what it recorded. That is the history the Gezondheid
+trend, the Scorekompas (7 days to a year) and Ownify AI read
+(`health_score_history()`): a day without a row of its own carries the last
+recorded categories while they hold, and has no score after that — never a
+recalculation from today's records, never a backfill. An existing database
+needs `database/migrations/017-score-history.sql` for `valid_until`; without
+it the scores are stored and shown as before and nothing is carried. Each result also carries the `facts` its
 components were worked out from (each night's length, the spreads, minutes a
 week…) for the Scorekompas to put into words ([SCORE-COMPASS.md](SCORE-COMPASS.md));
 they are never stored and never scored.

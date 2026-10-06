@@ -6,8 +6,11 @@
  * WHAT THE HEALTH SCORE IS
  * ---------------------------------------------------------------------------
  * How healthy somebody's recent PATTERN is: sleep, nutrition and training
- * over a rolling window of the last 90 days — the current moment minus 90
- * days, moving with the clock, never a calendar week or month.
+ * over a rolling window of the last 168 hours — the current moment minus
+ * seven days, moving with the clock, never a calendar week. There is one
+ * Health Score and this is its window; the 30, 90 and 365 days the
+ * Scorekompas shows are its history (one stored score a day), never other
+ * scores.
  *
  * It is not the leaderboard. Nothing in this file awards a point, and nothing
  * that awards points reads a Health Score: points are for what somebody did,
@@ -27,11 +30,20 @@
  * MISSING IS NOT ZERO
  * ---------------------------------------------------------------------------
  * A category scores only with at least `min_days` distinct days of real data
- * in the window, and then over the days that HAVE data — 24 nights in 90 days
- * is an average over 24, not a sum over 90. A component with no data at all
+ * in the window, and then over the days that HAVE data — 5 nights in 7 days
+ * is an average over 5, not a sum over 7. A component with no data at all
  * (sleep stages from a phone without a watch, say) is left out and the
  * remaining weights are scaled up to fill its place, so nobody is marked down
  * for what their device cannot measure.
+ *
+ * ---------------------------------------------------------------------------
+ * NO NEW DATA IS NOT A ZERO EITHER — BUT IT DOES NOT LAST
+ * ---------------------------------------------------------------------------
+ * A day without a new night or rating changes nothing: the score rests on
+ * the days that are still in the window. After `expiry_days` days in a row
+ * without new input, though, the category stops counting — it is left out
+ * of the Health Score, never counted as zero, and the categories that are
+ * still current make the score until new data comes in.
  */
 
 declare(strict_types=1);
@@ -41,8 +53,20 @@ return [
     /* The window, and how much of it has to hold data before a category
        says anything: distinct days with data, not hours. The overall score
        appears as soon as one category has its days. */
-    'window_days' => 90,
-    'min_days'    => 3,
+    'window_hours' => 168,
+    'min_days'     => 3,
+
+    /* Days in a row without new input after which a category stops counting:
+       its last night (the morning it ended), its last cijfer. Day 1 a night,
+       days 2, 3 and 4 none: on day 4 Slaap is left out. Null: it does not
+       expire. Sport does not, on purpose — days without a workout are rest,
+       which its balance scores, and three of them in a row is an ordinary
+       week; the window still drops workouts older than 168 hours. */
+    'expiry_days' => [
+        'sleep'     => 3,
+        'nutrition' => 3,
+        'training'  => null,
+    ],
 
     /* What a score means. Interpretation only: no calculation reads these. */
     'bands' => [

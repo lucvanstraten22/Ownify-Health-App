@@ -239,6 +239,160 @@
 }
 
 /* --------------------------------------------------------------------------
+   2 — What is changing: the score's history, over a period
+   One score, as it was recorded each day; the switch picks how far back.
+   -------------------------------------------------------------------------- */
+.compass-history__switch { margin-top: var(--space-4); }
+
+.compass-history__chart { margin-top: var(--space-4); }
+
+.compass-history__text { margin-top: 0; }
+
+.compass-history__since { color: var(--text-muted); }
+
+/* A chip in the head belongs to one period; .chip's display would otherwise
+   beat the hidden attribute. */
+[data-range-chip][hidden] { display: none; }
+
+/* The line. Above it is the band a reading appears in — the gap below the
+   sentences — so it must never be tightened. */
+.compass-plot {
+    position: relative;
+    height: 100px;          /* = .chart__svg */
+    border-radius: 6px;
+}
+
+.compass-history__text + .compass-plot { margin-top: var(--space-5); }
+
+.compass-plot__svg {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+}
+
+/* Read with a finger, a cursor or the arrow keys (compass-history.js), as a
+   goal's Verloop is: vertical drags still scroll the page. */
+.compass-plot[data-compass-plot] {
+    touch-action: pan-y;
+    cursor: crosshair;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.compass-plot:focus { outline: none; }
+.compass-plot:focus-visible {
+    outline: 2px solid var(--glass-border);
+    outline-offset: 6px;
+}
+
+/* A day as a dot: every day of a week, otherwise a day on its own. Ringed
+   in the card's colour so it stays legible on the line; a day whose score
+   was carried from an earlier one is the ring alone. */
+.compass-plot__dot {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--bg-secondary);
+    pointer-events: none;
+}
+
+.compass-plot__dot.is-carried {
+    background: var(--bg-secondary);
+    box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 2px var(--bg-secondary);
+}
+
+/* One day read closely: its score, and its categories with their parts. */
+.compass-day {
+    margin-top: var(--space-4);
+    padding: var(--space-3);
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+}
+
+.compass-day__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.compass-day__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.compass-day__date {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.compass-day__label {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.compass-day__note {
+    margin-top: var(--space-2);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.compass-day__cats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.compass-day__cat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.compass-day__cat .legend__dot { flex: none; }
+
+.compass-day__cat-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.compass-day__cat-label {
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.compass-day__parts {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+.compass-day__cat .compass-score { font-size: var(--fs-small); }
+
+.compass-day__note[hidden],
+.compass-day__parts[hidden] { display: none; }
+
+.compass-history__hint {
+    margin-top: var(--space-3);
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* --------------------------------------------------------------------------
    3 — Compared with yourself
    -------------------------------------------------------------------------- */
 .compass-compare { margin-top: var(--space-4); }
@@ -283,5 +437,6 @@
    -------------------------------------------------------------------------- */
 @media (max-width: 359px) {
     .compass-cat { padding: var(--space-3) var(--space-2); }
+    .compass-day { padding: var(--space-3) var(--space-2); }
     .compass-chance__head { padding: var(--space-3) var(--space-2); }
 }

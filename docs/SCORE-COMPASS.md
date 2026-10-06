@@ -14,12 +14,12 @@ It answers four questions:
 | | |
 | --- | --- |
 | Engine | `includes/health-score.php`, numbers in `config/scoring.php` — unchanged |
-| History | `health_score_history($userId, 60)`: the engine's own result at the end of each of the last 60 days, recalculated from the records (`health_score_trend()` is now this, reduced to the four numbers — the same records, the same moments) |
+| History | `health_score_history($userId, 365)`: the score as it was **recorded** each day in `daily_scores` — never recalculated from today's records — and today's as it stands (below, *The history*) |
 | Compass | `includes/score-compass.php` — pure: no database, no clock |
 | Words and rules | `config/compass.php` |
 | Page data | `lib/hydrate-compass.php` → `$data['compass']` in `app_page_data()`, so `index.php` and `api/app/state.php` (the app) show the same block |
-| Website | `pages/score-compass.php`, `components/score-direction.php`, `assets/css/compass.css` |
-| App | `ui/screens/overview/ScoreCompass.kt`, `Detail.ScoreCompass`, `data/AppData.kt` (`Compass`) |
+| Website | `pages/score-compass.php`, `components/compass-history.php`, `components/score-direction.php`, `assets/css/compass.css`, `assets/js/compass-history.js` |
+| App | `ui/screens/overview/ScoreCompass.kt`, `Detail.ScoreCompass`, `data/AppData.kt` (`Compass`, `CompassPeriod`, `CompassDay`) |
 
 Nothing the compass does changes a weight, a curve, the window, the minimum
 number of days, how missing data is handled or a score band. The one change
@@ -29,22 +29,52 @@ bedtime and wake time, each quality measurement, minutes a week, the parts of
 balance and progression — so the compass can say them in words. They are not
 stored (`daily_scores` keeps the components only) and nothing reads them to
 score. `tools/score-compass-test.php` checks that they give the components
-back exactly, and every account's scores, days and components for 90 days
-were compared before and after the change: identical.
+back exactly.
 
-## The window
+## The window: one score, the last 168 hours
 
-**The Health Score is calculated over a rolling 90 days** (`window_days` in
-`config/scoring.php`, `HEALTH_SCORE_VERSION` `rolling90-v1`), not over the
-last 168 hours. The compass is built around the score as it is, and says so
-where it shows it ("Over de afgelopen 90 dagen", read from the config, so the
-words follow if the window ever changes). Making it a 7-day score would be a
-deliberate change of the scoring model — one line in `config/scoring.php`,
-but every score, the stored history and what Ownify AI is told would move
-with it — and is not part of the compass.
+**The Health Score is calculated over the last 168 hours** (`window_hours` in
+`config/scoring.php`, `HEALTH_SCORE_VERSION` `rolling168-v1`): the moment of
+calculation minus 168 hours, moving with the clock. There is one score. The
+7 days, 30 days, 90 days and year the compass shows are its **history** —
+the score as it was each day — never scores of their own. The compass says
+"Over de afgelopen 7 dagen" where it shows the score, read from the config.
 
-A 90-day score moves slowly: a week of short nights lowers it by a point or
-two. The compass's thresholds are set for that.
+Until 1.6.0 the window was 90 days (`rolling90-v1`). Rows stored then are
+kept as they were and shown in the history for their days; nothing is
+recalculated.
+
+**Missing data is not zero, and old data does not last.** Without new input
+a category keeps its score while its data is still in the window — for at
+most `expiry_days` (3) days for Slaap and Voeding. On the third day without
+a new night (or cijfer) the category stops counting: it is left out of the
+overall score, which is recalculated from the categories that still count,
+never counted as a zero. Sport has no expiry: a rest day is part of what it
+scores, and the window drops old workouts by itself.
+
+## The history
+
+Every calculation of the score is written to `daily_scores` — one row per
+person, day and category (the primary key; calculating again the same day
+updates that day's row) with its days, its components and `valid_until`,
+the last day it holds without new input (migration 017). It is written
+whenever the score is calculated: a save on Gezondheid, a Health Connect
+sync, every page render and every app read. No scheduler.
+
+- **A past day is never written again.** `health_score_store()` only writes
+  today's rows, so what a day recorded stays what it was, whatever comes in
+  later.
+- **A day without a row of its own** (nobody opened Ownify and nothing came
+  in) keeps the last recorded score, each category only up to its
+  `valid_until` — `carried`, with the day it came from — and the overall
+  score is combined again from the categories that still held. After that
+  the day has no score.
+- **No backfill.** A new account's history starts on its first day with a
+  score: 18 days of history are 18 days, never a year with 347 empty or
+  invented ones. The periods show where the history begins.
+- **A year at most** is read. Nothing is deleted.
+
+`tools/score-history-test.php` checks all of this against a database.
 
 ## 1 — What the score is made of
 
@@ -62,8 +92,31 @@ list.
 
 ## 2 — What is changing
 
-The last 30 days of the daily Health Score, as a line (0–100, the same box
-and draw-on as Gezondheid's trend), and sentences.
+The Health Score's history over a period the person picks — **7 dagen**
+(where it opens: the score's own week), **30 dagen**, **90 dagen** or **1
+jaar** — in the range switch's Liquid Glass capsule, as a line (0–100, the
+same box and draw-on as Gezondheid's trend) with sentences. The line adapts
+to the period: in a week every day is a dot (a ring for a day whose score
+was carried), in longer periods only a day on its own is; the axis names 4
+dates in a week, 3 in 30 days, 4 in 90 and 5 in a year, each under its own
+day. A day without a score is a gap in the line, never a drop to zero.
+
+**Reading a day.** A finger on the line (press and slide; a vertical drag
+still scrolls), a cursor or the arrow keys pick the nearest day: its date
+and score appear above the line as on a goal's Verloop, and the panel under
+the chart shows the whole day — its Health Score, Slaap, Voeding and Sport
+with their bands and their parts ("Slaapduur 72 · Regelmaat 60 · Kwaliteit
+70", "Dagcijfer 7,7") — and, for a carried day, that the score of an
+earlier day still held; for a day without one, that it had none. The panel
+shows today until a day is read, and today again when the period changes.
+TalkBack steps through the days with the node's actions (Vorige dag,
+Volgende dag).
+
+**Sentences per period.** A week is too short to compare a first and a
+last week, so it says what the week held ("De afgelopen 7 dagen lag je
+score tussen 68 en 73."). 30 days, 90 days and a year are analysed with the
+rules below, each over its own days, with its own direction chip; the
+direction under the score on Overzicht and the hero stays the 30 days'.
 
 | Rule | Value |
 | --- | --- |
@@ -83,7 +136,7 @@ duidelijker." No days: "Nog niet genoeg gegevens."
 
 | Row | What it is | Needs |
 | --- | --- | --- |
-| Nu | the Health Score now, over its 90 days | a score |
+| Nu | the Health Score now, over its 168 hours | a score |
 | Laatste 7 dagen | the average of the daily score | 4 of the 7 days |
 | Laatste 30 dagen | the average of the daily score | 15 of the 30 days |
 | 30 dagen daarvoor | the same, the 30 days before | 15 of those 30 days |
@@ -94,8 +147,8 @@ an average, never counted as zero. Nobody else's score is ever shown.
 
 ## 4 — The biggest opportunity
 
-For every component with data, in a category with at least **7 days** of
-data:
+For every component with data, in a category with at least **3 days** of
+data (the minimum for a score, now that the window is 7 days):
 
 ```
 room = (100 − component) × its weight among its category's counted components
@@ -125,13 +178,12 @@ anybody else ("anderen", "vrienden", "Nederland"…).
 
 ## Limits
 
-- **The window is 90 days** (above): the compass describes how a slow score
-  moved, not last week's behaviour.
+- **The history is what was recorded.** A day before 1.6.0 shows the 90-day
+  score of that time; a day nobody's data reached has no score.
 - **Sentences are about the score, not the behaviour behind it.** "In
   dezelfde periode ging je score voor slaapduur van gemiddeld 80 naar 66" is
   read from the engine's components; the compass does not look at single
-  nights to find "three shorter nights", because a 90-day score does not move
-  on three nights, and naming them would suggest that it did.
+  nights to find "three shorter nights".
 - **Room is linear.** It ignores rounding, and that a component can rarely be
   100 (a cijfer of 10 every day). It ranks components; it is not a promise.
 - **Mean-based explanations.** Sleep quality's parts are averages over the

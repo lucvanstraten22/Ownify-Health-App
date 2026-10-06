@@ -385,8 +385,12 @@ data class CompassPart(
 }
 
 /**
- * The last 30 days: [state] `empty`, `collecting` or `filled`; [text] the
- * sentences; the line in the 300 × 120 box, as on Gezondheid.
+ * What is changing. [periods] are the score's history over 7 days, 30, 90
+ * and a year — views of one score, never scores of their own — and [days]
+ * every recorded day from the first with a score, which a finger on a
+ * period's line reads. The fields before them are the 30 days alone, as a
+ * server from before the periods sends them: [state] `empty`, `collecting`
+ * or `filled`; [text] the sentences; the line in the 300 × 120 box.
  */
 data class CompassTrend(
     val title: String,
@@ -398,11 +402,17 @@ data class CompassTrend(
     val aria: String,
     val chart: TrendChart,
     val width: Float,
-    val height: Float
+    val height: Float,
+    val defaultPeriod: String = "",
+    val switchLabel: String = "",
+    val readout: CompassReadout = CompassReadout("", "", emptyList()),
+    val periods: List<CompassPeriod> = emptyList(),
+    val days: List<CompassDay> = emptyList()
 ) {
     companion object {
         fun parse(o: JSONObject?): CompassTrend {
             val chart = o.obj("chart")
+            val periods = o.arr("periods").map(CompassPeriod::parse)
             return CompassTrend(
                 title = o.str("title").orEmpty(),
                 state = o.str("state") ?: "empty",
@@ -413,11 +423,113 @@ data class CompassTrend(
                 aria = o.str("aria").orEmpty(),
                 chart = if (chart == null) TrendChart(emptyList(), emptyList(), emptyList(), false) else TrendChart.parse(chart),
                 width = (chart.num("width") ?: 300.0).toFloat(),
-                height = (chart.num("height") ?: 120.0).toFloat()
+                height = (chart.num("height") ?: 120.0).toFloat(),
+                defaultPeriod = o.str("default") ?: periods.firstOrNull()?.key.orEmpty(),
+                switchLabel = o.str("switch").orEmpty(),
+                readout = CompassReadout.parse(o.obj("readout")),
+                periods = periods,
+                days = o.arr("days").map(CompassDay::parse)
             )
         }
     }
 }
+
+/** What a day's reading is called, its [hint], and the categories' names and colours, once. */
+data class CompassReadout(val score: String, val hint: String, val categories: List<CompassName>) {
+    companion object {
+        fun parse(o: JSONObject?) = CompassReadout(
+            o.str("score").orEmpty(),
+            o.str("hint").orEmpty(),
+            o.arr("categories").map { CompassName(it.str("id") ?: return@map null, it.str("label").orEmpty(), it.str("accent").orEmpty()) }
+        )
+    }
+}
+
+data class CompassName(val id: String, val label: String, val accent: String)
+
+/**
+ * One period: its sentences and direction, [since] when the history is
+ * younger than the period, and its line. [start] is where its first day is
+ * in the trend's days; [at] each of its days' place on the line in % —
+ * x left to right, y top to bottom, null for a day without a score.
+ */
+data class CompassPeriod(
+    val key: String,
+    val label: String,
+    val state: String,
+    val direction: CompassDirection?,
+    val text: List<String>,
+    val empty: String,
+    val since: String?,
+    val start: Int,
+    val dayDots: Boolean,
+    val axis: List<CompassTick>,
+    val aria: String,
+    val chart: TrendChart,
+    val width: Float,
+    val height: Float,
+    val at: List<Pair<Float, Float?>>
+) {
+    companion object {
+        fun parse(o: JSONObject): CompassPeriod? {
+            val key = o.str("key") ?: return null
+            val chart = o.obj("chart")
+            val at = chart.arr("at")
+            return CompassPeriod(
+                key = key,
+                label = o.str("label").orEmpty(),
+                state = o.str("state") ?: "empty",
+                direction = CompassDirection.parse(o.obj("direction")),
+                text = o.arr("text").strings(),
+                empty = o.str("empty").orEmpty(),
+                since = o.str("since"),
+                start = o.int("start") ?: 0,
+                dayDots = o.bool("day_dots"),
+                axis = o.arr("axis").map { CompassTick(it.str("label").orEmpty(), (it.num("x") ?: 0.0).toFloat()) },
+                aria = o.str("aria").orEmpty(),
+                chart = if (chart == null) TrendChart(emptyList(), emptyList(), emptyList(), false) else TrendChart.parse(chart),
+                width = (chart.num("width") ?: 300.0).toFloat(),
+                height = (chart.num("height") ?: 120.0).toFloat(),
+                at = if (at == null) emptyList() else (0 until at.length()).mapNotNull { i ->
+                    at.optJSONArray(i)?.let { p ->
+                        p.optDouble(0).toFloat() to (if (p.isNull(1)) null else p.optDouble(1).toFloat())
+                    }
+                }
+            )
+        }
+    }
+}
+
+/** A date under a period's line, at [x] % from the left. */
+data class CompassTick(val label: String, val x: Float)
+
+/**
+ * One recorded day: its [label] ("5 oktober", "Vandaag"), its Health Score
+ * and band, [state] `stored`, `carried`, `none` or `today`, and [note] —
+ * that an earlier score still held, or that there was none.
+ */
+data class CompassDay(
+    val date: String,
+    val label: String,
+    val value: Int?,
+    val band: String?,
+    val state: String,
+    val note: String?,
+    val categories: List<CompassDayCategory>
+) {
+    companion object {
+        fun parse(o: JSONObject): CompassDay? {
+            val date = o.str("date") ?: return null
+            return CompassDay(
+                date, o.str("label").orEmpty(), o.int("value"), o.str("band"), o.str("state") ?: "stored", o.str("note"),
+                o.arr("categories").map { CompassDayCategory(it.str("id") ?: return@map null, it.int("value"), it.str("band"), it.str("parts")) }
+            )
+        }
+    }
+}
+
+/** A category on a day: its score and band, and [parts] its components in one line. */
+data class CompassDayCategory(val id: String, val value: Int?, val band: String?, val parts: String?)
 
 data class CompassComparison(val title: String, val note: String, val rows: List<CompassRow>, val delta: String?) {
     companion object {
