@@ -295,6 +295,46 @@ A refusal carries a `code` and a Dutch sentence (`config/dashboard.php`, `ai` �
 `blocked` 422 (Gemini would not answer this question), `action_gone` 409 (the
 proposal was already answered).
 
+## When it does not answer: the log, and the diagnostic
+
+Every failure behind "De AI-assistent is tijdelijk niet beschikbaar" is
+written down as a line starting `[ownify] ai:`, with PHP's `error_log()`
+and nothing else. Where that line ends up is the server's choice, not
+Ownify's: PHP's `error_log` setting, which Hestia leaves unset. PHP-FPM then
+hands the line to the web server over FastCGI, and on Hestia (nginx in
+front of Apache) Apache writes it to
+
+    /var/log/apache2/domains/ownify.acits.nl.error.log
+
+as `AH01071: Got error 'PHP message: [ownify] ai: …'`. The domain's own
+`logs/` folder, `/home/<user>/web/ownify.acits.nl/logs/`, only holds links
+to that file, and Hestia's File Manager — confined to the user's home —
+cannot follow them: it shows a page of the panel instead. Read it with SSH
+(`grep "\[ownify\] ai:" /var/log/apache2/domains/ownify.acits.nl.error.log | tail`)
+or in the panel's own log view of the domain. Only if the domain's PHP-FPM
+pool (`/etc/php/<version>/fpm/pool.d/ownify.acits.nl.conf`) sets
+`php_admin_value[error_log]` do the lines go to that file instead.
+
+**Without either, switch on the diagnostic** — temporary, and off unless
+asked for. In `config/ai.local.php` (the File Manager edits it), add
+
+```php
+'diagnostic_log' => true,
+```
+
+Every Gemini request then adds one line to `ownify-ai-diagnostic.log` in
+PHP's upload folder — on Hestia `/home/<user>/tmp/`, which the File Manager
+shows as `tmp/`, outside the web root. A line holds the HTTP status, the
+outcome, Gemini's error status and message, the model, and the outline of
+what was sent and what came back: roles, part kinds, text lengths, whether
+a part carried a thought signature. Never the key, never a word of a
+question, an answer or any health data, never a signature itself; an error
+message that repeats the conversation is withheld, and values it quotes are
+replaced. Lines of one question share a tag. The file is the server user's
+alone (0600), stops at 1 MB, and is never written inside the app. A full
+path instead of `true` writes there; `AI_DIAGNOSTIC_LOG` does the same from
+the environment. Remove the line again when done, and delete the file.
+
 ## Testing without Google
 
 ```bash

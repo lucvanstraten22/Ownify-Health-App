@@ -101,7 +101,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.5.3'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.5.4'],
             ],
         ],
     ],
@@ -497,7 +497,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.5.3'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.5.4'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS',
                          'value_app' => 'Kotlin · Jetpack Compose'],
                     ],

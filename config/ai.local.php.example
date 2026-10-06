@@ -26,4 +26,9 @@ declare(strict_types=1);
 return [
     /** This example value is deliberately not a key. Never commit a real one. */
     'api_key' => 'PUT-YOUR-GEMINI-API-KEY-HERE',
+
+    /* Temporary, to see why Ownify AI did not answer: one line per Gemini
+       request in /home/<user>/tmp/ownify-ai-diagnostic.log — status, error,
+       model and outline only (docs/AI.md). Remove it again afterwards. */
+    // 'diagnostic_log' => true,
 ];

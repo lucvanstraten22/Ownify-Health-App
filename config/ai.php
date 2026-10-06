@@ -114,6 +114,18 @@ $settings = [
      * instead of "only what fits the question", so everybody is asked again.
      */
     'consent_version' => '2026-10-gemini-free',
+
+    /* --------------------------------------------------------- diagnostic */
+
+    /**
+     * Temporary, and off: true writes one line per Gemini request to
+     * ownify-ai-diagnostic.log in PHP's upload_tmp_dir (on Hestia
+     * /home/<user>/tmp, which the File Manager shows), or give a full path.
+     * Only status, Gemini's error, the model and the outline of what was
+     * sent and received — never the key, a word of the text, or a
+     * signature. Never inside the web root. See includes/ai/diagnostic.php.
+     */
+    'diagnostic_log' => false,
 ];
 
 $local = __DIR__ . '/ai.local.php';
@@ -131,6 +143,7 @@ foreach ([
     'AI_DAILY_MESSAGE_LIMIT' => ['daily_limit', 'int'],
     'AI_GLOBAL_DAILY_LIMIT'  => ['global_daily_limit', 'int'],
     'AI_THINKING_LEVEL'      => ['thinking_level', 'string'],
+    'AI_DIAGNOSTIC_LOG'      => ['diagnostic_log', 'string'],
 ] as $variable => [$key, $type]) {
     $value = getenv($variable);
     if (!is_string($value) || $value === '') {

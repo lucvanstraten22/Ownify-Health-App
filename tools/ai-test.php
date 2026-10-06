@@ -310,6 +310,8 @@ $appEnv = [
     'GEMINI_TIMEOUT'         => '2',
     'AI_DAILY_MESSAGE_LIMIT' => '20',
     'AI_GLOBAL_DAILY_LIMIT'  => '100000',
+    /* The temporary diagnostic, on for this run (checked at the end). */
+    'AI_DIAGNOSTIC_LOG'      => $fakeDir . '/diagnostic.log',
 ] + getenv();
 
 $port   = free_port();
@@ -741,6 +743,27 @@ try {
     check('all of Sanne\'s: gone', $r['status'] === 200 && (int) db_value('SELECT COUNT(*) FROM ai_conversations WHERE user_id = ?', [$sanne['id']]) === 0);
     check('Bram\'s are all still there', $bramBefore > 0 && (int) db_value('SELECT COUNT(*) FROM ai_conversations WHERE user_id = ?', [$bram['id']]) === $bramBefore);
     check('the goals the assistant helped with stay: they are goals, not chat', db_value('SELECT id FROM goals WHERE id = ?', [$goal['id']]) !== null);
+
+    section('the diagnostic (AI_DIAGNOSTIC_LOG): structure only, never content');
+    $diagnostic = (string) @file_get_contents($fakeDir . '/diagnostic.log');
+    check('one line per Gemini request, with the status, the outcome, the model and the outline',
+        str_contains($diagnostic, 'gemini  HTTP 200  outcome=ok  model=gemini-3.8-flash  sent: contents=')
+        && str_contains($diagnostic, 'question answered after') && str_contains($diagnostic, 'text(') && str_contains($diagnostic, '+sig'));
+    check('a refusal: Gemini\'s status and message', str_contains($diagnostic, 'HTTP 400  outcome=thinking  model=gemini-3.8-flash  error=400 INVALID_ARGUMENT  message="Thinking level is not supported for this model."'));
+    check('readable by the server\'s own user only (0600)', (fileperms($fakeDir . '/diagnostic.log') & 0777) === 0600);
+    $leaked = array_filter(['test-key-not-real', 'Hoe heb ik de afgelopen nachten geslapen?', '6 u 55 min', 'asleep_minutes', 'Sanne',
+        $bram['username'], 'c2lnbmF0dXJl', 'YW50d29vcmQ'], static fn (string $s) => str_contains($diagnostic, $s));
+    check('no key, no question, no answer, no health data, no name, no signature', $diagnostic !== '' && $leaked === [], implode(', ', $leaked));
+    require_once $root . '/includes/ai/diagnostic.php';
+    $quoting = ['contents' => [['role' => 'user', 'parts' => [['text' => 'Hoe heb ik de afgelopen nachten geslapen?']]]]];
+    check('a Gemini message that repeats the conversation is withheld; one that names a field or function is kept',
+        ai_diagnostic_message('Invalid content near: afgelopen nachten geslapen', $quoting) === '(withheld: it repeated part of the conversation)'
+        && ai_diagnostic_message("Invalid value at 'contents[1].role', function call `default_api:get_health_summary`", $quoting)
+            === "Invalid value at 'contents[1].role', function call `default_api:get_health_summary`"
+        && ai_diagnostic_message('Bad value: {"result":{"asleep_minutes":455}}', $quoting) === 'Bad value: (value)');
+    exec('AI_DIAGNOSTIC_LOG=' . escapeshellarg($root . '/uploads/diagnostic.log') . ' ' . escapeshellarg(PHP_BINARY)
+        . ' -r ' . escapeshellarg('require "' . $root . '/includes/ai/diagnostic.php"; var_export(ai_diagnostic_path());'), $out);
+    check('never inside the app, where the web server could hand it out', ($out[0] ?? '') === 'NULL' && !is_file($root . '/uploads/diagnostic.log'));
 
 } finally {
     foreach ($made as $username) {

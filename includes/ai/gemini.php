@@ -23,6 +23,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/diagnostic.php';
 
 if (!function_exists('ai_gemini_generate')) {
 
@@ -31,6 +32,19 @@ if (!function_exists('ai_gemini_generate')) {
      * @return array<string,mixed>       see the list above; always has 'ok' and 'outcome'
      */
     function ai_gemini_generate(array $body): array
+    {
+        $status = 0;
+        $json   = null;
+        $answer = ai_gemini_exchange($body, $status, $json);
+
+        /* Off unless switched on (includes/ai/diagnostic.php). */
+        ai_diagnostic_exchange($body, $status, is_array($json) ? $json : [], $answer, (string) (ai_model() ?? '?'));
+
+        return $answer;
+    }
+
+    /** The request itself; $status and $json say what Google answered, for the diagnostic. */
+    function ai_gemini_exchange(array $body, int &$status, mixed &$json): array
     {
         $key   = ai_api_key();
         $model = ai_model();
@@ -194,21 +208,7 @@ if (!function_exists('ai_gemini_generate')) {
 
         foreach ((array) ($body['contents'] ?? []) as $content) {
             $content = (array) $content;
-            $kinds   = [];
-
-            foreach ((array) ($content['parts'] ?? []) as $part) {
-                $part = (array) $part;
-                $kind = match (true) {
-                    isset($part['functionCall'])     => 'call:' . (string) (((array) $part['functionCall'])['name'] ?? '?'),
-                    isset($part['functionResponse']) => 'response:' . (string) (((array) $part['functionResponse'])['name'] ?? '?'),
-                    isset($part['text'])             => (($part['thought'] ?? false) === true ? 'thought' : 'text')
-                                                        . '(' . mb_strlen((string) $part['text']) . ')',
-                    default                          => 'other',
-                };
-                $kinds[] = $kind . (isset($part['thoughtSignature']) ? '+sig' : '');
-            }
-
-            $turns[] = (string) ($content['role'] ?? '?') . ': ' . ($kinds === [] ? 'NO PARTS' : implode(', ', $kinds));
+            $turns[] = (string) ($content['role'] ?? '?') . ': ' . ai_gemini_part_kinds((array) ($content['parts'] ?? []));
         }
 
         $tools = 0;
@@ -220,6 +220,31 @@ if (!function_exists('ai_gemini_generate')) {
             . ' system=' . (isset($body['systemInstruction']) ? 'yes' : 'no')
             . ' tools=' . $tools
             . ' config=' . json_encode($body['generationConfig'] ?? null);
+    }
+
+    /**
+     * Each part's kind, never its content: text(212), thought(40), a call or
+     * response by function name, `+sig` where a thought signature came along,
+     * and any field this list does not know by name.
+     */
+    function ai_gemini_part_kinds(array $parts): string
+    {
+        $kinds = [];
+
+        foreach ($parts as $part) {
+            $part = (array) $part;
+            $kind = match (true) {
+                isset($part['functionCall'])     => 'call:' . (string) (((array) $part['functionCall'])['name'] ?? '?'),
+                isset($part['functionResponse']) => 'response:' . (string) (((array) $part['functionResponse'])['name'] ?? '?'),
+                isset($part['text'])             => (($part['thought'] ?? false) === true ? 'thought' : 'text')
+                                                    . '(' . mb_strlen((string) $part['text']) . ')',
+                default                          => 'other',
+            };
+            $extra = array_diff(array_keys($part), ['functionCall', 'functionResponse', 'text', 'thought', 'thoughtSignature']);
+            $kinds[] = $kind . (isset($part['thoughtSignature']) ? '+sig' : '') . ($extra === [] ? '' : '{' . implode(',', $extra) . '}');
+        }
+
+        return $kinds === [] ? 'NO PARTS' : implode(', ', $kinds);
     }
 
     /** Anything but a 200, reduced to an outcome. */

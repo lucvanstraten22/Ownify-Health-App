@@ -247,6 +247,9 @@ if (!function_exists('ai_chat')) {
                 default   => 'unavailable',
             };
 
+            ai_diagnostic_write('question failed: outcome=' . $outcome . ' after ' . $calls
+                . ' Gemini request(s); the person is told: ' . $code);
+
             return ai_fail($code === 'quota' ? 503 : ($code === 'blocked' ? 422 : 503), $code, ['usage' => ai_usage_summary($userId)]);
         }
 
@@ -282,6 +285,9 @@ if (!function_exists('ai_chat')) {
         if ($parts !== null && strlen((string) json_encode($meta + ['parts' => $parts], JSON_UNESCAPED_UNICODE)) < 60000) {
             $meta['parts'] = $parts;
         }
+
+        ai_diagnostic_write('question answered after ' . $calls . ' Gemini request(s); kept for the next question: '
+            . (isset($meta['parts']) ? '[model: ' . ai_gemini_part_kinds($meta['parts']) . ']' : 'the text only, no parts'));
 
         $userMessageId      = ai_message_add($userId, $conversationId, 'user', $message);
         $assistantMessageId = ai_message_add($userId, $conversationId, 'assistant', (string) $answer['text'], $turn['proposal'], $meta);
