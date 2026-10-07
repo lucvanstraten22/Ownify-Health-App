@@ -47,20 +47,19 @@ if (!function_exists('goals_prepare')) {
 
         /* Exactly one primary, always. A board that lost its primary — the
            only goal that carried the flag was completed, say — would leave the
-           page with a headline slot and nothing in it, so the first active
-           goal takes the flag rather than the slot standing empty. */
+           page with a headline slot and nothing in it, so the goal a delete
+           would hand it to takes the flag: the first of Secundaire doelen
+           (goals_successor()). goal_ensure_primary_after_completion() stores
+           this same goal. */
         if ($active !== [] && !$active[0]['is_primary']) {
+            $active = goals_secondary_order($active);
             $active[0]['priority']   = 'primary';
             $active[0]['is_primary'] = true;
         }
 
-        /* Secundaire doelen: the running ones furthest along first
-           (goals_secondary_compare), the paused ones after them as before.
-           The primary goal has its slot already and is not part of this. */
-        $secondary = array_slice($active, 1);
-        $running   = array_values(array_filter($secondary, static fn (array $g): bool => !$g['is_paused']));
-        $paused    = array_values(array_filter($secondary, static fn (array $g): bool => $g['is_paused']));
-        $active    = array_merge(array_slice($active, 0, 1), goals_sort_stable($running, 'goals_secondary_compare'), $paused);
+        /* Secundaire doelen in their order. The primary goal has its slot
+           already and is not part of this. */
+        $active = array_merge(array_slice($active, 0, 1), goals_secondary_order(array_slice($active, 1)));
 
         $limit = (int) $config['limits']['active'];
         $used  = count($active);
@@ -91,6 +90,20 @@ if (!function_exists('goals_rank')) {
         $paused   = $goal['status'] === 'paused' ? 1 : 0;
 
         return $priority * 2 + $paused;
+    }
+}
+
+if (!function_exists('goals_secondary_order')) {
+    /**
+     * Secundaire doelen in their order: the running goals furthest along first
+     * (goals_secondary_compare()), the paused ones after them as they came.
+     */
+    function goals_secondary_order(array $goals): array
+    {
+        $running = array_values(array_filter($goals, static fn (array $g): bool => !$g['is_paused']));
+        $paused  = array_values(array_filter($goals, static fn (array $g): bool => $g['is_paused']));
+
+        return array_merge(goals_sort_stable($running, 'goals_secondary_compare'), $paused);
     }
 }
 

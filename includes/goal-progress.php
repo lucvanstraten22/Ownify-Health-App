@@ -1165,7 +1165,7 @@ if (!function_exists('goal_sources_available')) {
             return false;
         }
 
-        goal_ensure_primary($userId);
+        goal_ensure_primary_after_completion($userId);
 
         return true;
     }

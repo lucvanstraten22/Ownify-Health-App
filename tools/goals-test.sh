@@ -444,6 +444,65 @@ stored "the paused goal is the primary goal" "$PAUSED"
 drop "$PAUSED" > /dev/null
 
 # ======================================================================
+echo "== completing the primary goal: the same goal takes its place as after a delete =="
+# Completing used to hand the place to the oldest goal; a delete hands it to
+# the first of Secundaire doelen. Now both do the latter.
+
+# app_primary_name — the primary goal's name in what api/app/state.php sends the app
+app_primary_name() { curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/app/state.php" --data-urlencode "csrf=$(csrf "$P")" \
+    | php -r 'echo json_decode(stream_get_contents(STDIN), true)["data"]["goals"]["primary"]["name"] ?? "(none)";'; }
+# finish <goal id> — completing by hand: api/goals/update.php, action=complete (the assistant's "Doel afronden")
+finish() { curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/goals/update.php" --data-urlencode "csrf=$(csrf "$P")" \
+    --data-urlencode "goal_id=$1" --data-urlencode "action=complete" > /dev/null; }
+# board_8264 — the primary goal, then 41%, 64%, 82%; 41% the oldest. Sets MAIN G41 G64 G82.
+board_8264() {
+    MAIN="$(milestone "Hoofddoel" month 50)"
+    G41="$(milestone "41 procent" month 41)"; G64="$(milestone "64 procent" month 64)"; G82="$(milestone "82 procent" month 82)"
+    q "backdate:$G41:30" "$USER_P" > /dev/null
+}
+
+board_8264
+enter "$P" "$MAIN" 100 > /dev/null                  # the entry that reaches the target finishes it
+same "an entry reaching 100%: the primary goal is completed" "$(q "status:$MAIN" "$USER_P")" "completed"
+same "  and it is under Behaald" "$(slot "$(page "$P")" "$MAIN")" "completed"
+stored "82% is the primary goal — not the oldest goal" "$G82"
+same "  and the others keep their order: 64%, 41%" "$(web_secondary)" "$G64,$G41"
+COMPLETED="$(app_primary_name)"
+for G in "$G82" "$G64" "$G41" "$MAIN"; do drop "$G" > /dev/null; done
+
+board_8264
+drop "$MAIN" > /dev/null
+same "the same board, the primary goal deleted instead: the same goal takes its place" "$(app_primary_name)" "$COMPLETED"
+for G in "$G82" "$G64" "$G41"; do drop "$G" > /dev/null; done
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+NONE="$(milestone "geen data, een week" week)"
+ZERO="$(milestone "nul procent" year 0)"
+PAUSED="$(milestone "90 procent, gepauzeerd" month 90)"
+curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/goals/update.php" --data-urlencode "csrf=$(csrf "$P")" \
+    --data-urlencode "goal_id=$PAUSED" --data-urlencode "action=pause" > /dev/null
+finish "$MAIN"
+same "completed by the assistant's action: completed" "$(q "status:$MAIN" "$USER_P")" "completed"
+stored "a real 0% takes its place — before no data, and a running goal before a paused one" "$ZERO"
+COMPLETED="$(app_primary_name)"
+for G in "$ZERO" "$NONE" "$PAUSED" "$MAIN"; do drop "$G" > /dev/null; done
+MAIN="$(milestone "Hoofddoel" month 50)"
+NONE="$(milestone "geen data, een week" week)"
+ZERO="$(milestone "nul procent" year 0)"
+PAUSED="$(milestone "90 procent, gepauzeerd" month 90)"
+curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/goals/update.php" --data-urlencode "csrf=$(csrf "$P")" \
+    --data-urlencode "goal_id=$PAUSED" --data-urlencode "action=pause" > /dev/null
+drop "$MAIN" > /dev/null
+same "  deleted instead: the same goal" "$(app_primary_name)" "$COMPLETED"
+for G in "$ZERO" "$NONE" "$PAUSED"; do drop "$G" > /dev/null; done
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+enter "$P" "$MAIN" 100 > /dev/null
+same "the only goal completed: completed" "$(q "status:$MAIN" "$USER_P")" "completed"
+stored "no secondary goal left: no primary goal" "(none)"
+drop "$MAIN" > /dev/null
+
+# ======================================================================
 LIMIT="$(php -r 'echo (require $argv[1])["limits"]["active"];' "$ROOT/config/goals.php")"
 echo "== the board holds $LIMIT active goals (config/goals.php), and no more =="
 for N in $(seq 1 "$LIMIT"); do

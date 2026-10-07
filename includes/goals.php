@@ -245,9 +245,10 @@ if (!function_exists('goals_for_user')) {
      *
      * Called after anything that can remove the primary — a delete, a
      * completion — so the headline slot never stands empty while active goals
-     * exist. A delete names the goal that inherits it ($successor: the first
-     * of Secundaire doelen, goals_successor() in lib/goals.php); otherwise
-     * the oldest active goal does.
+     * exist. A delete and a completion name the goal that inherits it
+     * ($successor: the first of Secundaire doelen — goals_successor() in
+     * lib/goals.php, goal_ensure_primary_after_completion()); otherwise the
+     * oldest active goal does.
      */
     function goal_ensure_primary(int $userId, ?int $successor = null): void
     {
@@ -304,9 +305,51 @@ if (!function_exists('goals_for_user')) {
             return false;
         }
 
-        goal_ensure_primary($userId);
+        if ($status === 'completed') {
+            goal_ensure_primary_after_completion($userId);
+        } else {
+            goal_ensure_primary($userId);
+        }
 
         return true;
+    }
+
+    /**
+     * After a goal was completed: when it was the primary goal, the first of
+     * Secundaire doelen takes its place — the goal a delete would hand it to
+     * (goals_successor() in lib/goals.php). The board is built the way the
+     * pages build it, so the order is this moment's, and goals_prepare() puts
+     * that goal in the empty slot; it is stored here. While that board is
+     * being built, a goal it finds finished leaves the choice to the build.
+     * No goal left to be primary: none is.
+     */
+    function goal_ensure_primary_after_completion(int $userId): void
+    {
+        static $building = false;
+
+        $hasPrimary = db_value(
+            "SELECT id FROM goals WHERE user_id = ? AND priority = 'primary' AND status IN ('active','paused')",
+            [$userId]
+        );
+
+        if ($building || $hasPrimary !== null) {
+            return;
+        }
+
+        $root = dirname(__DIR__);
+        require_once $root . '/lib/render.php';
+        require_once $root . '/lib/goals.php';
+        require_once $root . '/lib/hydrate-goals.php';
+
+        $building = true;
+        try {
+            $board = goals_prepare(hydrate_goals(require $root . '/config/goals.php', $userId));
+        } finally {
+            $building = false;
+        }
+
+        $heir = $board['primary']['id'] ?? null;
+        goal_ensure_primary($userId, $heir === null ? null : (int) $heir);
     }
 
     /**

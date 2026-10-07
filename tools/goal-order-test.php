@@ -128,9 +128,9 @@ expect('a primary with no percentage stays primary',
 expect('a paused primary keeps its slot too',
     [goal('40%', 40, 10), goal('Hoofddoel gepauzeerd', 80, 30, 'primary', 'paused')],
     'Hoofddoel gepauzeerd', '40%');
-expect('no goal marked primary: the first goal takes the slot as before, not the one furthest along',
+expect('no goal marked primary (it was completed): the first of Secundaire doelen takes the slot, as after a delete',
     [goal('eerste', 10, 30), goal('verder', 90, 30), goal('midden', 50, 30)],
-    'eerste', 'verder, midden');
+    'verder', 'midden, eerste');
 
 echo "\nStable: still equal keeps the order it came in\n";
 expect('same percentage and same end date: the order they arrived in',
@@ -232,6 +232,39 @@ check('the deleted goal itself: the board\'s first',
 $done = goal('klaar', 100, null, 'secondary', 'completed') + ['completed_days_ago' => 1];
 $g = [$main(), goal('70%', 70, 10), $done];
 check('a completed goal: the board\'s first', successor($g, $done['id']) === '70%', successor($g, $done['id']));
+
+echo "\nCompleting the primary goal: the same goal takes its place as after a delete\n";
+
+/**
+ * One board, twice: the primary goal deleted (goals_successor() on the board
+ * before) and completed (the board after, as goals_prepare() fills the empty
+ * slot — the goal goal_ensure_primary_after_completion() stores).
+ */
+function both_ways(array $secondary): array
+{
+    $main    = goal('Hoofddoel', 50, 20, 'primary');
+    $deleted = successor(array_merge([$main], $secondary));
+    $done    = ['status' => 'completed', 'completed_days_ago' => 0, 'percent' => 100] + $main;
+    $after   = board(array_merge([$done], $secondary));
+
+    return [$deleted, $after['primary']['name'] ?? '(none)', names($after['completed'])];
+}
+
+foreach ([
+    '82%, 64%, 41% (41% the oldest)'          => [[goal('41%', 41, 10), goal('64%', 64, 10), goal('82%', 82, 10)], '82%'],
+    'equal percentages: the one ending sooner' => [[goal('60% tot 25 okt', 60, 24), goal('60% tot 12 okt', 60, 11)], '60% tot 12 okt'],
+    'only goals without data: soonest first'   => [[goal('geen data, 30 okt', null, 29), goal('geen data, 12 okt', null, 11)], 'geen data, 12 okt'],
+    'a real 0% before no data'                 => [[goal('geen data', null, 1), goal('0%', 0, 60)], '0%'],
+    'a running goal before a paused one'       => [[goal('gepauzeerd 90%', 90, 10, 'secondary', 'paused'), goal('20%', 20, 10)], '20%'],
+    'only paused goals: the first of them'     => [[goal('gepauzeerd A', 90, 10, 'secondary', 'paused'), goal('gepauzeerd B', 10, 5, 'secondary', 'paused')], 'gepauzeerd A'],
+    'one secondary goal'                       => [[goal('enige', null, 30)], 'enige'],
+    'no secondary goal: none'                  => [[], '(none)'],
+] as $label => [$secondary, $expected]) {
+    [$deleted, $completed, $history] = both_ways($secondary);
+    check("$label: $expected, deleted or completed", $deleted === $expected && $completed === $expected,
+        "deleted → $deleted, completed → $completed");
+    check('  and the completed goal is under Behaald', $history === 'Hoofddoel', $history);
+}
 
 echo "\n  $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
