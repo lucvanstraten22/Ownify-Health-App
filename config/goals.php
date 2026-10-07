@@ -122,7 +122,7 @@ return [
     /* --------------------------------------------------------------- copy */
     'labels' => [
         'primary'        => 'Primair doel',
-        'secondary'      => 'Overige doelen',
+        'secondary'      => 'Secundaire doelen',
         'primary_chip'   => 'Primair',
         'paused_chip'    => 'Gepauzeerd',
         'add'            => 'Nieuw doel',

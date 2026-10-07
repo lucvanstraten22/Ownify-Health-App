@@ -54,6 +54,14 @@ if (!function_exists('goals_prepare')) {
             $active[0]['is_primary'] = true;
         }
 
+        /* Secundaire doelen: the running ones furthest along first
+           (goals_secondary_compare), the paused ones after them as before.
+           The primary goal has its slot already and is not part of this. */
+        $secondary = array_slice($active, 1);
+        $running   = array_values(array_filter($secondary, static fn (array $g): bool => !$g['is_paused']));
+        $paused    = array_values(array_filter($secondary, static fn (array $g): bool => $g['is_paused']));
+        $active    = array_merge(array_slice($active, 0, 1), goals_sort_stable($running, 'goals_secondary_compare'), $paused);
+
         $limit = (int) $config['limits']['active'];
         $used  = count($active);
 
@@ -83,6 +91,59 @@ if (!function_exists('goals_rank')) {
         $paused   = $goal['status'] === 'paused' ? 1 : 0;
 
         return $priority * 2 + $paused;
+    }
+}
+
+if (!function_exists('goals_secondary_compare')) {
+    /**
+     * The order of the running secondary goals, the same for the website and
+     * the app (which shows the order it is sent):
+     *
+     *   1. the highest percentage first — the percentage the card shows;
+     *   2. a goal with no percentage (no data yet, too little, or no target to
+     *      measure against) after every goal that has one. A real 0% is a
+     *      percentage, so it comes before them;
+     *   3. and 4. between equal percentages, and between goals without one,
+     *      the goal that ends soonest first; one without an end date last.
+     *
+     * Goals still equal keep the order they had (goals_sort_stable).
+     */
+    function goals_secondary_compare(array $a, array $b): int
+    {
+        $hasA = $a['percent'] !== null;
+        $hasB = $b['percent'] !== null;
+
+        if ($hasA !== $hasB) {
+            return $hasA ? -1 : 1;
+        }
+
+        if ($hasA && ($order = $b['percent'] <=> $a['percent']) !== 0) {
+            return $order;
+        }
+
+        $endA = $a['end_date'] ?? null;
+        $endB = $b['end_date'] ?? null;
+
+        if ($endA === null || $endB === null) {
+            return ($endA === null) <=> ($endB === null);
+        }
+
+        return $endA <=> $endB;
+    }
+}
+
+if (!function_exists('goals_sort_stable')) {
+    /** usort that keeps equal items in the order they came in, on any PHP. */
+    function goals_sort_stable(array $items, callable $compare): array
+    {
+        $keyed = [];
+        foreach (array_values($items) as $position => $item) {
+            $keyed[] = [$position, $item];
+        }
+
+        usort($keyed, static fn (array $a, array $b): int => $compare($a[1], $b[1]) ?: $a[0] <=> $b[0]);
+
+        return array_column($keyed, 1);
     }
 }
 

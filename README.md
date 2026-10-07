@@ -63,6 +63,8 @@ tools/
                               biggest opportunity, empty states, wording — no database
     first-days-test.php       the first days: every day of the baseline card, the focus,
                               the suggested first goal, the tone — no database
+    goal-order-test.php       the order of Secundaire doelen on the goals board — no
+                              database
     brand-icons.py            the Ownify logo for every place it is shown, made from the
                               supplied artwork in docs/brand (Python: Pillow, numpy, scipy)
 pages/
@@ -417,8 +419,17 @@ PRIMAIR DOEL
 │ Nog 18 dagen · t/m 4 okt      ›  │
 └──────────────────────────────────┘
 
-OVERIGE DOELEN   ×4
+SECUNDAIRE DOELEN   ×4
 ```
+
+**The order of Secundaire doelen.** The primary goal keeps its own slot. Under
+it, the running secondary goals are sorted furthest along first, by the
+percentage on their card; a goal with no percentage yet (no data, too little,
+or nothing to measure against) comes after every goal that has one — a real
+0% is a percentage and stays above them. Equal percentages, and goals without
+one, go soonest-ending first; goals still equal keep their order. Paused goals
+follow the running ones. `goals_prepare()` in `lib/goals.php` decides it once,
+for the website and the app alike (`tools/goal-order-test.php`).
 
 **Five goals, one primary.** The limit is one number, `limits` → `active` in
 `config/goals.php`; it is enforced in one place (`GOAL_MAX_ACTIVE`,
@@ -546,7 +557,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.7.0
+OVER         Over de app · Versie Beta 1.7.1
 
              [ Uitloggen ]
                Account verwijderen

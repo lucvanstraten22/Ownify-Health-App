@@ -17,7 +17,9 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
@@ -60,6 +62,7 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyTheme
 import com.ownify.android.ui.theme.OwnifyThemeStore
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -936,6 +939,48 @@ class OwnifyAppFlowTest {
         bar.performTouchInput { up() }
         compose.mainClock.advanceTimeBy(600)
         assertTrue("letting go hides it", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun `Doelen - Secundaire doelen in the order the server sends, under the primary goal`() {
+        // The server's order (goals_prepare, lib/goals.php): furthest along
+        // first, a real 0% before a goal with no percentage. The app sorts
+        // nothing itself, so the website and the app show the same order.
+        val state = JSONObject(server.stateBody)
+        val goals = state.getJSONObject("data").getJSONObject("goals")
+        val template = goals.getJSONArray("secondary").getJSONObject(0)
+        val sent = listOf("Hardlopen 82" to 82, "Zwemmen 41" to 41, "Fietsen 0" to 0, "Yoga zonder data" to null)
+        val secondary = JSONArray()
+        sent.forEachIndexed { i, (name, percent) ->
+            secondary.put(JSONObject(template.toString()).put("id", "order-$i").put("name", name).put("status", "active")
+                .put("is_paused", false).put("percent", percent ?: JSONObject.NULL))
+        }
+        val active = JSONArray().put(goals.getJSONObject("primary"))
+        for (i in 0 until secondary.length()) active.put(secondary.getJSONObject(i))
+        val all = JSONArray()
+        for (i in 0 until active.length()) all.put(active.getJSONObject(i))
+        for (i in 0 until goals.getJSONArray("completed").length()) all.put(goals.getJSONArray("completed").getJSONObject(i))
+        goals.put("secondary", secondary).put("active", active).put("all", all)
+        server.stateBody = state.toString()
+
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        button("Doelen").performClick()
+        // The eyebrow is shown in capitals, as on the website (text-transform).
+        fun nodes(text: String) = compose.onAllNodesWithText(text, ignoreCase = true).fetchSemanticsNodes()
+        compose.waitUntil(15_000) { nodes("Secundaire doelen").isNotEmpty() }
+
+        // Each card is one button, named for its goal; only the page on screen
+        // counts (the rail keeps its neighbours composed beside it). Positions,
+        // not bounds: the last cards are below the fold.
+        val width = compose.onRoot().fetchSemanticsNode().size.width
+        fun onScreen(found: List<SemanticsNode>) = found.first { it.positionInRoot.x >= 0f && it.positionInRoot.x < width }
+        fun card(name: String) = onScreen(compose.onAllNodes(hasContentDescription(name, substring = true)).fetchSemanticsNodes()).positionInRoot.y
+        val primary = goals.getJSONObject("primary").getString("name")
+        val tops = listOf(card(primary), onScreen(nodes("Secundaire doelen")).positionInRoot.y) + sent.map { card(it.first) }
+        assertEquals("from the top: $primary, Secundaire doelen, ${sent.map { it.first }}", tops.sorted(), tops)
+        assertTrue("the old name is gone", nodes("Overige doelen").isEmpty())
     }
 
     @Test

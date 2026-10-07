@@ -27,11 +27,11 @@ if (!function_exists('goals_for_user')) {
     function goals_for_user(int $userId, ?string $status = 'active'): array
     {
         if ($status === null) {
-            return db_all('SELECT * FROM goals WHERE user_id = ? ORDER BY start_date DESC', [$userId]);
+            return db_all('SELECT * FROM goals WHERE user_id = ? ORDER BY start_date DESC, id DESC', [$userId]);
         }
 
         return db_all(
-            'SELECT * FROM goals WHERE user_id = ? AND status = ? ORDER BY start_date DESC',
+            'SELECT * FROM goals WHERE user_id = ? AND status = ? ORDER BY start_date DESC, id DESC',
             [$userId, $status]
         );
     }
