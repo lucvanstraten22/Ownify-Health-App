@@ -92,6 +92,12 @@ return [
                 ['id' => 'notifications', 'icon' => 'bell',          'label' => 'Meldingen',               'value' => 'Uit'],
                 ['id' => 'theme',         'icon' => 'moon',          'label' => 'Thema & uiterlijk',       'value' => 'Systeem'],
                 ['id' => 'language',      'icon' => 'globe',         'label' => 'Taal',                    'value' => 'Nederlands'],
+            ],
+        ],
+
+        [
+            'label' => 'Voorkeuren',
+            'rows'  => [
                 ['id' => 'units',         'icon' => 'ruler',         'label' => 'Eenheden',                'value' => 'Metrisch'],
                 ['id' => 'week',          'icon' => 'calendar',      'label' => 'Eerste dag van de week',  'value' => 'Maandag'],
                 ['id' => 'accessibility', 'icon' => 'accessibility', 'label' => 'Toegankelijkheid',        'value' => 'Systeem'],
@@ -101,7 +107,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.9.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.9.1'],
             ],
         ],
     ],
@@ -151,7 +157,8 @@ return [
      *   toggles       switches, disabled while the feature does not exist
      *   actions       a button that does one thing after "are you sure?"
      *   rows          plain label/value information
-     *   note          one framed line of explanation
+     *   note          one framed line of explanation, under its own heading
+     *                 when it has a `title`
      */
     'pages' => [
 
@@ -499,9 +506,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.9.0'],
-                        ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS',
-                         'value_app' => 'Kotlin · Jetpack Compose'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.9.1'],
                     ],
                 ],
 
@@ -516,15 +521,9 @@ return [
                     ],
                 ],
 
-                [
-                    'type'  => 'rows',
-                    'title' => 'Hulp',
-                    'items' => [
-                        ['label' => 'Contact', 'value' => 'Binnenkort'],
-                    ],
-                ],
-
-                ['type' => 'note', 'icon' => 'info',
+                /* Hulp's Contact is left out until it has something behind it;
+                   until then Hulp is its heading over this note. */
+                ['type' => 'note', 'title' => 'Hulp', 'icon' => 'info',
                  'text' => 'Ownify is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.'],
             ],
         ],

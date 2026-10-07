@@ -1314,7 +1314,8 @@ sealed interface SettingsBlock {
     data class States(val title: String, val lede: String?, val items: List<StateItem>) : SettingsBlock
     data class Toggles(val title: String, val lede: String?, val items: List<ToggleItem>) : SettingsBlock
     data class Rows(val title: String, val items: List<Pair<String, String>>) : SettingsBlock
-    data class Note(val icon: String, val text: String) : SettingsBlock
+    /** [title]: the heading it sits under, when it has one (Over de app's Hulp). */
+    data class Note(val icon: String, val text: String, val title: String? = null) : SettingsBlock
     data class Actions(val title: String, val items: List<ActionItem>) : SettingsBlock
 
     companion object {
@@ -1341,7 +1342,7 @@ sealed interface SettingsBlock {
                     }
                 )
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
-                "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty())
+                "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty(), o.str("title")?.takeIf { it.isNotEmpty() })
                 "actions" -> Actions(o.str("title").orEmpty(), o.arr("items").map(ActionItem::parse))
                 else -> null
             }

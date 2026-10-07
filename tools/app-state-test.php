@@ -315,15 +315,51 @@ try {
             }
         }
     }
-    check('Over de app in the app\'s words: Ownify, built with Kotlin and Compose, and what it uses',
+    check('Over de app in the app\'s words: Ownify, and what it uses',
         ($appSays['Naam'][0] ?? null) === 'Ownify'
-        && ($appSays['Gebouwd met'][0] ?? null) === 'Kotlin · Jetpack Compose'
         && ($appSays['Licenties'][0] ?? null) === 'AndroidX, Kotlin en Google Play-services', json_encode($appSays['Licenties'] ?? null));
     check('…its text follows the phone, not a browser, and no variant is left for the app to choose',
         ($appSays['Tekstgrootte'][1] ?? null) === 'De app schaalt mee met de lettergrootte van je telefoon' && !$variant);
-    check('the website keeps its own: PHP, no external packages, the browser\'s text size',
-        str_contains($page['raw'], 'PHP · HTML · CSS · JS') && str_contains($page['raw'], 'Geen externe pakketten')
-        && str_contains($page['raw'], 'tekstgrootte van je browser') && !str_contains($page['raw'], 'Jetpack Compose'));
+    check('the website keeps its own: no external packages, the browser\'s text size',
+        str_contains($page['raw'], 'Geen externe pakketten')
+        && str_contains($page['raw'], 'tekstgrootte van je browser') && !str_contains($page['raw'], 'Google Play-services'));
+
+    /* Instellingen's groups, the same on both: Meldingen, Thema & uiterlijk and
+       Taal under App, then Voorkeuren with the other three, each row still
+       opening its own screen. */
+    $want = ['Account' => ['account'], 'Gezondheid' => ['devices'], 'Privacy' => ['privacy'],
+             'App' => ['notifications', 'theme', 'language'], 'Voorkeuren' => ['units', 'week', 'accessibility'],
+             'Over' => ['about']];
+    $appGroups = [];
+    foreach ($app['body']['data']['settings']['groups'] ?? [] as $group) {
+        $appGroups[(string) $group['label']] = array_column($group['rows'] ?? [], 'id');
+    }
+    check('Instellingen in the app: App holds Meldingen, Thema & uiterlijk and Taal, Voorkeuren the other three',
+        $appGroups === $want, json_encode($appGroups));
+    $webGroups = [];
+    preg_match_all('~<section class="settings-group[^"]*"[^>]*>\s*<h2 class="settings-eyebrow"[^>]*>([^<]*)</h2>(.*?)</section>~s',
+        $page['raw'], $found, PREG_SET_ORDER);
+    foreach ($found as [, $label, $body]) {
+        preg_match_all('~data-detail-open="settings-([a-z_]+)"~', $body, $ids);
+        $webGroups[html_entity_decode($label)] = $ids[1];
+    }
+    unset($want['Account']);   // the website's is the card above the groups
+    check('…and on the website, in the same order', $webGroups === $want, json_encode($webGroups));
+
+    /* Over de app: no Gebouwd met, and Hulp without Contact — its heading over the note. */
+    $hulp = null;
+    foreach ($app['body']['data']['settings']['pages']['about']['blocks'] ?? [] as $block) {
+        if (($block['title'] ?? null) === 'Hulp') {
+            $hulp = $block;
+        }
+    }
+    check('Over de app in the app: no Gebouwd met or Contact, Hulp over the note',
+        !isset($appSays['Gebouwd met']) && !isset($appSays['Contact'])
+        && ($hulp['type'] ?? null) === 'note' && str_starts_with((string) ($hulp['text'] ?? ''), 'Ownify is geen medisch hulpmiddel'),
+        json_encode($hulp));
+    check('…and on the website',
+        !str_contains($page['raw'], 'Gebouwd met') && !str_contains($page['raw'], 'metric-row__label">Contact<')
+        && preg_match('~>Hulp</h2>\s*<p class="settings-note">.*?Ownify is geen medisch hulpmiddel~s', $page['raw']) === 1);
 
     /* Apple Health: no iPhone app, so nothing to pair with on either side. */
     $apple = null;

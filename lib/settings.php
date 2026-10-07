@@ -542,8 +542,8 @@ if (!function_exists('settings_for_app')) {
     /**
      * The Ownify app's own words: every item with a `value_app` or `note_app`
      * (config/settings.php) shows that instead of the website's `value` or
-     * `note`, which would not be true on a phone — what it is built with,
-     * what it uses, what its text follows. For the app's state only.
+     * `note`, which would not be true on a phone — what it uses, what its
+     * text follows. For the app's state only.
      */
     function settings_for_app(array $settings): array
     {

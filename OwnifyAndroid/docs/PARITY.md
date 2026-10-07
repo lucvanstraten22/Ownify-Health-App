@@ -54,8 +54,8 @@ with bold only.
 | `pages/goal-detail.php` | `GoalDetail` | hero, chips, meter, facts, day calendar, manual entry, Verloop chart (scrub), sources, recent, Beheer (promote, pause/resume, delete + confirm) |
 | `components/goal-wizard.php` | `GoalWizard` | six steps, per-step validation, source catalogue, targets, durations, summary, priority, done, errors |
 | `pages/community.php` | `CommunityPage` | Vrienden / Nederland × Maand / Jaar / All-time, board (profile picture over the initial, when its owner shows it), Vrienden toevoegen row (Vrienden boards only, above #1; opens Vriend toevoegen), your sticky row, gap row, empty board |
-| `pages/settings.php` | `SettingsPage` | identity card, five groups, logout, delete link |
-| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice (Thema's Systeem / Donker / Licht saves and switches at once; no not-saved line under it), states, toggles (Privacy's "Profielfoto op de ranglijst" and "Gegevens verwerken met Google Gemini" save), actions (Privacy's "AI-gesprekken wissen": Alles wissen, in-place confirm, done line, error), rows, notes, not-saved line |
+| `pages/settings.php` | `SettingsPage` | identity card, the groups below it (Gezondheid, Privacy, App, Voorkeuren, Over), logout, delete link |
+| `pages/settings-detail.php` ×10 | `SettingsDetail` | identity hero, fields, sign-in block, integrations (expandable), choice (Thema's Systeem / Donker / Licht saves and switches at once; no not-saved line under it), states, toggles (Privacy's "Profielfoto op de ranglijst" and "Gegevens verwerken met Google Gemini" save), actions (Privacy's "AI-gesprekken wissen": Alles wissen, in-place confirm, done line, error), rows, notes (one under its own heading: Over de app's Hulp), not-saved line |
 | `components/settings-editor.php` | `FieldEditor` | text / date / choice / measure, once-warning, error |
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |

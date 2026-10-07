@@ -127,7 +127,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.States -> StatesBlock(block)
                 is SettingsBlock.Toggles -> TogglesBlock(block)
                 is SettingsBlock.Rows -> RowsBlock(block)
-                is SettingsBlock.Note -> SettingsNote(block.icon, block.text, Modifier.reveal())
+                is SettingsBlock.Note -> NoteBlock(block)
                 is SettingsBlock.Actions -> ActionsBlock(block)
             }
         }
@@ -872,6 +872,20 @@ private fun RowsBlock(block: SettingsBlock.Rows) {
         JCard(Modifier.fillMaxWidth()) {
             block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0) }
         }
+    }
+}
+
+/** A note on its own, or under its eyebrow when it has a title — where a card would sit. */
+@Composable
+private fun NoteBlock(block: SettingsBlock.Note) {
+    val title = block.title
+    if (title == null) {
+        SettingsNote(block.icon, block.text, Modifier.reveal())
+        return
+    }
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(title)
+        SettingsNote(block.icon, block.text)
     }
 }
 

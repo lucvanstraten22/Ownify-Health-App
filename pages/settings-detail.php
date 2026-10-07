@@ -338,6 +338,17 @@ foreach ($page['blocks'] as $block) {
                             </div>
                         </section>
 
+                    <?php elseif ($block['type'] === 'note' && !empty($block['title'])): ?>
+
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <p class="settings-note">
+                                <?= icon($block['icon'], 'settings-note__icon') ?>
+                                <span><?= e($block['text']) ?></span>
+                            </p>
+                        </section>
+
                     <?php elseif ($block['type'] === 'note'): ?>
 
                         <p class="settings-note reveal">

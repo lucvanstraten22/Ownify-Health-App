@@ -22,6 +22,37 @@ import org.robolectric.annotation.Config
 class AppDataParseTest {
 
     @Test
+    fun `Instellingen - App, then Voorkeuren with three of its rows, and Over de app without Gebouwd met or Contact`() {
+        for (name in listOf("state-demo.json", "state-new-account.json")) {
+            val settings = fixture(name).settings
+            assertEquals(
+                name,
+                listOf(
+                    "Account" to listOf("account"), "Gezondheid" to listOf("devices"), "Privacy" to listOf("privacy"),
+                    "App" to listOf("notifications", "theme", "language"),
+                    "Voorkeuren" to listOf("units", "week", "accessibility"),
+                    "Over" to listOf("about")
+                ),
+                settings.groups.map { group -> group.label to group.rows.map { it.id } }
+            )
+
+            val about = settings.page("about")!!.blocks
+            assertEquals(
+                listOf("App" to listOf("Naam", "Versie"), "Juridisch" to listOf("Privacyverklaring", "Voorwaarden", "Licenties")),
+                about.filterIsInstance<SettingsBlock.Rows>().map { block -> block.title to block.items.map { it.first } }
+            )
+            // Hulp keeps its heading, over the note that followed Contact.
+            val hulp = about.last() as SettingsBlock.Note
+            assertEquals("Hulp", hulp.title)
+            assertTrue(hulp.text.startsWith("Ownify is geen medisch hulpmiddel."))
+            // Every other note has no heading of its own, as before.
+            val others = settings.pages.flatMap { it.blocks }.filterIsInstance<SettingsBlock.Note>().filter { it !== hulp }
+            assertTrue(others.isNotEmpty())
+            assertTrue(others.all { it.title == null })
+        }
+    }
+
+    @Test
     fun `the theme - the one choice that saves, and this phone's choice where the settings name it`() {
         val data = fixture("state-demo.json")
         val choice = data.settings.page("theme")!!.blocks.filterIsInstance<SettingsBlock.Choice>().single()

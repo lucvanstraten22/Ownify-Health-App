@@ -1,0 +1,129 @@
+package com.ownify.android.ui
+
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.dp
+import com.ownify.android.data.AppData
+import com.ownify.android.ui.app.AppShell
+import com.ownify.android.ui.app.Detail
+import com.ownify.android.ui.app.ShellState
+import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.LocalStillMotion
+import com.ownify.android.ui.design.ScreenMetrics
+import com.ownify.android.ui.screens.OwnifyScreens
+import com.ownify.android.ui.theme.OwnifyTheme
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/**
+ * Instellingen as the server lists it (config/settings.php): Meldingen,
+ * Thema & uiterlijk and Taal under App, then Voorkeuren with Eenheden, Eerste
+ * dag van de week and Toegankelijkheid — each row still opening its own
+ * screen — and Over de app without Gebouwd met, its Hulp without Contact.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+class SettingsLayoutTest {
+
+    @get:Rule
+    val compose = createComposeRule()
+
+    private lateinit var shell: ShellState
+
+    private fun show() {
+        val state = JSONObject(javaClass.classLoader!!.getResource("state-demo.json").readText()).getJSONObject("data")
+        compose.setContent {
+            OwnifyTheme {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight), LocalStillMotion provides true) {
+                        AppShell(AppData.parse(state), OwnifyScreens.shell, onShell = { shell = it })
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.runOnUiThread { shell.tab("settings") }
+        compose.waitForIdle()
+    }
+
+    /** A main-page row, by what it says: "Eenheden — Metrisch. Open instellingen." */
+    private fun row(label: String) = compose.onNode(hasContentDescription("$label — ", substring = true) and hasClickAction())
+
+    private fun heading(text: String) = compose.onNode(hasText(text) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading), useUnmergedTree = true)
+
+    private fun text(text: String) = compose.onNode(hasText(text), useUnmergedTree = true)
+
+    private fun none(text: String) = compose.onAllNodes(hasText(text), useUnmergedTree = true).fetchSemanticsNodes().isEmpty() &&
+        compose.onAllNodes(hasContentDescription(text, substring = true), useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+
+    // Where it is laid out, below the fold too (boundsInRoot is cut to the screen).
+    private val SemanticsNodeInteraction.top get() = fetchSemanticsNode().positionInRoot.y
+    private val SemanticsNodeInteraction.bottom get() = fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
+
+    @Test
+    fun `the main page - App holds Meldingen, Thema & uiterlijk and Taal, then Voorkeuren the other three, in that order`() {
+        show()
+
+        val order = listOf(
+            heading("APP"), row("Meldingen"), row("Thema & uiterlijk"), row("Taal"),
+            heading("VOORKEUREN"), row("Eenheden"), row("Eerste dag van de week"), row("Toegankelijkheid"),
+            heading("OVER"), row("Over de app")
+        ).map { it.top }
+        assertEquals("top to bottom", order.sorted(), order)
+        assertTrue("one page, no second level", none("Voorkeuren — "))
+    }
+
+    @Test
+    fun `each row in Voorkeuren opens its own screen, as before`() {
+        show()
+
+        for ((label, lede) in listOf(
+            "Eenheden" to "Hoe lengte, gewicht en afstand worden getoond.",
+            "Eerste dag van de week" to "Bepaalt waar je week begint in overzichten en grafieken.",
+            "Toegankelijkheid" to "De app volgt je systeeminstellingen waar dat kan."
+        )) {
+            // As a screen reader opens it: the lower rows sit under the tab bar until scrolled.
+            row(label).performSemanticsAction(SemanticsActions.OnClick)
+            compose.waitForIdle()
+            text(lede).assertExists()
+            compose.runOnUiThread { shell.closeDetail() }
+            compose.waitForIdle()
+        }
+    }
+
+    @Test
+    fun `Over de app - no Gebouwd met, and Hulp without Contact - its heading over the note, where a card would sit`() {
+        show()
+        compose.runOnUiThread { shell.openDetail(Detail.SettingsPage("about")) }
+        compose.waitForIdle()
+
+        for (kept in listOf("Naam", "Versie", "Beta 1.9.1", "Privacyverklaring", "Voorwaarden", "Licenties")) text(kept).assertExists()
+        heading("JURIDISCH").assertExists()
+        assertTrue("Gebouwd met is gone", none("Gebouwd met"))
+        assertTrue("Contact is gone", none("Contact"))
+
+        val hulp = heading("HULP")
+        val note = text("Ownify is geen medisch hulpmiddel. De scores en suggesties zijn bedoeld om je eigen ritme te volgen, niet om een diagnose te stellen.")
+        // The eyebrow's 8 below it, as over every card on these screens, then the
+        // note's own frame and padding (1 + 16) to its text.
+        val gap = with(compose.density) { (note.top - hulp.bottom).toDp() }
+        assertTrue("the note right under Hulp: $gap", gap > 24.dp && gap < 26.dp)
+    }
+}
