@@ -42,6 +42,7 @@ php tools/check-config.php
 ```
 index.php                     front door: the opening screen when signed out, else the
                               app shell — the rail, the dock, details and the sheet
+favicon.ico                   the browser tab's Ownify logo (docs/BRANDING.md)
 database/
     schema.sql                the MySQL schema — repeatable, import and go
     seed-dev.sql              fake development data, never production
@@ -62,6 +63,8 @@ tools/
                               biggest opportunity, empty states, wording — no database
     first-days-test.php       the first days: every day of the baseline card, the focus,
                               the suggested first goal, the tone — no database
+    brand-icons.py            the Ownify logo for every place it is shown, made from the
+                              supplied artwork in docs/brand (Python: Pillow, numpy, scipy)
 pages/
     welcome.php               the opening screen, for everyone not signed in
     setup.php                 the setup a new account starts with, before the app
@@ -159,6 +162,9 @@ assets/js/
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
     devices.js                the devices quick look, and its way to the devices screen
+assets/brand/
+    ownify-icon.webp          the logo on the opening screen
+    ownify-icon-192.png       the icon link; apple-touch-icon.png the iPhone home screen
 ```
 
 ## The opening screen
@@ -175,7 +181,8 @@ against the database — before anything else.
 - **Signed in**: the app, on Overzicht. That includes coming back after
   closing the browser or after a long time away — see *Staying signed in*.
 
-The opening screen shows the app's name, one line under it
+The opening screen shows the Ownify logo (the icon-only version,
+[docs/BRANDING.md](docs/BRANDING.md)), the app's name, one line under it
 (`config/dashboard.php` → `welcome.subtitle`, the only place it is written),
 and two buttons where the tab bar will be. **Inloggen** and **Registreren**
 open the same account panel as the app's account button, with the same forms
@@ -539,7 +546,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.6.0
+OVER         Over de app · Versie Beta 1.7.0
 
              [ Uitloggen ]
                Account verwijderen

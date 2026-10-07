@@ -40,7 +40,7 @@ with bold only.
 
 | Web | Android | States |
 | --- | --- | --- |
-| `pages/welcome.php` | `WelcomeScreen` | ring draw-in, rise-in, two buttons; paired-only variant (see deviations) |
+| `pages/welcome.php` | `WelcomeScreen` | the Ownify logo (icon-only, decorative — the name follows), rise-in, two buttons; paired-only variant (see deviations) |
 | `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, the Google mark (`.social`: 46 round soft glass, the G at 21, pressed 0.94, disabled at 50 % + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
 | `pages/setup.php` | `SetupScreen` (instead of the shell while `setup.pending`, crossfading to it) | the app's name and Uitloggen; four bars and "Stap 2 van 4"; each step sliding in from the side it comes from; Focus (five choices as a radio group, the chosen one ringed in its colour, Verder disabled until one is chosen, error); Gegevens (Health Connect, its status and last sync, the manual line, the later line; Doorgaan zonder koppelen, or Verder once connected — see deviations); Over jou (birth date, height, weight, each with its reason; a birth date already given shown locked; Overslaan / Opslaan en verder; error; under 360 dp the three buttons on two rows); Doel (a suggested goal with what it is based on, Toevoegen / Niet nu; the added line; Zelf een doel instellen opening the goal wizard; Naar Ownify; error); working |
 | `components/header.php` | `AppHeader` (shared, over the rail) | clear / scrolled (gradient + blur), devices dot |

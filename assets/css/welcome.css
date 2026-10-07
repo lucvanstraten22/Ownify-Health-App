@@ -1,11 +1,10 @@
 /* ==========================================================================
    welcome.css — the opening screen, for everyone not signed in.
 
-   No new tokens. The ground is the app's backdrop, the mark is the score
-   ring's gradient round the assistant's glass orb, and the two buttons are
-   cut from the same pane as the tab bar and sit exactly where it will be once
-   you are in: the same width, the same height, the same distance from the
-   bottom edge.
+   No new tokens. The ground is the app's backdrop, the mark is the Ownify
+   logo (assets/brand, docs/BRANDING.md), and the two buttons are cut from the
+   same pane as the tab bar and sit exactly where it will be once you are in:
+   the same width, the same height, the same distance from the bottom edge.
    ========================================================================== */
 
 .welcome {
@@ -47,73 +46,15 @@
     margin-bottom: var(--space-6);
 }
 
-.welcome__ring {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    transform: rotate(-90deg);
-    animation: welcome-turn 90s linear 1.6s infinite;
-}
-
-.welcome__track {
-    fill: none;
-    stroke: rgba(var(--ink), 0.07);
-    stroke-width: 7;
-}
-
-/* Drawn in once, three quarters round — the score ring's gesture, without
-   a score. 2 * PI * r (r = 68) = 427.26. */
-.welcome__arc {
-    fill: none;
-    stroke: url(#welcomeGradient);
-    stroke-width: 7;
-    stroke-linecap: round;
-    stroke-dasharray: 427.26;
-    stroke-dashoffset: 106.8;
-    animation: welcome-draw 1400ms var(--ease-out) 200ms both;
-}
-
-/* A light behind the glass, as on the assistant's orb. */
-.welcome__glow {
-    position: absolute;
-    inset: -30%;
-    border-radius: 50%;
-    background: radial-gradient(circle,
-        rgba(60, 158, 114, 0.18) 0%,
-        rgba(60, 158, 114, 0.08) 28%,
-        rgba(60, 158, 114, 0.02) 50%,
-        transparent 72%);
-}
-
-.welcome__orb {
-    position: absolute;
-    inset: 21%;
-    border-radius: 50%;
-    background: radial-gradient(120% 120% at 30% 22%,
-        rgba(255, 255, 255, calc(0.24 * var(--glint-k))) 0%,
-        rgba(255, 255, 255, calc(0.09 * var(--glint-k))) 34%,
-        rgba(255, 255, 255, calc(0.02 * var(--glint-k))) 62%,
-        rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%);
-    border: 1px solid rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
-    -webkit-backdrop-filter: blur(14px) saturate(125%);
-    backdrop-filter: blur(14px) saturate(125%);
-    box-shadow:
-        inset 0 2px 1px rgba(255, 255, 255, calc(0.24 * var(--glint-k))),
-        inset 0 -20px 30px rgba(var(--shade), calc(0.20 * var(--shade-k))),
-        0 20px 42px rgba(var(--shade), calc(0.28 * var(--shade-k)));
-    animation: welcome-breathe 7s ease-in-out 1.6s infinite;
-}
-
-/* Specular sheen. */
-.welcome__orb::after {
-    content: "";
-    position: absolute;
-    inset: 9% 20% 54% 17%;
-    border-radius: 50%;
-    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, calc(0.30 * var(--glint-k))), transparent 72%);
-    filter: blur(3px);
+/* The logo as supplied, as large as the ring it took the place of (r 68
+   + half its 7 stroke, of 160: 89.4%) — nothing drawn over or around it. */
+.welcome__logo {
+    display: block;
+    width: 89.4%;
+    height: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
 }
 
 .welcome__title {
@@ -215,7 +156,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   Arrival — the name and the buttons settle in once, the ring draws itself.
+   Arrival — the logo, the name and the buttons settle in once.
    The theme's reduced-motion rule turns all of it off.
    -------------------------------------------------------------------------- */
 .welcome__mark,
@@ -232,21 +173,6 @@
 @keyframes welcome-rise {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: none; }
-}
-
-@keyframes welcome-draw {
-    from { stroke-dashoffset: 427.26; }
-    to { stroke-dashoffset: 106.8; }
-}
-
-@keyframes welcome-turn {
-    from { transform: rotate(-90deg); }
-    to { transform: rotate(270deg); }
-}
-
-@keyframes welcome-breathe {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.035); }
 }
 
 /* --------------------------------------------------------------------------

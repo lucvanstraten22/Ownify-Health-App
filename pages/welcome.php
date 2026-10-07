@@ -9,8 +9,9 @@
  * (components/account-modal.php) — the same panel, forms and endpoints as
  * ever — each on its own flow and nothing else.
  *
- * The mark is the app's own: the score ring's gradient, drawn round the
- * assistant's glass orb.
+ * The mark is the Ownify logo — the icon-only version, as supplied
+ * (assets/brand, docs/BRANDING.md). It is decorative here: the name under it
+ * says "Ownify" already.
  */
 declare(strict_types=1);
 
@@ -33,19 +34,8 @@ $welcome = $data['welcome'];
 
         <div class="welcome__stage">
             <div class="welcome__mark" aria-hidden="true">
-                <svg class="welcome__ring" viewBox="0 0 160 160" focusable="false">
-                    <defs>
-                        <linearGradient id="welcomeGradient" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%"   stop-color="var(--sleep)"/>
-                            <stop offset="55%"  stop-color="var(--training)"/>
-                            <stop offset="100%" stop-color="var(--nutrition)"/>
-                        </linearGradient>
-                    </defs>
-                    <circle class="welcome__track" cx="80" cy="80" r="68"/>
-                    <circle class="welcome__arc" cx="80" cy="80" r="68"/>
-                </svg>
-                <span class="welcome__glow"></span>
-                <span class="welcome__orb"></span>
+                <img class="welcome__logo" src="<?= e(asset('assets/brand/ownify-icon.webp')) ?>"
+                     alt="" width="512" height="512" decoding="async" draggable="false">
             </div>
 
             <h1 class="welcome__title" id="welcome-title"><?= e($app['name']) ?></h1>

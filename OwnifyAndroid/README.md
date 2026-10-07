@@ -239,6 +239,11 @@ Android jar.
 - `ui/PhoneSyncUiTest` — this phone's Health Connect card in each state
   (unavailable, update needed, no/part/all access, background) and "Nu
   synchroniseren" end to end: success, revoked, offline.
+- `ui/BrandIconTest` — the launcher icon is the adaptive Ownify logo on the
+  logo's own green, and at every density the symbol is centred and wholly
+  inside the 66 dp safe zone. With `-Downify.shots=<dir>` it also draws the
+  icon through `AdaptiveIconDrawable` under the common launcher masks, the
+  themed version and the splash.
 - `ui/PresentationHelpersTest` — the few things the app formats itself
   (points, avatar accent and initial, member since, slot note, spans, Dutch
   numbers, sync moments), each checked against the website's own output.
@@ -261,6 +266,17 @@ the same day as the website is captured (the pages carry "Vandaag"). Add
 `-Downify.tree=1` for a dump of the layout tree. The website is captured in a
 browser at the same size and pixel ratio (2.625), with reduced motion, and
 the two dumps are compared text by text.
+
+## The app icon and the Ownify logo
+
+The launcher icon (`res/mipmap-anydpi/ic_launcher*.xml`: the logo's green
+behind the icon-only logo, the same picture as the monochrome layer), the
+logo on the opening screen (`res/drawable-nodpi/ownify_logo.webp`) and the
+Play Store listing's icon (`app/src/main/ic_launcher-playstore.png`, 512 ×
+512 — upload it with the listing; it is not in the APK) are made from the
+supplied artwork by `tools/brand-icons.py`, with the website's. What was
+done to them, and why, is in [docs/BRANDING.md](../docs/BRANDING.md). The
+splash is the system's: the launcher icon on the window's colour.
 
 ## Regenerating the icons
 

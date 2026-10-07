@@ -4,4 +4,9 @@
     <color name="ownify_bg_deep">#FF252223</color>
     <!-- The same in White Mode (theme.css, :root[data-theme="light"]). -->
     <color name="ownify_bg_deep_light">#FFF0EDEE</color>
+    <!-- The full Ownify logo's own dark green, behind its symbol (the median of
+         its tile, docs/BRANDING.md): the launcher icon's background layer,
+         which Android requires to be opaque. Not a theme colour - an app icon
+         does not follow the app's theme. -->
+    <color name="ownify_logo_ground">#FF101C15</color>
 </resources>

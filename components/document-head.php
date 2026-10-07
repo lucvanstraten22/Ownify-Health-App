@@ -20,6 +20,13 @@ $theme  = app_theme_head($app);     // lib/theme.php
     <meta name="apple-mobile-web-app-status-bar-style" content="<?= e($theme['status_bar']) ?>">
     <meta name="mobile-web-app-capable" content="yes">
 
+    <?php /* The Ownify logo, icon-only (docs/BRANDING.md): the browser tab, and
+             a phone's home screen for the two meta tags above. favicon.ico at
+             the root also answers a browser that asks for it unprompted. */ ?>
+    <link rel="icon" href="<?= e(asset('favicon.ico')) ?>" sizes="16x16 32x32 48x48">
+    <link rel="icon" href="<?= e(asset('assets/brand/ownify-icon-192.png')) ?>" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="<?= e(asset('assets/brand/apple-touch-icon.png')) ?>">
+
     <title><?= e($app['name']) ?> — <?= e($app['tagline']) ?></title>
 
     <?php

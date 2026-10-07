@@ -1,11 +1,12 @@
 package com.ownify.android.ui.screens
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
+import com.ownify.android.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -37,9 +38,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -57,7 +56,6 @@ import com.ownify.android.ui.design.Pane
 import com.ownify.android.ui.design.Panes
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.chWidth
-import com.ownify.android.ui.design.loopValue
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
@@ -74,20 +72,16 @@ import com.ownify.android.ui.design.drawBoxShadows
 import com.ownify.android.ui.design.blurRadiusFor
 import kotlin.math.pow
 import kotlin.math.sqrt
-import androidx.compose.foundation.layout.requiredSize
 import com.ownify.android.ui.design.Backdrop
 import com.ownify.android.ui.design.GlassFilter
 import com.ownify.android.ui.design.glassBackdrop
-import com.ownify.android.ui.design.rememberBackdrop
 import com.ownify.android.ui.design.rememberBlurLayer
-import com.ownify.android.ui.design.recordBackdrop
 import com.ownify.android.ui.design.GroundPlacement
 
 /**
- * The opening screen (pages/welcome.php): the mark — the score ring's
- * gradient drawn three quarters round the assistant's glass orb — the app's
- * name, one line, and two ways on where the tab bar will be once signed in:
- * the same width, the same height, the same distance from the bottom.
+ * The opening screen (pages/welcome.php): the mark — the Ownify logo — the
+ * app's name, one line, and two ways on where the tab bar will be once signed
+ * in: the same width, the same height, the same distance from the bottom.
  *
  * [below] is what an Android phone adds under the line: this phone's status
  * when it is paired with a code but not signed in (see docs/PARITY.md).
@@ -214,78 +208,25 @@ private fun Rise(delayMs: Int, content: @Composable () -> Unit) {
 }
 
 /**
- * `.welcome__mark`: a 7-wide track, the gradient arc drawn in to three
- * quarters over 1400 ms (then turning once every 90 s), the green light
- * behind the glass, and the orb breathing every 7 s.
+ * `.welcome__mark`: the Ownify logo, icon-only, as supplied
+ * (docs/BRANDING.md) — as large as the ring it took the place of, 89.4% of
+ * the mark — and decorative: the name under it says "Ownify" already.
  */
 @Composable
 private fun WelcomeMark(size: Dp) {
-    val still = LocalStillMotion.current
-    val draw = remember { Animatable(if (still) 1f else 0f) }
-    val turn = loopValue(0f, 360f, infiniteRepeatable(tween(90_000, delayMillis = 1_600, easing = LinearEasing)))
-    val breathe = loopValue(1f, 1.035f, infiniteRepeatable(tween(3_500, delayMillis = 1_600, easing = Ownify.Ease), RepeatMode.Reverse))
-
-    LaunchedEffect(Unit) {
-        if (!still) {
-            delay(200)
-            draw.animateTo(1f, tween(1_400, easing = Ownify.EaseOut))
-        }
-    }
-
-    val (behind, behindLayer) = rememberBackdrop()
+    val logo = ImageBitmap.imageResource(R.drawable.ownify_logo)
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-      // What the glass looks through: the light and the ring, recorded.
-      Box(Modifier.requiredSize(size * 1.6f).recordBackdrop(behind, behindLayer), contentAlignment = Alignment.Center) {
-        // .welcome__glow — inset -30%, a soft green light with a long falloff.
-        Canvas(Modifier.size(size * 1.6f)) {
-            drawCircle(
-                Brush.radialGradient(
-                    0f to Ownify.Health.copy(alpha = 0.18f),
-                    0.28f to Ownify.Health.copy(alpha = 0.08f),
-                    0.50f to Ownify.Health.copy(alpha = 0.02f),
-                    0.72f to Ownify.Health.copy(alpha = 0f),
-                    center = center,
-                    radius = this.size.width * 0.70710677f
-                )
-            )
-        }
-
-        // The ring.
-        Canvas(Modifier.size(size)) {
-            val unit = this.size.width / 160f
-            val r = 68f * unit
-            val angle = if (still) 0f else turn
-            rotate(angle) {
-                drawCircle(Ownify.ink(0.07f), radius = r, style = Stroke(7f * unit))
-                val sweep = 270f * draw.value
-                if (sweep > 0f) {
-                    val topLeft = Offset(center.x - r, center.y - r)
-                    drawArc(
-                        brush = Brush.linearGradient(
-                            0f to Ownify.Sleep, 0.55f to Ownify.Training, 1f to Ownify.Nutrition,
-                            start = Offset(topLeft.x, topLeft.y + 2 * r),
-                            end = Offset(topLeft.x + 2 * r, topLeft.y)
-                        ),
-                        startAngle = -90f,
-                        sweepAngle = sweep,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = Size(2 * r, 2 * r),
-                        style = Stroke(7f * unit, cap = StrokeCap.Round)
-                    )
-                }
-            }
-        }
-      }
-
-        // .welcome__mark's opacity animation (fill-mode both) makes it the
-        // orb's backdrop root: the ground is not in what the glass sees.
-        GlassOrb(size * 0.58f, if (still) 1f else breathe, behind, ground = null)
+        Image(
+            bitmap = logo,
+            contentDescription = null,
+            modifier = Modifier.size(size * 0.894f),
+            filterQuality = FilterQuality.High
+        )
     }
 }
 
 /**
- * The glass orb (`.welcome__orb` / `.orb__core`): a sphere of glass — a
+ * The glass orb (`.orb__core`, the assistant's): a sphere of glass — a
  * light radial wash, a hairline edge, a rim of light on top and depth under
  * it, and a soft specular sheen — over what is behind it, blurred.
  *

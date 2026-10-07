@@ -28,7 +28,7 @@ must look right in both themes. `docs/THEME.md` explains the roles.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 1.6.0**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 1.7.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher:
@@ -39,4 +39,4 @@ every change that is shipped, in the same commit, and keep the Android
 
 Every commit title starts with the new version number, then the
 description: `1.0.2 Show the version in commit titles`.
-The next version is 1.6.1 for a small update, or 1.7.0 for a bigger change.
+The next version is 1.7.1 for a small update, or 1.8.0 for a bigger change.
