@@ -67,6 +67,10 @@ internal fun JSONArray?.strings(): List<String> =
         }
     }
 
+/** An array of numbers, null where the server wrote null. */
+internal fun JSONArray?.floats(): List<Float?> =
+    if (this == null) emptyList() else (0 until length()).map { i -> if (isNull(i)) null else optDouble(i).toFloat() }
+
 /** An object's entries in the server's order, each value an object. */
 internal fun <T> JSONObject?.entries(read: (String, JSONObject) -> T?): List<T> {
     if (this == null) return emptyList()

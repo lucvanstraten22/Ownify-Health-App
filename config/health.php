@@ -277,7 +277,31 @@ return [
         ],
     ],
 
-    /* ============================================================== trend */
+    /* ============================================================ history
+       The Verloop card on Gezondheid: Slaap, Voeding and Training as they
+       were recorded each day, over the Scorekompas's periods (7, 30 and 90
+       days and a year, config/compass.php `history.periods`) — the same
+       history the Scorekompas reads, three lines instead of its one score
+       (lib/hydrate-compass.php, hydrate_health_history()). */
+    'history' => [
+        'title'  => 'Verloop',
+        'switch' => 'Periode kiezen',
+        'empty'  => 'Zodra er meetmomenten zijn, verschijnt hier je verloop.',
+        /* The chart's spoken label: %1$s the categories, %2$s the period. */
+        'aria'   => '%1$s per dag, %2$s',
+        'and'    => 'en',
+        'hint'   => 'Tik of schuif over de lijnen om een dag te bekijken.',
+        /* By a period's days: how many dates its axis names where that is
+           not the Scorekompas's number — every day of a week — and which
+           days are a dot: `every` day where there are few enough to tell
+           apart, otherwise only a day with no neighbour to draw a line to. */
+        'ticks'  => [7 => 7],
+        'dots'   => [7 => 'every', 30 => 'every', 90 => 'alone', 365 => 'alone'],
+    ],
+
+    /* ============================================================== trend
+       One area's week and month, on its detail page
+       (components/health-trend.php with `trend_area`). */
     'trend' => [
         'title'  => 'Verloop',
         'empty'  => 'Zodra er meetmomenten zijn, verschijnt hier je verloop.',

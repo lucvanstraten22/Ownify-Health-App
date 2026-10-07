@@ -72,6 +72,122 @@ if (!function_exists('hydrate_compass')) {
     }
 
     /**
+     * Gezondheid's Verloop: Slaap, Voeding and Training as they were recorded
+     * each day — the Scorekompas's history, its periods and its days, drawn
+     * as three lines instead of the one Health Score. Nothing is scored or
+     * carried here: every value is a category's score of
+     * health_score_history() as the Scorekompas reads it that day — stored,
+     * carried as long as its `valid_until` allows, or none (a gap, never a
+     * 0) — and every date is the Scorekompas's.
+     *
+     * Each period keeps the Scorekompas's window and its place in the
+     * Scorekompas's own list of days (`start`, in compass.trend.days, which
+     * the reading reads: its dates, its notes, each category's score); its
+     * lines are drawn here, once, for the website and the app alike, in the
+     * same 300 × 120 box.
+     *
+     * @param array $trend    hydrate_compass()['trend']: its periods and days
+     * @param array $compass  config/compass.php (the periods' spoken names, "Vandaag")
+     * @param array $copy     config/health.php `history`
+     * @param array $areas    Gezondheid's areas: their names and colours, in order
+     */
+    function hydrate_health_history(array $trend, array $compass, array $copy, array $areas): array
+    {
+        $days = $trend['days'] ?? [];
+        $year = $days === [] ? '' : substr((string) $days[count($days) - 1]['date'], 0, 4);
+        $ids  = array_keys($areas);
+
+        $categories = [];
+        foreach ($ids as $id) {
+            $categories[] = ['id' => (string) $id, 'label' => (string) $areas[$id]['label'], 'accent' => (string) $areas[$id]['accent']];
+        }
+
+        $names = array_column($categories, 'label');
+        $which = count($names) > 1
+            ? implode(', ', array_slice($names, 0, -1)) . ' ' . ($copy['and'] ?? 'en') . ' ' . $names[count($names) - 1]
+            : implode('', $names);
+
+        $spoken = [];
+        foreach ($compass['history']['periods'] as $period) {
+            $spoken[(int) $period['days']] = (string) ($period['spoken'] ?? $period['label']);
+        }
+
+        $periods = [];
+        foreach ($trend['periods'] ?? [] as $period) {
+            $length = (int) $period['days'];
+            $slice  = array_slice($days, (int) $period['start'], count($period['values']));
+            $ticks  = (int) ($copy['ticks'][$length] ?? 0);
+
+            $lines = [];
+            $x     = [];
+            $has   = false;
+            foreach ($ids as $id) {
+                $chart = hydrate_compass_chart(array_map(static fn ($day) => hydrate_health_history_score($day, (string) $id), $slice));
+                $x     = array_column($chart['at'], 0);
+                $has   = $has || $chart['has_data'];
+
+                $lines[] = [
+                    'id'     => (string) $id,
+                    'accent' => (string) $areas[$id]['accent'],
+                    'line'   => $chart['line'],
+                    'y'      => array_column($chart['at'], 1),
+                ];
+            }
+
+            $periods[] = [
+                'key'   => (string) $period['key'],
+                'label' => (string) $period['label'],
+                'days'  => $length,
+                'start' => (int) $period['start'],
+                'since' => $period['since'],
+                'dots'  => (string) ($copy['dots'][$length] ?? 'alone'),
+                /* A week names every day, each under its own dots — today
+                   by its date too, as wide as the others; longer periods name
+                   as many dates as the Scorekompas does. */
+                'axis'  => $ticks > 0 && $slice !== []
+                    ? score_compass_ticks(
+                        array_column($slice, 'date'),
+                        $ticks,
+                        $year,
+                        score_compass_date_in((string) $slice[count($slice) - 1]['date'], $year, true)
+                    )
+                    : $period['axis'],
+                'every' => $ticks > 0 && $ticks >= count($slice),
+                'aria'  => sprintf((string) ($copy['aria'] ?? '%1$s, %2$s'), $which, $spoken[$length] ?? $period['label']),
+                'chart' => [
+                    'width'    => 300.0,
+                    'height'   => 120.0,
+                    'has_data' => $has,
+                    'x'        => $x,
+                    'lines'    => $lines,
+                ],
+            ];
+        }
+
+        return [
+            'title'      => (string) ($copy['title'] ?? ''),
+            'switch'     => (string) ($copy['switch'] ?? ''),
+            'default'    => (string) ($trend['default'] ?? ''),
+            'empty'      => (string) ($copy['empty'] ?? ''),
+            'hint'       => (string) ($copy['hint'] ?? ''),
+            'categories' => $categories,
+            'periods'    => $periods,
+        ];
+    }
+
+    /** One category's score on a day of the Scorekompas's list; null when it had none. */
+    function hydrate_health_history_score(array $day, string $id): ?int
+    {
+        foreach ($day['categories'] ?? [] as $category) {
+            if ((string) $category['id'] === $id) {
+                return $category['value'] === null ? null : (int) $category['value'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The three categories as Overzicht shows them — its legend's names, in
      * its order — with Gezondheid's icon, colour and empty states.
      *

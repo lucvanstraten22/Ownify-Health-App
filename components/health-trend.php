@@ -1,10 +1,11 @@
 <?php
 /**
- * Week / month trend.
+ * Week / month trend — one area's, on its detail page (`trend_area`).
+ * Gezondheid itself shows the Verloop (components/health-history.php).
  *
  * Both ranges are drawn server-side and one is shown at a time, so switching
- * is a class toggle rather than a re-render. Pass `trend_area` to chart a
- * single area instead of all three.
+ * is a class toggle rather than a re-render. Without `trend_area` it charts
+ * all three areas.
  */
 declare(strict_types=1);
 

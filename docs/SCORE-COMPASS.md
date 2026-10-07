@@ -112,6 +112,17 @@ shows today until a day is read, and today again when the period changes.
 TalkBack steps through the days with the node's actions (Vorige dag,
 Volgende dag).
 
+**On Gezondheid.** The Verloop under Gezondheid's three cards is this same
+history — the same days, periods, windows and dates — drawn as three lines,
+Slaap, Voeding and Training, each in its category's colour, instead of the
+one Health Score (`hydrate_health_history()` in `lib/hydrate-compass.php`,
+`components/health-history.php`; `HistoryCard` in the app). Its reading shows
+the date and each category's score that day, above the lines; there is no
+panel. A week names every date, under its own dots, and a month has a dot
+for every day too. The chart and its reading are one piece of code for both:
+`compass-history.js` on the website, `HistoryPlot` (`ui/design/HistoryChart.kt`)
+in the app.
+
 **Sentences per period.** A week is too short to compare a first and a
 last week, so it says what the week held ("De afgelopen 7 dagen lag je
 score tussen 68 en 73."). 30 days, 90 days and a year are analysed with the

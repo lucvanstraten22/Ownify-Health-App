@@ -196,6 +196,91 @@
 .card--trend.is-empty .chart__svg { opacity: 0.55; }
 
 /* --------------------------------------------------------------------------
+   Verloop — Slaap, Voeding and Training per day (components/health-history.php):
+   the Scorekompas's chart and reading (compass.css, goals.css), three lines.
+   -------------------------------------------------------------------------- */
+
+/* The switch: on a phone a row of its own under the head, as the
+   Scorekompas has it; where the head has room, at its far end. */
+.health-history__head {
+    flex-wrap: wrap;
+    row-gap: var(--space-4);
+}
+
+.health-history__switch { flex: 1 1 100%; }
+
+@media (min-width: 600px) {
+    .health-history .health-history__switch {     /* over .range-switch--wide's width */
+        flex: 0 1 auto;
+        width: auto;
+        margin-left: auto;
+    }
+}
+
+/* Where the history begins, when the period reaches back further. */
+.health-history__since {
+    margin: 0 0 var(--space-5);
+    font-size: var(--fs-small);
+    line-height: 1.45;
+}
+
+/* A dot for every day of a month: the Scorekompas's dot, smaller, so the
+   days stay apart. */
+.health-history .compass-plot__dot.is-small {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    box-shadow: 0 0 0 1.5px var(--bg-secondary);
+}
+
+.health-history .compass-plot__dot.is-small.is-carried {
+    background: var(--bg-secondary);
+    box-shadow: inset 0 0 0 1.25px var(--accent), 0 0 0 1.5px var(--bg-secondary);
+}
+
+/* A week names every day, each date centred under its own dots. */
+.chart__axis--days .chart__tick,
+.chart__axis--days .chart__tick:first-child,
+.chart__axis--days .chart__tick:last-child { transform: translateX(-50%); }
+
+/* The reading: the date, then each category that had a score that day —
+   its line's colour as a short stroke, its name, its score. */
+.health-history__tip-rows {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    column-gap: 6px;
+    margin-top: 1px;
+}
+
+.health-history__tip-row { display: contents; }
+
+/* display: contents above would otherwise beat the hidden attribute. */
+.health-history__tip-row[hidden],
+.health-history__tip-none[hidden] { display: none; }
+
+.health-history__tip-key {
+    width: 10px;
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+
+.health-history__tip-label {
+    font-size: var(--fs-tiny);
+    line-height: 1.4;
+    color: var(--text-secondary);
+}
+
+.health-history__tip .goal-chart__tip-value { justify-self: end; }
+
+.health-history__tip-none {
+    font-size: var(--fs-tiny);
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
    Level 2 — the few numbers that explain the score
    -------------------------------------------------------------------------- */
 .metric-tiles {

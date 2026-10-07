@@ -332,6 +332,83 @@ class AppDataParseTest {
         assertFalse(data.ai.session.hasData)
     }
 
+    // ------------------------------------------------------ Gezondheid's Verloop
+
+    /**
+     * health-history-demo.json is what the server builds from compass-demo.json
+     * (hydrate_health_history(), lib/hydrate-compass.php): the same days, read
+     * as Slaap, Voeding and Training.
+     */
+    @Test
+    fun `the Verloop - Slaap, Voeding and Training over the Scorekompas's periods, every point a score of its days`() {
+        val compass = Compass.parse(resource("compass-demo.json"))
+        val history = HealthHistory.parse(resource("health-history-demo.json"))!!
+
+        assertEquals("Verloop", history.title)
+        assertEquals("7", history.defaultPeriod)
+        assertEquals("Periode kiezen", history.switchLabel)
+        assertEquals(listOf("Slaap", "Voeding", "Training"), history.categories.map { it.label })
+        assertEquals(listOf("sleep", "nutrition", "training"), history.categories.map { it.accent })
+
+        // The Scorekompas's switch and windows: the same periods over the same days.
+        assertEquals(compass.trend.periods.map { it.key to it.label }, history.periods.map { it.key to it.label })
+        history.periods.forEachIndexed { i, period ->
+            val same = compass.trend.periods[i]
+            assertEquals(same.start, period.start)
+            assertEquals(same.at.map { it.first }, period.x)
+            assertEquals(listOf("sleep", "nutrition", "training"), period.lines.map { it.id })
+            assertTrue(period.hasData)
+
+            // Each point is that category's score that day, on the 0-100 scale of
+            // the Scorekompas's box — and where it had none there is no point, never a 0.
+            for (line in period.lines) {
+                assertEquals(period.x.size, line.y.size)
+                line.y.forEachIndexed { d, y ->
+                    val value = compass.trend.days[period.start + d].categories.first { it.id == line.id }.value
+                    if (value == null) assertNull("${period.key} ${line.id} day $d", y)
+                    else assertEquals("${period.key} ${line.id} day $d", 10f + (100 - value) * 0.8f, y!!, 0.011f)
+                }
+            }
+        }
+
+        // A week: a dot and a date for every day; longer periods date as the Scorekompas does.
+        val week = history.periods[0]
+        assertTrue(week.every)
+        assertEquals("every", week.dots)
+        assertEquals(week.x, week.axis.map { it.x })
+        assertEquals(listOf("30 sep", "1 okt", "2 okt", "3 okt", "4 okt", "5 okt", "6 okt"), week.axis.map { it.label })
+        assertEquals(listOf("every", "alone", "alone"), history.periods.drop(1).map { it.dots })
+        assertEquals(compass.trend.periods.drop(1).map { it.axis }, history.periods.drop(1).map { it.axis })
+        assertEquals("Je geschiedenis begint op 23 augustus.", history.periods[2].since)
+        assertEquals("Slaap, Voeding en Training per dag, de afgelopen 7 dagen", week.aria)
+    }
+
+    @Test
+    fun `the Verloop carries a category's last score through a day without new input, as long as it held`() {
+        val days = Compass.parse(resource("compass-demo.json")).trend.days
+        val carried = days.indices.filter { days[it].state == "carried" }
+        assertTrue(carried.isNotEmpty())
+        for (i in carried) {
+            // The last day with a recorded score before it: each category it had, still the same.
+            val from = (i - 1 downTo 0).first { days[it].state == "stored" }
+            for (category in days[i].categories) {
+                val before = days[from].categories.first { it.id == category.id }.value
+                if (category.value != null) assertEquals("${days[i].date} ${category.id}", before, category.value)
+            }
+            assertTrue(days[i].note!!.contains("gold nog"))
+        }
+    }
+
+    @Test
+    fun `the Verloop - a new account's periods are empty, and a server from before it sends none`() {
+        val empty = HealthHistory.parse(resource("health-history-new-account.json"))!!
+        assertTrue(empty.periods.none { it.hasData })
+        assertTrue(empty.periods.all { it.x.isEmpty() && it.axis.isEmpty() })
+        assertEquals("Zodra er meetmomenten zijn, verschijnt hier je verloop.", empty.empty)
+
+        assertNull(Health.parse(JSONObject("""{"title":"Gezondheid","areas":{},"trend":{}}""")).history)
+    }
+
     // -------------------------------------------------------- the first days
 
     private fun resource(name: String) = JSONObject(javaClass.classLoader!!.getResource(name).readText())

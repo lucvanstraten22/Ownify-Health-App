@@ -1,6 +1,17 @@
 package com.ownify.android.ui.screens.health
 
 import androidx.compose.animation.core.Animatable
+import com.ownify.android.ui.design.PlotLine
+import com.ownify.android.ui.design.HistoryPlot
+import com.ownify.android.data.HealthHistory
+import com.ownify.android.data.CompassDay
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -83,9 +94,9 @@ import com.ownify.android.ui.theme.OwnifyType
 import com.ownify.android.ui.theme.LocalAccent
 
 /**
- * Gezondheid (pages/health.php): the three areas as one row of cards, the
- * trend of all three, and the line under the page. Everything else is on the
- * detail page behind each card.
+ * Gezondheid (pages/health.php): the three areas as one row of cards, how
+ * they went (the Verloop), and the line under the page. Everything else is on
+ * the detail page behind each card.
  */
 @Composable
 fun HealthPage(data: AppData, scroll: ScrollState) {
@@ -102,7 +113,9 @@ fun HealthPage(data: AppData, scroll: ScrollState) {
             health.areas.forEach { area -> HealthCard(area, Modifier.weight(1f).fillMaxHeight()) }
         }
 
-        TrendCard(data, only = null)
+        // The Verloop; from a server from before it, the week and month of all three.
+        val history = health.history
+        if (history != null) HistoryCard(history, data.compass.trend.days) else TrendCard(data, only = null)
 
         if (data.disclaimer.isNotEmpty()) Disclaimer(data.disclaimer, Modifier.reveal())
     }
@@ -182,6 +195,123 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * `components/health-history.php`: the Verloop — Slaap, Voeding and Training
+ * as they were recorded each day, over the Scorekompas's periods (7, 30 and
+ * 90 days and a year), read as the Scorekompas's line is ([HistoryPlot]):
+ * the switch at the head's far end where it fits and on a row of its own on
+ * a phone, the three lines with a dot for every day of a week or a month,
+ * the date and each category's score above them while a finger is on them,
+ * the legend and the hint. [days] is the Scorekompas's list, where each
+ * period's days begin at its `start`.
+ */
+@Composable
+private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
+    var selected by rememberSaveable { mutableStateOf(history.defaultPeriod) }
+    val period = history.periods.firstOrNull { it.key == selected } ?: history.periods.first()
+    val wide = LocalScreen.current.wide
+    val filled = history.periods.any { it.hasData }
+    val names = remember(history) { history.categories.associateBy { it.id } }
+    val lines = period.lines.map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.line, emptyList(), line.y) }
+
+    fun scores(day: CompassDay) = history.categories.mapNotNull { c -> day.categories.firstOrNull { it.id == c.id }?.value?.let { c to it } }
+
+    @Composable
+    fun Switch(modifier: Modifier) = RangeSwitch(
+        history.periods.map { it.key to it.label },
+        period.key,
+        { selected = it },
+        modifier,
+        wide = true,
+        label = history.switchLabel
+    )
+
+    JCard(Modifier.fillMaxWidth().reveal()) {
+        // .card__head: the icon and title — and on a wide screen the switch at its far end.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+                T(history.title, JStyle.Eyebrow, Modifier.semantics { heading() })
+            }
+            if (wide) Switch(Modifier.width(IntrinsicSize.Max))
+        }
+        // .health-history__switch: on a phone, a row of its own, as the Scorekompas has it.
+        if (!wide) Switch(Modifier.padding(top = Ownify.Space4))
+
+        Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+            period.since?.let {
+                T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, lineHeight = 1.45.em), Modifier.padding(bottom = Ownify.Space5))
+            }
+            HistoryPlot(
+                key = period.key,
+                viewBox = Size(period.width, period.height),
+                xs = period.x,
+                lines = lines,
+                filled = period.hasData,
+                dayDots = period.dots == "every",
+                small = period.dots == "every" && period.x.size > 7,
+                carried = { i -> days.getOrNull(period.start + i)?.state == "carried" },
+                axis = period.axis,
+                centredAxis = period.every,
+                aria = period.aria,
+                readable = { i -> days.getOrNull(period.start + i) != null },
+                describe = { i ->
+                    days.getOrNull(period.start + i)?.let { day ->
+                        val said = scores(day).joinToString(", ") { (c, value) -> "${c.label} $value" }
+                        "${day.label}: " + when {
+                            said.isEmpty() -> day.note ?: "—"
+                            day.note != null -> "$said. ${day.note}"
+                            else -> said
+                        }
+                    }.orEmpty()
+                },
+                empty = history.empty,
+                modifier = Modifier,
+                onRead = { }
+            ) { i ->
+                // .health-history__tip: the date, then each category that had a score that day.
+                val day = days[period.start + i]
+                val scored = scores(day)
+                T(day.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
+                if (scored.isEmpty()) {
+                    day.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
+                } else {
+                    Column(Modifier.width(IntrinsicSize.Max).padding(top = 1.dp)) {
+                        for ((category, value) in scored) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                // .health-history__tip-key: the line's own colour, as a short stroke.
+                                Box(
+                                    Modifier
+                                        .size(width = 10.dp, height = 2.5.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(Accent.of(category.accent).color)
+                                )
+                                T(
+                                    category.label,
+                                    OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.4.em),
+                                    Modifier.padding(start = 6.dp),
+                                    maxLines = 1
+                                )
+                                Spacer(Modifier.widthIn(min = 6.dp).weight(1f))
+                                T(value.toString(), OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Legend(
+            history.categories.map { LegendItem(it.label, null, Accent.of(it.accent)) },
+            Modifier.padding(top = Ownify.Space4),
+            values = false
+        )
+        if (filled) {
+            T(history.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }

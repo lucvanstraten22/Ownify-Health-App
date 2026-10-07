@@ -26,6 +26,9 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.ownify.android.data.AppData
 import com.ownify.android.data.OwnifyAssistant
@@ -341,6 +344,41 @@ class ScreenshotCapture {
     }
 
     @Test fun scoreCompass() = detail("overview", Detail.ScoreCompass, "compass", 700, 1400, 2100)
+
+    /** A history card in each of its periods: the card brought into view, then 7 dagen … 1 jaar. */
+    private fun periods(name: String, title: String) {
+        compose.onNode(hasText(title)).performScrollTo()
+        settle()
+        for (period in listOf("7 dagen", "30 dagen", "90 dagen", "1 jaar")) {
+            compose.onAllNodes(hasText(period) and hasClickAction()).onLast().performClick()
+            settle()
+            shoot("$name-${period.substringBefore(' ')}")
+        }
+    }
+
+    /** Gezondheid's Verloop — Slaap, Voeding and Training — in each period, then a day of its week read by a finger. */
+    @Test
+    fun healthPeriods() {
+        app { tab("health") }
+        periods("health-history", "Verloop")
+        compose.onAllNodes(hasText("7 dagen") and hasClickAction()).onLast().performClick()
+        settle()
+        val plot = compose.onNode(hasContentDescription("per dag, de afgelopen 7 dagen", substring = true))
+        plot.performTouchInput { down(Offset(width * 0.66f, height / 2f)) }
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+        FileOutputStream(File(out, "app-health-history-reading.png")).use { capture().compress(Bitmap.CompressFormat.PNG, 100, it) }
+        plot.performTouchInput { up() }
+    }
+
+    /** The Scorekompas's Wat er verandert, in each period. */
+    @Test
+    fun compassPeriods() {
+        app { tab("overview") }
+        compose.runOnUiThread { shell.openDetail(Detail.ScoreCompass) }
+        settle()
+        periods("compass-history", "Wat er verandert")
+    }
     @Test fun detailSleep() = detail("health", Detail.HealthArea("sleep"), "detail-sleep", 760, 1520)
     @Test fun detailNutrition() = detail("health", Detail.HealthArea("nutrition"), "detail-nutrition", 760, 1520)
     @Test fun detailTraining() = detail("health", Detail.HealthArea("training"), "detail-training", 760, 1520)

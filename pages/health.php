@@ -2,8 +2,9 @@
 /**
  * Gezondheid — the entry point to the three physical-health areas.
  *
- * Deliberately compact: three scores and one trend. Everything else lives in
- * the detail page behind each card.
+ * Deliberately compact: three scores and how they went (the Verloop:
+ * components/health-history.php). Everything else lives in the detail page
+ * behind each card.
  */
 declare(strict_types=1);
 
@@ -27,7 +28,12 @@ $health = $data['health'];
                     <?php endforeach; ?>
                 </div>
 
-                <?php component('health-trend', $data); ?>
+                <?php /* The Verloop; while a deploy is still landing its files, the week and month. */ ?>
+                <?php if (isset($data['health']['history']['periods']) && is_file(dirname(__DIR__) . '/components/health-history.php')): ?>
+                    <?php component('health-history', $data); ?>
+                <?php else: ?>
+                    <?php component('health-trend', $data); ?>
+                <?php endif; ?>
 
                 <?php if ($data['disclaimer'] !== ''): ?>
                 <p class="disclaimer reveal"><?= e($data['disclaimer']) ?></p>

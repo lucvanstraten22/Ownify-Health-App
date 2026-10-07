@@ -1,23 +1,27 @@
 /**
- * compass-history.js — reading the Scorekompas's history with a finger, a
- * cursor or keys (components/compass-history.php).
+ * compass-history.js — reading a score history with a finger, a cursor or
+ * keys: the Scorekompas's line (components/compass-history.php) and
+ * Gezondheid's three lines (components/health-history.php), read the same
+ * way.
  *
  * The periods are drawn server-side and health-trend.js switches between
- * them, as on Gezondheid. Every day arrives already written in Dutch — its
- * date, its score, its categories and their parts — so nothing here formats
- * a number or a date. This file only finds the day the reader means and
- * shows it: its date and score above the line, as a goal's Verloop does
- * (goal-chart.js), and the whole day in the panel below the chart.
+ * them. Every day arrives already written in Dutch — its date, its scores,
+ * its categories and their parts — so nothing here formats a number or a
+ * date. This file only finds the day the reader means and shows it: its
+ * date and score(s) above the chart, as a goal's Verloop does
+ * (goal-chart.js), and on the Scorekompas the whole day in the panel below.
  *
- *   touch   press and slide sideways along the line; a vertical drag still
- *           scrolls the page. The reading above the line stays a moment
- *           after lifting; the panel keeps the day until another is read.
+ *   touch   press and slide sideways along the chart; a vertical drag still
+ *           scrolls the page. The reading above the chart stays a moment
+ *           after lifting; the Scorekompas's panel keeps the day until
+ *           another is read.
  *   mouse   hover.
  *   keys    arrows step through the days, Home/End jump to either end,
  *           Escape puts the reading away. Announced through a live region.
  *
- * A day without a score is read like any other: its date, no number, and
- * the panel saying so. Switching the period puts the panel back on today.
+ * A day without a score is read like any other: its date, and no number.
+ * Switching the period puts the reading away (and the Scorekompas's panel
+ * back on today).
  */
 
 (function () {
@@ -25,19 +29,33 @@
 
     var LINGER = 1600;      // ms a touch reading stays after the finger lifts
 
-    Array.prototype.forEach.call(document.querySelectorAll('[data-compass-history]'), setup);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-compass-history]'), compass);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-health-history]'), health);
 
-    function setup(card) {
-        var source = card.querySelector('[data-compass-days]');
-        var panel  = card.querySelector('[data-compass-day]');
-        var live   = card.querySelector('[data-compass-live]');
-        var days;
+    function text(value) {
+        return value === null || value === undefined ? '—' : String(value);
+    }
+
+    function band(element, value) {
+        if (value) { element.setAttribute('data-score', value); } else { element.removeAttribute('data-score'); }
+    }
+
+    function daysIn(card, selector) {
+        var source = card.querySelector(selector);
 
         try {
-            days = JSON.parse(source ? source.textContent : '[]');
+            return JSON.parse(source ? source.textContent : '[]');
         } catch (error) {
-            return;
+            return [];
         }
+    }
+
+    /* ======================================== the Scorekompas: one score */
+
+    function compass(card) {
+        var panel = card.querySelector('[data-compass-day]');
+        var live  = card.querySelector('[data-compass-live]');
+        var days  = daysIn(card, '[data-compass-days]');
 
         if (!days.length || !panel) { return; }
 
@@ -48,14 +66,6 @@
         var dayValue = panel.querySelector('[data-day-value]');
         var dayNote  = panel.querySelector('[data-day-note]');
         var shown    = days.length - 1;
-
-        function text(value) {
-            return value === null || value === undefined ? '—' : String(value);
-        }
-
-        function band(element, value) {
-            if (value) { element.setAttribute('data-score', value); } else { element.removeAttribute('data-score'); }
-        }
 
         /* textContent only, never innerHTML: these strings came from the
            server, and nothing here needs markup. */
@@ -98,7 +108,7 @@
                 at = [];
             }
 
-            ranges.push(plot && at.length ? reader(plot, at, parseInt(range.getAttribute('data-start'), 10) || 0) : null);
+            ranges.push(plot && at.length ? line(plot, at, parseInt(range.getAttribute('data-start'), 10) || 0) : null);
         });
 
         /* After health-trend.js has switched the chart: the chip of the
@@ -116,9 +126,8 @@
             fill(days.length - 1);
         });
 
-        /* ------------------------------------------------ one period's line */
-
-        function reader(plot, at, start) {
+        /* One period's line: its date and score above it, a dot on it. */
+        function line(plot, at, start) {
             var cross = plot.querySelector('[data-compass-cross]');
             var focus = plot.querySelector('[data-compass-focus]');
             var tip   = plot.querySelector('[data-compass-tip]');
@@ -128,162 +137,293 @@
             var tipValue = tip.querySelector('[data-tip-value]');
             var tipDate  = tip.querySelector('[data-tip-date]');
 
-            var current  = -1;
-            var pending  = null;
-            var frame    = 0;
-            var linger   = 0;
-            var pressing = false;
+            return read(plot, at.map(function (point) { return point[0]; }), cross, tip, {
+                has: function (index) { return !!days[start + index]; },
 
-            /** The day nearest to a horizontal position, in % of the plot. */
-            function nearest(percent) {
-                var best = 0;
-                var gap  = Infinity;
+                show: function (index, changed, announce) {
+                    var point = at[index];
+                    var day   = days[start + index];
 
-                for (var i = 0; i < at.length; i++) {
-                    var d = Math.abs(at[i][0] - percent);
-                    if (d < gap) { gap = d; best = i; }
-                }
-
-                return best;
-            }
-
-            function show(index, announce) {
-                var point = at[index];
-                var day   = days[start + index];
-                if (!point || !day) { return; }
-
-                window.clearTimeout(linger);
-
-                if (index !== current) {
-                    current = index;
-
-                    cross.style.left = point[0] + '%';
-                    tipDate.textContent  = day.label;
-                    tipValue.textContent = text(day.value);
+                    if (changed) {
+                        tipDate.textContent  = day.label;
+                        tipValue.textContent = text(day.value);
+                    }
 
                     /* No score that day: no dot on a line that is not there. */
                     focus.hidden = point[1] === null;
-                    if (point[1] !== null) {
+                    if (changed && point[1] !== null) {
                         focus.style.left = point[0] + '%';
                         focus.style.top  = point[1] + '%';
                     }
-                } else {
-                    focus.hidden = point[1] === null;
-                }
 
-                cross.hidden = false;
-                tip.hidden   = false;
-                plot.classList.add('is-reading');
+                    fill(start + index);
 
-                place(point);
-                fill(start + index);
+                    if (announce && live) {
+                        live.textContent = day.label + ', ' + text(day.value) + (day.note ? '. ' + day.note : '');
+                    }
+                },
 
-                if (announce && live) {
-                    live.textContent = day.label + ', ' + text(day.value) + (day.note ? '. ' + day.note : '');
-                }
-            }
-
-            /** Centred over its day, pushed back inside the plot at either end. */
-            function place(point) {
-                var width = plot.clientWidth;
-                var own   = tip.offsetWidth;
-                var x     = point[0] / 100 * width - own / 2;
-
-                tip.style.left = (own >= width ? (width - own) / 2 : Math.max(0, Math.min(width - own, x))) + 'px';
-            }
-
-            function hide() {
-                window.clearTimeout(linger);
-                current = -1;
-                cross.hidden = true;
-                focus.hidden = true;
-                tip.hidden   = true;
-                plot.classList.remove('is-reading');
-            }
-
-            function percentOf(event) {
-                var box = plot.getBoundingClientRect();
-                return box.width ? (event.clientX - box.left) / box.width * 100 : 0;
-            }
-
-            /* One update per frame, however fast the pointer reports. */
-            function follow(percent) {
-                pending = percent;
-                if (frame) { return; }
-
-                frame = window.requestAnimationFrame(function () {
-                    frame = 0;
-                    if (pending !== null) { show(nearest(pending), false); }
-                    pending = null;
-                });
-            }
-
-            plot.addEventListener('pointerdown', function (event) {
-                if (event.pointerType === 'mouse' && event.button !== 0) { return; }
-
-                pressing = event.pointerType !== 'mouse';
-                show(nearest(percentOf(event)), false);
-
-                if (pressing && plot.setPointerCapture) {
-                    try { plot.setPointerCapture(event.pointerId); } catch (error) { /* not critical */ }
-                }
+                hide: function () { focus.hidden = true; }
             });
-
-            plot.addEventListener('pointermove', function (event) {
-                if (event.pointerType === 'mouse' || pressing) { follow(percentOf(event)); }
-            });
-
-            plot.addEventListener('pointerup', function (event) {
-                if (event.pointerType === 'mouse') { return; }
-
-                pressing = false;
-                window.clearTimeout(linger);
-                linger = window.setTimeout(hide, LINGER);
-            });
-
-            /* The browser took the gesture for a scroll: get out of the way. */
-            plot.addEventListener('pointercancel', function () {
-                pressing = false;
-                hide();
-            });
-
-            plot.addEventListener('pointerleave', function (event) {
-                if (event.pointerType === 'mouse') { hide(); }
-            });
-
-            plot.addEventListener('keydown', function (event) {
-                var last = at.length - 1;
-                var next;
-
-                switch (event.key) {
-                    case 'ArrowRight': next = current < 0 ? last : Math.min(last, current + 1); break;
-                    case 'ArrowLeft':  next = current < 0 ? last : Math.max(0, current - 1);    break;
-                    case 'Home':       next = 0;    break;
-                    case 'End':        next = last; break;
-                    case 'Escape':     hide(); return;
-                    default:           return;
-                }
-
-                event.preventDefault();
-                show(next, true);
-            });
-
-            /* Arriving by Tab shows today straight away; a tap shows the day it touched. */
-            plot.addEventListener('focus', function () {
-                var visible = true;
-                try { visible = plot.matches(':focus-visible'); } catch (error) { /* older engines */ }
-                if (visible && current < 0) { show(at.length - 1, true); }
-            });
-
-            plot.addEventListener('blur', function () {
-                if (!pressing) { hide(); }
-            });
-
-            window.addEventListener('resize', function () {
-                if (current >= 0) { place(at[current]); }
-            });
-
-            return { hide: hide };
         }
+    }
+
+    /* ============================ Gezondheid: Slaap, Voeding, Training */
+
+    function health(card) {
+        var live = card.querySelector('[data-reading-live]');
+        var days = daysIn(card, '[data-history-days]');
+
+        if (!days.length) { return; }
+
+        var ranges = [];
+
+        Array.prototype.forEach.call(card.querySelectorAll('.chart__range[data-range]'), function (range) {
+            var plot = range.querySelector('[data-history-plot]');
+            var xs;
+            var ys;
+
+            try {
+                xs = JSON.parse(range.getAttribute('data-x') || '[]');
+                ys = JSON.parse(range.getAttribute('data-y') || '{}');
+            } catch (error) {
+                xs = [];
+                ys = {};
+            }
+
+            ranges.push(plot && xs.length ? lines(plot, xs, ys, parseInt(range.getAttribute('data-start'), 10) || 0) : null);
+        });
+
+        /* After health-trend.js has switched the chart: any reading put away. */
+        card.addEventListener('click', function (event) {
+            if (!event.target.closest('[data-range-option]')) { return; }
+            ranges.forEach(function (r) { if (r) { r.hide(); } });
+        });
+
+        /* One period's lines: the date and each category's score above them,
+           a dot on each line that had one that day. */
+        function lines(plot, xs, ys, start) {
+            var cross = plot.querySelector('[data-reading-cross]');
+            var tip   = plot.querySelector('[data-reading-tip]');
+
+            if (!cross || !tip) { return null; }
+
+            var tipDate = tip.querySelector('[data-tip-date]');
+            var none    = tip.querySelector('[data-tip-none]');
+            var rows    = Array.prototype.map.call(tip.querySelectorAll('[data-tip-row]'), function (row) {
+                var id = row.getAttribute('data-tip-row');
+
+                return {
+                    id:    id,
+                    row:   row,
+                    label: row.querySelector('.health-history__tip-label').textContent,
+                    value: row.querySelector('[data-tip-value]'),
+                    focus: plot.querySelector('[data-reading-focus="' + id + '"]')
+                };
+            });
+
+            return read(plot, xs, cross, tip, {
+                has: function (index) { return !!days[start + index]; },
+
+                /* A day is [its date, its note, each category's score in
+                   the order of the rows]. */
+                show: function (index, changed, announce) {
+                    var day  = days[start + index];
+                    var note = day[1];
+                    var said = [];
+
+                    rows.forEach(function (r, k) {
+                        var value = day[2 + k];
+                        var y     = (ys[r.id] || [])[index];
+                        var has   = value !== null && value !== undefined;
+
+                        if (changed) {
+                            r.row.hidden = !has;
+                            r.value.textContent = has ? String(value) : '';
+                        }
+
+                        if (r.focus) {
+                            r.focus.hidden = !has || y === null || y === undefined;
+                            if (changed && !r.focus.hidden) {
+                                r.focus.style.left = xs[index] + '%';
+                                r.focus.style.top  = y + '%';
+                            }
+                        }
+
+                        if (has) { said.push(r.label + ' ' + value); }
+                    });
+
+                    /* Only the scores the day had; none at all, and it says so. */
+                    if (changed) {
+                        none.textContent = said.length ? '' : (note || '');
+                        none.hidden      = said.length > 0 || !note;
+                        tipDate.textContent = day[0];
+                    }
+
+                    if (announce && live) {
+                        live.textContent = day[0] + ': ' + (said.length ? said.join(', ') : (note || text(null)))
+                            + (said.length && note ? '. ' + note : '');
+                    }
+                },
+
+                hide: function () {
+                    rows.forEach(function (r) { if (r.focus) { r.focus.hidden = true; } });
+                }
+            });
+        }
+    }
+
+    /* ==================================== reading one period's chart ---
+
+       The day under a finger, a cursor or the keys. `xs` is each day's
+       place, in % from the left of the plot. `view` says what a day looks
+       like: has(index) whether there is one, show(index, changed, announce)
+       puts its words and dots in place (changed: another day than the one
+       shown), hide() takes its dots away. The crosshair, the tip — above
+       the chart, centred over the day, pushed back inside at either end —
+       and every gesture are the same for each chart, and handled here.
+       ---------------------------------------------------------------------- */
+
+    function read(plot, xs, cross, tip, view) {
+        var current  = -1;
+        var pending  = null;
+        var frame    = 0;
+        var linger   = 0;
+        var pressing = false;
+
+        /** The day nearest to a horizontal position, in % of the plot. */
+        function nearest(percent) {
+            var best = 0;
+            var gap  = Infinity;
+
+            for (var i = 0; i < xs.length; i++) {
+                var d = Math.abs(xs[i] - percent);
+                if (d < gap) { gap = d; best = i; }
+            }
+
+            return best;
+        }
+
+        function show(index, announce) {
+            if (xs[index] === undefined || !view.has(index)) { return; }
+
+            window.clearTimeout(linger);
+
+            var changed = index !== current;
+            if (changed) {
+                current = index;
+                cross.style.left = xs[index] + '%';
+            }
+
+            view.show(index, changed, announce);
+
+            cross.hidden = false;
+            tip.hidden   = false;
+            plot.classList.add('is-reading');
+
+            place(xs[index]);
+        }
+
+        /** Centred over its day, pushed back inside the plot at either end. */
+        function place(x) {
+            var width = plot.clientWidth;
+            var own   = tip.offsetWidth;
+            var left  = x / 100 * width - own / 2;
+
+            tip.style.left = (own >= width ? (width - own) / 2 : Math.max(0, Math.min(width - own, left))) + 'px';
+        }
+
+        function hide() {
+            window.clearTimeout(linger);
+            current = -1;
+            cross.hidden = true;
+            tip.hidden   = true;
+            view.hide();
+            plot.classList.remove('is-reading');
+        }
+
+        function percentOf(event) {
+            var box = plot.getBoundingClientRect();
+            return box.width ? (event.clientX - box.left) / box.width * 100 : 0;
+        }
+
+        /* One update per frame, however fast the pointer reports. */
+        function follow(percent) {
+            pending = percent;
+            if (frame) { return; }
+
+            frame = window.requestAnimationFrame(function () {
+                frame = 0;
+                if (pending !== null) { show(nearest(pending), false); }
+                pending = null;
+            });
+        }
+
+        plot.addEventListener('pointerdown', function (event) {
+            if (event.pointerType === 'mouse' && event.button !== 0) { return; }
+
+            pressing = event.pointerType !== 'mouse';
+            show(nearest(percentOf(event)), false);
+
+            if (pressing && plot.setPointerCapture) {
+                try { plot.setPointerCapture(event.pointerId); } catch (error) { /* not critical */ }
+            }
+        });
+
+        plot.addEventListener('pointermove', function (event) {
+            if (event.pointerType === 'mouse' || pressing) { follow(percentOf(event)); }
+        });
+
+        plot.addEventListener('pointerup', function (event) {
+            if (event.pointerType === 'mouse') { return; }
+
+            pressing = false;
+            window.clearTimeout(linger);
+            linger = window.setTimeout(hide, LINGER);
+        });
+
+        /* The browser took the gesture for a scroll: get out of the way. */
+        plot.addEventListener('pointercancel', function () {
+            pressing = false;
+            hide();
+        });
+
+        plot.addEventListener('pointerleave', function (event) {
+            if (event.pointerType === 'mouse') { hide(); }
+        });
+
+        plot.addEventListener('keydown', function (event) {
+            var last = xs.length - 1;
+            var next;
+
+            switch (event.key) {
+                case 'ArrowRight': next = current < 0 ? last : Math.min(last, current + 1); break;
+                case 'ArrowLeft':  next = current < 0 ? last : Math.max(0, current - 1);    break;
+                case 'Home':       next = 0;    break;
+                case 'End':        next = last; break;
+                case 'Escape':     hide(); return;
+                default:           return;
+            }
+
+            event.preventDefault();
+            show(next, true);
+        });
+
+        /* Arriving by Tab shows today straight away; a tap shows the day it touched. */
+        plot.addEventListener('focus', function () {
+            var visible = true;
+            try { visible = plot.matches(':focus-visible'); } catch (error) { /* older engines */ }
+            if (visible && current < 0) { show(xs.length - 1, true); }
+        });
+
+        plot.addEventListener('blur', function () {
+            if (!pressing) { hide(); }
+        });
+
+        window.addEventListener('resize', function () {
+            if (current >= 0) { place(xs[current]); }
+        });
+
+        return { hide: hide };
     }
 }());

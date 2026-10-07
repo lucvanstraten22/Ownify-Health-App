@@ -666,7 +666,8 @@ data class Recommendation(val title: String, val headline: String, val descripti
 
 // ------------------------------------------------------------ gezondheid
 
-data class Health(val title: String, val lede: String, val areas: List<Area>, val trend: Trend) {
+/** Gezondheid: its areas, one area's week and month ([trend], on its detail), and the [history] the page charts. */
+data class Health(val title: String, val lede: String, val areas: List<Area>, val trend: Trend, val history: HealthHistory? = null) {
     fun area(id: String): Area? = areas.firstOrNull { it.id == id }
 
     companion object {
@@ -674,8 +675,98 @@ data class Health(val title: String, val lede: String, val areas: List<Area>, va
             o.str("title").orEmpty(),
             o.str("lede").orEmpty(),
             o.obj("areas").entries { id, a -> Area.parse(id, a) },
-            Trend.parse(o.obj("trend"))
+            Trend.parse(o.obj("trend")),
+            HealthHistory.parse(o.obj("history"))
         )
+    }
+}
+
+/**
+ * Gezondheid's Verloop (components/health-history.php): Slaap, Voeding and
+ * Training as they were recorded each day, over the Scorekompas's periods —
+ * the Scorekompas's history, three lines instead of its one score. Each
+ * period's [HistoryPeriod.start] is where its days begin in the
+ * Scorekompas's own list ([CompassTrend.days]), which the reading reads.
+ * Null from a server from before it: the week and month are shown then.
+ */
+data class HealthHistory(
+    val title: String,
+    val switchLabel: String,
+    val defaultPeriod: String,
+    val empty: String,
+    val hint: String,
+    val categories: List<CompassName>,
+    val periods: List<HistoryPeriod>
+) {
+    companion object {
+        fun parse(o: JSONObject?): HealthHistory? {
+            val periods = o.arr("periods").map(HistoryPeriod::parse)
+            if (periods.isEmpty()) return null
+            return HealthHistory(
+                title = o.str("title").orEmpty(),
+                switchLabel = o.str("switch").orEmpty(),
+                defaultPeriod = o.str("default") ?: periods.first().key,
+                empty = o.str("empty").orEmpty(),
+                hint = o.str("hint").orEmpty(),
+                categories = o.arr("categories").map { CompassName(it.str("id") ?: return@map null, it.str("label").orEmpty(), it.str("accent").orEmpty()) },
+                periods = periods
+            )
+        }
+    }
+}
+
+/**
+ * One period of the Verloop: [start] where its days begin in the
+ * Scorekompas's list, [since] when the history is younger than the period,
+ * which days are a dot ([dots]: `every`, or `alone` — a day no line reaches),
+ * its dates ([every]: one under each day), and a line per category in the
+ * 300 × 120 box, with [x] each day's place in % from the left.
+ */
+data class HistoryPeriod(
+    val key: String,
+    val label: String,
+    val start: Int,
+    val since: String?,
+    val dots: String,
+    val axis: List<CompassTick>,
+    val every: Boolean,
+    val aria: String,
+    val width: Float,
+    val height: Float,
+    val hasData: Boolean,
+    val x: List<Float>,
+    val lines: List<HistoryLine>
+) {
+    companion object {
+        fun parse(o: JSONObject): HistoryPeriod? {
+            val key = o.str("key") ?: return null
+            val chart = o.obj("chart")
+            return HistoryPeriod(
+                key = key,
+                label = o.str("label").orEmpty(),
+                start = o.int("start") ?: 0,
+                since = o.str("since"),
+                dots = o.str("dots") ?: "alone",
+                axis = o.arr("axis").map { CompassTick(it.str("label").orEmpty(), (it.num("x") ?: 0.0).toFloat()) },
+                every = o.bool("every"),
+                aria = o.str("aria").orEmpty(),
+                width = (chart.num("width") ?: 300.0).toFloat(),
+                height = (chart.num("height") ?: 120.0).toFloat(),
+                hasData = chart.bool("has_data"),
+                x = chart.arr("x").floats().map { it ?: 0f },
+                lines = chart.arr("lines").map(HistoryLine::parse)
+            )
+        }
+    }
+}
+
+/** One category's line: its colour, its paths, and each day's height in % from the top — null without a score. */
+data class HistoryLine(val id: String, val accent: String, val line: List<String>, val y: List<Float?>) {
+    companion object {
+        fun parse(o: JSONObject): HistoryLine? {
+            val id = o.str("id") ?: return null
+            return HistoryLine(id, o.str("accent").orEmpty(), o.arr("line").strings(), o.arr("y").floats())
+        }
     }
 }
 

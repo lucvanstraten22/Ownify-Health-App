@@ -97,7 +97,22 @@ if (!function_exists('app_page_data')) {
         /* The Scorekompas behind the ring: what the score is made of, what
            is changing, the person's own earlier scores and where the most
            room is — read from the same engine, never scored again. */
-        $data['compass'] = hydrate_compass(require $config . '/compass.php', $data, $userId);
+        $compass         = require $config . '/compass.php';
+        $data['compass'] = hydrate_compass($compass, $data, $userId);
+
+        /* Gezondheid's Verloop: that same history, as Slaap, Voeding and
+           Training — three lines over the Scorekompas's periods. Guarded as
+           the first days are: a deploy lands one file at a time. */
+        if (function_exists('hydrate_health_history')) {
+            $data['health']['history'] = hydrate_health_history(
+                $data['compass']['trend'],
+                $compass,
+                $data['health']['history'] ?? [],
+                $data['health']['areas'] ?? []
+            );
+        } else {
+            unset($data['health']['history']);
+        }
 
         /* Real accounts and real points, or an empty board. */
         $data['community'] = hydrate_community(require $config . '/community.php', $userId);

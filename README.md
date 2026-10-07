@@ -72,7 +72,7 @@ pages/
     setup.php                 the setup a new account starts with, before the app
     overview.php              the dashboard
     score-compass.php         the Scorekompas, behind the score on Overzicht
-    health.php                Gezondheid — three scores and a trend
+    health.php                Gezondheid — three scores and their Verloop
     health-detail.php         one health area in full, ×3
     goals.php                 Doelen — the active goals, one of them primary
     goal-detail.php           one goal in full, one per goal
@@ -117,7 +117,8 @@ components/
     ai-empty-state.php        glass orb + name + suggestions, and the conversation
     ai-composer.php           the question field, send, today's count
     health-card.php           one of the three pillars, and the control that opens it
-    health-trend.php          week / month chart, one or three series
+    health-history.php        the Verloop: Slaap · Voeding · Training per day, 7 dagen to 1 jaar
+    health-trend.php          one area's week / month chart, on its detail page
     metric-tiles.php          level 2 — the few numbers that explain a score
     metric-group.php          level 3 — the long tail, grouped
     sleep-timeline.php        the night as one bar of stages
@@ -156,7 +157,8 @@ assets/js/
     ai-sheet.js               vertical: the assistant sheet
     ai-chat.js                Ownify AI inside it: consent, conversation, history
     detail-layer.js           drilling into an item, and swiping back
-    health-trend.js           week / month switch and the line draw-on
+    health-trend.js           a chart's period switch and the line draw-on
+    compass-history.js        reading a score history: finger, cursor or keys
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
     goal-wizard.js            the six-step create-a-goal flow
@@ -318,8 +320,8 @@ JavaScript.
 
 ## Gezondheid
 
-Overview first, detail on demand. The page itself is three scores and one
-trend; everything else lives behind a card.
+Overview first, detail on demand. The page itself is three scores and how
+they went — the Verloop; everything else lives behind a card.
 
 ```
 Gezondheid ──┬── Slaap      duur · timing · fasen · onderbrekingen · nachtwaarden
@@ -363,6 +365,18 @@ Scorekompas shows that history over 7 days, 30, 90 or a year
 is in `config/scoring.php`; the formulas are in
 [docs/DATABASE.md](docs/DATABASE.md#health-score-and-points). Scores never
 earn leaderboard points.
+
+**The Verloop.** Under the three cards, Slaap, Voeding and Training as they
+were recorded each day: the Scorekompas's history and its chart, three lines
+instead of its one score, each in its category's colour, over the same
+**7 dagen** (where it opens), **30 dagen**, **90 dagen** and **1 jaar**. Every
+day of a week and of a month is a dot; a week names every date, longer
+periods a few. A day without new input keeps a category's last score for as
+long as it holds, so the line goes on; after that the line has a gap, never a
+drop to 0. A finger, a cursor or the arrow keys read a day: its date and each
+category's score that day. Nothing is scored for it — `hydrate_health_history()`
+(`lib/hydrate-compass.php`) draws the Scorekompas's days, for the website and
+the app alike.
 
 **The day's cijfer.** The Voeding page has one input: how you ate today, 1 to
 10. It is the nutrition score's data for now, it replaces itself when saved
@@ -562,7 +576,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.8.1
+OVER         Over de app · Versie Beta 1.9.0
 
              [ Uitloggen ]
                Account verwijderen
