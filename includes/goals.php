@@ -245,9 +245,11 @@ if (!function_exists('goals_for_user')) {
      *
      * Called after anything that can remove the primary — a delete, a
      * completion — so the headline slot never stands empty while active goals
-     * exist. The oldest active goal inherits it.
+     * exist. A delete names the goal that inherits it ($successor: the first
+     * of Secundaire doelen, goals_successor() in lib/goals.php); otherwise
+     * the oldest active goal does.
      */
-    function goal_ensure_primary(int $userId): void
+    function goal_ensure_primary(int $userId, ?int $successor = null): void
     {
         $hasPrimary = db_value(
             "SELECT id FROM goals WHERE user_id = ? AND priority = 'primary' AND status IN ('active','paused')",
@@ -256,6 +258,18 @@ if (!function_exists('goals_for_user')) {
 
         if ($hasPrimary !== null) {
             return;
+        }
+
+        if ($successor !== null) {
+            $statement = db_run(
+                "UPDATE goals SET priority = 'primary'
+                  WHERE id = ? AND user_id = ? AND status IN ('active','paused')",
+                [$successor, $userId]
+            );
+
+            if ($statement !== null && $statement->rowCount() > 0) {
+                return;
+            }
         }
 
         $next = db_value(
@@ -295,8 +309,12 @@ if (!function_exists('goals_for_user')) {
         return true;
     }
 
-    /** Deleting is real: the progress history goes with it, by cascade. */
-    function goal_delete(int $userId, int $goalId): bool
+    /**
+     * Deleting is real: the progress history goes with it, by cascade. When it
+     * was the primary goal, $successor takes its place (api/goals/delete.php
+     * works out which: the first of Secundaire doelen).
+     */
+    function goal_delete(int $userId, int $goalId, ?int $successor = null): bool
     {
         $statement = db_run('DELETE FROM goals WHERE id = ? AND user_id = ?', [$goalId, $userId]);
 
@@ -304,7 +322,7 @@ if (!function_exists('goals_for_user')) {
             return false;
         }
 
-        goal_ensure_primary($userId);
+        goal_ensure_primary($userId, $successor);
 
         return true;
     }

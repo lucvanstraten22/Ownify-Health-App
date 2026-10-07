@@ -438,8 +438,11 @@ assistant all read the same number: the `+` disables itself and the line under
 the board says why, with the limit in it. A paused
 goal keeps its slot; only completing or deleting one frees it. There is always
 exactly one primary goal — promoting a secondary demotes the current primary in
-the same move, and deleting the primary hands the flag to the next goal, so the
-headline slot can never end up empty.
+the same move, and deleting the primary hands the flag to the first goal under
+Secundaire doelen, so the headline slot can never end up empty. That is the card
+the website and the app move up, and the goal the server stores: the delete
+sends its id, and `goals_successor()` (`lib/goals.php`) checks it against the
+board as it stands, which `api/goals/delete.php` builds the way the pages do.
 
 **Priority is an ordering, not a second kind of goal.** `goal-card.php` renders
 the primary, the secondaries and the completed ones; `--primary` is more room,
@@ -557,7 +560,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.7.1
+OVER         Over de app · Versie Beta 1.7.2
 
              [ Uitloggen ]
                Account verwijderen

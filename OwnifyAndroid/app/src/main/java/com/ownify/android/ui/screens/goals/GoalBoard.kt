@@ -55,7 +55,8 @@ object GoalBoard {
         // Plain classes: two taps that ask the same are two changes, each removed on its own answer.
         class Promote(override val id: String) : Edit
         class Pause(override val id: String, val paused: Boolean) : Edit
-        class Delete(override val id: String) : Edit {
+        /** [successor]: the goal that takes a deleted primary goal's place, sent along so the server stores the same. */
+        class Delete(override val id: String, val successor: String?) : Edit {
             /** Faded out and taken off the board (goals.js removes the card after 200 ms). */
             var gone by mutableStateOf(false)
         }
@@ -73,12 +74,25 @@ object GoalBoard {
         send(context, Edit.Pause(id, paused), "api/goals/update.php", mapOf("goal_id" to id, "action" to if (paused) "pause" else "resume"))
 
     fun delete(context: Context, id: String) {
-        val edit = Edit.Delete(id)
+        val successor = OwnifyAppState.data?.goals?.let { successor(board(it), id) }
+        val edit = Edit.Delete(id, successor)
         scope.launch {
             delay(200)
             edit.gone = true
         }
-        send(context, edit, "api/goals/delete.php", mapOf("goal_id" to id))
+        send(context, edit, "api/goals/delete.php", mapOf("goal_id" to id) + (successor?.let { mapOf("successor" to it) } ?: emptyMap()))
+    }
+
+    /**
+     * The goal that takes the primary goal's place when it is deleted: the
+     * first card under Secundaire doelen, which the server ordered — a running
+     * goal before a paused one, as goals_successor() (lib/goals.php) picks it,
+     * and as goals.js does. Null when [id] is not the primary goal.
+     */
+    internal fun successor(board: Board, id: String): String? {
+        if (board.primary?.id != id) return null
+        val staying = board.secondary.filter { it.id != id && it.id !in board.leaving }
+        return (staying.firstOrNull { !it.isPaused } ?: staying.firstOrNull())?.id
     }
 
     /** Signed out, or another account: nothing of the last board stays. */
@@ -113,8 +127,10 @@ object GoalBoard {
                     if (!edit.gone) {
                         leaving += edit.id
                     } else if (primary?.id == edit.id) {
-                        // The board is never left without a primary goal.
-                        primary = secondary.removeFirstOrNull()?.asPrimary()
+                        // The board is never left without a primary goal: the
+                        // successor sent with the delete moves up.
+                        val at = secondary.indexOfFirst { it.id == edit.successor }
+                        primary = if (at >= 0) secondary.removeAt(at).asPrimary() else null
                     } else {
                         secondary.removeAll { it.id == edit.id }
                     }

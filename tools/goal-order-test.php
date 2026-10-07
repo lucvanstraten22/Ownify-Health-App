@@ -166,5 +166,72 @@ check('completed goals keep their own order: most recently finished first',
     names(board(array_merge([$main()], $done))['completed']) === 'klaar gisteren, klaar 3 dagen',
     names(board(array_merge([$main()], $done))['completed']));
 
+echo "\nDeleting the primary goal: the first of Secundaire doelen takes its place\n";
+
+/** goals_successor() on this board, as names: which goal moves up when the primary goal is deleted. */
+function successor(array $goals, ?string $shown = null, ?string $deleting = null): string
+{
+    $b  = board($goals);
+    $id = goals_successor($b, $deleting ?? (string) ($b['primary']['id'] ?? ''), $shown);
+    foreach ($b['all'] as $g) {
+        if ($g['id'] === $id) {
+            return $g['name'];
+        }
+    }
+
+    return $id === null ? '(none)' : "(id $id)";
+}
+
+function id_of(array $goals, string $name): string
+{
+    foreach ($goals as $g) {
+        if ($g['name'] === $name) {
+            return $g['id'];
+        }
+    }
+
+    return '';
+}
+
+/* The order the goals are created in: the oldest first. The server used to
+   hand the place to the oldest goal; it has to be the first one shown. */
+$g = [$main(), goal('41%', 41, 10), goal('64%', 64, 10), goal('82%', 82, 10)];
+check('82%, 64%, 41% (41% the oldest): 82% becomes primary', successor($g) === '82%', successor($g));
+$g = [$main(), goal('60% tot 25 okt', 60, 24), goal('60% tot 12 okt', 60, 11)];
+check('equal percentages: the one that ends sooner', successor($g) === '60% tot 12 okt', successor($g));
+$g = [$main(), goal('geen data, 30 okt', null, 29), goal('geen data, 15 nov', null, 45), goal('geen data, 12 okt', null, 11)];
+check('only goals without a percentage: the one that ends soonest', successor($g) === 'geen data, 12 okt', successor($g));
+$g = [$main(), goal('geen data, 1 dag', null, 1), goal('0%', 0, 60)];
+check('a real 0% before a goal with no percentage, even one ending sooner', successor($g) === '0%', successor($g));
+$g = [$main(), goal('X', 50, 14), goal('Y', 50, 14)];
+check('still equal: the one already first', successor($g) === 'X', successor($g));
+$g = [$main(), goal('enige', null, 30)];
+check('one secondary goal: that one', successor($g) === 'enige', successor($g));
+check('no secondary goal: none — no goal is invented', successor([$main()]) === '(none)', successor([$main()]));
+$g = [$main(), goal('gepauzeerd 90%', 90, 10, 'secondary', 'paused'), goal('20%', 20, 10)];
+check('a running goal before a paused one, even a paused one further along', successor($g) === '20%', successor($g));
+$g = [$main(), goal('gepauzeerd A', 90, 10, 'secondary', 'paused'), goal('gepauzeerd B', 10, 5, 'secondary', 'paused')];
+check('only paused goals left: the first of them, as the board shows them', successor($g) === 'gepauzeerd A', successor($g));
+$g = [$main(), goal('70%', 70, 10), goal('30%', 30, 10)];
+check('deleting a secondary goal: nothing moves up', successor($g, null, id_of($g, '30%')) === '(none)', successor($g, null, id_of($g, '30%')));
+
+echo "\n  …and the goal the website or the app moved up is the one kept\n";
+$g = [$main(), goal('70%', 70, 10), goal('30%', 30, 10)];
+check('the card they showed first, still on the board: kept',
+    successor($g, id_of($g, '70%')) === '70%', successor($g, id_of($g, '70%')));
+check('a page from before a sync showed 30% first: 30% is kept, as the person saw it',
+    successor($g, id_of($g, '30%')) === '30%', successor($g, id_of($g, '30%')));
+$g = [$main(), goal('70%', 70, 10), goal('gepauzeerd', 90, 10, 'secondary', 'paused')];
+check('a paused goal sent while a running one is left: the running one',
+    successor($g, id_of($g, 'gepauzeerd')) === '70%', successor($g, id_of($g, 'gepauzeerd')));
+$g = [$main(), goal('70%', 70, 10)];
+check('a goal that is not on the board (gone, someone else\'s): the board\'s first',
+    successor($g, '999999') === '70%', successor($g, '999999'));
+check('the deleted goal itself: the board\'s first',
+    successor($g, (string) board($g)['primary']['id']) === '70%', successor($g, (string) board($g)['primary']['id']));
+$done = goal('klaar', 100, null, 'secondary', 'completed') + ['completed_days_ago' => 1];
+$g = [$main(), goal('70%', 70, 10), $done];
+check('a completed goal: the board\'s first', successor($g, $done['id']) === '70%', successor($g, $done['id']));
+
 echo "\n  $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);

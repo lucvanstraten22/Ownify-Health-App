@@ -132,6 +132,51 @@ if (!function_exists('goals_secondary_compare')) {
     }
 }
 
+if (!function_exists('goals_successor')) {
+    /**
+     * Which goal becomes primary when the primary goal is deleted: the first
+     * one under Secundaire doelen, in the order the board shows them
+     * (goals_prepare() — nothing is ranked again here). A paused goal comes
+     * after every running one there, so it is only chosen when no running
+     * secondary goal is left.
+     *
+     * $shown is the goal the website or the app moved up when the person
+     * deleted: the first card on their screen. It is the one kept when it is
+     * still on this board and as eligible — a page open since before a sync
+     * may show an older order, and the goal the person saw move up is the one
+     * that stays. Anything else — nothing sent, a goal that is gone, paused
+     * while a running one is left — falls back to the board's own first.
+     *
+     * $board is goals_prepare() from before the delete. Null when $goalId is
+     * not the primary goal (nothing changes) or no secondary goal is left.
+     */
+    function goals_successor(array $board, string $goalId, ?string $shown = null): ?string
+    {
+        if ((string) ($board['primary']['id'] ?? '') !== $goalId) {
+            return null;
+        }
+
+        $candidates = array_values(array_filter(
+            $board['secondary'],
+            static fn (array $g): bool => (string) $g['id'] !== $goalId
+        ));
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        $first = $candidates[0];
+
+        foreach ($candidates as $goal) {
+            if ($shown !== null && (string) $goal['id'] === $shown && ($first['is_paused'] || !$goal['is_paused'])) {
+                return (string) $goal['id'];
+            }
+        }
+
+        return (string) $first['id'];
+    }
+}
+
 if (!function_exists('goals_sort_stable')) {
     /** usort that keeps equal items in the order they came in, on any PHP. */
     function goals_sort_stable(array $items, callable $compare): array

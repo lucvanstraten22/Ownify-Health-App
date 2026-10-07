@@ -433,6 +433,16 @@ class FakeOwnifyServer {
                     reply(exchange, 200, """{"ok":true,"goal_id":900}""")
                 }
             }
+            // Deleting a goal (api/goals/delete.php): gone from the pages, and the answer says which goal is primary now.
+            path.endsWith("/goals/delete.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else {
+                    val fields = form(body)
+                    val primary = deleteGoal(fields["goal_id"].orEmpty(), fields["successor"])
+                    reply(exchange, 200, JSONObject().put("ok", true).put("primary", primary ?: JSONObject.NULL).toString())
+                }
+            }
             path.endsWith("/setup/finish.php") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
                 if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
@@ -591,6 +601,38 @@ class FakeOwnifyServer {
 
             else -> reply(exchange, 404, """{"ok":false}""")
         }
+    }
+
+    /**
+     * A goal deleted, as api/goals/delete.php leaves the pages: when it was the
+     * primary goal, the successor the app sent takes its place if it is still
+     * on the board — not a paused goal while a running one is left — and
+     * otherwise the first of Secundaire doelen (goals_successor(), lib/goals.php).
+     * Returns the primary goal now.
+     */
+    fun deleteGoal(id: String, sent: String?): String? {
+        val state = JSONObject(stateBody)
+        val goals = state.getJSONObject("data").getJSONObject("goals")
+        fun list(key: String) = goals.optJSONArray(key)?.let { a -> (0 until a.length()).map { a.getJSONObject(it) } }.orEmpty()
+
+        val before = goals.optJSONObject("primary")
+        var secondary = list("secondary").filter { it.optString("id") != id }
+        var primary = before?.takeIf { it.optString("id") != id }
+        if (before?.optString("id") == id) {
+            val first = secondary.firstOrNull()
+            val chosen = secondary.firstOrNull { it.optString("id") == sent && (first?.optBoolean("is_paused") == true || !it.optBoolean("is_paused")) } ?: first
+            primary = chosen?.put("priority", "primary")?.put("is_primary", true)
+            secondary = secondary.filter { it !== chosen }
+        }
+
+        val active = listOfNotNull(primary) + secondary
+        goals.put("primary", primary ?: JSONObject.NULL)
+            .put("secondary", org.json.JSONArray(secondary))
+            .put("active", org.json.JSONArray(active))
+            .put("all", org.json.JSONArray(active + list("completed")))
+            .put("used", active.size)
+        stateBody = state.toString()
+        return primary?.optString("id")
     }
 
     /** The answer to the consent question, stored — and read back in the pages, as ai_summary() and settings_prepare() would. */

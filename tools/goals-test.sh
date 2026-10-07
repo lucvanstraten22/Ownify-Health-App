@@ -37,13 +37,14 @@ PASS=0; FAIL=0
 STAMP="$(date +%Y%m%d_%H%M%S)"
 PASSWORD="goal-test-password"          # a test password, not a secret
 
-A="$(mktemp)"; S="$(mktemp)"; T="$(mktemp)"; B="$(mktemp)"
+A="$(mktemp)"; S="$(mktemp)"; T="$(mktemp)"; B="$(mktemp)"; P="$(mktemp)"
 USER_A="goaltest_${STAMP}a"            # Mijlpaal
 USER_S="goaltest_${STAMP}s"            # Streak
 USER_T="goaltest_${STAMP}t"            # Optellen
 USER_B="goaltest_${STAMP}b"            # somebody else entirely
+USER_P="goaltest_${STAMP}p"            # deleting the primary goal
 
-trap 'rm -f "$A" "$S" "$T" "$B"' EXIT
+trap 'rm -f "$A" "$S" "$T" "$B" "$P"' EXIT
 
 ok()   { PASS=$((PASS+1)); printf '  PASS  %s\n' "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '  FAIL  %s\n          %s\n' "$1" "$2"; }
@@ -89,7 +90,7 @@ echo "------------------------------------------------------------------------"
 
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/")" = "200" ] || { echo "  site not answering"; exit 2; }
 
-for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B"; do
+for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B" "$P:$USER_P"; do
     JAR="${PAIR%%:*}"; NAME="${PAIR##*:}"
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/auth/register.php" \
         --data-urlencode "csrf=$(csrf "$JAR")" --data-urlencode "username=$NAME" \
@@ -100,7 +101,7 @@ for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B"; do
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/setup/finish.php" \
         --data-urlencode "csrf=$(csrf "$JAR")" > /dev/null
 done
-ok "four test accounts exist"
+ok "five test accounts exist"
 
 # ======================================================================
 echo "== the wizard offers exactly three types =="
@@ -358,6 +359,91 @@ same "entering progress on someone else's goal -> 404" \
 same "  and it did not change" "$(q "percent:$GOAL_KM" "$USER_T")" "36"
 
 # ======================================================================
+echo "== deleting the primary goal: the first of Secundaire doelen takes its place =="
+# Before, the server gave the place to the oldest goal while both apps showed
+# the first secondary card moving up — and the board changed again on the
+# next read. Now the goal stored is the goal shown, wherever it is read.
+
+# milestone <name> <duration> [percent] — a manual Mijlpaal to 100, with one entry; prints its id
+milestone() {
+    local id; id="$(create "$P" "name=$1" "category=other" "type=milestone" "target_value=100" \
+        "direction=increase" "duration=$2" "source_kind=manual" | field goal_id)"
+    [ $# -ge 3 ] && enter "$P" "$id" "$3" > /dev/null
+    echo "$id"
+}
+# drop <goal id> [successor] — the delete as the board sends it; prints the answer's `primary`
+drop() {
+    local args=(--data-urlencode "csrf=$(csrf "$P")" --data-urlencode "goal_id=$1")
+    [ $# -ge 2 ] && args+=(--data-urlencode "successor=$2")
+    curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/goals/delete.php" "${args[@]}" | field primary
+}
+# web_primary / app_primary — the primary goal as the website renders the board and as the app is sent it
+web_primary() { page "$P" | php -r '$h = stream_get_contents(STDIN);
+    preg_match("~data-goal-slot=\"primary\"(.*?)(data-goal-slot=|$)~s", $h, $slot);
+    preg_match("~data-goal-card=\"(\d+)\"~", $slot[1] ?? "", $m); echo $m[1] ?? "(none)";'; }
+app_primary() { curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/app/state.php" --data-urlencode "csrf=$(csrf "$P")" \
+    | php -r 'echo json_decode(stream_get_contents(STDIN), true)["data"]["goals"]["primary"]["id"] ?? "(none)";'; }
+web_secondary() { page "$P" | php -r '$h = stream_get_contents(STDIN);
+    preg_match("~data-goal-slot=\"secondary\"(.*?)(data-goal-slot=|data-goal-panel=|$)~s", $h, $slot);
+    preg_match_all("~data-goal-card=\"(\d+)\"~", $slot[1] ?? "", $m); echo implode(",", $m[1]);'; }
+# stored <label> <goal id or (none)> — the answer, the database, the website and the app all say the same
+stored() {
+    same "$1: stored" "$(q "primary:" "$USER_P")" "$2"
+    same "  the website, read again, shows it" "$(web_primary)" "$2"
+    same "  the app, read again, is sent it" "$(app_primary)" "$2"
+}
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+G41="$(milestone "41 procent" month 41)"
+G64="$(milestone "64 procent" month 64)"
+G82="$(milestone "82 procent" month 82)"
+q "backdate:$G41:30" "$USER_P" > /dev/null          # the oldest by far: the goal the old rule picked
+same "the board: 82%, 64%, 41% under the primary goal" "$(web_secondary)" "$G82,$G64,$G41"
+same "deleting the primary goal answers with 82% as primary — not the oldest goal" "$(drop "$MAIN" "$GOAL_BENCH")" "$G82"
+#      (sent along: another account's goal — never taken, the board's own first is)
+stored "82% is the primary goal" "$G82"
+same "  and the others stay in order: 64%, 41%" "$(web_secondary)" "$G64,$G41"
+
+same "a page showing an older order moved 41% up: 41% is the goal stored" "$(drop "$G82" "$G41")" "$G41"
+stored "41% is the primary goal" "$G41"
+same "one secondary goal left: it takes the place" "$(drop "$G41")" "$G64"
+stored "64% is the primary goal" "$G64"
+same "no secondary goal left: no primary goal, and nothing made up" "$(drop "$G64")" "null"
+stored "no goal" "(none)"
+same "  the board is empty" "$(q "count:" "$USER_P")" "0"
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+WEEK="$(milestone "60 procent, een week" week 60)"
+MONTH="$(milestone "60 procent, een maand" month 60)"
+same "equal percentages: the board shows the week first" "$(web_secondary)" "$WEEK,$MONTH"
+same "  and the week becomes primary" "$(drop "$MAIN")" "$WEEK"
+stored "the goal ending sooner is the primary goal" "$WEEK"
+drop "$WEEK" > /dev/null; drop "$MONTH" > /dev/null
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+HALF="$(milestone "geen data, half jaar" halfyear)"
+NONE="$(milestone "geen data, een week" week)"
+ZERO="$(milestone "nul procent" year 0)"
+same "the board: 0%, then no data by end date" "$(web_secondary)" "$ZERO,$NONE,$HALF"
+same "a real 0% before no data: 0% becomes primary" "$(drop "$MAIN")" "$ZERO"
+stored "0% is the primary goal" "$ZERO"
+same "only goals without data: the one ending soonest" "$(drop "$ZERO")" "$NONE"
+stored "the week without data is the primary goal" "$NONE"
+drop "$NONE" > /dev/null; drop "$HALF" > /dev/null
+
+MAIN="$(milestone "Hoofddoel" month 50)"
+RUN="$(milestone "20 procent" month 20)"
+PAUSED="$(milestone "90 procent, gepauzeerd" month 90)"
+curl -s -b "$P" -c "$P" -X POST "$BASE_URL/api/goals/update.php" --data-urlencode "csrf=$(csrf "$P")" \
+    --data-urlencode "goal_id=$PAUSED" --data-urlencode "action=pause" > /dev/null
+same "a paused goal comes after the running one" "$(web_secondary)" "$RUN,$PAUSED"
+same "  sent the paused goal while a running one is left: the running goal becomes primary" "$(drop "$MAIN" "$PAUSED")" "$RUN"
+stored "the running goal is the primary goal" "$RUN"
+same "only a paused goal left: it takes the place, as before" "$(drop "$RUN" "$PAUSED")" "$PAUSED"
+stored "the paused goal is the primary goal" "$PAUSED"
+drop "$PAUSED" > /dev/null
+
+# ======================================================================
 LIMIT="$(php -r 'echo (require $argv[1])["limits"]["active"];' "$ROOT/config/goals.php")"
 echo "== the board holds $LIMIT active goals (config/goals.php), and no more =="
 for N in $(seq 1 "$LIMIT"); do
@@ -373,9 +459,9 @@ has "  and the board says it is full, with the same number" "$(page "$B")" "Je $
 
 echo
 if [ -n "${KEEP:-}" ]; then
-    echo "  Kept $USER_A, $USER_S, $USER_T and $USER_B."
+    echo "  Kept $USER_A, $USER_S, $USER_T, $USER_B and $USER_P."
 else
-    for NAME in "$USER_A" "$USER_S" "$USER_T" "$USER_B"; do
+    for NAME in "$USER_A" "$USER_S" "$USER_T" "$USER_B" "$USER_P"; do
         php "$ROOT/tools/goal-verify.php" --user="$NAME" --cleanup
     done
 fi

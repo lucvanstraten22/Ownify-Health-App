@@ -207,6 +207,12 @@ switch ($question) {
         echo (int) db_value('SELECT COUNT(*) FROM goals WHERE user_id = ?', [$userId]);
         break;
 
+    /* The goal stored as primary — what a reload, the website and the app read. */
+    case 'primary':
+        $primary = db_value("SELECT id FROM goals WHERE user_id = ? AND priority = 'primary' AND status IN ('active','paused')", [$userId]);
+        echo $primary === null ? '(none)' : (int) $primary;
+        break;
+
     /* ------------------------------------------------ writing test data */
 
     /* A weight reading now, as a scale or a phone would leave one. */

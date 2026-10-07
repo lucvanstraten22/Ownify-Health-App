@@ -41,6 +41,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
+import com.ownify.android.data.AppLoad
 import com.ownify.android.data.OwnifyAppState
 import com.ownify.android.connection.ACCOUNT_TOKEN
 import com.ownify.android.connection.FakeOwnifyServer
@@ -62,12 +63,14 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyTheme
 import com.ownify.android.ui.theme.OwnifyThemeStore
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -941,15 +944,13 @@ class OwnifyAppFlowTest {
         assertTrue("letting go hides it", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
     }
 
-    @Test
-    fun `Doelen - Secundaire doelen in the order the server sends, under the primary goal`() {
-        // The server's order (goals_prepare, lib/goals.php): furthest along
-        // first, a real 0% before a goal with no percentage. The app sorts
-        // nothing itself, so the website and the app show the same order.
+    // ----------------------------------------------------------------- Doelen
+
+    /** The demo pages with these goals under Secundaire doelen, in this order — the server's (goals_prepare()). Their ids: order-0, order-1… */
+    private fun boardWith(vararg sent: Pair<String, Int?>): JSONObject {
         val state = JSONObject(server.stateBody)
         val goals = state.getJSONObject("data").getJSONObject("goals")
         val template = goals.getJSONArray("secondary").getJSONObject(0)
-        val sent = listOf("Hardlopen 82" to 82, "Zwemmen 41" to 41, "Fietsen 0" to 0, "Yoga zonder data" to null)
         val secondary = JSONArray()
         sent.forEachIndexed { i, (name, percent) ->
             secondary.put(JSONObject(template.toString()).put("id", "order-$i").put("name", name).put("status", "active")
@@ -962,25 +963,150 @@ class OwnifyAppFlowTest {
         for (i in 0 until goals.getJSONArray("completed").length()) all.put(goals.getJSONArray("completed").getJSONObject(i))
         goals.put("secondary", secondary).put("active", active).put("all", all)
         server.stateBody = state.toString()
+        return goals
+    }
+
+    // The eyebrow is shown in capitals, as on the website (text-transform).
+    private fun nodes(text: String) = compose.onAllNodesWithText(text, ignoreCase = true).fetchSemanticsNodes()
+
+    // Only the page on screen counts: the rail keeps its neighbours composed
+    // beside it. Positions, not bounds: the last cards are below the fold.
+    private fun onScreen(node: SemanticsNode): Boolean {
+        val width = compose.onRoot().fetchSemanticsNode().size.width
+        return node.positionInRoot.x >= 0f && node.positionInRoot.x < width
+    }
+
+    /** Where a goal's card is on the board: each card is one button, named for its goal. Null when it is not there. */
+    private fun cardTop(name: String): Float? =
+        compose.onAllNodes(hasContentDescription(name, substring = true) and hasClickAction()).fetchSemanticsNodes()
+            .firstOrNull(::onScreen)?.positionInRoot?.y
+
+    /** The goal in the primary slot: the card above Secundaire doelen (the only one, when that is gone). */
+    private fun primaryShown(names: List<String>): String? {
+        val line = nodes("Secundaire doelen").firstOrNull(::onScreen)?.positionInRoot?.y ?: Float.MAX_VALUE
+        return names.firstOrNull { name -> cardTop(name)?.let { it < line } == true }
+    }
+
+    private fun openDoelen() {
+        button("Doelen").performClick()
+        compose.waitUntil(15_000) { nodes("Secundaire doelen").isNotEmpty() }
+    }
+
+    @Test
+    fun `Doelen - Secundaire doelen in the order the server sends, under the primary goal`() {
+        // The server's order (goals_prepare, lib/goals.php): furthest along
+        // first, a real 0% before a goal with no percentage. The app sorts
+        // nothing itself, so the website and the app show the same order.
+        val sent = listOf("Hardlopen 82" to 82, "Zwemmen 41" to 41, "Fietsen 0" to 0, "Yoga zonder data" to null)
+        val goals = boardWith(*sent.toTypedArray())
 
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
-        button("Doelen").performClick()
-        // The eyebrow is shown in capitals, as on the website (text-transform).
-        fun nodes(text: String) = compose.onAllNodesWithText(text, ignoreCase = true).fetchSemanticsNodes()
-        compose.waitUntil(15_000) { nodes("Secundaire doelen").isNotEmpty() }
+        openDoelen()
 
-        // Each card is one button, named for its goal; only the page on screen
-        // counts (the rail keeps its neighbours composed beside it). Positions,
-        // not bounds: the last cards are below the fold.
-        val width = compose.onRoot().fetchSemanticsNode().size.width
-        fun onScreen(found: List<SemanticsNode>) = found.first { it.positionInRoot.x >= 0f && it.positionInRoot.x < width }
-        fun card(name: String) = onScreen(compose.onAllNodes(hasContentDescription(name, substring = true)).fetchSemanticsNodes()).positionInRoot.y
         val primary = goals.getJSONObject("primary").getString("name")
-        val tops = listOf(card(primary), onScreen(nodes("Secundaire doelen")).positionInRoot.y) + sent.map { card(it.first) }
-        assertEquals("from the top: $primary, Secundaire doelen, ${sent.map { it.first }}", tops.sorted(), tops)
+        val tops = listOf(cardTop(primary), nodes("Secundaire doelen").first(::onScreen).positionInRoot.y) + sent.map { cardTop(it.first) }
+        assertEquals("from the top: $primary, Secundaire doelen, ${sent.map { it.first }}", tops.map { it!! }.sorted(), tops)
         assertTrue("the old name is gone", nodes("Overige doelen").isEmpty())
+    }
+
+    @Test
+    fun `Doelen - deleting the primary goal - the first of Secundaire doelen takes its place, and keeps it`() {
+        // 82%, 64%, 41% under the primary goal: the server's order. The server
+        // used to give the place to the oldest goal while the app showed the
+        // first one moving up — and the board changed again once it was read.
+        val goals = boardWith("Fietsen 82" to 82, "Zwemmen 64" to 64, "Lopen 41" to 41)
+        val main = goals.getJSONObject("primary").getString("name")
+        val names = listOf(main, "Fietsen 82", "Zwemmen 64", "Lopen 41")
+
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openDoelen()
+        assertEquals(main, primaryShown(names))
+
+        // The primary goal's page: Doel verwijderen, then Verwijderen.
+        val cards = compose.onAllNodes(hasContentDescription(main, substring = true) and hasClickAction())
+        cards[cards.fetchSemanticsNodes().indexOfFirst(::onScreen)].performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Doel verwijderen")
+        button("Doel verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Weet je het zeker?")
+        val reads = server.requestsTo("state.php").size
+        button("Verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+
+        // Which goal is in the primary slot, from the tap until the board has
+        // been read again — and a while after: only ever the deleted goal
+        // (fading) and then 82%, never another goal in between.
+        val seen = mutableListOf<String>()
+        fun look() { primaryShown(names)?.let { if (seen.lastOrNull() != it) seen += it } }
+        compose.waitUntil(15_000) {
+            look()
+            server.requestsTo("goals/delete.php").isNotEmpty() && server.requestsTo("state.php").size > reads &&
+                (OwnifyAppState.load as? AppLoad.Ready)?.refreshing == false && cardTop(main) == null
+        }
+        repeat(20) { compose.waitForIdle(); look() }
+        assertEquals("the primary slot, in turn", listOf(main, "Fietsen 82"), seen)
+
+        // The goal moved up is the goal the server was told — and stored.
+        val form = server.requestsTo("goals/delete.php").single().body.getString("form")
+        assertTrue("the delete names the goal moved up: $form", "successor=order-0" in form.split('&'))
+        assertTrue("the others stay in order: 64%, 41%", cardTop("Zwemmen 64")!! < cardTop("Lopen 41")!!)
+
+        // Read again, as when the app is opened again: the same goal is primary.
+        runBlocking { OwnifyAppState.reload(context) }
+        compose.waitForIdle()
+        assertEquals("Fietsen 82", primaryShown(names))
+    }
+
+    /**
+     * The same against a real Ownify server and its database — opt-in, and
+     * the goal deleted is real:
+     *
+     *     -Downify.live=http://127.0.0.1:8260/ -Downify.live.token=<an ACCOUNT token>
+     *
+     * for an account whose board has a primary goal and secondary goals.
+     */
+    @Test
+    fun `Doelen - deleting the primary goal - against a real server, opt-in`() {
+        val live = System.getProperty("ownify.live").orEmpty()
+        val token = System.getProperty("ownify.live.token").orEmpty()
+        assumeTrue("no real server asked for", live.isNotEmpty() && token.isNotEmpty())
+        OwnifyConnection.api = OwnifyApi(live)
+        MemoryTokenStorage.save(OwnifyCredential(token, OwnifyScope.ACCOUNT))
+
+        show()
+        // Reading the screen lets the app's main thread run on (Robolectric); the pages, then the board.
+        compose.waitUntil(30_000) { compose.onRoot().fetchSemanticsNode(); OwnifyAppState.data?.goals?.primary != null }
+        val goals = OwnifyAppState.data!!.goals
+        val main = goals.primary!!.name
+        val expected = (goals.secondary.firstOrNull { !it.isPaused } ?: goals.secondary.first()).name
+        val names = listOf(main) + goals.secondary.map { it.name }
+        openDoelen()
+        assertEquals(main, primaryShown(names))
+
+        val cards = compose.onAllNodes(hasContentDescription(main, substring = true) and hasClickAction())
+        cards[cards.fetchSemanticsNodes().indexOfFirst(::onScreen)].performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Doel verwijderen")
+        button("Doel verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Weet je het zeker?")
+        button("Verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+
+        val seen = mutableListOf<String>()
+        fun look() { primaryShown(names)?.let { if (seen.lastOrNull() != it) seen += it } }
+        compose.waitUntil(30_000) {
+            look()
+            OwnifyAppState.data?.goals?.all?.none { it.name == main } == true &&
+                (OwnifyAppState.load as? AppLoad.Ready)?.refreshing == false && cardTop(main) == null
+        }
+        repeat(20) { compose.waitForIdle(); look() }
+        assertEquals("the primary slot, in turn", listOf(main, expected), seen)
+
+        runBlocking { OwnifyAppState.reload(context) }
+        compose.waitForIdle()
+        assertEquals("stored: read again, the same goal is primary", expected, OwnifyAppState.data?.goals?.primary?.name)
+        assertEquals(expected, primaryShown(names))
+        println("live: deleted \"$main\"; primary before and after reading again: \"$expected\"; seen in the slot: $seen")
     }
 
     @Test

@@ -229,25 +229,47 @@
 
     /* ------------------------------------------------------------ delete */
 
+    /**
+     * The goal that takes the primary goal's place: the first card under
+     * Secundaire doelen, which the server ordered — a running goal before a
+     * paused one, as goals_successor() (lib/goals.php) picks it. Its id goes
+     * along with the delete, so the goal moved up here is the goal stored.
+     */
+    function successorOf(id) {
+        if (!secondarySlot) { return null; }
+
+        var staying = Array.prototype.filter.call(secondarySlot.children, function (other) {
+            return other.dataset.goalCard && other.dataset.goalCard !== id && !other.classList.contains('is-leaving');
+        });
+        var running = staying.filter(function (other) { return other.dataset.goalStatus !== 'paused'; });
+        var next = running[0] || staying[0];
+
+        return next ? next.dataset.goalCard : null;
+    }
+
+    /** Takes the card off the board; says which goal moved up, and when the card is gone. */
     function remove(id) {
         var card = cardOf(id);
         var detail = detailOf(id);
-        var wasPrimary = card && card.dataset.goalPriority === 'primary';
+        var wasPrimary = !!card && card.dataset.goalPriority === 'primary';
+        var successor = wasPrimary ? successorOf(id) : null;
 
         if (nav && nav.details && nav.details.currentId() === 'goal-' + id) {
             nav.details.close(false);
         }
 
-        if (card) {
+        var gone = new Promise(function (resolve) {
+            if (!card) { resolve(); return; }
+
             card.classList.add('is-leaving');
             window.setTimeout(function () {
                 if (card.parentNode) { card.parentNode.removeChild(card); }
 
                 // The board must never be left without a primary goal.
-                if (wasPrimary && secondarySlot && secondarySlot.firstElementChild) {
-                    var next = secondarySlot.firstElementChild;
+                var next = successor !== null ? cardOf(successor) : null;
+                if (next && primarySlot) {
                     primarySlot.appendChild(next);
-                    applyPriority(next.dataset.goalCard, 'primary');
+                    applyPriority(successor, 'primary');
                 }
 
                 sync();
@@ -256,8 +278,9 @@
                 // the one control that is always on this page.
                 var add = page.querySelector('[data-goal-add]');
                 if (add && !add.disabled) { add.focus({ preventScroll: true }); }
+                resolve();
             }, 200);
-        }
+        });
 
         if (detail) {
             window.setTimeout(function () {
@@ -265,6 +288,8 @@
                 if (detail.parentNode) { detail.parentNode.removeChild(detail); }
             }, (nav ? nav.duration : 280) + 120);
         }
+
+        return { primary: wasPrimary, successor: successor, gone: gone };
     }
 
     /* ----------------------------------------------- actions on a detail */
@@ -308,8 +333,19 @@
 
         if (action === 'delete-confirm') {
             if (confirm) { confirm.hidden = true; }
-            remove(id);
-            save('api/goals/delete.php', { goal_id: id });
+            var removal = remove(id);
+            var fields = { goal_id: id };
+            if (removal.successor !== null) { fields.successor = removal.successor; }
+            var saved = save('api/goals/delete.php', fields);
+
+            /* A new primary goal: once the card is gone and the delete is
+               stored, the goal parts of the page are read again — Overzicht's
+               goal card included — with the goal already moved up here. */
+            if (removal.primary) {
+                Promise.all([removal.gone, saved]).then(function (done) {
+                    if (done[1] && done[1].ok) { refresh(); }
+                });
+            }
         }
     });
 
