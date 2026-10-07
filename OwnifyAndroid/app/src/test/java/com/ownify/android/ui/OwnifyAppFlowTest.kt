@@ -62,6 +62,7 @@ import com.ownify.android.ui.screens.goals.GoalBoard
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyTheme
+import com.ownify.android.ui.theme.OwnifyThemeChoice
 import com.ownify.android.ui.theme.OwnifyThemeStore
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -114,7 +115,7 @@ class OwnifyAppFlowTest {
         OwnifyAppState.clear()
         GoalBoard.clear()
         OwnifySyncStatusPrefs(context).clear()
-        context.getSharedPreferences("ownify_theme", Context.MODE_PRIVATE).edit().clear().commit()
+        OwnifyThemeStore.forget(context)
         Ownify.use(OwnifyMode.DARK)
     }
 
@@ -890,6 +891,8 @@ class OwnifyAppFlowTest {
         toggle.performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Op de ranglijst staat je initiaal in plaats van je foto.")
         toggle.assertIsOff()
+        // The switch moves first; the save may still be on its way.
+        compose.waitUntil(15_000) { server.requestsTo("privacy.php").isNotEmpty() }
         val saved = server.requestsTo("privacy.php").single()
         assertEquals("Bearer $ACCOUNT_TOKEN", saved.headers["authorization"])
         assertEquals("leaderboard_avatar=0", saved.body.optString("form"))
@@ -1140,19 +1143,27 @@ class OwnifyAppFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodes(hasText("Hetzelfde glas, in het licht", substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    /** One of the theme's two options. */
-    private fun option(label: String) = compose.onNode(hasText(label) and hasClickAction() and hasText(if (label == "Licht") "Hetzelfde glas, in het licht" else "Het oorspronkelijke ontwerp"))
+    /** One of the theme's three options, by its name and its line. */
+    private fun option(label: String) = compose.onNode(
+        hasText(label) and hasClickAction() and hasText(
+            when (label) {
+                "Licht" -> "Hetzelfde glas, in het licht"
+                "Donker" -> "Het oorspronkelijke ontwerp"
+                else -> "Volgt je apparaat"
+            }
+        )
+    )
 
     @Test
-    fun `White Mode - Licht in Instellingen turns the app light at once, is kept on the phone through signing out, and Donker turns it back`() {
+    fun `Thema - nobody chose is Systeem, Licht turns the app light and is kept through signing out, Donker turns it back, Systeem follows the phone again`() {
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
-        assertEquals(OwnifyMode.DARK, Ownify.mode)
 
-        // Nobody chose: Dark, as the server says, and Licht can be chosen.
-        openTheme("Donker")
-        option("Donker").assertIsSelected()
+        // Nobody chose: Systeem — the phone's way — and Donker and Licht can be chosen.
+        openTheme("Systeem")
+        option("Systeem").assertIsSelected()
+        option("Donker").assertIsNotSelected().assertIsEnabled()
         option("Licht").assertIsNotSelected().assertIsEnabled()
         // The one choice that is kept: no "not kept" line under it.
         assertTrue(compose.onAllNodesWithText("Voorkeuren worden nog niet bewaard.").fetchSemanticsNodes().isEmpty())
@@ -1160,8 +1171,9 @@ class OwnifyAppFlowTest {
         option("Licht").performClick()
         compose.waitForIdle()
         assertEquals(OwnifyMode.LIGHT, Ownify.mode)
-        assertEquals("kept for the next start", OwnifyMode.LIGHT, OwnifyThemeStore.read(context))
+        assertEquals("kept for the next start", OwnifyThemeChoice.LIGHT, OwnifyThemeStore.preference(context))
         option("Licht").assertIsSelected()
+        option("Systeem").assertIsNotSelected()
         option("Donker").assertIsNotSelected()
 
         // Instellingen names it, as the website's row does.
@@ -1172,7 +1184,7 @@ class OwnifyAppFlowTest {
         button("Uitloggen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Registreren")
         assertEquals(OwnifyMode.LIGHT, Ownify.mode)
-        assertEquals(OwnifyMode.LIGHT, OwnifyThemeStore.read(context))
+        assertEquals(OwnifyThemeChoice.LIGHT, OwnifyThemeStore.preference(context))
 
         // Signed in again, still light — and Donker brings Dark back, kept too.
         server.revoked.clear()
@@ -1184,8 +1196,15 @@ class OwnifyAppFlowTest {
         option("Donker").performClick()
         compose.waitForIdle()
         assertEquals(OwnifyMode.DARK, Ownify.mode)
-        assertEquals(OwnifyMode.DARK, OwnifyThemeStore.read(context))
+        assertEquals(OwnifyThemeChoice.DARK, OwnifyThemeStore.preference(context))
         option("Donker").assertIsSelected()
+
+        // Back to Systeem: the phone's appearance again — this phone is light.
+        option("Systeem").performClick()
+        compose.waitForIdle()
+        assertEquals(OwnifyMode.LIGHT, Ownify.mode)
+        assertEquals(OwnifyThemeChoice.SYSTEM, OwnifyThemeStore.preference(context))
+        option("Systeem").assertIsSelected()
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onNodeWithTextExact(text: String) =

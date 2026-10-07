@@ -1260,11 +1260,12 @@ sealed interface SettingsBlock {
 data class ChoiceOption(val key: String, val label: String, val note: String?, val disabled: Boolean)
 
 /**
- * The settings with [theme] ("dark" or "light") as the theme: Thema &
- * uiterlijk's choice ticked on it, and the row on Instellingen that names it
- * saying so — lib/settings.php's settings_use_theme(). On the website the
- * server knows the browser's choice from its cookie; asked by the app it has
- * none and always says Dark, so the app puts this phone's choice in its place.
+ * The settings with [theme] ("system", "dark" or "light") as the theme choice:
+ * Thema & uiterlijk's choice ticked on it, and the row on Instellingen that
+ * names it saying so — lib/settings.php's settings_use_theme(). On the website
+ * the server knows the browser's choice from its cookie; asked by the app it
+ * has none and always says Systeem, so the app puts this phone's choice in its
+ * place.
  */
 fun Settings.withTheme(theme: String): Settings {
     val page = page("theme") ?: return this

@@ -8,7 +8,9 @@
  * (assets/css/theme.css: `:root`, then `:root[data-theme="light"]`). This
  * checks, in that order:
  *
- *   the word      no cookie, "dark" or anything else is Dark; "light" is White
+ *   the word      "dark" is Dark, "light" is White; "system", no cookie or any
+ *                 other word is Systeem — drawn Dark by the server, the device's
+ *                 put in place by the page's first script
  *   the head      the browser's bar colour, color-scheme and the iPhone status
  *                 bar for each
  *   the settings  Thema & uiterlijk ticks the browser's choice, the row on
@@ -22,8 +24,10 @@
  *                 red on a card; the score colours, the app's green and the
  *                 faint tier 3:1 as graphics
  *   the page      the front door, served by PHP's built-in server: drawn in the
- *                 cookie's theme from the first byte, the cookie sent back with
- *                 a year to run, and nothing of an unknown cookie echoed
+ *                 cookie's theme from the first byte, the script that follows
+ *                 the device ahead of the stylesheets, a choice sent back with a
+ *                 year to run, none handed out for no choice, and nothing of an
+ *                 unknown cookie echoed
  *
  * Exit code 0 when every check passes.
  */
@@ -58,23 +62,27 @@ function check(string $label, bool $ok, string $detail = ''): void
 
 echo "The word in the cookie\n";
 
+/* The choice, and the theme the server draws: on Systeem it cannot know the
+   device's, so Dark until the page's first script puts the device's in place. */
 foreach ([
-    'no cookie'          => [null, 'dark'],
-    '"dark"'             => ['dark', 'dark'],
-    '"light"'            => ['light', 'light'],
-    '"LIGHT"'            => ['LIGHT', 'dark'],
-    'something else'     => ['sepia', 'dark'],
-    'markup'             => ['"><script>', 'dark'],
-] as $label => [$cookie, $expected]) {
+    'no cookie'          => [null, 'system', 'dark'],
+    '"system"'           => ['system', 'system', 'dark'],
+    '"dark"'             => ['dark', 'dark', 'dark'],
+    '"light"'            => ['light', 'light', 'light'],
+    '"LIGHT"'            => ['LIGHT', 'system', 'dark'],
+    'something else'     => ['sepia', 'system', 'dark'],
+    'markup'             => ['"><script>', 'system', 'dark'],
+] as $label => [$cookie, $preference, $drawn]) {
     unset($_COOKIE[APP_THEME_COOKIE]);
     if ($cookie !== null) {
         $_COOKIE[APP_THEME_COOKIE] = $cookie;
     }
-    check("$label is $expected", app_theme() === $expected, app_theme());
+    check("$label: $preference, drawn $drawn", app_theme_preference() === $preference && app_theme() === $drawn,
+        app_theme_preference() . ' / ' . app_theme());
 }
 
 $_COOKIE[APP_THEME_COOKIE] = ['light'];
-check('an array is dark, not an error', app_theme() === 'dark');
+check('an array is Systeem, not an error', app_theme_preference() === 'system' && app_theme() === 'dark');
 
 /* ======================================================================
    THE HEAD
@@ -131,8 +139,8 @@ function theme_row(array $settings): ?string
 }
 
 $choice = theme_choice($settings);
-check('Dark is the default', $choice['selected'] === 'dark' && theme_row($settings) === 'Donker');
-check('Licht is offered, and nothing is disabled', array_column($choice['options'], 'key') === ['dark', 'light']
+check('Systeem is the default', $choice['selected'] === 'system' && theme_row($settings) === 'Systeem');
+check('Systeem, Donker and Licht are offered, and nothing is disabled', array_column($choice['options'], 'key') === ['system', 'dark', 'light']
     && array_filter($choice['options'], static fn (array $o): bool => !empty($o['disabled'])) === []);
 check('the theme is a choice that saves', ($choice['saves'] ?? false) === true);
 
@@ -152,8 +160,11 @@ check('White: Licht is ticked', theme_choice($asLight)['selected'] === 'light');
 check('White: the row says Licht', theme_row($asLight) === 'Licht', (string) theme_row($asLight));
 
 $asDark = settings_use_theme($asLight, 'dark');
-check('back to Dark: Donker ticked and named', theme_choice($asDark)['selected'] === 'dark' && theme_row($asDark) === 'Donker');
-check('nothing else on the settings changes', settings_use_theme($settings, 'dark') === $settings);
+check('Dark: Donker ticked and named', theme_choice($asDark)['selected'] === 'dark' && theme_row($asDark) === 'Donker');
+
+$asSystem = settings_use_theme($asDark, 'system');
+check('back to Systeem: Systeem ticked and named', theme_choice($asSystem)['selected'] === 'system' && theme_row($asSystem) === 'Systeem');
+check('nothing else on the settings changes', settings_use_theme($settings, 'system') === $settings);
 
 /* ======================================================================
    THE TOKENS
@@ -374,8 +385,19 @@ function front_door(int $port, ?string $cookie): array
 
 try {
     [$html, $set] = front_door($port, null);
-    check('never chose: drawn dark', (bool) preg_match('/<html[^>]* data-theme="dark"/', $html));
-    check('never chose: no cookie handed out', $set === [], implode(' | ', $set));
+    check('never chose: drawn dark from the server', (bool) preg_match('/<html[^>]* data-theme="dark"/', $html));
+    check('never chose: the first script follows the device before anything is painted',
+        (bool) preg_match('~<script>.*prefers-color-scheme: light.*</script>.*<link rel="stylesheet"~s', $html));
+    check('never chose: no cookie handed out — the device\'s look is not a choice', $set === [], implode(' | ', $set));
+
+    [$html, $set] = front_door($port, 'system');
+    check('chose Systeem: drawn as for never chosen', (bool) preg_match('/<html[^>]* data-theme="dark"/', $html));
+    check('chose Systeem: the choice sent back for a year', str_contains($set[0] ?? '', APP_THEME_COOKIE . '=system;')
+        && str_contains($set[0] ?? '', 'Max-Age=31536000'), $set[0] ?? 'none');
+
+    [$html, $set] = front_door($port, 'dark');
+    check('chose Dark: drawn dark, and the choice sent back', (bool) preg_match('/<html[^>]* data-theme="dark"/', $html)
+        && str_contains($set[0] ?? '', APP_THEME_COOKIE . '=dark;'), $set[0] ?? 'none');
 
     [$html, $set] = front_door($port, 'light');
     check('chose White: drawn light from the first byte', (bool) preg_match('/<html[^>]* data-theme="light"/', $html));
@@ -392,7 +414,7 @@ try {
     [$html, $set] = front_door($port, '"><script>alert(1)</script>');
     check('an unknown cookie: drawn dark', (bool) preg_match('/<html[^>]* data-theme="dark"/', $html));
     check('an unknown cookie: nothing of it in the page', !str_contains($html, 'alert(1)'));
-    check('an unknown cookie: replaced by "dark"', str_contains($set[0] ?? '', APP_THEME_COOKIE . '=dark;'), $set[0] ?? 'none');
+    check('an unknown cookie: replaced by "system"', str_contains($set[0] ?? '', APP_THEME_COOKIE . '=system;'), $set[0] ?? 'none');
 } finally {
     proc_terminate($server);
 }

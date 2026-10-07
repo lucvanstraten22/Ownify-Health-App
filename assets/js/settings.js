@@ -43,8 +43,8 @@
         );
 
         if (name === 'theme') {
-            useTheme(option.getAttribute('data-choice-key') === 'light' ? 'light' : 'dark',
-                option.querySelector('.settings-option__label'));
+            var key = option.getAttribute('data-choice-key');
+            useTheme(key === 'light' || key === 'dark' ? key : 'system', option.querySelector('.settings-option__label'));
         }
     });
 
@@ -52,22 +52,21 @@
 
     /**
      * Thema & uiterlijk is the one choice that saves, and on this device:
-     * the page changes in place (theme.css reads data-theme on <html>), the
-     * browser's own bars follow, and a cookie keeps it — lib/theme.php reads
-     * that when the next page is drawn, so no page is painted in the other
-     * theme first. The row on the main page says the new one.
+     * Systeem, Donker or Licht. A cookie keeps it — lib/theme.php reads that
+     * when the next page is drawn, so no page is painted in the other theme
+     * first — and the page changes in place (theme.css reads data-theme on
+     * <html>), the browser's own bars with it: to the chosen theme, or on
+     * Systeem to the device's, which the head's script then keeps following
+     * (components/document-head.php). The row on the main page says the new
+     * choice.
      */
-    function useTheme(theme, label) {
-        var root = document.documentElement;
-        root.setAttribute('data-theme', theme);
-
-        var bar = document.querySelector('meta[name="theme-color"]');
-        if (bar) { bar.setAttribute('content', bar.getAttribute(theme === 'light' ? 'data-theme-light' : 'data-theme-dark')); }
-        var scheme = document.querySelector('meta[name="color-scheme"]');
-        if (scheme) { scheme.setAttribute('content', theme); }
-
-        document.cookie = 'ownify_theme=' + theme + '; Max-Age=31536000; Path=/; SameSite=Lax'
+    function useTheme(choice, label) {
+        document.cookie = 'ownify_theme=' + choice + '; Max-Age=31536000; Path=/; SameSite=Lax'
             + (location.protocol === 'https:' ? '; Secure' : '');
+
+        if (window.ownifyTheme) {
+            if (choice === 'system') { window.ownifyTheme.follow(); } else { window.ownifyTheme.apply(choice); }
+        }
 
         var row = document.querySelector('[data-detail-open="settings-theme"]');
         var value = row && row.querySelector('.settings-row__value');

@@ -562,7 +562,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal ·
              Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.7.3
+OVER         Over de app · Versie Beta 1.8.0
 
              [ Uitloggen ]
                Account verwijderen
@@ -718,14 +718,19 @@ tokens from `theme.css`, as before.
 
 ## Dark Mode and White Mode
 
-Two themes, one design. **Dark Mode** is the original and the default;
-**White Mode** is the same design in a light environment — the same layout,
-glass, accents, type, motion and interactions, on a warm off-white ground with
-the same washes of colour. Instellingen → Thema & uiterlijk switches it at
-once, on the website and in the Android app alike, and it is kept: on the
-website in a cookie the server reads before it writes the page (so nothing is
-drawn in the wrong theme first), in the app on the phone. It belongs to the
-device, not the account, so the opening screen is in it too.
+Two themes, one design. **Dark Mode** is the original; **White Mode** is the
+same design in a light environment — the same layout, glass, accents, type,
+motion and interactions, on a warm off-white ground with the same washes of
+colour. Instellingen → Thema & uiterlijk sets it at once, on the website and in
+the Android app alike: **Systeem** (the default) follows the device's own
+appearance, also when it changes while Ownify is open; **Donker** or **Licht**
+stays whatever the device does. The choice is kept — on the website in a cookie
+the server reads before it writes the page, in the app on the phone — and only
+a choice is: a device that never chose keeps following its own. Nothing is
+drawn in the wrong theme first: on Systeem the page's first script, and the
+app before its first frame, put the device's in place. It belongs to the
+device, not the account, so the opening screen is in it too
+([docs/THEME.md](docs/THEME.md)).
 
 Every colour a component writes is a token or a *role* in `theme.css` — ink,
 fill, lift, glint, shade, scrim, ground, pane-body, tint — mirrored one for

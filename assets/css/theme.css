@@ -566,9 +566,10 @@ button {
    White Mode — the same design in a light environment.
 
    Set by <html data-theme="light"> (the server writes it from the person's
-   choice in Instellingen → Thema & uiterlijk; settings.js switches it in
-   place). Only roles and tokens change here: no component, size, space,
-   type or motion does. Mirrored in OwnifyTheme.kt (OwnifyPalette.Light).
+   choice in Instellingen → Thema & uiterlijk, the head's first script on
+   Systeem from the device's; settings.js switches it in place). Only roles
+   and tokens change here: no component, size, space, type or motion does.
+   Mirrored in OwnifyTheme.kt (OwnifyPalette.Light).
 
    The translation, role by role:
      ground      the dark theme's warm grey, as a warm off-white — lightest at

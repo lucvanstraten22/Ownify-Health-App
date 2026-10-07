@@ -100,7 +100,7 @@ import com.ownify.android.ui.screens.account.LinkButton
 import com.ownify.android.ui.screens.devices.StatusDot
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
-import com.ownify.android.ui.theme.OwnifyMode
+import com.ownify.android.ui.theme.OwnifyThemeChoice
 import com.ownify.android.ui.theme.OwnifyThemeStore
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
@@ -571,8 +571,9 @@ private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vec
 
 /**
  * A choice: one option ticked. The tick moves; nothing is stored (settings.js)
- * — except the theme's, which turns the app Dark or White at once and is kept
- * on this phone (OwnifyThemeStore); its tick is the theme on screen.
+ * — except the theme's, which is kept on this phone (OwnifyThemeStore) and
+ * turns the app Dark or White at once, or the phone's way on Systeem; its tick
+ * is the choice kept.
  */
 @Composable
 private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice) {
@@ -580,7 +581,7 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
     val context = LocalContext.current
     val theme = block.name == "theme"
     var picked by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
-    val selected = if (theme) Ownify.mode.key else picked
+    val selected = if (theme) OwnifyThemeStore.choice.key else picked
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
         InButton {
@@ -597,7 +598,7 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                             .fillMaxWidth()
                             .settingsRow(i > 0, fill)
                             .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) {
-                                if (theme) OwnifyThemeStore.choose(context, OwnifyMode.of(option.key)) else picked = option.key
+                                if (theme) OwnifyThemeStore.choose(context, OwnifyThemeChoice.of(option.key)) else picked = option.key
                             }
                             .semantics(mergeDescendants = true) {
                                 this.selected = on

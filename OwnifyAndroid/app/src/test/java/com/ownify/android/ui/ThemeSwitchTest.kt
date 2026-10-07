@@ -14,6 +14,7 @@ import com.ownify.android.connection.OwnifyApi
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyMode
+import com.ownify.android.ui.theme.OwnifyThemeChoice
 import com.ownify.android.ui.theme.OwnifyThemeStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,12 +33,12 @@ import org.robolectric.annotation.Config
  * swaps its theme-color and color-scheme in place.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], qualifiers = "night")
 class ThemeSwitchTest {
 
     private val compose = createAndroidComposeRule<MainActivity>()
 
-    /** A signed-out phone that never chose, set up before MainActivity starts. */
+    /** A signed-out phone in Dark Mode that never chose — so Dark (Systeem) — set up before MainActivity starts. */
     private val phone = object : ExternalResource() {
         override fun before() {
             val context = ApplicationProvider.getApplicationContext<Context>()
@@ -46,7 +47,7 @@ class ThemeSwitchTest {
             OwnifyConnection.api = OwnifyApi("http://127.0.0.1:9/")
             MemoryTokenStorage.clear()
             OwnifyConnection.reset()
-            context.getSharedPreferences("ownify_theme", Context.MODE_PRIVATE).edit().clear().commit()
+            OwnifyThemeStore.forget(context)
             Ownify.use(OwnifyMode.DARK)
         }
 
@@ -69,13 +70,13 @@ class ThemeSwitchTest {
         compose.waitForIdle()
         assertEquals(false to false, lightBars())
 
-        compose.runOnUiThread { OwnifyThemeStore.choose(compose.activity, OwnifyMode.LIGHT) }
+        compose.runOnUiThread { OwnifyThemeStore.choose(compose.activity, OwnifyThemeChoice.LIGHT) }
         compose.waitForIdle()
         assertTrue(Ownify.light)
         assertEquals("dark icons over the light ground", true to true, lightBars())
         assertEquals(0xFFF0EDEE.toInt(), windowColour())
 
-        compose.runOnUiThread { OwnifyThemeStore.choose(compose.activity, OwnifyMode.DARK) }
+        compose.runOnUiThread { OwnifyThemeStore.choose(compose.activity, OwnifyThemeChoice.DARK) }
         compose.waitForIdle()
         assertFalse(Ownify.light)
         assertEquals("light icons over the dark ground", false to false, lightBars())

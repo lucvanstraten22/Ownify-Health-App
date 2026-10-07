@@ -40,7 +40,42 @@ $theme  = app_theme_head($app);     // lib/theme.php
         <meta name="app-version" content="<?= e(substr(trim($deployed), 0, 7)) ?>">
     <?php endif; ?>
 
-    <script>document.documentElement.classList.add('js');</script>
+    <script>
+    /* Before anything is painted. Thema & uiterlijk on Systeem — chosen, or
+       nothing chosen (lib/theme.php) — is the device's appearance: put in
+       place now, and followed when the device changes while the page is open.
+       Donker or Licht stays as it is. settings.js switches through here. */
+    (function () {
+        var root = document.documentElement;
+        var device = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+        root.classList.add('js');
+
+        function chosen() {
+            var word = /(?:^|;\s*)ownify_theme=(dark|light)(?:;|$)/.exec(document.cookie);
+            return word ? word[1] : null;
+        }
+
+        function apply(theme) {
+            root.setAttribute('data-theme', theme);
+            var bar = document.querySelector('meta[name="theme-color"]');
+            if (bar) { bar.setAttribute('content', bar.getAttribute(theme === 'light' ? 'data-theme-light' : 'data-theme-dark')); }
+            var scheme = document.querySelector('meta[name="color-scheme"]');
+            if (scheme) { scheme.setAttribute('content', theme); }
+            var status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+            if (status) { status.setAttribute('content', theme === 'light' ? 'default' : 'black-translucent'); }
+        }
+
+        function follow() {
+            if (!chosen() && device) { apply(device.matches ? 'light' : 'dark'); }
+        }
+
+        follow();
+        if (device && device.addEventListener) { device.addEventListener('change', follow); }
+        else if (device && device.addListener) { device.addListener(follow); }
+
+        window.ownifyTheme = { apply: apply, follow: follow };
+    })();
+    </script>
 
     <?php foreach ($styles as $style): ?>
     <link rel="stylesheet" href="<?= e(asset('assets/css/' . $style . '.css')) ?>">

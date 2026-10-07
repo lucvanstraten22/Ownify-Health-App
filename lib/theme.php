@@ -1,14 +1,24 @@
 <?php
 /**
- * Dark Mode or White Mode: which one this browser chose.
+ * Dark Mode or White Mode: which one this browser chose — or the device's.
  *
  * A device preference, like a phone's own appearance setting, so it is kept
  * in a cookie and not on the account: the opening screen — where nobody is
- * signed in yet — comes up in the theme chosen on this device, and the page
- * arrives in it from the server, never painted dark first and switched after.
+ * signed in yet — comes up in the theme chosen on this device, and signing
+ * out or in changes nothing about it.
  *
- *   ownify_theme=light   White Mode
- *   (anything else)      Dark Mode, the default
+ *   ownify_theme=dark     Dark Mode, always
+ *   ownify_theme=light    White Mode, always
+ *   ownify_theme=system   the device's appearance (Systeem)
+ *   (no cookie, or any    the same: the default. Only a choice made in
+ *    other word)          Instellingen is ever stored, never what the
+ *                         device happened to show.
+ *
+ * Dark and White arrive from the server, never painted in the other theme
+ * first. On Systeem the server cannot know the device's appearance, so it
+ * draws Dark, as before; the first script in <head> (components/document-
+ * head.php) puts the device's theme in place before anything is painted, and
+ * follows it when it changes while the page is open.
  *
  * settings.js writes the cookie the moment the choice is made in Instellingen
  * → Thema & uiterlijk and switches the page in place. Each page then sends it
@@ -30,15 +40,26 @@ if (!defined('APP_THEME_COOKIE')) {
 
 if (!function_exists('app_theme')) {
 
-    /** 'light' or 'dark' — dark unless this browser chose light. */
+    /** 'system', 'dark' or 'light' — what this browser chose; Systeem when it chose nothing. */
+    function app_theme_preference(): string
+    {
+        $chosen = $_COOKIE[APP_THEME_COOKIE] ?? '';
+
+        return in_array($chosen, ['dark', 'light', 'system'], true) ? $chosen : 'system';
+    }
+
+    /**
+     * 'light' or 'dark' — the theme the page is drawn in: the one chosen, or
+     * on Systeem Dark, until the first script puts the device's in place.
+     */
     function app_theme(): string
     {
-        return ($_COOKIE[APP_THEME_COOKIE] ?? '') === 'light' ? 'light' : 'dark';
+        return app_theme_preference() === 'light' ? 'light' : 'dark';
     }
 
     /**
      * The choice again, from the server, for another year — only when one was
-     * made: a browser that never chose keeps no cookie and stays dark.
+     * made: a browser that never chose keeps no cookie and follows its device.
      */
     function app_theme_renew(): void
     {
@@ -49,7 +70,7 @@ if (!function_exists('app_theme')) {
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (($_SERVER['SERVER_PORT'] ?? null) == 443);
 
-        setcookie(APP_THEME_COOKIE, app_theme(), [
+        setcookie(APP_THEME_COOKIE, app_theme_preference(), [
             'expires'  => time() + 365 * 24 * 3600,
             'path'     => '/',
             'secure'   => $https,

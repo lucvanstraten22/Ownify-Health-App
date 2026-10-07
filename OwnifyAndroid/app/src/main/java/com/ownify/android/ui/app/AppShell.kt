@@ -50,6 +50,7 @@ import com.ownify.android.ui.design.recordBackdrop
 import com.ownify.android.ui.design.rememberBackdrop
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.OwnifyThemeStore
 import kotlinx.coroutines.CancellationException
 
 /** The shell, for the screens inside it: where to go, what to open. */
@@ -77,8 +78,8 @@ class ShellScreens(
  */
 @Composable
 fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> Unit)? = null) {
-    // The theme on this phone, where the settings name it (AppData.withTheme).
-    val theme = Ownify.mode.key
+    // The theme choice on this phone, where the settings name it (AppData.withTheme).
+    val theme = OwnifyThemeStore.choice.key
     val data = remember(source, theme) { source.withTheme(theme) }
     val scope = rememberCoroutineScope()
     val pageIds = remember(data.navigation) { data.navigation.map { it.id } }

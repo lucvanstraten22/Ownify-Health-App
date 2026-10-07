@@ -24,8 +24,10 @@ import com.ownify.android.ui.theme.OwnifyThemeStore
  * browser with `viewport-fit=cover`: under light system-bar icons in Dark
  * Mode, dark ones in White Mode.
  *
- * The theme this phone chose (OwnifyThemeStore) is put in place before
- * anything is drawn, so the app opens in it and never in the other one first.
+ * The theme this phone chose — or on Systeem the phone's own (OwnifyThemeStore)
+ * — is put in place before anything is drawn, so the app opens in it and never
+ * in the other one first. On Systeem a change of the phone's appearance starts
+ * the activity again, and it comes back in the new one.
  */
 class MainActivity : ComponentActivity() {
 
@@ -37,7 +39,8 @@ class MainActivity : ComponentActivity() {
             // Chosen in Instellingen: the bars, the window and the next
             // start's splash follow at once.
             val now = Ownify.mode
-            LaunchedEffect(now) { follow(now) }
+            val choice = OwnifyThemeStore.choice
+            LaunchedEffect(now, choice) { follow(now) }
 
             OwnifyTheme {
                 OwnifyApp(OwnifyScreens.shell, OwnifyScreens.signedOut)
@@ -59,9 +62,10 @@ class MainActivity : ComponentActivity() {
         // What shows behind the app while the keyboard moves it, or before a frame.
         window.setBackgroundDrawable(Ownify.BgDeep.toArgb().toDrawable())
         // The system's splash at the next start (Android 13 and later): in the
-        // theme the app will open in, not the one it was installed with.
+        // theme the app will open in, not the one it was installed with — on
+        // Systeem the phone's, whichever it is by then.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            runCatching { splashScreen.setSplashScreenTheme(OwnifyThemeStore.windowTheme()) }
+            runCatching { splashScreen.setSplashScreenTheme(OwnifyThemeStore.splashTheme()) }
         }
     }
 }

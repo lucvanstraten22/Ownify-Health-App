@@ -90,7 +90,7 @@ return [
             'label' => 'App',
             'rows'  => [
                 ['id' => 'notifications', 'icon' => 'bell',          'label' => 'Meldingen',               'value' => 'Uit'],
-                ['id' => 'theme',         'icon' => 'moon',          'label' => 'Thema & uiterlijk',       'value' => 'Donker'],
+                ['id' => 'theme',         'icon' => 'moon',          'label' => 'Thema & uiterlijk',       'value' => 'Systeem'],
                 ['id' => 'language',      'icon' => 'globe',         'label' => 'Taal',                    'value' => 'Nederlands'],
                 ['id' => 'units',         'icon' => 'ruler',         'label' => 'Eenheden',                'value' => 'Metrisch'],
                 ['id' => 'week',          'icon' => 'calendar',      'label' => 'Eerste dag van de week',  'value' => 'Maandag'],
@@ -101,7 +101,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.7.3'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 1.8.0'],
             ],
         ],
     ],
@@ -370,13 +370,15 @@ return [
                     'name'     => 'theme',
                     /* This browser's choice (lib/theme.php) replaces it in
                        settings_prepare(); the app replaces it with the phone's. */
-                    'selected' => 'dark',
+                    'selected' => 'system',
                     /* Saved, at once, on this device — not one of the
-                       choices the foot of the screen says are not kept. */
+                       choices the foot of the screen says are not kept.
+                       Systeem, the default, is the device's appearance. */
                     'saves'    => true,
                     'options'  => [
-                        ['key' => 'dark',  'label' => 'Donker', 'note' => 'Het oorspronkelijke ontwerp'],
-                        ['key' => 'light', 'label' => 'Licht',  'note' => 'Hetzelfde glas, in het licht'],
+                        ['key' => 'system', 'label' => 'Systeem', 'note' => 'Volgt je apparaat'],
+                        ['key' => 'dark',   'label' => 'Donker',  'note' => 'Het oorspronkelijke ontwerp'],
+                        ['key' => 'light',  'label' => 'Licht',   'note' => 'Hetzelfde glas, in het licht'],
                     ],
                 ],
 
@@ -497,7 +499,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 1.7.3'],
+                        ['label' => 'Versie',  'value' => 'Beta 1.8.0'],
                         ['label' => 'Gebouwd met', 'value' => 'PHP · HTML · CSS · JS',
                          'value_app' => 'Kotlin · Jetpack Compose'],
                     ],

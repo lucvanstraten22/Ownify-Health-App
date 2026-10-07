@@ -1,22 +1,34 @@
 # Dark Mode and White Mode
 
-Ownify has two themes. **Dark Mode** is the original design and the default.
-**White Mode** is the same design in a light environment: the same layout,
-components, glass, accents, type, spacing, motion and interactions — only the
-colours and the light on the glass change. Nothing is redesigned per theme.
+Ownify has two themes. **Dark Mode** is the original design. **White Mode**
+is the same design in a light environment: the same layout, components,
+glass, accents, type, spacing, motion and interactions — only the colours and
+the light on the glass change. Nothing is redesigned per theme.
 
-It is chosen in Instellingen → Thema & uiterlijk (Donker / Licht), on the
-website and in the Android app alike, and takes effect at once.
+Which one shows is set in Instellingen → Thema & uiterlijk, on the website and
+in the Android app alike, and takes effect at once:
+
+| Choice | Device light | Device dark |
+| --- | --- | --- |
+| **Systeem** — the default | White | Dark |
+| Donker | Dark | Dark |
+| Licht | White | White |
+
+On Systeem the app follows the device, also when the device changes while it
+is open. Only a choice made there is ever stored — never what the device
+happened to show — so a device that never chose keeps following its own, and
+a choice of Donker or Licht stays whatever the device does, until it is
+changed. Donker and Licht kept before Systeem existed stay as they were.
 
 ## Where it lives
 
 | | Website | Android app |
 | --- | --- | --- |
 | Tokens | `assets/css/theme.css`: `:root` is Dark, `:root[data-theme="light"]` (at the end of the file) is White | `ui/theme/OwnifyTheme.kt`: `OwnifyPalette.Dark` and `OwnifyPalette.Light`, read through `Ownify` |
-| Which one | `<html data-theme="dark\|light">`, written by the server (`lib/theme.php`) | `Ownify.palette`, Compose state: everything drawn with it follows a change |
+| Which one | `<html data-theme="dark\|light">`, written by the server (`lib/theme.php`); on Systeem the first script in `<head>` (`components/document-head.php`) puts the device's in place before anything is painted (`prefers-color-scheme`) and follows it | `Ownify.palette`, Compose state: everything drawn with it follows a change; on Systeem `OwnifyThemeStore.restore()` reads the phone's night mode, and Android starts the activity again when it changes |
 | Choosing | `useTheme()` in `assets/js/settings.js` | `ChoiceBlock` in `SettingsDetail.kt` → `OwnifyThemeStore.choose()` |
-| Kept | the cookie `ownify_theme` | `shared_prefs/ownify_theme.xml` (`OwnifyThemeStore`) |
-| The browser's / system's own parts | `theme-color`, `color-scheme`, the iPhone status-bar style (`components/document-head.php`) | the window theme (`Theme.Ownify` / `Theme.Ownify.Light` in `res/values/themes.xml`), the system bars, the splash, the date picker (`MainActivity`, `OwnifyThemeStore`) |
+| Kept | the cookie `ownify_theme`: `system`, `dark` or `light`; none is Systeem | `shared_prefs/ownify_theme.xml` (`OwnifyThemeStore`): the same three words; none is Systeem |
+| The browser's / system's own parts | `theme-color`, `color-scheme`, the iPhone status-bar style (`components/document-head.php`) | the window theme (`Theme.Ownify` / `Theme.Ownify.Light`, and `Theme.Ownify.System`, which follows the phone through `values-night`, before the first frame), the system bars, the splash, the date picker (`MainActivity`, `OwnifyThemeStore`) |
 
 ## Roles
 
@@ -115,15 +127,20 @@ app each remember their own.
   tokens, contrast, and the front door served in each theme.
 - `ColourSystemTest` — both palettes against `theme.css`, the roles, the
   unchanged categories and score bands, contrast.
-- `ThemeTest`, `ThemeSwitchTest` — the stored choice, opening in it, the
-  bars and the window following a switch, the Health Connect rationale.
-- `OwnifyAppFlowTest` — Licht in Instellingen, kept through signing out, and
-  back to Donker. `AppDataParseTest` — the theme choice from the server.
+- `ThemeTest`, `ThemeSwitchTest` — Systeem following the phone (nothing
+  stored), Donker and Licht staying whatever the phone does, the stored choice
+  and opening in it, the bars and the window following a switch, the Health
+  Connect rationale.
+- `OwnifyAppFlowTest` — Licht in Instellingen, kept through signing out, back
+  to Donker, and Systeem following the phone again. `AppDataParseTest` — the
+  theme choice from the server.
 
 ## Limits
 
-- Android 12 and older draw the system's starting window from the manifest's
-  theme before the app runs, so a cold start in White Mode can show the dark
-  ground for a moment. From Android 13 the splash follows the choice.
+- Android 12 and older draw the system's starting window before the app runs,
+  from the manifest's theme, which follows the phone (`Theme.Ownify.System`):
+  with Donker or Licht chosen against the phone's appearance, a cold start can
+  show the other ground for a moment. From Android 13 the splash follows the
+  choice.
 - The keyboard and the system's share and permission screens are the
   phone's own and follow the phone's theme, not Ownify's.

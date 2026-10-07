@@ -27,9 +27,10 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
- * Dark Mode or White Mode: the website's `<html data-theme>`. Chosen in
- * Instellingen → Thema & uiterlijk and kept on this phone (OwnifyThemeStore),
- * as the website keeps it in the browser; Dark unless White was chosen.
+ * Dark Mode or White Mode: the website's `<html data-theme>`, the theme on
+ * screen. Instellingen → Thema & uiterlijk decides it, kept on this phone
+ * (OwnifyThemeStore) as the website keeps it in the browser: Donker, Licht, or
+ * on Systeem — the default — the phone's own appearance.
  */
 enum class OwnifyMode(val key: String) {
     DARK("dark"),
