@@ -1112,6 +1112,66 @@ class OwnifyAppFlowTest {
         println("live: deleted \"$main\"; primary before and after reading again: \"$expected\"; seen in the slot: $seen")
     }
 
+    /**
+     * Making another goal primary, against a real Ownify server — opt-in, as
+     * above, and the change is real: the goal last under Secundaire doelen is
+     * made primary, and Overzicht's goal card, which the server builds from the
+     * primary goal, shows it as soon as the change is stored — the old goal
+     * nowhere on it.
+     */
+    @Test
+    fun `Doelen - making a goal primary, Overzicht follows - against a real server, opt-in`() {
+        val live = System.getProperty("ownify.live").orEmpty()
+        val token = System.getProperty("ownify.live.token").orEmpty()
+        assumeTrue("no real server asked for", live.isNotEmpty() && token.isNotEmpty())
+        OwnifyConnection.api = OwnifyApi(live)
+        MemoryTokenStorage.save(OwnifyCredential(token, OwnifyScope.ACCOUNT))
+
+        show()
+        compose.waitUntil(30_000) { compose.onRoot().fetchSemanticsNode(); OwnifyAppState.data?.goals?.primary != null }
+        val goals = OwnifyAppState.data!!.goals
+        val main = goals.primary!!.name
+        val picked = goals.secondary.last().name
+        val names = listOf(main) + goals.secondary.map { it.name }
+        fun overview() = names.firstOrNull { name -> nodes(name).any(::onScreen) }
+        assertEquals("Overzicht before", main, overview())
+
+        openDoelen()
+        val cards = compose.onAllNodes(hasContentDescription(picked, substring = true) and hasClickAction())
+        cards[cards.fetchSemanticsNodes().indexOfFirst(::onScreen)].performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Maak primair")
+
+        // From the tap: the board's primary goal | Overzicht's card, as the app holds them.
+        val seen = mutableListOf<String>()
+        fun look() {
+            val data = OwnifyAppState.data ?: return
+            val pair = "${com.ownify.android.ui.screens.goals.GoalBoard.board(data.goals).primary?.name} | ${data.overview.goal.name}"
+            if (seen.lastOrNull() != pair) seen += pair
+        }
+        button("Maak primair").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        // Until the pages read again after the save have arrived.
+        compose.waitUntil(30_000) {
+            compose.onRoot().fetchSemanticsNode(); look()
+            OwnifyAppState.data?.goals?.primary?.name == picked && (OwnifyAppState.load as? AppLoad.Ready)?.refreshing == false
+        }
+        repeat(10) { compose.waitForIdle(); look() }
+
+        compose.onNode(hasContentDescription("Terug naar Doelen") and hasClickAction()).performClick()
+        compose.waitForIdle()
+        button("Overzicht").performClick()
+        compose.waitForIdle()
+        assertEquals("Overzicht's goal card", picked, overview())
+        assertTrue("the old goal is gone from Overzicht", nodes(main).none(::onScreen))
+        assertEquals("the board and the card agree", "$picked | $picked", seen.last())
+
+        runBlocking { OwnifyAppState.reload(context) }
+        compose.waitForIdle()
+        assertEquals("stored: read again, the same goal is primary", picked, OwnifyAppState.data?.goals?.primary?.name)
+        assertEquals(picked, OwnifyAppState.data?.overview?.goal?.name)
+        assertEquals(picked, overview())
+        println("live: made \"$picked\" primary over \"$main\"; board | Overzicht from the tap: $seen")
+    }
+
     @Test
     fun `accessibility - named controls, touch targets as large as the website's, and one heading per page`() {
         MemoryTokenStorage.signedIn()

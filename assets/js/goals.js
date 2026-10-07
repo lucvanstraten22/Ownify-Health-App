@@ -307,7 +307,12 @@
 
         if (action === 'promote') {
             promote(id);
-            save('api/goals/update.php', { goal_id: id, action: 'primary' });
+            /* A new primary goal: once it is stored, the goal parts of the
+               page are read again — Overzicht's goal card included — as after
+               deleting the primary goal. */
+            save('api/goals/update.php', { goal_id: id, action: 'primary' }).then(function (result) {
+                if (result && result.ok) { refresh(); }
+            });
             return;
         }
 
