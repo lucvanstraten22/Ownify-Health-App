@@ -22,19 +22,28 @@ import org.robolectric.annotation.Config
 class AppDataParseTest {
 
     @Test
-    fun `Instellingen - App, then Voorkeuren with three of its rows, and Over de app without Gebouwd met or Contact`() {
+    fun `Instellingen - App with Voorkeuren as one row, its three settings on one screen, and Over de app without Gebouwd met or Contact`() {
         for (name in listOf("state-demo.json", "state-new-account.json")) {
             val settings = fixture(name).settings
             assertEquals(
                 name,
                 listOf(
                     "Account" to listOf("account"), "Gezondheid" to listOf("devices"), "Privacy" to listOf("privacy"),
-                    "App" to listOf("notifications", "theme", "language"),
-                    "Voorkeuren" to listOf("units", "week", "accessibility"),
+                    "App" to listOf("notifications", "theme", "language", "preferences"),
                     "Over" to listOf("about")
                 ),
                 settings.groups.map { group -> group.label to group.rows.map { it.id } }
             )
+
+            // Voorkeuren: Eenheden, Eerste dag van de week and Toegankelijkheid, each under its own heading.
+            val preferences = settings.page("preferences")!!.blocks
+            assertEquals(
+                listOf("Eenheden", "Eerste dag van de week", "Toegankelijkheid"),
+                preferences.filterIsInstance<SettingsBlock.Section>().map { it.title }
+            )
+            assertEquals(listOf("units", "week"), preferences.filterIsInstance<SettingsBlock.Choice>().map { it.name })
+            assertTrue(preferences.any { it is SettingsBlock.States } && preferences.any { it is SettingsBlock.Toggles })
+            for (gone in listOf("units", "week", "accessibility")) assertNull(gone, settings.page(gone))
 
             val about = settings.page("about")!!.blocks
             assertEquals(
@@ -142,7 +151,7 @@ class AppDataParseTest {
         assertEquals("dewi_7001", data.community.sent.single().username)
 
         // Instellingen
-        assertEquals(listOf("account", "devices", "privacy", "notifications", "theme", "language", "units", "week", "accessibility", "about"),
+        assertEquals(listOf("account", "devices", "privacy", "notifications", "theme", "language", "preferences", "about"),
             data.settings.pages.map { it.id })
         val fields = data.settings.page("account")!!.blocks.filterIsInstance<SettingsBlock.Fields>().flatMap { it.fields }
         assertEquals("locked", fields.single { it.key == "gender" }.state)

@@ -586,8 +586,10 @@ generated roster. A board with nobody on it shows its empty state.
 
 ## Instellingen
 
-Categories, not settings. Nine rows over six groups, each opening a screen of
-its own, so the overview stays a short scan.
+Categories, not settings. Eight rows over five groups, each opening a screen
+of its own, so the overview stays a short scan. Voorkeuren is one row: its
+screen holds Eenheden, Eerste dag van de week and Toegankelijkheid, each
+under its own heading.
 
 ```
 [ avatar ]  Username                         >
@@ -595,9 +597,8 @@ its own, so the overview stays a short scan.
 GEZONDHEID   Apparaten & Gezondheid          >
              Geen verbonden
 PRIVACY      Privacy · Gezondheidsdata privé >
-APP          Meldingen · Thema · Taal
-VOORKEUREN   Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 10.0
+APP          Meldingen · Thema · Taal · Voorkeuren
+OVER         Over de app · Versie Beta 11.1
 
              [ Uitloggen ]
                Account verwijderen

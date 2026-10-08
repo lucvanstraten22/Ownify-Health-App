@@ -406,9 +406,7 @@ class ScreenshotCapture {
     @Test fun settingsNotifications() = detail("settings", Detail.SettingsPage("notifications"), "settings-notifications")
     @Test fun settingsTheme() = detail("settings", Detail.SettingsPage("theme"), "settings-theme")
     @Test fun settingsLanguage() = detail("settings", Detail.SettingsPage("language"), "settings-language")
-    @Test fun settingsUnits() = detail("settings", Detail.SettingsPage("units"), "settings-units")
-    @Test fun settingsWeek() = detail("settings", Detail.SettingsPage("week"), "settings-week")
-    @Test fun settingsAccessibility() = detail("settings", Detail.SettingsPage("accessibility"), "settings-accessibility")
+    @Test fun settingsPreferences() = detail("settings", Detail.SettingsPage("preferences"), "settings-preferences", 760, 1520)
     @Test fun settingsAbout() = detail("settings", Detail.SettingsPage("about"), "settings-about", 600)
 
     // ----------------------------------------------------------------- panels

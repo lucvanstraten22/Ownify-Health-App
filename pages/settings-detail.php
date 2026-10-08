@@ -17,6 +17,9 @@
  *   actions       a button that does one thing after "are you sure?" in place
  *   rows          plain label/value information
  *   note          one framed line of explanation
+ *   section       a heading over the blocks after it, with its icon and one
+ *                 line (Voorkeuren: Eenheden, Eerste dag van de week and
+ *                 Toegankelijkheid on one screen)
  */
 declare(strict_types=1);
 
@@ -348,6 +351,18 @@ foreach ($page['blocks'] as $block) {
                                 <span><?= e($block['text']) ?></span>
                             </p>
                         </section>
+
+                    <?php elseif ($block['type'] === 'section'): ?>
+
+                        <header class="settings-section reveal">
+                            <span class="icon-tile" aria-hidden="true"><?= icon($block['icon']) ?></span>
+                            <span class="settings-section__text">
+                                <h2 class="settings-section__title"><?= e($block['title']) ?></h2>
+                                <?php if (!empty($block['lede'])): ?>
+                                    <span class="settings-section__lede"><?= e($block['lede']) ?></span>
+                                <?php endif; ?>
+                            </span>
+                        </header>
 
                     <?php elseif ($block['type'] === 'note'): ?>
 

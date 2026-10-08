@@ -89,25 +89,18 @@ return [
         [
             'label' => 'App',
             'rows'  => [
-                ['id' => 'notifications', 'icon' => 'bell',          'label' => 'Meldingen',               'value' => 'Uit'],
-                ['id' => 'theme',         'icon' => 'moon',          'label' => 'Thema & uiterlijk',       'value' => 'Systeem'],
-                ['id' => 'language',      'icon' => 'globe',         'label' => 'Taal',                    'value' => 'Nederlands'],
-            ],
-        ],
-
-        [
-            'label' => 'Voorkeuren',
-            'rows'  => [
-                ['id' => 'units',         'icon' => 'ruler',         'label' => 'Eenheden',                'value' => 'Metrisch'],
-                ['id' => 'week',          'icon' => 'calendar',      'label' => 'Eerste dag van de week',  'value' => 'Maandag'],
-                ['id' => 'accessibility', 'icon' => 'accessibility', 'label' => 'Toegankelijkheid',        'value' => 'Systeem'],
+                ['id' => 'notifications', 'icon' => 'bell',    'label' => 'Meldingen',         'value' => 'Uit'],
+                ['id' => 'theme',         'icon' => 'moon',    'label' => 'Thema & uiterlijk', 'value' => 'Systeem'],
+                ['id' => 'language',      'icon' => 'globe',   'label' => 'Taal',              'value' => 'Nederlands'],
+                /* Eenheden, Eerste dag van de week and Toegankelijkheid, together on one screen. */
+                ['id' => 'preferences',   'icon' => 'sliders', 'label' => 'Voorkeuren',        'value' => 'Metrisch · Maandag'],
             ],
         ],
 
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 11.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 11.1'],
             ],
         ],
     ],
@@ -413,12 +406,18 @@ return [
             ],
         ],
 
-        /* -------------------------------------------------------------- units */
-        'units' => [
-            'title' => 'Eenheden',
-            'icon'  => 'ruler',
-            'lede'  => 'Hoe lengte, gewicht en afstand worden getoond.',
+        /* -------------------------------------------------------- preferences
+         * Eenheden, Eerste dag van de week and Toegankelijkheid on one screen,
+         * each under its own heading (a `section` block), its content as it
+         * was on a screen of its own. */
+        'preferences' => [
+            'title' => 'Voorkeuren',
+            'icon'  => 'sliders',
+            'lede'  => 'Eenheden, de eerste dag van de week en toegankelijkheid.',
             'blocks' => [
+                /* Eenheden: as it was on a screen of its own. */
+                ['type' => 'section', 'title' => 'Eenheden', 'icon' => 'ruler', 'lede' => 'Hoe lengte, gewicht en afstand worden getoond.'],
+
                 [
                     'type'     => 'choice',
                     'title'    => 'Stelsel',
@@ -440,15 +439,10 @@ return [
                         ['label' => 'Energie',  'value' => 'kilocalorie (kcal)'],
                     ],
                 ],
-            ],
-        ],
 
-        /* --------------------------------------------------------------- week */
-        'week' => [
-            'title' => 'Eerste dag van de week',
-            'icon'  => 'calendar',
-            'lede'  => 'Bepaalt waar je week begint in overzichten en grafieken.',
-            'blocks' => [
+                /* Eerste dag van de week: as it was on a screen of its own. */
+                ['type' => 'section', 'title' => 'Eerste dag van de week', 'icon' => 'calendar', 'lede' => 'Bepaalt waar je week begint in overzichten en grafieken.'],
+
                 [
                     'type'     => 'choice',
                     'title'    => 'Week begint op',
@@ -459,15 +453,10 @@ return [
                         ['key' => 'sunday', 'label' => 'Zondag'],
                     ],
                 ],
-            ],
-        ],
 
-        /* ------------------------------------------------------ accessibility */
-        'accessibility' => [
-            'title' => 'Toegankelijkheid',
-            'icon'  => 'accessibility',
-            'lede'  => 'De app volgt je systeeminstellingen waar dat kan.',
-            'blocks' => [
+                /* Toegankelijkheid: as it was on a screen of its own. */
+                ['type' => 'section', 'title' => 'Toegankelijkheid', 'icon' => 'accessibility', 'lede' => 'De app volgt je systeeminstellingen waar dat kan.'],
+
                 [
                     'type'  => 'states',
                     'title' => 'Nu actief',
@@ -506,7 +495,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 11.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 11.1'],
                     ],
                 ],
 

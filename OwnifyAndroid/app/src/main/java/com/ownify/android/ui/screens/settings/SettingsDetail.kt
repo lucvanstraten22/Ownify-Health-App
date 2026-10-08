@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.settings
 
+import androidx.compose.ui.semantics.heading
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.animateColorAsState
@@ -110,7 +111,7 @@ import com.ownify.android.ui.theme.LocalTracking
 /**
  * One settings screen (pages/settings-detail.php), built from the blocks
  * the server lists for it — identity, fields, sign-in, sources, choices,
- * facts, switches, rows and notes — and, when it offers a choice that is
+ * facts, switches, rows, notes and section headings — and, when it offers a choice that is
  * not kept, the line that says so (the theme's is kept).
  */
 @Composable
@@ -129,6 +130,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.Rows -> RowsBlock(block)
                 is SettingsBlock.Note -> NoteBlock(block)
                 is SettingsBlock.Actions -> ActionsBlock(block)
+                is SettingsBlock.Section -> SectionHead(block)
             }
         }
         if (page.blocks.any { it is SettingsBlock.Choice && !it.saves }) Disclaimer(data.settings.notSaved)
@@ -886,6 +888,22 @@ private fun NoteBlock(block: SettingsBlock.Note) {
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(title)
         SettingsNote(block.icon, block.text)
+    }
+}
+
+/** `.settings-section`: a heading over the blocks after it — its icon tile, its name, its one line. */
+@Composable
+private fun SectionHead(block: SettingsBlock.Section) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = Ownify.Space3).padding(horizontal = Ownify.Space2).reveal(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+    ) {
+        OwnifyIcons.named(block.icon)?.let { IconTile(it) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            T(block.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em), Modifier.semantics { heading() })
+            block.lede?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)) }
+        }
     }
 }
 

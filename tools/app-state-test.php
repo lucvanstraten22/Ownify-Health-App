@@ -324,18 +324,23 @@ try {
         str_contains($page['raw'], 'Geen externe pakketten')
         && str_contains($page['raw'], 'tekstgrootte van je browser') && !str_contains($page['raw'], 'Google Play-services'));
 
-    /* Instellingen's groups, the same on both: Meldingen, Thema & uiterlijk and
-       Taal under App, then Voorkeuren with the other three, each row still
-       opening its own screen. */
+    /* Instellingen's groups, the same on both: Meldingen, Thema & uiterlijk,
+       Taal and Voorkeuren under App — Voorkeuren one row, its three settings
+       on one screen. */
     $want = ['Account' => ['account'], 'Gezondheid' => ['devices'], 'Privacy' => ['privacy'],
-             'App' => ['notifications', 'theme', 'language'], 'Voorkeuren' => ['units', 'week', 'accessibility'],
+             'App' => ['notifications', 'theme', 'language', 'preferences'],
              'Over' => ['about']];
     $appGroups = [];
     foreach ($app['body']['data']['settings']['groups'] ?? [] as $group) {
         $appGroups[(string) $group['label']] = array_column($group['rows'] ?? [], 'id');
     }
-    check('Instellingen in the app: App holds Meldingen, Thema & uiterlijk and Taal, Voorkeuren the other three',
+    check('Instellingen in the app: App holds Meldingen, Thema & uiterlijk, Taal and Voorkeuren, nothing else for the three',
         $appGroups === $want, json_encode($appGroups));
+    $prefs = $app['body']['data']['settings']['pages'] ?? [];
+    check('…Voorkeuren one screen: Eenheden, Eerste dag van de week, Toegankelijkheid, each with its own content; no screens of their own',
+        array_column(array_filter($prefs['preferences']['blocks'] ?? [], static fn ($b) => $b['type'] === 'section'), 'title') === ['Eenheden', 'Eerste dag van de week', 'Toegankelijkheid']
+        && array_column(array_filter($prefs['preferences']['blocks'] ?? [], static fn ($b) => $b['type'] === 'choice'), 'name') === ['units', 'week']
+        && !isset($prefs['units']) && !isset($prefs['week']) && !isset($prefs['accessibility']));
     $webGroups = [];
     preg_match_all('~<section class="settings-group[^"]*"[^>]*>\s*<h2 class="settings-eyebrow"[^>]*>([^<]*)</h2>(.*?)</section>~s',
         $page['raw'], $found, PREG_SET_ORDER);

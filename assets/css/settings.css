@@ -212,6 +212,25 @@
    -------------------------------------------------------------------------- */
 .settings-block { display: block; }
 
+/* A heading over the blocks after it (Voorkeuren: one per setting it holds). */
+.settings-section {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding-inline: var(--space-2);
+}
+.settings-section__text { display: grid; gap: 2px; min-width: 0; }
+.settings-section__title {
+    font-size: var(--fs-label);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.settings-section__lede {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+}
+
 /* --- profile fields ---------------------------------------------------- */
 .settings-field {
     grid-template-columns: minmax(0, 1fr) auto auto;

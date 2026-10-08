@@ -1375,6 +1375,8 @@ sealed interface SettingsBlock {
     /** [title]: the heading it sits under, when it has one (Over de app's Hulp). */
     data class Note(val icon: String, val text: String, val title: String? = null) : SettingsBlock
     data class Actions(val title: String, val items: List<ActionItem>) : SettingsBlock
+    /** A heading over the blocks after it, with its icon and one line (Voorkeuren: one per setting it holds). */
+    data class Section(val title: String, val icon: String, val lede: String?) : SettingsBlock
 
     companion object {
         fun parse(o: JSONObject): SettingsBlock? =
@@ -1402,6 +1404,7 @@ sealed interface SettingsBlock {
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
                 "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty(), o.str("title")?.takeIf { it.isNotEmpty() })
                 "actions" -> Actions(o.str("title").orEmpty(), o.arr("items").map(ActionItem::parse))
+                "section" -> Section(o.str("title").orEmpty(), o.str("icon").orEmpty(), o.str("lede"))
                 else -> null
             }
     }

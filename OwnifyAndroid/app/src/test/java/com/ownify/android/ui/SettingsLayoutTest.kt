@@ -35,9 +35,10 @@ import org.robolectric.annotation.Config
 
 /**
  * Instellingen as the server lists it (config/settings.php): Meldingen,
- * Thema & uiterlijk and Taal under App, then Voorkeuren with Eenheden, Eerste
- * dag van de week and Toegankelijkheid — each row still opening its own
- * screen — and Over de app without Gebouwd met, its Hulp without Contact.
+ * Thema & uiterlijk, Taal and Voorkeuren under App — Voorkeuren one row,
+ * opening one screen with Eenheden, Eerste dag van de week and
+ * Toegankelijkheid — and Over de app without Gebouwd met, its Hulp without
+ * Contact.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
@@ -79,34 +80,37 @@ class SettingsLayoutTest {
     private val SemanticsNodeInteraction.bottom get() = fetchSemanticsNode().let { it.positionInRoot.y + it.size.height }
 
     @Test
-    fun `the main page - App holds Meldingen, Thema & uiterlijk and Taal, then Voorkeuren the other three, in that order`() {
+    fun `the main page - App holds Meldingen, Thema & uiterlijk, Taal and Voorkeuren - no row of its own for the three in Voorkeuren`() {
         show()
 
         val order = listOf(
-            heading("APP"), row("Meldingen"), row("Thema & uiterlijk"), row("Taal"),
-            heading("VOORKEUREN"), row("Eenheden"), row("Eerste dag van de week"), row("Toegankelijkheid"),
+            heading("APP"), row("Meldingen"), row("Thema & uiterlijk"), row("Taal"), row("Voorkeuren"),
             heading("OVER"), row("Over de app")
         ).map { it.top }
         assertEquals("top to bottom", order.sorted(), order)
-        assertTrue("one page, no second level", none("Voorkeuren — "))
+        for (gone in listOf("Eenheden — ", "Eerste dag van de week — ", "Toegankelijkheid — ")) assertTrue(gone, none(gone))
+        assertTrue("no group of its own", none("VOORKEUREN"))
     }
 
     @Test
-    fun `each row in Voorkeuren opens its own screen, as before`() {
+    fun `Voorkeuren opens one screen with Eenheden, Eerste dag van de week and Toegankelijkheid, their content as before`() {
         show()
 
-        for ((label, lede) in listOf(
+        // As a screen reader opens it: the lower rows sit under the tab bar until scrolled.
+        row("Voorkeuren").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        val tops = listOf(
             "Eenheden" to "Hoe lengte, gewicht en afstand worden getoond.",
             "Eerste dag van de week" to "Bepaalt waar je week begint in overzichten en grafieken.",
             "Toegankelijkheid" to "De app volgt je systeeminstellingen waar dat kan."
-        )) {
-            // As a screen reader opens it: the lower rows sit under the tab bar until scrolled.
-            row(label).performSemanticsAction(SemanticsActions.OnClick)
-            compose.waitForIdle()
+        ).map { (title, lede) ->
+            heading(title).assertExists()
             text(lede).assertExists()
-            compose.runOnUiThread { shell.closeDetail() }
-            compose.waitForIdle()
+            heading(title).top
         }
+        assertEquals("in that order", tops.sorted(), tops)
+        // Each setting's own content.
+        for (kept in listOf("Metrisch", "Imperiaal", "Gewicht", "Maandag", "Zondag", "Minder beweging", "Grotere tekst")) text(kept).assertExists()
     }
 
     @Test
