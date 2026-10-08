@@ -31,15 +31,121 @@ if (!function_exists('hydrate_compass')) {
         $history = db_available() ? health_score_history($userId, $days) : [];
         $compass = score_compass($history, $copy, hydrate_compass_areas($data));
 
-        /* The 30 days of the direction (what an older app draws), and each
-           period's line, in the same 300 × 120 box as Gezondheid's trend. */
+        /* The 30 days of the direction, as an older app draws them, in the
+           300 × 120 box of Gezondheid's trend; and each period's line, drawn
+           as Gezondheid's Verloop draws its three. */
         $compass['trend']['chart'] = hydrate_compass_chart($compass['trend']['values']);
-
-        foreach ($compass['trend']['periods'] as $i => $period) {
-            $compass['trend']['periods'][$i]['chart'] = hydrate_compass_chart($period['values']);
-        }
+        $compass['trend']['periods'] = hydrate_compass_periods($compass['trend'], $copy);
 
         return $compass;
+    }
+
+    /**
+     * The Scorekompas's periods drawn as Gezondheid's Verloop is
+     * (hydrate_health_history()), its one line the Health Score: a point a
+     * day over 7 and 30 days, a week over 90, a month over a year (half a
+     * month while the history is younger than half a year), each where it
+     * falls in time, over the period's own height with its levels named, a
+     * monotone curve without the wash a 0–100 line had. Nothing else of a
+     * period changes — its sentences, direction and `since` are the
+     * Scorekompas's, worked out from its days as before.
+     *
+     * Each period carries its points (`points`): what a reading shows, in the
+     * line and in the panel under it — a day of the list as it is, or a week
+     * or month as one: its days, that its scores are their mean, the Health
+     * Score's and each category's mean (no parts). A period of days keeps its
+     * place in the list (`start`); a period of weeks or months points past
+     * its end, so an older app reads nothing there rather than a wrong day.
+     */
+    function hydrate_compass_periods(array $trend, array $copy): array
+    {
+        $h     = $copy['history'];
+        $days  = $trend['days'] ?? [];
+        $year  = $days === [] ? '' : substr((string) $days[count($days) - 1]['date'], 0, 4);
+        $ids   = array_map(static fn ($c) => (string) $c['id'], $trend['readout']['categories'] ?? []);
+        $half  = (int) ($h['half_days'] ?? 183);
+        $words = ['range' => $h['range'] ?? '%1$s – %2$s', 'mean' => $h['mean'] ?? [], 'none' => $h['empty_at'] ?? []];
+
+        $config = [];
+        foreach ($h['periods'] as $p) {
+            $config[(int) $p['days']] = $p;
+        }
+
+        /* A day's scores: the Health Score, then each category's. */
+        $read = static function (array $day) use ($ids): array {
+            $values = array_column($day['categories'] ?? [], 'value', 'id');
+            return [$day['value'] ?? null, ...array_map(static fn ($id) => $values[$id] ?? null, $ids)];
+        };
+
+        $periods = [];
+        foreach ($trend['periods'] ?? [] as $period) {
+            $length = (int) $period['days'];
+            $group  = (string) (($h['group'] ?? [90 => 'week', 365 => 'month'])[$length] ?? 'day');
+            if ($group === 'month' && count($days) < $half) {
+                $group = 'half';
+            }
+            if ($days === []) {
+                $group = 'day';
+            }
+
+            if ($group === 'day') {
+                $built  = hydrate_health_history_days($days, $period, $read, [], $year);
+                $points = array_map(
+                    static fn ($day) => $day + ['detail' => null],
+                    array_slice($days, (int) $period['start'], count($period['values'] ?? []))
+                );
+            } else {
+                $built  = hydrate_health_history_buckets(
+                    $days, $group, $length, $half, $read, $words, $year,
+                    (int) ($config[$length]['ticks'] ?? 4), (string) ($copy['trend']['today'] ?? '')
+                );
+                $points = array_map(static fn ($p) => [
+                    'date'       => $p['date'],
+                    'label'      => $p['label'],
+                    'detail'     => $p['detail'],
+                    'value'      => $p['values'][0],
+                    'band'       => score_colour_band($p['values'][0]),
+                    'state'      => $p['values'][0] === null ? 'none' : 'stored',
+                    'note'       => $p['note'],
+                    'categories' => array_map(static fn ($id, $k) => [
+                        'id'    => $id,
+                        'value' => $p['values'][$k + 1] ?? null,
+                        'band'  => score_colour_band($p['values'][$k + 1] ?? null),
+                        'parts' => null,
+                    ], $ids, array_keys($ids)),
+                ], $built['points']);
+                $period['axis']     = $built['axis'];
+                $period['start']    = count($days);
+                /* Every week and month a dot: each is a point of its own. */
+                $period['day_dots'] = true;
+                $direction          = $period['direction'] === null ? '' : ': ' . mb_strtolower((string) $period['direction']['label']);
+                $period['aria']     = sprintf(
+                    (string) ($h['aria_per'][$group] ?? $h['aria']),
+                    (string) ($config[$length]['spoken'] ?? $period['label']),
+                    $direction
+                );
+            }
+
+            $chart = hydrate_health_history_chart($built['x'], $built['points'], ['score' => 'health']);
+            $line  = $chart['lines'][0];
+
+            $periods[] = ['group' => $group] + $period + [
+                'points' => $points,
+            ];
+            $periods[count($periods) - 1]['chart'] = [
+                'width'    => $chart['width'],
+                'height'   => $chart['height'],
+                'has_data' => $chart['has_data'],
+                'line'     => $line['line'],
+                'area'     => [],
+                'at'       => array_map(static fn ($x, $y) => [$x, $y], $chart['x'], $line['y']),
+                'grid'     => $chart['grid'],
+                'low'      => $chart['low'],
+                'high'     => $chart['high'],
+            ];
+        }
+
+        return $periods;
     }
 
     /**
@@ -131,6 +237,10 @@ if (!function_exists('hydrate_compass')) {
             $tickAt[(int) $period['days']] = (int) ($period['ticks'] ?? 2);
         }
 
+        /* Each day's scores, in the categories' order; each line's colour. */
+        $read    = static fn (array $day): array => array_map(static fn ($id) => hydrate_health_history_score($day, $id), $ids);
+        $accents = array_combine($ids, array_map(static fn ($id) => (string) $areas[$id]['accent'], $ids));
+
         $groups = (array) ($copy['group'] ?? [90 => 'week', 365 => 'month']);
         $half   = (int) ($copy['half_days'] ?? 183);
 
@@ -144,13 +254,13 @@ if (!function_exists('hydrate_compass')) {
             }
 
             if ($group === 'day' || $days === []) {
-                $built = hydrate_health_history_days($days, $period, $ids, $copy, $year);
+                $built = hydrate_health_history_days($days, $period, $read, $copy, $year);
                 $group = 'day';
             } else {
-                $built = hydrate_health_history_buckets($days, $group, $length, $half, $ids, $copy, $year, $tickAt[$length] ?? 4, (string) ($compass['trend']['today'] ?? ''));
+                $built = hydrate_health_history_buckets($days, $group, $length, $half, $read, $copy, $year, $tickAt[$length] ?? 4, (string) ($compass['trend']['today'] ?? ''));
             }
 
-            $chart = hydrate_health_history_chart($built['x'], $built['points'], $ids, $areas);
+            $chart = hydrate_health_history_chart($built['x'], $built['points'], $accents);
             $per   = (string) ($copy['per'][$group] ?? '');
 
             $periods[] = [
@@ -184,7 +294,7 @@ if (!function_exists('hydrate_compass')) {
      * A period of days, as the Scorekompas has it: its window of its list,
      * a point a day, spread over the width as its own line is.
      */
-    function hydrate_health_history_days(array $days, array $period, array $ids, array $copy, string $year): array
+    function hydrate_health_history_days(array $days, array $period, callable $read, array $copy, string $year): array
     {
         $length = (int) $period['days'];
         $slice  = array_slice($days, (int) $period['start'], count($period['values'] ?? []));
@@ -200,7 +310,7 @@ if (!function_exists('hydrate_compass')) {
                 'detail'  => null,
                 'note'    => $day['note'] ?? null,
                 'carried' => ($day['state'] ?? '') === 'carried',
-                'values'  => array_map(static fn ($id) => hydrate_health_history_score($day, $id), $ids),
+                'values'  => $read($day),
             ];
         }
 
@@ -226,14 +336,14 @@ if (!function_exists('hydrate_compass')) {
      * A period of weeks or months: its days in time, today the last of them
      * (or, for `half`, the first day of the history the first), cut into
      * buckets — seven days back from today, twelve of the 365, or twelve of
-     * the half year — each the mean of every score a category had in it,
-     * rounded as a score is. A bucket is a point where it holds days of the
+     * the half year — each the mean of every score a line had in it ($read:
+     * a day's scores, a line each), rounded as a score is. A bucket is a point where it holds days of the
      * history; one that lies before the history began or after today is no
      * point at all, and the place it would have stays empty.
      *
      * @return array{x: float[], points: array[], axis: array, every: bool}
      */
-    function hydrate_health_history_buckets(array $days, string $group, int $length, int $half, array $ids, array $copy, string $year, int $ticks, string $today): array
+    function hydrate_health_history_buckets(array $days, string $group, int $length, int $half, callable $read, array $copy, string $year, int $ticks, string $today): array
     {
         $count = count($days);
         $last  = new DateTimeImmutable((string) $days[$count - 1]['date']);
@@ -268,17 +378,16 @@ if (!function_exists('hydrate_compass')) {
                 continue;
             }
 
-            $values = [];
-            foreach ($ids as $id) {
-                $scores = [];
-                for ($d = $from; $d <= $to; $d++) {
-                    $score = hydrate_health_history_score($days[$d - $offset], $id);
+            $scores = [];
+            for ($d = $from; $d <= $to; $d++) {
+                foreach ($read($days[$d - $offset]) as $k => $score) {
+                    $scores[$k] ??= [];
                     if ($score !== null) {
-                        $scores[] = $score;
+                        $scores[$k][] = $score;
                     }
                 }
-                $values[] = $scores === [] ? null : (int) round(array_sum($scores) / count($scores));
             }
+            $values = array_map(static fn ($s) => $s === [] ? null : (int) round(array_sum($s) / count($s)), array_values($scores));
 
             $none     = array_filter($values, static fn ($v) => $v !== null) === [];
             $x[]      = round(($from + $to) / 2 / ($span - 1) * 100, 2);
@@ -287,6 +396,7 @@ if (!function_exists('hydrate_compass')) {
                 'label'   => $from === $to
                     ? (string) $days[$from - $offset]['label']
                     : hydrate_health_history_range((string) $days[$from - $offset]['date'], (string) $days[$to - $offset]['date'], $year, $copy),
+                'date'    => (string) $days[$to - $offset]['date'],
                 'detail'  => $none ? null : ($copy['mean'][$group] ?? null),
                 'note'    => $none ? ($copy['none'][$group] ?? null) : null,
                 'carried' => false,
@@ -324,24 +434,28 @@ if (!function_exists('hydrate_compass')) {
     }
 
     /**
-     * The three lines in the 300 × 160 box, over one height for all three:
+     * The lines in the 300 × 160 box — Gezondheid's three, the Scorekompas's
+     * one — over one height for all of them:
      * the range their points span, widened to round tens and to at least 30
      * points, within 0–100 — and the round levels in it, named, as the grid.
      * A run of points without a gap is one monotone curve
      * (goal_chart_monotone()), a point on its own none: its dot is all.
      *
      * @param float[] $x       each point's place, in % from the left
-     * @param array[] $points  each point's `values`, in the order of $ids
+     * @param array[] $points  each point's `values`, a line each
+     * @param array<string,string> $accents  each line's id and colour, in the order of `values`;
+     *                                       a value past them is not drawn
      */
-    function hydrate_health_history_chart(array $x, array $points, array $ids, array $areas): array
+    function hydrate_health_history_chart(array $x, array $points, array $accents): array
     {
         $width  = 300.0;
         $height = 160.0;
         $padY   = 12.0;
 
+        $ids = array_keys($accents);
         $all = [];
         foreach ($points as $point) {
-            foreach ($point['values'] as $value) {
+            foreach (array_slice($point['values'], 0, count($ids)) as $value) {
                 if ($value !== null) {
                     $all[] = $value;
                 }
@@ -353,6 +467,7 @@ if (!function_exists('hydrate_compass')) {
 
         $lines = [];
         foreach ($ids as $k => $id) {
+            $id   = (string) $id;
             $y    = [];
             $runs = [];
             $run  = [];
@@ -369,7 +484,7 @@ if (!function_exists('hydrate_compass')) {
 
             $lines[] = [
                 'id'     => $id,
-                'accent' => (string) $areas[$id]['accent'],
+                'accent' => $accents[$id],
                 'line'   => array_values(array_map('goal_chart_monotone', array_filter($runs, static fn ($r) => count($r) > 1))),
                 'y'      => $y,
             ];

@@ -28,7 +28,9 @@
  *     its own line only
  *   - a week names every day, today by its date; a month is dated as the
  *     Scorekompas dates it; every point is a dot
- *   - the Scorekompas's own history is the same with or without it
+ *   - the Scorekompas's own history is the same with or without it; its
+ *     line is the Health Score drawn the same way — weeks, months, its own
+ *     height — and everything else of it as it was
  *   - a new account has nothing to draw and says so
  *
  * Accounts are named `hhtest_…` and removed at the end, with everything
@@ -364,6 +366,83 @@ $pages = pages($u);
 check('20 days in 90: three weeks at the right, where they fall — never stretched over the width',
     count(period($pages, '90')['points']) === 3 && period($pages, '90')['chart']['x'][0] > 75);
 
+section('The Scorekompas\'s line: the Health Score, drawn the same way');
+
+/** The Scorekompas as score_compass() leaves it: the sentences, before any line is drawn. */
+function bare_compass(int $userId): array
+{
+    global $compassCopy, $healthCopy;
+
+    $areas = $healthCopy['areas'];
+    $data  = ['scores' => ['contributors' => array_map(
+        static fn ($id) => ['area' => $id, 'label' => $areas[$id]['label'], 'accent' => $areas[$id]['accent']], array_keys($areas)
+    )], 'health' => ['areas' => $areas]];
+
+    return score_compass(health_score_history($userId, 365), $compassCopy, hydrate_compass_areas($data));
+}
+
+$u = account();
+for ($ago = 380; $ago >= 1; $ago--) {
+    snapshot($u, $ago, array_filter(array_map(static fn ($f) => ($v = $f($ago)) === null ? null : [$v, 0], $scores)));
+}
+$pages   = pages($u);
+$cp      = array_column($pages['compass']['trend']['periods'], null, 'key');
+$list    = $pages['compass']['trend']['days'];
+$bare    = array_column(bare_compass($u)['trend']['periods'], null, 'key');
+$verloop = array_column($pages['history']['periods'], null, 'key');
+
+check('a day, a day, a week, a month — as the Verloop has them',
+    array_column($cp, 'group') === ['day', 'day', 'week', 'month'] && array_column($cp, 'group') === array_column($verloop, 'group'));
+check('  the same places in time, and the same dates under them',
+    array_map(static fn ($p) => array_column($p['chart']['at'], 0), array_values($cp)) === array_column(array_column($verloop, 'chart'), 'x')
+    && array_column(array_slice($cp, 2), 'axis') === array_column(array_slice($verloop, 2), 'axis'));
+$ok = true;
+foreach ($cp['90']['points'] as $w => $point) {
+    [$from, $to] = [max(0, 89 - 7 * (12 - $w) - 6), 89 - 7 * (12 - $w)];
+    $values = array_values(array_filter(array_map(
+        static fn ($d) => $list[count($list) - 90 + $d]['value'] ?? null, range($from, $to)
+    ), static fn ($v) => $v !== null));
+    $mean = $values === [] ? null : (int) round(array_sum($values) / count($values));
+    if ($point['value'] !== $mean || score_at($cp['90'], $cp['90']['chart']['at'][$w][1]) !== $mean) { $ok = false; }
+    if (array_column($point['categories'], 'value') !== $verloop['90']['points'][$w]['values']) { $ok = false; }
+}
+check('  each week the mean of its days\' Health Scores, on the line; its categories the Verloop\'s means', $ok);
+check('  its reading: its days, that it is a mean, no parts',
+    $cp['90']['points'][12]['label'] === $verloop['90']['points'][12]['label'] && $cp['90']['points'][12]['detail'] === 'weekgemiddelde'
+    && array_filter(array_column($cp['90']['points'][12]['categories'], 'parts')) === []);
+check('  7 and 30 days: the Scorekompas\'s own days, as before',
+    $cp['30']['start'] === $bare['30']['start'] && array_column($cp['30']['points'], 'date') === array_column(array_slice($list, $bare['30']['start'], 30), 'date'));
+check('  weeks and months point past the list: an older app reads no day there',
+    $cp['90']['start'] === count($list) && $cp['365']['start'] === count($list));
+check('  the dots: every day of a week, every week and month — a month\'s days as before',
+    array_column($cp, 'day_dots') === [true, false, true, true]);
+check('  spoken per week and per month, with its direction',
+    str_starts_with($cp['90']['aria'], 'Je Gezondheidsscore per week, de afgelopen 90 dagen')
+    && str_starts_with($cp['365']['aria'], 'Je Gezondheidsscore per maand, het afgelopen jaar'));
+check('  no wash under a line that does not start at 0', array_merge(...array_column(array_column($cp, 'chart'), 'area')) === []);
+$ok = true;
+foreach ($cp as $p) {
+    foreach ($p['chart']['line'] as $path) { if (!within($path)) { $ok = false; } }
+}
+check('  a monotone curve: no peak that is not there', $ok);
+$same = true;
+foreach ($bare as $key => $p) {
+    foreach (['key', 'label', 'days', 'state', 'direction', 'text', 'empty', 'since', 'values'] as $field) {
+        if ($cp[$key][$field] !== $p[$field]) { $same = false; }
+    }
+}
+check('everything else as it was: sentences, direction, since, the score\'s values', $same);
+check('  the 30 days an older app draws: still 0–100, a point a day',
+    count($pages['compass']['trend']['chart']['at']) === count($pages['compass']['trend']['values']));
+
+$u = account();
+for ($ago = 20; $ago >= 1; $ago--) {
+    snapshot($u, $ago, ['sleep' => [70, 0], 'nutrition' => [72, 0]]);
+}
+$cp = array_column(pages($u)['compass']['trend']['periods'], null, 'key');
+check('20 days: three weeks at the right, and a half year from the first day',
+    count($cp['90']['points']) === 3 && $cp['90']['chart']['at'][0][0] > 75 && $cp['365']['group'] === 'half' && count($cp['365']['points']) === 2);
+
 section('The height: honest, and readable');
 
 check('73 and 80: 60–90, a rise of 7 is 23% of the height', hydrate_health_history_range_of([73, 80]) === [60, 90]);
@@ -374,7 +453,7 @@ check('near the top: never past 100', hydrate_health_history_range_of([97, 99]) 
 check('near the bottom: never under 0', hydrate_health_history_range_of([2, 3]) === [0, 30]);
 check('no score: 0–100', hydrate_health_history_range_of([]) === [0, 100]);
 
-$chart = hydrate_health_history_chart([0.0, 50.0, 100.0], [['values' => [73]], ['values' => [80]], ['values' => [76]]], ['sleep'], $healthCopy['areas']);
+$chart = hydrate_health_history_chart([0.0, 50.0, 100.0], [['values' => [73]], ['values' => [80]], ['values' => [76]]], ['sleep' => 'sleep']);
 $rise  = ($chart['lines'][0]['y'][0] - $chart['lines'][0]['y'][1]) / 100 * $chart['height'];
 check('  73 → 80 rises ' . round($rise) . ' of 160 in the box', $rise > 25 && $rise < 35);
 check('  its levels named, in tens: 70, 80', array_column($chart['grid'], 'label') === ['70', '80']);

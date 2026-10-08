@@ -358,7 +358,7 @@ score. Three days in a row without a new night or cijfer and Slaap or Voeding
 stops counting until new data comes in — left out, never a zero. The score on
 Overzicht is the average of the ones that exist, and there is no score at all
 rather than a `0`. Each day's score is stored once and kept as it was: the
-Scorekompas shows that history over 7 days, 30, 90 or a year
+Scorekompas shows that history over 7 days, 30, 90 (by week) or a year (by month), drawn as the Verloop below
 ([docs/SCORE-COMPASS.md](docs/SCORE-COMPASS.md)); an existing database needs
 `database/migrations/017-score-history.sql` for it. Every weight and curve
 is in `config/scoring.php`; the formulas are in

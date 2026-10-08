@@ -280,6 +280,43 @@
     -webkit-user-select: none;
 }
 
+/* The Scorekompas's line and Gezondheid's Verloop: 160 px tall, over the
+   period's own range, so a rise of a few points has room to show
+   (lib/hydrate-compass.php). Its levels are named in a gutter on its left,
+   the dates under it moved over with it. */
+.compass-history { --level-gutter: 26px; }
+.compass-history .compass-plot {
+    height: 160px;
+    margin-left: var(--level-gutter);
+}
+.compass-history .chart__axis { margin-left: var(--level-gutter); }
+.compass-history .chart__empty { top: 76px; }
+
+.compass-plot__level {
+    position: absolute;
+    left: calc(-1 * var(--level-gutter));
+    width: calc(var(--level-gutter) - 8px);
+    transform: translateY(-50%);
+    font-size: var(--fs-tiny);
+    line-height: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* A week's or month's point: beside its days — in the reading and the
+   panel — that its scores are their mean. */
+.compass-plot__detail {
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+.compass-plot__detail::before {
+    content: " · ";
+    color: var(--text-muted);
+}
+.compass-plot__detail[hidden] { display: none; }
+
 .compass-plot:focus { outline: none; }
 .compass-plot:focus-visible {
     outline: 2px solid var(--glass-border);

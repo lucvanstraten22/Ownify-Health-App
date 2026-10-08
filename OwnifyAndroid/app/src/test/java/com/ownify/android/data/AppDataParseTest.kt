@@ -235,7 +235,8 @@ class AppDataParseTest {
         assertNull("a week is too short for a direction", week.direction)
         assertEquals(listOf("De afgelopen 7 dagen lag je score tussen 68 en 73."), week.text)
         assertTrue("every day of a week is a dot", week.dayDots)
-        assertFalse(year.dayDots)
+        assertFalse(month.dayDots)
+        assertTrue("every week and month is a dot", quarter.dayDots && year.dayDots)
         assertEquals(listOf(0f, 33.33f, 66.67f, 100f), week.axis.map { it.x })
         assertEquals("Vandaag", week.axis.last().label)
         assertEquals(CompassDirection("down", "Dalend"), month.direction)
@@ -243,16 +244,28 @@ class AppDataParseTest {
         assertEquals("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.", month.text.first())
         assertEquals("Je geschiedenis begint op 23 augustus.", quarter.since)
         assertNull(month.since)
-        assertEquals("Je Gezondheidsscore per dag, het afgelopen jaar: stabiel", year.aria)
+        assertEquals("Je Gezondheidsscore per halve maand, het afgelopen jaar: stabiel", year.aria)
+        assertEquals("Je Gezondheidsscore per week, de afgelopen 90 dagen", quarter.aria.substringBefore(":"))
 
         // The days: only the real ones, from the first with a score — 45, not 365.
         assertEquals(45, t.days.size)
         assertEquals("2026-08-23", t.days.first().date)
         assertEquals("Vandaag", t.days.last().label)
         assertEquals("today", t.days.last().state)
-        assertEquals(listOf(38, 15, 0, 0), t.periods.map { it.start })
-        assertEquals(listOf(7, 30, 45, 45), t.periods.map { it.at.size })
+        // Drawn as Gezondheid's Verloop: a day, a day, a week, half a month (45 days of history),
+        // each with what its reading shows; weeks and months point past the days.
+        assertEquals(listOf("day", "day", "week", "half"), t.periods.map { it.group })
+        assertEquals(listOf(38, 15, 45, 45), t.periods.map { it.start })
+        assertEquals(listOf(7, 30, 7, 3), t.periods.map { it.at.size })
+        assertEquals(t.periods.map { it.at.size }, t.periods.map { it.points.size })
         assertEquals(100f, week.at.last().first)
+        assertEquals(t.days.takeLast(7), week.points)
+        val lastWeek = quarter.points.last()
+        assertEquals("30 sep – 6 okt", lastWeek.label)
+        assertEquals("weekgemiddelde", lastWeek.detail)
+        assertEquals(Math.round(t.days.takeLast(7).mapNotNull { it.value }.average()).toInt(), lastWeek.value)
+        assertTrue("a week's categories: their means, no parts", lastWeek.categories.all { it.parts == null })
+        assertTrue("its levels named", quarter.grid.isNotEmpty() && quarter.chart.area.isEmpty())
 
         // A day carried from an earlier one: its score, and why.
         val carried = t.days.first { it.date == "2026-09-12" }
@@ -263,7 +276,7 @@ class AppDataParseTest {
         val gap = t.days.indexOfFirst { it.date == "2026-09-14" }
         assertNull(t.days[gap].value)
         assertEquals("Geen score op deze dag.", t.days[gap].note)
-        assertNull(quarter.at[gap - quarter.start].second)
+        assertNull(month.at[gap - month.start].second)
 
         // A day read closely: each category with its band and its parts.
         val day = t.days.first { it.date == "2026-10-05" }
@@ -272,7 +285,7 @@ class AppDataParseTest {
         assertEquals("Dagcijfer 7,6", day.categories[1].parts)
         assertEquals("mid", day.categories[2].band)
         assertEquals("Gezondheidsscore", t.readout.score)
-        assertEquals("Tik of schuif over de lijn om een dag te bekijken.", t.readout.hint)
+        assertEquals("Tik of schuif over de lijn om je score te bekijken.", t.readout.hint)
         assertEquals(listOf(CompassName("sleep", "Slaap", "sleep"), CompassName("nutrition", "Voeding", "nutrition"), CompassName("training", "Sport", "training")), t.readout.categories)
 
         // 3 — compared with yourself: now is the last 168 hours.

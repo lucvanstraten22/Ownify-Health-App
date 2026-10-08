@@ -5,11 +5,12 @@
  * way.
  *
  * The periods are drawn server-side and health-trend.js switches between
- * them. Every day arrives already written in Dutch — its date, its scores,
- * its categories and their parts — so nothing here formats a number or a
- * date. This file only finds the day the reader means and shows it: its
- * date and score(s) above the chart, as a goal's Verloop does
- * (goal-chart.js), and on the Scorekompas the whole day in the panel below.
+ * them. Every point — a day, or a week or month as one — arrives already
+ * written in Dutch with its period: its date or days, its scores, its
+ * categories and their parts — so nothing here formats a number or a date.
+ * This file only finds the point the reader means and shows it: its date
+ * and score(s) above the chart, as a goal's Verloop does (goal-chart.js),
+ * and on the Scorekompas the whole point in the panel below.
  *
  *   touch   press and slide sideways along the chart; a vertical drag still
  *           scrolls the page. The reading above the chart stays a moment
@@ -53,28 +54,40 @@
     /* ======================================== the Scorekompas: one score */
 
     function compass(card) {
-        var panel = card.querySelector('[data-compass-day]');
-        var live  = card.querySelector('[data-compass-live]');
-        var days  = daysIn(card, '[data-compass-days]');
+        var panel  = card.querySelector('[data-compass-day]');
+        var live   = card.querySelector('[data-compass-live]');
+        var latest = card.querySelector('[data-compass-latest]');
 
-        if (!days.length || !panel) { return; }
+        try {
+            latest = latest ? JSON.parse(latest.textContent) : null;
+        } catch (error) {
+            latest = null;
+        }
+
+        if (!latest || !panel) { return; }
 
         /* ------------------------------------------------ the panel */
 
-        var dayDate  = panel.querySelector('[data-day-date]');
-        var dayScore = panel.querySelector('[data-day-score]');
-        var dayValue = panel.querySelector('[data-day-value]');
-        var dayNote  = panel.querySelector('[data-day-note]');
-        var shown    = days.length - 1;
+        var dayDate   = panel.querySelector('[data-day-date]');
+        var dayDetail = panel.querySelector('[data-day-detail]');
+        var dayScore  = panel.querySelector('[data-day-score]');
+        var dayValue  = panel.querySelector('[data-day-value]');
+        var dayNote   = panel.querySelector('[data-day-note]');
+        var shown     = latest;
 
-        /* textContent only, never innerHTML: these strings came from the
-           server, and nothing here needs markup. */
-        function fill(index) {
-            var day = days[index];
-            if (!day || index === shown) { return; }
+        /* A day, or a week or month as one: its date or days, that its scores
+           are their mean, its score and each category's. textContent only,
+           never innerHTML: these strings came from the server, and nothing
+           here needs markup. */
+        function fill(day) {
+            if (!day || day === shown) { return; }
 
-            shown = index;
+            shown = day;
             dayDate.textContent  = day.label;
+            if (dayDetail) {
+                dayDetail.textContent = day.detail || '';
+                dayDetail.hidden      = !day.detail;
+            }
             dayValue.textContent = text(day.value);
             band(dayScore, day.band);
             dayNote.textContent = day.note || '';
@@ -99,7 +112,8 @@
         var ranges = [];
 
         Array.prototype.forEach.call(card.querySelectorAll('.chart__range[data-range]'), function (range) {
-            var plot = range.querySelector('[data-compass-plot]');
+            var plot   = range.querySelector('[data-compass-plot]');
+            var points = daysIn(range, '[data-compass-points]');
             var at;
 
             try {
@@ -108,7 +122,7 @@
                 at = [];
             }
 
-            ranges.push(plot && at.length ? line(plot, at, parseInt(range.getAttribute('data-start'), 10) || 0) : null);
+            ranges.push(plot && at.length && points.length ? line(plot, at, points) : null);
         });
 
         /* After health-trend.js has switched the chart: the chip of the
@@ -123,30 +137,35 @@
             });
 
             ranges.forEach(function (r) { if (r) { r.hide(); } });
-            fill(days.length - 1);
+            fill(latest);
         });
 
-        /* One period's line: its date and score above it, a dot on it. */
-        function line(plot, at, start) {
+        /* One period's line: its date or days and score above it, a dot on it. */
+        function line(plot, at, points) {
             var cross = plot.querySelector('[data-compass-cross]');
             var focus = plot.querySelector('[data-compass-focus]');
             var tip   = plot.querySelector('[data-compass-tip]');
 
             if (!cross || !focus || !tip) { return null; }
 
-            var tipValue = tip.querySelector('[data-tip-value]');
-            var tipDate  = tip.querySelector('[data-tip-date]');
+            var tipValue  = tip.querySelector('[data-tip-value]');
+            var tipDate   = tip.querySelector('[data-tip-date]');
+            var tipDetail = tip.querySelector('[data-tip-detail]');
 
             return read(plot, at.map(function (point) { return point[0]; }), cross, tip, {
-                has: function (index) { return !!days[start + index]; },
+                has: function (index) { return !!points[index]; },
 
                 show: function (index, changed, announce) {
                     var point = at[index];
-                    var day   = days[start + index];
+                    var day   = points[index];
 
                     if (changed) {
                         tipDate.textContent  = day.label;
                         tipValue.textContent = text(day.value);
+                        if (tipDetail) {
+                            tipDetail.textContent = day.detail || '';
+                            tipDetail.hidden      = !day.detail;
+                        }
                     }
 
                     /* No score that day: no dot on a line that is not there. */
@@ -156,10 +175,11 @@
                         focus.style.top  = point[1] + '%';
                     }
 
-                    fill(start + index);
+                    fill(day);
 
                     if (announce && live) {
-                        live.textContent = day.label + ', ' + text(day.value) + (day.note ? '. ' + day.note : '');
+                        live.textContent = day.label + (day.detail ? ', ' + day.detail : '') + ', ' + text(day.value)
+                            + (day.note ? '. ' + day.note : '');
                     }
                 },
 

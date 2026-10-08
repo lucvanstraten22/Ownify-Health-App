@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -287,9 +286,9 @@ private fun TrendCard(trend: CompassTrend) {
 
     var selected by rememberSaveable { mutableStateOf(trend.defaultPeriod) }
     val period = trend.periods.firstOrNull { it.key == selected } ?: trend.periods.first()
-    // The day in the panel, in trend.days: today until another is read, and
-    // today again when the period changes.
-    var shown by remember(period.key, trend.days) { mutableIntStateOf(trend.days.lastIndex) }
+    // The day — or week or month — in the panel: today until another is read,
+    // and today again when the period changes.
+    var shown by remember(period.key, trend.days) { mutableStateOf(trend.days.lastOrNull()) }
 
     JCard(Modifier.fillMaxWidth().reveal()) {
         // .card__head: the icon and title, and the period's direction at the far end.
@@ -325,7 +324,7 @@ private fun TrendCard(trend: CompassTrend) {
             ) { shown = it }
         }
 
-        trend.days.getOrNull(shown)?.let { day ->
+        shown?.let { day ->
             DayPanel(day, trend.readout)
             T(
                 trend.readout.hint,
@@ -339,17 +338,24 @@ private fun TrendCard(trend: CompassTrend) {
 
 /**
  * One period's line (`.compass-plot`): the Health Score's line in the health
- * green, with its wash — a dot for every day of a week or for a day on its
- * own, a ring where an earlier score was carried — and the dates under it,
- * read with a finger as the shared chart reads any history ([HistoryPlot]):
- * the day's date and score above the line, and [onRead] puts the whole day
- * in the panel.
+ * green, drawn as Gezondheid's Verloop is — a point a day, week or month,
+ * each where it falls in time, 160 dp tall over the period's own range with
+ * its levels named — a dot for every day of a week, every week and month,
+ * or for a day on its own, a ring where an earlier score was carried — and
+ * the dates under it, read with a finger as the shared chart reads any
+ * history ([HistoryPlot]): the date or days and score above the line, and
+ * [onRead] puts the whole point in the panel. From a server from before the
+ * points: its days in the trend's list, as they were drawn.
  */
 @Composable
-private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier: Modifier, onRead: (Int) -> Unit) {
+private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier: Modifier, onRead: (CompassDay) -> Unit) {
     val color = Ownify.Health
     val line = remember(period, color) { PlotLine(color, period.chart.line, period.chart.area, period.at.map { it.second }) }
     val xs = remember(period) { period.at.map { it.first } }
+    val points: List<CompassDay?> = remember(period, days) {
+        period.points.ifEmpty { xs.indices.map { days.getOrNull(period.start + it) } }
+    }
+    val levels = period.grid.ifEmpty { null }
     HistoryPlot(
         key = period.key,
         viewBox = Size(period.width, period.height),
@@ -358,21 +364,29 @@ private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier:
         filled = period.chart.hasData,
         dayDots = period.dayDots,
         small = false,
-        carried = { i -> days.getOrNull(period.start + i)?.state == "carried" },
+        carried = { i -> points.getOrNull(i)?.state == "carried" },
         axis = period.axis,
         centredAxis = false,
         aria = period.aria,
-        readable = { i -> days.getOrNull(period.start + i) != null },
+        readable = { i -> points.getOrNull(i) != null },
         describe = { i ->
-            days.getOrNull(period.start + i)?.let { "${it.label}, ${it.value ?: "—"}" + (it.note?.let { n -> ". $n" } ?: "") }.orEmpty()
+            points.getOrNull(i)?.let {
+                it.label + (it.detail?.let { d -> ", $d" } ?: "") + ", ${it.value ?: "—"}" + (it.note?.let { n -> ". $n" } ?: "")
+            }.orEmpty()
         },
         empty = period.empty,
         modifier = modifier,
-        onRead = { onRead(period.start + it) }
+        onRead = { i -> points.getOrNull(i)?.let(onRead) },
+        height = if (levels != null) 160.dp else 100.dp,
+        levels = levels,
+        gutter = if (levels != null) 26.dp else 0.dp
     ) { i ->
-        // .goal-chart__tip: the day's date and score.
-        val day = days[period.start + i]
-        T(day.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
+        // .goal-chart__tip: the date — or a week's or month's days and that its score is their mean — and the score.
+        val day = points[i]!!
+        Row {
+            T(day.label + if (day.detail != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
+            day.detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+        }
         T(day.value?.toString() ?: "—", OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
     }
 }
@@ -388,7 +402,14 @@ private fun DayPanel(day: CompassDay, readout: CompassReadout) {
     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4).quietBox()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
-                T(day.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em))
+                // A week's or month's days, and beside them that its scores are their mean.
+                Row {
+                    T(day.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em))
+                    day.detail?.let {
+                        T(" · ", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextMuted, tracking = (-0.01f).em))
+                        T(it, OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary, tracking = (-0.01f).em))
+                    }
+                }
                 T(readout.score, JStyle.Tiny, Modifier.padding(top = 2.dp))
             }
             ScoreValue(day.value, day.band)

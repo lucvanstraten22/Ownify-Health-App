@@ -94,12 +94,21 @@ list.
 
 The Health Score's history over a period the person picks — **7 dagen**
 (where it opens: the score's own week), **30 dagen**, **90 dagen** or **1
-jaar** — in the range switch's Liquid Glass capsule, as a line (0–100, the
-same box and draw-on as Gezondheid's trend) with sentences. The line adapts
-to the period: in a week every day is a dot (a ring for a day whose score
-was carried), in longer periods only a day on its own is; the axis names 4
-dates in a week, 3 in 30 days, 4 in 90 and 5 in a year, each under its own
-day. A day without a score is a gap in the line, never a drop to zero.
+jaar** — in the range switch's Liquid Glass capsule, as a line with
+sentences, drawn as Gezondheid's Verloop draws its three
+(`hydrate_compass_periods()` in `lib/hydrate-compass.php`). 7 and 30 days have
+a point a day; 90 days a point a week, the mean of its days' Health Scores,
+the last ending today; a year twelve months over the last 365 days, or —
+while the history is younger than 183 days — twelve half months from its
+first day, filled as far as today. Weeks and months stand where they fall in
+time, never stretched over the width. The line is 160 px / dp tall over the
+period's own range in round tens (at least 30 points), its levels named on
+the left, a monotone curve without a wash. In a week every day is a dot (a
+ring for a day whose score was carried), and so is every week and month; in
+30 days only a day on its own is. The axis names 4 dates in a week, 3 in 30
+days, 4 in 90 and 5 in a year. A point without a score is a gap in the line,
+never a drop to zero. The sentences and direction are worked out from the
+days as before; the 30 days an older app draws (`trend.chart`) stay 0–100.
 
 **Reading a day.** A finger on the line (press and slide; a vertical drag
 still scrolls), a cursor or the arrow keys pick the nearest day: its date
@@ -107,7 +116,10 @@ and score appear above the line as on a goal's Verloop, and the panel under
 the chart shows the whole day — its Health Score, Slaap, Voeding and Sport
 with their bands and their parts ("Slaapduur 72 · Regelmaat 60 · Kwaliteit
 70", "Dagcijfer 7,7") — and, for a carried day, that the score of an
-earlier day still held; for a day without one, that it had none. The panel
+earlier day still held; for a day without one, that it had none. A week or
+month reads as one: its days with "weekgemiddelde" or "maandgemiddelde"
+beside them, the mean Health Score and each category's mean, without parts.
+The panel
 shows today until a day is read, and today again when the period changes.
 TalkBack steps through the days with the node's actions (Vorige dag,
 Volgende dag).
@@ -125,7 +137,7 @@ over the width. Its height is the period's own range in round tens, at least
 (`goal_chart_monotone()`). Its reading shows the date or days and each
 category's score, above the lines; there is no panel. A week names every
 date, under its own dots, and every point is a dot. The Scorekompas's own
-line keeps the fixed 0–100 and a point a day in every period. The chart and its reading are one piece of code for both:
+line is drawn the same way, its one line the Health Score. The chart and its reading are one piece of code for both:
 `compass-history.js` on the website, `HistoryPlot` (`ui/design/HistoryChart.kt`)
 in the app.
 

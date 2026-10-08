@@ -8,11 +8,16 @@
  *   the switch    the four periods, the score's own week first
  *   a period      its direction (from 30 days), its sentences, where the
  *                 history begins when it is younger than the period, and
- *                 its line — a gap where a day had no score, never a 0
+ *                 its line, drawn as Gezondheid's Verloop draws its three
+ *                 (lib/hydrate-compass.php): a point a day over 7 and 30
+ *                 days, a week over 90, a month over a year, each where it
+ *                 falls in time, over the period's own height with its
+ *                 levels named — a gap where it had no score, never a 0
  *   the reading   a finger, a cursor or the arrow keys on the line show a
- *                 day: its date and score above the line (as on a goal's
- *                 Verloop), and below it the day's categories and their
- *                 parts — or that an earlier score still held that day
+ *                 point: its date or days and score above the line (as on
+ *                 a goal's Verloop), and below it its categories and their
+ *                 parts — or that an earlier score still held that day; a
+ *                 week or month as its days' means
  *
  * Every period is drawn here at once and one is shown, so switching is a
  * class toggle (health-trend.js, as on Gezondheid); compass-history.js does
@@ -23,11 +28,10 @@ declare(strict_types=1);
 
 $trend   = $data['trend'];
 $periods = $trend['periods'];
-$days    = $trend['days'];
 $readout = $trend['readout'];
 $default = (string) $trend['default'];
 $names   = array_column($readout['categories'], null, 'id');
-$latest  = $days === [] ? null : $days[count($days) - 1];
+$latest  = $trend['days'] === [] ? null : $trend['days'][count($trend['days']) - 1];
 $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !== [];
 ?>
 <section class="card card--trend reveal compass-card compass-history <?= $filled ? 'is-filled' : 'is-empty' ?>"
@@ -62,7 +66,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
             $at    = $chart['at'];
             ?>
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
-                 data-start="<?= (int) $period['start'] ?>" data-at="<?= e((string) json_encode($at)) ?>">
+                 data-at="<?= e((string) json_encode($at)) ?>">
 
                 <?php if ($period['text'] !== [] || $period['since'] !== null): ?>
                     <div class="compass-text compass-history__text">
@@ -79,12 +83,18 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
                      data-compass-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="compass-history-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
+                    <?php /* The grid's levels, named: the height is the period's own,
+                             not 0–100 — in the gutter to its left. */ ?>
+                    <?php foreach ($chart['grid'] as $level): ?>
+                        <span class="compass-plot__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
+                    <?php endforeach; ?>
+
                     <svg class="chart__svg compass-plot__svg" viewBox="0 0 <?= (int) $chart['width'] ?> <?= (int) $chart['height'] ?>"
                          preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                        <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
+                        <?php foreach ($chart['grid'] as $level): ?>
                             <line class="chart__grid" x1="0" x2="<?= (int) $chart['width'] ?>"
-                                  y1="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"
-                                  y2="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"/>
+                                  y1="<?= round($level['y'] / 100 * $chart['height'], 1) ?>"
+                                  y2="<?= round($level['y'] / 100 * $chart['height'], 1) ?>"/>
                         <?php endforeach; ?>
 
                         <g class="chart__series">
@@ -99,12 +109,13 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
 
                     <?php /* Dots are HTML, not SVG circles: the SVG stretches to the
                              card, and a stretched circle is an ellipse. Every day in
-                             a week; otherwise only a day with no neighbour to draw a
-                             line to. A day whose score was carried is a ring. */ ?>
+                             a week, every week and month; otherwise only a day with
+                             no neighbour to draw a line to. A day whose score was
+                             carried is a ring. */ ?>
                     <?php foreach ($at as $i => [$x, $y]):
                         $alone = ($at[$i - 1][1] ?? null) === null && ($at[$i + 1][1] ?? null) === null;
                         if ($y === null || (!$period['day_dots'] && !$alone)) { continue; }
-                        $state = (string) ($days[$period['start'] + $i]['state'] ?? '');
+                        $state = (string) ($period['points'][$i]['state'] ?? '');
                         ?>
                         <span class="compass-plot__dot<?= $state === 'carried' ? ' is-carried' : '' ?>" aria-hidden="true"
                               style="left: <?= e((string) $x) ?>%; top: <?= e((string) $y) ?>%;"></span>
@@ -115,7 +126,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
                         <span class="goal-chart__cross" data-compass-cross aria-hidden="true" hidden></span>
                         <span class="goal-chart__focus" data-compass-focus aria-hidden="true" hidden></span>
                         <div class="goal-chart__tip" data-compass-tip aria-hidden="true" hidden>
-                            <span class="goal-chart__tip-date" data-tip-date></span>
+                            <span class="goal-chart__tip-date"><span data-tip-date></span><span class="compass-plot__detail" data-tip-detail hidden></span></span>
                             <strong class="goal-chart__tip-value" data-tip-value></strong>
                         </div>
                     <?php endif; ?>
@@ -129,6 +140,13 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
 
                 <?php if (!$chart['has_data']): ?>
                     <p class="chart__empty"><?= e($period['empty']) ?></p>
+                <?php else: ?>
+                    <?php /* Each point as the reading shows it: a day of the list, or a
+                             week or month as one (its days, its means). */ ?>
+                    <script type="application/json" data-compass-points><?= json_encode(
+                        $period['points'],
+                        JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                    ) ?></script>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
@@ -139,7 +157,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
         <div class="compass-day" data-compass-day>
             <div class="compass-day__head">
                 <span class="compass-day__text">
-                    <span class="compass-day__date" data-day-date><?= e($latest['label']) ?></span>
+                    <span class="compass-day__date"><span data-day-date><?= e($latest['label']) ?></span><span class="compass-plot__detail" data-day-detail hidden></span></span>
                     <span class="compass-day__label"><?= e($readout['score']) ?></span>
                 </span>
                 <span class="compass-score" data-day-score data-score="<?= e((string) ($latest['band'] ?? '')) ?>">
@@ -168,8 +186,9 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
         <p class="compass-history__hint" id="compass-history-hint"><?= e($readout['hint']) ?></p>
         <p class="sr-only" aria-live="polite" data-compass-live></p>
 
-        <script type="application/json" data-compass-days><?= json_encode(
-            $days,
+        <?php /* Today, which the panel goes back to when the period changes. */ ?>
+        <script type="application/json" data-compass-latest><?= json_encode(
+            $latest + ['detail' => null],
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ) ?></script>
     <?php endif; ?>

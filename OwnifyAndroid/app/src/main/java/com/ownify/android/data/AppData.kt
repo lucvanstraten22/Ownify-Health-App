@@ -447,9 +447,13 @@ data class CompassName(val id: String, val label: String, val accent: String)
 
 /**
  * One period: its sentences and direction, [since] when the history is
- * younger than the period, and its line. [start] is where its first day is
- * in the trend's days; [at] each of its days' place on the line in % —
- * x left to right, y top to bottom, null for a day without a score.
+ * younger than the period, and its line, drawn as Gezondheid's Verloop
+ * draws its three: what a point is ([group]: `day`, `week`, `month` or
+ * `half`), [points] what a reading shows of each — a day of the trend's
+ * days, or a week or month as one ([CompassDay.detail]) — [at] each point's
+ * place on the line in % (x left to right, y top to bottom, null without a
+ * score) and [grid] the levels named on it. From a server from before the
+ * points, [start] is where its first day is in the trend's days.
  */
 data class CompassPeriod(
     val key: String,
@@ -466,7 +470,10 @@ data class CompassPeriod(
     val chart: TrendChart,
     val width: Float,
     val height: Float,
-    val at: List<Pair<Float, Float?>>
+    val at: List<Pair<Float, Float?>>,
+    val group: String = "day",
+    val points: List<CompassDay> = emptyList(),
+    val grid: List<HistoryLevel> = emptyList()
 ) {
     companion object {
         fun parse(o: JSONObject): CompassPeriod? {
@@ -492,7 +499,10 @@ data class CompassPeriod(
                     at.optJSONArray(i)?.let { p ->
                         p.optDouble(0).toFloat() to (if (p.isNull(1)) null else p.optDouble(1).toFloat())
                     }
-                }
+                },
+                group = o.str("group") ?: "day",
+                points = o.arr("points").map(CompassDay::parse),
+                grid = chart.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
             )
         }
     }
@@ -504,7 +514,9 @@ data class CompassTick(val label: String, val x: Float)
 /**
  * One recorded day: its [label] ("5 oktober", "Vandaag"), its Health Score
  * and band, [state] `stored`, `carried`, `none` or `today`, and [note] —
- * that an earlier score still held, or that there was none.
+ * that an earlier score still held, or that there was none. A week or a
+ * month of a period's line reads as one: its days as [label], [detail] that
+ * its scores are their mean, and no parts.
  */
 data class CompassDay(
     val date: String,
@@ -513,14 +525,16 @@ data class CompassDay(
     val band: String?,
     val state: String,
     val note: String?,
-    val categories: List<CompassDayCategory>
+    val categories: List<CompassDayCategory>,
+    val detail: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject): CompassDay? {
             val date = o.str("date") ?: return null
             return CompassDay(
                 date, o.str("label").orEmpty(), o.int("value"), o.str("band"), o.str("state") ?: "stored", o.str("note"),
-                o.arr("categories").map { CompassDayCategory(it.str("id") ?: return@map null, it.int("value"), it.str("band"), it.str("parts")) }
+                o.arr("categories").map { CompassDayCategory(it.str("id") ?: return@map null, it.int("value"), it.str("band"), it.str("parts")) },
+                o.str("detail")
             )
         }
     }

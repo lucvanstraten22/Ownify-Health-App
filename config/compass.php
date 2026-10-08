@@ -194,7 +194,24 @@ return [
         'score'     => 'Gezondheidsscore',
         'carried'   => 'Geen nieuwe gegevens: de score van %s gold nog.',
         'none'      => 'Geen score op deze dag.',
-        'hint'      => 'Tik of schuif over de lijn om een dag te bekijken.',
+        'hint'      => 'Tik of schuif over de lijn om je score te bekijken.',
+        /* What a point of the line stands for, by a period's days: a day
+           where not named — 90 days a week, a year a month; a history
+           younger than `half_days` shows its year as twelve half months
+           from its first day (lib/hydrate-compass.php, as Gezondheid's
+           Verloop). Its spoken label then, %1$s the period, %2$s its
+           direction; its days, "12 – 18 sep"; beside them, that its score is
+           their mean; or that it had none. */
+        'group'     => [90 => 'week', 365 => 'month'],
+        'half_days' => 183,
+        'aria_per'  => [
+            'week'  => 'Je Gezondheidsscore per week, %1$s%2$s',
+            'month' => 'Je Gezondheidsscore per maand, %1$s%2$s',
+            'half'  => 'Je Gezondheidsscore per halve maand, %1$s%2$s',
+        ],
+        'range'     => '%1$s – %2$s',
+        'mean'      => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde', 'half' => 'gemiddelde'],
+        'empty_at'  => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.', 'half' => 'Geen score in deze halve maand.'],
     ],
 
     /* ------------------------------------------------------------------

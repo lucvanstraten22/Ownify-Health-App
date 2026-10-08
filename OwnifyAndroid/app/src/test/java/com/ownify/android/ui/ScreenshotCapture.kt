@@ -347,9 +347,10 @@ class ScreenshotCapture {
 
     @Test fun scoreCompass() = detail("overview", Detail.ScoreCompass, "compass", 700, 1400, 2100)
 
-    /** A history card in each of its periods: the card brought into view, then 7 dagen … 1 jaar. */
+    /** A history card in each of its periods: the card brought into view — down to its hint — then 7 dagen … 1 jaar. */
     private fun periods(name: String, title: String) {
         compose.onNode(hasText(title)).performScrollTo()
+        compose.onAllNodes(hasText("Tik of schuif over de lijn", substring = true)).onLast().performScrollTo()
         settle()
         for (period in listOf("7 dagen", "30 dagen", "90 dagen", "1 jaar")) {
             compose.onAllNodes(hasText(period) and hasClickAction()).onLast().performClick()

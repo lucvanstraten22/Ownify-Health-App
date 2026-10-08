@@ -71,7 +71,7 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
                              not 0–100 — in the gutter to its left. HTML, as the
                              dots are, so the text never stretches with the SVG. */ ?>
                     <?php foreach ($chart['grid'] as $level): ?>
-                        <span class="health-history__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
+                        <span class="compass-plot__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
                     <?php endforeach; ?>
 
                     <svg class="chart__svg compass-plot__svg" viewBox="0 0 <?= (int) $chart['width'] ?> <?= (int) $chart['height'] ?>"
@@ -120,7 +120,7 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
                                   data-accent="<?= e($category['accent']) ?>" aria-hidden="true" hidden></span>
                         <?php endforeach; ?>
                         <div class="goal-chart__tip health-history__tip" data-reading-tip aria-hidden="true" hidden>
-                            <span class="goal-chart__tip-date"><span data-tip-date></span><span class="health-history__tip-detail" data-tip-detail hidden></span></span>
+                            <span class="goal-chart__tip-date"><span data-tip-date></span><span class="compass-plot__detail" data-tip-detail hidden></span></span>
                             <span class="health-history__tip-rows">
                                 <?php foreach ($categories as $category): ?>
                                     <span class="health-history__tip-row" data-tip-row="<?= e($category['id']) ?>"

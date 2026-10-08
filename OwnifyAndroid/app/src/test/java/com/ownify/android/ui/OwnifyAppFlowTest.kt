@@ -587,14 +587,20 @@ class OwnifyAppFlowTest {
         // What is changing: the score's own week first, today read closely under it.
         compose.onNode(hasText("De afgelopen 7 dagen lag je score tussen 68 en 73.")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Dagcijfer 7,3")).performScrollTo().assertIsDisplayed()
-        compose.onNode(hasText("Tik of schuif over de lijn om een dag te bekijken.")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Tik of schuif over de lijn om je score te bekijken.")).performScrollTo().assertIsDisplayed()
         // Another period: its own sentences, the same score's history.
         compose.onNode(hasText("30 dagen") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("1 jaar") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Je geschiedenis begint op 23 augustus.")).performScrollTo().assertIsDisplayed()
-        // A screen reader steps through the days as the arrow keys do: the panel follows.
-        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per dag, het afgelopen jaar", substring = true), "Vorige dag") }
+        // A screen reader steps through the points as the arrow keys do: the panel follows — a
+        // half month of the year as its days' mean, without parts.
+        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per halve maand, het afgelopen jaar", substring = true), "Vorige dag") }
+        compose.onNode(hasText("7 – 22 sep")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("gemiddelde")).assertIsDisplayed()
+        // A day of the week: its categories and their parts.
+        compose.onNode(hasText("7 dagen") and hasClickAction()).performScrollTo().performClick()
+        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per dag, de afgelopen 7 dagen", substring = true), "Vorige dag") }
         compose.onNode(hasText("5 oktober")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Slaapduur 68 · Regelmaat 57 · Kwaliteit 66")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("−1 ten opzichte van de 30 dagen daarvoor")).performScrollTo().assertIsDisplayed()
