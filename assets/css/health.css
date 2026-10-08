@@ -224,6 +224,31 @@
     line-height: 1.45;
 }
 
+/* Taller than the Scorekompas's line: its height is the period's own range,
+   so a rise of a few points has room to show (lib/hydrate-compass.php). Its
+   levels are named in a gutter on its left, the dates under it moved over
+   with it. */
+.health-history { --level-gutter: 26px; }
+.health-history .compass-plot {
+    height: 160px;
+    margin-left: var(--level-gutter);
+}
+.health-history .chart__axis { margin-left: var(--level-gutter); }
+.health-history .chart__empty { top: 76px; }
+
+.health-history__level {
+    position: absolute;
+    left: calc(-1 * var(--level-gutter));
+    width: calc(var(--level-gutter) - 8px);
+    transform: translateY(-50%);
+    font-size: var(--fs-tiny);
+    line-height: 1;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
 /* A dot for every day of a month: the Scorekompas's dot, smaller, so the
    days stay apart. */
 .health-history .compass-plot__dot.is-small {
@@ -245,6 +270,15 @@
 
 /* The reading: the date, then each category that had a score that day —
    its line's colour as a short stroke, its name, its score. */
+/* A week's or month's point: beside its days, that its scores are their mean. */
+.health-history__tip-detail { color: var(--text-secondary); }
+.health-history__tip-detail::before {
+    content: " · ";
+    color: var(--text-muted);
+}
+
+.health-history__tip-detail[hidden] { display: none; }
+
 .health-history__tip-rows {
     display: grid;
     grid-template-columns: auto auto auto;

@@ -1,21 +1,24 @@
 <?php
 /**
- * Gezondheid's Verloop — Slaap, Voeding and Training as they were recorded
- * each day, over 7 days, 30 days, 90 days or a year: the Scorekompas's
- * history (components/compass-history.php), three lines instead of its one
- * Health Score (lib/hydrate-compass.php, hydrate_health_history()).
+ * Gezondheid's Verloop — Slaap, Voeding and Training as they were recorded,
+ * over 7 days, 30 days, 90 days or a year: the Scorekompas's history
+ * (components/compass-history.php), three lines instead of its one Health
+ * Score (lib/hydrate-compass.php, hydrate_health_history()).
  *
  *   the switch    the four periods, the week first — at the head's far end
  *                 where it fits, on a row of its own on a phone
  *   a period      the three lines in the categories' own colours — a gap
- *                 where a category had no score, never a 0 — a dot for
- *                 every day where the days can be told apart (a ring where
- *                 an earlier score was carried), and the dates under them:
- *                 every day of a week, each under its own dots
+ *                 where a category had no score, never a 0 — a point a day
+ *                 over 7 and 30 days, a week over 90, a month over a year
+ *                 (a half month while the history is younger than half a
+ *                 year), each where it falls in time; a dot for every point
+ *                 (a ring where a day's earlier score was carried); the
+ *                 levels of its own height on the grid, and the dates under
+ *                 it: every day of a week, each under its own dots
  *   the reading   a finger, a cursor or the arrow keys on the chart show a
- *                 day: its date and each category's score that day, above
- *                 the chart (compass-history.js, as the Scorekompas's line
- *                 is read)
+ *                 point: its date or its days and each category's score,
+ *                 above the chart (compass-history.js, as the Scorekompas's
+ *                 line is read)
  *
  * Every period is drawn here at once and one is shown, so switching is a
  * class toggle (health-trend.js). Every word and number is the server's,
@@ -26,7 +29,6 @@ declare(strict_types=1);
 $history    = $data['health']['history'];
 $periods    = $history['periods'];
 $categories = $history['categories'];
-$days       = $data['compass']['trend']['days'] ?? [];    // the Scorekompas's list: `start` points into it
 $default    = (string) $history['default'];
 $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !== [];
 ?>
@@ -55,8 +57,7 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
             $y     = array_column($chart['lines'], 'y', 'id');
             ?>
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
-                 data-start="<?= (int) $period['start'] ?>" data-x="<?= e((string) json_encode($x)) ?>"
-                 data-y="<?= e((string) json_encode((object) $y)) ?>">
+                 data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $y)) ?>">
 
                 <?php if ($period['since'] !== null): ?>
                     <p class="compass-history__since health-history__since"><?= e($period['since']) ?></p>
@@ -66,12 +67,19 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
                      data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="health-history-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
+                    <?php /* The grid's levels, named: the height is the period's own,
+                             not 0–100 — in the gutter to its left. HTML, as the
+                             dots are, so the text never stretches with the SVG. */ ?>
+                    <?php foreach ($chart['grid'] as $level): ?>
+                        <span class="health-history__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
+                    <?php endforeach; ?>
+
                     <svg class="chart__svg compass-plot__svg" viewBox="0 0 <?= (int) $chart['width'] ?> <?= (int) $chart['height'] ?>"
                          preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                        <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
+                        <?php foreach ($chart['grid'] as $level): ?>
                             <line class="chart__grid" x1="0" x2="<?= (int) $chart['width'] ?>"
-                                  y1="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"
-                                  y2="<?= round(12 + $line * ($chart['height'] - 24), 1) ?>"/>
+                                  y1="<?= round($level['y'] / 100 * $chart['height'], 1) ?>"
+                                  y2="<?= round($level['y'] / 100 * $chart['height'], 1) ?>"/>
                         <?php endforeach; ?>
 
                         <?php /* Lines only: one wash reads as depth, three stack into a block. */ ?>
@@ -85,19 +93,20 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
                     </svg>
 
                     <?php /* Dots are HTML, not SVG circles: the SVG stretches to the card,
-                             and a stretched circle is an ellipse. Every day where the
-                             days can be told apart; otherwise only a day with no
-                             neighbour to draw a line to. A day whose scores were
-                             carried from an earlier one is a ring. */ ?>
+                             and a stretched circle is an ellipse. Every point where they
+                             can be told apart — smaller for the days of a month;
+                             otherwise only a point with no neighbour to draw a line to.
+                             A day whose scores were carried from an earlier one is a
+                             ring. */ ?>
+                    <?php $small = $period['dots'] === 'every' && $period['group'] === 'day' && count($x) > 7; ?>
                     <?php foreach ($chart['lines'] as $series):
                         $ys = $series['y'];
                         foreach ($ys as $i => $top):
                             $alone = ($ys[$i - 1] ?? null) === null && ($ys[$i + 1] ?? null) === null;
                             if ($top === null || ($period['dots'] !== 'every' && !$alone)) { continue; }
-                            $state = (string) ($days[$period['start'] + $i]['state'] ?? '');
-                            $small = $period['dots'] === 'every' && count($ys) > 7;
+                            $carried = !empty($period['points'][$i]['carried']);
                             ?>
-                            <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $state === 'carried' ? ' is-carried' : '' ?>"
+                            <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $carried ? ' is-carried' : '' ?>"
                                   data-accent="<?= e($series['accent']) ?>" aria-hidden="true"
                                   style="left: <?= e((string) $x[$i]) ?>%; top: <?= e((string) $top) ?>%;"></span>
                         <?php endforeach; ?>
@@ -111,7 +120,7 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
                                   data-accent="<?= e($category['accent']) ?>" aria-hidden="true" hidden></span>
                         <?php endforeach; ?>
                         <div class="goal-chart__tip health-history__tip" data-reading-tip aria-hidden="true" hidden>
-                            <span class="goal-chart__tip-date" data-tip-date></span>
+                            <span class="goal-chart__tip-date"><span data-tip-date></span><span class="health-history__tip-detail" data-tip-detail hidden></span></span>
                             <span class="health-history__tip-rows">
                                 <?php foreach ($categories as $category): ?>
                                     <span class="health-history__tip-row" data-tip-row="<?= e($category['id']) ?>"
@@ -135,6 +144,14 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
 
                 <?php if (!$chart['has_data']): ?>
                     <p class="chart__empty"><?= e($history['empty']) ?></p>
+                <?php else: ?>
+                    <?php /* Each point as the reading needs it: [its date or days, what
+                             its scores are (a week's mean), its note, and each
+                             category's score in the order above]. */ ?>
+                    <script type="application/json" data-history-points><?= json_encode(
+                        array_map(static fn ($p) => array_merge([$p['label'], $p['detail'], $p['note']], $p['values']), $period['points']),
+                        JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+                    ) ?></script>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
@@ -152,15 +169,5 @@ $filled     = array_filter($periods, static fn ($p) => $p['chart']['has_data']) 
     <?php if ($filled): ?>
         <p class="compass-history__hint" id="health-history-hint"><?= e($history['hint']) ?></p>
         <p class="sr-only" aria-live="polite" data-reading-live></p>
-
-        <?php /* Each day as the reading needs it: [its date, its note, and each
-                 category's score in the order above]. */ ?>
-        <script type="application/json" data-history-days><?= json_encode(
-            array_map(static fn ($day) => array_merge(
-                [$day['label'], $day['note']],
-                array_map(static fn ($c) => hydrate_health_history_score($day, $c['id']), $categories)
-            ), $days),
-            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-        ) ?></script>
     <?php endif; ?>
 </section>

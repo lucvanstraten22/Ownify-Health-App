@@ -116,7 +116,7 @@ components/
     ai-empty-state.php        glass orb + name + suggestions, and the conversation
     ai-composer.php           the question field, send, today's count
     health-card.php           one of the three pillars, and the control that opens it
-    health-history.php        the Verloop: Slaap · Voeding · Training per day, 7 dagen to 1 jaar
+    health-history.php        the Verloop: Slaap · Voeding · Training by day, week or month, 7 dagen to 1 jaar
     health-trend.php          one area's week / month chart, on its detail page
     metric-tiles.php          level 2 — the few numbers that explain a score
     metric-group.php          level 3 — the long tail, grouped
@@ -366,16 +366,24 @@ is in `config/scoring.php`; the formulas are in
 earn leaderboard points.
 
 **The Verloop.** Under the three cards, Slaap, Voeding and Training as they
-were recorded each day: the Scorekompas's history and its chart, three lines
-instead of its one score, each in its category's colour, over the same
-**7 dagen** (where it opens), **30 dagen**, **90 dagen** and **1 jaar**. Every
-day of a week and of a month is a dot; a week names every date, longer
-periods a few. A day without new input keeps a category's last score for as
-long as it holds, so the line goes on; after that the line has a gap, never a
-drop to 0. A finger, a cursor or the arrow keys read a day: its date and each
-category's score that day. Nothing is scored for it — `hydrate_health_history()`
-(`lib/hydrate-compass.php`) draws the Scorekompas's days, for the website and
-the app alike.
+were recorded: the Scorekompas's history and its chart, three lines instead
+of its one score, each in its category's colour, over the same **7 dagen**
+(where it opens), **30 dagen**, **90 dagen** and **1 jaar**. 7 and 30 days
+have a point a day; 90 days a point a week, the mean of its seven days, the
+last ending today; a year twelve points a month over the last 365 days — or,
+while the history is younger than half a year, twelve half months from its
+first day, filled as far as today. Weeks and months stand where they fall in
+time, so a short history is never stretched over the width. The chart is
+160 px / dp tall over its period's own range in round tens (at least 30
+points; 73 → 80 is a clear rise, one point a small one), its levels named on
+the left; every line is a monotone curve, which never bends past a point.
+Every point is a dot; a week names every date, longer periods a few. A day
+without new input keeps a category's last score for as long as it holds, so
+the line goes on; after that the line has a gap, never a drop to 0. A finger,
+a cursor or the arrow keys read a point: its date or days (a week's: that its
+scores are their mean) and each category's score. Nothing is scored for it —
+`hydrate_health_history()` (`lib/hydrate-compass.php`) draws the Scorekompas's
+days, for the website and the app alike.
 
 **The day's cijfer.** The Voeding page has one input: how you ate today, 1 to
 10. It is the nutrition score's data for now, it replaces itself when saved

@@ -666,11 +666,13 @@ data class Health(val title: String, val lede: String, val areas: List<Area>, va
 
 /**
  * Gezondheid's Verloop (components/health-history.php): Slaap, Voeding and
- * Training as they were recorded each day, over the Scorekompas's periods —
- * the Scorekompas's history, three lines instead of its one score. Each
- * period's [HistoryPeriod.start] is where its days begin in the
- * Scorekompas's own list ([CompassTrend.days]), which the reading reads.
- * Null from a server from before it: the week and month are shown then.
+ * Training as they were recorded, over the Scorekompas's periods — the
+ * Scorekompas's history, three lines instead of its one score. Each period
+ * carries its own points ([HistoryPeriod.points]: a day, a week or a month),
+ * which the reading reads; from a server from before them, its
+ * [HistoryPeriod.start] is where its days begin in the Scorekompas's own
+ * list ([CompassTrend.days]). Null from a server from before the Verloop:
+ * the week and month are shown then.
  */
 data class HealthHistory(
     val title: String,
@@ -699,26 +701,32 @@ data class HealthHistory(
 }
 
 /**
- * One period of the Verloop: [start] where its days begin in the
- * Scorekompas's list, [since] when the history is younger than the period,
- * which days are a dot ([dots]: `every`, or `alone` — a day no line reaches),
- * its dates ([every]: one under each day), and a line per category in the
- * 300 × 120 box, with [x] each day's place in % from the left.
+ * One period of the Verloop: what a point is ([group]: `day`, `week`,
+ * `month`, or `half` — half a month, while the history is younger than half
+ * a year), [start] where its days begin in the Scorekompas's list (a period
+ * of days only), [since] when the history is younger than the period, which
+ * points are a dot ([dots]: `every`, or `alone` — a point no line reaches),
+ * its dates ([every]: one under each day), its [points], and a line per
+ * category in the 300 × 160 box over the period's own height, with [x] each
+ * point's place in % from the left and [grid] the levels named on it.
  */
 data class HistoryPeriod(
     val key: String,
     val label: String,
+    val group: String,
     val start: Int,
     val since: String?,
     val dots: String,
     val axis: List<CompassTick>,
     val every: Boolean,
     val aria: String,
+    val points: List<HistoryPoint>,
     val width: Float,
     val height: Float,
     val hasData: Boolean,
     val x: List<Float>,
-    val lines: List<HistoryLine>
+    val lines: List<HistoryLine>,
+    val grid: List<HistoryLevel>
 ) {
     companion object {
         fun parse(o: JSONObject): HistoryPeriod? {
@@ -727,23 +735,47 @@ data class HistoryPeriod(
             return HistoryPeriod(
                 key = key,
                 label = o.str("label").orEmpty(),
+                group = o.str("group") ?: "day",
                 start = o.int("start") ?: 0,
                 since = o.str("since"),
                 dots = o.str("dots") ?: "alone",
                 axis = o.arr("axis").map { CompassTick(it.str("label").orEmpty(), (it.num("x") ?: 0.0).toFloat()) },
                 every = o.bool("every"),
                 aria = o.str("aria").orEmpty(),
+                points = o.arr("points").map(HistoryPoint::parse),
                 width = (chart.num("width") ?: 300.0).toFloat(),
                 height = (chart.num("height") ?: 120.0).toFloat(),
                 hasData = chart.bool("has_data"),
                 x = chart.arr("x").floats().map { it ?: 0f },
-                lines = chart.arr("lines").map(HistoryLine::parse)
+                lines = chart.arr("lines").map(HistoryLine::parse),
+                grid = chart.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
             )
         }
     }
 }
 
-/** One category's line: its colour, its paths, and each day's height in % from the top — null without a score. */
+/**
+ * One point as the reading shows it: its date — a day's, or a week's or
+ * month's days — what its scores are ([detail]: their days' mean), a [note]
+ * when it had none (or a day's carried score), whether a day's scores were
+ * carried, and each category's score in the order of the categories.
+ */
+data class HistoryPoint(val label: String, val detail: String?, val note: String?, val carried: Boolean, val values: List<Int?>) {
+    companion object {
+        fun parse(o: JSONObject): HistoryPoint = HistoryPoint(
+            label = o.str("label").orEmpty(),
+            detail = o.str("detail"),
+            note = o.str("note"),
+            carried = o.bool("carried"),
+            values = o.arr("values").floats().map { it?.toInt() }
+        )
+    }
+}
+
+/** A level of the grid: its height in % from the top, and its score. */
+data class HistoryLevel(val y: Float, val label: String)
+
+/** One category's line: its colour, its paths, and each point's height in % from the top — null without a score. */
 data class HistoryLine(val id: String, val accent: String, val line: List<String>, val y: List<Float?>) {
     companion object {
         fun parse(o: JSONObject): HistoryLine? {

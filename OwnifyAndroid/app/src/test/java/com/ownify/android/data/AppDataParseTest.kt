@@ -368,12 +368,15 @@ class AppDataParseTest {
     /**
      * health-history-demo.json is what the server builds from compass-demo.json
      * (hydrate_health_history(), lib/hydrate-compass.php): the same days, read
-     * as Slaap, Voeding and Training.
+     * as Slaap, Voeding and Training — a point a day over 7 and 30 days, a
+     * week over 90, and half a month over a year while the history (45 days)
+     * is younger than half a year.
      */
     @Test
     fun `the Verloop - Slaap, Voeding and Training over the Scorekompas's periods, every point a score of its days`() {
         val compass = Compass.parse(resource("compass-demo.json"))
         val history = HealthHistory.parse(resource("health-history-demo.json"))!!
+        val days = compass.trend.days
 
         assertEquals("Verloop", history.title)
         assertEquals("7", history.defaultPeriod)
@@ -381,37 +384,79 @@ class AppDataParseTest {
         assertEquals(listOf("Slaap", "Voeding", "Training"), history.categories.map { it.label })
         assertEquals(listOf("sleep", "nutrition", "training"), history.categories.map { it.accent })
 
-        // The Scorekompas's switch and windows: the same periods over the same days.
+        // The Scorekompas's switch: the same periods; a day, a day, a week, half a month.
         assertEquals(compass.trend.periods.map { it.key to it.label }, history.periods.map { it.key to it.label })
+        assertEquals(listOf("day", "day", "week", "half"), history.periods.map { it.group })
+
         history.periods.forEachIndexed { i, period ->
-            val same = compass.trend.periods[i]
-            assertEquals(same.start, period.start)
-            assertEquals(same.at.map { it.first }, period.x)
             assertEquals(listOf("sleep", "nutrition", "training"), period.lines.map { it.id })
             assertTrue(period.hasData)
+            assertEquals(period.x.size, period.points.size)
+            assertEquals("left to right in time", period.x.sorted(), period.x)
 
-            // Each point is that category's score that day, on the 0-100 scale of
-            // the Scorekompas's box — and where it had none there is no point, never a 0.
-            for (line in period.lines) {
+            // The height is the period's own, its levels named: every point sits
+            // where its score falls between them — and where it had none there is
+            // no point, never a 0.
+            assertTrue("${period.key}: levels", period.grid.size >= 2)
+            val (a, b) = period.grid.take(2)
+            val at = { value: Int -> a.y + (value - a.label.toInt()) * (b.y - a.y) / (b.label.toInt() - a.label.toInt()) }
+            for ((k, line) in period.lines.withIndex()) {
                 assertEquals(period.x.size, line.y.size)
                 line.y.forEachIndexed { d, y ->
-                    val value = compass.trend.days[period.start + d].categories.first { it.id == line.id }.value
-                    if (value == null) assertNull("${period.key} ${line.id} day $d", y)
-                    else assertEquals("${period.key} ${line.id} day $d", 10f + (100 - value) * 0.8f, y!!, 0.011f)
+                    val value = period.points[d].values[k]
+                    if (value == null) assertNull("${period.key} ${line.id} point $d", y)
+                    else assertEquals("${period.key} ${line.id} point $d", at(value), y!!, 0.02f)
                 }
+            }
+
+            // A period of days: its days are the Scorekompas's window, each point that day's scores.
+            if (period.group == "day") {
+                val same = compass.trend.periods[i]
+                assertEquals(same.start, period.start)
+                assertEquals(same.at.map { it.first }, period.x)
+                period.points.forEachIndexed { d, point ->
+                    val day = days[period.start + d]
+                    assertEquals(day.label, point.label)
+                    assertEquals(day.state == "carried", point.carried)
+                    assertEquals(history.categories.map { c -> day.categories.first { it.id == c.id }.value }, point.values)
+                }
+            } else {
+                // Weeks and months read no day of the list: an older app finds none there.
+                assertEquals(days.size, period.start)
             }
         }
 
-        // A week: a dot and a date for every day; longer periods date as the Scorekompas does.
+        // 90 days: a week a point, the last the mean of the last seven days, today the last of them.
+        val weeks = history.periods[2]
+        val last = days.takeLast(7)
+        val mean = history.categories.map { c ->
+            last.mapNotNull { d -> d.categories.first { it.id == c.id }.value }.takeIf { it.isNotEmpty() }?.let { Math.round(it.average()).toInt() }
+        }
+        assertEquals(mean, weeks.points.last().values)
+        assertEquals("30 sep – 6 okt", weeks.points.last().label)
+        assertEquals("weekgemiddelde", weeks.points.last().detail)
+        // Where they fall in time: 45 days of history fill the last seven weeks of 90 days, never the width.
+        assertEquals(7, weeks.points.size)
+        assertTrue(weeks.x.first() > 45f)
+        assertEquals(listOf("9 jul", "8 aug", "6 sep", "Vandaag"), weeks.axis.map { it.label })
+
+        // A year of 45 days: twelve half months from the first day, three of them so far.
+        val year = history.periods[3]
+        assertEquals(3, year.points.size)
+        assertTrue(year.x.last() < 30f)
+        assertEquals("gemiddelde", year.points.first().detail)
+        assertEquals("23 aug", year.axis.first().label)
+
+        // A week: a dot and a date for every day; every point of every period a dot.
         val week = history.periods[0]
         assertTrue(week.every)
-        assertEquals("every", week.dots)
         assertEquals(week.x, week.axis.map { it.x })
         assertEquals(listOf("30 sep", "1 okt", "2 okt", "3 okt", "4 okt", "5 okt", "6 okt"), week.axis.map { it.label })
-        assertEquals(listOf("every", "alone", "alone"), history.periods.drop(1).map { it.dots })
-        assertEquals(compass.trend.periods.drop(1).map { it.axis }, history.periods.drop(1).map { it.axis })
+        assertEquals(listOf("every", "every", "every", "every"), history.periods.map { it.dots })
+        assertEquals(compass.trend.periods[1].axis, history.periods[1].axis)
         assertEquals("Je geschiedenis begint op 23 augustus.", history.periods[2].since)
         assertEquals("Slaap, Voeding en Training per dag, de afgelopen 7 dagen", week.aria)
+        assertEquals("Slaap, Voeding en Training per week, de afgelopen 90 dagen", weeks.aria)
     }
 
     @Test

@@ -358,7 +358,7 @@ class ScreenshotCapture {
         }
     }
 
-    /** Gezondheid's Verloop — Slaap, Voeding and Training — in each period, then a day of its week read by a finger. */
+    /** Gezondheid's Verloop — Slaap, Voeding and Training — in each period, then a day of its week and a week of its 90 days read by a finger. */
     @Test
     fun healthPeriods() {
         app { tab("health") }
@@ -371,6 +371,17 @@ class ScreenshotCapture {
         compose.waitForIdle()
         FileOutputStream(File(out, "app-health-history-reading.png")).use { capture().compress(Bitmap.CompressFormat.PNG, 100, it) }
         plot.performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(2_000)
+
+        // And a week of 90 dagen: its days and that its scores are their mean.
+        compose.onAllNodes(hasText("90 dagen") and hasClickAction()).onLast().performClick()
+        settle()
+        val weeks = compose.onNode(hasContentDescription("per week, de afgelopen 90 dagen", substring = true))
+        weeks.performTouchInput { down(Offset(width * 0.97f, height / 2f)) }
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitForIdle()
+        FileOutputStream(File(out, "app-health-history-reading-90.png")).use { capture().compress(Bitmap.CompressFormat.PNG, 100, it) }
+        weeks.performTouchInput { up() }
     }
 
     /** The Scorekompas's Wat er verandert, in each period. */

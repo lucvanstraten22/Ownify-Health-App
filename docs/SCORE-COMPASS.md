@@ -116,10 +116,16 @@ Volgende dag).
 history — the same days, periods, windows and dates — drawn as three lines,
 Slaap, Voeding and Training, each in its category's colour, instead of the
 one Health Score (`hydrate_health_history()` in `lib/hydrate-compass.php`,
-`components/health-history.php`; `HistoryCard` in the app). Its reading shows
-the date and each category's score that day, above the lines; there is no
-panel. A week names every date, under its own dots, and a month has a dot
-for every day too. The chart and its reading are one piece of code for both:
+`components/health-history.php`; `HistoryCard` in the app). 7 and 30 days
+are the Scorekompas's days; 90 days are weeks and a year months (half months
+while the history is younger than 183 days, from its first day), each the
+mean of its days' scores, placed where it falls in time rather than spread
+over the width. Its height is the period's own range in round tens, at least
+30 points, with the levels named; its lines are monotone curves
+(`goal_chart_monotone()`). Its reading shows the date or days and each
+category's score, above the lines; there is no panel. A week names every
+date, under its own dots, and every point is a dot. The Scorekompas's own
+line keeps the fixed 0–100 and a point a day in every period. The chart and its reading are one piece of code for both:
 `compass-history.js` on the website, `HistoryPlot` (`ui/design/HistoryChart.kt`)
 in the app.
 

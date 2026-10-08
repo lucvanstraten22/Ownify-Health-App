@@ -171,15 +171,12 @@
     /* ============================ Gezondheid: Slaap, Voeding, Training */
 
     function health(card) {
-        var live = card.querySelector('[data-reading-live]');
-        var days = daysIn(card, '[data-history-days]');
-
-        if (!days.length) { return; }
-
+        var live   = card.querySelector('[data-reading-live]');
         var ranges = [];
 
         Array.prototype.forEach.call(card.querySelectorAll('.chart__range[data-range]'), function (range) {
-            var plot = range.querySelector('[data-history-plot]');
+            var plot   = range.querySelector('[data-history-plot]');
+            var points = daysIn(range, '[data-history-points]');
             var xs;
             var ys;
 
@@ -191,7 +188,7 @@
                 ys = {};
             }
 
-            ranges.push(plot && xs.length ? lines(plot, xs, ys, parseInt(range.getAttribute('data-start'), 10) || 0) : null);
+            ranges.push(plot && xs.length && points.length ? lines(plot, xs, ys, points) : null);
         });
 
         /* After health-trend.js has switched the chart: any reading put away. */
@@ -200,17 +197,19 @@
             ranges.forEach(function (r) { if (r) { r.hide(); } });
         });
 
-        /* One period's lines: the date and each category's score above them,
-           a dot on each line that had one that day. */
-        function lines(plot, xs, ys, start) {
+        /* One period's lines: the point's date — a day's, or a week's or
+           month's days and that its scores are their mean — and each
+           category's score above them, a dot on each line that had one. */
+        function lines(plot, xs, ys, points) {
             var cross = plot.querySelector('[data-reading-cross]');
             var tip   = plot.querySelector('[data-reading-tip]');
 
             if (!cross || !tip) { return null; }
 
-            var tipDate = tip.querySelector('[data-tip-date]');
-            var none    = tip.querySelector('[data-tip-none]');
-            var rows    = Array.prototype.map.call(tip.querySelectorAll('[data-tip-row]'), function (row) {
+            var tipDate   = tip.querySelector('[data-tip-date]');
+            var tipDetail = tip.querySelector('[data-tip-detail]');
+            var none      = tip.querySelector('[data-tip-none]');
+            var rows      = Array.prototype.map.call(tip.querySelectorAll('[data-tip-row]'), function (row) {
                 var id = row.getAttribute('data-tip-row');
 
                 return {
@@ -223,17 +222,18 @@
             });
 
             return read(plot, xs, cross, tip, {
-                has: function (index) { return !!days[start + index]; },
+                has: function (index) { return !!points[index]; },
 
-                /* A day is [its date, its note, each category's score in
-                   the order of the rows]. */
+                /* A point is [its date or days, what its scores are, its
+                   note, each category's score in the order of the rows]. */
                 show: function (index, changed, announce) {
-                    var day  = days[start + index];
-                    var note = day[1];
-                    var said = [];
+                    var point  = points[index];
+                    var detail = point[1];
+                    var note   = point[2];
+                    var said   = [];
 
                     rows.forEach(function (r, k) {
-                        var value = day[2 + k];
+                        var value = point[3 + k];
                         var y     = (ys[r.id] || [])[index];
                         var has   = value !== null && value !== undefined;
 
@@ -253,15 +253,20 @@
                         if (has) { said.push(r.label + ' ' + value); }
                     });
 
-                    /* Only the scores the day had; none at all, and it says so. */
+                    /* Only the scores it had; none at all, and it says so. */
                     if (changed) {
                         none.textContent = said.length ? '' : (note || '');
                         none.hidden      = said.length > 0 || !note;
-                        tipDate.textContent = day[0];
+                        tipDate.textContent = point[0];
+                        if (tipDetail) {
+                            tipDetail.textContent = detail || '';
+                            tipDetail.hidden      = !detail;
+                        }
                     }
 
                     if (announce && live) {
-                        live.textContent = day[0] + ': ' + (said.length ? said.join(', ') : (note || text(null)))
+                        live.textContent = point[0] + (detail ? ', ' + detail : '') + ': '
+                            + (said.length ? said.join(', ') : (note || text(null)))
                             + (said.length && note ? '. ' + note : '');
                     }
                 },

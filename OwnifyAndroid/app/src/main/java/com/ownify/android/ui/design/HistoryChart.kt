@@ -50,9 +50,14 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.ownify.android.data.CompassTick
+import com.ownify.android.data.HistoryLevel
 import com.ownify.android.ui.app.LocalOwnedAreas
 import com.ownify.android.ui.app.ownsGestures
 import com.ownify.android.ui.theme.Ownify
@@ -83,6 +88,11 @@ class PlotLine(val color: Color, val paths: List<String>, val washes: List<Strin
  * nearest day, a crosshair, a dot on each line that had a score that day,
  * and [tip] above the chart; [onRead] hears which (an index into [xs], each
  * day's place in % from the left). A vertical drag still scrolls.
+ *
+ * The Scorekompas's is 100 dp tall over 0–100, its grid unnamed. Gezondheid's
+ * Verloop is taller ([height]) over its period's own range, with its [levels]
+ * named in a [gutter] on the left, the dates moved over with it
+ * (`.health-history__level`).
  */
 @Composable
 fun HistoryPlot(
@@ -102,6 +112,9 @@ fun HistoryPlot(
     empty: String,
     modifier: Modifier,
     onRead: (Int) -> Unit,
+    height: Dp = 100.dp,
+    levels: List<HistoryLevel>? = null,
+    gutter: Dp = 0.dp,
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
     val still = LocalStillMotion.current
@@ -115,6 +128,8 @@ fun HistoryPlot(
     var reading by remember(key) { mutableIntStateOf(-1) }
     var linger by remember { mutableStateOf<Job?>(null) }
     val ownKey = remember { Any() }
+    val measurer = rememberTextMeasurer()
+    val levelStyle = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.em, tabular = true)
 
     DisposableEffect(ownKey) { onDispose { owned.set(ownKey, null) } }
 
@@ -156,7 +171,8 @@ fun HistoryPlot(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .padding(start = gutter)
+                    .height(height)
                     .then(
                         if (!filled || xs.isEmpty()) Modifier.clearAndSetSemantics { contentDescription = aria }
                         else Modifier
@@ -206,6 +222,16 @@ fun HistoryPlot(
                             }
                     )
             ) {
+                // Each level's score in the gutter, right-aligned 8 dp short of its line — outside
+                // the plot, so not under the faded layer of an empty one, which would cut it off.
+                if (levels != null) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        for (level in levels) {
+                            val text = measurer.measure(level.label, levelStyle)
+                            drawText(text, topLeft = Offset(-8.dp.toPx() - text.size.width, level.y / 100f * size.height - text.size.height / 2f))
+                        }
+                    }
+                }
                 Canvas(
                     Modifier
                         .fillMaxSize()
@@ -218,9 +244,16 @@ fun HistoryPlot(
                         }
                 ) {
                     val sy = size.height / viewBox.height
-                    for (line in listOf(0.25f, 0.5f, 0.75f)) {
-                        val y = (12f + line * (viewBox.height - 24f)) * sy
-                        drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                    if (levels == null) {
+                        for (line in listOf(0.25f, 0.5f, 0.75f)) {
+                            val y = (12f + line * (viewBox.height - 24f)) * sy
+                            drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                        }
+                    } else {
+                        for (level in levels) {
+                            val y = level.y / 100f * size.height
+                            drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                        }
                     }
                     lines.forEachIndexed { i, line -> washes[i].forEach { drawPath(it.stretched(viewBox, size), line.color.copy(alpha = 0.10f)) } }
                     lines.forEachIndexed { i, line -> paths[i].forEach { drawChartLine(it.stretched(viewBox, size), line.color, 2.2.dp.toPx(), draw.value) } }
@@ -256,14 +289,14 @@ fun HistoryPlot(
 
                 if (shown) xs.getOrNull(reading)?.let { x -> ReadingTip(x) { tip(reading) } }
             }
-            TickAxis(axis, Modifier.padding(top = Ownify.Space2), centred = centredAxis)
+            TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis)
         }
 
         if (!filled) {
             T(
                 empty,
                 OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted),
-                Modifier.fillMaxWidth().padding(top = 46.dp),
+                Modifier.fillMaxWidth().padding(top = (height - 8.dp) / 2),
                 align = TextAlign.Center
             )
         }

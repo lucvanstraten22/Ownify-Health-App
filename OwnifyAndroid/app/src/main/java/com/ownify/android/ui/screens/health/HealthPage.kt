@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import com.ownify.android.ui.design.PlotLine
 import com.ownify.android.ui.design.HistoryPlot
 import com.ownify.android.data.HealthHistory
+import com.ownify.android.data.HistoryPoint
 import com.ownify.android.data.CompassDay
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -201,13 +202,15 @@ private fun HealthCard(area: Area, modifier: Modifier) {
 
 /**
  * `components/health-history.php`: the Verloop — Slaap, Voeding and Training
- * as they were recorded each day, over the Scorekompas's periods (7, 30 and
- * 90 days and a year), read as the Scorekompas's line is ([HistoryPlot]):
- * the switch at the head's far end where it fits and on a row of its own on
- * a phone, the three lines with a dot for every day of a week or a month,
- * the date and each category's score above them while a finger is on them,
- * the legend and the hint. [days] is the Scorekompas's list, where each
- * period's days begin at its `start`.
+ * as they were recorded, over the Scorekompas's periods (7, 30 and 90 days
+ * and a year), read as the Scorekompas's line is ([HistoryPlot]): the switch
+ * at the head's far end where it fits and on a row of its own on a phone,
+ * the three lines — a point a day over 7 and 30 days, a week over 90, a
+ * month (or half a month) over a year, each where it falls in time — over
+ * the period's own height with its levels named, a dot for every point, the
+ * date or days and each category's score above them while a finger is on
+ * them, the legend and the hint. [days] is the Scorekompas's list, which a
+ * server from before the periods' own points still points into.
  */
 @Composable
 private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
@@ -217,8 +220,18 @@ private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
     val filled = history.periods.any { it.hasData }
     val names = remember(history) { history.categories.associateBy { it.id } }
     val lines = period.lines.map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.line, emptyList(), line.y) }
+    // Each point as the reading shows it: the period's own, or — from a server from before them — its day in the Scorekompas's list.
+    val points: List<HistoryPoint?> = remember(period, days) {
+        if (period.points.isNotEmpty()) period.points
+        else period.x.indices.map { i ->
+            days.getOrNull(period.start + i)?.let { day ->
+                HistoryPoint(day.label, null, day.note, day.state == "carried", history.categories.map { c -> day.categories.firstOrNull { it.id == c.id }?.value })
+            }
+        }
+    }
+    val levels = period.grid.ifEmpty { null }
 
-    fun scores(day: CompassDay) = history.categories.mapNotNull { c -> day.categories.firstOrNull { it.id == c.id }?.value?.let { c to it } }
+    fun scores(point: HistoryPoint) = history.categories.zip(point.values).mapNotNull { (c, value) -> value?.let { c to it } }
 
     @Composable
     fun Switch(modifier: Modifier) = RangeSwitch(
@@ -253,32 +266,42 @@ private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
                 lines = lines,
                 filled = period.hasData,
                 dayDots = period.dots == "every",
-                small = period.dots == "every" && period.x.size > 7,
-                carried = { i -> days.getOrNull(period.start + i)?.state == "carried" },
+                // A month's days, smaller so they stay apart; a week's or a month's points as a week's days.
+                small = period.dots == "every" && period.group == "day" && period.x.size > 7,
+                carried = { i -> points.getOrNull(i)?.carried == true },
                 axis = period.axis,
                 centredAxis = period.every,
                 aria = period.aria,
-                readable = { i -> days.getOrNull(period.start + i) != null },
+                readable = { i -> points.getOrNull(i) != null },
                 describe = { i ->
-                    days.getOrNull(period.start + i)?.let { day ->
-                        val said = scores(day).joinToString(", ") { (c, value) -> "${c.label} $value" }
-                        "${day.label}: " + when {
-                            said.isEmpty() -> day.note ?: "—"
-                            day.note != null -> "$said. ${day.note}"
+                    points.getOrNull(i)?.let { point ->
+                        val said = scores(point).joinToString(", ") { (c, value) -> "${c.label} $value" }
+                        point.label + (point.detail?.let { ", $it" } ?: "") + ": " + when {
+                            said.isEmpty() -> point.note ?: "—"
+                            point.note != null -> "$said. ${point.note}"
                             else -> said
                         }
                     }.orEmpty()
                 },
                 empty = history.empty,
                 modifier = Modifier,
-                onRead = { }
+                onRead = { },
+                // .health-history .compass-plot: taller, its levels named in a gutter — from a server that sends them.
+                height = if (levels != null) 160.dp else 100.dp,
+                levels = levels,
+                gutter = if (levels != null) 26.dp else 0.dp
             ) { i ->
-                // .health-history__tip: the date, then each category that had a score that day.
-                val day = days[period.start + i]
-                val scored = scores(day)
-                T(day.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
+                // .health-history__tip: the date or days — beside a week's or month's, that its scores
+                // are their mean — then each category that had a score.
+                val point = points[i]!!
+                val scored = scores(point)
+                val detail = point.detail?.takeIf { scored.isNotEmpty() }
+                Row {
+                    T(point.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
+                    detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+                }
                 if (scored.isEmpty()) {
-                    day.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
+                    point.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
                 } else {
                     Column(Modifier.width(IntrinsicSize.Max).padding(top = 1.dp)) {
                         for ((category, value) in scored) {

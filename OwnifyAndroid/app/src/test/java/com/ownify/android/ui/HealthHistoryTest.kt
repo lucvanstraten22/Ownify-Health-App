@@ -39,10 +39,10 @@ import org.robolectric.annotation.Config
 
 /**
  * Gezondheid's Verloop (components/health-history.php): Slaap, Voeding and
- * Training per day over the Scorekompas's periods, read as the Scorekompas's
- * line is — here on the demo pages with the history the server builds from
- * compass-demo.json (health-history-demo.json), checked against that same
- * list of days.
+ * Training over the Scorekompas's periods — a point a day over 7 and 30
+ * days, a week over 90 — read as the Scorekompas's line is: here on the demo
+ * pages with the history the server builds from compass-demo.json
+ * (health-history-demo.json), checked against that same list of days.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
@@ -78,7 +78,7 @@ class HealthHistoryTest {
         compose.waitForIdle()
     }
 
-    private fun plot(period: String) = compose.onNode(hasContentDescription("Slaap, Voeding en Training per dag, $period"))
+    private fun plot(period: String, per: String = "per dag") = compose.onNode(hasContentDescription("Slaap, Voeding en Training $per, $period"))
 
     private fun reading(node: SemanticsNodeInteraction): String =
         node.fetchSemanticsNode().config.getOrNull(SemanticsProperties.StateDescription).orEmpty()
@@ -115,14 +115,18 @@ class HealthHistoryTest {
         for (label in listOf("Slaap", "Voeding", "Training")) {
             assertTrue(label, compose.onAllNodesWithText(label).fetchSemanticsNodes().isNotEmpty())
         }
-        compose.onNodeWithText("Tik of schuif over de lijnen om een dag te bekijken.").assertExists()
+        compose.onNodeWithText("Tik of schuif over de lijnen om je scores te bekijken.").assertExists()
 
         // Another period: its own chart, and back.
-        for ((option, spoken) in listOf("30 dagen" to "de afgelopen 30 dagen", "90 dagen" to "de afgelopen 90 dagen", "1 jaar" to "het afgelopen jaar")) {
+        for ((option, spoken, per) in listOf(
+            Triple("30 dagen", "de afgelopen 30 dagen", "per dag"),
+            Triple("90 dagen", "de afgelopen 90 dagen", "per week"),
+            Triple("1 jaar", "het afgelopen jaar", "per halve maand")
+        )) {
             compose.onNode(hasText(option) and hasClickAction()).performClick()
             compose.waitForIdle()
             compose.onNode(hasText(option) and isSelected()).assertExists()
-            plot(spoken).assertExists()
+            plot(spoken, per).assertExists()
         }
         compose.onNodeWithText("Je geschiedenis begint op 23 augustus.").assertExists()
     }
@@ -154,13 +158,13 @@ class HealthHistoryTest {
     fun `a finger on the Verloop reads the day under it - a carried day keeps its scores, a day without any says so`() {
         val data = data()
         val days = data.compass.trend.days
-        val period = data.health.history!!.periods.first { it.key == "90" }
+        val period = data.health.history!!.periods.first { it.key == "30" }
         show(data)
 
         compose.onNodeWithText("Verloop").performScrollTo()
-        compose.onNode(hasText("90 dagen") and hasClickAction()).performClick()
+        compose.onNode(hasText("30 dagen") and hasClickAction()).performClick()
         compose.waitForIdle()
-        val chart = plot("de afgelopen 90 dagen")
+        val chart = plot("de afgelopen 30 dagen")
         chart.performScrollTo()
 
         val carried = period.x.indices.first { days[period.start + it].state == "carried" }
@@ -182,6 +186,56 @@ class HealthHistoryTest {
         compose.mainClock.advanceTimeBy(1_600)
         compose.waitForIdle()
         assertEquals("", reading(chart))
+    }
+
+    @Test
+    fun `90 dagen read week by week - its days, that the scores are their mean, and each category's mean`() {
+        val data = data()
+        val days = data.compass.trend.days
+        val period = data.health.history!!.periods.first { it.key == "90" }
+        show(data)
+
+        compose.onNodeWithText("Verloop").performScrollTo()
+        compose.onNode(hasText("90 dagen") and hasClickAction()).performClick()
+        compose.waitForIdle()
+        val chart = plot("de afgelopen 90 dagen", "per week")
+        chart.performScrollTo()
+
+        // Today's week: the last seven days, each category's mean of them.
+        val mean = listOf("sleep" to "Slaap", "nutrition" to "Voeding", "training" to "Training").mapNotNull { (id, label) ->
+            days.takeLast(7).mapNotNull { d -> d.categories.first { it.id == id }.value }.takeIf { it.isNotEmpty() }
+                ?.let { "$label ${Math.round(it.average())}" }
+        }.joinToString(", ")
+        act(chart, "Vorige dag")
+        assertEquals("30 sep – 6 okt, weekgemiddelde: $mean", reading(chart))
+
+        // A finger on the first week: where the history begins, never at the left edge.
+        chart.performTouchInput { down(Offset(width * 0.02f, height / 2f)) }
+        compose.waitForIdle()
+        assertTrue(reading(chart).startsWith("23 – 25 aug, weekgemiddelde: "))
+        assertTrue("seven weeks of 45 days, where they fall in 90", period.x.size == 7 && period.x.first() > 50f)
+    }
+
+    @Test
+    fun `a server that sends no points of its own - the days of the Scorekompas's list, as before`() {
+        val history = json("health-history-demo.json")
+        val week = history.getJSONArray("periods").getJSONObject(0)
+        week.remove("points")
+        week.remove("group")
+        week.getJSONObject("chart").remove("grid")
+        val state = json("state-demo.json").getJSONObject("data")
+        state.put("compass", json("compass-demo.json"))
+        state.getJSONObject("health").put("history", history)
+        val data = AppData.parse(state)
+        val days = data.compass.trend.days
+        show(data)
+
+        val chart = plot("de afgelopen 7 dagen")
+        chart.performScrollTo()
+        act(chart, "Vorige dag")
+        assertEquals(reads(days[days.lastIndex]), reading(chart))
+        act(chart, "Vorige dag")
+        assertEquals(reads(days[days.lastIndex - 1]), reading(chart))
     }
 
     @Test

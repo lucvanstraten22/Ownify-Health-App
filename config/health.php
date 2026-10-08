@@ -287,16 +287,29 @@ return [
         'title'  => 'Verloop',
         'switch' => 'Periode kiezen',
         'empty'  => 'Zodra er meetmomenten zijn, verschijnt hier je verloop.',
-        /* The chart's spoken label: %1$s the categories, %2$s the period. */
-        'aria'   => '%1$s per dag, %2$s',
+        /* The chart's spoken label: %1$s the categories, %2$s what a point
+           is (`per`), %3$s the period. */
+        'aria'   => '%1$s %2$s, %3$s',
         'and'    => 'en',
-        'hint'   => 'Tik of schuif over de lijnen om een dag te bekijken.',
+        'hint'   => 'Tik of schuif over de lijnen om je scores te bekijken.',
         /* By a period's days: how many dates its axis names where that is
            not the Scorekompas's number — every day of a week — and which
-           days are a dot: `every` day where there are few enough to tell
-           apart, otherwise only a day with no neighbour to draw a line to. */
+           points are a dot: `every` point where there are few enough to tell
+           apart, otherwise only one with no neighbour to draw a line to. */
         'ticks'  => [7 => 7],
-        'dots'   => [7 => 'every', 30 => 'every', 90 => 'alone', 365 => 'alone'],
+        'dots'   => [7 => 'every', 30 => 'every', 90 => 'every', 365 => 'every'],
+        /* What a point stands for, by a period's days: a day where not
+           named — 90 days a week, a year a month. A history younger than
+           `half_days` shows its year as twelve half months from its first
+           day instead (lib/hydrate-compass.php). */
+        'group'     => [90 => 'week', 365 => 'month'],
+        'half_days' => 183,
+        'per'    => ['day' => 'per dag', 'week' => 'per week', 'month' => 'per maand', 'half' => 'per halve maand'],
+        /* A week's or month's dates, "12 – 18 sep"; beside them, that its
+           scores are its days' mean; or that it had none. */
+        'range'  => '%1$s – %2$s',
+        'mean'   => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde', 'half' => 'gemiddelde'],
+        'none'   => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.', 'half' => 'Geen score in deze halve maand.'],
     ],
 
     /* ============================================================== trend
