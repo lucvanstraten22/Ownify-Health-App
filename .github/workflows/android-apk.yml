@@ -30,8 +30,10 @@ jobs:
         run: |
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ownify-release.jks"
 
-      - name: Set version code
+      - name: Set version
         run: |
+          VERSION="11.1.${GITHUB_RUN_NUMBER}"
+          echo "OWNIFY_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
           echo "OWNIFY_VERSION_CODE=$((30 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
       - name: Make Gradle executable
@@ -55,7 +57,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v11.1-build-${GITHUB_RUN_NUMBER}" \
+          gh release create "v${OWNIFY_VERSION_NAME}" \
             app/build/outputs/apk/release/app-release.apk \
             --title "Ownify 11.1 (Build ${OWNIFY_VERSION_CODE})" \
             --generate-notes
