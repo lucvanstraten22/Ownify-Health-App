@@ -50,6 +50,7 @@
 
         var tipValue = tip.querySelector('[data-tip-value]');
         var tipDate  = tip.querySelector('[data-tip-date]');
+        var tipNote  = tip.querySelector('[data-tip-note]');
 
         var current  = -1;
         var pending  = null;
@@ -87,6 +88,8 @@
                    database, and a goal name or unit is user input. */
                 tipValue.textContent = point.v;
                 tipDate.textContent  = point.d;
+                /* What that day did and how far the goal was then, when known. */
+                if (tipNote) { tipNote.textContent = point.n || ''; tipNote.hidden = !point.n; }
             }
 
             cross.hidden = false;
@@ -96,7 +99,7 @@
 
             place(point);
 
-            if (announce && live) { live.textContent = point.d + ', ' + point.v; }
+            if (announce && live) { live.textContent = point.d + ', ' + point.v + (point.n ? ', ' + point.n : ''); }
         }
 
         /**

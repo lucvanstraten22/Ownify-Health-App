@@ -335,14 +335,35 @@ if (!function_exists('goal_chart_build')) {
         $xTicks = goal_chart_x_ticks($start, $end, $span, $xOf);
 
         /* ------------------------------------------------------- points */
+        /* Each point also says what the day itself did and how far the goal
+           was that day ('n'), from what is stored: an Optellen total the
+           amount that day added, a day-counting goal that the day counted,
+           and the percentage goal_progress kept for that date — what the
+           Recent block used to list. A day without one says nothing more. */
+        $percents = $series['percents'] ?? [];
         $out = [];
         foreach ($points as $i => $p) {
+            $value = (float) $p['value'];
+            $prev  = $i > 0 ? (float) $points[$i - 1]['value'] : 0.0;
+            $note  = [];
+
+            if ($mode === 'total') {
+                $note[] = '+ ' . goal_chart_value($value - $prev, $unit);
+            } elseif ($mode === 'count' && $value > $prev) {
+                $note[] = 'Gehaald';
+            }
+
+            if (isset($percents[$p['date']])) {
+                $note[] = $percents[$p['date']] . '% van je doel';
+            }
+
             $out[] = [
                 'x'     => round($xOf($dates[$i]) * 100, 3),
                 'y'     => round($yOf($values[$i]) * 100, 3),
                 'date'  => $p['date'],
                 'd'     => goal_chart_date_long($dates[$i], $today),
-                'v'     => goal_chart_value((float) $p['value'], $unit),
+                'v'     => goal_chart_value($value, $unit),
+                'n'     => implode(' · ', $note),
             ];
         }
 

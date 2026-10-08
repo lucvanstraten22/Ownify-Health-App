@@ -6,11 +6,15 @@
  * dock, so the tab bar and the assistant stay reachable from inside it.
  *
  * Information order follows how much it matters:
- *   1  how far you are          — the hero bar and the percentage
- *   2  the three numbers        — now, target, time left
- *   3  how it has moved         — the progress line
- *   4  what feeds it            — the health data behind the number
- *   5  what you can do about it — priority, pause, delete
+ *   1  the goal                 — how far you are, the numbers, the period
+ *   2  Zelf bijhouden           — for a goal you keep yourself, right under it
+ *   3  Verloop                  — how it has moved, day by day, and what feeds it
+ *   4  Per dag                  — the days, for a goal that counts them
+ *   5  Aanpassen                — Primair | Secundair, pause, delete
+ *
+ * What Wat telt mee and Recent said lives in the Verloop: its footer names the
+ * source and how the goal moves, each point the day's own amount and how far
+ * the goal was that day.
  */
 declare(strict_types=1);
 
@@ -109,15 +113,17 @@ $height = 96.0;
                                 <span class="metric-row__value"><?= e($fact['value']) ?></span>
                             </div>
                         <?php endforeach; ?>
-                        <div class="metric-row <?= state_class($goal['start_label']) ?>">
-                            <span class="metric-row__label">Gestart</span>
-                            <span class="metric-row__value"><?= e((string) ($goal['start_label'] ?? '—')) ?></span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-row__label"><?= $goal['is_completed'] ? 'Looptijd' : 'Eindigt' ?></span>
-                            <span class="metric-row__value"><?= e((string) ($goal['is_completed']
-                                ? ($goal['took_label'] ?? '—')
-                                : ($goal['end_label'] ?? $labels['no_deadline']))) ?></span>
+                        <?php /* Gestart and Eindigt (Looptijd, once behaald) together,
+                                 under one name: the goal's period. */ ?>
+                        <div class="metric-row metric-row--period" data-goal-period>
+                            <span class="metric-row__label"><?= e($copy['period'] ?? 'Periode') ?></span>
+                            <span class="metric-row__value goal-period">
+                                <span class="goal-period__part">Gestart: <?= e((string) ($goal['start_label'] ?? '—')) ?></span>
+                                <span class="goal-period__dot" aria-hidden="true">·</span>
+                                <span class="goal-period__part"><?= $goal['is_completed'] ? 'Looptijd' : 'Eindigt' ?>: <?= e((string) ($goal['is_completed']
+                                    ? ($goal['took_label'] ?? '—')
+                                    : ($goal['end_label'] ?? $labels['no_deadline']))) ?></span>
+                            </span>
                         </div>
                     </div>
 
@@ -125,68 +131,6 @@ $height = 96.0;
                         <?= e($goal['is_paused'] ? $copy['paused_body'] : (string) ($goal['note'] ?? '')) ?>
                     </p>
                 </section>
-
-                <!-- ---------------------------------- per-day results -->
-                <?php if ($goal['days'] !== []): ?>
-                    <?php
-                    /* One block per day, for a goal that counts days — a
-                       Streak, or Optellen in days.
-
-                       Not two states. A day with no data is not a day that
-                       failed — a phone that was not syncing yet says nothing
-                       about whether somebody walked — so it is drawn as an
-                       empty outline, never red. (For a Streak it still ends
-                       the run, because it is not a success either; the note
-                       under the calendar says so.) Today, until it counts, is
-                       open rather than missed. */
-                    ?>
-                    <section class="card reveal" aria-labelledby="goal-days-<?= e($id) ?>">
-                        <div class="card__head">
-                            <div class="card__head-group">
-                                <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
-                                <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? 'Per dag') ?></h2>
-                            </div>
-                            <span class="chip chip--muted">
-                                <?= e($goal['days_chip'] ?? ($goal['days_met'] . ' van ' . $goal['days_total'])) ?>
-                            </span>
-                        </div>
-
-                        <div class="day-calendar">
-                            <ol class="day-calendar__head" role="list" aria-hidden="true">
-                                <?php foreach (['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
-                                    <li><?= e($initial) ?></li>
-                                <?php endforeach; ?>
-                            </ol>
-
-                            <ol class="day-blocks" role="list"
-                                aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
-                                <?php foreach ($goal['days'] as $day): ?>
-                                    <?php if ($day['state'] === 'before'): ?>
-                                        <li class="day-block is-before" aria-hidden="true"></li>
-                                    <?php else: ?>
-                                        <?php $when = new DateTimeImmutable($day['date']); ?>
-                                        <li class="day-block is-<?= e($day['state']) ?>"
-                                            title="<?= e(goals_date_short($when) . ' · ' . match ($day['state']) {
-                                                'met'     => 'gehaald',
-                                                'missed'  => 'niet gehaald',
-                                                'unknown' => 'geen gegevens',
-                                                'pending' => 'vandaag, nog open',
-                                                default   => 'nog niet geweest',
-                                            }) ?>"><span><?= e($when->format('j')) ?></span></li>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </ol>
-                        </div>
-
-                        <p class="card__hint card__hint--plain">
-                            <?= e($goal['days_note'] ?? $copy['days_note']) ?>
-                            <?php /* Only when the calendar is showing less than the whole goal. */ ?>
-                            <?php if ($goal['days_total'] > count($goal['days'])): ?>
-                                <?= e($copy['days_window']) ?>
-                            <?php endif; ?>
-                        </p>
-                    </section>
-                <?php endif; ?>
 
                 <!-- ----------------------- manual entry, when it is theirs -->
                 <?php if ($goal['needs_input'] && !$goal['is_completed'] && !empty($goal['entry'])): ?>
@@ -242,7 +186,7 @@ $height = 96.0;
                    pre-formatted Dutch strings, so the script never has to
                    know how to write "10.425 stappen" or "12 september". */
                 $chartPoints = array_map(
-                    static fn (array $p): array => ['x' => $p['x'], 'y' => $p['y'], 'd' => $p['d'], 'v' => $p['v']],
+                    static fn (array $p): array => ['x' => $p['x'], 'y' => $p['y'], 'd' => $p['d'], 'v' => $p['v'], 'n' => $p['n'] ?? ''],
                     $chart['points']
                 );
                 ?>
@@ -337,6 +281,7 @@ $height = 96.0;
                                             <div class="goal-chart__tip" data-goal-tip aria-hidden="true" hidden>
                                                 <span class="goal-chart__tip-date" data-tip-date></span>
                                                 <strong class="goal-chart__tip-value" data-tip-value></strong>
+                                                <span class="goal-chart__tip-note" data-tip-note hidden></span>
                                             </div>
                                         </div>
 
@@ -363,10 +308,10 @@ $height = 96.0;
                                              hovering, which is what a screen reader reads. */ ?>
                                     <table class="sr-only">
                                         <caption><?= e($copy['history'] . ' van ' . $goal['name']) ?></caption>
-                                        <thead><tr><th scope="col">Datum</th><th scope="col">Waarde</th></tr></thead>
+                                        <thead><tr><th scope="col">Datum</th><th scope="col">Waarde</th><th scope="col">Die dag</th></tr></thead>
                                         <tbody>
                                             <?php foreach ($chart['points'] as $point): ?>
-                                                <tr><td><?= e($point['d']) ?></td><td><?= e($point['v']) ?></td></tr>
+                                                <tr><td><?= e($point['d']) ?></td><td><?= e($point['v']) ?></td><td><?= e($point['n'] ?? '') ?></td></tr>
                                             <?php endforeach; ?>
                                         </tbody>
                                     </table>
@@ -397,19 +342,14 @@ $height = 96.0;
                             <p class="chart__empty"><?= e($copy['history_empty']) ?></p>
                         </div>
                     <?php endif; ?>
-                </section>
 
-                <!-- ------------------------------------------------- 4 -->
-                <section class="card reveal" aria-labelledby="goal-sources-<?= e($id) ?>">
-                    <div class="card__head card__head--compact">
-                        <span class="icon-tile" aria-hidden="true"><?= icon('pulse') ?></span>
-                        <h2 class="card__eyebrow" id="goal-sources-<?= e($id) ?>"><?= e($copy['sources']) ?></h2>
-                    </div>
-
-                    <?php if ($goal['source_list'] === []): ?>
-                        <p class="card__lede card__lede--small">Dit doel is nog niet aan gezondheidsgegevens gekoppeld.</p>
-                    <?php else: ?>
-                        <div class="metric-rows">
+                    <?php /* What feeds the line — Wat telt mee, which had a block of its
+                             own: the source and its rule, or that the person keeps it,
+                             and how the goal moves. */ ?>
+                    <div class="goal-chart__source" data-goal-source>
+                        <?php if ($goal['source_list'] === []): ?>
+                            <p class="card__lede card__lede--small">Dit doel is nog niet aan gezondheidsgegevens gekoppeld.</p>
+                        <?php else: ?>
                             <?php foreach ($goal['source_list'] as $source): ?>
                                 <div class="metric-row" data-accent="<?= e($source['accent']) ?>">
                                     <span class="metric-row__badge goal-source__badge" aria-hidden="true"><?= icon($source['icon']) ?></span>
@@ -419,36 +359,72 @@ $height = 96.0;
                                     </span>
                                 </div>
                             <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php /* Said as it is now: a goal read from health data moves by
-                             itself, and one kept by hand only moves when you enter
-                             something. */ ?>
-                    <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e(!empty($goal['is_manual'])
-                        ? 'Je voortgang verandert alleen door wat je zelf invult.'
-                        : 'Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.') ?></p>
+                        <?php endif; ?>
+                        <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e(!empty($goal['is_manual'])
+                            ? 'Je voortgang verandert alleen door wat je zelf invult.'
+                            : 'Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.') ?></p>
+                    </div>
                 </section>
 
-                <!-- -------------------------------------- recent activity -->
-                <?php if ($goal['activity'] !== []): ?>
-                    <section class="card reveal" aria-labelledby="goal-activity-<?= e($id) ?>">
-                        <div class="card__head card__head--compact">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('ranking') ?></span>
-                            <h2 class="card__eyebrow" id="goal-activity-<?= e($id) ?>"><?= e($copy['activity']) ?></h2>
+                <!-- ---------------------------------- per-day results -->
+                <?php if ($goal['days'] !== []): ?>
+                    <?php
+                    /* One block per day, for a goal that counts days — a
+                       Streak, or Optellen in days.
+
+                       Not two states. A day with no data is not a day that
+                       failed — a phone that was not syncing yet says nothing
+                       about whether somebody walked — so it is drawn as an
+                       empty outline, never red. (For a Streak it still ends
+                       the run, because it is not a success either; the note
+                       under the calendar says so.) Today, until it counts, is
+                       open rather than missed. */
+                    ?>
+                    <section class="card reveal" aria-labelledby="goal-days-<?= e($id) ?>">
+                        <div class="card__head">
+                            <div class="card__head-group">
+                                <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
+                                <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? 'Per dag') ?></h2>
+                            </div>
+                            <span class="chip chip--muted">
+                                <?= e($goal['days_chip'] ?? ($goal['days_met'] . ' van ' . $goal['days_total'])) ?>
+                            </span>
                         </div>
 
-                        <div class="metric-rows">
-                            <?php foreach ($goal['activity'] as $entry): ?>
-                                <div class="metric-row">
-                                    <span class="metric-row__label goal-source__label">
-                                        <strong><?= e($entry['label']) ?></strong>
-                                        <span class="goal-source__note"><?= e($entry['meta']) ?></span>
-                                    </span>
-                                    <span class="metric-row__value"><?= e($entry['value']) ?></span>
-                                </div>
-                            <?php endforeach; ?>
+                        <div class="day-calendar">
+                            <ol class="day-calendar__head" role="list" aria-hidden="true">
+                                <?php foreach (['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
+                                    <li><?= e($initial) ?></li>
+                                <?php endforeach; ?>
+                            </ol>
+
+                            <ol class="day-blocks" role="list"
+                                aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
+                                <?php foreach ($goal['days'] as $day): ?>
+                                    <?php if ($day['state'] === 'before'): ?>
+                                        <li class="day-block is-before" aria-hidden="true"></li>
+                                    <?php else: ?>
+                                        <?php $when = new DateTimeImmutable($day['date']); ?>
+                                        <li class="day-block is-<?= e($day['state']) ?>"
+                                            title="<?= e(goals_date_short($when) . ' · ' . match ($day['state']) {
+                                                'met'     => 'gehaald',
+                                                'missed'  => 'niet gehaald',
+                                                'unknown' => 'geen gegevens',
+                                                'pending' => 'vandaag, nog open',
+                                                default   => 'nog niet geweest',
+                                            }) ?>"><span><?= e($when->format('j')) ?></span></li>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </ol>
                         </div>
+
+                        <p class="card__hint card__hint--plain">
+                            <?= e($goal['days_note'] ?? $copy['days_note']) ?>
+                            <?php /* Only when the calendar is showing less than the whole goal. */ ?>
+                            <?php if ($goal['days_total'] > count($goal['days'])): ?>
+                                <?= e($copy['days_window']) ?>
+                            <?php endif; ?>
+                        </p>
                     </section>
                 <?php endif; ?>
 
@@ -462,17 +438,26 @@ $height = 96.0;
 
                         <div class="goal-manage">
 
-                            <p class="goal-manage__state" data-goal-action="is-primary"
-                               <?= $goal['is_primary'] ? '' : 'hidden' ?>>
-                                <?= icon('chart', 'goal-manage__state-icon') ?>
-                                <span><?= e($copy['is_primary']) ?><span class="goal-manage__hint">Kies bij een ander doel “<?= e($copy['make_primary']) ?>” om te wisselen.</span></span>
-                            </p>
-
-                            <button type="button" class="btn goal-manage__button press" data-goal-action="promote"
-                                    <?= $goal['is_primary'] ? 'hidden' : '' ?>>
-                                <?= icon('chart', 'goal-manage__icon') ?>
-                                <?= e($copy['make_primary']) ?>
-                            </button>
+                            <?php /* Primair | Secundair: one selector, the one this goal is
+                                     pressed. Secundair hands the primary slot on to the goal a
+                                     delete would (goal_set_secondary()); a goal on its own has
+                                     no one to hand it to, so it stays Primair. */
+                            $alone = count($goals['active'] ?? []) < 2;
+                            ?>
+                            <div class="range-switch range-switch--wide goal-priority" role="group"
+                                 aria-label="<?= e($copy['priority']) ?>" data-goal-priority-switch>
+                                <button type="button" class="range-switch__option<?= $goal['is_primary'] ? ' is-active' : '' ?>"
+                                        data-goal-action="set-primary"
+                                        aria-pressed="<?= $goal['is_primary'] ? 'true' : 'false' ?>"><?= e($copy['priority_primary']) ?></button>
+                                <button type="button" class="range-switch__option<?= $goal['is_primary'] ? '' : ' is-active' ?>"
+                                        data-goal-action="set-secondary"
+                                        aria-pressed="<?= $goal['is_primary'] ? 'false' : 'true' ?>"
+                                        <?= $alone && $goal['is_primary'] ? 'disabled aria-disabled="true"' : '' ?>><?= e($copy['priority_secondary']) ?></button>
+                            </div>
+                            <?php if ($alone && $goal['is_primary']): ?>
+                                <p class="goal-manage__hint goal-priority__note"><?= e($copy['priority_alone']) ?></p>
+                            <?php endif; ?>
+                            <p class="field-editor__error" role="alert" data-goal-priority-error hidden></p>
 
                             <button type="button" class="btn goal-manage__button press" data-goal-action="pause">
                                 <span class="goal-manage__swap" data-goal-pause-icon="pause"

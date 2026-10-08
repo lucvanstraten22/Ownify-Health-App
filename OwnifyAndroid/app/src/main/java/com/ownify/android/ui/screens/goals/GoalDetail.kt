@@ -64,6 +64,7 @@ import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.JInput
 import com.ownify.android.ui.design.JStyle
+import com.ownify.android.ui.design.RangeSwitch
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.Meter
@@ -83,10 +84,12 @@ import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.focusSafely
 
 /**
- * One goal in full (pages/goal-detail.php), in the order it matters: how far
- * you are and the numbers behind it; the days, for a goal that counts them;
- * the entry, for a goal kept by hand; how it has moved; what feeds it; what
- * happened lately; and what you can do about it.
+ * One goal in full (pages/goal-detail.php), in the order it matters: the goal
+ * — how far you are, the numbers, the period; Zelf bijhouden, for a goal kept
+ * by hand, right under it; the Verloop, which now also says what feeds the
+ * line and, on each point, what the day did and how far the goal was then
+ * (what Wat telt mee and Recent said); the days, for a goal that counts them;
+ * and Aanpassen.
  */
 @Composable
 fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
@@ -103,13 +106,11 @@ fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.of(goal.accent)) {
         DetailColumn(scroll, back = copy["back"] ?: "Doelen", backAria = "Terug naar Doelen") {
             Hero(data, goal)
-            if (goal.days.isNotEmpty()) Days(goal, copy)
             val entry = goal.entry
             if (goal.needsInput && !goal.isCompleted && entry != null) ManualEntry(goal, entry, copy)
-            GoalHistory(goal, copy)
-            Sources(goal, copy)
-            if (goal.activity.isNotEmpty()) Activity(goal, copy)
-            if (!goal.isCompleted) Manage(goal, copy)
+            GoalHistory(goal, copy) { SourceFooter(goal) }
+            if (goal.days.isNotEmpty()) Days(goal, copy)
+            if (!goal.isCompleted) Manage(data, goal, copy)
         }
     }
 }
@@ -204,15 +205,45 @@ private fun Hero(data: AppData, goal: Goal) {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
                 FactRow(goal.currentTitle.ifEmpty { labels["current"].orEmpty() }, goal.currentLabel.ifEmpty { null }, first = true)
                 goal.extraFacts.forEach { (label, value) -> FactRow(label, value) }
-                FactRow("Gestart", goal.startLabel.ifEmpty { null })
-                FactRow(
-                    if (goal.isCompleted) "Looptijd" else "Eindigt",
-                    if (goal.isCompleted) goal.tookLabel ?: "—" else goal.endLabel ?: labels["no_deadline"].orEmpty()
+                PeriodRow(
+                    copy["period"] ?: "Periode",
+                    "Gestart: " + goal.startLabel.ifEmpty { "—" },
+                    (if (goal.isCompleted) "Looptijd: " else "Eindigt: ") +
+                        (if (goal.isCompleted) goal.tookLabel ?: "—" else goal.endLabel ?: labels["no_deadline"].orEmpty())
                 )
             }
         }
 
         CardHint(if (goal.isPaused) copy["paused_body"].orEmpty() else goal.note.orEmpty(), icon = null, plain = true)
+    }
+}
+
+/** `.metric-row--period`: Gestart and Eindigt in one row; on a narrow phone Eindigt moves under Gestart, never mid-date. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PeriodRow(label: String, started: String, ends: String) {
+    val style = OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true)
+    Column(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(top = Ownify.Space3, bottom = Ownify.Space3)
+                .semantics(mergeDescendants = true) { },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+        ) {
+            T(label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+            FlowRow(
+                Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                T(started, style, maxLines = 1)
+                T("·", style.copy(color = Ownify.TextMuted), Modifier.clearAndSetSemantics { })
+                T(ends, style, maxLines = 1)
+            }
+        }
     }
 }
 
@@ -410,15 +441,18 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
     }
 }
 
-/** Section 4: what feeds the number — or that nothing does — and how it moves. */
+/**
+ * `.goal-chart__source`, under the Verloop: what feeds the line — or that
+ * nothing does — and how it moves. Wat telt mee said this in a block of its own.
+ */
 @Composable
-private fun Sources(goal: Goal, copy: Map<String, String>) {
-    JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.pulse, copy["sources"].orEmpty())
-        if (goal.sourceList.isEmpty()) {
-            T("Dit doel is nog niet aan gezondheidsgegevens gekoppeld.", JStyle.Meta)
-        } else {
-            Column(Modifier.fillMaxWidth()) {
+private fun SourceFooter(goal: Goal) {
+    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
+        Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
+            if (goal.sourceList.isEmpty()) {
+                T("Dit doel is nog niet aan gezondheidsgegevens gekoppeld.", JStyle.Meta)
+            } else {
                 goal.sourceList.forEachIndexed { i, source ->
                     val accent = Accent.of(source.accent).color
                     RowFrame(first = i == 0) {
@@ -438,26 +472,10 @@ private fun Sources(goal: Goal, copy: Map<String, String>) {
                     }
                 }
             }
-        }
-        CardHint(
-            if (goal.isManual) "Je voortgang verandert alleen door wat je zelf invult."
-            else "Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen."
-        )
-    }
-}
-
-/** Recent activity: what happened to this goal lately, newest first. */
-@Composable
-private fun Activity(goal: Goal, copy: Map<String, String>) {
-    JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.ranking, copy["activity"].orEmpty())
-        Column(Modifier.fillMaxWidth()) {
-            goal.activity.forEachIndexed { i, entry ->
-                RowFrame(first = i == 0) {
-                    LabelWithNote(entry.label, entry.meta, Modifier.weight(1f))
-                    T(entry.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true), align = TextAlign.End)
-                }
-            }
+            CardHint(
+                if (goal.isManual) "Je voortgang verandert alleen door wat je zelf invult."
+                else "Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen."
+            )
         }
     }
 }
@@ -489,44 +507,43 @@ private fun LabelWithNote(label: String, note: String, modifier: Modifier) {
 }
 
 /**
- * Section 5: primary or not, pause or resume, delete — which asks first, in
- * place. The board moves at once; the server hears of it at the same time.
+ * Aanpassen: Primair | Secundair, pause or resume, delete — which asks first,
+ * in place. The board moves at once; the server hears of it at the same time,
+ * and once it has answered the state is read again, so the board, this page
+ * and Overzicht show what is stored.
  */
 @Composable
-private fun Manage(goal: Goal, copy: Map<String, String>) {
+private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
     val context = LocalContext.current
-    val accent = LocalAccent.current.color
     var confirming by remember(goal.id) { mutableStateOf(false) }
+    // A goal on its own has no one to hand the primary slot to (goal_set_secondary()).
+    val alone = goal.isPrimary && GoalBoard.board(data.goals).active < 2
 
     JCard(Modifier.fillMaxWidth().reveal()) {
         CompactHead(OwnifyIcons.sliders, copy["manage"].orEmpty())
 
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            if (goal.isPrimary) {
-                // .goal-manage__state: this is the primary goal, and how to change that.
-                val shape = RoundedCornerShape(Ownify.RadiusMd)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(shape)
-                        .background(Ownify.mix(accent, 0.12f, Color.Transparent))
-                        .border(1.dp, Ownify.mix(accent, 0.28f, Color.Transparent), shape)
-                        .cssPadding(PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3), border = 1.dp)
-                        .semantics(mergeDescendants = true) { },
-                    horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-                ) {
-                    JIcon(OwnifyIcons.chart, size = 17.dp, color = accent)
-                    Column(Modifier.weight(1f)) {
-                        T(copy["is_primary"].orEmpty(), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
-                        T(
-                            "Kies bij een ander doel “${copy["make_primary"].orEmpty()}” om te wisselen.",
-                            OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary),
-                            Modifier.padding(top = Ownify.Space1)
-                        )
+            // `.goal-priority`: the shared segmented switch, the one this goal is pressed.
+            RangeSwitch(
+                options = listOf("primary" to copy["priority_primary"].orEmpty(), "secondary" to copy["priority_secondary"].orEmpty()),
+                selected = if (goal.isPrimary) "primary" else "secondary",
+                onSelect = { chosen ->
+                    when {
+                        chosen == "primary" && !goal.isPrimary -> GoalBoard.promote(context, goal.id)
+                        chosen == "secondary" && goal.isPrimary -> GoalBoard.demote(context, goal.id)
                     }
-                }
-            } else {
-                ManageButton(OwnifyIcons.chart, copy["make_primary"].orEmpty()) { GoalBoard.promote(context, goal.id) }
+                },
+                modifier = Modifier.padding(bottom = Ownify.Space1),
+                wide = true,
+                label = copy["priority"],
+                disabled = if (alone) setOf("secondary") else emptySet()
+            )
+            if (alone) {
+                T(
+                    copy["priority_alone"].orEmpty(),
+                    OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted),
+                    Modifier.padding(horizontal = Ownify.Space1).padding(bottom = Ownify.Space1)
+                )
             }
 
             ManageButton(

@@ -13,8 +13,8 @@ android {
         applicationId = "com.ownify.android"
         minSdk = 28
         targetSdk = 37
-        versionCode = 25
-        versionName = "1.9.2"
+        versionCode = 26
+        versionName = "10.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

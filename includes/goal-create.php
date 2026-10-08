@@ -277,11 +277,7 @@ if (!function_exists('goal_create_from_input')) {
             'resume'    => goal_set_status($userId, $goalId, 'active'),
             'complete'  => goal_set_status($userId, $goalId, 'completed'),
             'primary'   => goal_set_primary($userId, $goalId),
-            'secondary' => (static function () use ($userId, $goalId): bool {
-                db_run("UPDATE goals SET priority = 'secondary' WHERE id = ? AND user_id = ?", [$goalId, $userId]);
-                goal_ensure_primary($userId);
-                return true;
-            })(),
+            'secondary' => goal_set_secondary($userId, $goalId),
             default     => null,
         };
     }

@@ -477,6 +477,19 @@
     border-top: 1px solid var(--glass-hairline);
 }
 
+/* Periode: Gestart and Eindigt in one row. The two halves wrap as wholes —
+   on a narrow phone Eindigt moves under Gestart, never splits mid-date. */
+.goal-period {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    column-gap: var(--space-2);
+    row-gap: 2px;
+    min-width: 0;
+}
+
+.goal-period__part { white-space: nowrap; }
+
 /* --------------------------------------------------------------------------
    What feeds the goal
    -------------------------------------------------------------------------- */
@@ -549,6 +562,13 @@
 }
 
 .goal-manage__state[hidden] { display: none; }
+
+/* Primair | Secundair: the shared segmented switch, full width. */
+.goal-priority { margin-bottom: var(--space-1); }
+
+.goal-priority .range-switch__option:disabled { opacity: 0.45; cursor: default; }
+
+.goal-priority__note { margin: 0 0 var(--space-1); padding-inline: var(--space-1); color: var(--text-muted); }
 
 .goal-manage__state-icon { width: 17px; height: 17px; flex: none; color: var(--accent); }
 
@@ -1380,6 +1400,25 @@
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
 }
+
+/* What the day did and how far the goal was then: "+ 2,5 km · 62% van je doel". */
+.goal-chart__tip-note {
+    font-size: var(--fs-tiny);
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+}
+
+.goal-chart__tip-note[hidden] { display: none; }
+
+/* What feeds the line, under it: the source and how the goal moves. */
+.goal-chart__source {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--glass-hairline);
+}
+
+.goal-chart__source .card__hint { margin-top: var(--space-3); }
 
 /* --- axes ------------------------------------------------------------- */
 

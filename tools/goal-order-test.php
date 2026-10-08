@@ -266,5 +266,104 @@ foreach ([
     check('  and the completed goal is under Behaald', $history === 'Hoofddoel', $history);
 }
 
+echo "\nAanpassen — Primair | Secundair\n";
+
+/** goal_set_primary(): the goal takes the primary slot and the goal that had it becomes secondary; the board orders the rest. */
+function made_primary(array $goals, string $name): array
+{
+    return array_map(static function (array $g) use ($name): array {
+        if ($g['name'] === $name) {
+            return ['priority' => 'primary'] + $g;
+        }
+
+        return $g['priority'] === 'primary' ? ['priority' => 'secondary'] + $g : $g;
+    }, $goals);
+}
+
+/**
+ * goal_set_secondary(): the goal a delete would hand the slot to
+ * (goals_successor() on the board as it is) is made primary, and with that the
+ * old primary goal is secondary. Null when no goal is left to take the slot.
+ */
+function made_secondary(array $goals, string $name, ?string $shown = null): ?array
+{
+    $b = board($goals);
+    if ((string) ($b['primary']['id'] ?? '') !== id_of($goals, $name)) {
+        return $goals;                          // secondary already: nothing changes
+    }
+
+    $heir = goals_successor($b, id_of($goals, $name), $shown);
+    foreach ($goals as $g) {
+        if ($g['id'] === $heir) {
+            return made_primary($goals, $g['name']);
+        }
+    }
+
+    return null;
+}
+
+$A = static fn (?int $p, ?int $ends = 20, string $prio = 'secondary', string $status = 'active'): array => goal('A', $p, $ends, $prio, $status);
+
+/* 8 — secondary → Primair: B takes the slot, A falls in by the order. (The
+   brief's example lists "A — 50%, C — 64%"; the order it asks to keep puts
+   64% first, so that is what is checked.) */
+$g = [$A(50, 20, 'primary'), goal('B', 82, 20), goal('C', 64, 20)];
+expect('B (82%) → Primair: B primary, A (50%) under C (64%)', made_primary($g, 'B'), 'B', 'C, A');
+
+/* 9 — primary → Secundair, another goal further along. */
+expect('A (50%) → Secundair: B (82%) primary, then C (64%), A (50%)', made_secondary($g, 'A'), 'B', 'C, A');
+
+/* 10 — primary → Secundair while it is the furthest along itself. */
+$g = [$A(82, 20, 'primary'), goal('B', 64, 20), goal('C', 41, 20)];
+expect('A (82%, the highest) → Secundair: B (64%) primary, A first of the secondary goals', made_secondary($g, 'A'), 'B', 'A, C');
+
+/* Equal percentages: the one that ends sooner takes the slot. */
+$g = [$A(70, 20, 'primary'), goal('B', 60, 30), goal('C', 60, 10)];
+expect('equal 60%: C (ends sooner) primary; A (70%) first, then B', made_secondary($g, 'A'), 'C', 'A, B');
+
+/* Goals without a percentage come after every goal with one. */
+$g = [$A(50, 20, 'primary'), goal('B', null, 5), goal('C', 10, 40)];
+expect('no-data B ends sooner, but C has 10%: C primary; A, then B', made_secondary($g, 'A'), 'C', 'A, B');
+$g = [$A(40, 20, 'primary'), goal('B', null, 30), goal('C', null, null), goal('D', null, 10)];
+expect('only no-data goals left: D (ends soonest) primary; A (40%), B, then C (no end date)', made_secondary($g, 'A'), 'D', 'A, B, C');
+
+/* The old primary goal placed by the end-date rules among equals. */
+$g = [$A(60, 5, 'primary'), goal('B', 60, 20), goal('C', 60, 3)];
+expect('all 60%: C (ends in 3) primary; A (ends in 5) before B (20)', made_secondary($g, 'A'), 'C', 'A, B');
+$g = [$A(60, null, 'primary'), goal('B', 60, 20), goal('C', 60, 3)];
+expect('all 60%, A without an end date: C primary; B, then A last', made_secondary($g, 'A'), 'C', 'B, A');
+
+/* A real 0% is a percentage. */
+$g = [$A(30, 20, 'primary'), goal('nul', 0, 90), goal('leeg', null, 1)];
+expect('0% before no data: "nul" primary', made_secondary($g, 'A'), 'nul', 'A, leeg');
+
+/* Paused goals: a running one first, as a delete chooses. */
+$g = [$A(50, 20, 'primary'), goal('gepauzeerd', 90, 10, 'secondary', 'paused'), goal('loopt', 20, 10)];
+expect('a running goal before a paused one: "loopt" primary', made_secondary($g, 'A'), 'loopt', 'A, gepauzeerd');
+
+/* The goal moved up on the page is the one kept, as with a delete. */
+$g = [$A(50, 20, 'primary'), goal('B', 82, 20), goal('C', 64, 20)];
+expect('the page moved C up (a page from before a sync): C is kept', made_secondary($g, 'A', id_of($g, 'C')), 'C', 'B, A');
+
+/* The same goal as a delete or a completion would choose. */
+foreach ([
+    [[$A(50, 20, 'primary'), goal('B', 82, 20), goal('C', 64, 20)], 'B'],
+    [[$A(82, 20, 'primary'), goal('B', 64, 20), goal('C', 41, 20)], 'B'],
+    [[$A(40, 20, 'primary'), goal('B', null, 30), goal('D', null, 10)], 'D'],
+] as [$g, $heir]) {
+    $deleted = successor($g);
+    $done    = board(array_map(static fn (array $x): array => $x['name'] === 'A'
+        ? ['status' => 'completed', 'completed_days_ago' => 0] + $x : $x, $g))['primary']['name'] ?? '';
+    $demoted = board(made_secondary($g, 'A'))['primary']['name'] ?? '';
+    check("Secundair, delete and completion hand the slot to the same goal ($heir)",
+        $demoted === $heir && $deleted === $heir && $done === $heir, "secundair $demoted, delete $deleted, completed $done");
+}
+
+/* Nothing to hand it to. */
+check('the only goal → Secundair: refused, it stays primary', made_secondary([$A(50, 20, 'primary')], 'A') === null);
+$g = [$A(50, 20, 'primary'), goal('B', 82, 20)];
+expect('a secondary goal → Secundair: nothing changes', made_secondary($g, 'B'), 'A', 'B');
+expect('the primary goal → Primair: nothing changes', made_primary($g, 'A'), 'A', 'B');
+
 echo "\n  $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);

@@ -353,6 +353,42 @@ if (!function_exists('goals_for_user')) {
     }
 
     /**
+     * Makes the primary goal secondary. The primary slot does not stay empty:
+     * the goal a delete or a completion would hand it to takes it — the first
+     * of Secundaire doelen on the board as it is now (goals_successor() in
+     * lib/goals.php, with $shown the goal the website or the app moved up) —
+     * and the goal that was primary falls in under Secundaire doelen by the
+     * board's own order. So when it has the highest percentage itself, the
+     * next highest becomes primary and it goes first among the secondary goals.
+     *
+     * True when stored, or when the goal was secondary already. False when it
+     * is not this user's goal, or when no other goal is left to be primary:
+     * one goal on its own stays the primary goal.
+     */
+    function goal_set_secondary(int $userId, int $goalId, ?string $shown = null): bool
+    {
+        $goal = goal_get($userId, $goalId);
+
+        if ($goal === null) {
+            return false;
+        }
+
+        if ($goal['priority'] !== 'primary') {
+            return true;
+        }
+
+        $root = dirname(__DIR__);
+        require_once $root . '/lib/render.php';
+        require_once $root . '/lib/goals.php';
+        require_once $root . '/lib/hydrate-goals.php';
+
+        $board = goals_prepare(hydrate_goals(require $root . '/config/goals.php', $userId));
+        $heir  = goals_successor($board, (string) $goalId, $shown);
+
+        return $heir !== null && goal_set_primary($userId, (int) $heir);
+    }
+
+    /**
      * Deleting is real: the progress history goes with it, by cascade. When it
      * was the primary goal, $successor takes its place (api/goals/delete.php
      * works out which: the first of Secundaire doelen).

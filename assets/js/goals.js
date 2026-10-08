@@ -149,11 +149,12 @@
             var chip = detail.querySelector('[data-goal-chip="primary"]');
             if (chip) { chip.hidden = !isPrimary; }
 
-            var state = detail.querySelector('[data-goal-action="is-primary"]');
-            if (state) { state.hidden = !isPrimary; }
-
-            var promote = detail.querySelector('[data-goal-action="promote"]');
-            if (promote) { promote.hidden = isPrimary; }
+            /* Aanpassen's Primair | Secundair: the one this goal is, pressed. */
+            Array.prototype.forEach.call(detail.querySelectorAll('[data-goal-priority-switch] [data-goal-action]'), function (option) {
+                var on = (option.getAttribute('data-goal-action') === 'set-primary') === isPrimary;
+                option.classList.toggle('is-active', on);
+                option.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
         }
     }
 
@@ -305,13 +306,36 @@
         var action = trigger.getAttribute('data-goal-action');
         var confirm = detail.querySelector('[data-goal-confirm]');
 
-        if (action === 'promote') {
+        /* Primair | Secundair. Either way the board moves at once and, once
+           the server has stored it, the goal parts of the page are read again
+           — the board, every goal page and Overzicht's goal card — so all
+           three show what is stored. */
+        if (action === 'set-primary') {
+            if (detail.dataset.goalPriority === 'primary') { return; }
             promote(id);
-            /* A new primary goal: once it is stored, the goal parts of the
-               page are read again — Overzicht's goal card included — as after
-               deleting the primary goal. */
             save('api/goals/update.php', { goal_id: id, action: 'primary' }).then(function (result) {
                 if (result && result.ok) { refresh(); }
+            });
+            return;
+        }
+
+        if (action === 'set-secondary') {
+            if (detail.dataset.goalPriority !== 'primary' || trigger.disabled) { return; }
+
+            /* The slot goes to the goal a delete would hand it to: the first
+               under Secundaire doelen (successorOf(), goals_successor() on the
+               server). Sent along, so the goal moved up here is the one stored;
+               where this goal itself ends up is the server's order. */
+            var heir = successorOf(id);
+            if (!heir) { return; }
+
+            var error = detail.querySelector('[data-goal-priority-error]');
+            if (error) { error.hidden = true; }
+
+            promote(heir);
+            save('api/goals/update.php', { goal_id: id, action: 'secondary', successor: heir }).then(function (result) {
+                if (result && result.ok) { refresh(); return; }
+                if (error && result && result.error) { error.textContent = result.error; error.hidden = false; }
             });
             return;
         }

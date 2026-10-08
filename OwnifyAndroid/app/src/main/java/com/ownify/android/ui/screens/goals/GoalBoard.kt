@@ -54,6 +54,8 @@ object GoalBoard {
 
         // Plain classes: two taps that ask the same are two changes, each removed on its own answer.
         class Promote(override val id: String) : Edit
+        /** The primary goal made secondary: [successor], the goal a delete would hand the slot to, takes it. */
+        class Demote(override val id: String, val successor: String) : Edit
         class Pause(override val id: String, val paused: Boolean) : Edit
         /** [successor]: the goal that takes a deleted primary goal's place, sent along so the server stores the same. */
         class Delete(override val id: String, val successor: String?) : Edit {
@@ -69,6 +71,19 @@ object GoalBoard {
     fun deleting(id: String): Boolean = edits.any { it is Edit.Delete && it.id == id }
 
     fun promote(context: Context, id: String) = send(context, Edit.Promote(id), "api/goals/update.php", mapOf("goal_id" to id, "action" to "primary"))
+
+    /**
+     * Aanpassen's Secundair on the primary goal. The slot goes to the goal a
+     * delete would hand it to ([successor], goals_successor() on the server),
+     * sent along so the goal moved up here is the one stored; where this goal
+     * itself ends up is the server's order, read again once it has answered.
+     * False when no other goal is there to take it: it stays primary.
+     */
+    fun demote(context: Context, id: String): Boolean {
+        val successor = OwnifyAppState.data?.goals?.let { successor(board(it), id) } ?: return false
+        send(context, Edit.Demote(id, successor), "api/goals/update.php", mapOf("goal_id" to id, "action" to "secondary", "successor" to successor))
+        return true
+    }
 
     fun pause(context: Context, id: String, paused: Boolean) =
         send(context, Edit.Pause(id, paused), "api/goals/update.php", mapOf("goal_id" to id, "action" to if (paused) "pause" else "resume"))
@@ -136,8 +151,10 @@ object GoalBoard {
                     }
                 }
 
-                is Edit.Promote -> {
-                    val at = secondary.indexOfFirst { it.id == edit.id }
+                is Edit.Promote, is Edit.Demote -> {
+                    // A demotion is the successor's promotion: the same swap.
+                    val up = if (edit is Edit.Demote) edit.successor else edit.id
+                    val at = secondary.indexOfFirst { it.id == up }
                     if (at >= 0) {
                         // Always a swap: the outgoing primary takes the promoted card's place.
                         val promoted = secondary[at]

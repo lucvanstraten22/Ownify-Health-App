@@ -736,6 +736,7 @@ fun CardHint(
 /**
  * `.range-switch`: options in a hairline capsule, the chosen one a lit pane
  * of its own. [wide] is `--wide`: the options share the width equally.
+ * An option in [disabled] is shown faded and does nothing (`:disabled`).
  */
 @Composable
 fun RangeSwitch(
@@ -746,7 +747,8 @@ fun RangeSwitch(
     wide: Boolean = false,
     optionHeight: Dp = if (wide) 34.dp else 32.dp,
     optionPadding: Dp = if (wide) Ownify.Space2 else Ownify.Space3,
-    label: String? = null
+    label: String? = null,
+    disabled: Set<String> = emptySet()
 ) {
     InButton {
         val shape = RoundedCornerShape(50)
@@ -768,9 +770,11 @@ fun RangeSwitch(
                     tween(Ownify.FastMs, easing = Ownify.Ease),
                     label = "option"
                 )
+                val off = key in disabled
                 Box(
                     Modifier
                         .then(if (wide) Modifier.weight(1f) else Modifier)
+                        .alpha(if (off) 0.45f else 1f)
                         .heightIn(min = optionHeight)
                         .drawWithContent {
                             if (active) {
@@ -783,7 +787,7 @@ fun RangeSwitch(
                             drawContent()
                         }
                         .clip(shape)
-                        .clickable(role = Role.Button, onClick = blurring { onSelect(key) })
+                        .clickable(enabled = !off, role = Role.Button, onClick = blurring { onSelect(key) })
                         .semantics { this.selected = active }
                         // `border: 1px solid transparent` on every option: it takes room either way.
                         .cssPadding(PaddingValues(horizontal = optionPadding), border = 1.dp),

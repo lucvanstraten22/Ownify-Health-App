@@ -485,8 +485,18 @@ same rules again (`includes/goal-create.php`).
 works itself out from the person's own records; a goal kept by hand gets an
 entry on its detail page — a tick for the day, or an amount to add. Either way
 `includes/goal-progress.php` recalculates it from the rows underneath and
-stores where it stands on the goal. The detail page shows the chart, the last
-six weeks day by day, what counts (*Wat telt mee*) and the recent entries.
+stores where it stands on the goal. The detail page goes: the goal (with its
+*Periode*, Gestart and Eindigt in one row), *Zelf bijhouden* for a goal kept by
+hand, the *Verloop* — which also names what feeds it and, on each point, what
+the day added and how far the goal was that day — the last six weeks day by
+day for a goal that counts days, and *Aanpassen*.
+
+**Primair | Secundair.** *Aanpassen* has one selector. Primair makes the goal
+primary and the old primary secondary. Secundair on the primary goal hands the
+slot to the goal a delete or a completion would (`goals_successor()`, the first
+of Secundaire doelen — so the next highest when the goal is the furthest along
+itself), via `goal_set_secondary()`; a goal on its own stays primary. Either way
+the board, every goal page and Overzicht's card are read again from the server.
 
 **Real goals only.** Goals are rows in the `goals` table, read for the
 signed-in person by `lib/hydrate-goals.php`; an account without goals gets the
@@ -575,7 +585,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal
 VOORKEUREN   Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.9.2
+OVER         Over de app · Versie Beta 10.0
 
              [ Uitloggen ]
                Account verwijderen

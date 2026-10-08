@@ -90,6 +90,10 @@ if (!function_exists('hydrate_goals')) {
            kilos or the steps themselves, not the percentage. */
         $series = goal_series($userId, $row, $today);
 
+        /* The percentage stored on each day (goal_progress), so a point on the
+           chart can say how far the goal was that day — what Recent showed. */
+        $series['percents'] = hydrate_goal_percents($userId, $goalId);
+
         return [
             'id'       => (string) $goalId,
             'name'     => $row['name'],
@@ -334,6 +338,30 @@ if (!function_exists('hydrate_goals')) {
                 'value' => $text,
             ];
         }, $rows);
+    }
+
+    /**
+     * The percentage each day of a goal was stored with, by date. A day the
+     * goal was not worked out on has none; nothing is filled in.
+     *
+     * @return array<string, int>
+     */
+    function hydrate_goal_percents(int $userId, int $goalId): array
+    {
+        $rows = db_all(
+            'SELECT p.recorded_on, p.percent_complete
+               FROM goal_progress p
+               JOIN goals g ON g.id = p.goal_id
+              WHERE p.goal_id = ? AND g.user_id = ? AND p.percent_complete IS NOT NULL',
+            [$goalId, $userId]
+        );
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(string) $r['recorded_on']] = (int) floor((float) $r['percent_complete']);
+        }
+
+        return $out;
     }
 
     /** "86 kg", or null when there is no value to label. */

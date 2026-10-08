@@ -1,6 +1,7 @@
 <?php
 /**
  * Pause, resume, complete or re-prioritise one of the signed-in user's goals.
+ * Answers with the goal that is primary afterwards.
  *
  * The goal id arrives from the browser, which is why every statement behind
  * this carries `AND user_id = ?`: an id belonging to someone else matches no
@@ -36,14 +37,30 @@ if (goal_get($userId, $goalId) === null) {
     api_fail('Onbekend doel.', 404);
 }
 
-$ok = goal_apply_action($userId, $goalId, $action);
+/* Secundair: the goal that takes the primary slot is the one a delete would
+   hand it to (goal_set_secondary()); `successor` is the goal the page or the
+   app moved up, kept when it is as eligible — as with a delete. */
+if ($action === 'secondary') {
+    $shown = is_scalar($input['successor'] ?? null) ? trim((string) $input['successor']) : '';
+    if (!goal_set_secondary($userId, $goalId, $shown === '' ? null : $shown)) {
+        api_fail('Er is geen ander doel dat je hoofddoel kan worden.', 409);
+    }
+} else {
+    $ok = goal_apply_action($userId, $goalId, $action);
 
-if ($ok === null) {
-    api_fail('Onbekende actie.', 400);
+    if ($ok === null) {
+        api_fail('Onbekende actie.', 400);
+    }
+
+    if ($ok === false) {
+        api_fail('Deze wijziging kon niet worden opgeslagen.', 500);
+    }
 }
 
-if ($ok === false) {
-    api_fail('Deze wijziging kon niet worden opgeslagen.', 500);
-}
+/* Which goal is primary now, so a caller can check what was stored. */
+$primary = db_value(
+    "SELECT id FROM goals WHERE user_id = ? AND priority = 'primary' AND status IN ('active','paused')",
+    [$userId]
+);
 
-api_ok();
+api_ok(['primary' => $primary === null ? null : (string) $primary]);

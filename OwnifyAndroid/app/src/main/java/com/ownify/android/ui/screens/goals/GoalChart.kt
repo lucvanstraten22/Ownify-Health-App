@@ -105,7 +105,7 @@ private const val LINGER_MS = 1600L
  * recorded yet, the faint grid and one sentence, never an invented line.
  */
 @Composable
-fun GoalHistory(goal: Goal, copy: Map<String, String>) {
+fun GoalHistory(goal: Goal, copy: Map<String, String>, footer: @Composable () -> Unit = {}) {
     val chart = goal.chart
     val history = copy["history"].orEmpty()
     val filled = goal.hasHistory && chart != null
@@ -131,6 +131,9 @@ fun GoalHistory(goal: Goal, copy: Map<String, String>) {
         } else {
             EmptyHistory(goal, history, copy["history_empty"].orEmpty())
         }
+
+        // `.goal-chart__source`: what feeds the line (Wat telt mee, once a block of its own).
+        footer()
     }
 }
 
@@ -215,7 +218,7 @@ private fun Plot(goal: Goal, chart: GoalChart, description: String) {
                     .ownsGestures(owned, ownKey)
                     .semantics {
                         contentDescription = description
-                        stateDescription = points.getOrNull(reading)?.let { "${it.date}, ${it.value}" } ?: ""
+                        stateDescription = points.getOrNull(reading)?.let { "${it.date}, ${it.value}" + (if (it.note.isNotEmpty()) ", ${it.note}" else "") } ?: ""
                         liveRegion = LiveRegionMode.Polite
                         // The keyboard's arrows, for a screen reader: step through the readings.
                         customActions = listOf(
@@ -447,7 +450,7 @@ private fun settleEnd(chart: GoalChart, lines: List<Path>, plot: Size, label: In
 }
 
 /**
- * `.goal-chart__tip`: the date and the value, just above the plot, centred
+ * `.goal-chart__tip`: the date, the value and what the day did, just above the plot, centred
  * over the point and kept inside the plot's width.
  */
 @Composable
@@ -470,6 +473,8 @@ private fun Reading(point: ChartPoint, accent: Color) {
             ) {
                 T(point.date, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
                 T(point.value, OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                // `.goal-chart__tip-note`: what the day did and how far the goal was then.
+                if (point.note.isNotEmpty()) T(point.note, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em, tabular = true), maxLines = 1)
             }
         },
         modifier = Modifier.clearAndSetSemantics { }

@@ -160,9 +160,18 @@ return [
         'back'       => 'Doelen',
         'history'    => 'Verloop',
         'history_empty' => 'Nog geen verloop',
+        /* `sources` and `activity` were blocks of their own; what they said
+           now lives in the Verloop (its footer, and each point). The words
+           stay for an Android app from before, which still draws them. */
         'sources'    => 'Wat telt mee',
         'activity'   => 'Recent',
-        'manage'     => 'Beheer',
+        'manage'     => 'Aanpassen',
+        'period'     => 'Periode',
+        /* Aanpassen's one selector: which of the two this goal is. */
+        'priority'           => 'Prioriteit',
+        'priority_primary'   => 'Primair',
+        'priority_secondary' => 'Secundair',
+        'priority_alone'     => 'Je enige doel is altijd je primaire doel.',
         'manual'     => 'Zelf bijhouden',
         'manual_save'  => 'Opslaan',
         'days'       => 'Per dag',

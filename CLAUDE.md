@@ -28,15 +28,18 @@ must look right in both themes. `docs/THEME.md` explains the roles.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 1.9.2**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 10.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
-(without "Beta") with `versionCode` one higher:
+(without "Beta") with `versionCode` one higher.
 
-- a small update (fix, tweak): patch, e.g. 1.0.0 → 1.0.1
-- a bigger change (new feature): minor, e.g. 1.0.1 → 1.1.0
-- a big UI refresh: major, e.g. 1.1.0 → 2.0.0 — only when the user says so
+Since 10.0 the version has two parts (the user's choice; 1.9.2 was followed
+by 10.0):
+
+- a small update (fix, tweak): the second number, e.g. 10.0 → 10.1
+- a big update (new feature, bigger change): the next whole number, e.g.
+  10.1 → 11.0
 
 Every commit title starts with the new version number, then the
-description: `1.0.2 Show the version in commit titles`.
-The next version is 1.9.3 for a small update, or 1.10.0 for a bigger change.
+description: `10.1 Show the version in commit titles`.
+The next version is 10.1 for a small update, or 11.0 for a big one.

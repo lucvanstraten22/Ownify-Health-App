@@ -1119,7 +1119,7 @@ data class GoalChart(
             width = (o.num("width") ?: 1000.0).toFloat(),
             height = (o.num("height") ?: 132.0).toFloat(),
             points = o.arr("points").map {
-                ChartPoint((it.num("x") ?: 0.0).toFloat(), (it.num("y") ?: 0.0).toFloat(), it.str("d").orEmpty(), it.str("v").orEmpty(), it.bool("dot"))
+                ChartPoint((it.num("x") ?: 0.0).toFloat(), (it.num("y") ?: 0.0).toFloat(), it.str("d").orEmpty(), it.str("v").orEmpty(), it.bool("dot"), it.str("n").orEmpty())
             },
             line = o.arr("line").strings(),
             area = o.arr("area").strings(),
@@ -1136,7 +1136,8 @@ data class GoalChart(
     }
 }
 
-data class ChartPoint(val x: Float, val y: Float, val date: String, val value: String, val dot: Boolean)
+/** [note]: what the day did and how far the goal was then ("+ 2,5 km · 62% van je doel"); empty when nothing is known. */
+data class ChartPoint(val x: Float, val y: Float, val date: String, val value: String, val dot: Boolean, val note: String = "")
 data class XTick(val left: Float, val label: String, val align: String)
 data class YTick(val top: Float, val label: String)
 data class ChartTarget(val top: Float, val label: String)
