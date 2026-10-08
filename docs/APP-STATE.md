@@ -26,7 +26,8 @@ token, like every endpoint behind `api_require_account_user()`.
 
 `data` is what the templates read: `config/dashboard.php` filled for the
 account — `app`, `header`, `overview`, `scores`, `goal` (the Overzicht goal
-card), `insights`, `patterns`, `recommendation`, `leaderboard`,
+card), `insights`, `patterns` (no longer shown: kept for Android apps from
+before 1.9.2, which draw it), `recommendation`, `leaderboard`,
 `navigation`, `ai`, `disclaimers`, `disclaimer`, `auth`, `health`,
 `community`, `goals`, `settings` — plus:
 

@@ -22,7 +22,6 @@ declare(strict_types=1);
                 component('health-score', $data);
                 component('goal-progress', $data);
                 component('insights', $data);
-                component('patterns', $data);
                 component('recommendation', $data);
                 ?>
                 <?php if ($data['disclaimer'] !== ''): ?>

@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
@@ -114,7 +115,10 @@ class SettingsLayoutTest {
         compose.runOnUiThread { shell.openDetail(Detail.SettingsPage("about")) }
         compose.waitForIdle()
 
-        for (kept in listOf("Naam", "Versie", "Beta 1.9.1", "Privacyverklaring", "Voorwaarden", "Licenties")) text(kept).assertExists()
+        for (kept in listOf("Naam", "Versie", "Privacyverklaring", "Voorwaarden", "Licenties")) text(kept).assertExists()
+        // The Versie row's value, whatever the version (the main page says "Versie Beta …").
+        assertTrue(compose.onAllNodes(hasText("Beta ", substring = true), useUnmergedTree = true).fetchSemanticsNodes()
+            .any { node -> node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { it.text.startsWith("Beta ") } })
         heading("JURIDISCH").assertExists()
         assertTrue("Gebouwd met is gone", none("Gebouwd met"))
         assertTrue("Contact is gone", none("Contact"))

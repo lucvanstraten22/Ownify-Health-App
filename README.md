@@ -107,7 +107,6 @@ components/
     calibration.php           the first days on Overzicht: baseline, first score, starting point
     goal-progress.php         personal goal progress
     insights.php              useful insights
-    patterns.php              patterns + research placeholder
     recommendation.php        one small suggestion placeholder
     leaderboard.php           compact social layer
     scroll-top.php            floating glass control
@@ -576,7 +575,7 @@ GEZONDHEID   Apparaten & Gezondheid          >
 PRIVACY      Privacy · Gezondheidsdata privé >
 APP          Meldingen · Thema · Taal
 VOORKEUREN   Eenheden · Eerste dag · Toegankelijkheid
-OVER         Over de app · Versie Beta 1.9.1
+OVER         Over de app · Versie Beta 1.9.2
 
              [ Uitloggen ]
                Account verwijderen

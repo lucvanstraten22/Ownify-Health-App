@@ -58,10 +58,11 @@ if (!function_exists('icon')) {
                 // insights — heartbeat
                 'pulse'    => '<path d="M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21"/>',
 
-                // patterns / research
+                // goals (the Doelen tab, the goal card and pages), and a chart's heading
                 'chart'    => '<path d="M4 4.5v15h15.5"/><path d="M7.6 15.4 11 11.2l2.9 2.4 4.4-6"/>',
 
-                // goals — deliberately not a second ring: `rings` owns that shape
+                // a goal of no category (Anders) — deliberately not a second ring:
+                // `rings` owns that shape
                 'flag'     => '<path d="M6 20.6V4"/><path d="M6 5c4.5-2 9 2 13.5 0v8.6c-4.5 2-9-2-13.5 0Z"/>',
 
                 // recommendation
@@ -174,6 +175,10 @@ if (!function_exists('icon')) {
          * stays 1.6 grid units whatever the shape does. An icon that is not
          * listed is drawn exactly as before: the chevrons and the small
          * in-page marks are deliberately not this size.
+         *
+         * The Doelen tab's `chart` is one of those: it is the icon the
+         * Overview's Patronen & onderzoek card had, used as it is. `flag`, the
+         * tab's icon before, keeps its entry for the goals that still show it.
          */
         static $optical = [
             'rings'     => [0.9336, 12.00, 12.00],

@@ -714,7 +714,7 @@ private fun DoneStep(draft: Draft, goals: Goals) {
     val duration = goals.durations.firstOrNull { it.key == draft.duration }
 
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        IconTile(OwnifyIcons.flag, color = Ownify.Health, background = Ownify.Health.copy(alpha = 0.14f))
+        IconTile(OwnifyIcons.chart, color = Ownify.Health, background = Ownify.Health.copy(alpha = 0.14f))
         T(words["done_title"], JStyle.Subtitle, Modifier.padding(top = Ownify.Space3).semantics { heading() }, align = TextAlign.Center)
     }
 

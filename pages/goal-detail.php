@@ -464,13 +464,13 @@ $height = 96.0;
 
                             <p class="goal-manage__state" data-goal-action="is-primary"
                                <?= $goal['is_primary'] ? '' : 'hidden' ?>>
-                                <?= icon('flag', 'goal-manage__state-icon') ?>
+                                <?= icon('chart', 'goal-manage__state-icon') ?>
                                 <span><?= e($copy['is_primary']) ?><span class="goal-manage__hint">Kies bij een ander doel “<?= e($copy['make_primary']) ?>” om te wisselen.</span></span>
                             </p>
 
                             <button type="button" class="btn goal-manage__button press" data-goal-action="promote"
                                     <?= $goal['is_primary'] ? 'hidden' : '' ?>>
-                                <?= icon('flag', 'goal-manage__icon') ?>
+                                <?= icon('chart', 'goal-manage__icon') ?>
                                 <?= e($copy['make_primary']) ?>
                             </button>
 

@@ -174,7 +174,11 @@ return [
         ],
     ],
 
-    /* -------------------------------------------------- patterns + research */
+    /* -------------------------------------------------- patterns + research
+     * No longer on Overzicht (1.9.2). Still sent in the app's state: an
+     * Android app from before 1.9.2 draws this card from it, and would draw
+     * an empty one without it.
+     */
     'patterns' => [
         'title'       => 'Patronen & onderzoek',
         'state'       => 'empty',
@@ -224,7 +228,7 @@ return [
      */
     'navigation' => [
         ['id' => 'health',    'label' => 'Gezondheid',   'icon' => 'heart',     'destination' => 'health',   'active' => false],
-        ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'flag',      'destination' => 'goals',    'active' => false],
+        ['id' => 'goals',     'label' => 'Doelen',       'icon' => 'chart',     'destination' => 'goals',    'active' => false],
         ['id' => 'overview',  'label' => 'Overzicht',    'icon' => 'rings',     'destination' => 'overview', 'active' => true],
         ['id' => 'community', 'label' => 'Community',    'icon' => 'community', 'destination' => 'community','active' => false],
         ['id' => 'settings',  'label' => 'Instellingen', 'icon' => 'sliders',   'destination' => 'settings', 'active' => false],

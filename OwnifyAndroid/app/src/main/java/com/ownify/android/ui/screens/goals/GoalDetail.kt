@@ -515,7 +515,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                         .semantics(mergeDescendants = true) { },
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                 ) {
-                    JIcon(OwnifyIcons.flag, size = 17.dp, color = accent)
+                    JIcon(OwnifyIcons.chart, size = 17.dp, color = accent)
                     Column(Modifier.weight(1f)) {
                         T(copy["is_primary"].orEmpty(), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
                         T(
@@ -526,7 +526,7 @@ private fun Manage(goal: Goal, copy: Map<String, String>) {
                     }
                 }
             } else {
-                ManageButton(OwnifyIcons.flag, copy["make_primary"].orEmpty()) { GoalBoard.promote(context, goal.id) }
+                ManageButton(OwnifyIcons.chart, copy["make_primary"].orEmpty()) { GoalBoard.promote(context, goal.id) }
             }
 
             ManageButton(

@@ -63,7 +63,7 @@ $copy = goals_script_copy($goals);
                 <div class="goals-view is-active" data-goal-panel="active">
 
                     <div class="card goals-empty is-empty reveal" data-goals-empty <?= $hasAny ? 'hidden' : '' ?>>
-                        <span class="icon-tile" aria-hidden="true"><?= icon('flag') ?></span>
+                        <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
                         <h2 class="goals-empty__title"><?= e($goals['empty']['active']['title']) ?></h2>
                         <p class="goals-empty__body"><?= e($goals['empty']['active']['body']) ?></p>
                         <button type="button" class="btn press goals-empty__cta" data-goal-add>

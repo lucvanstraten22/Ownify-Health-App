@@ -142,7 +142,7 @@ private fun ActiveView(data: AppData, board: Board, onAdd: () -> Unit) {
 
     // Every slot is in the column whether or not it holds a card, as on the website.
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        if (!any) EmptyCard(goals.emptyActive, OwnifyIcons.flag, if (board.canAdd) onAdd else null)
+        if (!any) EmptyCard(goals.emptyActive, OwnifyIcons.chart, if (board.canAdd) onAdd else null)
         if (any) Eyebrow(labels["primary"].orEmpty())
 
         Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {

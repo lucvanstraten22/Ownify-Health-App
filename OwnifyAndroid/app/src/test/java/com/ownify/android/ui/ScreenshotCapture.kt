@@ -296,6 +296,8 @@ class ScreenshotCapture {
         shoot("overview")
         scroll(760)
         shoot("overview-2")
+        scroll(10_000)
+        shoot("overview-end")
     }
 
     @Test

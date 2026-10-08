@@ -24,11 +24,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -54,7 +51,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -73,7 +69,6 @@ import com.ownify.android.data.AppData
 import com.ownify.android.data.Contributor
 import com.ownify.android.data.GoalCard
 import com.ownify.android.data.Insights
-import com.ownify.android.data.Patterns
 import com.ownify.android.data.Recommendation
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.LocalShell
@@ -111,9 +106,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Overzicht (pages/overview.php): in a new account's first days the card of
- * its baseline, then the day's score, the personal goal, the insights, the
- * patterns and the one suggestion — and the line under them when there is
- * one to say. The scroll-to-top control appears 360 dp down.
+ * its baseline, then the day's score, the personal goal, the insights and
+ * the one suggestion — and the line under them when there is one to say. The scroll-to-top control appears 360 dp down.
  */
 @Composable
 fun OverviewPage(data: AppData, scroll: ScrollState) {
@@ -125,7 +119,6 @@ fun OverviewPage(data: AppData, scroll: ScrollState) {
             HealthScoreCard(data)
             GoalProgressCard(overview.goal)
             InsightsCard(overview.insights)
-            PatternsCard(overview.patterns)
             RecommendationCard(overview.recommendation)
             if (data.disclaimer.isNotEmpty()) Disclaimer(data.disclaimer, Modifier.reveal())
         }
@@ -230,7 +223,7 @@ private fun GoalProgressCard(goal: GoalCard) {
     val set = goal.state != "unset" && goal.progress != null
 
     JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
-        CompactHead(OwnifyIcons.solidFlag, goal.title)
+        CompactHead(OwnifyIcons.solidChart, goal.title)
 
         // .goal__headline
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -445,50 +438,6 @@ private fun InsightsCard(insights: Insights) {
                     }
                 }
             }
-        }
-    }
-}
-
-/** `components/patterns.php`: seven flat bars shimmering until there are measurements. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun PatternsCard(patterns: Patterns) {
-    JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.solidChart, patterns.title, meta = patterns.range)
-
-        // .trend — equal heights on purpose: a shaped skeleton would read as data.
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .graphicsLayer { alpha = 0.6f }
-                .drawBehind {
-                    val y = size.height - 0.5.dp.toPx()
-                    drawLine(
-                        Ownify.GlassBorderSoft, Offset(0f, y), Offset(size.width, y), 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))
-                    )
-                }
-                .padding(bottom = Ownify.Space2)
-                .clearAndSetSemantics { },
-            horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            repeat(7) {
-                Skeleton(Modifier.weight(1f).fillMaxHeight(0.46f), RoundedCornerShape(6.dp))
-            }
-        }
-        Spacer(Modifier.height(Ownify.Space4))
-
-        T(patterns.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
-        T(patterns.description, JStyle.Meta)
-
-        FlowRow(
-            Modifier.fillMaxWidth().padding(top = Ownify.Space4),
-            horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
-            verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
-        ) {
-            patterns.topics.forEach { Chip(it, muted = true) }
         }
     }
 }

@@ -291,7 +291,7 @@ $total  = count($steps);
 
             <!-- ------------------------------------------------- closing -->
             <section class="wizard__step wizard__step--done" data-wizard-step="done" aria-label="<?= e($copy['done_title']) ?>" hidden>
-                <span class="icon-tile wizard__done-mark" aria-hidden="true"><?= icon('flag') ?></span>
+                <span class="icon-tile wizard__done-mark" aria-hidden="true"><?= icon('chart') ?></span>
                 <h3 class="wizard__title"><?= e($copy['done_title']) ?></h3>
 
                 <div class="wizard__preview" data-wizard-preview></div>

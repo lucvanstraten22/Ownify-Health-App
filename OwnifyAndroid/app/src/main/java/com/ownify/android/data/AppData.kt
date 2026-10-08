@@ -229,7 +229,6 @@ data class Overview(
     val contributors: List<Contributor>,
     val goal: GoalCard,
     val insights: Insights,
-    val patterns: Patterns,
     val recommendation: Recommendation
 ) {
     companion object {
@@ -241,7 +240,6 @@ data class Overview(
                 contributors = scores.arr("contributors").map(Contributor::parse),
                 goal = GoalCard.parse(data.obj("goal")),
                 insights = Insights.parse(data.obj("insights")),
-                patterns = Patterns.parse(data.obj("patterns")),
                 recommendation = Recommendation.parse(data.obj("recommendation"))
             )
         }
@@ -640,21 +638,6 @@ data class Insights(val title: String, val subtitle: String, val items: List<Ins
 }
 
 data class Insight(val icon: String, val accent: String, val title: String, val body: String, val state: String)
-
-data class Patterns(
-    val title: String,
-    val headline: String,
-    val description: String,
-    val topics: List<String>,
-    val range: String
-) {
-    companion object {
-        fun parse(o: JSONObject?) = Patterns(
-            o.str("title").orEmpty(), o.str("headline").orEmpty(), o.str("description").orEmpty(),
-            o.arr("topics").strings(), o.str("range").orEmpty()
-        )
-    }
-}
 
 data class Recommendation(val title: String, val headline: String, val description: String, val note: String) {
     companion object {
