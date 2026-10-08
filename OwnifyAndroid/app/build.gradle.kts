@@ -17,7 +17,7 @@ android {
 
         // Automatically increased by GitHub Actions for release builds.
         versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 30
-        versionName = "11.1"
+        versionName = System.getenv("OWNIFY_VERSION_NAME") ?: "11.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
