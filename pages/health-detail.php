@@ -4,7 +4,8 @@
  *
  * Three levels of information, in order of how much they matter:
  *   1  the score
- *   2  the handful of numbers that explain it
+ *   2  the handful of numbers that explain it — for Slaap, drawn: the
+ *      night's stages and four charts over time (docs/SLEEP.md)
  *   3  the long tail, grouped, with device-dependent groups marked
  *
  * Which metrics exist is entirely config; adding one later means adding a
@@ -67,10 +68,27 @@ $ratio = score_ratio($score['value'], $score['max']);
                     component('nutrition-rating', $data + ['area' => $area]);
                 }
 
-                component('metric-tiles', $data + ['area' => $area, 'tiles' => $area['highlights']]);
+                /* Slaap, drawn (docs/SLEEP.md): the night's stages, then its four
+                   charts two by two — instead of the numbers and the bar of
+                   stages they show. */
+                $view = isset($area['view']) && is_file(dirname(__DIR__) . '/components/sleep-chart.php') ? $area['view'] : null;
+                if ($view !== null) {
+                    component('sleep-night', $data + ['night' => $view['night']]);
+                    ?>
+                    <div class="sleep-charts-frame">
+                        <div class="sleep-charts">
+                            <?php foreach ($view['charts'] as $sleepChart): ?>
+                                <?php component('sleep-chart', $data + ['sleep_chart' => $sleepChart, 'sleep_mode' => 'mini']); ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php
+                } else {
+                    component('metric-tiles', $data + ['area' => $area, 'tiles' => $area['highlights']]);
 
-                if (!empty($area['timeline'])) {
-                    component('sleep-timeline', $data + ['area' => $area]);
+                    if (!empty($area['timeline'])) {
+                        component('sleep-timeline', $data + ['area' => $area]);
+                    }
                 }
 
                 foreach ($area['groups'] as $index => $group) {

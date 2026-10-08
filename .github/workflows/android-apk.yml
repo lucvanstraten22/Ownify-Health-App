@@ -32,7 +32,7 @@ jobs:
 
       - name: Set version
         run: |
-          VERSION="11.1.${GITHUB_RUN_NUMBER}"
+          VERSION="12.0.${GITHUB_RUN_NUMBER}"
           echo "OWNIFY_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
           echo "OWNIFY_VERSION_CODE=$((30 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
@@ -59,5 +59,5 @@ jobs:
         run: |
           gh release create "v${OWNIFY_VERSION_NAME}" \
             app/build/outputs/apk/release/app-release.apk \
-            --title "Ownify 11.1 (Build ${OWNIFY_VERSION_CODE})" \
+            --title "Ownify 12.0 (Build ${OWNIFY_VERSION_CODE})" \
             --generate-notes

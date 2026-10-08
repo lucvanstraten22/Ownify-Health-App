@@ -87,8 +87,8 @@ import com.ownify.android.ui.design.focusSafely
 /**
  * One health area in full (pages/health-detail.php), in the order it
  * matters: the score; for Voeding the day's own cijfer; the few numbers that
- * explain it; for Slaap the night's stages; the long tail in groups; and the
- * area's own Verloop. Everything shown is the server's.
+ * explain it — for Slaap, drawn: the night's stages and four charts over time
+ * (docs/SLEEP.md); the long tail in groups; and the area's own Verloop. Everything shown is the server's.
  */
 @Composable
 fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
@@ -96,8 +96,16 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
         DetailColumn(scroll, back = "Gezondheid", backAria = "Terug naar Gezondheid") {
             HeroCard(area)
             area.rating?.let { NutritionRating(area, it) }
-            MetricTiles(area.highlights)
-            area.timeline?.let { SleepTimeline(it) }
+            // Slaap, drawn (docs/SLEEP.md): the night's stages and four charts two by two,
+            // instead of the numbers and the bar of stages they show.
+            val view = area.view
+            if (view != null) {
+                SleepNightCard(view.night)
+                SleepChartsGrid(view)
+            } else {
+                MetricTiles(area.highlights)
+                area.timeline?.let { SleepTimeline(it) }
+            }
             area.groups.forEach { MetricGroupCard(it) }
             // Its own Verloop: Gezondheid's, its one line (docs/CHARTS.md); a server from before it: the week and month.
             val history = data.health.history

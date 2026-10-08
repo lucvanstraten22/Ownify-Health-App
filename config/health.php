@@ -119,6 +119,75 @@ return [
                 ['key' => 'sleep_efficiency', 'value' => null],
             ],
 
+            /* The Slaap page, drawn (lib/hydrate-sleep.php, docs/SLEEP.md):
+               the night's stages as a timeline from bedtime to wake time, and
+               four charts over time below it, two by two. Each chart opens a
+               page of its own with the same chart, large, over 7 dagen to
+               1 jaar. Every value is a recorded one; a day without one is a
+               gap. Replaces `highlights`, `timeline` and the groups' rows the
+               charts now show, for an app that draws it. */
+            'night' => [
+                'title'  => 'Slaapverloop',
+                /* The night: "Nacht van 7 op 8 okt", or "8 okt" for a sleep
+                   that began after midnight. */
+                'night'  => 'Nacht van %1$s op %2$s',
+                'asleep' => 'geslapen',
+                'efficiency' => 'efficiënt',
+                /* The rows, top to bottom, and which of Health Connect's
+                   stages each draws: 1 awake; 7 awake in bed — lying awake,
+                   not an awakening (the minutes count it as awake, the
+                   awakenings do not) — as Rusteloosheid; 6 REM; 4 light;
+                   5 deep. 2 (asleep, kind unknown) and 3 (out of bed) are on
+                   no row: a gap, never guessed. */
+                'stages' => [
+                    ['key' => 'awake',    'label' => 'Wakker',        'kinds' => [1]],
+                    ['key' => 'restless', 'label' => 'Rusteloosheid', 'kinds' => [7]],
+                    ['key' => 'rem',      'label' => 'REM',           'kinds' => [6]],
+                    ['key' => 'light',    'label' => 'Licht',         'kinds' => [4]],
+                    ['key' => 'deep',     'label' => 'Diep',          'kinds' => [5]],
+                ],
+                /* A stage's time over the night, beside its name. */
+                'minutes' => '%d min',
+                /* The chart's spoken label: %1$s bedtime, %2$s wake time. */
+                'aria'   => 'Slaapfasen van %1$s tot %2$s',
+                'hint'   => 'Tik of schuif over de fasen om de tijden te zien.',
+                'empty'  => 'Zodra er een nacht is opgenomen, zie je hier je slaapfasen.',
+                /* A night with its times but no stages: a phone without a
+                   watch, or synced before the stages were kept. */
+                'unstaged' => 'Van deze nacht zijn geen slaapfasen opgenomen.',
+                /* How far back the last night is looked for. */
+                'days'   => 7,
+            ],
+
+            /* The four charts, in their order on the page. `bed` draws Tijd in
+               bed as bars and Regelmaat — the sleep score's own regularity
+               part, as the Scorekompas shows it per day — as a line over it,
+               each on its own height, so no scale is shared or named. */
+            'charts' => [
+                'bed'       => ['title' => 'Tijd in bed + Regelmaat',
+                                'series' => [
+                                    ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars'],
+                                    ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line'],
+                                ]],
+                'spo2'      => ['title' => 'SpO₂',
+                                'series' => [['key' => 'spo2', 'label' => 'SpO₂', 'unit' => '%', 'kind' => 'line', 'decimals' => 0]]],
+                'skin_temp' => ['title' => 'Huidtemperatuur',
+                                'series' => [['key' => 'skin_temp', 'label' => 'Huidtemperatuur', 'unit' => '°C', 'kind' => 'line', 'decimals' => 1]]],
+                'hrv'       => ['title' => 'Hartslag­variabiliteit',   /* a soft hyphen: where it breaks on a small card */
+                                'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
+            ],
+            'chart_copy' => [
+                'empty'   => 'Nog geen metingen.',
+                'hint'    => 'Tik of schuif over de grafiek om de waarden te zien.',
+                'open'    => 'Open %s',
+                /* A chart's spoken label: %1$s its title, %2$s what a point
+                   is, %3$s the period. */
+                'aria'    => '%1$s %2$s, %3$s',
+                'none'    => ['day' => 'Geen meting op deze dag.', 'week' => 'Geen meting in deze week.', 'month' => 'Geen meting in deze maand.'],
+                'carried' => 'Geen nieuwe nacht: de regelmaat van %s gold nog.',
+                'back'    => 'Slaap',
+            ],
+
             'timeline' => [
                 'title'  => 'Slaapverloop',
                 'hint'   => 'De nacht van slaapfase tot slaapfase.',
@@ -130,32 +199,17 @@ return [
                 ],
             ],
 
+            /* Only what no chart above shows: Tijd in bed, Regelmaat, SpO₂,
+               Huidtemperatuur and HRV are charts now, and the awakenings and
+               time awake are the timeline's Wakker row. */
             'groups' => [
-                [
-                    'title'   => 'Duur en timing',
-                    'metrics' => [
-                        ['key' => 'time_in_bed',      'value' => null],
-                        ['key' => 'sleep_regularity', 'value' => null],
-                    ],
-                ],
-                [
-                    'title'   => 'Onderbrekingen',
-                    'metrics' => [
-                        ['key' => 'awakenings', 'value' => null],
-                        ['key' => 'awake_time', 'value' => null],
-                        ['key' => 'movement',   'value' => null],
-                    ],
-                ],
                 [
                     'title'   => 'Nachtelijke waarden',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
                         ['key' => 'sleeping_hr',      'value' => null],
                         ['key' => 'resting_hr',       'value' => null],
-                        ['key' => 'hrv',              'value' => null],
                         ['key' => 'respiratory_rate', 'value' => null],
-                        ['key' => 'skin_temp',        'value' => null],
-                        ['key' => 'spo2',             'value' => null],
                     ],
                 ],
             ],

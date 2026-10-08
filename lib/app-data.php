@@ -24,6 +24,9 @@ require_once __DIR__ . '/hydrate-health.php';
 require_once __DIR__ . '/hydrate-goals.php';
 require_once __DIR__ . '/hydrate-community.php';
 require_once __DIR__ . '/hydrate-compass.php';
+if (is_file(__DIR__ . '/hydrate-sleep.php')) {
+    require_once __DIR__ . '/hydrate-sleep.php';
+}
 
 /* The first days (includes/setup.php). Guarded as persistent-login.php is in
    includes/bootstrap.php: a deploy lands one file at a time, and this file
@@ -98,7 +101,24 @@ if (!function_exists('app_page_data')) {
            is changing, the person's own earlier scores and where the most
            room is — read from the same engine, never scored again. */
         $compass         = require $config . '/compass.php';
-        $data['compass'] = hydrate_compass($compass, $data, $userId);
+        $scoreDays       = [];
+        $data['compass'] = hydrate_compass($compass, $data, $userId, $scoreDays);
+
+        /* Slaap, drawn: the night's stages and its four charts over time
+           (lib/hydrate-sleep.php, docs/SLEEP.md) — Regelmaat from the same
+           recorded days. Guarded as the Verloop is: a deploy lands one file
+           at a time. */
+        if (function_exists('hydrate_sleep') && isset($data['health']['areas']['sleep']['night'])) {
+            $data['health']['areas']['sleep']['view'] = hydrate_sleep(
+                $data['health']['areas']['sleep'],
+                $compass['history']['periods'],
+                $userId,
+                $scoreDays,
+                date('Y-m-d')
+            );
+        }
+        unset($data['health']['areas']['sleep']['night'], $data['health']['areas']['sleep']['charts'],
+              $data['health']['areas']['sleep']['chart_copy']);
 
         /* Gezondheid's Verloop: that same history, as Slaap, Voeding and
            Training — three lines over the Scorekompas's periods. Guarded as

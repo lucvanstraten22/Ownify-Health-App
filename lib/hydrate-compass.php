@@ -22,8 +22,10 @@ if (!function_exists('hydrate_compass')) {
      * @param array $copy  config/compass.php
      * @param array $data  app_page_data() so far: the ring's legend (scores.contributors)
      *                     and the Gezondheid areas (health.areas), already filled
+     * @param array|null $history  given back: the days read (health_score_history()),
+     *                     for Slaap's Regelmaat (lib/hydrate-sleep.php)
      */
-    function hydrate_compass(array $copy, array $data, int $userId): array
+    function hydrate_compass(array $copy, array $data, int $userId, ?array &$history = null): array
     {
         $days    = max(
             2 * (int) $copy['rules']['period_days'],

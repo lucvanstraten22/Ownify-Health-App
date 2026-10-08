@@ -211,6 +211,7 @@ if (!function_exists('health_connect_map')) {
 
         $awakenings = 0;
         $detailed   = false;     // any light, deep or REM stage
+        $periods    = [];        // each stage as recorded, for the Slaap timeline (sleep_stages)
 
         foreach ($r['stages'] ?? [] as $stage) {
             $from = strtotime((string) ($stage['startTime'] ?? ''));
@@ -220,6 +221,8 @@ if (!function_exists('health_connect_map')) {
             if ($from === false || $to === false || $to <= $from || !array_key_exists($kind, $minutes)) {
                 continue;
             }
+
+            $periods[] = ['stage' => $kind, 'started_at' => (string) $stage['startTime'], 'ended_at' => (string) $stage['endTime']];
 
             $minutes[$kind] += (int) round(($to - $from) / 60);
 
@@ -259,6 +262,10 @@ if (!function_exists('health_connect_map')) {
                 $record['rem_minutes']   = $minutes[HC_STAGE_REM];
             }
         }
+
+        /* The periods themselves, as recorded: the timeline draws them. The
+           minutes above are what everything else reads, and stay as they were. */
+        $record['stages'] = $periods;
 
         return [$record];
     }

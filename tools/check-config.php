@@ -236,6 +236,20 @@ if (db_available()) {
                 . 'shows none in the Scorekompas — import database/migrations/017-score-history.sql');
         }
 
+        /* Not fatal: without it the Slaap timeline shows each night's times
+           without its stages, and a sync keeps the minutes per stage as before. */
+        $sleepStages = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'sleep_stages'"
+        );
+
+        if ($sleepStages > 0) {
+            line('ok', 'sleep stages', 'sleep_stages is there: the Slaap timeline draws each night stage by stage');
+        } else {
+            line('warn', 'sleep stages', 'sleep_stages is missing, so the Slaap timeline shows a night\'s times without its stages '
+                . '— import database/migrations/018-sleep-stages.sql');
+        }
+
         /* Not fatal: without GD the boards and friends lists show each
            picture as uploaded (up to 3 MB) instead of a small copy. */
         if (!function_exists('imagecreatetruecolor')) {

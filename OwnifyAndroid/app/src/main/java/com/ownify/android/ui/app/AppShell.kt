@@ -3,6 +3,7 @@ package com.ownify.android.ui.app
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.key
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,6 +105,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             is Detail.GoalPage -> data.goals.goal(detail.id) != null
             is Detail.HealthArea -> data.health.area(detail.id) != null
             is Detail.SettingsPage -> data.settings.page(detail.id) != null
+            is Detail.SleepChart -> data.health.area("sleep")?.view?.chart(detail.id) != null
             Detail.ScoreCompass -> data.compass.available
         }
         if (!exists) shell.closeDetail()
@@ -235,21 +237,36 @@ private fun Rail(shell: ShellState, data: AppData, screens: ShellScreens, modifi
     }
 }
 
-/** The detail layer: above the rail, below the dock; slides in from the right. */
+/**
+ * The detail layer: above the rail, below the dock; slides in from the
+ * right. A detail opened over another ([ShellState.under]: Slaap's charts,
+ * over Slaap) slides in over it, which stands open beneath, as it was left.
+ */
 @Composable
 private fun DetailLayer(shell: ShellState, data: AppData, screens: ShellScreens) {
     val detail = shell.detail ?: return
+    // One call site for both, keyed: the detail beneath keeps all it holds while one opens over it.
+    listOfNotNull(shell.under, detail).forEach { d ->
+        key(d.key) {
+            if (d == detail) DetailPage(shell, data, screens, d, shell.detailScroll, shell.detailProgress, live = shell.detailShown)
+            else DetailPage(shell, data, screens, d, shell.underScroll, progress = 1f, live = false)
+        }
+    }
+}
+
+@Composable
+private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, detail: Detail, scroll: ScrollState, progress: Float, live: Boolean) {
     val width = LocalScreen.current.width
     val density = LocalDensity.current
     val shadows = LocalGraphicsContext.current.shadowContext
     val accent = when (detail) {
         is Detail.HealthArea -> Accent.of(data.health.area(detail.id)?.accent)
         is Detail.GoalPage -> Accent.of(data.goals.goal(detail.id)?.accent)
+        is Detail.SleepChart -> Accent.of("sleep")
         is Detail.SettingsPage -> Accent.HEALTH
         Detail.ScoreCompass -> Accent.HEALTH
     }
     val ground = remember(detail.key, accent) { GroundPlacement(Ground.detail(accent)) }
-    val progress = shell.detailProgress
     val visibility = remember(detail.key) { Visibility() }
 
     Box(
@@ -267,10 +284,10 @@ private fun DetailLayer(shell: ShellState, data: AppData, screens: ShellScreens)
                 drawRect(Ownify.glint(0.07f), size = size.copy(width = 1.dp.toPx()))
             }
             .ground(ground)
-            .then(if (shell.aiOpen || !shell.detailShown) Modifier.clearAndSetSemantics { } else Modifier)
+            .then(if (shell.aiOpen || !live) Modifier.clearAndSetSemantics { } else Modifier)
     ) {
         CompositionLocalProvider(LocalGround provides ground, LocalVisibility provides visibility) {
-            screens.detail(detail, data, shell.detailScroll)
+            screens.detail(detail, data, scroll)
         }
     }
 }

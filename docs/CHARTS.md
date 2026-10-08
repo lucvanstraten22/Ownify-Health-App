@@ -2,7 +2,8 @@
 
 Every Ownify chart that shows something over days — Gezondheid's Verloop,
 a category's own Verloop on its page, the Scorekompas's Health Score
-history, a goal's Verloop, and any chart that comes after them — follows
+history, a goal's Verloop, Slaap's four charts (docs/SLEEP.md), and any
+chart that comes after them — follows
 one standard, on the website and in the Android app alike. Read this before
 you add or change one.
 
@@ -45,6 +46,9 @@ server sends. Its own test is `tools/time-axis-test.php`.
   same day of the month as the window's first day (the last day of a
   shorter month: 31 jan, 28 feb, 31 mrt …). The 13th boundary is not a 13th
   month.
+- **A chart too narrow for a week's dates** (Slaap's small charts) writes
+  them in two rows as 30 and 90 days do — the day over its month, the month
+  where it is named (`time_axis_rows()`): the same dates, at the same days.
 - **A chart without a period switch** (a goal's Verloop) takes the shortest
   period that holds its whole history — 7 dagen, then 30, 90, then a year,
   which rolls from then on (`time_axis_fit()`).
@@ -95,6 +99,7 @@ These are the same on every chart and are not part of the time rule:
 | Gezondheid's Verloop, a category's own | `hydrate_health_history()` (`lib/hydrate-compass.php`) | `components/health-history.php` (`history_area` for a category's page) | `HistoryCard` (`only` for a category's page) |
 | The Scorekompas's history | `hydrate_compass_periods()` | `components/compass-history.php` | `PeriodChart` in `ScoreCompass.kt` |
 | A goal's Verloop | `goal_chart_build()` (`lib/goal-chart.php`) | `pages/goal-detail.php`, `goal-chart.js` | `GoalChart.kt` |
+| Slaap's four charts, small and on their own page (docs/SLEEP.md) | `hydrate_sleep_charts()` (`lib/hydrate-sleep.php`) | `components/sleep-chart.php` | `SleepChartsGrid`, `SleepChartDetail` |
 | Reading a chart | — | `assets/js/compass-history.js`, `goal-chart.js` | `HistoryPlot` (`ui/design/HistoryChart.kt`), `GoalChart.kt` |
 
 A new chart over time: build its points on `time_axis()` — its `slots` are

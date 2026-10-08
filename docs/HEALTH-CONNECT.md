@@ -190,7 +190,7 @@ without eventually duplicating them.
 
 | Health Connect record | Becomes | Notes |
 | --- | --- | --- |
-| `SleepSession` | a sleep session | stages → light/deep/REM/awake minutes; "sleeping" (2) counts as sleep without a breakdown; "out of bed" (3) is neither sleep nor time in bed; efficiency derived from time asleep over time in bed |
+| `SleepSession` | a sleep session | stages → light/deep/REM/awake minutes; "sleeping" (2) counts as sleep without a breakdown; "out of bed" (3) is neither sleep nor time in bed; efficiency derived from time asleep over time in bed; each stage period also kept as recorded (`sleep_stages`, migration 018) for the Slaap timeline (docs/SLEEP.md) |
 | `ExerciseSession` | a workout | `exerciseTypeName`, `title` or `exerciseType`, whichever is present |
 | `Steps` | metric `steps` | |
 | `Distance` | metric `distance` | metres → km |

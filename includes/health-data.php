@@ -353,6 +353,95 @@ if (!function_exists('health_source_id')) {
         return $series;
     }
 
+    /**
+     * health_daily_metric() for each day from $from to $to (Y-m-d), in one
+     * read: the same value per day, rolled up the same way. Days without a
+     * reading are absent — never a 0.
+     *
+     * @return array<string,float> date => value, oldest first
+     */
+    function health_daily_metric_days(int $userId, string $metricCode, string $from, string $to): array
+    {
+        $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$metricCode]);
+        if ($type === null) {
+            return [];
+        }
+
+        if ($type['aggregation'] === 'sum') {
+            return health_metric_totals($userId, $metricCode, $from, $to);
+        }
+
+        $aggregate = match ($type['aggregation']) {
+            'avg' => 'AVG(value)',
+            'min' => 'MIN(value)',
+            'max' => 'MAX(value)',
+            default => 'SUBSTRING_INDEX(GROUP_CONCAT(value ORDER BY recorded_at DESC), ",", 1)',
+        };
+
+        $days = [];
+        foreach (db_all(
+            'SELECT recorded_on AS day, ' . $aggregate . ' AS value
+               FROM health_metrics
+              WHERE user_id = ? AND metric_type_id = ? AND recorded_on BETWEEN ? AND ?
+           GROUP BY recorded_on
+           ORDER BY recorded_on',
+            [$userId, (int) $type['id'], $from, $to]
+        ) as $row) {
+            if ($row['value'] !== null) {
+                $days[(string) $row['day']] = (float) $row['value'];
+            }
+        }
+
+        return $days;
+    }
+
+    /** Whether a night's stages are kept period by period (sleep_stages, migration 018). */
+    function health_sleep_stages_stored(): bool
+    {
+        static $stored = null;
+
+        return $stored ??= db_available() && (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'sleep_stages'"
+        ) > 0;
+    }
+
+    /**
+     * The stage periods of some of the user's sleep sessions, oldest first,
+     * each as recorded: its stage (Health Connect's numbering) and its start
+     * and end as timestamps on the sessions' clock. None before migration 018.
+     *
+     * @param int[] $sessionIds
+     * @return list<array{stage: int, start: int, end: int}>
+     */
+    function health_sleep_stage_periods(int $userId, array $sessionIds): array
+    {
+        $sessionIds = array_values(array_unique(array_map('intval', $sessionIds)));
+        if ($sessionIds === [] || !health_sleep_stages_stored()) {
+            return [];
+        }
+
+        $rows = db_all(
+            'SELECT st.stage, st.started_at, st.ended_at
+               FROM sleep_stages st
+               JOIN sleep_sessions s ON s.id = st.sleep_session_id
+              WHERE s.user_id = ? AND s.id IN (' . implode(',', array_fill(0, count($sessionIds), '?')) . ')
+           ORDER BY st.started_at, st.id',
+            [$userId, ...$sessionIds]
+        );
+
+        $periods = [];
+        foreach ($rows as $row) {
+            $start = strtotime((string) $row['started_at']);
+            $end   = strtotime((string) $row['ended_at']);
+            if ($start !== false && $end !== false && $end > $start) {
+                $periods[] = ['stage' => (int) $row['stage'], 'start' => $start, 'end' => $end];
+            }
+        }
+
+        return $periods;
+    }
+
     function health_sleep_sessions(int $userId, int $limit = 30): array
     {
         return db_all(

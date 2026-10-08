@@ -86,7 +86,7 @@ foreach ($data['navigation'] as $position => $item) {
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community',
-        'goals', 'settings', 'account', 'devices',
+        'goals', 'settings', 'account', 'devices', 'sleep',
     ]]); ?>
 </head>
 <body class="app">
@@ -166,6 +166,12 @@ foreach ($data['navigation'] as $position => $item) {
                 <?php page('health-detail', $data + ['area' => $area + ['id' => $areaId]]); ?>
             <?php endforeach; ?>
 
+            <?php /* Slaap's charts, each on a page of its own over Slaap's
+                     (docs/SLEEP.md): after it, so it slides in on top. */ ?>
+            <?php foreach (is_file(__DIR__ . '/pages/sleep-metric.php') ? $data['health']['areas']['sleep']['view']['charts'] ?? [] : [] as $sleepChart): ?>
+                <?php page('sleep-metric', $data + ['sleep_chart' => $sleepChart]); ?>
+            <?php endforeach; ?>
+
             <?php foreach ($data['goals']['all'] as $goal): ?>
                 <?php /* The new key goes first: `+` keeps the left side, and the
                          dashboard config already owns a 'goal' of its own. */ ?>
@@ -212,6 +218,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/health-rating.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-chart.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/compass-history.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/sleep.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/community.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goals.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>

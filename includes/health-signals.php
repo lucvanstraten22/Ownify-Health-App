@@ -466,6 +466,7 @@ if (!function_exists('health_scoring_config')) {
 
         return [
             'session_id' => $parts[0]['session_id'],          // the longest part
+            'parts'      => array_column($parts, 'session_id'),   // every part: the Slaap timeline draws them all
             'date'       => $parts[0]['date'],
             'start'      => min(array_column($parts, 'start')),
             'end'        => max(array_column($parts, 'end')),

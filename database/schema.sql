@@ -309,6 +309,24 @@ CREATE TABLE `sleep_sessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+-- A night's sleep stages, period by period, as the device recorded them — the
+-- periods sleep_sessions' minutes per stage were added up from, for the Slaap
+-- timeline (migration 018, docs/SLEEP.md). Replaced whenever the session is
+-- synced again.
+CREATE TABLE `sleep_stages` (
+    `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sleep_session_id` BIGINT UNSIGNED NOT NULL,
+    `stage`            TINYINT UNSIGNED NOT NULL
+                       COMMENT 'Health Connect: 1 awake, 2 sleeping, 3 out of bed, 4 light, 5 deep, 6 REM, 7 awake in bed',
+    `started_at`       DATETIME NOT NULL,
+    `ended_at`         DATETIME NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_stage_session` (`sleep_session_id`, `started_at`),
+    CONSTRAINT `fk_stage_session` FOREIGN KEY (`sleep_session_id`)
+        REFERENCES `sleep_sessions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 -- A meal or a drink. The nutrients themselves are health_metrics rows pointing
 -- at the entry, so adding "omega 3" later needs no change to this table.
 CREATE TABLE `nutrition_entries` (

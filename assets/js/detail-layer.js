@@ -14,6 +14,11 @@
  *
  * A detail is always open, closed, on its way to one of them, or held by a
  * finger; a released swipe always ends fully open or fully closed.
+ *
+ * One detail can open over another: a page whose [data-detail-parent] names
+ * the detail in front (Slaap's charts, over Slaap). It slides in over it the
+ * same way and leaves the same way, back to that detail as it was left —
+ * its scroll, its focus. Leaving for another section closes both.
  */
 
 (function () {
@@ -36,6 +41,8 @@
     var drag = null;          // { from, base, progress } while a finger holds it
     var settleTimer = null;   // the move under way, until it has landed
     var opener = null;        // the card to hand focus back to
+    var parent = null;        // the detail under current, when one opened over it
+    var parentOpener = null;  // what opened that one
 
     /* ------------------------------------------------------------ helpers */
 
@@ -83,7 +90,7 @@
 
         drag = null;
         shown = opening;
-        nav.state.detailOpen = opening;
+        nav.state.detailOpen = opening || !!parent;   // closing over a parent: still a detail in front
 
         if (detail) { detail.classList.remove('is-dragging'); }
         deck.dataset.detailState = 'moving';
@@ -98,6 +105,21 @@
             if (!opening && detail && current === detail) {
                 park(detail);
                 current = null;
+
+                /* Back to the detail it opened over, as it was. */
+                if (parent) {
+                    current = parent;
+                    shown = true;
+                    parent = null;
+                    nav.state.detailOpen = true;
+                    deck.dataset.detailState = 'open';
+                    var back = opener;
+                    opener = parentOpener;
+                    parentOpener = null;
+                    nav.refresh();
+                    if (moveFocus && back && back.focus) { back.focus({ preventScroll: true }); }
+                    return;
+                }
             }
 
             nav.refresh();
@@ -121,6 +143,14 @@
         if (!detail) { return; }
 
         if (current === detail && shown) { return; }   // already open, or opening
+
+        /* Over the detail in front, when it is this one's own. */
+        if (current && current !== detail && shown && !parent && !settleTimer
+            && detail.dataset.detailParent && current.dataset.detail === detail.dataset.detailParent) {
+            parent = current;
+            parentOpener = opener;
+            current = null;
+        }
 
         if (current && current !== detail) {
             if (shown) { return; }   // another one is in front; its own way out comes first
@@ -203,8 +233,19 @@
             return;
         }
 
-        // Leaving for another section closes the detail behind you.
-        if (current && shown && event.target.closest('[data-nav]')) { close(false); }
+        // Leaving for another section closes the detail behind you — and
+        // the one it opened over, which goes with it.
+        if (current && shown && event.target.closest('[data-nav]')) {
+            if (parent) {
+                park(current);
+                current = parent;
+                parent = null;
+                opener = parentOpener;
+                parentOpener = null;
+                nav.refresh();
+            }
+            close(false);
+        }
     });
 
     document.addEventListener('keydown', function (event) {
@@ -226,6 +267,7 @@
         forget: function (detail) {
             var at = details.indexOf(detail);
             if (at !== -1) { details.splice(at, 1); }
+            if (parent === detail) { parent = null; parentOpener = null; }
 
             if (current === detail) {
                 window.clearTimeout(settleTimer);

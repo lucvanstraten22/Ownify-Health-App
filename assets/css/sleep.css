@@ -1,0 +1,366 @@
+/* ==========================================================================
+   sleep.css — Slaap, drawn (docs/SLEEP.md): the night's stages as a
+   timeline (components/sleep-night.php) and four charts over time, two by
+   two (components/sleep-chart.php), each opening a page of its own with the
+   same chart large (pages/sleep-metric.php). The charts are the Verloop's
+   (health.css, compass.css, goals.css); only what is Slaap's own is here.
+   Every colour is the theme's.
+   ========================================================================== */
+
+/* The stages, calm and told apart: sleep in the Slaap colour — deep the
+   full colour, REM its lighter shade, light sleep half of it — and being
+   awake in the text colour, Wakker the brighter of the two. Each also has a
+   row of its own, so no stage is told by its colour alone. */
+.sleep-night,
+.sleep-chart {
+    --stage-deep: var(--sleep);
+    --stage-rem: var(--sleep-light);
+    --stage-light: color-mix(in srgb, var(--sleep) 52%, transparent);
+    --stage-restless: rgba(var(--ink), 0.30);
+    --stage-awake: rgba(var(--ink), 0.58);
+    --bar: color-mix(in srgb, var(--sleep) 58%, transparent);
+}
+
+[data-stage="deep"]     { --stage: var(--stage-deep); }
+[data-stage="rem"]      { --stage: var(--stage-rem); }
+[data-stage="light"]    { --stage: var(--stage-light); }
+[data-stage="restless"] { --stage: var(--stage-restless); }
+[data-stage="awake"]    { --stage: var(--stage-awake); }
+
+/* --------------------------------------------------------------------------
+   Slaapverloop — the night
+   -------------------------------------------------------------------------- */
+.sleep-night__head {
+    align-items: flex-start;
+    margin-bottom: var(--space-5);
+}
+
+/* How long was slept, and how much of the time in bed: the night in two
+   numbers, at the head's far end. */
+.sleep-night__sum {
+    display: grid;
+    justify-items: end;
+    flex: none;
+    text-align: right;
+}
+
+.sleep-night__value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+}
+
+.sleep-night__unit {
+    margin-left: 3px;
+    font-size: var(--fs-small);
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-muted);
+}
+
+.sleep-night__word {
+    margin-top: 2px;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* The rows: named on the left, the night on the right. */
+/* The rows' height and the names' column, for the chart and the times under it. */
+.sleep-night {
+    --row-h: 34px;
+    --label-w: 96px;
+}
+
+.sleep-night__chart {
+    display: grid;
+    grid-template-columns: var(--label-w) minmax(0, 1fr);
+    column-gap: var(--space-3);
+}
+
+.sleep-night__labels {
+    display: grid;
+    grid-template-rows: repeat(var(--rows), var(--row-h));
+}
+
+.sleep-night__label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding-left: 12px;
+    position: relative;
+}
+
+/* The stage's own colour beside its name: the key to its blocks. */
+.sleep-night__label::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin-top: -3px;
+    border-radius: 2px;
+    background: var(--stage);
+}
+
+.sleep-night__name {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sleep-night__total {
+    font-size: var(--fs-tiny);
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.sleep-night__plot {
+    position: relative;
+    height: calc(var(--rows) * var(--row-h));
+    touch-action: pan-y;
+    cursor: crosshair;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: 6px;
+}
+
+.sleep-night__plot:focus { outline: none; }
+.sleep-night__plot:focus-visible {
+    outline: 2px solid var(--glass-border);
+    outline-offset: 6px;
+}
+
+/* Each row a quiet lane, so an empty stretch reads as time, not as nothing. */
+.sleep-night__lane {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(var(--row) * var(--row-h) + 6px);
+    height: calc(var(--row-h) - 12px);
+    border-radius: 6px;
+    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    pointer-events: none;
+}
+
+/* A period of a stage: on its row, from when it began to when it ended —
+   never thinner than a line, so a minute awake still shows. */
+.sleep-night__block {
+    position: absolute;
+    top: calc(var(--row) * var(--row-h) + 6px);
+    height: calc(var(--row-h) - 12px);
+    min-width: 2px;
+    border-radius: 4px;
+    background: var(--stage);
+    pointer-events: none;
+    transition: opacity var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* The period read: the others step back, it is ringed. */
+.sleep-night__plot.is-reading .sleep-night__block { opacity: 0.38; }
+.sleep-night__plot.is-reading .sleep-night__block.is-read {
+    opacity: 1;
+    box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 3.5px var(--stage);
+}
+
+.sleep-night__tip { z-index: 4; }
+
+/* Bedtime at the left edge, wake time at the right, hours between. */
+.sleep-night__axis { margin-left: calc(var(--label-w) + var(--space-3)); }
+
+.sleep-night__note {
+    margin-top: var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.sleep-night.is-empty .sleep-night__plot { opacity: 0.55; }
+
+/* --------------------------------------------------------------------------
+   The four charts — two by two, each square, together as wide as one card
+   -------------------------------------------------------------------------- */
+/* The frame is what the grid measures itself by (100cqw). */
+.sleep-charts-frame { container-type: inline-size; }
+
+.sleep-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* Each row at least as tall as a card is wide — square — and both cards
+       of a row as tall as the taller, should a long name need a line more. */
+    grid-auto-rows: minmax(calc((100cqw - var(--space-3)) / 2), auto);
+    gap: var(--space-3);
+}
+
+/* The series' colours: a line alone in the Slaap colour; beside bars, its
+   lighter shade over them. */
+.sleep-chart [data-tone="line"]  { --accent: var(--sleep); }
+.sleep-chart [data-tone="light"] { --accent: var(--sleep-light); }
+.sleep-chart [data-tone="bars"]  { --accent: var(--bar); }
+
+/* Tijd in bed: bars from the bottom, their ends rounded. */
+.sleep-chart__bar {
+    position: absolute;
+    bottom: 0;
+    border-radius: 4px 4px 1px 1px;
+    background: var(--bar);
+    pointer-events: none;
+}
+
+/* A bar's key in the reading and the legend is a square, a line's a stroke. */
+.sleep-chart .health-history__tip-row[data-tone="bars"] .health-history__tip-key { height: 8px; width: 8px; border-radius: 2px; }
+.sleep-chart .legend__item[data-tone="bars"] .legend__dot { border-radius: 2px; box-shadow: none; }
+.sleep-chart .goal-chart__focus[data-tone="bars"] { --accent: var(--sleep); }
+
+/* Two series need no gutter: neither scale is named. */
+.sleep-chart.compass-history .compass-plot:not(.has-levels),
+.sleep-chart.compass-history .chart__axis:not(.has-levels) { margin-left: 0; }
+
+.sleep-chart__legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* --- small, on the Slaap page ------------------------------------------- */
+.sleep-chart--mini {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;                /* the reading may rise over the card's edge */
+    padding: var(--space-4);
+    cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sleep-chart--mini:active { transform: scale(0.985); }
+
+.sleep-chart__head { min-width: 0; }
+
+.sleep-chart__title { font: inherit; }
+
+.sleep-chart__open {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-1);
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--text-secondary);
+    text-align: left;
+    hyphens: manual;
+    cursor: pointer;
+}
+
+.sleep-chart__open:focus { outline: none; }
+.sleep-chart__open:focus-visible {
+    outline: 2px solid var(--glass-border);
+    outline-offset: 4px;
+    border-radius: 6px;
+}
+
+.sleep-chart__chevron {
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    color: var(--text-muted);
+}
+
+/* The latest value: what the week ends on. */
+.sleep-chart__now {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 6px;
+    margin-top: 2px;
+}
+
+.sleep-chart__value,
+.sleep-chart__none {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.sleep-chart__none { color: var(--text-muted); font-weight: 600; }
+
+.sleep-chart__when {
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.sleep-chart__key {
+    align-self: center;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--accent);
+}
+
+.sleep-chart__key[data-tone="light"] { height: 2.5px; width: 10px; }
+
+/* The week fills what the square leaves. */
+.sleep-chart--mini .sleep-chart__chart {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-top: var(--space-3);
+}
+
+.sleep-chart--mini .chart__range.is-active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.sleep-chart--mini .compass-plot {
+    flex: 1;
+    height: auto;
+    min-height: 48px;
+}
+
+.sleep-chart--mini .chart__axis {
+    flex: none;
+    height: 2.5em;                    /* two rows of the dates' own size */
+    margin-top: var(--space-1);
+    font-size: var(--fs-tiny);
+    line-height: 1.2;
+}
+.sleep-chart--mini .chart__empty {
+    top: 50%;
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    transform: translateY(-50%);
+}
+
+.sleep-chart--mini.is-empty .compass-plot { opacity: 0.55; }
+
+/* The reading over a small chart: above it, over its head. */
+.sleep-chart--mini .goal-chart__tip { bottom: calc(100% + 2px); }
+
+/* --- large, on its own page ---------------------------------------------- */
+.sleep-metric .page-intro__title { hyphens: manual; }
+
+/* A narrow phone: the rows' names closer to the night. */
+@media (max-width: 359px) {
+    .sleep-night { --label-w: 84px; }
+    .sleep-night__chart { column-gap: var(--space-2); }
+    .sleep-night__axis { margin-left: calc(var(--label-w) + var(--space-2)); }
+}
+
+/* The large chart's head is its switch alone, across the card. */
+.sleep-chart .sleep-chart__switch-row .health-history__switch { flex: 1 1 100%; width: 100%; margin-left: 0; }

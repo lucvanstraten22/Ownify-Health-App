@@ -841,7 +841,9 @@ data class Area(
     val ratingToday: Int?,
     val highlights: List<Metric>,
     val groups: List<MetricGroup>,
-    val timeline: Timeline?
+    val timeline: Timeline?,
+    /** Slaap, drawn: its night and four charts, instead of [highlights] and [timeline]; null from a server from before it. */
+    val view: SleepView? = null
 ) {
     companion object {
         fun parse(id: String, o: JSONObject) = Area(
@@ -870,7 +872,8 @@ data class Area(
                         Stage(s.str("key").orEmpty(), s.str("label").orEmpty(), s.str("tone").orEmpty(), s.num("share"))
                     }
                 )
-            }
+            },
+            view = SleepView.parse(o.obj("view"))
         )
     }
 }
@@ -890,6 +893,192 @@ data class Metric(val key: String, val label: String, val unit: String, val valu
 data class MetricGroup(val title: String, val hint: String?, val metrics: List<Metric>, val locked: Boolean)
 
 data class Timeline(val title: String, val hint: String, val stages: List<Stage>)
+
+/**
+ * Slaap, drawn (lib/hydrate-sleep.php, docs/SLEEP.md): the last [night]'s
+ * stages as a timeline, and four [charts] over time — Tijd in bed +
+ * Regelmaat, SpO₂, Huidtemperatuur, Hartslagvariabiliteit — each small on
+ * the Slaap page and large on a page of its own.
+ */
+data class SleepView(val night: SleepNight, val charts: List<SleepChart>) {
+    fun chart(id: String): SleepChart? = charts.firstOrNull { it.id == id }
+
+    companion object {
+        fun parse(o: JSONObject?): SleepView? {
+            val night = SleepNight.parse(o.obj("night") ?: return null)
+            return SleepView(night, o.arr("charts").map(SleepChart::parse))
+        }
+    }
+}
+
+/**
+ * The night: its [rows] (Wakker, Rusteloosheid, REM, Licht, Diep, each with
+ * its time over the night), its [blocks] — each recorded period of a stage,
+ * from bedtime at 0 % to wake time at 100 % — the times under it ([ticks]),
+ * how long was slept ([asleep], "7:40") and how much of the time in bed
+ * ([efficiency], %), its [date], and a [note] when it has no stages or
+ * there is no night.
+ */
+data class SleepNight(
+    val title: String,
+    val hint: String,
+    val rows: List<SleepRow>,
+    val staged: Boolean,
+    val date: String?,
+    val start: String?,
+    val end: String?,
+    val asleep: String?,
+    val asleepLabel: String,
+    val efficiency: Int?,
+    val efficiencyLabel: String,
+    val blocks: List<SleepBlock>,
+    val ticks: List<CompassTick>,
+    val aria: String,
+    val note: String?
+) {
+    companion object {
+        fun parse(o: JSONObject) = SleepNight(
+            title = o.str("title").orEmpty(),
+            hint = o.str("hint").orEmpty(),
+            rows = o.arr("rows").map { SleepRow(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("total")) },
+            staged = o.bool("staged"),
+            date = o.str("date"),
+            start = o.str("start"),
+            end = o.str("end"),
+            asleep = o.str("asleep"),
+            asleepLabel = o.str("asleep_label").orEmpty(),
+            efficiency = o.int("efficiency"),
+            efficiencyLabel = o.str("efficiency_label").orEmpty(),
+            blocks = o.arr("blocks").let { a ->
+                if (a == null) emptyList() else (0 until a.length()).mapNotNull { i ->
+                    val b = a.optJSONArray(i) ?: return@mapNotNull null
+                    SleepBlock(b.optInt(0), b.optDouble(1).toFloat(), b.optDouble(2).toFloat(), b.optString(3), b.optString(4))
+                }
+            },
+            ticks = o.arr("ticks").map(CompassTick::parse),
+            aria = o.str("aria").orEmpty(),
+            note = o.str("note")
+        )
+    }
+}
+
+data class SleepRow(val key: String, val label: String, val total: String?)
+
+/** A period of a stage: its [row], from and to in % of the night, and when it [began] and [ended] ("00:48"). */
+data class SleepBlock(val row: Int, val from: Float, val to: Float, val began: String, val ended: String)
+
+/**
+ * One of Slaap's charts: its [series] (one line, or Tijd in bed's bars with
+ * Regelmaat's line), its [latest] value for the small chart's head, and its
+ * [periods] — 7 dagen first, which the small chart draws.
+ */
+data class SleepChart(
+    val id: String,
+    val title: String,
+    val open: String,
+    val back: String,
+    val switchLabel: String,
+    val hint: String,
+    val empty: String,
+    val series: List<SleepSeries>,
+    val latest: SleepLatest?,
+    val defaultPeriod: String,
+    val periods: List<SleepPeriod>
+) {
+    /** Bars and a line: two heights, neither named. */
+    val mixed get() = series.map { it.kind }.distinct().size > 1
+
+    companion object {
+        fun parse(o: JSONObject): SleepChart? {
+            val id = o.str("id") ?: return null
+            val periods = o.arr("periods").map(SleepPeriod::parse)
+            if (periods.isEmpty()) return null
+            return SleepChart(
+                id = id,
+                title = o.str("title").orEmpty(),
+                open = o.str("open").orEmpty(),
+                back = o.str("back") ?: "Slaap",
+                switchLabel = o.str("switch").orEmpty(),
+                hint = o.str("hint").orEmpty(),
+                empty = o.str("empty").orEmpty(),
+                series = o.arr("series").map { SleepSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line") },
+                latest = o.obj("latest")?.let { SleepLatest(it.arr("texts").let(::textsOf), it.str("date")) },
+                defaultPeriod = o.str("default") ?: periods.first().key,
+                periods = periods
+            )
+        }
+    }
+}
+
+data class SleepSeries(val key: String, val label: String, val kind: String)
+
+data class SleepLatest(val texts: List<String?>, val date: String?)
+
+/**
+ * A chart over one period (docs/CHARTS.md): its dates ([axis]; [axisRows]
+ * the same in two rows, for the small chart), each point's place ([x], %
+ * from the left) and reading ([points]), which days' Regelmaat was carried,
+ * and its lines, bars and named levels in the 300 × 160 box.
+ */
+data class SleepPeriod(
+    val key: String,
+    val label: String,
+    val group: String,
+    val aria: String,
+    val axis: List<CompassTick>,
+    val axisRows: List<CompassTick>?,
+    val x: List<Float>,
+    val points: List<SleepPoint>,
+    val carried: Set<Int>,
+    val width: Float,
+    val height: Float,
+    val hasData: Boolean,
+    val lines: List<SleepLine>,
+    val bars: List<SleepBars>,
+    val grid: List<HistoryLevel>
+) {
+    companion object {
+        fun parse(o: JSONObject): SleepPeriod? {
+            val key = o.str("key") ?: return null
+            val points = o.arr("points").let { a ->
+                if (a == null) emptyList() else (0 until a.length()).mapNotNull { i ->
+                    val p = a.optJSONArray(i) ?: return@mapNotNull null
+                    val all = textsOf(p)
+                    SleepPoint(all.getOrNull(0).orEmpty(), all.getOrNull(1), all.getOrNull(2), all.drop(3))
+                }
+            }
+            return SleepPeriod(
+                key = key,
+                label = o.str("label").orEmpty(),
+                group = o.str("group") ?: "day",
+                aria = o.str("aria").orEmpty(),
+                axis = o.arr("axis").map(CompassTick::parse),
+                axisRows = o.arr("axis_rows")?.map(CompassTick::parse),
+                x = o.arr("x").floats().map { it ?: 0f },
+                points = points,
+                carried = o.arr("carried").floats().mapNotNull { it?.toInt() }.toSet(),
+                width = (o.num("width") ?: 300.0).toFloat(),
+                height = (o.num("height") ?: 160.0).toFloat(),
+                hasData = o.bool("has_data"),
+                lines = o.arr("lines").map { SleepLine(it.str("key") ?: return@map null, it.arr("line").strings(), it.arr("y").floats()) },
+                bars = o.arr("bars").map { SleepBars(it.str("key") ?: return@map null, (it.num("w") ?: 0.0).toFloat(), it.arr("top").floats()) },
+                grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
+            )
+        }
+    }
+}
+
+/** A point as the reading shows it: its date or days, [detail] (a week's or month's mean), a [note], each series' value as written. */
+data class SleepPoint(val label: String, val detail: String?, val note: String?, val texts: List<String?>)
+
+data class SleepLine(val key: String, val line: List<String>, val y: List<Float?>)
+
+/** Bars from the bottom: [w] each one's width and [top] its height, in % of the plot. */
+data class SleepBars(val key: String, val w: Float, val top: List<Float?>)
+
+/** Strings and nulls, as written. */
+private fun textsOf(a: org.json.JSONArray?): List<String?> =
+    if (a == null) emptyList() else (0 until a.length()).map { i -> if (a.isNull(i)) null else a.opt(i)?.toString() }
 
 data class Stage(val key: String, val label: String, val tone: String, val share: Double?)
 

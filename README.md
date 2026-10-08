@@ -120,7 +120,9 @@ components/
     health-trend.php          one area's week / month chart, on its detail page
     metric-tiles.php          level 2 — the few numbers that explain a score
     metric-group.php          level 3 — the long tail, grouped
-    sleep-timeline.php        the night as one bar of stages
+    sleep-timeline.php        the night as one bar of stages (an app from before sleep-night)
+    sleep-night.php           Slaapverloop: the night stage by stage, bedtime to wake time
+    sleep-chart.php           one of Slaap's four charts: small, two by two, or large on its page
     segmented.php             the two-or-three-way switch, shared
     leaderboard-board.php     one scope × period board
     leaderboard-row.php       position · avatar · name · points
@@ -323,7 +325,7 @@ Overview first, detail on demand. The page itself is three scores and how
 they went — the Verloop; everything else lives behind a card.
 
 ```
-Gezondheid ──┬── Slaap      duur · timing · fasen · onderbrekingen · nachtwaarden
+Gezondheid ──┬── Slaap      de nacht per fase · tijd in bed + regelmaat · SpO₂ · huidtemperatuur · HRV
              ├── Voeding    macro's · hydratatie · eigen invoer
              └── Training   activiteit · trainingen · conditie en herstel
 ```
@@ -337,7 +339,11 @@ Overzicht's Scorekompas use the same layer and the same controller
 drilling in is the same movement everywhere.
 
 Each detail page runs three levels deep: the score, the handful of numbers
-that explain it, then the long tail in groups. Which metrics exist is entirely
+that explain it, then the long tail in groups. Slaap draws its numbers
+instead (docs/SLEEP.md): the last night stage by stage, from bedtime to wake
+time, and four charts two by two — Tijd in bed + Regelmaat, SpO₂,
+Huidtemperatuur, Hartslagvariabiliteit — each opening its own page with the
+same chart, large. Which metrics exist is entirely
 `config/health.php` — adding one later is a line of config, not a template
 change.
 

@@ -203,7 +203,53 @@ if (!function_exists('health_import_records')) {
             ]
         );
 
+        if (isset($r['stages']) && is_array($r['stages'])) {
+            health_import_sleep_stages($userId, $start, $r['stages']);
+        }
+
         return ['ok' => true, 'error' => null, 'date' => $nightOf, 'touch' => [['nights', $nightOf]]];
+    }
+
+    /**
+     * The session's stages, period by period (sleep_stages, migration 018):
+     * replaced as a whole, as the session itself is. Each period on the
+     * session's own clock, as its start and end are stored. Nothing is
+     * worked out from them here — the minutes per stage on the session are
+     * what the night, the score and the points read.
+     *
+     * @param array<int,array{stage: int, started_at: string, ended_at: string}> $stages
+     */
+    function health_import_sleep_stages(int $userId, DateTimeImmutable $start, array $stages): void
+    {
+        if (!function_exists('health_sleep_stages_stored') || !health_sleep_stages_stored()) {
+            return;                       // migration 018 not imported yet: the minutes are kept all the same
+        }
+
+        $session = db_value(
+            'SELECT id FROM sleep_sessions WHERE user_id = ? AND started_at = ?',
+            [$userId, $start->format('Y-m-d H:i:s')]
+        );
+
+        if ($session === null) {
+            return;
+        }
+
+        db_run('DELETE FROM sleep_stages WHERE sleep_session_id = ?', [(int) $session]);
+
+        foreach ($stages as $stage) {
+            $from = health_import_time($stage['started_at'] ?? null);
+            $to   = health_import_time($stage['ended_at'] ?? null);
+            $kind = (int) ($stage['stage'] ?? 0);
+
+            if ($from === null || $to === null || $to <= $from || $kind < 1 || $kind > 7) {
+                continue;
+            }
+
+            db_run(
+                'INSERT INTO sleep_stages (sleep_session_id, stage, started_at, ended_at) VALUES (?, ?, ?, ?)',
+                [(int) $session, $kind, $from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]
+            );
+        }
     }
 
     /* ------------------------------------------------------------- workout */

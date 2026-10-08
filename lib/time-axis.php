@@ -169,6 +169,35 @@ if (!function_exists('time_axis')) {
         return $day;
     }
 
+    /**
+     * A period's dates in two rows — the day over its month, the month named
+     * at the first date and where it changes — as 30 and 90 days always are:
+     * for a chart too narrow for "8 okt" seven times across (Slaap's small
+     * charts). The same dates at the same places; $place moves them as the
+     * chart insets its plot.
+     *
+     * @param list<array{date: string, x: float}> $ticks  time_axis()'s
+     * @return list<array{x: float, label: string, day: string, month: ?string}>
+     */
+    function time_axis_rows(array $ticks, ?callable $place = null): array
+    {
+        $out      = [];
+        $previous = null;
+        foreach ($ticks as $tick) {
+            $date  = new DateTimeImmutable($tick['date']);
+            $named = $previous === null || $previous->format('n') !== $date->format('n');
+            $out[] = [
+                'x'     => $place === null ? $tick['x'] : $place($tick['x']),
+                'label' => $tick['label'],
+                'day'   => (string) (int) $date->format('j'),
+                'month' => $named ? time_axis_month((int) $date->format('n')) : null,
+            ];
+            $previous = $date;
+        }
+
+        return $out;
+    }
+
     function time_axis_month(int $month): string
     {
         return ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][$month - 1];

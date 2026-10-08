@@ -37,6 +37,15 @@ sealed interface Detail {
     data class SettingsPage(val id: String) : Detail {
         override val key get() = "settings:$id"
     }
+
+    /** One of Slaap's charts on its own page (docs/SLEEP.md), over Slaap's. */
+    data class SleepChart(val id: String) : Detail {
+        override val key get() = "sleep:$id"
+        override val parent: Detail get() = HealthArea("sleep")
+    }
+
+    /** The detail this one opens over, or null: it opens over the rail. */
+    val parent: Detail? get() = null
 }
 
 /** A panel in front of everything, with its scrim (`[data-overlay]` on the website). */
@@ -107,6 +116,18 @@ class ShellState(
     private var detailDrag: Drag? = null
     private var detailJob: Job? = null
 
+    /**
+     * The detail [detail] opened over (its [Detail.parent]), standing open
+     * under it, with the scroll it was left at — or null. Back, a swipe or
+     * the back pill return to it as it was; a tab closes both
+     * (detail-layer.js's `parent`).
+     */
+    var under by mutableStateOf<Detail?>(null)
+        private set
+
+    var underScroll by mutableStateOf(ScrollState(0))
+        private set
+
     // ---------------------------------------------------------- the sheet
 
     var aiOpen by mutableStateOf(false)
@@ -168,7 +189,11 @@ class ShellState(
             scope.launch { scrolls[id]?.animateScrollTo(0) }
             return
         }
-        if (detail != null && detailShown) closeDetail()
+        if (detail != null && detailShown) {
+            // The detail it opened over goes with it.
+            under = null
+            closeDetail()
+        }
         goTo(id)
     }
 
@@ -183,6 +208,16 @@ class ShellState(
         if (detailDrag != null) return
         val current = detail
         if (current == next && detailShown) return
+        // Over the detail in front, when it is this one's own.
+        if (current != null && detailShown && under == null && next.parent == current && detailJob?.isActive != true) {
+            under = current
+            underScroll = detailScroll
+            detail = next
+            detailScroll = ScrollState(0)
+            detailProgress = 0f
+            settleDetail(1f)
+            return
+        }
         if (current != null && current != next && detailShown) return
 
         val returning = current == next
@@ -241,7 +276,19 @@ class ShellState(
         val closing = detail
         detailJob = scope.launch {
             animate(detailProgress, target, animationSpec = tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) { v, _ -> detailProgress = v }
-            if (!opening && detail == closing) detail = null
+            if (!opening && detail == closing) {
+                val back = under
+                if (back != null) {
+                    // Back to the detail it opened over, as it was left.
+                    under = null
+                    detail = back
+                    detailScroll = underScroll
+                    detailProgress = 1f
+                    detailShown = true
+                } else {
+                    detail = null
+                }
+            }
         }
     }
 

@@ -80,6 +80,14 @@ private const val READ_LINGER_MS = 1600L
 class PlotLine(val color: Color, val paths: List<String>, val washes: List<String>, val y: List<Float?>)
 
 /**
+ * Bars from the bottom (Slaap's Tijd in bed, `.sleep-chart__bar`): their
+ * colour, each one's width in % of the plot, and each point's top in % from
+ * the top — null for a day without one.
+ */
+@Immutable
+class PlotBars(val color: Color, val width: Float, val top: List<Float?>)
+
+/**
  * A score's history, read with a finger (`.compass-plot`, compass-history.js)
  * — the Scorekompas's one line and Gezondheid's three: the grid, the washes,
  * the lines drawn on whenever the period ([key]) is shown, a dot for every
@@ -94,6 +102,11 @@ class PlotLine(val color: Color, val paths: List<String>, val washes: List<Strin
  * Verloop is taller ([height]) over its period's own range, with its [levels]
  * named in a [gutter] on the left, the dates moved over with it
  * (`.health-history__level`).
+ *
+ * Slaap's charts (docs/SLEEP.md) add [bars] under the lines; a small one
+ * ([compact]: its dates tighter) sits in a card that opens with a tap, so it
+ * reads only once a finger has moved sideways ([readOnDrag]) — a tap still
+ * reaches the card, a vertical drag still scrolls.
  */
 @Composable
 fun HistoryPlot(
@@ -116,6 +129,9 @@ fun HistoryPlot(
     height: Dp = 100.dp,
     levels: List<HistoryLevel>? = null,
     gutter: Dp = 0.dp,
+    bars: List<PlotBars> = emptyList(),
+    readOnDrag: Boolean = false,
+    compact: Boolean = false,
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
     val still = LocalStillMotion.current
@@ -193,7 +209,40 @@ fun HistoryPlot(
                                     CustomAccessibilityAction("Dag verbergen") { hide(); true }
                                 )
                             }
-                            .pointerInput(xs) {
+                            .pointerInput(xs, readOnDrag) {
+                                if (readOnDrag) {
+                                    // A small chart in a card that opens with a tap: a reading only once the finger
+                                    // has gone sideways — then the card's tap is off (consumed); upright, the page scrolls.
+                                    awaitEachGesture {
+                                        val down = awaitFirstDown(requireUnconsumed = false)
+                                        var dragging = false
+                                        while (true) {
+                                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                                            if (!change.pressed) {
+                                                if (dragging) {
+                                                    // Lifted: the reading stays a moment.
+                                                    linger?.cancel()
+                                                    linger = scope.launch {
+                                                        delay(READ_LINGER_MS)
+                                                        reading = -1
+                                                    }
+                                                }
+                                                break
+                                            }
+                                            val dx = change.position.x - down.position.x
+                                            val dy = change.position.y - down.position.y
+                                            if (!dragging) {
+                                                if (abs(dy) > viewConfiguration.touchSlop && abs(dy) >= abs(dx)) break
+                                                if (abs(dx) > viewConfiguration.touchSlop) dragging = true
+                                            }
+                                            if (dragging) {
+                                                change.consume()
+                                                if (size.width > 0) show(nearest(change.position.x / size.width * 100f))
+                                            }
+                                        }
+                                    }
+                                    return@pointerInput
+                                }
                                 // In the final pass: whatever the page's scroll made of the same touch is known by then.
                                 awaitEachGesture {
                                     val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Final)
@@ -250,10 +299,35 @@ fun HistoryPlot(
                             val y = (12f + line * (viewBox.height - 24f)) * sy
                             drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                         }
+                    } else if (levels.isEmpty()) {
+                        // No level named (Slaap's small charts, bars beside a line): the baseline alone.
+                        drawLine(Ownify.ink(0.055f), Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
                     } else {
                         for (level in levels) {
                             val y = level.y / 100f * size.height
                             drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                        }
+                    }
+                    // `.sleep-chart__bar`: from the bottom, the top corners rounded, never stretched.
+                    for (set in bars) {
+                        val w = set.width / 100f * size.width
+                        val r = minOf(4.dp.toPx(), w / 2f)
+                        set.top.forEachIndexed { i, top ->
+                            if (top == null) return@forEachIndexed
+                            val left = xs[i] / 100f * size.width - w / 2f
+                            val y = top / 100f * size.height
+                            val bar = androidx.compose.ui.graphics.Path().apply {
+                                addRoundRect(
+                                    androidx.compose.ui.geometry.RoundRect(
+                                        left, y, left + w, size.height,
+                                        topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
+                                        topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
+                                        bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(1.dp.toPx(), 1.dp.toPx()),
+                                        bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                                    )
+                                )
+                            }
+                            drawPath(bar, set.color)
                         }
                     }
                     lines.forEachIndexed { i, line -> washes[i].forEach { drawPath(it.stretched(viewBox, size), line.color.copy(alpha = 0.10f)) } }
@@ -287,13 +361,26 @@ fun HistoryPlot(
                             drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
                             drawCircle(line.color, radius = 6.dp.toPx(), center = c)
                         }
+                        // A bar's point: at its top, in the full colour.
+                        for (set in bars) {
+                            val y = set.top.getOrNull(reading) ?: continue
+                            val c = Offset(px, y / 100f * size.height)
+                            drawCircle(Ownify.mix(Ownify.Sleep, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
+                            drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
+                            drawCircle(Ownify.Sleep, radius = 6.dp.toPx(), center = c)
+                        }
                     }
                 }
 
                 if (shown) xs.getOrNull(reading)?.let { x -> ReadingTip(x) { tip(reading) } }
             }
             // A history card keeps room for two rows of dates in every period (`.compass-history .chart__axis`).
-            TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
+            if (compact) {
+                // `.sleep-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
+                TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true)
+            } else {
+                TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
+            }
         }
 
         if (!filled) {
@@ -362,12 +449,12 @@ fun ReadingTip(x: Float, content: @Composable ColumnScope.() -> Unit) {
  * room for two in any period.
  */
 @Composable
-fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1) {
+fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1, compact: Boolean = false) {
     val density = LocalDensity.current
-    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
-    // height: 1.2em of the card's 15 sp text a row; 2.4em for two.
+    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = if (compact) 1.2.em else 1.5.em)
+    // height: 1.2em of the card's 15 sp text a row; 2.4em for two — compact, 2.5em of the dates' own size.
     val two = rows > 1 || ticks.any { it.day != null }
-    val height = with(density) { (Ownify.FsBody.toPx() * if (two) 2.4f else 1.2f).toDp() }
+    val height = with(density) { if (compact) (Ownify.FsTiny.toPx() * 2.5f).toDp() else (Ownify.FsBody.toPx() * if (two) 2.4f else 1.2f).toDp() }
     Layout(
         content = { ticks.forEach { TickLabel(it.label, it.day, it.month, style) } },
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }

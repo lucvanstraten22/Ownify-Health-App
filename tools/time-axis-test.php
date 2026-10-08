@@ -111,6 +111,14 @@ $a = time_axis(365, '2025-03-01', '2028-03-01');
 check('a rolling year over a leap day: still 12 months, the last ending today',
     count($a['slots']) === 12 && end($a['slots'])['to'] === '2028-03-01' && $a['start'] === '2027-03-03');
 
+section('Dates in two rows');
+
+$rows = time_axis_rows(time_axis(7, '2026-09-28', '2026-10-02')['ticks'], static fn (float $x): float => 5 + $x * 0.9);
+check('a week for a narrow chart: the day over its month, the month at the first date and where it changes',
+    array_column($rows, 'day') === ['28', '29', '30', '1', '2', '3', '4'] && array_column($rows, 'month') === ['sep', null, null, 'okt', null, null, null],
+    json_encode($rows));
+check('  the same dates at the same places, moved as the chart insets its plot', $rows[0]['x'] === 5.0 && $rows[6]['x'] === 95.0);
+
 section('A chart without a period switch');
 
 check('3 days of history: 7 dagen', time_axis_fit('2026-10-06', '2026-10-08') === 7);

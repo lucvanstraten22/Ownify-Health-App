@@ -252,6 +252,15 @@ try {
         isset($data['health']['trend']['charts']['sleep']['week']['has_data'])
         && ($data['goals']['wizard_sources'][0]['sources'][0]['types'] ?? null) === ['milestone']
         && array_key_exists('state', $data['settings']['pages']['account']['blocks'][1]['fields'][0] ?? []));
+    $sleepView = $data['health']['areas']['sleep']['view'] ?? null;
+    check('Slaap, drawn, for a new account: five empty rows, four charts with no value, nothing made up (docs/SLEEP.md)',
+        $sleepView !== null && array_column($sleepView['night']['rows'] ?? [], 'label') === ['Wakker', 'Rusteloosheid', 'REM', 'Licht', 'Diep']
+        && ($sleepView['night']['blocks'] ?? null) === [] && ($sleepView['night']['has_night'] ?? true) === false
+        && array_column($sleepView['charts'] ?? [], 'id') === ['bed', 'spo2', 'skin_temp', 'hrv']
+        && array_filter(array_column($sleepView['charts'], 'latest')) === []
+        && array_column(array_column(array_column($sleepView['charts'], 'periods'), 0), 'has_data') === [false, false, false, false]
+        && !isset($data['health']['areas']['sleep']['night'], $data['health']['areas']['sleep']['charts']),
+        json_encode($sleepView['night'] ?? null));
     $compass = $data['compass'] ?? [];
     check('the Scorekompas of a new account: no score, no direction, nothing made up',
         array_key_exists('value', $compass['score'] ?? []) && $compass['score']['value'] === null

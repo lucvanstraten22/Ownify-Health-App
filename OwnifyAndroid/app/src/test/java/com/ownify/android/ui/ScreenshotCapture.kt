@@ -394,6 +394,8 @@ class ScreenshotCapture {
         periods("compass-history", "Wat er verandert")
     }
     @Test fun detailSleep() = detail("health", Detail.HealthArea("sleep"), "detail-sleep", 760, 1520)
+    @Test fun sleepChartBed() = detail("health", Detail.SleepChart("bed"), "sleep-chart-bed")
+    @Test fun sleepChartSpo2() = detail("health", Detail.SleepChart("spo2"), "sleep-chart-spo2")
     @Test fun detailNutrition() = detail("health", Detail.HealthArea("nutrition"), "detail-nutrition", 760, 1520)
     @Test fun detailTraining() = detail("health", Detail.HealthArea("training"), "detail-training", 760, 1520)
     @Test fun goal301() = detail("goals", Detail.GoalPage("301"), "goal-301", 760, 1520, 2280)
