@@ -5,6 +5,7 @@ plugins {
 
 android {
     namespace = "com.ownify.android"
+
     compileSdk {
         version = release(37)
     }
@@ -13,49 +14,74 @@ android {
         applicationId = "com.ownify.android"
         minSdk = 28
         targetSdk = 37
-        versionCode = 30
+
+        // Automatically increased by GitHub Actions for release builds.
+        versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 30
         versionName = "11.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_FILE")
+
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "ownify"
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (!System.getenv("ANDROID_KEYSTORE_FILE").isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+
             optimization {
                 enable = false
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
     }
+
     testOptions {
-        // Robolectric: the Ownify sync tests run WorkManager and the real
-        // worker on the JVM, with the app's manifest and resources.
         unitTests {
             isIncludeAndroidResources = true
+
             all {
-                // Robolectric's Android 16 sets up its shared memory through
-                // a JDK internal it has to be allowed to reach.
                 it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
-                // The screenshots for the parity check with the website
-                // (ScreenshotCapture) are only taken when asked for:
-                // -Downify.shots=<dir> -Downify.state=<state.json> -Downify.server=<url>
-                // (-Downify.state.free: an account with a free goal slot, for the wizard;
-                // -Downify.ai: an api/ai/state.php answer with a conversation, for the assistant;
-                // -Downify.theme=light: the same shots in White Mode;
-                // -Downify.firstdays: a folder of state answers for the setup and the first days;
-                // -Downify.live=<url> -Downify.live.token=<token>: deleting a primary goal, or making one primary, against a real server)
-                for (key in listOf("ownify.shots", "ownify.state", "ownify.state.free", "ownify.server", "ownify.tree", "ownify.ai", "ownify.theme", "ownify.firstdays", "ownify.live", "ownify.live.token")) {
+
+                for (key in listOf(
+                    "ownify.shots",
+                    "ownify.state",
+                    "ownify.state.free",
+                    "ownify.server",
+                    "ownify.tree",
+                    "ownify.ai",
+                    "ownify.theme",
+                    "ownify.firstdays",
+                    "ownify.live",
+                    "ownify.live.token"
+                )) {
                     it.systemProperty(key, System.getProperty(key) ?: "")
                 }
-                // PixelCopy renders in hardware under Robolectric, so glass
-                // (RenderEffect blur) is in the screenshots too.
-                it.systemProperty("robolectric.pixelCopyRenderMode", "hardware")
+
+                it.systemProperty(
+                    "robolectric.pixelCopyRenderMode",
+                    "hardware"
+                )
             }
         }
     }
@@ -73,12 +99,8 @@ dependencies {
 
     implementation("androidx.health.connect:connect-client:1.1.0")
 
-    // The automatic Ownify sync (OwnifyBackgroundSync, OwnifySyncWorker).
     implementation(libs.androidx.work.runtime.ktx)
 
-    // Sign in with Google: Android Credential Manager and Google's ID-token
-    // option for it (GoogleSignIn.kt). The ID token goes to the Ownify server,
-    // which verifies it (api/auth/app-google.php).
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
@@ -87,13 +109,15 @@ dependencies {
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.robolectric)
-    // The screens, rendered and clicked under Robolectric (ui/OwnifyAppFlowTest and the other ui/ tests).
+
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
+
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
