@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -261,10 +262,12 @@ fun HistoryPlot(
                     // .compass-plot__dot: 7 across with a 2 px ring of the card (5 and 1.5 when
                     // small), never stretched; a carried day's is a ring.
                     for (line in lines) {
+                        // Where the line begins: a dot of its own, whatever the period (docs/CHARTS.md).
+                        val begin = line.y.indexOfFirst { it != null }
                         line.y.forEachIndexed { i, y ->
                             if (y == null) return@forEachIndexed
                             val alone = line.y.getOrNull(i - 1) == null && line.y.getOrNull(i + 1) == null
-                            if (!dayDots && !alone) return@forEachIndexed
+                            if (!dayDots && !alone && i != begin) return@forEachIndexed
                             val c = Offset(xs[i] / 100f * size.width, y / 100f * size.height)
                             val dot = if (small) 2.5.dp.toPx() else 3.5.dp.toPx()
                             drawCircle(Ownify.BgSecondary, radius = dot + (if (small) 1.5.dp else 2.dp).toPx(), center = c)
@@ -289,7 +292,8 @@ fun HistoryPlot(
 
                 if (shown) xs.getOrNull(reading)?.let { x -> ReadingTip(x) { tip(reading) } }
             }
-            TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis)
+            // A history card keeps room for two rows of dates in every period (`.compass-history .chart__axis`).
+            TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
         }
 
         if (!filled) {
@@ -300,6 +304,19 @@ fun HistoryPlot(
                 align = TextAlign.Center
             )
         }
+    }
+}
+
+/** `.chart__tick`: a date in one line, or its day over its month (`.chart__tick-month`), centred. */
+@Composable
+fun TickLabel(label: String, day: String?, month: String?, style: TextStyle) {
+    if (day == null) {
+        T(label, style, maxLines = 1)
+        return
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        T(day, style, maxLines = 1)
+        month?.let { T(it, style, maxLines = 1) }
     }
 }
 
@@ -339,17 +356,20 @@ fun ReadingTip(x: Float, content: @Composable ColumnScope.() -> Unit) {
 
 /**
  * `.chart__axis`: each date at its day — the first from the left edge, the
- * last to the right; [centred] (`.chart__axis--days`, a date under every
- * day) each centred under its own day.
+ * last to the right; [centred] (`.chart__axis--days`, a chart over time,
+ * docs/CHARTS.md) each centred under its own day. Over 30 and 90 days a date
+ * is two rows, its day over its month (`.chart__axis--rows`); [rows] keeps
+ * room for two in any period.
  */
 @Composable
-fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false) {
+fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1) {
     val density = LocalDensity.current
     val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
-    // height: 1.2em of the card's 15 sp text.
-    val height = with(density) { (Ownify.FsBody.toPx() * 1.2f).toDp() }
+    // height: 1.2em of the card's 15 sp text a row; 2.4em for two.
+    val two = rows > 1 || ticks.any { it.day != null }
+    val height = with(density) { (Ownify.FsBody.toPx() * if (two) 2.4f else 1.2f).toDp() }
     Layout(
-        content = { ticks.forEach { T(it.label, style, maxLines = 1) } },
+        content = { ticks.forEach { TickLabel(it.label, it.day, it.month, style) } },
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Int.MAX_VALUE)) }

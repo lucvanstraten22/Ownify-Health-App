@@ -473,7 +473,8 @@ data class CompassPeriod(
     val at: List<Pair<Float, Float?>>,
     val group: String = "day",
     val points: List<CompassDay> = emptyList(),
-    val grid: List<HistoryLevel> = emptyList()
+    val grid: List<HistoryLevel> = emptyList(),
+    val every: Boolean = false
 ) {
     companion object {
         fun parse(o: JSONObject): CompassPeriod? {
@@ -490,7 +491,7 @@ data class CompassPeriod(
                 since = o.str("since"),
                 start = o.int("start") ?: 0,
                 dayDots = o.bool("day_dots"),
-                axis = o.arr("axis").map { CompassTick(it.str("label").orEmpty(), (it.num("x") ?: 0.0).toFloat()) },
+                axis = o.arr("axis").map(CompassTick::parse),
                 aria = o.str("aria").orEmpty(),
                 chart = if (chart == null) TrendChart(emptyList(), emptyList(), emptyList(), false) else TrendChart.parse(chart),
                 width = (chart.num("width") ?: 300.0).toFloat(),
@@ -502,14 +503,23 @@ data class CompassPeriod(
                 },
                 group = o.str("group") ?: "day",
                 points = o.arr("points").map(CompassDay::parse),
-                grid = chart.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
+                grid = chart.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) },
+                every = o.bool("every")
             )
         }
     }
 }
 
-/** A date under a period's line, at [x] % from the left. */
-data class CompassTick(val label: String, val x: Float)
+/**
+ * A date under a chart over time, at [x] % from the left (lib/time-axis.php):
+ * [label] in one line ("8 okt", "okt"); over 30 and 90 days also [day] over
+ * its [month] — the month only where it begins — drawn in two rows.
+ */
+data class CompassTick(val label: String, val x: Float, val day: String? = null, val month: String? = null) {
+    companion object {
+        fun parse(o: JSONObject) = CompassTick(o.str("label").orEmpty(), (o.num("x") ?: 0.0).toFloat(), o.str("day"), o.str("month"))
+    }
+}
 
 /**
  * One recorded day: its [label] ("5 oktober", "Vandaag"), its Health Score
@@ -695,7 +705,8 @@ data class HealthHistory(
     val empty: String,
     val hint: String,
     val categories: List<CompassName>,
-    val periods: List<HistoryPeriod>
+    val periods: List<HistoryPeriod>,
+    val hintOne: String = hint
 ) {
     companion object {
         fun parse(o: JSONObject?): HealthHistory? {
@@ -708,7 +719,8 @@ data class HealthHistory(
                 empty = o.str("empty").orEmpty(),
                 hint = o.str("hint").orEmpty(),
                 categories = o.arr("categories").map { CompassName(it.str("id") ?: return@map null, it.str("label").orEmpty(), it.str("accent").orEmpty()) },
-                periods = periods
+                periods = periods,
+                hintOne = o.str("hint_one") ?: o.str("hint").orEmpty()
             )
         }
     }
@@ -753,7 +765,7 @@ data class HistoryPeriod(
                 start = o.int("start") ?: 0,
                 since = o.str("since"),
                 dots = o.str("dots") ?: "alone",
-                axis = o.arr("axis").map { CompassTick(it.str("label").orEmpty(), (it.num("x") ?: 0.0).toFloat()) },
+                axis = o.arr("axis").map(CompassTick::parse),
                 every = o.bool("every"),
                 aria = o.str("aria").orEmpty(),
                 points = o.arr("points").map(HistoryPoint::parse),
@@ -789,15 +801,31 @@ data class HistoryPoint(val label: String, val detail: String?, val note: String
 /** A level of the grid: its height in % from the top, and its score. */
 data class HistoryLevel(val y: Float, val label: String)
 
-/** One category's line: its colour, its paths, and each point's height in % from the top — null without a score. */
-data class HistoryLine(val id: String, val accent: String, val line: List<String>, val y: List<Float?>) {
+/**
+ * One category's line: its colour, its paths, and each point's height in %
+ * from the top — null without a score; and [solo] the same line on its own,
+ * over its own height, as that category's page draws it.
+ */
+data class HistoryLine(val id: String, val accent: String, val line: List<String>, val y: List<Float?>, val solo: HistorySolo? = null) {
     companion object {
         fun parse(o: JSONObject): HistoryLine? {
             val id = o.str("id") ?: return null
-            return HistoryLine(id, o.str("accent").orEmpty(), o.arr("line").strings(), o.arr("y").floats())
+            val solo = o.obj("solo")?.let {
+                HistorySolo(
+                    it.arr("line").strings(),
+                    it.arr("y").floats(),
+                    it.arr("grid").map { g -> HistoryLevel((g.num("y") ?: return@map null).toFloat(), g.str("label").orEmpty()) },
+                    it.bool("has_data"),
+                    it.str("aria").orEmpty()
+                )
+            }
+            return HistoryLine(id, o.str("accent").orEmpty(), o.arr("line").strings(), o.arr("y").floats(), solo)
         }
     }
 }
+
+/** A line on its own: its paths and heights over its own range, that range's levels, whether it has a point, its spoken label. */
+data class HistorySolo(val line: List<String>, val y: List<Float?>, val grid: List<HistoryLevel>, val hasData: Boolean, val aria: String)
 
 data class Score(val value: Int?, val max: Int)
 
@@ -1169,7 +1197,7 @@ data class GoalChart(
             },
             line = o.arr("line").strings(),
             area = o.arr("area").strings(),
-            xTicks = o.arr("x_ticks").map { XTick((it.num("left") ?: 0.0).toFloat(), it.str("label").orEmpty(), it.str("align") ?: "center") },
+            xTicks = o.arr("x_ticks").map { XTick((it.num("left") ?: 0.0).toFloat(), it.str("label").orEmpty(), it.str("align") ?: "center", it.str("day"), it.str("month")) },
             yTicks = o.arr("y_ticks").map { YTick((it.num("top") ?: 0.0).toFloat(), it.str("label").orEmpty()) },
             target = o.obj("target")?.let { ChartTarget((it.num("top") ?: 0.0).toFloat(), it.str("label").orEmpty()) },
             end = o.obj("end")?.let {
@@ -1184,7 +1212,7 @@ data class GoalChart(
 
 /** [note]: what the day did and how far the goal was then ("+ 2,5 km · 62% van je doel"); empty when nothing is known. */
 data class ChartPoint(val x: Float, val y: Float, val date: String, val value: String, val dot: Boolean, val note: String = "")
-data class XTick(val left: Float, val label: String, val align: String)
+data class XTick(val left: Float, val label: String, val align: String, val day: String? = null, val month: String? = null)
 data class YTick(val top: Float, val label: String)
 data class ChartTarget(val top: Float, val label: String)
 data class ChartEnd(val x: Float, val y: Float, val label: String, val below: Boolean, val align: String)

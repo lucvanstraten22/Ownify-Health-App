@@ -71,6 +71,7 @@ import com.ownify.android.ui.app.ownsGestures
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.Chip
 import com.ownify.android.ui.design.IconTile
+import com.ownify.android.ui.design.TickLabel
 import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.OwnifyIcons
@@ -137,7 +138,7 @@ fun GoalHistory(goal: Goal, copy: Map<String, String>, footer: @Composable () ->
     }
 }
 
-/** Nothing recorded yet: the trend card's empty chart, from the start to now. */
+/** Nothing recorded yet: the trend card's empty chart, the week from today. */
 @Composable
 private fun EmptyHistory(goal: Goal, history: String, empty: String) {
     Box(Modifier.fillMaxWidth().padding(top = Ownify.Space5)) {
@@ -156,7 +157,10 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
                     drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                 }
             }
-            Axis(listOf(goal.startLabel.ifEmpty { "Start" }, if (goal.isCompleted) "Behaald" else "Nu"), Modifier.padding(top = Ownify.Space2))
+            // The week from today, its dates (docs/CHARTS.md); a server from before that: from the start to now.
+            val chart = goal.chart
+            if (chart != null && chart.xTicks.isNotEmpty()) XTicks(chart, Modifier.padding(top = Ownify.Space2))
+            else Axis(listOf(goal.startLabel.ifEmpty { "Start" }, if (goal.isCompleted) "Behaald" else "Nu"), Modifier.padding(top = Ownify.Space2))
         }
         T(empty, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = 46.dp), align = TextAlign.Center)
     }
@@ -508,14 +512,18 @@ private fun YTicks(chart: GoalChart, modifier: Modifier) {
     }
 }
 
-/** `.goal-chart__x`: the dates, each at its spot, aligned start, centre or end as the server says. */
+/**
+ * `.goal-chart__x`: the period's dates (docs/CHARTS.md), each at its spot,
+ * aligned start, centre or end as the server says — over 30 and 90 days in
+ * two rows, the day over its month.
+ */
 @Composable
 private fun XTicks(chart: GoalChart, modifier: Modifier) {
     val density = LocalDensity.current
     val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
-    val height = with(density) { (Ownify.FsBody.toPx() * 1.2f).toDp() }
+    val height = with(density) { (Ownify.FsBody.toPx() * if (chart.xTicks.any { it.day != null }) 2.4f else 1.2f).toDp() }
     Layout(
-        content = { chart.xTicks.forEach { T(it.label, style, maxLines = 1) } },
+        content = { chart.xTicks.forEach { TickLabel(it.label, it.day, it.month, style) } },
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Int.MAX_VALUE)) }

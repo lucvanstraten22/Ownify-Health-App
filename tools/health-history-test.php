@@ -14,10 +14,14 @@
  *     days
  *   - every point of a day is that category's recorded score that day —
  *     nothing scored again — and a real 0 is a point at the bottom
- *   - 90 days: a point a week, each the mean of its seven days; a year: twelve
- *     months over 365 days, or — younger than half a year — twelve half
- *     months from the first day, none yet where they lie ahead; each where it
- *     falls in time, a young history never stretched over the width
+ *   - Ownify's time axis (lib/time-axis.php, docs/CHARTS.md): a young
+ *     history starts at the left on its first day and the rest of the
+ *     period stays empty ahead; a full one rolls, today at the right; the
+ *     dates every day, every third day, every week or 13 month boundaries,
+ *     never "Vandaag" or a year
+ *   - 90 days: a point a week, a year: a point a month, each the mean of its
+ *     days and standing at its first date; a line begins at a point of its
+ *     own, never before its category's first score
  *   - the height is the period's own range in round tens, at least 30: 73 to
  *     80 is a clear rise, one point a small one; the levels are named; every
  *     curve stays between the points it joins
@@ -26,8 +30,7 @@
  *     unbroken line at 82; after that it has none — a gap, never a 0
  *   - a category without a score on a day the others have one is a gap in
  *     its own line only
- *   - a week names every day, today by its date; a month is dated as the
- *     Scorekompas dates it; every point is a dot
+ *   - a week names every day, today by its date; every point is a dot
  *   - the Scorekompas's own history is the same with or without it; its
  *     line is the Health Score drawn the same way — weeks, months, its own
  *     height — and everything else of it as it was
@@ -197,14 +200,6 @@ function within(string $path): bool
     return true;
 }
 
-/** The mean of a category's scores over the days $from to $to ago, rounded as a score is. */
-function mean_of(callable $score, int $from, int $to): ?int
-{
-    $values = array_values(array_filter(array_map($score, range($from, $to)), static fn ($v) => $v !== null));
-
-    return $values === [] ? null : (int) round(array_sum($values) / count($values));
-}
-
 /* ===================================================================== */
 
 section('Four periods, three lines, the Scorekompas\'s days');
@@ -225,8 +220,7 @@ check('the periods are the Scorekompas\'s: 7 dagen, 30 dagen, 90 dagen, 1 jaar',
     array_column($history['periods'], 'label') === ['7 dagen', '30 dagen', '90 dagen', '1 jaar']
     && array_column($history['periods'], 'key') === array_column($trend['periods'], 'key'));
 check('  it opens on 7 dagen', $history['default'] === '7');
-check('  a day, a day, a week, half a month (40 days of history)',
-    array_column($history['periods'], 'group') === ['day', 'day', 'week', 'half']);
+check('  a day, a day, a week, a month', array_column($history['periods'], 'group') === ['day', 'day', 'week', 'month']);
 check('  7 and 30 days over the same windows: each starts where the Scorekompas\'s does',
     array_column(array_slice($history['periods'], 0, 2), 'start') === array_column(array_slice($trend['periods'], 0, 2), 'start'));
 check('three lines — Slaap, Voeding, Training — in the categories\' own colours',
@@ -248,7 +242,8 @@ $week = $history['periods'][0];
 check('a week names every day — today by its date', count($week['axis']) === 7 && $week['every']
     && array_column($week['axis'], 'x') === $week['chart']['x']
     && $week['axis'][6]['label'] === score_compass_date(day(0), true));
-check('  a month is dated as the Scorekompas dates it', $history['periods'][1]['axis'] === $trend['periods'][1]['axis']);
+check('  30 days: a date every third day, its month where it begins',
+    count($history['periods'][1]['axis']) === 10 && $history['periods'][1]['axis'][0]['label'] === score_compass_date(day(29), true));
 check('  every point is a dot', array_column($history['periods'], 'dots') === ['every', 'every', 'every', 'every']);
 check('  spoken: the three, per day or per week, over the period',
     $week['aria'] === 'Slaap, Voeding en Training per dag, de afgelopen 7 dagen'
@@ -296,7 +291,107 @@ foreach ($pages['history']['periods'] as $p) {
 }
 check('no missing day is drawn — every point is a score, every gap a day without one', $zeros === 0, "$zeros wrong points");
 
-section('90 days: a week a point; a year: a month a point');
+/* ------------------------------------------------- the time axis */
+
+/** Every axis of every period of both charts: no "Vandaag", no year. */
+function plain_axes(array $pages): bool
+{
+    foreach ([...$pages['history']['periods'], ...$pages['compass']['trend']['periods']] as $p) {
+        foreach ($p['axis'] as $tick) {
+            if (str_contains($tick['label'], 'Vandaag') || preg_match('/\d{4}/', $tick['label'])) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/** The mean of a line's scores (by days ago) over a point's days, rounded as a score is; null without any. */
+function mean_over(callable $score, string $from, string $to): ?int
+{
+    $today  = new DateTimeImmutable('today');
+    $values = [];
+    for ($d = new DateTimeImmutable($from); $d <= new DateTimeImmutable($to) && $d <= $today; $d = $d->modify('+1 day')) {
+        $value = $score((int) $d->diff($today)->days);
+        if ($value !== null) {
+            $values[] = $value;
+        }
+    }
+
+    return $values === [] ? null : (int) round(array_sum($values) / count($values));
+}
+
+/** A line's first point: its index, null without one. */
+function begins(array $line): ?int
+{
+    return array_key_first(array_filter($line['y'], static fn ($y) => $y !== null));
+}
+
+section('A new history starts at the left; the rest of the period stays empty');
+
+$u = account();
+snapshot($u, 2, ['sleep' => [72, 2]]);
+snapshot($u, 1, ['sleep' => [75, 2]]);
+$pages = pages($u);
+
+$ok = true;
+foreach ([...$pages['history']['periods'], ...$pages['compass']['trend']['periods']] as $p) {
+    $x = $p['chart']['x'] ?? array_column($p['chart']['at'], 0);
+    if (($x[0] ?? null) !== 0.0) { $ok = false; }
+}
+check('two days of Slaap: in every period of both charts the first point is at the left edge', $ok);
+$week = period($pages, '7');
+check('  7 dagen: the week from its first day, every day by its date, the days ahead empty',
+    array_column($week['axis'], 'label') === array_map(static fn ($ago) => score_compass_date(day($ago), true), [2, 1, 0, -1, -2, -3, -4])
+    && $week['chart']['x'] === [0.0, 16.67, 33.33], json_encode($week['axis']));
+check('  — not moved to the right, not stretched over the width', max($week['chart']['x']) < 50);
+$month = period($pages, '30');
+check('  30 dagen: 30 days from the first, a date every third day',
+    count($month['axis']) === 10 && $month['axis'][0]['label'] === score_compass_date(day(2), true)
+    && $month['axis'][1]['label'] === (string) (int) (new DateTimeImmutable(day(-1)))->format('j') && $month['chart']['x'] === [0.0, 3.45, 6.9]);
+$quarter = period($pages, '90');
+check('  90 dagen: a date every week from the first day, one week begun so far',
+    count($quarter['axis']) === 13 && $quarter['axis'][0]['x'] === 0.0 && count($quarter['points']) === 1);
+$year = period($pages, '365');
+check('  1 jaar: 13 month boundaries from its first day — the same month at both ends — one month begun',
+    count($year['axis']) === 12 + 1 && $year['axis'][0]['label'] === $year['axis'][12]['label'] && count($year['points']) === 1
+    && preg_match('/^[a-z]{3}$/', $year['axis'][5]['label']) === 1, json_encode(array_column($year['axis'], 'label')));
+check('  only Slaap has a line: Voeding and Training none at all',
+    begins(array_column($week['chart']['lines'], null, 'id')['sleep']) === 0
+    && begins(array_column($week['chart']['lines'], null, 'id')['nutrition']) === null
+    && begins(array_column($week['chart']['lines'], null, 'id')['training']) === null);
+check('  never "Vandaag", never a year under any chart', plain_axes($pages));
+check('  the Scorekompas on the same axis', array_column(array_column($pages['compass']['trend']['periods'], null, 'key')['30']['axis'], 'label') === array_column($month['axis'], 'label'));
+
+section('Lines that begin on different days, on one axis');
+
+$u = account();
+for ($ago = 20; $ago >= 1; $ago--) {
+    snapshot($u, $ago, array_filter([
+        'sleep'     => [70 + $ago % 5, 2],
+        'nutrition' => $ago <= 18 ? [74 + $ago % 3, 2] : null,
+        'training'  => $ago <= 10 ? [60 + $ago % 7, 2] : null,
+    ]));
+}
+$pages = pages($u);
+$lines = array_column(period($pages, '30')['chart']['lines'], null, 'id');
+check('30 dagen: Slaap from the first day, Voeding two days later, Training ten',
+    [begins($lines['sleep']), begins($lines['nutrition']), begins($lines['training'])] === [0, 2, 10]);
+check('  nothing drawn before a line\'s first score',
+    array_filter(array_slice($lines['training']['y'], 0, 10), static fn ($y) => $y !== null) === []);
+$weeks = period($pages, '90');
+$lines = array_column($weeks['chart']['lines'], null, 'id');
+check('90 dagen: Voeding began inside the first week, so it begins at the second; Training inside the second, at the third',
+    [begins($lines['sleep']), begins($lines['nutrition']), begins($lines['training'])] === [0, 1, 2],
+    json_encode([begins($lines['sleep']), begins($lines['nutrition']), begins($lines['training'])]));
+check('  each first point at a date of the axis, a real point of its own',
+    $weeks['chart']['x'][1] === $weeks['axis'][1]['x'] && $weeks['chart']['x'][2] === $weeks['axis'][2]['x']);
+$lines = array_column(period($pages, '365')['chart']['lines'], null, 'id');
+check('1 jaar: only Slaap began with the first month; the others begin with the next',
+    begins($lines['sleep']) === 0 && begins($lines['nutrition']) === null && begins($lines['training']) === null);
+
+section('A full history rolls: today at the right, the oldest at the left');
 
 $u = account();
 $scores = [
@@ -308,63 +403,57 @@ for ($ago = 380; $ago >= 1; $ago--) {
     snapshot($u, $ago, array_filter(array_map(static fn ($f) => ($v = $f($ago)) === null ? null : [$v, 0], $scores)));
 }
 $pages = pages($u);
+$week  = period($pages, '7');
+check('7 dagen: the last seven days, today the last date — by its date',
+    $week['axis'][0]['label'] === score_compass_date(day(6), true) && end($week['axis'])['label'] === score_compass_date(day(0), true)
+    && end($week['chart']['x']) === 100.0);
+$month = period($pages, '30');
+check('30 dagen: the last 30, a point a day, the newest at the right',
+    count($month['points']) === 30 && $month['axis'][0]['label'] === score_compass_date(day(29), true) && end($month['chart']['x']) === 100.0);
+
 $weeks = period($pages, '90');
-$year  = period($pages, '365');
-
-check('90 days: 13 weeks, the last ending today, the first the 6 days before them',
-    $weeks['group'] === 'week' && count($weeks['points']) === 13
-    && $weeks['points'][12]['label'] === hydrate_health_history_range(day(6), day(0), substr(day(0), 0, 4), $healthCopy['history'])
-    && $weeks['points'][0]['label'] === hydrate_health_history_range(day(89), day(84), substr(day(0), 0, 4), $healthCopy['history']),
-    json_encode(array_column($weeks['points'], 'label')));
+$axis  = time_axis(90, $pages['compass']['trend']['days'][0]['date'], day(0));
+check('90 dagen: 13 weeks from 89 days ago, the last of them ending today',
+    count($weeks['points']) === 13 && $axis['start'] === day(89) && end($axis['slots'])['to'] === day(0));
 $ok = true;
-foreach (range(0, 11) as $w) {
-    $to = 7 * (11 - $w);   // days ago at the week's end: the last week ends today
+foreach ($axis['slots'] as $w => $slot) {
     foreach (array_keys($scores) as $k => $id) {
-        if ($weeks['points'][$w + 1]['values'][$k] !== mean_of($scores[$id], $to, $to + 6)) { $ok = false; }
+        if ($weeks['points'][$w]['values'][$k] !== mean_over($scores[$id], $slot['from'], $slot['to'])) { $ok = false; }
     }
+    if ($weeks['chart']['x'][$w] !== $slot['x'] || $slot['x'] !== $weeks['axis'][$w]['x']) { $ok = false; }
 }
-check('  each week the mean of its seven days\' scores, rounded', $ok);
+check('  each week the mean of its seven days, standing at its own date', $ok);
 check('  that it is a mean, in its reading', $weeks['points'][5]['detail'] === 'weekgemiddelde');
-check('  each in the middle of its days, in time: a week apart, 7/89 of the width',
-    abs($weeks['chart']['x'][6] - $weeks['chart']['x'][5] - 700 / 89) < 0.02 && abs($weeks['chart']['x'][12] - (86 / 89 * 100)) < 0.02);
 check('  no day of the Scorekompas\'s list: an older app reads none', $weeks['start'] === count($pages['compass']['trend']['days']));
-check('  dated over its 90 days, today by name', end($weeks['axis'])['label'] === 'Vandaag' && $weeks['axis'][0]['label'] === score_compass_date(day(89), true));
 
-check('a year of history: twelve months over 365 days', $year['group'] === 'month' && count($year['points']) === 12);
+$year = period($pages, '365');
+$axis = time_axis(365, $pages['compass']['trend']['days'][0]['date'], day(0));
+check('1 jaar: 12 months and 13 boundaries — never a 13th month — the oldest at the left, today in the last',
+    count($year['points']) === 12 && count($year['axis']) === 13 && end($axis['slots'])['to'] === day(0)
+    && $year['axis'][0]['label'] === $year['axis'][12]['label']);
 $ok = true;
-foreach (range(0, 11) as $m) {
-    [$from, $to] = [(int) round($m * 365 / 12), (int) round(($m + 1) * 365 / 12) - 1];
+foreach ($axis['slots'] as $m => $slot) {
     foreach (array_keys($scores) as $k => $id) {
-        if ($year['points'][$m]['values'][$k] !== mean_of($scores[$id], 364 - $to, 364 - $from)) { $ok = false; }
+        $expected = $id === 'training' && $slot['from'] < day(200) ? null : mean_over($scores[$id], $slot['from'], $slot['to']);
+        if ($year['points'][$m]['values'][$k] !== $expected) { $ok = false; }
     }
 }
-check('  each the mean of its days\' scores — today\'s none yet among them', $ok);
-check('  Training only where it was recorded: none in its first months, never a 0',
-    $year['points'][0]['values'][2] === null && $year['points'][11]['values'][2] !== null);
+check('  each month the mean of its days; Training, begun 200 days ago, from the first month after', $ok);
+check('  never "Vandaag", never a year under any chart', plain_axes($pages));
 
-$u = account();
-for ($ago = 100; $ago >= 1; $ago--) {
-    snapshot($u, $ago, array_filter(array_map(static fn ($f) => ($v = $f($ago)) === null ? null : [$v, 0], $scores)));
+$solo = array_column($month['chart']['lines'], null, 'id')['sleep']['solo'];
+$a    = $solo['grid'][0];
+$b    = $solo['grid'][1];
+$ok   = true;
+foreach ($month['points'] as $i => $point) {
+    $value = $point['values'][0];
+    $y     = $solo['y'][$i];
+    if (($value === null) !== ($y === null)
+        || ($value !== null && abs($y - ($a['y'] + ($value - (int) $a['label']) * ($b['y'] - $a['y']) / ((int) $b['label'] - (int) $a['label']))) > 0.02)) {
+        $ok = false;
+    }
 }
-$pages = pages($u);
-$half  = period($pages, '365');
-$list  = $pages['compass']['trend']['days'];
-check('younger than half a year: twelve half months from its first day, filled as far as today',
-    $half['group'] === 'half' && count($half['points']) === 7 && $half['axis'][0]['label'] === score_compass_date($list[0]['date'], true),
-    count($half['points']) . ' ' . json_encode($half['axis']));
-check('  nothing ahead of today: the last point is today\'s half month, before the middle of the width',
-    end($half['chart']['x']) < 56 && end($half['chart']['x']) > 50, (string) end($half['chart']['x']));
-check('  the timeline is the half year, its far end a date to come',
-    end($half['axis'])['label'] === score_compass_date_in(
-        (new DateTimeImmutable($list[0]['date']))->modify('+182 days')->format('Y-m-d'), substr(day(0), 0, 4), true));
-
-$u = account();
-for ($ago = 20; $ago >= 1; $ago--) {
-    snapshot($u, $ago, ['sleep' => [70, 0], 'nutrition' => [72, 0]]);
-}
-$pages = pages($u);
-check('20 days in 90: three weeks at the right, where they fall — never stretched over the width',
-    count(period($pages, '90')['points']) === 3 && period($pages, '90')['chart']['x'][0] > 75);
+check('a category\'s own page: its line alone, over its own height and levels', $ok && $solo['aria'] === 'Slaap per dag, de afgelopen 30 dagen');
 
 section('The Scorekompas\'s line: the Health Score, drawn the same way');
 
@@ -381,11 +470,6 @@ function bare_compass(int $userId): array
     return score_compass(health_score_history($userId, 365), $compassCopy, hydrate_compass_areas($data));
 }
 
-$u = account();
-for ($ago = 380; $ago >= 1; $ago--) {
-    snapshot($u, $ago, array_filter(array_map(static fn ($f) => ($v = $f($ago)) === null ? null : [$v, 0], $scores)));
-}
-$pages   = pages($u);
 $cp      = array_column($pages['compass']['trend']['periods'], null, 'key');
 $list    = $pages['compass']['trend']['days'];
 $bare    = array_column(bare_compass($u)['trend']['periods'], null, 'key');
@@ -395,14 +479,13 @@ check('a day, a day, a week, a month — as the Verloop has them',
     array_column($cp, 'group') === ['day', 'day', 'week', 'month'] && array_column($cp, 'group') === array_column($verloop, 'group'));
 check('  the same places in time, and the same dates under them',
     array_map(static fn ($p) => array_column($p['chart']['at'], 0), array_values($cp)) === array_column(array_column($verloop, 'chart'), 'x')
-    && array_column(array_slice($cp, 2), 'axis') === array_column(array_slice($verloop, 2), 'axis'));
-$ok = true;
+    && array_column($cp, 'axis') === array_column($verloop, 'axis') && array_unique(array_column($cp, 'every')) === [true]);
+$axis = time_axis(90, $list[0]['date'], day(0));
+$ok   = true;
 foreach ($cp['90']['points'] as $w => $point) {
-    [$from, $to] = [max(0, 89 - 7 * (12 - $w) - 6), 89 - 7 * (12 - $w)];
-    $values = array_values(array_filter(array_map(
-        static fn ($d) => $list[count($list) - 90 + $d]['value'] ?? null, range($from, $to)
-    ), static fn ($v) => $v !== null));
-    $mean = $values === [] ? null : (int) round(array_sum($values) / count($values));
+    $slot   = $axis['slots'][$w];
+    $values = array_values(array_filter(array_column(array_filter($list, static fn ($d) => $d['date'] >= $slot['from'] && $d['date'] <= $slot['to']), 'value'), static fn ($v) => $v !== null));
+    $mean   = $values === [] ? null : (int) round(array_sum($values) / count($values));
     if ($point['value'] !== $mean || score_at($cp['90'], $cp['90']['chart']['at'][$w][1]) !== $mean) { $ok = false; }
     if (array_column($point['categories'], 'value') !== $verloop['90']['points'][$w]['values']) { $ok = false; }
 }
@@ -410,11 +493,11 @@ check('  each week the mean of its days\' Health Scores, on the line; its catego
 check('  its reading: its days, that it is a mean, no parts',
     $cp['90']['points'][12]['label'] === $verloop['90']['points'][12]['label'] && $cp['90']['points'][12]['detail'] === 'weekgemiddelde'
     && array_filter(array_column($cp['90']['points'][12]['categories'], 'parts')) === []);
-check('  7 and 30 days: the Scorekompas\'s own days, as before',
+check('  7 and 30 days: the Scorekompas\'s own days, from the window\'s first',
     $cp['30']['start'] === $bare['30']['start'] && array_column($cp['30']['points'], 'date') === array_column(array_slice($list, $bare['30']['start'], 30), 'date'));
 check('  weeks and months point past the list: an older app reads no day there',
     $cp['90']['start'] === count($list) && $cp['365']['start'] === count($list));
-check('  the dots: every day of a week, every week and month — a month\'s days as before',
+check('  the dots: every day of a week, every week and month — a month\'s days where the line begins',
     array_column($cp, 'day_dots') === [true, false, true, true]);
 check('  spoken per week and per month, with its direction',
     str_starts_with($cp['90']['aria'], 'Je Gezondheidsscore per week, de afgelopen 90 dagen')
@@ -435,13 +518,27 @@ check('everything else as it was: sentences, direction, since, the score\'s valu
 check('  the 30 days an older app draws: still 0–100, a point a day',
     count($pages['compass']['trend']['chart']['at']) === count($pages['compass']['trend']['values']));
 
-$u = account();
-for ($ago = 20; $ago >= 1; $ago--) {
-    snapshot($u, $ago, ['sleep' => [70, 0], 'nutrition' => [72, 0]]);
-}
-$cp = array_column(pages($u)['compass']['trend']['periods'], null, 'key');
-check('20 days: three weeks at the right, and a half year from the first day',
-    count($cp['90']['points']) === 3 && $cp['90']['chart']['at'][0][0] > 75 && $cp['365']['group'] === 'half' && count($cp['365']['points']) === 2);
+section('A goal\'s Verloop: the same axis, its period the shortest that holds it');
+
+$goal  = ['tracking' => 'manual', 'target_unit' => 'kg'];
+$today = new DateTimeImmutable('today');
+$chart = static function (int $days) use ($goal, $today): array {
+    $points = [];
+    for ($ago = $days - 1; $ago >= 0; $ago--) {
+        $points[] = ['date' => $today->modify("-{$ago} day")->format('Y-m-d'), 'value' => 80 - $ago / 10];
+    }
+    return goal_chart_build($goal, ['points' => $points, 'mode' => 'best', 'target' => 75.0, 'best' => null], $today);
+};
+$two = $chart(2);
+check('two days: 7 dagen from the first, at the left — the rest of the week empty',
+    count($two['x_ticks']) === 7 && $two['x_ticks'][0]['label'] === score_compass_date(day(1), true)
+    && $two['points'][0]['x'] === $two['x_ticks'][0]['left'] && $two['points'][1]['x'] < 25);
+$ten = $chart(10);
+check('ten days: 30 dagen, a date every third day', count($ten['x_ticks']) === 10 && $ten['points'][0]['x'] === $ten['x_ticks'][0]['left']);
+$long = $chart(500);
+check('more than a year: the year that ends today, 13 month boundaries',
+    count($long['x_ticks']) === 13 && preg_match('/^[a-z]{3}$/', $long['x_ticks'][0]['label']) === 1
+    && end($long['points'])['date'] === day(0) && $long['points'][0]['date'] === day(364));
 
 section('The height: honest, and readable');
 

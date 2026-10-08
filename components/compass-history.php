@@ -9,10 +9,13 @@
  *   a period      its direction (from 30 days), its sentences, where the
  *                 history begins when it is younger than the period, and
  *                 its line, drawn as Gezondheid's Verloop draws its three
- *                 (lib/hydrate-compass.php): a point a day over 7 and 30
- *                 days, a week over 90, a month over a year, each where it
- *                 falls in time, over the period's own height with its
- *                 levels named — a gap where it had no score, never a 0
+ *                 (lib/hydrate-compass.php) on Ownify's time axis
+ *                 (docs/CHARTS.md): the period's window — a young history
+ *                 from its first day at the left, the rest empty ahead — a
+ *                 point a day over 7 and 30 days, a week over 90, a month
+ *                 over a year, over the period's own height with its levels
+ *                 named, the period's dates under it — a gap where it had
+ *                 no score, never a 0
  *   the reading   a finger, a cursor or the arrow keys on the line show a
  *                 point: its date or days and score above the line (as on
  *                 a goal's Verloop), and below it its categories and their
@@ -109,12 +112,13 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
 
                     <?php /* Dots are HTML, not SVG circles: the SVG stretches to the
                              card, and a stretched circle is an ellipse. Every day in
-                             a week, every week and month; otherwise only a day with
-                             no neighbour to draw a line to. A day whose score was
-                             carried is a ring. */ ?>
+                             a week, every week and month; otherwise only where the
+                             line begins and a day with no neighbour to draw a line
+                             to. A day whose score was carried is a ring. */ ?>
+                    <?php $begin = array_key_first(array_filter($at, static fn ($p) => $p[1] !== null)); ?>
                     <?php foreach ($at as $i => [$x, $y]):
                         $alone = ($at[$i - 1][1] ?? null) === null && ($at[$i + 1][1] ?? null) === null;
-                        if ($y === null || (!$period['day_dots'] && !$alone)) { continue; }
+                        if ($y === null || (!$period['day_dots'] && !$alone && $i !== $begin)) { continue; }
                         $state = (string) ($period['points'][$i]['state'] ?? '');
                         ?>
                         <span class="compass-plot__dot<?= $state === 'carried' ? ' is-carried' : '' ?>" aria-hidden="true"
@@ -132,11 +136,8 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
                     <?php endif; ?>
                 </div>
 
-                <ul class="chart__axis" role="list" aria-hidden="true">
-                    <?php foreach ($period['axis'] as $tick): ?>
-                        <li class="chart__tick" style="left: <?= e((string) $tick['x']) ?>%;"><?= e($tick['label']) ?></li>
-                    <?php endforeach; ?>
-                </ul>
+                <?php /* The period's dates, each under its day (lib/time-axis.php). */ ?>
+                <?php component('chart-axis', ['ticks' => $period['axis']]); ?>
 
                 <?php if (!$chart['has_data']): ?>
                     <p class="chart__empty"><?= e($period['empty']) ?></p>

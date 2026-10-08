@@ -28,6 +28,9 @@ import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.screens.OwnifyScreens
 import com.ownify.android.ui.theme.OwnifyTheme
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.onRoot
+import com.ownify.android.ui.app.Detail
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -121,7 +124,7 @@ class HealthHistoryTest {
         for ((option, spoken, per) in listOf(
             Triple("30 dagen", "de afgelopen 30 dagen", "per dag"),
             Triple("90 dagen", "de afgelopen 90 dagen", "per week"),
-            Triple("1 jaar", "het afgelopen jaar", "per halve maand")
+            Triple("1 jaar", "het afgelopen jaar", "per maand")
         )) {
             compose.onNode(hasText(option) and hasClickAction()).performClick()
             compose.waitForIdle()
@@ -201,19 +204,19 @@ class HealthHistoryTest {
         val chart = plot("de afgelopen 90 dagen", "per week")
         chart.performScrollTo()
 
-        // Today's week: the last seven days, each category's mean of them.
+        // Today's week: the one begun on 4 oktober, so far — each category's mean of its days.
         val mean = listOf("sleep" to "Slaap", "nutrition" to "Voeding", "training" to "Training").mapNotNull { (id, label) ->
-            days.takeLast(7).mapNotNull { d -> d.categories.first { it.id == id }.value }.takeIf { it.isNotEmpty() }
+            days.takeLast(3).mapNotNull { d -> d.categories.first { it.id == id }.value }.takeIf { it.isNotEmpty() }
                 ?.let { "$label ${Math.round(it.average())}" }
         }.joinToString(", ")
         act(chart, "Vorige dag")
-        assertEquals("30 sep – 6 okt, weekgemiddelde: $mean", reading(chart))
+        assertEquals("4 – 6 okt, weekgemiddelde: $mean", reading(chart))
 
-        // A finger on the first week: where the history begins, never at the left edge.
-        chart.performTouchInput { down(Offset(width * 0.02f, height / 2f)) }
+        // A finger at the left edge: the first week, where the history begins (docs/CHARTS.md).
+        chart.performTouchInput { down(Offset(width * 0.01f, height / 2f)) }
         compose.waitForIdle()
-        assertTrue(reading(chart).startsWith("23 – 25 aug, weekgemiddelde: "))
-        assertTrue("seven weeks of 45 days, where they fall in 90", period.x.size == 7 && period.x.first() > 50f)
+        assertTrue(reading(chart).startsWith("23 – 29 aug, weekgemiddelde: "))
+        assertTrue("seven weeks of 45 days, from the left of 90", period.x.size == 7 && period.x.first() == 0f)
     }
 
     @Test
@@ -236,6 +239,31 @@ class HealthHistoryTest {
         assertEquals(reads(days[days.lastIndex]), reading(chart))
         act(chart, "Vorige dag")
         assertEquals(reads(days[days.lastIndex - 1]), reading(chart))
+    }
+
+    @Test
+    fun `a category's own page - its Verloop with its one line, the same switch, read point by point`() {
+        val data = data()
+        val days = data.compass.trend.days
+        show(data)
+        compose.runOnUiThread { shell.openDetail(Detail.HealthArea("sleep")) }
+        compose.waitForIdle()
+
+        // On its page, not Gezondheid's beside it: on screen sideways.
+        val width = compose.onRoot().fetchSemanticsNode().size.width
+        val chart = compose.onAllNodes(hasContentDescription("Slaap per dag, de afgelopen 7 dagen")).fetchSemanticsNodes()
+            .first { it.positionInRoot.x >= 0f && it.positionInRoot.x < width }
+        val node = compose.onNode(hasContentDescription("Slaap per dag, de afgelopen 7 dagen") and SemanticsMatcher("on screen") { it.id == chart.id })
+        node.performScrollTo()
+        act(node, "Vorige dag")
+        val today = days.last()
+        val sleep = today.categories.first { it.id == "sleep" }.value
+        assertEquals(today.label + ": " + (sleep?.let { "Slaap $it" } ?: today.note ?: "—") + (if (sleep != null && today.note != null) ". ${today.note}" else ""), reading(node))
+        assertTrue(compose.onAllNodesWithText("Tik of schuif over de lijn om je score te bekijken.").fetchSemanticsNodes().isNotEmpty())
+        // The same switch as Gezondheid's, on its page.
+        for (period in listOf("7 dagen", "30 dagen", "90 dagen", "1 jaar")) {
+            assertTrue(period, compose.onAllNodes(hasText(period) and hasClickAction()).fetchSemanticsNodes().any { it.positionInRoot.x >= 0f && it.positionInRoot.x < width })
+        }
     }
 
     @Test

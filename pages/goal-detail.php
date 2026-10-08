@@ -292,12 +292,8 @@ $height = 96.0;
                                         </ol>
                                     </div>
 
-                                    <ul class="chart__axis goal-chart__x" role="list" aria-hidden="true">
-                                        <?php foreach ($chart['x_ticks'] as $tick): ?>
-                                            <li class="chart__tick is-<?= e($tick['align']) ?>"
-                                                style="left: <?= e((string) $tick['left']) ?>%;"><?= e($tick['label']) ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
+                                    <?php /* The period's dates, each under its day (docs/CHARTS.md). */ ?>
+                                    <?php component('chart-axis', ['ticks' => $chart['x_ticks'], 'class' => 'goal-chart__x']); ?>
 
                                     <p class="sr-only" id="goal-chart-hint-<?= e($id) ?>">
                                         Gebruik de pijltjestoetsen om door de metingen te lopen.
@@ -333,10 +329,15 @@ $height = 96.0;
                                     <?php endforeach; ?>
                                 </svg>
 
-                                <ul class="chart__axis" role="list">
-                                    <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? 'Start')) ?></li>
-                                    <li class="chart__tick" style="left: 100%;"><?= $goal['is_completed'] ? 'Behaald' : 'Nu' ?></li>
-                                </ul>
+                                <?php /* No history yet: the week from today, its dates (docs/CHARTS.md). */ ?>
+                                <?php if (!empty($goal['chart']['x_ticks'])): ?>
+                                    <?php component('chart-axis', ['ticks' => $goal['chart']['x_ticks']]); ?>
+                                <?php else: ?>
+                                    <ul class="chart__axis" role="list">
+                                        <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? 'Start')) ?></li>
+                                        <li class="chart__tick" style="left: 100%;"><?= $goal['is_completed'] ? 'Behaald' : 'Nu' ?></li>
+                                    </ul>
+                                <?php endif; ?>
                             </div>
 
                             <p class="chart__empty"><?= e($copy['history_empty']) ?></p>

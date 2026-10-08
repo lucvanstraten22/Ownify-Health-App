@@ -96,17 +96,19 @@ The Health Score's history over a period the person picks — **7 dagen**
 (where it opens: the score's own week), **30 dagen**, **90 dagen** or **1
 jaar** — in the range switch's Liquid Glass capsule, as a line with
 sentences, drawn as Gezondheid's Verloop draws its three
-(`hydrate_compass_periods()` in `lib/hydrate-compass.php`). 7 and 30 days have
-a point a day; 90 days a point a week, the mean of its days' Health Scores,
-the last ending today; a year twelve months over the last 365 days, or —
-while the history is younger than 183 days — twelve half months from its
-first day, filled as far as today. Weeks and months stand where they fall in
-time, never stretched over the width. The line is 160 px / dp tall over the
+(`hydrate_compass_periods()` in `lib/hydrate-compass.php`) on Ownify's time
+axis ([CHARTS.md](CHARTS.md)): a young history from its first day at the
+left, the rest of the period empty ahead; a full one rolling, today at the
+right. 7 and 30 days have a point a day; 90 days a point a week and a year a
+point a month, each the mean of its days' Health Scores, standing at its own
+date. The line is 160 px / dp tall over the
 period's own range in round tens (at least 30 points), its levels named on
 the left, a monotone curve without a wash. In a week every day is a dot (a
 ring for a day whose score was carried), and so is every week and month; in
-30 days only a day on its own is. The axis names 4 dates in a week, 3 in 30
-days, 4 in 90 and 5 in a year. A point without a score is a gap in the line,
+30 days only where the line begins and a day on its own. The dates: every
+day of a week, every third day of 30, every week of 90 (those two in two
+rows, the month under the day where it begins), 13 month boundaries for a
+year; never "Vandaag" or a year. A point without a score is a gap in the line,
 never a drop to zero. The sentences and direction are worked out from the
 days as before; the 30 days an older app draws (`trend.chart`) stay 0–100.
 
@@ -129,10 +131,9 @@ history — the same days, periods, windows and dates — drawn as three lines,
 Slaap, Voeding and Training, each in its category's colour, instead of the
 one Health Score (`hydrate_health_history()` in `lib/hydrate-compass.php`,
 `components/health-history.php`; `HistoryCard` in the app). 7 and 30 days
-are the Scorekompas's days; 90 days are weeks and a year months (half months
-while the history is younger than 183 days, from its first day), each the
-mean of its days' scores, placed where it falls in time rather than spread
-over the width. Its height is the period's own range in round tens, at least
+are days, 90 days weeks and a year months, each the mean of its days'
+scores, on the same time axis; a line begins at a point of its own. A
+category's page shows it with its one line. Its height is the period's own range in round tens, at least
 30 points, with the levels named; its lines are monotone curves
 (`goal_chart_monotone()`). Its reading shows the date or days and each
 category's score, above the lines; there is no panel. A week names every

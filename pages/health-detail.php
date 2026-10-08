@@ -81,7 +81,14 @@ $ratio = score_ratio($score['value'], $score['max']);
                     ]);
                 }
 
-                component('health-trend', $data + ['trend_area' => $area['id']]);
+                /* Its own Verloop: the Gezondheid Verloop's chart, its one line
+                   (docs/CHARTS.md); while a deploy is still landing its files,
+                   the week and month. */
+                if (isset($data['health']['history']['periods']) && is_file(dirname(__DIR__) . '/components/health-history.php')) {
+                    component('health-history', $data + ['history_area' => $area['id']]);
+                } else {
+                    component('health-trend', $data + ['trend_area' => $area['id']]);
+                }
                 ?>
 
             </div>

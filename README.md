@@ -368,16 +368,20 @@ earn leaderboard points.
 **The Verloop.** Under the three cards, Slaap, Voeding and Training as they
 were recorded: the Scorekompas's history and its chart, three lines instead
 of its one score, each in its category's colour, over the same **7 dagen**
-(where it opens), **30 dagen**, **90 dagen** and **1 jaar**. 7 and 30 days
-have a point a day; 90 days a point a week, the mean of its seven days, the
-last ending today; a year twelve points a month over the last 365 days — or,
-while the history is younger than half a year, twelve half months from its
-first day, filled as far as today. Weeks and months stand where they fall in
-time, so a short history is never stretched over the width. The chart is
+(where it opens), **30 dagen**, **90 dagen** and **1 jaar**, on Ownify's time
+axis (**[docs/CHARTS.md](docs/CHARTS.md)**, the standard for every chart over
+time): a young history starts at the left on its first day and the rest of
+the period stays empty ahead of it; once the history fills the period the
+window rolls, today at the right. 7 and 30 days have a point a day; 90 days
+a point a week and a year a point a month, each the mean of its days and
+standing at its own date; a line begins at a point of its own, never before
+its category's first score. The dates: every day, every third day, every
+week, 13 month boundaries — never "Vandaag" or a year. Each category's page
+shows the same chart with its one line. The chart is
 160 px / dp tall over its period's own range in round tens (at least 30
 points; 73 → 80 is a clear rise, one point a small one), its levels named on
 the left; every line is a monotone curve, which never bends past a point.
-Every point is a dot; a week names every date, longer periods a few. A day
+Every point is a dot. A day
 without new input keeps a category's last score for as long as it holds, so
 the line goes on; after that the line has a gap, never a drop to 0. A finger,
 a cursor or the arrow keys read a point: its date or days (a week's: that its

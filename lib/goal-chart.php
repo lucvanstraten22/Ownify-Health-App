@@ -11,9 +11,12 @@
  * whatever the goal was about.
  *
  * It now plots the thing the goal is about — kilos, steps, hours — against
- * real dates, from goal_series(), with axes that adapt to the data: days for a
- * short stretch, weeks for a month or two, months beyond that, and a Y range
- * rounded to clean numbers around the actual values and the target.
+ * real dates, from goal_series(), on Ownify's time axis (lib/time-axis.php,
+ * docs/CHARTS.md): the shortest standard period that holds the goal's
+ * history — 7 days, 30, 90 or a year, which rolls from then on — with the
+ * history from its first day at the left and the rest of the period empty
+ * ahead of it, the period's own dates under it, and a Y range rounded to
+ * clean numbers around the actual values and the target.
  *
  * ---------------------------------------------------------------------------
  * NOTHING IS MADE UP
@@ -28,6 +31,8 @@
  */
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/time-axis.php';
 
 if (!defined('GOAL_CHART_W')) {
     define('GOAL_CHART_W', 1000.0);   // viewBox width; the SVG stretches to the card
@@ -257,29 +262,37 @@ if (!function_exists('goal_chart_build')) {
             'all_dots' => false, 'summary' => '', 'mode' => $mode,
         ];
 
+        /* No history yet: the week from today, its dates and nothing on it. */
+        $empty['x_ticks'] = array_map(static fn (array $t): array => [
+            'left'  => round((GOAL_CHART_PAD + $t['x'] / 100 * (1 - 2 * GOAL_CHART_PAD)) * 100, 3),
+            'label' => $t['label'],
+            'align' => 'center',
+        ], time_axis(7, null, $today->format('Y-m-d'))['ticks']);
+
         if ($points === []) {
             return $empty;
         }
 
         /* ------------------------------------------------------- X domain */
-        $dates = array_map(static fn (array $p): DateTimeImmutable => new DateTimeImmutable($p['date']), $points);
-        $first = $dates[0];
-        $last  = $dates[count($dates) - 1];
-
-        /* A week at least, so a single reading is a dot on a timeline rather
-           than a dot filling the card. Widened backwards: the latest value
-           stays at the right edge, where the eye expects "now". */
-        $start = $first;
-        if ((int) $first->diff($last)->days < 6) {
-            $start = $last->modify('-6 day');
+        /* Ownify's time axis: the shortest standard period that holds the
+           goal's history from its first point, the history at the left and
+           the rest of the period empty ahead of it — never the few days
+           there are stretched over the card; past a year, the year that
+           ends today. A point from before that year is off the chart. */
+        $axis  = time_axis(time_axis_fit((string) $points[0]['date'], $today->format('Y-m-d')), (string) $points[0]['date'], $today->format('Y-m-d'));
+        $skip  = 0;
+        while ($skip < count($points) && (string) $points[$skip]['date'] < $axis['start']) {
+            $skip++;
         }
-        $end  = $last;
-        $span = max(1, (int) $start->diff($end)->days);
+        $before = $skip > 0 ? (float) $points[$skip - 1]['value'] : 0.0;   // what a total had grown to before the year
+        $points = array_values(array_slice($points, $skip));
+        if ($points === []) {
+            return $empty;
+        }
+        $dates = array_map(static fn (array $p): DateTimeImmutable => new DateTimeImmutable($p['date']), $points);
 
-        $xOf = static function (DateTimeImmutable $d) use ($start, $span): float {
-            $f = (int) $start->diff($d)->days / $span;
-            return GOAL_CHART_PAD + $f * (1 - 2 * GOAL_CHART_PAD);
-        };
+        $xOf = static fn (DateTimeImmutable $d): float
+            => GOAL_CHART_PAD + time_axis_x($axis, $d->format('Y-m-d')) / 100 * (1 - 2 * GOAL_CHART_PAD);
 
         /* ------------------------------------------------------- Y domain */
         $values = array_map(static fn (array $p): float => (float) $p['value'] * $unit['scale'], $points);
@@ -332,7 +345,12 @@ if (!function_exists('goal_chart_build')) {
         }
 
         /* ------------------------------------------------------- X ticks */
-        $xTicks = goal_chart_x_ticks($start, $end, $span, $xOf);
+        /* The period's own dates, each under its day (lib/time-axis.php). */
+        $xTicks = array_map(static fn (array $t): array => [
+            'left'  => round($xOf(new DateTimeImmutable($t['date'])) * 100, 3),
+            'label' => $t['label'],
+            'align' => 'center',
+        ] + array_intersect_key($t, ['day' => 0, 'month' => 0]), $axis['ticks']);
 
         /* ------------------------------------------------------- points */
         /* Each point also says what the day itself did and how far the goal
@@ -344,7 +362,7 @@ if (!function_exists('goal_chart_build')) {
         $out = [];
         foreach ($points as $i => $p) {
             $value = (float) $p['value'];
-            $prev  = $i > 0 ? (float) $points[$i - 1]['value'] : 0.0;
+            $prev  = $i > 0 ? (float) $points[$i - 1]['value'] : $before;
             $note  = [];
 
             if ($mode === 'total') {
@@ -494,74 +512,5 @@ if (!function_exists('goal_chart_build')) {
             'summary'   => $summary,
             'mode'      => $mode,
         ];
-    }
-
-    /**
-     * Date ticks at a grain that suits the span.
-     *
-     *   up to 16 days    days      "12 sep"
-     *   up to 10 weeks   Mondays   "7 sep"
-     *   longer           months    "sep", with the year on January
-     *
-     * At most five labels, because that is what fits across a phone without
-     * two dates touching; the tooltip carries the exact day of every point.
-     *
-     * @return list<array{left: float, label: string, align: string}>
-     */
-    function goal_chart_x_ticks(DateTimeImmutable $start, DateTimeImmutable $end, int $span, callable $xOf): array
-    {
-        $candidates = [];
-
-        if ($span <= 16) {
-            $step = max(1, (int) ceil($span / 4));
-            for ($d = $start; $d <= $end; $d = $d->modify('+' . $step . ' day')) {
-                $candidates[] = [$d, (int) $d->format('j') . ' ' . goal_chart_month((int) $d->format('n'), false)];
-            }
-        } elseif ($span <= 70) {
-            $step   = $span > 35 ? 14 : 7;
-            $monday = $start->modify('monday this week');
-            if ($monday < $start) {
-                $monday = $monday->modify('+7 day');
-            }
-            for ($d = $monday; $d <= $end; $d = $d->modify('+' . $step . ' day')) {
-                $candidates[] = [$d, (int) $d->format('j') . ' ' . goal_chart_month((int) $d->format('n'), false)];
-            }
-        } else {
-            $months = (int) ceil($span / 30.4);
-            $every  = max(1, (int) ceil($months / 5));
-            $crosses = $start->format('Y') !== $end->format('Y');
-            $d = $start->modify('first day of next month');
-            if ($start->format('j') === '1') {
-                $d = $start;
-            }
-            for (; $d <= $end; $d = $d->modify('+' . $every . ' month')) {
-                $label = goal_chart_month((int) $d->format('n'), false);
-                if ($crosses && $d->format('n') === '1') {
-                    $label .= " '" . $d->format('y');
-                }
-                $candidates[] = [$d, $label];
-            }
-        }
-
-        $ticks = [];
-        $last  = -1.0;
-
-        foreach ($candidates as [$day, $label]) {
-            $f = $xOf($day);
-
-            /* Two labels closer than this overlap on a phone. */
-            if ($last >= 0 && $f - $last < 0.16) {
-                continue;
-            }
-
-            $ticks[] = [
-                'left'  => round($f * 100, 3),
-                'label' => $label,
-                'align' => $f < 0.08 ? 'start' : ($f > 0.92 ? 'end' : 'center'),
-            ];
-            $last = $f;
-        }
-
-        return $ticks;
     }
 }

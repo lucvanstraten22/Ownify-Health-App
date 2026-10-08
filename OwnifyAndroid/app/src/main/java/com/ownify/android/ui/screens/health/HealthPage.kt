@@ -205,21 +205,29 @@ private fun HealthCard(area: Area, modifier: Modifier) {
  * as they were recorded, over the Scorekompas's periods (7, 30 and 90 days
  * and a year), read as the Scorekompas's line is ([HistoryPlot]): the switch
  * at the head's far end where it fits and on a row of its own on a phone,
- * the three lines — a point a day over 7 and 30 days, a week over 90, a
- * month (or half a month) over a year, each where it falls in time — over
- * the period's own height with its levels named, a dot for every point, the
- * date or days and each category's score above them while a finger is on
- * them, the legend and the hint. [days] is the Scorekompas's list, which a
- * server from before the periods' own points still points into.
+ * the three lines on Ownify's time axis (docs/CHARTS.md) — the period's
+ * window, a young history from its first day at the left and the rest empty
+ * ahead; a point a day over 7 and 30 days, a week over 90, a month over a
+ * year — over the period's own height with its levels named, a dot for
+ * every point, the date or days and each category's score above them while
+ * a finger is on them, the legend and the hint. [days] is the Scorekompas's
+ * list, which a server from before the periods' own points still points
+ * into. With [only] it is that category's own Verloop, on its page: its one
+ * line over its own height (`solo`), no legend.
  */
 @Composable
-private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
+internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: String? = null) {
     var selected by rememberSaveable { mutableStateOf(history.defaultPeriod) }
     val period = history.periods.firstOrNull { it.key == selected } ?: history.periods.first()
     val wide = LocalScreen.current.wide
-    val filled = history.periods.any { it.hasData }
     val names = remember(history) { history.categories.associateBy { it.id } }
-    val lines = period.lines.map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.line, emptyList(), line.y) }
+    // The categories shown, with their place in each point's scores.
+    val shown = history.categories.withIndex().filter { only == null || it.value.id == only }
+    val solo = if (only == null) null else period.lines.firstOrNull { it.id == only }?.solo
+    val filled = history.periods.any { p -> if (only == null) p.hasData else p.lines.firstOrNull { it.id == only }?.solo?.hasData ?: p.hasData }
+    val lines = period.lines
+        .filter { only == null || it.id == only }
+        .map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.solo?.takeIf { only != null }?.line ?: line.line, emptyList(), line.solo?.takeIf { only != null }?.y ?: line.y) }
     // Each point as the reading shows it: the period's own, or — from a server from before them — its day in the Scorekompas's list.
     val points: List<HistoryPoint?> = remember(period, days) {
         if (period.points.isNotEmpty()) period.points
@@ -229,9 +237,9 @@ private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
             }
         }
     }
-    val levels = period.grid.ifEmpty { null }
+    val levels = (solo?.grid ?: period.grid).ifEmpty { null }
 
-    fun scores(point: HistoryPoint) = history.categories.zip(point.values).mapNotNull { (c, value) -> value?.let { c to it } }
+    fun scores(point: HistoryPoint) = shown.mapNotNull { (k, c) -> point.values.getOrNull(k)?.let { c to it } }
 
     @Composable
     fun Switch(modifier: Modifier) = RangeSwitch(
@@ -264,14 +272,14 @@ private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
                 viewBox = Size(period.width, period.height),
                 xs = period.x,
                 lines = lines,
-                filled = period.hasData,
+                filled = solo?.hasData ?: period.hasData,
                 dayDots = period.dots == "every",
                 // A month's days, smaller so they stay apart; a week's or a month's points as a week's days.
                 small = period.dots == "every" && period.group == "day" && period.x.size > 7,
                 carried = { i -> points.getOrNull(i)?.carried == true },
                 axis = period.axis,
                 centredAxis = period.every,
-                aria = period.aria,
+                aria = solo?.aria?.ifEmpty { null } ?: period.aria,
                 readable = { i -> points.getOrNull(i) != null },
                 describe = { i ->
                     points.getOrNull(i)?.let { point ->
@@ -328,13 +336,16 @@ private fun HistoryCard(history: HealthHistory, days: List<CompassDay>) {
             }
         }
 
-        Legend(
-            history.categories.map { LegendItem(it.label, null, Accent.of(it.accent)) },
-            Modifier.padding(top = Ownify.Space4),
-            values = false
-        )
+        // One line is named by its page; three by the legend.
+        if (only == null) {
+            Legend(
+                history.categories.map { LegendItem(it.label, null, Accent.of(it.accent)) },
+                Modifier.padding(top = Ownify.Space4),
+                values = false
+            )
+        }
         if (filled) {
-            T(history.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(if (only == null) history.hint else history.hintOne, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }

@@ -221,15 +221,27 @@
                         "x": 0
                     },
                     {
+                        "label": "1 okt",
+                        "x": 16.67
+                    },
+                    {
                         "label": "2 okt",
                         "x": 33.33
+                    },
+                    {
+                        "label": "3 okt",
+                        "x": 50
                     },
                     {
                         "label": "4 okt",
                         "x": 66.67
                     },
                     {
-                        "label": "Vandaag",
+                        "label": "5 okt",
+                        "x": 83.33
+                    },
+                    {
+                        "label": "6 okt",
                         "x": 100
                     }
                 ],
@@ -489,7 +501,8 @@
                         ],
                         "detail": null
                     }
-                ]
+                ],
+                "every": true
             },
             {
                 "group": "day",
@@ -546,15 +559,63 @@
                 "axis": [
                     {
                         "label": "7 sep",
-                        "x": 0
+                        "x": 0,
+                        "day": "7",
+                        "month": "sep"
                     },
                     {
-                        "label": "22 sep",
-                        "x": 51.72
+                        "label": "10",
+                        "x": 10.34,
+                        "day": "10",
+                        "month": null
                     },
                     {
-                        "label": "Vandaag",
-                        "x": 100
+                        "label": "13",
+                        "x": 20.69,
+                        "day": "13",
+                        "month": null
+                    },
+                    {
+                        "label": "16",
+                        "x": 31.03,
+                        "day": "16",
+                        "month": null
+                    },
+                    {
+                        "label": "19",
+                        "x": 41.38,
+                        "day": "19",
+                        "month": null
+                    },
+                    {
+                        "label": "22",
+                        "x": 51.72,
+                        "day": "22",
+                        "month": null
+                    },
+                    {
+                        "label": "25",
+                        "x": 62.07,
+                        "day": "25",
+                        "month": null
+                    },
+                    {
+                        "label": "28",
+                        "x": 72.41,
+                        "day": "28",
+                        "month": null
+                    },
+                    {
+                        "label": "1 okt",
+                        "x": 82.76,
+                        "day": "1",
+                        "month": "okt"
+                    },
+                    {
+                        "label": "4",
+                        "x": 93.1,
+                        "day": "4",
+                        "month": null
                     }
                 ],
                 "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen: dalend",
@@ -1573,7 +1634,8 @@
                         ],
                         "detail": null
                     }
-                ]
+                ],
+                "every": true
             },
             {
                 "group": "week",
@@ -1642,20 +1704,82 @@
                 "day_dots": true,
                 "axis": [
                     {
-                        "label": "9 jul",
-                        "x": 0
+                        "label": "23 aug",
+                        "x": 0,
+                        "day": "23",
+                        "month": "aug"
                     },
                     {
-                        "label": "8 aug",
-                        "x": 33.71
+                        "label": "30",
+                        "x": 7.87,
+                        "day": "30",
+                        "month": null
                     },
                     {
                         "label": "6 sep",
-                        "x": 66.29
+                        "x": 15.73,
+                        "day": "6",
+                        "month": "sep"
                     },
                     {
-                        "label": "Vandaag",
-                        "x": 100
+                        "label": "13",
+                        "x": 23.6,
+                        "day": "13",
+                        "month": null
+                    },
+                    {
+                        "label": "20",
+                        "x": 31.46,
+                        "day": "20",
+                        "month": null
+                    },
+                    {
+                        "label": "27",
+                        "x": 39.33,
+                        "day": "27",
+                        "month": null
+                    },
+                    {
+                        "label": "4 okt",
+                        "x": 47.19,
+                        "day": "4",
+                        "month": "okt"
+                    },
+                    {
+                        "label": "11",
+                        "x": 55.06,
+                        "day": "11",
+                        "month": null
+                    },
+                    {
+                        "label": "18",
+                        "x": 62.92,
+                        "day": "18",
+                        "month": null
+                    },
+                    {
+                        "label": "25",
+                        "x": 70.79,
+                        "day": "25",
+                        "month": null
+                    },
+                    {
+                        "label": "1 nov",
+                        "x": 78.65,
+                        "day": "1",
+                        "month": "nov"
+                    },
+                    {
+                        "label": "8",
+                        "x": 86.52,
+                        "day": "8",
+                        "month": null
+                    },
+                    {
+                        "label": "15",
+                        "x": 94.38,
+                        "day": "15",
+                        "month": null
                     }
                 ],
                 "aria": "Je Gezondheidsscore per week, de afgelopen 90 dagen: stabiel",
@@ -1664,37 +1788,37 @@
                     "height": 160,
                     "has_data": true,
                     "line": [
-                        "M 155.07 66.4 C 160.68 63.38, 166.29 59.38, 171.9 57.33 C 179.77 54.45, 187.64 52.8, 195.51 52.8 C 203.37 52.8, 211.23 55.82, 219.09 57.33 C 226.96 58.84, 234.83 61.87, 242.7 61.87 C 250.56 61.87, 258.42 61.87, 266.28 61.87 C 274.15 61.87, 282.02 61.87, 289.89 61.87"
+                        "M 0 61.87 C 7.87 58.85, 15.74 52.8, 23.61 52.8 C 31.47 52.8, 39.33 52.8, 47.19 52.8 C 55.06 52.8, 62.93 61.87, 70.8 61.87 C 78.66 61.87, 86.52 61.87, 94.38 61.87 C 102.25 61.87, 110.12 66.4, 117.99 66.4 C 125.85 66.4, 133.71 60.35, 141.57 57.33"
                     ],
                     "area": [],
                     "at": [
                         [
-                            51.69,
-                            41.5
+                            0,
+                            38.67
                         ],
                         [
-                            57.3,
-                            35.83
-                        ],
-                        [
-                            65.17,
+                            7.87,
                             33
                         ],
                         [
-                            73.03,
+                            15.73,
+                            33
+                        ],
+                        [
+                            23.6,
+                            38.67
+                        ],
+                        [
+                            31.46,
+                            38.67
+                        ],
+                        [
+                            39.33,
+                            41.5
+                        ],
+                        [
+                            47.19,
                             35.83
-                        ],
-                        [
-                            80.9,
-                            38.67
-                        ],
-                        [
-                            88.76,
-                            38.67
-                        ],
-                        [
-                            96.63,
-                            38.67
                         ]
                     ],
                     "grid": [
@@ -1712,124 +1836,8 @@
                 },
                 "points": [
                     {
-                        "date": "2026-08-25",
-                        "label": "23 – 25 aug",
-                        "detail": "weekgemiddelde",
-                        "value": 68,
-                        "band": "mid",
-                        "state": "stored",
-                        "note": null,
-                        "categories": [
-                            {
-                                "id": "sleep",
-                                "value": 68,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "nutrition",
-                                "value": 76,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "training",
-                                "value": 60,
-                                "band": "mid",
-                                "parts": null
-                            }
-                        ]
-                    },
-                    {
-                        "date": "2026-09-01",
-                        "label": "26 aug – 1 sep",
-                        "detail": "weekgemiddelde",
-                        "value": 70,
-                        "band": "mid",
-                        "state": "stored",
-                        "note": null,
-                        "categories": [
-                            {
-                                "id": "sleep",
-                                "value": 72,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "nutrition",
-                                "value": 73,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "training",
-                                "value": 64,
-                                "band": "mid",
-                                "parts": null
-                            }
-                        ]
-                    },
-                    {
-                        "date": "2026-09-08",
-                        "label": "2 – 8 sep",
-                        "detail": "weekgemiddelde",
-                        "value": 71,
-                        "band": "mid",
-                        "state": "stored",
-                        "note": null,
-                        "categories": [
-                            {
-                                "id": "sleep",
-                                "value": 76,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "nutrition",
-                                "value": 68,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "training",
-                                "value": 69,
-                                "band": "mid",
-                                "parts": null
-                            }
-                        ]
-                    },
-                    {
-                        "date": "2026-09-15",
-                        "label": "9 – 15 sep",
-                        "detail": "weekgemiddelde",
-                        "value": 70,
-                        "band": "mid",
-                        "state": "stored",
-                        "note": null,
-                        "categories": [
-                            {
-                                "id": "sleep",
-                                "value": 75,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "nutrition",
-                                "value": 65,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "training",
-                                "value": 71,
-                                "band": "mid",
-                                "parts": null
-                            }
-                        ]
-                    },
-                    {
-                        "date": "2026-09-22",
-                        "label": "16 – 22 sep",
+                        "date": "2026-08-29",
+                        "label": "23 – 29 aug",
                         "detail": "weekgemiddelde",
                         "value": 69,
                         "band": "mid",
@@ -1844,7 +1852,65 @@
                             },
                             {
                                 "id": "nutrition",
+                                "value": 75,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "training",
+                                "value": 62,
+                                "band": "mid",
+                                "parts": null
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-09-05",
+                        "label": "30 aug – 5 sep",
+                        "detail": "weekgemiddelde",
+                        "value": 71,
+                        "band": "mid",
+                        "state": "stored",
+                        "note": null,
+                        "categories": [
+                            {
+                                "id": "sleep",
+                                "value": 75,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "nutrition",
+                                "value": 70,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "training",
                                 "value": 67,
+                                "band": "mid",
+                                "parts": null
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-09-12",
+                        "label": "6 – 12 sep",
+                        "detail": "weekgemiddelde",
+                        "value": 71,
+                        "band": "mid",
+                        "state": "stored",
+                        "note": null,
+                        "categories": [
+                            {
+                                "id": "sleep",
+                                "value": 76,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "nutrition",
+                                "value": 65,
                                 "band": "mid",
                                 "parts": null
                             },
@@ -1857,8 +1923,8 @@
                         ]
                     },
                     {
-                        "date": "2026-09-29",
-                        "label": "23 – 29 sep",
+                        "date": "2026-09-19",
+                        "label": "13 – 19 sep",
                         "detail": "weekgemiddelde",
                         "value": 69,
                         "band": "mid",
@@ -1867,19 +1933,77 @@
                         "categories": [
                             {
                                 "id": "sleep",
-                                "value": 65,
+                                "value": 71,
                                 "band": "mid",
                                 "parts": null
                             },
                             {
                                 "id": "nutrition",
-                                "value": 72,
+                                "value": 65,
                                 "band": "mid",
                                 "parts": null
                             },
                             {
                                 "id": "training",
+                                "value": 72,
+                                "band": "mid",
+                                "parts": null
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-09-26",
+                        "label": "20 – 26 sep",
+                        "detail": "weekgemiddelde",
+                        "value": 69,
+                        "band": "mid",
+                        "state": "stored",
+                        "note": null,
+                        "categories": [
+                            {
+                                "id": "sleep",
+                                "value": 67,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "nutrition",
                                 "value": 69,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "training",
+                                "value": 70,
+                                "band": "mid",
+                                "parts": null
+                            }
+                        ]
+                    },
+                    {
+                        "date": "2026-10-03",
+                        "label": "27 sep – 3 okt",
+                        "detail": "weekgemiddelde",
+                        "value": 68,
+                        "band": "mid",
+                        "state": "stored",
+                        "note": null,
+                        "categories": [
+                            {
+                                "id": "sleep",
+                                "value": 64,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "nutrition",
+                                "value": 74,
+                                "band": "mid",
+                                "parts": null
+                            },
+                            {
+                                "id": "training",
+                                "value": 66,
                                 "band": "mid",
                                 "parts": null
                             }
@@ -1887,9 +2011,9 @@
                     },
                     {
                         "date": "2026-10-06",
-                        "label": "30 sep – 6 okt",
+                        "label": "4 – 6 okt",
                         "detail": "weekgemiddelde",
-                        "value": 69,
+                        "value": 70,
                         "band": "mid",
                         "state": "stored",
                         "note": null,
@@ -1908,16 +2032,17 @@
                             },
                             {
                                 "id": "training",
-                                "value": 65,
+                                "value": 64,
                                 "band": "mid",
                                 "parts": null
                             }
                         ]
                     }
-                ]
+                ],
+                "every": true
             },
             {
-                "group": "half",
+                "group": "month",
                 "key": "365",
                 "label": "1 jaar",
                 "days": 365,
@@ -1983,46 +2108,74 @@
                 "day_dots": true,
                 "axis": [
                     {
-                        "label": "23 aug",
+                        "label": "aug",
                         "x": 0
                     },
                     {
-                        "label": "8 okt",
+                        "label": "sep",
+                        "x": 8.52
+                    },
+                    {
+                        "label": "okt",
+                        "x": 16.76
+                    },
+                    {
+                        "label": "nov",
                         "x": 25.27
                     },
                     {
-                        "label": "22 nov",
-                        "x": 50
+                        "label": "dec",
+                        "x": 33.52
                     },
                     {
-                        "label": "7 jan 2027",
-                        "x": 75.27
+                        "label": "jan",
+                        "x": 42.03
                     },
                     {
-                        "label": "21 feb 2027",
+                        "label": "feb",
+                        "x": 50.55
+                    },
+                    {
+                        "label": "mrt",
+                        "x": 58.24
+                    },
+                    {
+                        "label": "apr",
+                        "x": 66.76
+                    },
+                    {
+                        "label": "mei",
+                        "x": 75
+                    },
+                    {
+                        "label": "jun",
+                        "x": 83.52
+                    },
+                    {
+                        "label": "jul",
+                        "x": 91.76
+                    },
+                    {
+                        "label": "aug",
                         "x": 100
                     }
                 ],
-                "aria": "Je Gezondheidsscore per halve maand, het afgelopen jaar: stabiel",
+                "aria": "Je Gezondheidsscore per maand, het afgelopen jaar: stabiel",
                 "chart": {
                     "width": 300,
                     "height": 160,
                     "has_data": true,
                     "line": [
-                        "M 11.55 57.33 C 20.06 57.33, 28.57 57.33, 37.08 57.33 C 45.32 57.33, 53.56 60.36, 61.8 61.87"
+                        "M 0 57.33 C 8.52 58.84, 17.04 60.36, 25.56 61.87"
                     ],
                     "area": [],
                     "at": [
                         [
-                            3.85,
+                            0,
                             35.83
                         ],
                         [
-                            12.36,
-                            35.83
-                        ],
-                        [
-                            20.6,
+                            8.52,
                             38.67
                         ]
                     ],
@@ -2041,38 +2194,9 @@
                 },
                 "points": [
                     {
-                        "date": "2026-09-06",
-                        "label": "23 aug – 6 sep",
-                        "detail": "gemiddelde",
-                        "value": 70,
-                        "band": "mid",
-                        "state": "stored",
-                        "note": null,
-                        "categories": [
-                            {
-                                "id": "sleep",
-                                "value": 73,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "nutrition",
-                                "value": 72,
-                                "band": "mid",
-                                "parts": null
-                            },
-                            {
-                                "id": "training",
-                                "value": 65,
-                                "band": "mid",
-                                "parts": null
-                            }
-                        ]
-                    },
-                    {
                         "date": "2026-09-22",
-                        "label": "7 – 22 sep",
-                        "detail": "gemiddelde",
+                        "label": "23 aug – 22 sep",
+                        "detail": "maandgemiddelde",
                         "value": 70,
                         "band": "mid",
                         "state": "stored",
@@ -2086,13 +2210,13 @@
                             },
                             {
                                 "id": "nutrition",
-                                "value": 66,
+                                "value": 69,
                                 "band": "mid",
                                 "parts": null
                             },
                             {
                                 "id": "training",
-                                "value": 71,
+                                "value": 68,
                                 "band": "mid",
                                 "parts": null
                             }
@@ -2101,7 +2225,7 @@
                     {
                         "date": "2026-10-06",
                         "label": "23 sep – 6 okt",
-                        "detail": "gemiddelde",
+                        "detail": "maandgemiddelde",
                         "value": 69,
                         "band": "mid",
                         "state": "stored",
@@ -2127,7 +2251,8 @@
                             }
                         ]
                     }
-                ]
+                ],
+                "every": true
             }
         ],
         "days": [

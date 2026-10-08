@@ -172,8 +172,9 @@ return [
        ------------------------------------------------------------------ */
     'history' => [
         /* `spoken` goes into the chart's spoken label; `ticks` is how many
-           dates the axis names; `day_dots` marks every day — only where
-           there are few enough days to tell them apart. */
+           dates the 30 days an older app draws name (the line's own dates
+           are Ownify's time axis, lib/time-axis.php); `day_dots` marks
+           every day — only where there are few enough days to tell apart. */
         'periods' => [
             ['days' => 7,   'label' => '7 dagen',  'spoken' => 'de afgelopen 7 dagen',  'ticks' => 4, 'day_dots' => true],
             ['days' => 30,  'label' => '30 dagen', 'spoken' => 'de afgelopen 30 dagen', 'ticks' => 3, 'day_dots' => false],
@@ -195,23 +196,18 @@ return [
         'carried'   => 'Geen nieuwe gegevens: de score van %s gold nog.',
         'none'      => 'Geen score op deze dag.',
         'hint'      => 'Tik of schuif over de lijn om je score te bekijken.',
-        /* What a point of the line stands for, by a period's days: a day
-           where not named — 90 days a week, a year a month; a history
-           younger than `half_days` shows its year as twelve half months
-           from its first day (lib/hydrate-compass.php, as Gezondheid's
-           Verloop). Its spoken label then, %1$s the period, %2$s its
+        /* The line stands on Ownify's time axis (lib/time-axis.php,
+           docs/CHARTS.md): over 90 days a point is a week, over a year a
+           month. Its spoken label then, %1$s the period, %2$s its
            direction; its days, "12 – 18 sep"; beside them, that its score is
            their mean; or that it had none. */
-        'group'     => [90 => 'week', 365 => 'month'],
-        'half_days' => 183,
         'aria_per'  => [
             'week'  => 'Je Gezondheidsscore per week, %1$s%2$s',
             'month' => 'Je Gezondheidsscore per maand, %1$s%2$s',
-            'half'  => 'Je Gezondheidsscore per halve maand, %1$s%2$s',
         ],
         'range'     => '%1$s – %2$s',
-        'mean'      => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde', 'half' => 'gemiddelde'],
-        'empty_at'  => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.', 'half' => 'Geen score in deze halve maand.'],
+        'mean'      => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde'],
+        'empty_at'  => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.'],
     ],
 
     /* ------------------------------------------------------------------

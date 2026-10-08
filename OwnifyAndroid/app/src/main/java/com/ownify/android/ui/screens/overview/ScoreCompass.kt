@@ -366,7 +366,8 @@ private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier:
         small = false,
         carried = { i -> points.getOrNull(i)?.state == "carried" },
         axis = period.axis,
-        centredAxis = false,
+        // Each date under its day (lib/time-axis.php); a server from before that: first and last at the edges.
+        centredAxis = period.every,
         aria = period.aria,
         readable = { i -> points.getOrNull(i) != null },
         describe = { i ->

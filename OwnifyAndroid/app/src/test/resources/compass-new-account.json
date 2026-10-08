@@ -194,7 +194,36 @@
                 "start": 0,
                 "values": [],
                 "day_dots": true,
-                "axis": [],
+                "axis": [
+                    {
+                        "label": "8 okt",
+                        "x": 0
+                    },
+                    {
+                        "label": "9 okt",
+                        "x": 16.67
+                    },
+                    {
+                        "label": "10 okt",
+                        "x": 33.33
+                    },
+                    {
+                        "label": "11 okt",
+                        "x": 50
+                    },
+                    {
+                        "label": "12 okt",
+                        "x": 66.67
+                    },
+                    {
+                        "label": "13 okt",
+                        "x": 83.33
+                    },
+                    {
+                        "label": "14 okt",
+                        "x": 100
+                    }
+                ],
                 "aria": "Je Gezondheidsscore per dag, de afgelopen 7 dagen",
                 "chart": {
                     "width": 300,
@@ -220,7 +249,8 @@
                     "low": 0,
                     "high": 100
                 },
-                "points": []
+                "points": [],
+                "every": true
             },
             {
                 "group": "day",
@@ -235,7 +265,68 @@
                 "start": 0,
                 "values": [],
                 "day_dots": false,
-                "axis": [],
+                "axis": [
+                    {
+                        "label": "8 okt",
+                        "x": 0,
+                        "day": "8",
+                        "month": "okt"
+                    },
+                    {
+                        "label": "11",
+                        "x": 10.34,
+                        "day": "11",
+                        "month": null
+                    },
+                    {
+                        "label": "14",
+                        "x": 20.69,
+                        "day": "14",
+                        "month": null
+                    },
+                    {
+                        "label": "17",
+                        "x": 31.03,
+                        "day": "17",
+                        "month": null
+                    },
+                    {
+                        "label": "20",
+                        "x": 41.38,
+                        "day": "20",
+                        "month": null
+                    },
+                    {
+                        "label": "23",
+                        "x": 51.72,
+                        "day": "23",
+                        "month": null
+                    },
+                    {
+                        "label": "26",
+                        "x": 62.07,
+                        "day": "26",
+                        "month": null
+                    },
+                    {
+                        "label": "29",
+                        "x": 72.41,
+                        "day": "29",
+                        "month": null
+                    },
+                    {
+                        "label": "1 nov",
+                        "x": 82.76,
+                        "day": "1",
+                        "month": "nov"
+                    },
+                    {
+                        "label": "4",
+                        "x": 93.1,
+                        "day": "4",
+                        "month": null
+                    }
+                ],
                 "aria": "Je Gezondheidsscore per dag, de afgelopen 30 dagen",
                 "chart": {
                     "width": 300,
@@ -261,10 +352,11 @@
                     "low": 0,
                     "high": 100
                 },
-                "points": []
+                "points": [],
+                "every": true
             },
             {
-                "group": "day",
+                "group": "week",
                 "key": "90",
                 "label": "90 dagen",
                 "days": 90,
@@ -275,9 +367,88 @@
                 "since": null,
                 "start": 0,
                 "values": [],
-                "day_dots": false,
-                "axis": [],
-                "aria": "Je Gezondheidsscore per dag, de afgelopen 90 dagen",
+                "day_dots": true,
+                "axis": [
+                    {
+                        "label": "8 okt",
+                        "x": 0,
+                        "day": "8",
+                        "month": "okt"
+                    },
+                    {
+                        "label": "15",
+                        "x": 7.87,
+                        "day": "15",
+                        "month": null
+                    },
+                    {
+                        "label": "22",
+                        "x": 15.73,
+                        "day": "22",
+                        "month": null
+                    },
+                    {
+                        "label": "29",
+                        "x": 23.6,
+                        "day": "29",
+                        "month": null
+                    },
+                    {
+                        "label": "5 nov",
+                        "x": 31.46,
+                        "day": "5",
+                        "month": "nov"
+                    },
+                    {
+                        "label": "12",
+                        "x": 39.33,
+                        "day": "12",
+                        "month": null
+                    },
+                    {
+                        "label": "19",
+                        "x": 47.19,
+                        "day": "19",
+                        "month": null
+                    },
+                    {
+                        "label": "26",
+                        "x": 55.06,
+                        "day": "26",
+                        "month": null
+                    },
+                    {
+                        "label": "3 dec",
+                        "x": 62.92,
+                        "day": "3",
+                        "month": "dec"
+                    },
+                    {
+                        "label": "10",
+                        "x": 70.79,
+                        "day": "10",
+                        "month": null
+                    },
+                    {
+                        "label": "17",
+                        "x": 78.65,
+                        "day": "17",
+                        "month": null
+                    },
+                    {
+                        "label": "24",
+                        "x": 86.52,
+                        "day": "24",
+                        "month": null
+                    },
+                    {
+                        "label": "31",
+                        "x": 94.38,
+                        "day": "31",
+                        "month": null
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per week, de afgelopen 90 dagen",
                 "chart": {
                     "width": 300,
                     "height": 160,
@@ -302,10 +473,11 @@
                     "low": 0,
                     "high": 100
                 },
-                "points": []
+                "points": [],
+                "every": true
             },
             {
-                "group": "day",
+                "group": "month",
                 "key": "365",
                 "label": "1 jaar",
                 "days": 365,
@@ -316,9 +488,62 @@
                 "since": null,
                 "start": 0,
                 "values": [],
-                "day_dots": false,
-                "axis": [],
-                "aria": "Je Gezondheidsscore per dag, het afgelopen jaar",
+                "day_dots": true,
+                "axis": [
+                    {
+                        "label": "okt",
+                        "x": 0
+                    },
+                    {
+                        "label": "nov",
+                        "x": 8.52
+                    },
+                    {
+                        "label": "dec",
+                        "x": 16.76
+                    },
+                    {
+                        "label": "jan",
+                        "x": 25.27
+                    },
+                    {
+                        "label": "feb",
+                        "x": 33.79
+                    },
+                    {
+                        "label": "mrt",
+                        "x": 41.48
+                    },
+                    {
+                        "label": "apr",
+                        "x": 50
+                    },
+                    {
+                        "label": "mei",
+                        "x": 58.24
+                    },
+                    {
+                        "label": "jun",
+                        "x": 66.76
+                    },
+                    {
+                        "label": "jul",
+                        "x": 75
+                    },
+                    {
+                        "label": "aug",
+                        "x": 83.52
+                    },
+                    {
+                        "label": "sep",
+                        "x": 92.03
+                    },
+                    {
+                        "label": "okt",
+                        "x": 100
+                    }
+                ],
+                "aria": "Je Gezondheidsscore per maand, het afgelopen jaar",
                 "chart": {
                     "width": 300,
                     "height": 160,
@@ -343,7 +568,8 @@
                     "low": 0,
                     "high": 100
                 },
-                "points": []
+                "points": [],
+                "every": true
             }
         ],
         "days": [],

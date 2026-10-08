@@ -238,10 +238,18 @@
     box-shadow: inset 0 0 0 1.25px var(--accent), 0 0 0 1.5px var(--bg-secondary);
 }
 
-/* A week names every day, each date centred under its own dots. */
+/* A chart over time names its dates each centred under its day
+   (components/chart-axis.php, docs/CHARTS.md). */
 .chart__axis--days .chart__tick,
 .chart__axis--days .chart__tick:first-child,
-.chart__axis--days .chart__tick:last-child { transform: translateX(-50%); }
+.chart__axis--days .chart__tick:last-child { transform: translateX(-50%); text-align: center; }
+
+/* Over 30 and 90 days, two rows: the day over its month where the month
+   begins. A history card keeps the room for both rows in every period, so
+   switching never moves what is under it. */
+.chart__axis--rows,
+.compass-history .chart__axis { height: 2.4em; }
+.chart__tick-month { display: block; }
 
 /* The reading: the date, then each category that had a score that day —
    its line's colour as a short stroke, its name, its score. */

@@ -594,10 +594,10 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("1 jaar") and hasClickAction()).performScrollTo().performClick()
         compose.onNode(hasText("Je geschiedenis begint op 23 augustus.")).performScrollTo().assertIsDisplayed()
         // A screen reader steps through the points as the arrow keys do: the panel follows — a
-        // half month of the year as its days' mean, without parts.
-        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per halve maand, het afgelopen jaar", substring = true), "Vorige dag") }
-        compose.onNode(hasText("7 – 22 sep")).performScrollTo().assertIsDisplayed()
-        compose.onNode(hasText("gemiddelde")).assertIsDisplayed()
+        // month of the year as its days' mean, without parts.
+        repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per maand, het afgelopen jaar", substring = true), "Vorige dag") }
+        compose.onNode(hasText("23 aug – 22 sep")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("maandgemiddelde")).assertIsDisplayed()
         // A day of the week: its categories and their parts.
         compose.onNode(hasText("7 dagen") and hasClickAction()).performScrollTo().performClick()
         repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per dag, de afgelopen 7 dagen", substring = true), "Vorige dag") }

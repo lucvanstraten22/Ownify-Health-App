@@ -292,24 +292,21 @@ return [
         'aria'   => '%1$s %2$s, %3$s',
         'and'    => 'en',
         'hint'   => 'Tik of schuif over de lijnen om je scores te bekijken.',
-        /* By a period's days: how many dates its axis names where that is
-           not the Scorekompas's number — every day of a week — and which
-           points are a dot: `every` point where there are few enough to tell
-           apart, otherwise only one with no neighbour to draw a line to. */
-        'ticks'  => [7 => 7],
+        /* On a category's own page, its one line. */
+        'hint_one' => 'Tik of schuif over de lijn om je score te bekijken.',
+        /* Which points are a dot, by a period's days: `every` point where
+           there are few enough to tell apart, otherwise only one with no
+           neighbour to draw a line to. The window, the dates and what a
+           point is (a day, a week, a month) are Ownify's time axis
+           (lib/time-axis.php, docs/CHARTS.md), not copy. */
         'dots'   => [7 => 'every', 30 => 'every', 90 => 'every', 365 => 'every'],
-        /* What a point stands for, by a period's days: a day where not
-           named — 90 days a week, a year a month. A history younger than
-           `half_days` shows its year as twelve half months from its first
-           day instead (lib/hydrate-compass.php). */
-        'group'     => [90 => 'week', 365 => 'month'],
-        'half_days' => 183,
-        'per'    => ['day' => 'per dag', 'week' => 'per week', 'month' => 'per maand', 'half' => 'per halve maand'],
+        /* What a point is, spoken: `per` its grain. */
+        'per'    => ['day' => 'per dag', 'week' => 'per week', 'month' => 'per maand'],
         /* A week's or month's dates, "12 – 18 sep"; beside them, that its
            scores are its days' mean; or that it had none. */
         'range'  => '%1$s – %2$s',
-        'mean'   => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde', 'half' => 'gemiddelde'],
-        'none'   => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.', 'half' => 'Geen score in deze halve maand.'],
+        'mean'   => ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde'],
+        'none'   => ['week' => 'Geen score in deze week.', 'month' => 'Geen score in deze maand.'],
     ],
 
     /* ============================================================== trend

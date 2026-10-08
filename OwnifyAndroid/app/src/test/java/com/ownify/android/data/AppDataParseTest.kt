@@ -237,14 +237,15 @@ class AppDataParseTest {
         assertTrue("every day of a week is a dot", week.dayDots)
         assertFalse(month.dayDots)
         assertTrue("every week and month is a dot", quarter.dayDots && year.dayDots)
-        assertEquals(listOf(0f, 33.33f, 66.67f, 100f), week.axis.map { it.x })
-        assertEquals("Vandaag", week.axis.last().label)
+        // Ownify's time axis (docs/CHARTS.md): every day of the week by its date, today too — never "Vandaag".
+        assertEquals(listOf(0f, 16.67f, 33.33f, 50f, 66.67f, 83.33f, 100f), week.axis.map { it.x })
+        assertEquals("6 okt", week.axis.last().label)
         assertEquals(CompassDirection("down", "Dalend"), month.direction)
         assertEquals("the hero's direction is the 30 days'", c.direction, month.direction)
         assertEquals("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.", month.text.first())
         assertEquals("Je geschiedenis begint op 23 augustus.", quarter.since)
         assertNull(month.since)
-        assertEquals("Je Gezondheidsscore per halve maand, het afgelopen jaar: stabiel", year.aria)
+        assertEquals("Je Gezondheidsscore per maand, het afgelopen jaar: stabiel", year.aria)
         assertEquals("Je Gezondheidsscore per week, de afgelopen 90 dagen", quarter.aria.substringBefore(":"))
 
         // The days: only the real ones, from the first with a score — 45, not 365.
@@ -252,18 +253,24 @@ class AppDataParseTest {
         assertEquals("2026-08-23", t.days.first().date)
         assertEquals("Vandaag", t.days.last().label)
         assertEquals("today", t.days.last().state)
-        // Drawn as Gezondheid's Verloop: a day, a day, a week, half a month (45 days of history),
-        // each with what its reading shows; weeks and months point past the days.
-        assertEquals(listOf("day", "day", "week", "half"), t.periods.map { it.group })
+        // Drawn as Gezondheid's Verloop: a day, a day, a week, a month, each with what its reading
+        // shows; weeks and months point past the days. 45 days of history: 90 days and a year from
+        // its first day, at the left — seven weeks begun, two months.
+        assertEquals(listOf("day", "day", "week", "month"), t.periods.map { it.group })
         assertEquals(listOf(38, 15, 45, 45), t.periods.map { it.start })
-        assertEquals(listOf(7, 30, 7, 3), t.periods.map { it.at.size })
+        assertEquals(listOf(7, 30, 7, 2), t.periods.map { it.at.size })
+        assertEquals(0f, quarter.at.first().first)
+        assertEquals(listOf("23 aug", "30", "6 sep"), quarter.axis.take(3).map { it.label })
+        assertEquals(listOf("aug", "sep", "okt"), year.axis.take(3).map { it.label })
+        assertEquals(13, year.axis.size)
         assertEquals(t.periods.map { it.at.size }, t.periods.map { it.points.size })
         assertEquals(100f, week.at.last().first)
         assertEquals(t.days.takeLast(7), week.points)
+        // The week that began on 4 oktober, so far: its three days.
         val lastWeek = quarter.points.last()
-        assertEquals("30 sep – 6 okt", lastWeek.label)
+        assertEquals("4 – 6 okt", lastWeek.label)
         assertEquals("weekgemiddelde", lastWeek.detail)
-        assertEquals(Math.round(t.days.takeLast(7).mapNotNull { it.value }.average()).toInt(), lastWeek.value)
+        assertEquals(Math.round(t.days.takeLast(3).mapNotNull { it.value }.average()).toInt(), lastWeek.value)
         assertTrue("a week's categories: their means, no parts", lastWeek.categories.all { it.parts == null })
         assertTrue("its levels named", quarter.grid.isNotEmpty() && quarter.chart.area.isEmpty())
 
@@ -382,8 +389,8 @@ class AppDataParseTest {
      * health-history-demo.json is what the server builds from compass-demo.json
      * (hydrate_health_history(), lib/hydrate-compass.php): the same days, read
      * as Slaap, Voeding and Training — a point a day over 7 and 30 days, a
-     * week over 90, and half a month over a year while the history (45 days)
-     * is younger than half a year.
+     * week over 90 and a month over a year, on Ownify's time axis: 45 days of
+     * history start at the left of every period, the rest empty ahead.
      */
     @Test
     fun `the Verloop - Slaap, Voeding and Training over the Scorekompas's periods, every point a score of its days`() {
@@ -397,9 +404,9 @@ class AppDataParseTest {
         assertEquals(listOf("Slaap", "Voeding", "Training"), history.categories.map { it.label })
         assertEquals(listOf("sleep", "nutrition", "training"), history.categories.map { it.accent })
 
-        // The Scorekompas's switch: the same periods; a day, a day, a week, half a month.
+        // The Scorekompas's switch: the same periods; a day, a day, a week, a month.
         assertEquals(compass.trend.periods.map { it.key to it.label }, history.periods.map { it.key to it.label })
-        assertEquals(listOf("day", "day", "week", "half"), history.periods.map { it.group })
+        assertEquals(listOf("day", "day", "week", "month"), history.periods.map { it.group })
 
         history.periods.forEachIndexed { i, period ->
             assertEquals(listOf("sleep", "nutrition", "training"), period.lines.map { it.id })
@@ -439,26 +446,33 @@ class AppDataParseTest {
             }
         }
 
-        // 90 days: a week a point, the last the mean of the last seven days, today the last of them.
+        // 90 days: a week a point from the first day, at the left; the last the week begun on 4 oktober.
         val weeks = history.periods[2]
-        val last = days.takeLast(7)
+        val last = days.takeLast(3)
         val mean = history.categories.map { c ->
             last.mapNotNull { d -> d.categories.first { it.id == c.id }.value }.takeIf { it.isNotEmpty() }?.let { Math.round(it.average()).toInt() }
         }
         assertEquals(mean, weeks.points.last().values)
-        assertEquals("30 sep – 6 okt", weeks.points.last().label)
+        assertEquals("4 – 6 okt", weeks.points.last().label)
         assertEquals("weekgemiddelde", weeks.points.last().detail)
-        // Where they fall in time: 45 days of history fill the last seven weeks of 90 days, never the width.
         assertEquals(7, weeks.points.size)
-        assertTrue(weeks.x.first() > 45f)
-        assertEquals(listOf("9 jul", "8 aug", "6 sep", "Vandaag"), weeks.axis.map { it.label })
+        assertEquals(0f, weeks.x.first())
+        assertEquals(listOf("23 aug", "30", "6 sep", "13"), weeks.axis.take(4).map { it.label })
+        assertEquals(listOf("23", "30", "6", "13"), weeks.axis.take(4).map { it.day })
+        assertEquals(listOf("aug", null, "sep", null), weeks.axis.take(4).map { it.month })
+        assertEquals(weeks.x, weeks.axis.take(7).map { it.x })
 
-        // A year of 45 days: twelve half months from the first day, three of them so far.
+        // A year of 45 days: the year from the first day, 13 boundaries, two months begun.
         val year = history.periods[3]
-        assertEquals(3, year.points.size)
-        assertTrue(year.x.last() < 30f)
-        assertEquals("gemiddelde", year.points.first().detail)
-        assertEquals("23 aug", year.axis.first().label)
+        assertEquals(2, year.points.size)
+        assertEquals(listOf(0f, year.axis[1].x), year.x)
+        assertEquals("maandgemiddelde", year.points.first().detail)
+        assertEquals(listOf("aug", "aug"), listOf(year.axis.first().label, year.axis.last().label))
+
+        // A category's own page: its line alone, its own levels, its own spoken label.
+        val solo = history.periods[1].lines.first { it.id == "sleep" }.solo!!
+        assertEquals("Slaap per dag, de afgelopen 30 dagen", solo.aria)
+        assertTrue(solo.grid.isNotEmpty() && solo.y.size == history.periods[1].x.size)
 
         // A week: a dot and a date for every day; every point of every period a dot.
         val week = history.periods[0]
@@ -492,7 +506,8 @@ class AppDataParseTest {
     fun `the Verloop - a new account's periods are empty, and a server from before it sends none`() {
         val empty = HealthHistory.parse(resource("health-history-new-account.json"))!!
         assertTrue(empty.periods.none { it.hasData })
-        assertTrue(empty.periods.all { it.x.isEmpty() && it.axis.isEmpty() })
+        // Nothing to draw, but the period's dates from today on: a chart is time (docs/CHARTS.md).
+        assertTrue(empty.periods.all { it.x.isEmpty() && it.axis.isNotEmpty() && it.axis.none { t -> t.label == "Vandaag" } })
         assertEquals("Zodra er meetmomenten zijn, verschijnt hier je verloop.", empty.empty)
 
         assertNull(Health.parse(JSONObject("""{"title":"Gezondheid","areas":{},"trend":{}}""")).history)
