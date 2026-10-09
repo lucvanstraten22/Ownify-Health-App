@@ -13,8 +13,18 @@
    a little taller than the squares under it, the list's four rows in it
    -------------------------------------------------------------------------- */
 .training-top {
-    grid-auto-rows: minmax(calc((100cqw - var(--space-3)) / 2 * 1.2), auto);
+    grid-auto-rows: minmax(calc(100cqw / 2 * 1.2), auto);
+    gap: 0;
+    padding: 0;
+    overflow: visible;                /* the chart's reading may rise over the edge */
 }
+
+/* The two halves share the card; a hairline between them. */
+.training-top > .area-chart {
+    border-left: 1px solid var(--glass-hairline);
+}
+
+.training-top > .area-chart:active { transform: none; }
 
 .training-sessions {
     display: flex;

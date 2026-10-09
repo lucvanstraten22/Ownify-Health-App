@@ -24,6 +24,7 @@ declare(strict_types=1);
 $chart  = $data['area_chart'];
 $area   = (string) ($data['chart_area'] ?? 'sleep');
 $mini   = ($data['chart_mode'] ?? 'mini') === 'mini';
+$bare   = !empty($data['chart_bare']);          // inside another card (Training's top section): no card of its own
 $id     = $area . '-' . $chart['id'];
 $suffix = $id . ($mini ? '-mini' : '-full');
 $series = $chart['series'];
@@ -33,7 +34,7 @@ $default = $mini ? (string) $periods[0]['key'] : (string) $chart['default'];
 $filled  = array_filter($periods, static fn ($p) => $p['has_data']) !== [];
 $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mixed ? 'light' : 'line');
 ?>
-<section class="card area-chart <?= $mini ? 'area-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?>"
+<section class="<?= $bare ? 'is-bare' : 'card' ?> area-chart <?= $mini ? 'area-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?>"
          data-health-history data-accent="<?= e($area) ?>"<?php if ($mini): ?> data-detail-open="<?= e($id) ?>" data-area-mini<?php endif; ?>
          aria-labelledby="<?= e($suffix) ?>-title">
 

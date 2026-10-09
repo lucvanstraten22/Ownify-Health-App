@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 $sessions = $data['sessions'];
 ?>
-<section class="card training-sessions reveal" aria-labelledby="training-sessions-title">
+<section class="training-sessions" aria-labelledby="training-sessions-title">
     <h3 class="training-sessions__title" id="training-sessions-title"><?= e($sessions['title']) ?></h3>
 
     <?php if ($sessions['items'] === []): ?>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -118,28 +119,34 @@ fun TrainingViewContent(view: TrainingView) {
 // ---------------------------------------------------------------------------
 
 /**
- * `.training-top`: two halves, as tall as 1.2 times their width — the list
- * of four sessions fits — or taller should the list need it.
+ * `.training-top`: one card, two halves — the sessions and the sessions per
+ * day, a hairline between them — as tall as 1.2 times a half's width (the
+ * list of four sessions fits), or taller should the list need it.
  */
 @Composable
 private fun TrainingTop(sessions: TrainingSessions, perDay: AreaChart?) {
     val shell = LocalShell.current
     val density = LocalDensity.current
-    SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
-        val gap = Ownify.Space3.roundToPx()
-        val w = (constraints.maxWidth - gap) / 2
-        // The list's own height at that width, asked of it rather than measured: composed once.
-        val list = subcompose("sessions") { SessionsCard(sessions, Modifier.fillMaxHeight()) }.first()
-        val h = maxOf((w * 1.2f).toInt(), list.minIntrinsicHeight(w))
-        val left = list.measure(Constraints.fixed(w, h))
-        val right = perDay?.let { chart ->
-            subcompose("chart") {
-                AreaChartMini(chart, Accent.TRAINING, with(density) { h.toDp() }) { shell.openDetail(Detail.AreaChart("training", chart.id)) }
-            }.first().measure(Constraints.fixed(w, h))
-        }
-        layout(constraints.maxWidth, h) {
-            left.place(0, 0)
-            right?.place(w + gap, 0)
+    JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(0.dp)) {
+        SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
+            val line = 1.dp.roundToPx()
+            val w = (constraints.maxWidth - line) / 2
+            // The list's own height at that width, asked of it rather than measured: composed once.
+            val list = subcompose("sessions") { SessionsCard(sessions, Modifier.fillMaxHeight()) }.first()
+            val h = maxOf((w * 1.2f).toInt(), list.minIntrinsicHeight(w))
+            val left = list.measure(Constraints.fixed(w, h))
+            val divider = subcompose("line") { Box(Modifier.fillMaxSize().background(Ownify.GlassHairline)) }.first()
+                .measure(Constraints.fixed(line, h))
+            val right = perDay?.let { chart ->
+                subcompose("chart") {
+                    AreaChartMini(chart, Accent.TRAINING, with(density) { h.toDp() }, bare = true) { shell.openDetail(Detail.AreaChart("training", chart.id)) }
+                }.first().measure(Constraints.fixed(w, h))
+            }
+            layout(constraints.maxWidth, h) {
+                left.place(0, 0)
+                divider.place(w, 0)
+                right?.place(w + line, 0)
+            }
         }
     }
 }
@@ -149,7 +156,7 @@ private fun TrainingTop(sessions: TrainingSessions, perDay: AreaChart?) {
 @Composable
 private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
     val shell = LocalShell.current
-    JCard(modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space4)) {
+    Column(modifier.fillMaxWidth().padding(Ownify.Space4)) {
         T(
             sessions.title,
             OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary, tracking = (-0.01).em, lineHeight = 1.25.em),

@@ -178,25 +178,31 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
  * sideways reads a day first, as the large chart is read.
  */
 @Composable
-internal fun AreaChartMini(chart: AreaChart, accent: Accent, height: Dp, onOpen: () -> Unit) {
+internal fun AreaChartMini(chart: AreaChart, accent: Accent, height: Dp, bare: Boolean = false, onOpen: () -> Unit) {
     val week = chart.periods.first()
     val interaction = remember { MutableInteractionSource() }
+    val open = Modifier
+        .fillMaxWidth()
+        .height(height)
+        .clickable(interaction, indication = null, role = Role.Button, onClickLabel = chart.open, onClick = onOpen)
+        .semantics { contentDescription = chart.open }
+    val content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
+        MiniHead(chart, accent)
+        BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(top = Ownify.Space3)) {
+            val axis = with(LocalDensity.current) { (Ownify.FsTiny.toPx() * 2.5f).toDp() } + Ownify.Space1
+            AreaPlot(chart, accent, week, Modifier, height = (maxHeight - axis).coerceAtLeast(MiniPlotMin), mini = true)
+        }
+    }
     InButton {
-        JCard(
-            Modifier
-                .fillMaxWidth()
-                .height(height)
-                .reveal()
-                .press(interaction, scale = 0.985f)
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = chart.open, onClick = onOpen)
-                .semantics { contentDescription = chart.open },
-            padding = androidx.compose.foundation.layout.PaddingValues(Ownify.Space4)
-        ) {
-            MiniHead(chart, accent)
-            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(top = Ownify.Space3)) {
-                val axis = with(LocalDensity.current) { (Ownify.FsTiny.toPx() * 2.5f).toDp() } + Ownify.Space1
-                AreaPlot(chart, accent, week, Modifier, height = (maxHeight - axis).coerceAtLeast(MiniPlotMin), mini = true)
-            }
+        if (bare) {
+            // Inside another card (Training's top section, `.area-chart.is-bare`): no card of its own.
+            Column(open.padding(Ownify.Space4), content = content)
+        } else {
+            JCard(
+                Modifier.reveal().press(interaction, scale = 0.985f).then(open),
+                padding = androidx.compose.foundation.layout.PaddingValues(Ownify.Space4),
+                content = content
+            )
         }
     }
 }

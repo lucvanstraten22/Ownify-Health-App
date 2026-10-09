@@ -19,11 +19,12 @@ $charts = array_column($view['charts'], null, 'id');
 $pick   = static fn (array $ids): array => array_values(array_filter(array_map(static fn ($id) => $charts[$id] ?? null, $ids)));
 $perDay = $charts[$view['layout']['per_day']] ?? null;
 ?>
+<?php /* One card, two halves: the sessions, and the sessions per day. */ ?>
 <div class="area-charts-frame">
-    <div class="area-charts training-top">
+    <div class="card area-charts training-top reveal">
         <?php component('training-sessions', $data + ['sessions' => $view['sessions']]); ?>
         <?php if ($perDay !== null): ?>
-            <?php component('area-chart', $data + ['area_chart' => $perDay, 'chart_mode' => 'mini', 'chart_area' => 'training']); ?>
+            <?php component('area-chart', $data + ['area_chart' => $perDay, 'chart_mode' => 'mini', 'chart_area' => 'training', 'chart_bare' => true]); ?>
         <?php endif; ?>
     </div>
 </div>
