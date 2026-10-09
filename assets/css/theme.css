@@ -27,6 +27,16 @@
     --training: #C97867;
     --training-light: #D99586;
 
+    /* The heart rate's four zones (docs/TRAINING.md): quiet grey low, the
+       Training colour higher, its clearest, brightest orange at the top —
+       zone 3 is the Training colour itself. Graphics only, and never alone:
+       a zone is always named beside its colour. Mirrored in OwnifyTheme.kt
+       (Ownify.zone). */
+    --zone-1: #8B8789;
+    --zone-2: #A9867F;
+    --zone-3: var(--training);
+    --zone-4: #E8845E;
+
     /* --- score colours ---------------------------------------------------
        HOW HIGH a score is — the same for every category. Which band a
        score falls in is decided on the server (config/scoring.php,
@@ -613,6 +623,11 @@ button {
     --score-mid: #7D910B;
     --score-low: #AC8032;
     --attention: #7D6A33;
+
+    /* The zones on white: the grey and the top orange deeper, to 3:1. */
+    --zone-1: #9A9597;
+    --zone-2: #B98A80;
+    --zone-4: #D66A44;
 
     /* The same three tiers, with the contrast the dark theme gives them:
        secondary 6.7–7.3:1, muted 5.0–5.5:1, faint (graphics only) ~3.3:1. */

@@ -27,6 +27,9 @@ require_once __DIR__ . '/hydrate-compass.php';
 if (is_file(__DIR__ . '/hydrate-sleep.php')) {
     require_once __DIR__ . '/hydrate-sleep.php';
 }
+if (is_file(__DIR__ . '/hydrate-training.php') && is_file(__DIR__ . '/area-charts.php')) {
+    require_once __DIR__ . '/hydrate-training.php';
+}
 
 /* The first days (includes/setup.php). Guarded as persistent-login.php is in
    includes/bootstrap.php: a deploy lands one file at a time, and this file
@@ -119,6 +122,20 @@ if (!function_exists('app_page_data')) {
         }
         unset($data['health']['areas']['sleep']['night'], $data['health']['areas']['sleep']['charts'],
               $data['health']['areas']['sleep']['chart_copy']);
+
+        /* Training, drawn: its sessions, its charts and its heart rate
+           (lib/hydrate-training.php, docs/TRAINING.md). Guarded the same way. */
+        if (function_exists('hydrate_training') && isset($data['health']['areas']['training']['heart'])) {
+            $data['health']['areas']['training']['view'] = hydrate_training(
+                $data['health']['areas']['training'],
+                $compass['history']['periods'],
+                $userId,
+                date('Y-m-d')
+            );
+        }
+        unset($data['health']['areas']['training']['sessions'], $data['health']['areas']['training']['layout'],
+              $data['health']['areas']['training']['charts'], $data['health']['areas']['training']['chart_copy'],
+              $data['health']['areas']['training']['heart']);
 
         /* Gezondheid's Verloop: that same history, as Slaap, Voeding and
            Training — three lines over the Scorekompas's periods. Guarded as

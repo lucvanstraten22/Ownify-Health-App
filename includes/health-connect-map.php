@@ -382,6 +382,8 @@ if (!function_exists('health_connect_map')) {
         $count   = 0;
         $last    = null;
 
+        /* `samples` are the ones taken during sleep: their average is the
+           sleep card's "Hartslag in slaap", as it always was. */
         foreach ($samples as $sample) {
             $bpm = health_connect_number($sample['beatsPerMinute'] ?? null);
 
@@ -394,12 +396,63 @@ if (!function_exists('health_connect_map')) {
             $last = $sample['time'] ?? $last;
         }
 
-        if ($count === 0) {
-            return [];
+        $out = $count === 0 ? [] : health_connect_metric($id, 'sleeping_hr', $total / $count, $last ?? ($r['startTime'] ?? null),
+            ['data_origin' => health_connect_origin($r)]);
+
+        /* Every sample of the day as well — `allSamples` from an app that
+           sends them (Ownify for Android 13.0), otherwise the sleep's own —
+           as the mean of each minute: the Training page's heart rate
+           (heart_rate_minutes, migration 019, docs/TRAINING.md). */
+        $minutes = health_connect_heart_minutes($r['allSamples'] ?? $samples);
+        if ($minutes !== []) {
+            $out[] = [
+                'type'        => 'heart_rate',
+                'external_id' => $id,
+                'data_origin' => health_connect_origin($r),
+                'minutes'     => $minutes,
+            ];
         }
 
-        return health_connect_metric($id, 'sleeping_hr', $total / $count, $last ?? ($r['startTime'] ?? null),
-            ['data_origin' => health_connect_origin($r)]);
+        return $out;
+    }
+
+    /**
+     * Heart-rate samples as the mean of each minute they fall in, on the
+     * clock they were recorded on: [{at: "Y-m-d H:i:00", bpm, n}], oldest
+     * first. A sample without a time or a heart rate is left out.
+     *
+     * @return list<array{at: string, bpm: float, n: int}>
+     */
+    function health_connect_heart_minutes(array $samples): array
+    {
+        $minutes = [];
+
+        foreach ($samples as $sample) {
+            $bpm = health_connect_number($sample['beatsPerMinute'] ?? null);
+            $at  = $sample['time'] ?? null;
+
+            if ($bpm === null || $bpm <= 0 || $bpm > 260 || !is_string($at) || $at === '') {
+                continue;
+            }
+
+            try {
+                $minute = (new DateTimeImmutable($at))->format('Y-m-d H:i:00');
+            } catch (Exception $e) {
+                continue;
+            }
+
+            $minutes[$minute][0] = ($minutes[$minute][0] ?? 0) + $bpm;
+            $minutes[$minute][1] = ($minutes[$minute][1] ?? 0) + 1;
+        }
+
+        ksort($minutes);
+
+        $out = [];
+        foreach ($minutes as $minute => [$sum, $n]) {
+            $out[] = ['at' => $minute, 'bpm' => round($sum / $n, 1), 'n' => $n];
+        }
+
+        return $out;
     }
 
     /* --------------------------------------------------------- small parts */

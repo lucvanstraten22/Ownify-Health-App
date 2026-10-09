@@ -25,6 +25,9 @@
  *                and a month each over a year — each starting at its date on
  *                the axis and standing there, covering the days up to the
  *                next. One that has begun is a point; one still ahead is not.
+ *                A chart of daily values that must stay daily over 90 days
+ *                (the heart rate's averages, docs/TRAINING.md) asks for the
+ *                `day` grain: a point per day, the same weekly dates.
  *
  * Positions are % of the plot's width, 0 at the window's first day and 100
  * at its last; the year's closing boundary, a day past it, stands at 100 too.
@@ -48,15 +51,22 @@ if (!function_exists('time_axis')) {
      * @param int         $days   7, 30, 90 or 365
      * @param string|null $first  the history's first day (Y-m-d), null without any
      * @param string      $today  Y-m-d
+     * @param string|null $grain  'day' for a point per day over 90 days; null for the period's own
      * @return array{days: int, grain: string, start: string, end: string, rolling: bool,
      *               ticks: list<array{date: string, label: string, x: float}>,
      *               slots: list<array{from: string, to: string, x: float}>}
      */
-    function time_axis(int $days, ?string $first, string $today): array
+    function time_axis(int $days, ?string $first, string $today, ?string $grain = null): array
     {
         $period = TIME_AXIS_PERIODS[$days] ?? null;
         if ($period === null) {
             throw new InvalidArgumentException("No standard period of {$days} days.");
+        }
+        if ($grain !== null && $grain !== $period['grain']) {
+            if ($grain !== 'day' || $period['grain'] !== 'week') {
+                throw new InvalidArgumentException("Points per {$grain} are not a standard over {$days} days.");
+            }
+            $period['grain'] = 'day';          // a point per day; the dates stay every seventh
         }
 
         $now   = new DateTimeImmutable($today);

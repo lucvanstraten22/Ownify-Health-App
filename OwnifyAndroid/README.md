@@ -109,8 +109,12 @@ One pipeline, `connection/OwnifySyncRunner.kt`, does every sync:
 2. Health Connect access — none: nothing is sent;
 3. the records of the last 7 days (`HealthConnectSyncReader`), granted types
    only;
-4. the JSON the server reads (`IngestPayload`), Health Connect's own format;
-5. `POST /api/integrations/ingest.php` in batches (`OwnifyApi.ingest`), with
+4. the JSON the server reads (`IngestPayload`), Health Connect's own format —
+   a heart-rate record with its samples during sleep (`samples`, for
+   "Hartslag in slaap") and all of them (`allSamples`, for Training's heart
+   rate through the day, from 13.0);
+5. `POST /api/integrations/ingest.php` in batches of at most 500 records and
+   about a megabyte (`IngestPayload.batches`, `OwnifyApi.ingest`), with
    `Authorization: Bearer <token>` over HTTPS — no user id, no token in the
    body.
 
@@ -155,7 +159,7 @@ and device transfers, as the token is.
 
 | Permission | Why |
 | --- | --- |
-| `android.permission.health.READ_*` (steps, distance, active calories, heart rate, sleep, nutrition, exercise) | the records a sync sends; granted per category, a missing one is skipped |
+| `android.permission.health.READ_*` (steps, distance, active calories, heart rate, sleep, nutrition, exercise; from 13.0 also total calories, floors, resting heart rate, heart-rate variability, oxygen saturation) | the records a sync sends; granted per category, a missing one is skipped — a phone that granted the first seven shows the five new ones as not yet granted until they are asked for |
 | `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND` | reading Health Connect while the app is **closed** — see below |
 | `android.permission.INTERNET` | the Ownify server |
 | `WAKE_LOCK`, `ACCESS_NETWORK_STATE`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` | added by WorkManager's own manifest; Ownify starts no foreground service |

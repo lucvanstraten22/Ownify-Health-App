@@ -395,6 +395,83 @@ if (!function_exists('health_source_id')) {
         return $days;
     }
 
+    /** Whether heart rate is kept minute by minute (heart_rate_minutes, migration 019). */
+    function health_heart_minutes_stored(): bool
+    {
+        static $stored = null;
+
+        return $stored ??= db_available() && (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'heart_rate_minutes'"
+        ) > 0;
+    }
+
+    /**
+     * The user's heart rate, minute by minute, from $from up to $to
+     * (Y-m-d H:i:s): each minute's mean over the apps that recorded it —
+     * weighted by their samples — oldest first. None before migration 019.
+     *
+     * @return array<string,float> "Y-m-d H:i:00" => bpm
+     */
+    function health_heart_minutes(int $userId, string $from, string $to): array
+    {
+        if (!health_heart_minutes_stored()) {
+            return [];
+        }
+
+        $out = [];
+        foreach (db_all(
+            'SELECT minute_at, SUM(bpm * samples) / SUM(samples) AS bpm
+               FROM heart_rate_minutes
+              WHERE user_id = ? AND minute_at >= ? AND minute_at < ?
+           GROUP BY minute_at
+           ORDER BY minute_at',
+            [$userId, $from, $to]
+        ) as $row) {
+            $out[(string) $row['minute_at']] = (float) $row['bpm'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Each day's average heart rate from $from to $to (Y-m-d): the mean of
+     * its five-minute means — the points the Training page draws a day with
+     * (docs/TRAINING.md) — each five minutes with a heart rate weighing the
+     * same, however often a device measured in it: a watch that measures
+     * every second during a run and every ten minutes otherwise would
+     * otherwise make every training day's average a training's.
+     * Days without any are absent.
+     *
+     * @return array<string,float> date => bpm
+     */
+    function health_heart_days(int $userId, string $from, string $to, int $bucket = 5): array
+    {
+        if (!health_heart_minutes_stored()) {
+            return [];
+        }
+
+        $out = [];
+        foreach (db_all(
+            'SELECT day, AVG(bpm) AS bpm FROM (
+                SELECT DATE(minute_at) AS day, FLOOR((HOUR(minute_at) * 60 + MINUTE(minute_at)) / ?) AS b, AVG(bpm) AS bpm FROM (
+                    SELECT minute_at, SUM(bpm * samples) / SUM(samples) AS bpm
+                      FROM heart_rate_minutes
+                     WHERE user_id = ? AND minute_at >= ? AND minute_at < ?
+                  GROUP BY minute_at
+                ) m
+              GROUP BY day, b
+             ) f
+           GROUP BY day
+           ORDER BY day',
+            [max(1, $bucket), $userId, $from . ' 00:00:00', (new DateTimeImmutable($to))->modify('+1 day')->format('Y-m-d') . ' 00:00:00']
+        ) as $row) {
+            $out[(string) $row['day']] = (float) $row['bpm'];
+        }
+
+        return $out;
+    }
+
     /** Whether a night's stages are kept period by period (sleep_stages, migration 018). */
     function health_sleep_stages_stored(): bool
     {

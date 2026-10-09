@@ -86,7 +86,7 @@ foreach ($data['navigation'] as $position => $item) {
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community',
-        'goals', 'settings', 'account', 'devices', 'sleep',
+        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training',
     ]]); ?>
 </head>
 <body class="app">
@@ -166,10 +166,19 @@ foreach ($data['navigation'] as $position => $item) {
                 <?php page('health-detail', $data + ['area' => $area + ['id' => $areaId]]); ?>
             <?php endforeach; ?>
 
-            <?php /* Slaap's charts, each on a page of its own over Slaap's
-                     (docs/SLEEP.md): after it, so it slides in on top. */ ?>
-            <?php foreach (is_file(__DIR__ . '/pages/sleep-metric.php') ? $data['health']['areas']['sleep']['view']['charts'] ?? [] : [] as $sleepChart): ?>
-                <?php page('sleep-metric', $data + ['sleep_chart' => $sleepChart]); ?>
+            <?php /* An area's charts, each on a page of its own over the area's
+                     (docs/CHARTS.md): after it, so it slides in on top. */ ?>
+            <?php foreach (is_file(__DIR__ . '/pages/area-chart.php') ? $data['health']['areas'] : [] as $areaId => $area): ?>
+                <?php foreach ($area['view']['charts'] ?? [] as $areaChart): ?>
+                    <?php page('area-chart', $data + ['area_chart' => $areaChart, 'chart_area' => $areaId]); ?>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+
+            <?php /* Training's latest sessions, each on a page of its own over
+                     Training's (docs/TRAINING.md). */ ?>
+            <?php $trainingView = $data['health']['areas']['training']['view'] ?? null; ?>
+            <?php foreach (is_file(__DIR__ . '/pages/training-session.php') ? $trainingView['details'] ?? [] : [] as $session): ?>
+                <?php page('training-session', ['session' => $session, 'zones' => $trainingView['heart']['zones'], 'hint' => $trainingView['heart']['hint']] + $data); ?>
             <?php endforeach; ?>
 
             <?php foreach ($data['goals']['all'] as $goal): ?>
@@ -218,7 +227,9 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/health-rating.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-chart.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/compass-history.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/area-charts.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/sleep.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/training.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/community.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goals.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>

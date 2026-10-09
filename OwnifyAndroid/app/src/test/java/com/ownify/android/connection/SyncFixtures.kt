@@ -3,14 +3,20 @@ package com.ownify.android.connection
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.NutritionRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.units.Energy
 import androidx.health.connect.client.units.Length
 import androidx.health.connect.client.units.Mass
+import androidx.health.connect.client.units.Percentage
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -51,6 +57,11 @@ object SyncFixtures {
         StepsRecord(at("2026-09-25T18:00:00"), CEST, at("2026-09-25T19:00:00"), CEST, 4500, meta("$prefix-steps-2")),
         DistanceRecord(at("2026-09-25T10:00:00"), CEST, at("2026-09-25T11:00:00"), CEST, Length.meters(2400.0), meta("$prefix-distance")),
         ActiveCaloriesBurnedRecord(at("2026-09-25T10:00:00"), CEST, at("2026-09-25T11:00:00"), CEST, Energy.kilocalories(210.5), meta("$prefix-active")),
+        TotalCaloriesBurnedRecord(at("2026-09-25T00:00:00"), CEST, at("2026-09-26T00:00:00"), CEST, Energy.kilocalories(2310.0), meta("$prefix-total")),
+        FloorsClimbedRecord(at("2026-09-25T10:00:00"), CEST, at("2026-09-25T11:00:00"), CEST, 6.0, meta("$prefix-floors")),
+        RestingHeartRateRecord(at("2026-09-25T07:00:00"), CEST, 54, meta("$prefix-resting")),
+        HeartRateVariabilityRmssdRecord(at("2026-09-25T04:00:00"), CEST, 41.5, meta("$prefix-hrv")),
+        OxygenSaturationRecord(at("2026-09-25T04:00:00"), CEST, Percentage(96.0), meta("$prefix-spo2")),
         // Night samples (52, 48) and a morning one (80) in one record; a daytime-only record.
         HeartRateRecord(
             at("2026-09-25T01:00:00"), CEST, at("2026-09-25T08:00:00"), CEST,

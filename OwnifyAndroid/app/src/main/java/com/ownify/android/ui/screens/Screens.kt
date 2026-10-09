@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyState
+import com.ownify.android.data.TrainingView
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
@@ -29,7 +30,8 @@ import com.ownify.android.ui.screens.goals.GoalBoard
 import com.ownify.android.ui.screens.goals.GoalWizard
 import com.ownify.android.ui.screens.goals.GoalsPage
 import com.ownify.android.ui.screens.health.HealthDetail
-import com.ownify.android.ui.screens.health.SleepChartDetail
+import com.ownify.android.ui.screens.health.AreaChartDetail
+import com.ownify.android.ui.screens.health.TrainingSessionDetail
 import com.ownify.android.ui.screens.health.HealthPage
 import com.ownify.android.ui.screens.overview.OverviewPage
 import com.ownify.android.ui.screens.overview.ScoreCompassDetail
@@ -67,7 +69,10 @@ object OwnifyScreens {
                 is Detail.HealthArea -> data.health.area(detail.id)?.let { HealthDetail(data, it, scroll) }
                 is Detail.GoalPage -> data.goals.goal(detail.id)?.let { GoalDetail(data, it, scroll) }
                 is Detail.SettingsPage -> data.settings.page(detail.id)?.let { SettingsDetail(data, it, scroll) }
-                is Detail.SleepChart -> data.health.area("sleep")?.view?.chart(detail.id)?.let { SleepChartDetail(it, scroll) }
+                is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id)?.let { AreaChartDetail(it, detail.area, scroll) }
+                is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.let { view ->
+                    view.session(detail.id)?.let { TrainingSessionDetail(it, view.heart, scroll) }
+                }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },

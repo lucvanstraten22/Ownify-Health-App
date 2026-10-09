@@ -261,6 +261,7 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | `user_measurements` | height, weight and other body values, with history |
 | `sleep_sessions` | one night: timing, duration, efficiency, stage totals |
 | `sleep_stages` | a night's stages period by period, as recorded — for the Slaap timeline (migration 018, docs/SLEEP.md) |
+| `heart_rate_minutes` | heart rate through the day: each minute's mean, per app that recorded it — for Training's heart rate (migration 019, docs/TRAINING.md) |
 | `nutrition_entries` | one meal or drink |
 | `workouts` | one training session, every column nullable |
 | `workout_hr_zones` | seconds per heart-rate zone |
@@ -414,6 +415,17 @@ are what the night, the score and the points read, as before. An existing
 database gets the table from `database/migrations/018-sleep-stages.sql`;
 until then a night shows its times without its stages, and the app's next
 sync after it fills in the last seven nights.
+
+**Heart rate, minute by minute** (`heart_rate_minutes`): every heart-rate
+sample Health Connect sends, kept as the mean of each minute per app — one
+row per user, minute and app, its number of samples beside it, written
+again the same on a re-sync. Training draws a day from it (each five
+minutes' mean), a session (each minute), and a period of daily averages
+(each day the mean of its five-minute means); docs/TRAINING.md. The
+average during sleep is still kept as `sleeping_hr`, as before. An existing
+database gets the table from `database/migrations/019-heart-rate-minutes.sql`;
+until then Training's heart rate is empty and nothing else changes, and the
+app's next sync after it fills in the last seven days.
 
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair

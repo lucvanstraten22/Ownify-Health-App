@@ -38,10 +38,16 @@ sealed interface Detail {
         override val key get() = "settings:$id"
     }
 
-    /** One of Slaap's charts on its own page (docs/SLEEP.md), over Slaap's. */
-    data class SleepChart(val id: String) : Detail {
-        override val key get() = "sleep:$id"
-        override val parent: Detail get() = HealthArea("sleep")
+    /** One of an area's charts on its own page (docs/CHARTS.md), over the area's: Slaap's, Training's. */
+    data class AreaChart(val area: String, val id: String) : Detail {
+        override val key get() = "chart:$area:$id"
+        override val parent: Detail get() = HealthArea(area)
+    }
+
+    /** One of Training's latest sessions on its own page (docs/TRAINING.md), over Training's. */
+    data class TrainingSession(val id: String) : Detail {
+        override val key get() = "session:$id"
+        override val parent: Detail get() = HealthArea("training")
     }
 
     /** The detail this one opens over, or null: it opens over the rail. */

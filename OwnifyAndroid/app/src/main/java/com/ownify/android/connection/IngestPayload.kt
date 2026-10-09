@@ -3,11 +3,16 @@ package com.ownify.android.connection
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.NutritionRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.units.Mass
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -30,7 +35,12 @@ import org.json.JSONObject
  */
 internal object IngestPayload {
 
-    /** The record types a sync reads and sends — all seven this app may read. */
+    /**
+     * The record types a sync reads and sends — all twelve this app may read
+     * (AndroidManifest.xml). The last five arrived with 13.0, for the
+     * Training and Slaap pages: a phone that granted the first seven before
+     * shows them as not yet granted until they are asked for.
+     */
     val TYPES = listOf(
         SleepSessionRecord::class,
         ExerciseSessionRecord::class,
@@ -38,18 +48,24 @@ internal object IngestPayload {
         DistanceRecord::class,
         ActiveCaloriesBurnedRecord::class,
         HeartRateRecord::class,
-        NutritionRecord::class
+        NutritionRecord::class,
+        TotalCaloriesBurnedRecord::class,
+        FloorsClimbedRecord::class,
+        RestingHeartRateRecord::class,
+        HeartRateVariabilityRmssdRecord::class,
+        OxygenSaturationRecord::class
     )
 
     /**
      * Every record as its JSON object, in the order given.
      *
-     * Heart rate is the one exception to "send it as it is". The server keeps
-     * a heart-rate record as the average heart rate *during sleep* (the sleep
-     * card's "Hartslag in slaap"), so only the samples taken inside one of the
-     * sleep sessions in [records] are sent; a heart-rate record with none is
-     * left out. Sending the day's samples would show daytime heart rate as
-     * sleeping heart rate.
+     * Heart rate is sent twice over. The server keeps the average heart rate
+     * *during sleep* (the sleep card's "Hartslag in slaap") from `samples`, so
+     * that holds only the samples taken inside one of the sleep sessions in
+     * [records] — daytime heart rate is not sleeping heart rate. Every sample
+     * goes in `allSamples`, which the server keeps as the mean of each minute
+     * for the Training page's heart rate (docs/TRAINING.md). A server from
+     * before 13.0 ignores `allSamples`.
      */
     fun of(records: List<Record>): List<JSONObject> {
         val nights = records.filterIsInstance<SleepSessionRecord>()
@@ -61,6 +77,11 @@ internal object IngestPayload {
                 is StepsRecord -> steps(record)
                 is DistanceRecord -> distance(record)
                 is ActiveCaloriesBurnedRecord -> activeCalories(record)
+                is TotalCaloriesBurnedRecord -> totalCalories(record)
+                is FloorsClimbedRecord -> floors(record)
+                is RestingHeartRateRecord -> restingHeartRate(record)
+                is HeartRateVariabilityRmssdRecord -> heartRateVariability(record)
+                is OxygenSaturationRecord -> oxygenSaturation(record)
                 is NutritionRecord -> nutrition(record)
                 is HeartRateRecord -> heartRate(record, nights)
                 else -> null
@@ -72,9 +93,33 @@ internal object IngestPayload {
     fun countByType(payload: List<JSONObject>): Map<String, Int> =
         payload.groupingBy { it.optString("recordType") }.eachCount()
 
-    /** [payload] in batches for ingest.php, which takes up to 2000 records per call. */
-    fun batches(payload: List<JSONObject>, size: Int): List<JSONArray> =
-        payload.chunked(size).map { JSONArray(it) }
+    /**
+     * [payload] in batches for ingest.php, which takes up to 2000 records per
+     * call: at most [size] records, and at most [bytes] of JSON, so a week of
+     * second-by-second heart rate does not become one request the server
+     * cannot take. A single record larger than [bytes] goes on its own.
+     */
+    fun batches(payload: List<JSONObject>, size: Int, bytes: Int = MAX_BATCH_BYTES): List<JSONArray> {
+        val out = mutableListOf<JSONArray>()
+        var batch = JSONArray()
+        var length = 2
+
+        for (record in payload) {
+            val recordLength = record.toString().length + 1
+            if (batch.length() > 0 && (batch.length() >= size || length + recordLength > bytes)) {
+                out += batch
+                batch = JSONArray()
+                length = 2
+            }
+            batch.put(record)
+            length += recordLength
+        }
+        if (batch.length() > 0) out += batch
+        return out
+    }
+
+    /** About a megabyte: well inside any PHP post_max_size. */
+    const val MAX_BATCH_BYTES = 1_000_000
 
     // ------------------------------------------------------------ record types
 
@@ -107,6 +152,26 @@ internal object IngestPayload {
         interval("ActiveCaloriesBurned", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
             .put("energy", JSONObject().put("kilocalories", r.energy.inKilocalories))
 
+    private fun totalCalories(r: TotalCaloriesBurnedRecord): JSONObject =
+        interval("TotalCaloriesBurned", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
+            .put("energy", JSONObject().put("kilocalories", r.energy.inKilocalories))
+
+    private fun floors(r: FloorsClimbedRecord): JSONObject =
+        interval("FloorsClimbed", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
+            .put("floors", r.floors)
+
+    private fun restingHeartRate(r: RestingHeartRateRecord): JSONObject =
+        instant("RestingHeartRate", r, r.time, r.zoneOffset)
+            .put("beatsPerMinute", r.beatsPerMinute)
+
+    private fun heartRateVariability(r: HeartRateVariabilityRmssdRecord): JSONObject =
+        instant("HeartRateVariabilityRmssd", r, r.time, r.zoneOffset)
+            .put("heartRateVariabilityMillis", r.heartRateVariabilityMillis)
+
+    private fun oxygenSaturation(r: OxygenSaturationRecord): JSONObject =
+        instant("OxygenSaturation", r, r.time, r.zoneOffset)
+            .put("percentage", r.percentage.value)
+
     private fun nutrition(r: NutritionRecord): JSONObject =
         interval("Nutrition", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
             .putIfPresent("name", r.name)
@@ -120,22 +185,25 @@ internal object IngestPayload {
             .putGrams("sugar", r.sugar)
             .putGrams("sodium", r.sodium)
 
-    /** Only the samples inside one of [nights]; null when there are none. */
+    /** `samples`: only those inside one of [nights]; `allSamples`: every one. Null without samples. */
     private fun heartRate(r: HeartRateRecord, nights: List<SleepSessionRecord>): JSONObject? {
-        val samples = r.samples.filter { sample ->
-            nights.any { night -> !sample.time.isBefore(night.startTime) && !sample.time.isAfter(night.endTime) }
-        }
-
-        if (samples.isEmpty()) {
+        if (r.samples.isEmpty()) {
             return null
         }
 
+        val asleep = r.samples.filter { sample ->
+            nights.any { night -> !sample.time.isBefore(night.startTime) && !sample.time.isAfter(night.endTime) }
+        }
+
+        fun json(samples: List<HeartRateRecord.Sample>) = JSONArray(samples.map { sample ->
+            JSONObject()
+                .put("time", time(sample.time, r.startZoneOffset))
+                .put("beatsPerMinute", sample.beatsPerMinute)
+        })
+
         return interval("HeartRate", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
-            .put("samples", JSONArray(samples.map { sample ->
-                JSONObject()
-                    .put("time", time(sample.time, r.startZoneOffset))
-                    .put("beatsPerMinute", sample.beatsPerMinute)
-            }))
+            .put("samples", json(asleep))
+            .put("allSamples", json(r.samples))
     }
 
     // ------------------------------------------------------------------ parts
@@ -159,6 +227,18 @@ internal object IngestPayload {
             )
             .put("startTime", time(start, startOffset))
             .put("endTime", time(end, endOffset))
+
+    /** The fields a reading at one moment carries: its type, its id and origin, and its time. */
+    private fun instant(type: String, record: Record, at: Instant, offset: ZoneOffset?): JSONObject =
+        JSONObject()
+            .put("recordType", type)
+            .put(
+                "metadata",
+                JSONObject()
+                    .put("id", record.metadata.id)
+                    .put("dataOrigin", record.metadata.dataOrigin.packageName)
+            )
+            .put("time", time(at, offset))
 
     /**
      * The moment as ISO 8601 with the offset Health Connect recorded for it,

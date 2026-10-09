@@ -66,6 +66,8 @@ DROP TABLE IF EXISTS `daily_scores`;
 DROP TABLE IF EXISTS `workout_hr_zones`;
 DROP TABLE IF EXISTS `workouts`;
 DROP TABLE IF EXISTS `nutrition_entries`;
+DROP TABLE IF EXISTS `heart_rate_minutes`;
+DROP TABLE IF EXISTS `sleep_stages`;
 DROP TABLE IF EXISTS `sleep_sessions`;
 DROP TABLE IF EXISTS `health_metric_day_totals`;
 DROP TABLE IF EXISTS `health_metrics`;
@@ -324,6 +326,21 @@ CREATE TABLE `sleep_stages` (
     KEY `idx_stage_session` (`sleep_session_id`, `started_at`),
     CONSTRAINT `fk_stage_session` FOREIGN KEY (`sleep_session_id`)
         REFERENCES `sleep_sessions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Heart rate through the day, minute by minute: the mean of the samples one
+-- app recorded in each minute (migration 019, docs/TRAINING.md) — for the
+-- Training page's day, week and session charts and its daily averages.
+CREATE TABLE `heart_rate_minutes` (
+    `user_id`     BIGINT UNSIGNED NOT NULL,
+    `minute_at`   DATETIME NOT NULL COMMENT 'The minute, on the clock the samples were recorded on',
+    `data_origin` VARCHAR(191) NOT NULL DEFAULT '' COMMENT 'The app that recorded it (package name), or source:<id>',
+    `bpm`         DECIMAL(5,1) UNSIGNED NOT NULL COMMENT 'Mean of the samples in this minute',
+    `samples`     SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+    PRIMARY KEY (`user_id`, `minute_at`, `data_origin`),
+    CONSTRAINT `fk_hrm_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

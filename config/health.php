@@ -159,15 +159,17 @@ return [
                 'days'   => 7,
             ],
 
-            /* The four charts, in their order on the page. `bed` draws Tijd in
-               bed as bars and Regelmaat — the sleep score's own regularity
-               part, as the Scorekompas shows it per day — as a line over it,
-               each on its own height, so no scale is shared or named. */
+            /* The four charts, in their order on the page — Ownify's area
+               charts (lib/area-charts.php, which says what each key means).
+               `bed` draws Tijd in bed as bars and Regelmaat — the sleep
+               score's own regularity part, as the Scorekompas shows it per
+               day — as a line over it, each on its own height (Regelmaat a
+               score, 0–100), so no scale is shared or named. */
             'charts' => [
                 'bed'       => ['title' => 'Tijd in bed + Regelmaat',
                                 'series' => [
-                                    ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars'],
-                                    ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line'],
+                                    ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars', 'format' => 'hours'],
+                                    ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line', 'format' => 'score', 'range' => [0, 100]],
                                 ]],
                 'spo2'      => ['title' => 'SpO₂',
                                 'series' => [['key' => 'spo2', 'label' => 'SpO₂', 'unit' => '%', 'kind' => 'line', 'decimals' => 0]]],
@@ -292,39 +294,139 @@ return [
                 ['key' => 'distance',         'value' => null],
             ],
 
+            /* The Training page, drawn (lib/hydrate-training.php,
+               docs/TRAINING.md): the recent training sessions beside the
+               sessions per day, four charts two by two, the heart rate over a
+               day or a period with its zones, and HRV and Hartbelasting. Every
+               value is a recorded one; a day without one is a gap. Replaces
+               `highlights` and the groups' rows the charts now show, for an
+               app that draws it. */
+            'sessions' => [
+                'title' => 'Recente trainingen',
+                /* The sessions listed: Ownify's counted workouts
+                   (health_workouts_counted(): 10 minutes to 8 hours, each
+                   real session once), newest first. */
+                'count' => 4,
+                'empty' => 'Nog geen trainingen opgenomen.',
+                'open'  => 'Open %1$s van %2$s',
+                'today' => 'Vandaag',
+                'yesterday' => 'Gisteren',
+                /* A session's own page. */
+                'back'  => 'Training',
+                'heart_title' => 'Hartslag tijdens de training',
+                'heart_empty' => 'Geen hartslag gemeten tijdens deze training.',
+                'stats_title' => 'Gegevens',
+                /* What each figure is called; only those the session has are shown. */
+                'stats' => [
+                    'duration'      => 'Duur',
+                    'distance'      => 'Afstand',
+                    'pace'          => 'Tempo',
+                    'speed'         => 'Snelheid',
+                    'active_energy' => 'Actieve calorieën',
+                    'total_energy'  => 'Totale calorieën',
+                    'steps'         => 'Stappen',
+                    'avg_hr'        => 'Gem. hartslag',
+                    'max_hr'        => 'Max. hartslag',
+                    'floors'        => 'Verdiepingen',
+                    'elevation'     => 'Hoogtemeters',
+                    'cadence'       => 'Cadans',
+                    'active_minutes' => 'Actieve minuten',
+                ],
+            ],
+
+            /* The charts, small on the page and each large on a page of its
+               own — Ownify's area charts (lib/area-charts.php). `sessions` is
+               the top section's right half; then the four two by two; then
+               HRV and Hartbelasting under the heart rate. */
+            'layout' => [
+                'per_day' => 'sessions',
+                'grid'    => ['steps', 'energy', 'floors', 'active_minutes'],
+                'lower'   => ['hrv', 'training_load'],
+            ],
+            'charts' => [
+                'sessions'       => ['title' => 'Trainingen per dag',
+                                     'series' => [['key' => 'sessions', 'label' => 'Trainingen', 'unit' => 'training', 'units' => 'trainingen', 'kind' => 'bars', 'format' => 'count']]],
+                'steps'          => ['title' => 'Stappen + Afstand',
+                                     'series' => [
+                                         ['key' => 'steps',    'label' => 'Stappen', 'unit' => '',   'kind' => 'bars', 'decimals' => 0],
+                                         ['key' => 'distance', 'label' => 'Afstand', 'unit' => 'km', 'kind' => 'line', 'decimals' => 1],
+                                     ]],
+                /* Both kcal: one height, its levels named. */
+                'energy'         => ['title' => 'Actieve + Totale calorieën', 'scale' => 'shared',
+                                     'series' => [
+                                         ['key' => 'active_energy', 'label' => 'Actief', 'unit' => 'kcal', 'kind' => 'line', 'decimals' => 0],
+                                         ['key' => 'total_energy',  'label' => 'Totaal', 'unit' => 'kcal', 'kind' => 'bars', 'decimals' => 0],
+                                     ]],
+                'floors'         => ['title' => 'Verdiepingen',
+                                     'series' => [['key' => 'floors', 'label' => 'Verdiepingen', 'unit' => '', 'kind' => 'line', 'decimals' => 0]]],
+                'active_minutes' => ['title' => 'Actieve minuten',
+                                     'series' => [['key' => 'active_minutes', 'label' => 'Actieve minuten', 'unit' => 'min', 'kind' => 'line', 'decimals' => 0]]],
+                'hrv'            => ['title' => 'HRV',
+                                     'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
+                'training_load'  => ['title' => 'Hartbelasting',
+                                     'series' => [['key' => 'training_load', 'label' => 'Hartbelasting', 'unit' => '', 'kind' => 'line', 'decimals' => 0]]],
+            ],
+            'chart_copy' => [
+                'empty'   => 'Nog geen metingen.',
+                'hint'    => 'Tik of schuif over de grafiek om de waarden te zien.',
+                'open'    => 'Open %s',
+                'aria'    => '%1$s %2$s, %3$s',
+                'none'    => ['day' => 'Geen meting op deze dag.', 'week' => 'Geen meting in deze week.', 'month' => 'Geen meting in deze maand.'],
+                'carried' => '%s',
+                'back'    => 'Training',
+            ],
+
+            /* The heart rate (heart_rate_minutes, migration 019): a whole day,
+               00:00 to 24:00, as each five minutes' mean — today and the six
+               days before it — and over 7 dagen to 1 jaar as each day's
+               average (the mean of its minutes), a point per day over
+               90 dagen too, per month over a year. */
+            'heart' => [
+                'title'  => 'Hartslag',
+                'label'  => 'Hartslag',
+                'unit'   => 'bpm',
+                'today'  => 'Vandaag',
+                'yesterday' => 'Gisteren',
+                'before'    => 'Eergisteren',
+                'days'   => 7,
+                'bucket' => 5,                      // minutes per point of a day
+                'break'  => 20,                     // minutes without a value that break the line
+                'hours'  => 3,                      // hours between the times under a day
+                'hint'   => 'Tik of schuif over de grafiek om je hartslag te zien.',
+                'empty_day' => 'Geen hartslag gemeten op deze dag.',
+                'empty'  => 'Nog geen hartslag gemeten.',
+                'prev'   => 'Vorige dag',
+                'next'   => 'Volgende dag',
+                'aria_day' => 'Hartslag op %s, per 5 minuten',
+                /* Four zones (docs/TRAINING.md), a visual layer only: the
+                   values are never changed by them. With a resting heart
+                   rate (the median of the last `resting_days` days' resting
+                   heart rate) and a maximum, from the heart-rate reserve
+                   (Karvonen) at ACSM's light, moderate and vigorous: 30%, 40%
+                   and 60%. With a maximum alone, from it: ACSM's light 57%,
+                   and the moderate and vigorous of config/scoring.php (64%,
+                   77%). The maximum is health_hr_max(): the highest recorded
+                   in a training, or 208 − 0,7 × age if that is higher. */
+                'zones' => [
+                    'labels'  => ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'],
+                    'reserve' => [0.30, 0.40, 0.60],
+                    'light'   => 0.57,
+                    'resting_days' => 30,
+                    'basis_reserve' => 'Op basis van je rusthartslag (%1$d bpm) en maximale hartslag (%2$d bpm).',
+                    'basis_max'     => 'Op basis van je maximale hartslag (%d bpm).',
+                    'none'          => 'Zones volgen zodra je geboortedatum of een training met hartslag bekend is.',
+                ],
+            ],
+
+            /* Only what no chart and no session shows. */
             'groups' => [
-                [
-                    'title'   => 'Activiteit',
-                    'metrics' => [
-                        ['key' => 'steps',          'value' => null],
-                        ['key' => 'distance',       'value' => null],
-                        ['key' => 'active_energy',  'value' => null],
-                        ['key' => 'total_energy',   'value' => null],
-                        ['key' => 'active_minutes', 'value' => null],
-                        ['key' => 'floors',         'value' => null],
-                    ],
-                ],
-                [
-                    'title'   => 'Trainingen',
-                    'metrics' => [
-                        ['key' => 'sessions',         'value' => null],
-                        ['key' => 'session_duration', 'value' => null],
-                        ['key' => 'avg_hr',           'value' => null],
-                        ['key' => 'max_hr',           'value' => null],
-                        ['key' => 'hr_zones',         'value' => null],
-                    ],
-                ],
                 [
                     'title'   => 'Conditie en herstel',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
-                        ['key' => 'vo2max',        'value' => null],
-                        ['key' => 'resting_hr',    'value' => null],
-                        ['key' => 'hrv',           'value' => null],
-                        ['key' => 'readiness',     'value' => null],
-                        ['key' => 'training_load', 'value' => null],
-                        ['key' => 'cadence',       'value' => null],
-                        ['key' => 'elevation',     'value' => null],
+                        ['key' => 'vo2max',     'value' => null],
+                        ['key' => 'resting_hr', 'value' => null],
+                        ['key' => 'readiness',  'value' => null],
                     ],
                 ],
             ],

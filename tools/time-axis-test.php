@@ -127,6 +127,23 @@ check('31 days: 90 dagen', time_axis_fit('2026-09-08', '2026-10-08') === 90);
 check('91 days: a year', time_axis_fit('2026-07-09', '2026-10-08') === 365);
 check('two years: a year, rolling', time_axis_fit('2024-10-08', '2026-10-08') === 365);
 
+section('A point per day over 90 dagen');
+
+$daily = time_axis(90, '2026-07-01', '2026-10-08', 'day');
+$weekly = time_axis(90, '2026-07-01', '2026-10-08');
+check('the heart rate\'s averages: a point each day, 90 of them, the window rolling',
+    $daily['grain'] === 'day' && count($daily['slots']) === 90 && $daily['slots'][1]['from'] === '2026-07-12' && $daily['rolling'],
+    json_encode([count($daily['slots']), $daily['slots'][1] ?? null]));
+check('  the dates the period\'s own: every seventh day, as with a point per week',
+    array_column($daily['ticks'], 'label') === array_column($weekly['ticks'], 'label') && count($weekly['slots']) === 13);
+$threw = false;
+try {
+    time_axis(365, '2026-01-01', '2026-10-08', 'day');
+} catch (InvalidArgumentException $e) {
+    $threw = true;
+}
+check('  only over 90 dagen: a year of days is no standard', $threw);
+
 echo "\n" . str_repeat('-', 72) . "\n";
 printf("  %d passed, %d failed\n", $pass, $fail);
 

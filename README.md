@@ -122,7 +122,14 @@ components/
     metric-group.php          level 3 — the long tail, grouped
     sleep-timeline.php        the night as one bar of stages (an app from before sleep-night)
     sleep-night.php           Slaapverloop: the night stage by stage, bedtime to wake time
-    sleep-chart.php           one of Slaap's four charts: small, two by two, or large on its page
+    sleep-view.php            Slaap drawn: the night, then its four charts two by two
+    area-chart.php            one of an area's charts (Slaap, Training): small, or large on its page
+    area-charts-grid.php      an area's small charts, two by two, each square
+    training-view.php         Training drawn: sessions, charts, heart rate (docs/TRAINING.md)
+    training-sessions.php     the latest training sessions, each opening its own page
+    heart-chart.php           the heart rate: a day 00:00–24:00 back over seven, or 7 dagen to 1 jaar
+    heart-plot.php            one heart-rate plot with its zones: a day, a period or a session
+    heart-zones.php           the four heart-rate zones named, and what they are based on
     segmented.php             the two-or-three-way switch, shared
     leaderboard-board.php     one scope × period board
     leaderboard-row.php       position · avatar · name · points
@@ -150,6 +157,9 @@ assets/css/
     account.css               the account panel
     devices.css               the devices quick look (tokens only)
     welcome.css               the opening screen (tokens only)
+    area-charts.css           an area's charts over time, small and large (tokens only)
+    sleep.css                 Slaap's night (tokens only)
+    training.css              Training's sessions, heart rate and zones (tokens only)
 assets/js/
     dashboard.js              data attributes -> rings, meters, counters
     interactions.js           reveal, header condense, floating control
@@ -160,6 +170,9 @@ assets/js/
     detail-layer.js           drilling into an item, and swiping back
     health-trend.js           a chart's period switch and the line draw-on
     compass-history.js        reading a score history: finger, cursor or keys
+    area-charts.js            an area's small chart: a tap opens it, a sideways drag reads it
+    sleep.js                  reading Slaap's night period by period
+    training.js               the heart rate's day: back over seven days, by arrow or swipe
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
     goal-wizard.js            the six-step create-a-goal flow

@@ -197,7 +197,7 @@ without eventually duplicating them.
 | `ActiveCaloriesBurned` | metric `active_energy` | |
 | `TotalCaloriesBurned` | metric `total_energy` | |
 | `FloorsClimbed` | metric `floors` | |
-| `HeartRate` | metric `sleeping_hr` | samples averaged; storing each would be a row every few seconds for a figure nothing reads |
+| `HeartRate` | metric `sleeping_hr`; heart rate per minute | `samples` (those during sleep) averaged into `sleeping_hr`, as before; `allSamples` (every sample, Ownify for Android 13.0) — or `samples` from an app before it — kept as the mean of each minute (`heart_rate_minutes`, migration 019) for Training (docs/TRAINING.md) |
 | `RestingHeartRate` | metric `resting_hr` | |
 | `HeartRateVariabilityRmssd` | metric `hrv` | |
 | `OxygenSaturation` | metric `spo2` | |

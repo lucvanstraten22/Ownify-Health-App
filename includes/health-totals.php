@@ -237,6 +237,63 @@ if (!function_exists('health_metric_totals')) {
     }
 
     /**
+     * A summed metric over a stretch of time — a training session — from
+     * $from up to $to ('Y-m-d H:i:s', on the clock), by the rule a day's
+     * total is counted by: a reading that spans part of it counts for the
+     * share of its value that falls in it, and each moment once over the
+     * apps that recorded it (health_reconcile_day()). A reading without a
+     * span is left out: it is no record of particular moments; and so is
+     * one that spans more than an hour and more than the stretch itself —
+     * a day's total calories spread evenly say nothing about a run's.
+     * Null when nothing reaches into it, or before migration 012.
+     */
+    function health_metric_window_total(int $userId, string $metricCode, string $from, string $to): ?float
+    {
+        $typeId = health_metric_type_id($metricCode);
+        $a      = strtotime($from . ' UTC');
+        $b      = strtotime($to . ' UTC');
+
+        if ($typeId === null || $a === false || $b === false || $b <= $a || !health_metric_intervals_available()) {
+            return null;
+        }
+
+        $spans = [];
+        foreach (db_all(
+            'SELECT id, value, started_at, recorded_at, data_origin, source_id, created_at
+               FROM health_metrics
+              WHERE user_id = ? AND metric_type_id = ? AND started_at IS NOT NULL
+                AND recorded_at > ? AND started_at < ? AND recorded_at < ?',
+            [$userId, $typeId, $from, $to, gmdate('Y-m-d H:i:s', $b + 86400)]
+        ) as $row) {
+            $end   = strtotime($row['recorded_at'] . ' UTC');
+            $start = strtotime($row['started_at'] . ' UTC');
+
+            if ($end === false || $start === false || $start >= $end || $end - $start > max(3600, $b - $a)) {
+                continue;
+            }
+
+            $s = max($start, $a);
+            $e = min($end, $b);
+            if ($e <= $s) {
+                continue;
+            }
+
+            $spans[] = [
+                's'      => $s,
+                'e'      => $e,
+                'origin' => ($row['data_origin'] ?? '') !== '' ? (string) $row['data_origin'] : 'source:' . ($row['source_id'] ?? ''),
+                'rate'   => (float) $row['value'] / ($end - $start),
+                'order'  => [
+                    empty($row['created_at']) ? 0 : (int) strtotime($row['created_at'] . ' UTC'),
+                    $start, $end, (float) $row['value'], (int) ($row['id'] ?? 0),
+                ],
+            ];
+        }
+
+        return $spans === [] ? null : round(health_reconcile_day($spans, health_sources_config()['priority']), 4);
+    }
+
+    /**
      * The day totals from rows already read — kept apart from the database so
      * it can be tested on its own. Returns [date => total] for $from..$to.
      *

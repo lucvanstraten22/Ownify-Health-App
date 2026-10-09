@@ -842,8 +842,12 @@ data class Area(
     val highlights: List<Metric>,
     val groups: List<MetricGroup>,
     val timeline: Timeline?,
-    /** Slaap, drawn: its night and four charts, instead of [highlights] and [timeline]; null from a server from before it. */
-    val view: SleepView? = null
+    /**
+     * The area drawn — Slaap's night and charts ([SleepView]), Training's
+     * sessions, charts and heart rate ([TrainingView]) — instead of
+     * [highlights] and [timeline]; null from a server from before it.
+     */
+    val view: AreaView? = null
 ) {
     companion object {
         fun parse(id: String, o: JSONObject) = Area(
@@ -873,7 +877,10 @@ data class Area(
                     }
                 )
             },
-            view = SleepView.parse(o.obj("view"))
+            view = when (id) {
+                "training" -> TrainingView.parse(o.obj("view"))
+                else -> SleepView.parse(o.obj("view"))
+            }
         )
     }
 }
@@ -894,19 +901,23 @@ data class MetricGroup(val title: String, val hint: String?, val metrics: List<M
 
 data class Timeline(val title: String, val hint: String, val stages: List<Stage>)
 
+/** An area drawn: its [charts] over time (lib/area-charts.php), each small on its page and large on a page of its own. */
+interface AreaView {
+    val charts: List<AreaChart>
+    fun chart(id: String): AreaChart? = charts.firstOrNull { it.id == id }
+}
+
 /**
  * Slaap, drawn (lib/hydrate-sleep.php, docs/SLEEP.md): the last [night]'s
  * stages as a timeline, and four [charts] over time — Tijd in bed +
- * Regelmaat, SpO₂, Huidtemperatuur, Hartslagvariabiliteit — each small on
- * the Slaap page and large on a page of its own.
+ * Regelmaat, SpO₂, Huidtemperatuur, Hartslagvariabiliteit.
  */
-data class SleepView(val night: SleepNight, val charts: List<SleepChart>) {
-    fun chart(id: String): SleepChart? = charts.firstOrNull { it.id == id }
+data class SleepView(val night: SleepNight, override val charts: List<AreaChart>) : AreaView {
 
     companion object {
         fun parse(o: JSONObject?): SleepView? {
             val night = SleepNight.parse(o.obj("night") ?: return null)
-            return SleepView(night, o.arr("charts").map(SleepChart::parse))
+            return SleepView(night, o.arr("charts").map(AreaChart::parse))
         }
     }
 }
@@ -968,11 +979,11 @@ data class SleepRow(val key: String, val label: String, val total: String?)
 data class SleepBlock(val row: Int, val from: Float, val to: Float, val began: String, val ended: String)
 
 /**
- * One of Slaap's charts: its [series] (one line, or Tijd in bed's bars with
- * Regelmaat's line), its [latest] value for the small chart's head, and its
- * [periods] — 7 dagen first, which the small chart draws.
+ * One of an area's charts (lib/area-charts.php): its [series] (one line,
+ * bars, or bars with a line), its [latest] value for the small chart's head,
+ * and its [periods] — 7 dagen first, which the small chart draws.
  */
-data class SleepChart(
+data class AreaChart(
     val id: String,
     val title: String,
     val open: String,
@@ -980,29 +991,29 @@ data class SleepChart(
     val switchLabel: String,
     val hint: String,
     val empty: String,
-    val series: List<SleepSeries>,
-    val latest: SleepLatest?,
+    val series: List<AreaSeries>,
+    val latest: AreaLatest?,
     val defaultPeriod: String,
-    val periods: List<SleepPeriod>
+    val periods: List<AreaPeriod>
 ) {
-    /** Bars and a line: two heights, neither named. */
+    /** Bars and a line: drawn in two shades. */
     val mixed get() = series.map { it.kind }.distinct().size > 1
 
     companion object {
-        fun parse(o: JSONObject): SleepChart? {
+        fun parse(o: JSONObject): AreaChart? {
             val id = o.str("id") ?: return null
-            val periods = o.arr("periods").map(SleepPeriod::parse)
+            val periods = o.arr("periods").map(AreaPeriod::parse)
             if (periods.isEmpty()) return null
-            return SleepChart(
+            return AreaChart(
                 id = id,
                 title = o.str("title").orEmpty(),
                 open = o.str("open").orEmpty(),
-                back = o.str("back") ?: "Slaap",
+                back = o.str("back").orEmpty(),
                 switchLabel = o.str("switch").orEmpty(),
                 hint = o.str("hint").orEmpty(),
                 empty = o.str("empty").orEmpty(),
-                series = o.arr("series").map { SleepSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line") },
-                latest = o.obj("latest")?.let { SleepLatest(it.arr("texts").let(::textsOf), it.str("date")) },
+                series = o.arr("series").map { AreaSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line") },
+                latest = o.obj("latest")?.let { AreaLatest(it.arr("texts").let(::textsOf), it.str("date")) },
                 defaultPeriod = o.str("default") ?: periods.first().key,
                 periods = periods
             )
@@ -1010,17 +1021,17 @@ data class SleepChart(
     }
 }
 
-data class SleepSeries(val key: String, val label: String, val kind: String)
+data class AreaSeries(val key: String, val label: String, val kind: String)
 
-data class SleepLatest(val texts: List<String?>, val date: String?)
+data class AreaLatest(val texts: List<String?>, val date: String?)
 
 /**
  * A chart over one period (docs/CHARTS.md): its dates ([axis]; [axisRows]
  * the same in two rows, for the small chart), each point's place ([x], %
- * from the left) and reading ([points]), which days' Regelmaat was carried,
- * and its lines, bars and named levels in the 300 × 160 box.
+ * from the left) and reading ([points]), which days' value was carried
+ * (Regelmaat), and its lines, bars and named levels in the 300 × 160 box.
  */
-data class SleepPeriod(
+data class AreaPeriod(
     val key: String,
     val label: String,
     val group: String,
@@ -1028,26 +1039,26 @@ data class SleepPeriod(
     val axis: List<CompassTick>,
     val axisRows: List<CompassTick>?,
     val x: List<Float>,
-    val points: List<SleepPoint>,
+    val points: List<AreaPoint>,
     val carried: Set<Int>,
     val width: Float,
     val height: Float,
     val hasData: Boolean,
-    val lines: List<SleepLine>,
-    val bars: List<SleepBars>,
+    val lines: List<AreaLine>,
+    val bars: List<AreaBars>,
     val grid: List<HistoryLevel>
 ) {
     companion object {
-        fun parse(o: JSONObject): SleepPeriod? {
+        fun parse(o: JSONObject): AreaPeriod? {
             val key = o.str("key") ?: return null
             val points = o.arr("points").let { a ->
                 if (a == null) emptyList() else (0 until a.length()).mapNotNull { i ->
                     val p = a.optJSONArray(i) ?: return@mapNotNull null
                     val all = textsOf(p)
-                    SleepPoint(all.getOrNull(0).orEmpty(), all.getOrNull(1), all.getOrNull(2), all.drop(3))
+                    AreaPoint(all.getOrNull(0).orEmpty(), all.getOrNull(1), all.getOrNull(2), all.drop(3))
                 }
             }
-            return SleepPeriod(
+            return AreaPeriod(
                 key = key,
                 label = o.str("label").orEmpty(),
                 group = o.str("group") ?: "day",
@@ -1060,8 +1071,8 @@ data class SleepPeriod(
                 width = (o.num("width") ?: 300.0).toFloat(),
                 height = (o.num("height") ?: 160.0).toFloat(),
                 hasData = o.bool("has_data"),
-                lines = o.arr("lines").map { SleepLine(it.str("key") ?: return@map null, it.arr("line").strings(), it.arr("y").floats()) },
-                bars = o.arr("bars").map { SleepBars(it.str("key") ?: return@map null, (it.num("w") ?: 0.0).toFloat(), it.arr("top").floats()) },
+                lines = o.arr("lines").map { AreaLine(it.str("key") ?: return@map null, it.arr("line").strings(), it.arr("y").floats()) },
+                bars = o.arr("bars").map { AreaBars(it.str("key") ?: return@map null, (it.num("w") ?: 0.0).toFloat(), it.arr("top").floats()) },
                 grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
             )
         }
@@ -1069,12 +1080,204 @@ data class SleepPeriod(
 }
 
 /** A point as the reading shows it: its date or days, [detail] (a week's or month's mean), a [note], each series' value as written. */
-data class SleepPoint(val label: String, val detail: String?, val note: String?, val texts: List<String?>)
+data class AreaPoint(val label: String, val detail: String?, val note: String?, val texts: List<String?>)
 
-data class SleepLine(val key: String, val line: List<String>, val y: List<Float?>)
+data class AreaLine(val key: String, val line: List<String>, val y: List<Float?>)
 
 /** Bars from the bottom: [w] each one's width and [top] its height, in % of the plot. */
-data class SleepBars(val key: String, val w: Float, val top: List<Float?>)
+data class AreaBars(val key: String, val w: Float, val top: List<Float?>)
+
+/**
+ * Training, drawn (lib/hydrate-training.php, docs/TRAINING.md): the latest
+ * [sessions] beside the sessions per day ([perDay]), four [charts] two by two
+ * ([grid]), the [heart] rate across the page, HRV and Hartbelasting under it
+ * ([lower]) — and each listed session's own page ([details]).
+ */
+data class TrainingView(
+    val perDay: String,
+    val grid: List<String>,
+    val lower: List<String>,
+    val sessions: TrainingSessions,
+    override val charts: List<AreaChart>,
+    val heart: HeartChart,
+    val details: List<TrainingSession>
+) : AreaView {
+    fun session(id: String): TrainingSession? = details.firstOrNull { it.id == id }
+
+    companion object {
+        fun parse(o: JSONObject?): TrainingView? {
+            val heart = HeartChart.parse(o.obj("heart") ?: return null) ?: return null
+            val layout = o.obj("layout")
+            val sessions = o.obj("sessions")
+            return TrainingView(
+                perDay = layout.str("per_day") ?: "sessions",
+                grid = layout.arr("grid").strings(),
+                lower = layout.arr("lower").strings(),
+                sessions = TrainingSessions(
+                    sessions.str("title").orEmpty(),
+                    sessions.str("empty").orEmpty(),
+                    sessions.arr("items").map {
+                        TrainingSessionItem(
+                            it.str("id") ?: return@map null, it.str("label").orEmpty(), it.str("date").orEmpty(),
+                            it.str("time").orEmpty(), it.str("duration"), it.str("open").orEmpty()
+                        )
+                    }
+                ),
+                charts = o.arr("charts").map(AreaChart::parse),
+                heart = heart,
+                details = o.arr("details").map(TrainingSession::parse)
+            )
+        }
+    }
+}
+
+data class TrainingSessions(val title: String, val empty: String, val items: List<TrainingSessionItem>)
+
+/** A session in the list: its kind ("Hardlopen"), day ("Vandaag", "5 okt"), start time, how long, and what opening it says. */
+data class TrainingSessionItem(val id: String, val label: String, val date: String, val time: String, val duration: String?, val open: String)
+
+/**
+ * The heart rate: Vandaag's [days] — today first, then the six before it —
+ * each 00:00 to 24:00 every five minutes, and the [periods] 7 dagen to
+ * 1 jaar of daily averages; the switch's [options] (d0 is Vandaag), and the
+ * four [zones].
+ */
+data class HeartChart(
+    val title: String,
+    val label: String,
+    val switchLabel: String,
+    val hint: String,
+    val empty: String,
+    val prev: String,
+    val next: String,
+    val defaultKey: String,
+    val options: List<Pair<String, String>>,
+    val days: List<HeartPlot>,
+    val periods: List<HeartPlot>,
+    val zones: HeartZones
+) {
+    companion object {
+        fun parse(o: JSONObject): HeartChart? {
+            val days = o.arr("days").map(HeartPlot::parse)
+            if (days.isEmpty()) return null
+            return HeartChart(
+                title = o.str("title").orEmpty(),
+                label = o.str("label").orEmpty(),
+                switchLabel = o.str("switch").orEmpty(),
+                hint = o.str("hint").orEmpty(),
+                empty = o.str("empty").orEmpty(),
+                prev = o.str("prev").orEmpty(),
+                next = o.str("next").orEmpty(),
+                defaultKey = o.str("default") ?: "d0",
+                options = o.arr("options").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
+                days = days,
+                periods = o.arr("periods").map(HeartPlot::parse),
+                zones = HeartZones.parse(o.obj("zones"))
+            )
+        }
+    }
+}
+
+/**
+ * One heart-rate plot — a day, a period or a session: its points' places
+ * ([x], %) and readings ([points]: time or date, zone or "weekgemiddelde",
+ * note, bpm), each point's [zone], the points no line reaches ([lone]; null:
+ * a dot on every point), its line, levels and dates, and where zones 2, 3
+ * and 4 begin ([zonesY], % from the top; null without zones).
+ */
+data class HeartPlot(
+    val key: String,
+    val title: String?,
+    val group: String,
+    val aria: String,
+    val empty: String?,
+    val axis: List<CompassTick>,
+    val x: List<Float>,
+    val points: List<AreaPoint>,
+    val zone: List<Int?>,
+    val lone: Set<Int>?,
+    val width: Float,
+    val height: Float,
+    val hasData: Boolean,
+    val line: List<String>,
+    val y: List<Float?>,
+    val grid: List<HistoryLevel>,
+    val zonesY: List<Float>?
+) {
+    companion object {
+        fun parse(o: JSONObject): HeartPlot? {
+            val line = o.arr("lines")?.optJSONObject(0)
+            return HeartPlot(
+                key = o.str("key") ?: "session",
+                title = o.str("title"),
+                group = o.str("group") ?: "day",
+                aria = o.str("aria").orEmpty(),
+                empty = o.str("empty"),
+                axis = o.arr("axis").map(CompassTick::parse),
+                x = o.arr("x").floats().map { it ?: 0f },
+                points = o.arr("points").let { a ->
+                    if (a == null) emptyList() else (0 until a.length()).mapNotNull { i ->
+                        val p = a.optJSONArray(i) ?: return@mapNotNull null
+                        val all = textsOf(p)
+                        AreaPoint(all.getOrNull(0).orEmpty(), all.getOrNull(1), all.getOrNull(2), all.drop(3))
+                    }
+                },
+                zone = o.arr("zone").floats().map { it?.toInt() },
+                lone = o.arr("lone")?.floats()?.mapNotNull { it?.toInt() }?.toSet(),
+                width = (o.num("width") ?: 300.0).toFloat(),
+                height = (o.num("height") ?: 160.0).toFloat(),
+                hasData = o.bool("has_data"),
+                line = line.arr("line").strings(),
+                y = line.arr("y").floats(),
+                grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) },
+                zonesY = o.arr("zones_y")?.floats()?.map { it ?: 0f }
+            )
+        }
+    }
+}
+
+/** The zones' [labels] ("Zone 1" …), their [bands] (name and range), and what they are based on ([note]); no bands without zones. */
+data class HeartZones(val labels: List<String>, val bands: List<Pair<String, String>>, val note: String) {
+    companion object {
+        fun parse(o: JSONObject?) = HeartZones(
+            o.arr("labels").strings(),
+            o.arr("bands").map { (it.str("label") ?: return@map null) to it.str("range").orEmpty() },
+            o.str("note").orEmpty()
+        )
+    }
+}
+
+/** A session's own page: its kind, day and times, its figures ([stats]) and its heart rate minute by minute. */
+data class TrainingSession(
+    val id: String,
+    val title: String,
+    val date: String,
+    val time: String,
+    val back: String,
+    val statsTitle: String,
+    val stats: List<SessionStat>,
+    val heartTitle: String,
+    val heart: HeartPlot
+) {
+    companion object {
+        fun parse(o: JSONObject): TrainingSession? {
+            val heart = o.obj("heart") ?: return null
+            return TrainingSession(
+                id = o.str("id") ?: return null,
+                title = o.str("title").orEmpty(),
+                date = o.str("date").orEmpty(),
+                time = o.str("time").orEmpty(),
+                back = o.str("back").orEmpty(),
+                statsTitle = o.str("stats_title").orEmpty(),
+                stats = o.arr("stats").map { SessionStat(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("value") ?: return@map null, it.str("unit").orEmpty()) },
+                heartTitle = heart.str("title").orEmpty(),
+                heart = HeartPlot.parse(heart) ?: return null
+            )
+        }
+    }
+}
+
+data class SessionStat(val key: String, val label: String, val value: String, val unit: String)
 
 /** Strings and nulls, as written. */
 private fun textsOf(a: org.json.JSONArray?): List<String?> =

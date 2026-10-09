@@ -16,20 +16,15 @@
  * Where the finger is between two periods, the nearer one is read. Every
  * word and time is the server's; nothing here formats one.
  *
- * The four small charts (components/sleep-chart.php) are read by
- * compass-history.js and open their page with a tap or click
- * (detail-layer.js). A sideways drag that read a chart is not a tap: it
- * does not open the page.
+ * The four small charts are Ownify's area charts (area-charts.js).
  */
 
 (function () {
     'use strict';
 
     var LINGER = 1600;      // ms a touch reading stays after the finger lifts
-    var SLOP = 8;           // px a press may move and still be a tap
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-night]'), night);
-    Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-mini]'), mini);
 
     /* =============================================================== night */
 
@@ -193,35 +188,5 @@
         window.addEventListener('resize', function () {
             if (current >= 0) { place((blocks[current][1] + blocks[current][2]) / 2); }
         });
-    }
-
-    /* ======================================================= small charts */
-
-    /* A press that slid sideways was a reading, not a tap: the click it
-       ends with is kept from the detail layer. */
-    function mini(card) {
-        var start = null;
-        var moved = false;
-
-        card.addEventListener('pointerdown', function (event) {
-            start = { x: event.clientX, y: event.clientY };
-            moved = false;
-        });
-
-        card.addEventListener('pointermove', function (event) {
-            if (!start || moved) { return; }
-            if (Math.abs(event.clientX - start.x) > SLOP || Math.abs(event.clientY - start.y) > SLOP) {
-                moved = event.pointerType !== 'mouse' || event.buttons !== 0;
-            }
-        });
-
-        card.addEventListener('click', function (event) {
-            if (moved && !event.target.closest('button')) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            moved = false;
-            start = null;
-        }, true);
     }
 }());

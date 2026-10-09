@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ownify.android.data.AppData
+import com.ownify.android.data.TrainingView
 import com.ownify.android.data.withTheme
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.Ground
@@ -105,7 +106,8 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             is Detail.GoalPage -> data.goals.goal(detail.id) != null
             is Detail.HealthArea -> data.health.area(detail.id) != null
             is Detail.SettingsPage -> data.settings.page(detail.id) != null
-            is Detail.SleepChart -> data.health.area("sleep")?.view?.chart(detail.id) != null
+            is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id) != null
+            is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.session(detail.id) != null
             Detail.ScoreCompass -> data.compass.available
         }
         if (!exists) shell.closeDetail()
@@ -262,7 +264,8 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
     val accent = when (detail) {
         is Detail.HealthArea -> Accent.of(data.health.area(detail.id)?.accent)
         is Detail.GoalPage -> Accent.of(data.goals.goal(detail.id)?.accent)
-        is Detail.SleepChart -> Accent.of("sleep")
+        is Detail.AreaChart -> Accent.of(detail.area)
+        is Detail.TrainingSession -> Accent.TRAINING
         is Detail.SettingsPage -> Accent.HEALTH
         Detail.ScoreCompass -> Accent.HEALTH
     }

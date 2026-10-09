@@ -152,6 +152,7 @@ if (!function_exists('health_import_records')) {
             'nutrition'   => health_import_nutrition($userId, $sourceCode, $sourceId, $externalId, $record),
             'measurement' => health_import_measurement($userId, $sourceId, $externalId, $record),
             'metric'      => health_import_metric($userId, $sourceId, $externalId, $record),
+            'heart_rate'  => health_import_heart_rate($userId, $sourceId, $record),
             default       => ['ok' => false, 'error' => 'Onbekend recordtype: ' . $type, 'date' => null],
         };
     }
@@ -250,6 +251,55 @@ if (!function_exists('health_import_records')) {
                 [(int) $session, $kind, $from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]
             );
         }
+    }
+
+    /* ---------------------------------------------------------- heart rate */
+
+    /**
+     * A heart-rate record's minutes (heart_rate_minutes, migration 019): the
+     * mean of each minute's samples, per app — written again, the same, when
+     * the record is synced again. Nothing is worked out from them here.
+     *
+     * @param array{minutes?: list<array{at: string, bpm: float, n: int}>, data_origin?: ?string} $r
+     */
+    function health_import_heart_rate(int $userId, int $sourceId, array $r): array
+    {
+        $minutes = (array) ($r['minutes'] ?? []);
+        if ($minutes === []) {
+            return ['ok' => false, 'error' => 'Hartslag zonder metingen.', 'date' => null];
+        }
+
+        if (!function_exists('health_heart_minutes_stored') || !health_heart_minutes_stored()) {
+            return ['ok' => true, 'error' => null, 'date' => null];     // migration 019 not imported: nothing to keep it in
+        }
+
+        $origin = trim((string) ($r['data_origin'] ?? '')) !== '' ? mb_substr((string) $r['data_origin'], 0, 191) : 'source:' . $sourceId;
+        $first  = null;
+
+        foreach (array_chunk($minutes, 200) as $chunk) {
+            $rows   = [];
+            $params = [];
+            foreach ($chunk as $minute) {
+                $at  = health_import_time($minute['at'] ?? null);
+                $bpm = health_import_number($minute['bpm'] ?? null);
+                if ($at === null || $bpm === null || $bpm <= 0 || $bpm > 260) {
+                    continue;
+                }
+                $first ??= $at->format('Y-m-d');
+                $rows[] = '(?, ?, ?, ?, ?)';
+                array_push($params, $userId, $at->format('Y-m-d H:i:00'), $origin, round($bpm, 1), max(1, min(65535, (int) ($minute['n'] ?? 1))));
+            }
+            if ($rows === []) {
+                continue;
+            }
+            db_run(
+                'INSERT INTO heart_rate_minutes (user_id, minute_at, data_origin, bpm, samples) VALUES ' . implode(', ', $rows) . '
+                 ON DUPLICATE KEY UPDATE bpm = VALUES(bpm), samples = VALUES(samples)',
+                $params
+            );
+        }
+
+        return ['ok' => true, 'error' => null, 'date' => $first];
     }
 
     /* ------------------------------------------------------------- workout */

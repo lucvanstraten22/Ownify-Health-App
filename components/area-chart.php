@@ -1,30 +1,30 @@
 <?php
 /**
- * One of Slaap's charts over time (lib/hydrate-sleep.php, docs/SLEEP.md):
- * Tijd in bed + Regelmaat, SpO₂, Huidtemperatuur or Hartslagvariabiliteit.
+ * One of an area's charts over time (lib/area-charts.php, docs/CHARTS.md):
+ * Slaap's four (docs/SLEEP.md), Training's seven (docs/TRAINING.md).
  *
- *   small (`sleep_mode` mini)  on the Slaap page, two by two: a square card —
- *               its name, its latest value, and its week on Ownify's time
- *               axis (docs/CHARTS.md), the dates in two rows. A tap or click
- *               opens its own page; a cursor, a sideways drag or the arrow
- *               keys read a day first.
- *   large (`sleep_mode` full)  on that page: the Verloop's card — its
+ *   small (`chart_mode` mini)  on the area's page, two by two: a square
+ *               card — its name, its latest value, and its week on Ownify's
+ *               time axis, the dates in two rows. A tap or click opens its
+ *               own page; a cursor, a sideways drag or the arrow keys read a
+ *               day first.
+ *   large (`chart_mode` full)  on that page: the Verloop's card — its
  *               switch over 7 dagen, 30 dagen, 90 dagen and 1 jaar, the
- *               plot 160 px tall with a line's levels named, the reading
- *               above it.
+ *               plot 160 px tall with its levels named where a scale is,
+ *               the reading above it.
  *
  * Drawn as Gezondheid's Verloop is (components/health-history.php) and read
  * by the same script (compass-history.js), the switch by health-trend.js:
  * a line a monotone curve with a dot for every point, a gap where a day had
- * no value — never a 0. Bars (Tijd in bed) stand on the bottom; beside them
- * the line (Regelmaat) has a height of its own, so no level is named for
- * either. Every word and number is the server's.
+ * no value — never a 0. Bars stand on the bottom. In the area's colour
+ * (`chart_area`, its data-accent). Every word and number is the server's.
  */
 declare(strict_types=1);
 
-$chart  = $data['sleep_chart'];
-$mini   = ($data['sleep_mode'] ?? 'mini') === 'mini';
-$id     = 'sleep-' . $chart['id'];
+$chart  = $data['area_chart'];
+$area   = (string) ($data['chart_area'] ?? 'sleep');
+$mini   = ($data['chart_mode'] ?? 'mini') === 'mini';
+$id     = $area . '-' . $chart['id'];
 $suffix = $id . ($mini ? '-mini' : '-full');
 $series = $chart['series'];
 $mixed  = count(array_unique(array_column($series, 'kind'))) > 1;
@@ -33,28 +33,31 @@ $default = $mini ? (string) $periods[0]['key'] : (string) $chart['default'];
 $filled  = array_filter($periods, static fn ($p) => $p['has_data']) !== [];
 $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mixed ? 'light' : 'line');
 ?>
-<section class="card sleep-chart <?= $mini ? 'sleep-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?>"
-         data-health-history data-accent="sleep"<?php if ($mini): ?> data-detail-open="<?= e($id) ?>" data-sleep-mini<?php endif; ?>
+<section class="card area-chart <?= $mini ? 'area-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?>"
+         data-health-history data-accent="<?= e($area) ?>"<?php if ($mini): ?> data-detail-open="<?= e($id) ?>" data-area-mini<?php endif; ?>
          aria-labelledby="<?= e($suffix) ?>-title">
 
     <?php if ($mini): ?>
-        <div class="sleep-chart__head">
-            <h3 class="sleep-chart__title" id="<?= e($suffix) ?>-title">
-                <button type="button" class="sleep-chart__open" data-detail-open="<?= e($id) ?>" aria-label="<?= e($chart['open']) ?>">
-                    <span><?= e($chart['title']) ?></span><?= icon('chevron-right', 'sleep-chart__chevron') ?>
+        <div class="area-chart__head">
+            <h3 class="area-chart__title" id="<?= e($suffix) ?>-title">
+                <button type="button" class="area-chart__open" data-detail-open="<?= e($id) ?>" aria-label="<?= e($chart['open']) ?>">
+                    <span><?= e($chart['title']) ?></span><?= icon('chevron-right', 'area-chart__chevron') ?>
                 </button>
             </h3>
             <?php $latest = $chart['latest']; ?>
-            <p class="sleep-chart__now">
+            <p class="area-chart__now">
                 <?php if ($latest === null): ?>
-                    <span class="sleep-chart__none">—</span>
+                    <span class="area-chart__none">—</span>
                 <?php else: ?>
+                    <?php /* Each series' key with its value, never apart: a pair that does not fit goes to the next line. */ ?>
                     <?php foreach ($series as $k => $s): if (($latest['texts'][$k] ?? null) === null) { continue; } ?>
-                        <?php if (count($series) > 1): ?><span class="sleep-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
-                        <span class="sleep-chart__value"><?= e($latest['texts'][$k] ?? '—') ?></span>
+                        <span class="area-chart__pair">
+                            <?php if (count($series) > 1): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
+                            <span class="area-chart__value"><?= e($latest['texts'][$k] ?? '—') ?></span>
+                        </span>
                     <?php endforeach; ?>
                     <?php if ($latest['date'] !== null): ?>
-                        <span class="sleep-chart__when"><?= e($latest['date']) ?></span>
+                        <span class="area-chart__when"><?= e($latest['date']) ?></span>
                     <?php endif; ?>
                 <?php endif; ?>
             </p>
@@ -62,7 +65,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
     <?php else: ?>
         <?php /* Its page is named by its title above the card; the card is the chart. */ ?>
         <h2 class="sr-only" id="<?= e($suffix) ?>-title"><?= e($chart['title']) ?></h2>
-        <div class="card__head health-history__head sleep-chart__switch-row">
+        <div class="card__head health-history__head area-chart__switch-row">
             <div class="range-switch range-switch--wide health-history__switch" role="group" aria-label="<?= e($chart['switch']) ?>">
                 <?php foreach ($periods as $period): ?>
                     <button type="button"
@@ -74,7 +77,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
         </div>
     <?php endif; ?>
 
-    <div class="chart compass-history__chart sleep-chart__chart" data-chart>
+    <div class="chart compass-history__chart area-chart__chart" data-chart>
         <?php foreach ($periods as $period):
             $x      = $period['x'];
             $ys     = [];
@@ -87,7 +90,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
                  data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $ys)) ?>">
 
-                <div class="compass-plot sleep-chart__plot<?= $levels !== [] ? ' has-levels' : '' ?>"<?php if ($period['has_data']): ?>
+                <div class="compass-plot area-chart__plot<?= $levels !== [] ? ' has-levels' : '' ?>"<?php if ($period['has_data']): ?>
                      data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="<?= e($suffix) ?>-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
@@ -100,7 +103,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
                              stretch with the SVG. Each over its point, from the bottom. */ ?>
                     <?php foreach ($period['bars'] as $bar): ?>
                         <?php foreach ($bar['top'] as $i => $top): if ($top === null) { continue; } ?>
-                            <span class="sleep-chart__bar" aria-hidden="true"
+                            <span class="area-chart__bar" aria-hidden="true"
                                   style="left: <?= e((string) round($x[$i] - $bar['w'] / 2, 3)) ?>%; width: <?= e((string) $bar['w']) ?>%; top: <?= e((string) $top) ?>%;"></span>
                         <?php endforeach; ?>
                     <?php endforeach; ?>
@@ -130,7 +133,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
                         $def = array_values(array_filter($series, static fn ($s) => $s['key'] === $line['key']))[0];
                         foreach ($line['y'] as $i => $top):
                             if ($top === null) { continue; }
-                            $ring = isset($carried[$i]) && $line['key'] === 'regularity';
+                            $ring = isset($carried[$i]);      // a value carried from an earlier day (Regelmaat)
                             ?>
                             <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $ring ? ' is-carried' : '' ?>"
                                   data-tone="<?= e($tone($def)) ?>" aria-hidden="true"
@@ -176,7 +179,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
 
     <?php /* Two series: which is which. One is named by its title. */ ?>
     <?php if (!$mini && count($series) > 1): ?>
-        <ul class="legend health-history__legend sleep-chart__legend" role="list">
+        <ul class="legend health-history__legend area-chart__legend" role="list">
             <?php foreach ($series as $s): ?>
                 <li class="legend__item" data-tone="<?= e($tone($s)) ?>">
                     <span class="legend__dot" aria-hidden="true"></span>

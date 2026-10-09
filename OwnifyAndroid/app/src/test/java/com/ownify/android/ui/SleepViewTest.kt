@@ -15,6 +15,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.performSemanticsAction
 import com.ownify.android.data.AppData
+import com.ownify.android.data.SleepView
 import com.ownify.android.ui.app.AppShell
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.ShellState
@@ -96,7 +97,7 @@ class SleepViewTest {
 
     @Test
     fun `the view as the server sends it - the night's five rows and periods, four charts over four periods`() {
-        val view = data().health.area("sleep")!!.view!!
+        val view = data().health.area("sleep")!!.view as SleepView
         assertEquals(listOf("Wakker", "Rusteloosheid", "REM", "Licht", "Diep"), view.night.rows.map { it.label })
         assertEquals("23:01", view.night.start)
         assertEquals("07:19", view.night.end)
@@ -166,7 +167,7 @@ class SleepViewTest {
         show()
         mini("SpO₂").performSemanticsAction(SemanticsActions.OnClick)
         compose.waitForIdle()
-        assertEquals(Detail.SleepChart("spo2"), shell.detail)
+        assertEquals(Detail.AreaChart("sleep", "spo2"), shell.detail)
         assertEquals(Detail.HealthArea("sleep"), shell.under)
         compose.onNode(hasText("SpO₂") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading), useUnmergedTree = true).assertExists()
         for (period in listOf("7 dagen", "30 dagen", "90 dagen", "1 jaar")) text(period).assertExists()

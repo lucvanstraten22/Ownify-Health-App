@@ -2,8 +2,9 @@
 
 Every Ownify chart that shows something over days — Gezondheid's Verloop,
 a category's own Verloop on its page, the Scorekompas's Health Score
-history, a goal's Verloop, Slaap's four charts (docs/SLEEP.md), and any
-chart that comes after them — follows
+history, a goal's Verloop, Slaap's four charts (docs/SLEEP.md), Training's
+charts and its heart rate over a period (docs/TRAINING.md), and any chart
+that comes after them — follows
 one standard, on the website and in the Android app alike. Read this before
 you add or change one.
 
@@ -52,6 +53,10 @@ server sends. Its own test is `tools/time-axis-test.php`.
 - **A chart without a period switch** (a goal's Verloop) takes the shortest
   period that holds its whole history — 7 dagen, then 30, 90, then a year,
   which rolls from then on (`time_axis_fit()`).
+- **A point per day over 90 dagen.** A chart of daily values that must stay
+  daily (Training's heart rate: each day's average) asks `time_axis()` for
+  the `day` grain: 90 points, the dates still every seventh day. Only over
+  90 dagen; a year is always a point per month.
 
 ## The points
 
@@ -76,6 +81,24 @@ server sends. Its own test is `tools/time-axis-test.php`.
   the line on; without a valid score there is no point — a gap, never a 0.
   No history is made up.
 
+## A day of heart rate is not a chart over days
+
+Training's heart rate under **Vandaag** shows one day on the clock, not a
+span of days, so the time rule above does not apply to it; its own rule is
+as fixed:
+
+- always the whole day, 00:00 at the left edge and 24:00 at the right —
+  never from the first measurement, never zoomed into the hours there are;
+- the hours every three, `00:00 · 03:00 … 21:00`, evenly spaced;
+- a point per five minutes that had a heart rate, at their middle; a line
+  through points no more than 20 minutes apart, a dot where one stands
+  alone; a stretch without any is a gap;
+- its name above it — Vandaag, Gisteren, Eergisteren, 5 oktober — and
+  never under it.
+
+`hydrate_training_heart_day()` (`lib/hydrate-training.php`) builds it; a
+session's heart rate, from its start to its end, is built the same way.
+
 ## The rest of a chart
 
 These are the same on every chart and are not part of the time rule:
@@ -99,9 +122,13 @@ These are the same on every chart and are not part of the time rule:
 | Gezondheid's Verloop, a category's own | `hydrate_health_history()` (`lib/hydrate-compass.php`) | `components/health-history.php` (`history_area` for a category's page) | `HistoryCard` (`only` for a category's page) |
 | The Scorekompas's history | `hydrate_compass_periods()` | `components/compass-history.php` | `PeriodChart` in `ScoreCompass.kt` |
 | A goal's Verloop | `goal_chart_build()` (`lib/goal-chart.php`) | `pages/goal-detail.php`, `goal-chart.js` | `GoalChart.kt` |
-| Slaap's four charts, small and on their own page (docs/SLEEP.md) | `hydrate_sleep_charts()` (`lib/hydrate-sleep.php`) | `components/sleep-chart.php` | `SleepChartsGrid`, `SleepChartDetail` |
+| An area's charts, small two by two and each on its own page — Slaap's four (docs/SLEEP.md), Training's seven (docs/TRAINING.md) | `area_charts()` (`lib/area-charts.php`), fed by `hydrate_sleep_charts()` and `hydrate_training()` | `components/area-chart.php`, `area-charts-grid.php`, `pages/area-chart.php` | `AreaChartsGrid`, `AreaChartDetail` (`AreaCharts.kt`) |
+| Training's heart rate: a day, a period, a session (docs/TRAINING.md) | `hydrate_training_heart()` (`lib/hydrate-training.php`) | `components/heart-chart.php`, `heart-plot.php`, `assets/js/training.js` | `HeartCard`, `HeartPlotView` (`TrainingView.kt`) |
 | Reading a chart | — | `assets/js/compass-history.js`, `goal-chart.js` | `HistoryPlot` (`ui/design/HistoryChart.kt`), `GoalChart.kt` |
 
 A new chart over time: build its points on `time_axis()` — its `slots` are
 where the points go, its `ticks` the dates — and draw them with the shared
-pieces above. Nothing new needs its own window, dates or positions.
+pieces above. A chart on an area's page is one of its area charts: a series
+of days given to `area_charts()`, drawn by the components above, with no
+chart system of its own. Nothing new needs its own window, dates or
+positions.

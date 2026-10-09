@@ -74,6 +74,9 @@ class OwnifyPalette(
     val scoreLow: Color,
     val attention: Color,
 
+    /** `--zone-1` … `--zone-4`: the heart rate's zones, grey to the brightest Training orange (docs/TRAINING.md). */
+    val zones: List<Color>,
+
     val textPrimary: Color,
     val textSecondary: Color,
     val textMuted: Color,
@@ -133,6 +136,7 @@ class OwnifyPalette(
             scoreMid = Color(0xFFAECA0F),
             scoreLow = Color(0xFFC99A45),
             attention = Color(0xFFBFA863),
+            zones = listOf(Color(0xFF8B8789), Color(0xFFA9867F), Color(0xFFC97867), Color(0xFFE8845E)),
             textPrimary = Color(0xFFF7F7F5),
             textSecondary = white(0.74f),
             textMuted = white(0.60f),
@@ -188,6 +192,7 @@ class OwnifyPalette(
             scoreMid = Color(0xFF7D910B),
             scoreLow = Color(0xFFAC8032),
             attention = Color(0xFF7D6A33),
+            zones = listOf(Color(0xFF9A9597), Color(0xFFB98A80), Color(0xFFC97867), Color(0xFFD66A44)),
             textPrimary = Color(0xFF1D1A1C),
             textSecondary = text(0.74f),
             textMuted = text(0.66f),
@@ -296,6 +301,9 @@ object Ownify {
      * [Attention]'s deeper White Mode value.
      */
     val AttentionWash = Color(0xFFBFA863)
+
+    /** `--zone-N`: heart-rate zone [n] (1–4), grey to the brightest Training orange; null-safe outside 1–4. */
+    fun zone(n: Int): Color = palette.zones[(n - 1).coerceIn(0, 3)]
 
     /** `--neutral`: the solid tile of a card head that has no category — grey, not a colour. */
     val Neutral = Color(0xFF6B6769)

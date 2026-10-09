@@ -19,13 +19,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +55,9 @@ import com.ownify.android.data.Metric
 import com.ownify.android.data.MetricGroup
 import com.ownify.android.data.Outcome
 import com.ownify.android.data.RatingCopy
+import com.ownify.android.data.SleepView
 import com.ownify.android.data.Timeline
+import com.ownify.android.data.TrainingView
 import com.ownify.android.data.numberText
 import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.design.Btn
@@ -96,15 +98,18 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
         DetailColumn(scroll, back = "Gezondheid", backAria = "Terug naar Gezondheid") {
             HeroCard(area)
             area.rating?.let { NutritionRating(area, it) }
-            // Slaap, drawn (docs/SLEEP.md): the night's stages and four charts two by two,
-            // instead of the numbers and the bar of stages they show.
-            val view = area.view
-            if (view != null) {
-                SleepNightCard(view.night)
-                SleepChartsGrid(view)
-            } else {
-                MetricTiles(area.highlights)
-                area.timeline?.let { SleepTimeline(it) }
+            // An area drawn — Slaap (docs/SLEEP.md), Training (docs/TRAINING.md) — instead
+            // of the numbers and the bar of stages it shows.
+            when (val view = area.view) {
+                is SleepView -> {
+                    SleepNightCard(view.night)
+                    AreaChartsGrid(area.id, view.charts)
+                }
+                is TrainingView -> TrainingViewContent(view)
+                else -> {
+                    MetricTiles(area.highlights)
+                    area.timeline?.let { SleepTimeline(it) }
+                }
             }
             area.groups.forEach { MetricGroupCard(it) }
             // Its own Verloop: Gezondheid's, its one line (docs/CHARTS.md); a server from before it: the week and month.
@@ -235,16 +240,16 @@ fun EditorError(text: String, modifier: Modifier = Modifier) {
 
 /** `components/metric-tiles.php`: "Vandaag" and its numbers, two to a row. */
 @Composable
-private fun MetricTiles(tiles: List<Metric>) {
+internal fun MetricTiles(tiles: List<Metric>, title: String = "Vandaag", count: Boolean = true) {
     val (play, sight) = rememberPlayOnSight()
     val gap = if (LocalScreen.current.narrow) Ownify.Space2 else Ownify.Space3
 
     JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
-        T("Vandaag", JStyle.Eyebrow, Modifier.semantics { heading() })
+        T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(gap)) {
             tiles.chunked(2).forEach { pair ->
                 Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                    pair.forEach { MetricTile(it, play, Modifier.weight(1f).fillMaxHeight()) }
+                    pair.forEach { MetricTile(it, play, Modifier.weight(1f).fillMaxHeight(), count) }
                     if (pair.size == 1) Box(Modifier.weight(1f))
                 }
             }
@@ -253,7 +258,7 @@ private fun MetricTiles(tiles: List<Metric>) {
 }
 
 @Composable
-private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
+private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count: Boolean = true) {
     val empty = metric.value == null
     val shape = RoundedCornerShape(Ownify.RadiusMd)
     Column(
@@ -269,7 +274,8 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier) {
         T(metric.label, JStyle.Tiny)
         Row(Modifier.padding(top = Ownify.Space1)) {
             T(
-                countUpText(metric.value ?: "—", play && !empty),
+                // A figure written as it is ("1:12", "5:50", "1.468") is not counted up.
+                if (count) countUpText(metric.value ?: "—", play && !empty) else metric.value ?: "—",
                 OwnifyType.style(
                     20.sp,
                     if (empty) FontWeight.SemiBold else FontWeight.Bold,

@@ -1,15 +1,16 @@
 <?php
 /**
- * One of Slaap's charts on a page of its own (docs/SLEEP.md): its name and
- * the chart, large, over 7 dagen, 30 dagen, 90 dagen and 1 jaar — nothing
- * else. Opened from its small chart on the Slaap page, over it; back goes
- * to Slaap.
+ * One of an area's charts on a page of its own (lib/area-charts.php): its
+ * name and the chart, large, over 7 dagen, 30 dagen, 90 dagen and 1 jaar —
+ * nothing else. Opened from its small chart on the area's page (Slaap,
+ * Training), over it; back goes to that page.
  */
 declare(strict_types=1);
 
-$chart = $data['sleep_chart'];
+$chart = $data['area_chart'];
+$area  = (string) $data['chart_area'];
 ?>
-<article class="detail sleep-metric" data-detail="sleep-<?= e($chart['id']) ?>" data-detail-parent="sleep" data-accent="sleep"
+<article class="detail area-page" data-detail="<?= e($area . '-' . $chart['id']) ?>" data-detail-parent="<?= e($area) ?>" data-accent="<?= e($area) ?>"
          aria-label="<?= e($chart['title']) ?>" aria-hidden="true" inert>
 
     <div class="screen__scroll" data-scroller>
@@ -30,7 +31,7 @@ $chart = $data['sleep_chart'];
                     <h1 class="page-intro__title"><?= e($chart['title']) ?></h1>
                 </header>
 
-                <?php component('sleep-chart', $data + ['sleep_mode' => 'full']); ?>
+                <?php component('area-chart', $data + ['chart_mode' => 'full']); ?>
             </div>
         </main>
     </div>

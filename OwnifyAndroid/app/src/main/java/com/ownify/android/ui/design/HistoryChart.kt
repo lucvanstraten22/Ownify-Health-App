@@ -77,15 +77,34 @@ private const val READ_LINGER_MS = 1600L
  * day without a score.
  */
 @Immutable
-class PlotLine(val color: Color, val paths: List<String>, val washes: List<String>, val y: List<Float?>)
+class PlotLine(
+    val color: Color,
+    val paths: List<String>,
+    val washes: List<String>,
+    val y: List<Float?>,
+    /**
+     * A line coloured by where it runs (the heart rate's zones, docs/TRAINING.md):
+     * colours from the plot's top (0) to its bottom (1), hard edges as two stops
+     * at one place. Null: [color] throughout.
+     */
+    val stops: List<Pair<Float, Color>>? = null,
+    /** Each point's own colour for its dot and its reading (a zone's); null: [color]. */
+    val dotColor: ((Int) -> Color)? = null,
+    /** Dots only at these points (where a dense line stands alone); null: as [HistoryPlot]'s dayDots says. */
+    val dotsAt: Set<Int>? = null
+)
 
 /**
- * Bars from the bottom (Slaap's Tijd in bed, `.sleep-chart__bar`): their
+ * Bars from the bottom (Slaap's Tijd in bed, Training's steps, `.area-chart__bar`): their
  * colour, each one's width in % of the plot, and each point's top in % from
  * the top — null for a day without one.
  */
 @Immutable
-class PlotBars(val color: Color, val width: Float, val top: List<Float?>)
+class PlotBars(val color: Color, val width: Float, val top: List<Float?>, val focus: Color = color)
+
+/** A band across the plot from [top] to [bottom], % from its top, in [color] (a heart-rate zone). */
+@Immutable
+class PlotBand(val top: Float, val bottom: Float, val color: Color)
 
 /**
  * A score's history, read with a finger (`.compass-plot`, compass-history.js)
@@ -132,6 +151,7 @@ fun HistoryPlot(
     bars: List<PlotBars> = emptyList(),
     readOnDrag: Boolean = false,
     compact: Boolean = false,
+    bands: List<PlotBand> = emptyList(),
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
     val still = LocalStillMotion.current
@@ -294,6 +314,11 @@ fun HistoryPlot(
                         }
                 ) {
                     val sy = size.height / viewBox.height
+                    for (band in bands) {
+                        val top = band.top.coerceIn(0f, 100f) / 100f * size.height
+                        val bottom = band.bottom.coerceIn(0f, 100f) / 100f * size.height
+                        if (bottom > top) drawRect(band.color, topLeft = Offset(0f, top), size = Size(size.width, bottom - top))
+                    }
                     if (levels == null) {
                         for (line in listOf(0.25f, 0.5f, 0.75f)) {
                             val y = (12f + line * (viewBox.height - 24f)) * sy
@@ -308,7 +333,7 @@ fun HistoryPlot(
                             drawLine(Ownify.ink(0.055f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
                         }
                     }
-                    // `.sleep-chart__bar`: from the bottom, the top corners rounded, never stretched.
+                    // `.area-chart__bar`: from the bottom, the top corners rounded, never stretched.
                     for (set in bars) {
                         val w = set.width / 100f * size.width
                         val r = minOf(4.dp.toPx(), w / 2f)
@@ -331,7 +356,11 @@ fun HistoryPlot(
                         }
                     }
                     lines.forEachIndexed { i, line -> washes[i].forEach { drawPath(it.stretched(viewBox, size), line.color.copy(alpha = 0.10f)) } }
-                    lines.forEachIndexed { i, line -> paths[i].forEach { drawChartLine(it.stretched(viewBox, size), line.color, 2.2.dp.toPx(), draw.value) } }
+                    lines.forEachIndexed { i, line ->
+                        val brush = line.stops?.let { androidx.compose.ui.graphics.Brush.verticalGradient(colorStops = it.toTypedArray(), startY = 0f, endY = size.height) }
+                            ?: androidx.compose.ui.graphics.SolidColor(line.color)
+                        paths[i].forEach { drawChartLine(it.stretched(viewBox, size), brush, 2.2.dp.toPx(), draw.value) }
+                    }
 
                     // .compass-plot__dot: 7 across with a 2 px ring of the card (5 and 1.5 when
                     // small), never stretched; a carried day's is a ring.
@@ -341,11 +370,13 @@ fun HistoryPlot(
                         line.y.forEachIndexed { i, y ->
                             if (y == null) return@forEachIndexed
                             val alone = line.y.getOrNull(i - 1) == null && line.y.getOrNull(i + 1) == null
-                            if (!dayDots && !alone && i != begin) return@forEachIndexed
+                            if (line.dotsAt != null) {
+                                if (i !in line.dotsAt) return@forEachIndexed
+                            } else if (!dayDots && !alone && i != begin) return@forEachIndexed
                             val c = Offset(xs[i] / 100f * size.width, y / 100f * size.height)
                             val dot = if (small) 2.5.dp.toPx() else 3.5.dp.toPx()
                             drawCircle(Ownify.BgSecondary, radius = dot + (if (small) 1.5.dp else 2.dp).toPx(), center = c)
-                            drawCircle(line.color, radius = dot, center = c)
+                            drawCircle(line.dotColor?.invoke(i) ?: line.color, radius = dot, center = c)
                             if (carried(i)) drawCircle(Ownify.BgSecondary, radius = if (small) 1.25.dp.toPx() else 2.dp.toPx(), center = c)
                         }
                     }
@@ -357,17 +388,18 @@ fun HistoryPlot(
                         for (line in lines) {
                             val y = line.y.getOrNull(reading) ?: continue
                             val c = Offset(px, y / 100f * size.height)
-                            drawCircle(Ownify.mix(line.color, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
+                            val color = line.dotColor?.invoke(reading) ?: line.color
+                            drawCircle(Ownify.mix(color, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
                             drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
-                            drawCircle(line.color, radius = 6.dp.toPx(), center = c)
+                            drawCircle(color, radius = 6.dp.toPx(), center = c)
                         }
                         // A bar's point: at its top, in the full colour.
                         for (set in bars) {
                             val y = set.top.getOrNull(reading) ?: continue
                             val c = Offset(px, y / 100f * size.height)
-                            drawCircle(Ownify.mix(Ownify.Sleep, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
+                            drawCircle(Ownify.mix(set.focus, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
                             drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
-                            drawCircle(Ownify.Sleep, radius = 6.dp.toPx(), center = c)
+                            drawCircle(set.focus, radius = 6.dp.toPx(), center = c)
                         }
                     }
                 }
@@ -376,7 +408,7 @@ fun HistoryPlot(
             }
             // A history card keeps room for two rows of dates in every period (`.compass-history .chart__axis`).
             if (compact) {
-                // `.sleep-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
+                // `.area-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
                 TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true)
             } else {
                 TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)

@@ -80,7 +80,8 @@ out exactly as before; this only keeps what they were added up from.
 
 ## The four charts
 
-Two by two, each card square: two side by side are as wide as one
+Ownify's area charts (`lib/area-charts.php`, docs/CHARTS.md), the same
+system Training's charts are drawn with. Two by two, each card square: two side by side are as wide as one
 full-width card. When a long name needs a line more, both cards of that row
 grow to the taller one.
 
@@ -121,7 +122,7 @@ Every chart follows `docs/CHARTS.md` and `lib/time-axis.php`:
 
 ## A chart's own page
 
-`pages/sleep-metric.php`, `SleepChartDetail`: the chart's name, then the
+`pages/area-chart.php`, `AreaChartDetail`: the chart's name, then the
 same chart, large. It has the Verloop's switch (7 dagen, 30 dagen, 90 dagen,
 1 jaar), the plot 160 px tall, the reading above it, the legend when there
 are two series, and the hint. Nothing else.
@@ -153,9 +154,10 @@ beside bars it is `--sleep-light`.
 | --- | --- | --- |
 | The data | `lib/hydrate-sleep.php` → `health.areas.sleep.view` | `SleepView` (`data/AppData.kt`) |
 | The night | `components/sleep-night.php`, `assets/js/sleep.js` | `SleepNightCard` |
-| The four charts | `components/sleep-chart.php` (`sleep_mode` mini), read by `compass-history.js` | `SleepChartsGrid`, `HistoryPlot` (`bars`, `readOnDrag`) |
-| A chart's page | `pages/sleep-metric.php` | `SleepChartDetail` |
-| Styles | `assets/css/sleep.css` | `ui/screens/health/SleepView.kt` |
+| The page | `components/sleep-view.php` | `HealthDetail` (`SleepView`) |
+| The four charts | `lib/area-charts.php`; `components/area-chart.php` (`chart_mode` mini), `area-charts-grid.php`, read by `compass-history.js`, a tap by `area-charts.js` | `AreaChartsGrid`, `HistoryPlot` (`bars`, `readOnDrag`) |
+| A chart's page | `pages/area-chart.php` | `AreaChartDetail` (`Detail.AreaChart("sleep", …)`) |
+| Styles | `assets/css/sleep.css`, `area-charts.css` | `ui/screens/health/SleepView.kt`, `AreaCharts.kt` |
 | Copy | `config/health.php` (`night`, `charts`, `chart_copy`) | from the server |
 | Tests | `tools/sleep-view-test.php` | `SleepViewTest` |
 

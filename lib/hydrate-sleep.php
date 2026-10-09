@@ -12,7 +12,8 @@
  *                90 dagen and 1 jaar on Ownify's time axis
  *                (lib/time-axis.php, docs/CHARTS.md): the Slaap page draws
  *                the week of each, small; each chart's own page draws it
- *                large, over every period
+ *                large, over every period — Ownify's area charts
+ *                (lib/area-charts.php), which Training's are too
  *
  * Nothing here is calculated anew. Tijd in bed is the night's own, as the
  * Slaap page always showed it; Regelmaat is the sleep score's regularity
@@ -21,8 +22,7 @@
  * carried; SpO₂, Huidtemperatuur and HRV are each day's value as
  * health_daily_metric() gives it. A day without one is a gap, never a 0.
  *
- * Positions are % of the plot (x) and % from its top (y); the lines are
- * paths in a 300 × 160 box, as the Verloop's are.
+ * Positions are % of the plot (x) and % from its top (y).
  */
 
 declare(strict_types=1);
@@ -34,12 +34,9 @@ require_once __DIR__ . '/time-axis.php';
 require_once __DIR__ . '/goal-chart.php';
 require_once __DIR__ . '/hydrate-compass.php';
 require_once __DIR__ . '/hydrate-health.php';
+require_once __DIR__ . '/area-charts.php';
 
 if (!function_exists('hydrate_sleep')) {
-
-    define('SLEEP_CHART_W', 300.0);
-    define('SLEEP_CHART_H', 160.0);
-    define('SLEEP_CHART_PAD_Y', 12.0);   // as the Verloop's: a line's top and bottom points keep their dots inside
 
     /**
      * @param array  $area     config/health.php's Slaap area: `night`, `charts`, `chart_copy`
@@ -215,60 +212,28 @@ if (!function_exists('hydrate_sleep')) {
        ================================================================== */
 
     /**
-     * Each chart, over each period, from a year of its days.
+     * Each chart, over each period, from a year of its days — Ownify's area
+     * charts (lib/area-charts.php), with Slaap's own days.
      *
      * @return list<array>
      */
     function hydrate_sleep_charts(array $charts, array $copy, array $periods, int $userId, array $history, string $today): array
     {
         $yearAgo = (new DateTimeImmutable($today))->modify('-364 day')->format('Y-m-d');
-        $year    = substr($today, 0, 4);
 
-        $out = [];
-        foreach ($charts as $id => $chart) {
-            /* Each series' days: date => [value, text, carried]. */
-            $series = [];
-            $starts = [];                     // each series' first day ever, or null
-            foreach ($chart['series'] as $s) {
-                [$days, $first] = hydrate_sleep_series_days((string) $s['key'], $s, $userId, $history, $yearAgo, $today);
-                $series[] = $days;
-                $starts[] = $first;
-            }
-            $firsts = array_filter($starts, static fn ($f) => $f !== null);
-            $first  = $firsts === [] ? null : min($firsts);
-
-            $built = [];
-            foreach ($periods as $period) {
-                $built[] = hydrate_sleep_chart_period((string) $id, $chart, $copy, (int) $period['days'], $period, $series, $starts, $first, $today, $year);
-            }
-
-            $week = $built[0];
-            $out[] = [
-                'id'      => (string) $id,
-                'title'   => (string) $chart['title'],
-                'open'    => sprintf((string) $copy['open'], (string) $chart['title']),
-                'back'    => (string) $copy['back'],
-                'switch'  => 'Periode kiezen',
-                'hint'    => (string) $copy['hint'],
-                'empty'   => (string) $copy['empty'],
-                'series'  => array_map(static fn (array $s): array => [
-                    'key'   => (string) $s['key'],
-                    'label' => (string) $s['label'],
-                    'kind'  => (string) $s['kind'],
-                ], $chart['series']),
-                'latest'  => hydrate_sleep_latest($week, $today),
-                'default' => (string) $periods[0]['days'],
-                'periods' => $built,
-            ];
-        }
-
-        return $out;
+        return area_charts(
+            $charts,
+            $copy,
+            $periods,
+            static fn (array $s): array => hydrate_sleep_series_days((string) $s['key'], $s, $userId, $history, $yearAgo, $today),
+            $today
+        );
     }
 
     /**
      * One series' recorded days over the year, and its first day ever.
      *
-     * @return array{0: array<string,array{0: float, 1: string, 2: bool}>, 1: ?string}
+     * @return array{0: array<string,array{0: float, 1: string, 2: string|false}>, 1: ?string}
      */
     function hydrate_sleep_series_days(string $key, array $s, int $userId, array $history, string $from, string $to): array
     {
@@ -306,271 +271,6 @@ if (!function_exists('hydrate_sleep')) {
         }
 
         /* A wearable's nightly value, as the Slaap page always read it. */
-        $decimals = (int) ($s['decimals'] ?? 0);
-        foreach (health_daily_metric_days($userId, $key, $from, $to) as $date => $value) {
-            $days[$date] = [round($value, $decimals), hydrate_sleep_number($value, $decimals, (string) $s['unit']), false];
-        }
-        $first = db_value(
-            'SELECT MIN(m.recorded_on) FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id
-              WHERE m.user_id = ? AND t.code = ?',
-            [$userId, $key]
-        );
-
-        return [$days, $first === null ? null : (string) $first];
-    }
-
-    /** "97%", "34,2 °C", "48 ms": a value as the reading writes it. */
-    function hydrate_sleep_number(float $value, int $decimals, string $unit): string
-    {
-        $text = number_format($value, $decimals, ',', '.');
-
-        return $unit === '' ? $text : ($unit === '%' ? $text . '%' : $text . ' ' . $unit);
-    }
-
-    /**
-     * One chart over one period: the window and dates (time_axis()), a
-     * point for each day, week or month that has begun, each series' value
-     * there — a week's or month's the mean of its days with one — and its
-     * lines and bars.
-     */
-    function hydrate_sleep_chart_period(string $id, array $chart, array $copy, int $days, array $period, array $series, array $starts, ?string $first, string $today, string $year): array
-    {
-        $axis  = time_axis($days, $first, $today);
-        $grain = $axis['grain'];
-
-        /* Inset from either edge by most of half a point's room, so a bar
-           over the first or last date stays inside the plot; the dates move
-           with it (as a goal's Verloop insets its own). */
-        $spacing = ($grain === 'month' ? 365 / 12 : ($grain === 'week' ? 7 : 1)) / ($days - 1);
-        $pad     = 0.3 * $spacing;
-        $place   = static fn (float $x): float => round(($pad + $x / 100 * (1 - 2 * $pad)) * 100, 3);
-
-        $ticks = array_map(static fn (array $t): array => ['x' => $place($t['x'])] + array_diff_key($t, ['x' => 0, 'date' => 0]), $axis['ticks']);
-
-        $points = [];
-        $values = array_fill(0, count($series), []);
-        foreach ($axis['slots'] as $slot) {
-            $from = $slot['from'];
-            $to   = min($slot['to'], $today);
-            $row  = [
-                'x'       => $place($slot['x']),
-                'label'   => $from === $to || $grain === 'day'
-                    ? score_compass_date_in($from, $year)
-                    : hydrate_health_history_range($from, $to, $year, ['range' => '%1$s – %2$s']),
-                'detail'  => null,
-                'note'    => null,
-                'texts'   => [],
-                'carried' => false,
-            ];
-
-            foreach ($series as $k => $daysOf) {
-                $value = null;
-                $text  = null;
-
-                if ($grain === 'day') {
-                    if (isset($daysOf[$from])) {
-                        [$value, $text, $carried] = $daysOf[$from];
-                        if ($carried !== false && $carried !== '') {
-                            $row['carried'] = true;
-                            $row['note']    = sprintf((string) $copy['carried'], score_compass_date_in((string) $carried, $year));
-                        }
-                    }
-                } elseif ($starts[$k] !== null && $from >= $starts[$k]) {
-                    /* A week or month as one: the mean of its days with a
-                       value — never one that began before the series did: a
-                       line begins at a point of its own (docs/CHARTS.md). */
-                    $kept = [];
-                    for ($d = new DateTimeImmutable($from); $d->format('Y-m-d') <= $to; $d = $d->modify('+1 day')) {
-                        if (isset($daysOf[$d->format('Y-m-d')])) {
-                            $kept[] = $daysOf[$d->format('Y-m-d')][0];
-                        }
-                    }
-                    if ($kept !== []) {
-                        $value = array_sum($kept) / count($kept);
-                        $text  = hydrate_sleep_mean_text($chart['series'][$k], $value);
-                    }
-                }
-
-                $values[$k][] = $value;
-                $row['texts'][] = $text;
-            }
-
-            if (array_filter($row['texts'], static fn ($t) => $t !== null) === []) {
-                $row['note'] = (string) ($copy['none'][$grain] ?? '');
-            } elseif ($grain !== 'day') {
-                $row['detail'] = ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde'][$grain];
-            }
-
-            $points[] = $row;
-        }
-
-        $geometry = hydrate_sleep_geometry($chart['series'], array_column($points, 'x'), $values, $spacing * (1 - 2 * $pad) * 100);
-        $per      = ['day' => 'per dag', 'week' => 'per week', 'month' => 'per maand'][$grain];
-
-        return [
-            'key'      => (string) $days,
-            'label'    => (string) $period['label'],
-            'days'     => $days,
-            'group'    => $grain,
-            'aria'     => sprintf((string) $copy['aria'], (string) $chart['title'], $per, (string) ($period['spoken'] ?? $period['label'])),
-            'axis'     => $ticks,
-            /* The same dates in two rows — the day over its month where the
-               month is named — for the small chart, too narrow for "8 okt"
-               seven times. */
-            'axis_rows' => $days === 7 ? time_axis_rows($axis['ticks'], $place) : null,
-            'x'        => array_column($points, 'x'),
-            'points'   => array_map(static fn (array $p): array => array_merge([$p['label'], $p['detail'], $p['note']], $p['texts']), $points),
-            'carried'  => array_keys(array_filter(array_column($points, 'carried'))),
-        ] + $geometry;
-    }
-
-    /** A week's or month's mean, as its days' values are written. */
-    function hydrate_sleep_mean_text(array $s, float $value): string
-    {
-        return match ((string) $s['key']) {
-            'time_in_bed' => hydrate_hours((int) round($value * 60)) . ' u',
-            'regularity'  => (string) (int) round($value),
-            default       => hydrate_sleep_number(round($value, (int) ($s['decimals'] ?? 0)), (int) ($s['decimals'] ?? 0), (string) $s['unit']),
-        };
-    }
-
-    /**
-     * The lines and bars in the 300 × 160 box.
-     *
-     *   a line   alone on its chart: over the range its values span, out to
-     *            round steps, its levels named on the grid; beside bars
-     *            (Regelmaat, a score): over 0–100, no level named — the two
-     *            share no scale, and none is pretended
-     *   bars     from the bottom, over 0 to the highest out to a round step
-     *
-     * A run of values without a gap is one monotone curve; a value on its
-     * own is its dot.
-     *
-     * @param list<list<?float>> $values  each series' value at each point
-     */
-    function hydrate_sleep_geometry(array $defs, array $x, array $values, float $barRoom): array
-    {
-        $w    = SLEEP_CHART_W;
-        $h    = SLEEP_CHART_H;
-        $padY = SLEEP_CHART_PAD_Y;
-        $mixed = count(array_unique(array_column($defs, 'kind'))) > 1;
-
-        $lines = [];
-        $bars  = [];
-        $grid  = [];
-        $has   = false;
-
-        foreach ($defs as $k => $def) {
-            $kept = array_values(array_filter($values[$k], static fn ($v) => $v !== null));
-            $has  = $has || $kept !== [];
-
-            if ($def['kind'] === 'bars') {
-                $top  = $kept === [] ? 1.0 : max($kept);
-                $step = goal_chart_step(0, $top, 3);
-                $high = max($step, ceil($top / $step) * $step);
-                $bars[] = [
-                    'key' => (string) $def['key'],
-                    'w'   => round($barRoom * 0.62, 3),
-                    'top' => array_map(static fn ($v) => $v === null ? null : round(($padY + (1 - $v / $high) * ($h - $padY)) / $h * 100, 2), $values[$k]),
-                ];
-                continue;
-            }
-
-            if ($mixed) {
-                [$low, $high] = [0.0, 100.0];
-            } else {
-                [$low, $high, $step] = hydrate_sleep_range($kept, (int) ($def['decimals'] ?? 0));
-                $decimals = goal_chart_step_decimals($step);
-                for ($level = (floor($low / $step) + 1) * $step; $level < $high - $step / 2; $level += $step) {
-                    $grid[] = [
-                        'y'     => round(($padY + (1 - ($level - $low) / ($high - $low)) * ($h - 2 * $padY)) / $h * 100, 2),
-                        'label' => number_format($level, $decimals, ',', '.'),
-                    ];
-                }
-            }
-
-            $y    = [];
-            $runs = [];
-            $run  = [];
-            foreach ($values[$k] as $i => $v) {
-                if ($v === null) {
-                    $y[] = null;
-                    if ($run !== []) { $runs[] = $run; $run = []; }
-                    continue;
-                }
-                $top = round(($padY + (1 - ($v - $low) / ($high - $low)) * ($h - 2 * $padY)) / $h * 100, 2);
-                $y[] = $top;
-                $run[] = [$x[$i] / 100 * $w, $top / 100 * $h];
-            }
-            if ($run !== []) { $runs[] = $run; }
-
-            $lines[] = [
-                'key'  => (string) $def['key'],
-                'line' => array_values(array_map('goal_chart_monotone', array_filter($runs, static fn ($r) => count($r) > 1))),
-                'y'    => $y,
-            ];
-        }
-
-        return [
-            'width'    => $w,
-            'height'   => $h,
-            'has_data' => $has,
-            'lines'    => $lines,
-            'bars'     => $bars,
-            'grid'     => $grid,
-        ];
-    }
-
-    /**
-     * The height a line's values are drawn over: their span out to a round
-     * step (1, 2 or 5 times a power of ten), with a little room around it,
-     * so the grid reads 94 / 96 / 98, never 94.3 — and never finer than
-     * the values themselves are written (a whole percent, a tenth of a
-     * degree).
-     *
-     * @param float[] $values
-     * @return array{0: float, 1: float, 2: float} low, high, step
-     */
-    function hydrate_sleep_range(array $values, int $decimals = 0): array
-    {
-        if ($values === []) {
-            return [0.0, 100.0, 25.0];
-        }
-
-        $low  = min($values);
-        $high = max($values);
-        $room = max(($high - $low) * 0.15, abs($high) * 0.01, 0.1);
-        $low -= $room;
-        $high += $room;
-
-        $step = max(goal_chart_step($low, $high, 3), 10 ** -$decimals);
-        $low  = floor($low / $step) * $step;
-        $high = ceil($high / $step) * $step;
-        if ($high - $low < $step * 2) {
-            $high += $step;
-        }
-
-        return [$low, $high, $step];
-    }
-
-    /**
-     * What the small chart says beside its title: the most recent point
-     * of its week with a value — each series' — and that point's date
-     * unless it is today's.
-     *
-     * @return array{texts: list<?string>, date: ?string}|null
-     */
-    function hydrate_sleep_latest(array $week, string $today): ?array
-    {
-        for ($i = count($week['points']) - 1; $i >= 0; $i--) {
-            $texts = array_slice($week['points'][$i], 3);
-            if (array_filter($texts, static fn ($t) => $t !== null) !== []) {
-                $isToday = $i === count($week['points']) - 1 && $week['points'][$i][0] === score_compass_date_in($today, substr($today, 0, 4));
-
-                return ['texts' => $texts, 'date' => $isToday ? null : (string) $week['points'][$i][0]];
-            }
-        }
-
-        return null;
+        return area_metric_days($userId, $key, $s, $from, $to);
     }
 }
