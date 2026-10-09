@@ -670,10 +670,8 @@ the cloud: connected once with Polar's own sign-in (OAuth), on the website or
 from the app, after which the server fetches trainings, sleep, steps, heart
 rate and Nightly Recharge itself — right after connecting, on Nu
 synchroniseren and every half hour from cron; see
-**[docs/POLAR.md](docs/POLAR.md)**. **Apple Health**
-needs an app on the iPhone, which Ownify does not have, and **Google Health**
-in the cloud needs OAuth credentials on the server and a connect flow that is
-not built; both cards say why they cannot be connected.
+**[docs/POLAR.md](docs/POLAR.md)**. **Google Health** in the cloud needs OAuth credentials on the server and a
+connect flow that is not built; its card says so.
 
 **The header's device button is not this.** That button is a status glance;
 this is where the configuration lives. They are deliberately not the same

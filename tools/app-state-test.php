@@ -375,18 +375,6 @@ try {
         !str_contains($page['raw'], 'Gebouwd met') && !str_contains($page['raw'], 'metric-row__label">Contact<')
         && preg_match('~>Hulp</h2>\s*<p class="settings-note">.*?Ownify is geen medisch hulpmiddel~s', $page['raw']) === 1);
 
-    /* Apple Health: no iPhone app, so nothing to pair with on either side. */
-    $apple = null;
-    foreach ($app['body']['data']['settings']['integrations'] ?? [] as $integration) {
-        if (($integration['provider'] ?? null) === 'apple_health') {
-            $apple = $integration;
-        }
-    }
-    check('Apple Health cannot be connected, and says why', $apple !== null && ($apple['available'] ?? true) === false
-        && str_contains((string) ($apple['blocked'] ?? ''), 'Ownify heeft geen iPhone-app'));
-    check('…and no pairing code is minted for it', http('/api/integrations/pairing-code.php',
-        ['bearer' => $sanne['token'], 'form' => ['provider' => 'apple_health']])['status'] === 409);
-
     section('Vrienden toevoegen: on every Vrienden board, above #1 — on no Nederland board');
     preg_match_all('/data-board data-scope="([a-z]+)" data-period="([a-z]+)"(.*?)(?=data-board data-scope=|<\/section>)/s', $page['raw'], $boards, PREG_SET_ORDER);
     $seen = [];

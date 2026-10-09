@@ -7,7 +7,7 @@
  * ---------------------------------------------------------------------------
  * Nothing in this file knows what Google is. It records that a user connected
  * *something*, what it is allowed to read, the tokens for it, and when it last
- * managed to sync. Google Health, a Health Connect companion app, Apple Health
+ * managed to sync. Google Health, a Health Connect companion app, Polar
  * and a watch are all the same shape of thing from here; only the code that
  * fetches differs.
  *
@@ -58,14 +58,6 @@ if (!function_exists('integration_providers')) {
                 'label'     => 'Health Connect',
                 'transport' => 'device',
                 'note'      => 'Android — vereist de Ownify-app op je telefoon',
-            ],
-            'apple_health' => [
-                'label'     => 'Apple Health',
-                'transport' => 'device',
-                'note'      => 'iPhone — vereist de Ownify-app op je telefoon',
-                /* Why it cannot be connected while there is no app for it
-                   (`app_available` in config/integrations.php). */
-                'unavailable' => 'Apple Health kan alleen worden gelezen door een app op je iPhone, en Ownify heeft geen iPhone-app. Koppelen is daarom niet mogelijk.',
             ],
         ];
     }

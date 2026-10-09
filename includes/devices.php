@@ -5,7 +5,7 @@
  * ---------------------------------------------------------------------------
  * WHY A PHONE NEEDS ITS OWN CREDENTIAL
  * ---------------------------------------------------------------------------
- * Health Connect and Apple Health cannot be read from a server. The data sits
+ * Health Connect cannot be read from a server. The data sits
  * on the phone, behind permissions the person grants to an app on that phone,
  * and no amount of server-side OAuth reaches it. So an app reads it and posts
  * it here — which means that app has to prove which Ownify account it is posting
@@ -139,10 +139,10 @@ if (!function_exists('device_hash')) {
         return $sql;
     }
 
-    /** The phone's own source, from the platform the app says it runs on. */
+    /** The phone's own source: Health Connect, the only phone source Ownify has. */
     function device_app_provider(?string $platform): string
     {
-        return strtolower(trim((string) $platform)) === 'ios' ? 'apple_health' : 'google_health_connect';
+        return 'google_health_connect';
     }
 
     /* ------------------------------------------------------ pairing code */

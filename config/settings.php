@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 14.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 14.2'],
             ],
         ],
     ],
@@ -495,7 +495,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 14.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 14.2'],
                     ],
                 ],
 
@@ -543,14 +543,6 @@ return [
             'icon'  => 'rings',
             'note'  => 'Fitbit en Pixel Watch, via je Google-account',
             'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag', 'Voeding', 'Lichaamsmaten'],
-        ],
-        [
-            'key'      => 'apple_health',
-            'provider' => 'apple_health',
-            'label' => 'Apple Health',
-            'icon'  => 'heart',
-            'note'  => 'iPhone en Apple Watch',
-            'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag', 'Lichaamsmaten'],
         ],
         [
             'key'      => 'health_connect',

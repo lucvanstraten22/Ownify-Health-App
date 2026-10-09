@@ -97,13 +97,6 @@ $settings = [
         'overlap_days'  => 3,
     ],
 
-    /* Apple Health can only be read by an app on the iPhone itself, and
-       Ownify has no iPhone app: false, so the devices screen says so instead
-       of handing out a pairing code nothing can receive. */
-    'apple_health' => [
-        'app_available' => false,
-        'store_url'     => '',
-    ],
 ];
 
 $local = __DIR__ . '/integrations.local.php';
