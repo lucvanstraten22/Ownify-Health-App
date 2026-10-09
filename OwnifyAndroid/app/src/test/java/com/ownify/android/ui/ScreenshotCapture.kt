@@ -413,6 +413,20 @@ class ScreenshotCapture {
     @Test fun settingsAccount() = detail("settings", Detail.SettingsPage("account"), "settings-account", 760, 1520)
     @Test fun settingsDevices() = detail("settings", Detail.SettingsPage("devices"), "settings-devices", 600)
     @Test fun settingsPrivacy() = detail("settings", Detail.SettingsPage("privacy"), "settings-privacy", 700)
+
+    /** Apparaten & Gezondheid with Polar open: its rows, its buttons and what disconnecting means. */
+    @Test
+    fun settingsDevicesPolar() {
+        app { tab("settings") }
+        compose.runOnUiThread { shell.openDetail(Detail.SettingsPage("devices")) }
+        settle()
+        compose.onNode(hasContentDescription("Instellingen van Polar tonen", substring = true)).performClick()
+        settle()
+        scroll(420, detail = true)
+        shoot("settings-devices-polar")
+        scroll(500, detail = true)
+        shoot("settings-devices-polar-2")
+    }
     @Test fun settingsNotifications() = detail("settings", Detail.SettingsPage("notifications"), "settings-notifications")
     @Test fun settingsTheme() = detail("settings", Detail.SettingsPage("theme"), "settings-theme")
     @Test fun settingsLanguage() = detail("settings", Detail.SettingsPage("language"), "settings-language")

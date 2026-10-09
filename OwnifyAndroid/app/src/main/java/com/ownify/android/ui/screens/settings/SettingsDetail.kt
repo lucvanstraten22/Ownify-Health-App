@@ -379,7 +379,10 @@ private fun IntegrationCard(data: AppData, item: Integration) {
     val shadows = LocalGraphicsContext.current.shadowContext
     var open by rememberSaveable(item.key) { mutableStateOf(false) }
     var busy by remember { mutableStateOf<String?>(null) }
+    // A cloud source's answer (`[data-integration-result]`): why connecting or syncing did not go through.
+    var result by remember(item.key) { mutableStateOf<String?>(null) }
     val connected = item.connected
+    val cloud = item.transport != "device"
     val statusText = when (item.status) {
         "connected" -> labels["connected"]
         "revoked" -> labels["revoked"]
@@ -455,8 +458,12 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                 Column(Modifier.fillMaxWidth().padding(start = Ownify.Space4, end = Ownify.Space4, bottom = Ownify.Space4)) {
                     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
                         PhoneRow(labels["status"].orEmpty(), statusText, first = true)
-                        item.account?.let { PhoneRow(labels["account"].orEmpty(), it) }
-                        PhoneRow(labels["last_sync"].orEmpty(), item.lastSync ?: labels["never"].orEmpty(), empty = item.lastSync == null)
+                        item.account?.let { PhoneRow(item.accountLabel ?: labels["account"].orEmpty(), it) }
+                        PhoneRow(
+                            labels["last_sync"].orEmpty(),
+                            if (item.syncing) labels["syncing"].orEmpty() else item.lastSync ?: labels["never"].orEmpty(),
+                            empty = item.lastSync == null && !item.syncing
+                        )
                         PhoneRow(labels["permissions"].orEmpty(), labels["permissions_note"].orEmpty())
                     }
 
@@ -506,6 +513,25 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                     val actions: @Composable (Modifier) -> Unit = { each ->
                         if (connected) {
                             if (thisPhone) SyncNowButton(each)
+                            else if (cloud) {
+                                // Fetched by the server now (api/integrations/<provider>/sync.php); the pages are read again after.
+                                val syncing = item.syncing || busy == "sync"
+                                Btn(
+                                    if (syncing) labels["syncing"].orEmpty() else labels["sync_now"].orEmpty(),
+                                    onClick = {
+                                        val provider = item.provider ?: return@Btn
+                                        busy = "sync"
+                                        result = null
+                                        scope.launch {
+                                            val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/sync.php", emptyMap(), "Synchroniseren is niet gelukt. Probeer het opnieuw.")
+                                            if (outcome is Outcome.Refused) result = outcome.message
+                                            busy = null
+                                        }
+                                    },
+                                    enabled = busy == null && !item.syncing,
+                                    modifier = each
+                                )
+                            }
                             else Btn(labels["sync_now"].orEmpty(), onClick = {}, enabled = false, modifier = each)
                             Btn(
                                 labels["disconnect"].orEmpty(),
@@ -522,16 +548,26 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                     if (item.transport == "device") {
                                         shell.open(Overlay.Pairing(provider))
                                     } else {
-                                        // A cloud source's consent screen is the provider's own page, in the browser.
-                                        runCatching {
-                                            context.startActivity(
-                                                Intent(Intent.ACTION_VIEW, (OwnifyConnection.api.siteUrl + "api/integrations/" + Uri.encode(provider) + "/start.php").toUri())
-                                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            )
+                                        // A cloud source's consent screen is the provider's own page, in the browser:
+                                        // its address comes from the server, made for this account (start.php), and
+                                        // coming back the browser asks to confirm which Ownify account it is for.
+                                        busy = "connect"
+                                        result = null
+                                        scope.launch {
+                                            when (val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/start.php", emptyMap(), "Koppelen kan nu niet. Probeer het opnieuw.", reload = false)) {
+                                                is Outcome.Done -> outcome.body.optString("url").takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { url ->
+                                                    runCatching {
+                                                        context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                                                    }
+                                                }
+                                                is Outcome.Refused -> result = outcome.message
+                                                Outcome.SignedOut -> Unit
+                                            }
+                                            busy = null
                                         }
                                     }
                                 },
-                                enabled = canPair,
+                                enabled = canPair && busy == null,
                                 modifier = each
                             )
                         }
@@ -546,10 +582,11 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                         }
                     }
                     if (thisPhone && connected) SyncResult()
+                    result?.let { IntegrationHint(it, OwnifyIcons.info, warn = true) }
 
                     when {
                         !item.available && !connected && !item.blocked.isNullOrEmpty() -> IntegrationHint(item.blocked, OwnifyIcons.lock)
-                        connected -> IntegrationHint(labels["disconnect_confirm"].orEmpty(), OwnifyIcons.lock)
+                        connected -> IntegrationHint(item.disconnectNote ?: labels["disconnect_confirm"].orEmpty(), OwnifyIcons.lock)
                     }
                 }
             }

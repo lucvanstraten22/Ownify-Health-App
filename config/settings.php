@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 13.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 14.0'],
             ],
         ],
     ],
@@ -495,7 +495,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 13.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 14.0'],
                     ],
                 ],
 
@@ -561,6 +561,19 @@ return [
             'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag'],
         ],
         [
+            'key'      => 'polar',
+            'provider' => 'polar',
+            'label' => 'Polar',
+            'icon'  => 'device',
+            'note'  => 'Polar-horloges en -sensoren, via Polar Flow',
+            'categories' => ['Training', 'Slaap', 'Stappen', 'Hartslag', 'HRV', 'Ademhaling'],
+            /* What the connection is named after: the watches on the account. */
+            'account_label' => 'Apparaten',
+            /* Polar's v4 API has no way for a service to withdraw its own
+               access, so Ownify forgets its keys and says where the rest is. */
+            'disconnect_note' => 'Ontkoppelen verwijdert de Polar-sleutels direct uit Ownify; wat al binnen is blijft staan. Wil je Ownify ook bij Polar weghalen, doe dat in je Polar-account op account.polar.com.',
+        ],
+        [
             'key'   => 'watch',
             'label' => 'Smartwatch',
             'icon'  => 'device',
@@ -595,6 +608,8 @@ return [
         'reconnect'    => 'Opnieuw koppelen',
         'disconnect_confirm' => 'Ontkoppelen stopt het ophalen van nieuwe gegevens. Wat al binnen is blijft staan.',
         'expand'       => 'Instellingen van %s tonen',
+        'syncing'      => 'Bezig met synchroniseren…',
+        'synced'       => 'Gesynchroniseerd.',
 
         /* The phones paired to a source. One line each, revocable one at a
            time — losing a phone costs you that phone, not every phone. */

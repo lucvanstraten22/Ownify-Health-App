@@ -61,6 +61,42 @@ $settings = [
         'store_url'     => '',
     ],
 
+    /**
+     * Polar — AccessLink, the cloud one: Polar Flow's data, read server to
+     * server (docs/POLAR.md).
+     *
+     * A client registered at https://admin.polaraccesslink.com, with the
+     * redirect URL below added to it EXACTLY. The id and the secret come from
+     * the environment (POLAR_CLIENT_ID, POLAR_CLIENT_SECRET) or from
+     * config/integrations.local.php — never from this file.
+     */
+    'polar' => [
+        'client_id'     => '',
+        'client_secret' => '',
+        // Where Polar sends the browser back to. The live site's; a local
+        // copy sets its own (POLAR_REDIRECT_URI or the local file).
+        'redirect_uri'  => 'https://ownify.acits.nl/api/integrations/polar/callback.php',
+        // Read-only, and only what Ownify shows (docs/POLAR.md, "Scopes").
+        'scopes'        => [
+            'training_sessions:read',
+            'activity:read',
+            'sleep:read',
+            'nightly_recharge:read',
+            'continuous_samples:read',
+            'devices:read',
+            'sports:read',
+        ],
+        // Polar's own addresses (AccessLink v4). Not secrets; changeable only
+        // so the test suite can stand in for Polar (tools/polar-test.php).
+        'authorize_url' => 'https://auth.polar.com/oauth/authorize',
+        'token_url'     => 'https://auth.polar.com/oauth/token',
+        'api_base'      => 'https://www.polaraccesslink.com/v4/data',
+        // The first sync reaches this many days back; later ones overlap the
+        // last few days, because a watch can sync to Polar Flow days late.
+        'initial_days'  => 28,
+        'overlap_days'  => 3,
+    ],
+
     /* Apple Health can only be read by an app on the iPhone itself, and
        Ownify has no iPhone app: false, so the devices screen says so instead
        of handing out a pairing code nothing can receive. */
@@ -83,6 +119,12 @@ foreach ([
     'GOOGLE_HEALTH_CLIENT_ID'     => ['google_health', 'client_id'],
     'GOOGLE_HEALTH_CLIENT_SECRET' => ['google_health', 'client_secret'],
     'GOOGLE_HEALTH_REDIRECT_URI'  => ['google_health', 'redirect_uri'],
+    'POLAR_CLIENT_ID'             => ['polar', 'client_id'],
+    'POLAR_CLIENT_SECRET'         => ['polar', 'client_secret'],
+    'POLAR_REDIRECT_URI'          => ['polar', 'redirect_uri'],
+    'POLAR_AUTHORIZE_URL'         => ['polar', 'authorize_url'],
+    'POLAR_TOKEN_URL'             => ['polar', 'token_url'],
+    'POLAR_API_BASE'              => ['polar', 'api_base'],
 ] as $variable => [$provider, $key]) {
     $value = getenv($variable);
     if ($value !== false && $value !== '') {

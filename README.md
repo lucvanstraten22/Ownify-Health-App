@@ -665,7 +665,12 @@ source's settings — status, last sync, the phones paired to it, categories,
 connect and disconnect — open inside its card rather than pushing a third
 screen onto a stack that does not exist. What can be connected today:
 **Health Connect**, through the Ownify app on an Android phone (signing in to
-the app with the account, or a pairing code from this screen). **Apple Health**
+the app with the account, or a pairing code from this screen). **Polar**, in
+the cloud: connected once with Polar's own sign-in (OAuth), on the website or
+from the app, after which the server fetches trainings, sleep, steps, heart
+rate and Nightly Recharge itself — right after connecting, on Nu
+synchroniseren and every half hour from cron; see
+**[docs/POLAR.md](docs/POLAR.md)**. **Apple Health**
 needs an app on the iPhone, which Ownify does not have, and **Google Health**
 in the cloud needs OAuth credentials on the server and a connect flow that is
 not built; both cards say why they cannot be connected.

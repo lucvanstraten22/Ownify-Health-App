@@ -26,7 +26,10 @@ if (!integration_known($provider)) {
     api_fail('Onbekende koppeling.', 400);
 }
 
-if (!integration_disconnect($userId, $provider)) {
+/* Polar: its tokens go, and any connection still being made with it. */
+$done = $provider === 'polar' ? polar_disconnect($userId) : integration_disconnect($userId, $provider);
+
+if (!$done) {
     api_fail('Ontkoppelen is niet gelukt.', 500);
 }
 

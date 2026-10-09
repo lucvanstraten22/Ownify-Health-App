@@ -1,0 +1,64 @@
+/* ==========================================================================
+   connect.css — the one page outside the app: the phone's browser coming
+   back from a provider's consent screen (api/integrations/polar/callback.php).
+   A card in the middle of the ground; every colour is the theme's.
+   ========================================================================== */
+
+body.connect-page {
+    display: grid;
+    place-items: center;
+    min-height: 100%;
+    overflow: auto;                       /* theme.css: the app scrolls inside its screens; this page has none */
+    padding: var(--space-5) var(--space-4);
+    box-sizing: border-box;
+}
+
+.connect {
+    width: min(100%, 420px);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.connect__tile {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--space-4);
+    color: var(--health);
+}
+
+.connect__tile .icon { width: 22px; height: 22px; }
+
+.connect__title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-section);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.connect__text {
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.connect__text strong { color: var(--text-primary); }
+.connect__text--quiet { font-size: var(--fs-small); color: var(--text-muted); }
+.connect__warn { font-size: var(--fs-small); color: var(--attention); }
+.connect__warn strong { color: inherit; }
+
+.connect__actions {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+
+.connect__actions .btn { width: 100%; cursor: pointer; font: inherit; font-size: var(--fs-small); font-weight: 600; }
+
+/* The one thing to do on the page: the Health colour, as the app's own
+   primary actions. */
+.connect__actions .btn--primary {
+    border-color: color-mix(in srgb, var(--health) 55%, transparent);
+    background: color-mix(in srgb, var(--health) 26%, transparent);
+}

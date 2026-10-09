@@ -22,4 +22,14 @@ return [
         // Live:   https://your-domain.tld/api/integrations/google/callback.php
         'redirect_uri'  => 'https://your-domain.tld/api/integrations/google/callback.php',
     ],
+
+    /* Polar: only when the environment does not provide POLAR_CLIENT_ID and
+       POLAR_CLIENT_SECRET (the environment wins). docs/POLAR.md. */
+    'polar' => [
+        // https://admin.polaraccesslink.com -> your client
+        'client_id'     => 'PUT-YOUR-POLAR-CLIENT-ID-HERE',
+        'client_secret' => 'PUT-YOUR-POLAR-CLIENT-SECRET-HERE',
+        // Only on another address than the live site, e.g. a local copy:
+        // 'redirect_uri' => 'http://localhost:8000/api/integrations/polar/callback.php',
+    ],
 ];

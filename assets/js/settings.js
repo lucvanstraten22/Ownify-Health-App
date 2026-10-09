@@ -271,6 +271,15 @@
             return;
         }
 
+        /* A cloud source, fetched now by the server. The answer is one
+           sentence; on success the page is read again so the row, the last
+           sync and the pages behind it all show what came in. */
+        var sync = event.target.closest('[data-integration-sync]');
+        if (sync) {
+            syncNow(sync);
+            return;
+        }
+
         var pair = event.target.closest('[data-integration-pair]');
         if (pair) {
             openPairing(pair.getAttribute('data-integration-pair'));
@@ -293,6 +302,39 @@
         postAndReload(disconnect, 'api/integrations/disconnect.php',
             'provider', disconnect.getAttribute('data-integration-disconnect'));
     });
+
+    function syncNow(button) {
+        var panel  = document.querySelector('[data-account]');
+        var row    = button.closest('[data-integration]');
+        var result = row ? row.querySelector('[data-integration-result]') : null;
+        var label  = button.textContent;
+        var body   = new FormData();
+
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        button.disabled = true;
+        button.textContent = button.getAttribute('data-busy') || 'Bezig met synchroniseren…';
+        if (result) { result.hidden = true; }
+
+        fetch('api/integrations/' + encodeURIComponent(button.getAttribute('data-integration-sync')) + '/sync.php',
+            { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false }; });
+            })
+            .catch(function () { return { ok: false }; })
+            .then(function (answer) {
+                if (answer && answer.ok) {
+                    window.location.reload();
+                    return;
+                }
+                button.disabled = false;
+                button.textContent = label;
+                if (result) {
+                    result.textContent = (answer && answer.error) || 'Synchroniseren is niet gelukt. Probeer het opnieuw.';
+                    result.classList.add('integration__hint--warn');
+                    result.hidden = false;
+                }
+            });
+    }
 
     /**
      * Posts one named field with the CSRF token, then reloads on success.

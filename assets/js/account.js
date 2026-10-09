@@ -275,18 +275,22 @@
     }
 
     /* A link started from Settings comes back to Settings > Account, where
-       the Inloggen block says how it went. */
-    var linkResult = document.querySelector('[data-signin-flash]');
+       the Inloggen block says how it went — and connecting a source (Polar)
+       comes back to Apparaten & Gezondheid, where Koppelingen says it. */
     var nav = window.AppNav;
 
-    if (linkResult && nav && nav.pages && nav.details) {
-        nav.pages.goToId('settings');
-        nav.details.open('settings-account');
+    [['[data-signin-flash]', 'settings-account'], ['[data-integration-flash]', 'settings-devices']].forEach(function (pair) {
+        var result = document.querySelector(pair[0]);
 
-        window.setTimeout(function () {
-            linkResult.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }, (nav.duration || 280) + 120);
-    }
+        if (result && nav && nav.pages && nav.details) {
+            nav.pages.goToId('settings');
+            nav.details.open(pair[1]);
+
+            window.setTimeout(function () {
+                result.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, (nav.duration || 280) + 120);
+        }
+    });
 
     /* ---------------------------------------------------- the right screen */
 

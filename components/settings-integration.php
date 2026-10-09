@@ -58,13 +58,13 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
             </div>
             <?php if (!empty($item['account'])): ?>
                 <div class="metric-row">
-                    <span class="metric-row__label"><?= e($labels['account']) ?></span>
+                    <span class="metric-row__label"><?= e($item['account_label'] ?? $labels['account']) ?></span>
                     <span class="metric-row__value"><?= e($item['account']) ?></span>
                 </div>
             <?php endif; ?>
-            <div class="metric-row <?= $item['last_sync'] === null ? 'is-empty' : '' ?>">
+            <div class="metric-row <?= $item['last_sync'] === null && empty($item['syncing']) ? 'is-empty' : '' ?>">
                 <span class="metric-row__label"><?= e($labels['last_sync']) ?></span>
-                <span class="metric-row__value"><?= e($item['last_sync'] ?? $labels['never']) ?></span>
+                <span class="metric-row__value"><?= e(!empty($item['syncing']) ? $labels['syncing'] : ($item['last_sync'] ?? $labels['never'])) ?></span>
             </div>
             <div class="metric-row">
                 <span class="metric-row__label"><?= e($labels['permissions']) ?></span>
@@ -124,9 +124,15 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
 
         <div class="integration__actions">
             <?php if ($item['connected']): ?>
+                <?php
+                /* A cloud source is fetched by the server, so the website can
+                   ask for it now; a phone source is sent by its phone. */
+                $cloud = ($item['transport'] ?? 'cloud') === 'cloud';
+                ?>
                 <button type="button" class="btn press"
-                        data-integration-sync="<?= e($item['provider']) ?>" disabled>
-                    <?= e($labels['sync_now']) ?>
+                        data-integration-sync="<?= e($item['provider']) ?>"
+                        <?= $cloud && empty($item['syncing']) ? '' : 'disabled' ?>>
+                    <?= e(!empty($item['syncing']) ? $labels['syncing'] : $labels['sync_now']) ?>
                 </button>
                 <button type="button" class="btn press"
                         data-integration-disconnect="<?= e($item['provider'] ?? '') ?>">
@@ -155,13 +161,15 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
             <?php endif; ?>
         </div>
 
+        <p class="integration__hint" data-integration-result role="status" hidden></p>
+
         <?php if (!$canConnect && !$item['connected'] && !empty($item['blocked'])): ?>
             <p class="integration__hint">
                 <?= icon('lock', 'card__hint-icon') ?><?= e($item['blocked']) ?>
             </p>
         <?php elseif ($item['connected']): ?>
             <p class="integration__hint">
-                <?= icon('lock', 'card__hint-icon') ?><?= e($labels['disconnect_confirm']) ?>
+                <?= icon('lock', 'card__hint-icon') ?><?= e($item['disconnect_note'] ?? $labels['disconnect_confirm']) ?>
             </p>
         <?php endif; ?>
     </div>

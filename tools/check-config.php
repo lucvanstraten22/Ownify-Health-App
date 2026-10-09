@@ -374,6 +374,35 @@ foreach ($integrations as $provider => $config) {
     );
 }
 
+/* ---------------------------------------------------------------- polar */
+
+/* Where the id and secret come from and where Polar sends people back — never
+   the values themselves. docs/POLAR.md. */
+require_once dirname(__DIR__) . '/includes/integrations.php';
+
+$polar       = polar_config();
+$polarSource = static function (string $variable, string $key) use ($polar): string {
+    $env = getenv($variable);
+    if ($env !== false && $env !== '') {
+        return 'from the environment (' . $variable . ')';
+    }
+    return $polar[$key] === '' ? 'missing' : 'from config/integrations.local.php';
+};
+
+if (!polar_credentials_present()) {
+    line('warn', 'Polar', 'not configured — set POLAR_CLIENT_ID and POLAR_CLIENT_SECRET (docs/POLAR.md); the button stays disabled');
+} else {
+    line('ok', 'Polar', 'client id ' . $polarSource('POLAR_CLIENT_ID', 'client_id') . ', secret ' . $polarSource('POLAR_CLIENT_SECRET', 'client_secret'));
+}
+
+line($polar['redirect_uri'] === '' ? 'fail' : 'ok', 'Polar redirect', $polar['redirect_uri'] === '' ? 'missing' : $polar['redirect_uri']);
+
+if (db_available()) {
+    line(polar_stored() ? 'ok' : 'warn', 'Polar tables', polar_stored() ? 'migration 020 imported' : 'migration 020 not imported yet');
+}
+
+line(function_exists('curl_init') ? 'ok' : 'fail', 'Polar HTTP', function_exists('curl_init') ? 'curl available' : 'the curl extension is missing');
+
 /* ------------------------------------------------------- google sign-in */
 
 /* Present or absent, and where the redirect goes — never the id or secret. */

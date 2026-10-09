@@ -42,6 +42,9 @@ if (!function_exists('settings_prepare')) {
             $integration['last_sync'] = settings_sync_label($state['last_sync_at'] ?? null);
             $integration['error']     = $state['last_error'] ?? null;
             $integration['transport'] = $state['transport'] ?? 'cloud';
+            /* A sync running now (a cloud source, after connecting or on
+               "Nu synchroniseren"), so the row can say so. */
+            $integration['syncing']   = (bool) ($state['syncing'] ?? false);
 
             /* Whether connecting is possible at all, and if not, why. A
                source whose data lives on a phone cannot be reached from a

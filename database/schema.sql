@@ -59,6 +59,7 @@ DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `friendships`;
 DROP TABLE IF EXISTS `user_devices`;
 DROP TABLE IF EXISTS `device_pairing_codes`;
+DROP TABLE IF EXISTS `integration_oauth_states`;
 DROP TABLE IF EXISTS `user_integrations`;
 DROP TABLE IF EXISTS `goal_progress`;
 DROP TABLE IF EXISTS `goals`;
@@ -517,6 +518,7 @@ CREATE TABLE `user_integrations` (
     `token_expires_at`    DATETIME NULL,
     `connected_at`        DATETIME NULL,
     `last_sync_at`        DATETIME NULL COMMENT 'Last run that finished without error',
+    `sync_started_at`     DATETIME NULL COMMENT 'A sync running now; cleared when it ends',
     `last_sync_status`    ENUM('never','ok','partial','failed') NOT NULL DEFAULT 'never',
     `last_error`          VARCHAR(255) NULL COMMENT 'For the owner, never a raw API body',
     `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -525,6 +527,31 @@ CREATE TABLE `user_integrations` (
     UNIQUE KEY `uq_integration_user_provider` (`user_id`, `provider`),
     KEY `idx_integration_status` (`status`),
     CONSTRAINT `fk_integration_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- A connection being made with a cloud source's sign-in (Polar): the state
+-- sent to the provider (only its hash), whose it is, and where it may be
+-- finished — the browser session that started it, or, from the app, a
+-- confirmation page. Single use, ten minutes.
+CREATE TABLE `integration_oauth_states` (
+    `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`      BIGINT UNSIGNED NOT NULL COMMENT 'Whose connection this is: from the session or account token that started it, never from the callback',
+    `provider`     VARCHAR(40) NOT NULL,
+    `state_hash`   CHAR(64) NOT NULL COMMENT 'sha256 of the state sent to the provider; the state itself is never stored',
+    `client`       ENUM('web','app') NOT NULL,
+    `session_hash` CHAR(64) NULL COMMENT 'web: sha256 of the browser session that started it — only that session may finish it',
+    `confirm_hash` CHAR(64) NULL COMMENT 'app: sha256 of the one-time token on the confirmation page',
+    `pending_code` BLOB NULL COMMENT 'app: the authorization code, sealed, until the person confirms',
+    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `expires_at`   DATETIME NOT NULL,
+    `used_at`      DATETIME NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_oauth_state` (`state_hash`),
+    KEY `idx_oauth_state_user` (`user_id`, `provider`),
+    KEY `idx_oauth_state_expires` (`expires_at`),
+    CONSTRAINT `fk_oauth_state_user` FOREIGN KEY (`user_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -895,6 +922,7 @@ INSERT INTO `data_sources` (`code`, `label`, `kind`) VALUES
     ('apple_health',         'Apple Health',          'platform'),
     ('google_health_connect','Google Health Connect', 'platform'),
     ('google_health',        'Google Health',         'platform'),
+    ('polar',                'Polar',                 'platform'),
     ('wearable',             'Wearable',              'wearable'),
     ('derived',              'Berekend',              'derived');
 

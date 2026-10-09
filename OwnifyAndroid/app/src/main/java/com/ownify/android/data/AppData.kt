@@ -1945,14 +1945,21 @@ data class Integration(
     val transport: String?,
     val available: Boolean,
     val blocked: String?,
-    val devices: List<PairedDevice>
+    val devices: List<PairedDevice>,
+    /** A cloud source's sync running now (`syncing`): the row says so. */
+    val syncing: Boolean = false,
+    /** What disconnecting means for this source, in place of the general line (Polar's). */
+    val disconnectNote: String? = null,
+    /** What the `account` row is called for this source (Polar: its watches), in place of "Account". */
+    val accountLabel: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject) = Integration(
             o.str("key").orEmpty(), o.str("provider"), o.str("label").orEmpty(), o.str("icon").orEmpty(), o.str("note").orEmpty(),
             o.arr("categories").strings(), o.str("status") ?: "disconnected", o.bool("connected"), o.str("account"),
             o.str("last_sync"), o.str("error"), o.str("transport"), o.bool("available"), o.str("blocked"),
-            o.arr("devices").map { PairedDevice(it.int("id") ?: 0, it.str("label").orEmpty(), it.str("last_sync"), it.str("paired")) }
+            o.arr("devices").map { PairedDevice(it.int("id") ?: 0, it.str("label").orEmpty(), it.str("last_sync"), it.str("paired")) },
+            o.bool("syncing"), o.str("disconnect_note"), o.str("account_label")
         )
     }
 }

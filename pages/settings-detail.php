@@ -185,10 +185,23 @@ foreach ($page['blocks'] as $block) {
                             </div>
                         </section>
 
-                    <?php elseif ($block['type'] === 'integrations'): ?>
+                    <?php elseif ($block['type'] === 'integrations'):
+                        /* How connecting a cloud source went (Polar's callback),
+                           once, above the sources. */
+                        $flash = $data['auth']['flash'] ?? null;
+                        $flash = ($flash !== null && $flash['target'] === 'settings-devices') ? $flash : null;
+                        ?>
 
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
                             <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <?php if ($flash !== null): ?>
+                                <p class="settings-note settings-note--flash" data-integration-flash
+                                   role="<?= $flash['tone'] === 'error' ? 'alert' : 'status' ?>">
+                                    <?= icon($flash['tone'] === 'ok' ? 'check' : 'info', 'settings-note__icon') ?>
+                                    <span><?= e($flash['message']) ?></span>
+                                </p>
+                            <?php endif; ?>
 
                             <div class="settings-integrations">
                                 <?php foreach ($settings['integrations'] as $integration): ?>

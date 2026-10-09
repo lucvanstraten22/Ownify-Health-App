@@ -46,6 +46,14 @@ if (!function_exists('integration_providers')) {
                 'transport' => 'cloud',
                 'note'      => 'Fitbit en Pixel Watch, via je Google-account',
             ],
+            'polar' => [
+                'label'     => 'Polar',
+                'transport' => 'cloud',
+                'note'      => 'Polar-horloges en -sensoren, via Polar Flow',
+                /* What Polar needs beyond every cloud source: its own
+                   credentials and migration 020 (includes/polar.php). */
+                'check'     => 'polar_problem',
+            ],
             'google_health_connect' => [
                 'label'     => 'Health Connect',
                 'transport' => 'device',
@@ -119,6 +127,10 @@ if (!function_exists('integration_providers')) {
             }
         }
 
+        if (isset($meta['check']) && function_exists($meta['check']) && ($meta['check'])() !== null) {
+            return false;
+        }
+
         /* Tokens have to be storable before a connection is worth starting. */
         return crypto_available();
     }
@@ -144,6 +156,10 @@ if (!function_exists('integration_providers')) {
             if (empty($config[$key])) {
                 return 'Deze koppeling is op de server nog niet ingesteld.';
             }
+        }
+
+        if (isset($meta['check']) && function_exists($meta['check']) && ($problem = ($meta['check'])()) !== null) {
+            return $problem;
         }
 
         if (!crypto_available()) {
@@ -191,6 +207,10 @@ if (!function_exists('integration_providers')) {
             'last_sync_at'  => $row['last_sync_at'] ?? null,
             'last_sync'     => $row['last_sync_status'] ?? 'never',
             'last_error'    => $row['last_error'] ?? null,
+            /* A sync running now — started under a quarter of an hour ago,
+               so one that died does not say so forever. */
+            'syncing'       => !empty($row['sync_started_at'])
+                && strtotime((string) $row['sync_started_at']) > time() - 900,
             'available'     => integration_configured($provider),
             'blocked'       => integration_blocked_reason($provider),
             'scopes'        => $row === null || $row['scopes'] === null
@@ -397,3 +417,7 @@ if (!function_exists('integration_providers')) {
         );
     }
 }
+
+/* Polar's own half: its credentials check, connecting and syncing. Loaded
+   after the functions above, which it builds on. */
+require_once __DIR__ . '/polar.php';

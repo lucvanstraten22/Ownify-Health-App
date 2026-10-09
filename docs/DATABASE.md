@@ -427,6 +427,17 @@ database gets the table from `database/migrations/019-heart-rate-minutes.sql`;
 until then Training's heart rate is empty and nothing else changes, and the
 app's next sync after it fills in the last seven days.
 
+**Connecting a cloud source** (`integration_oauth_states`): one Polar
+connection being made — only the SHA-256 of the state sent to Polar, whose it
+is (from the session or the app's account token, never from the callback),
+and where it may be finished (the browser session that started it, or the
+app's confirmation page with its one-time token and the code waiting,
+sealed). Single use, ten minutes, removed with the account.
+`user_integrations.sync_started_at` marks a sync running now. An existing
+database gets both, and the source `polar`, from
+`database/migrations/020-polar.sql`; until then Polar is shown as not yet set
+up and nothing else changes. See [POLAR.md](POLAR.md).
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
