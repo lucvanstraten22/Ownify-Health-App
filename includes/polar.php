@@ -75,7 +75,7 @@ if (!function_exists('polar_config')) {
         $config = polar_config();
 
         foreach (['client_id', 'client_secret'] as $key) {
-            if ($config[$key] === '' || str_starts_with($config[$key], 'PUT-YOUR-')) {
+            if (integration_placeholder($config[$key])) {
                 return false;
             }
         }

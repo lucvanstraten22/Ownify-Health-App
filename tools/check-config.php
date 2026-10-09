@@ -353,6 +353,7 @@ if (is_file(dirname(__DIR__) . '/config/app.local.php')) {
 
 /* --------------------------------------------------------- integrations */
 
+require_once dirname(__DIR__) . '/includes/integrations.php';
 $integrations = (array) require dirname(__DIR__) . '/config/integrations.php';
 
 foreach ($integrations as $provider => $config) {
@@ -367,11 +368,9 @@ foreach ($integrations as $provider => $config) {
         continue;
     }
 
-    line(
-        ($config['client_id'] ?? '') === '' ? 'warn' : 'ok',
-        $provider,
-        ($config['client_id'] ?? '') === '' ? 'no client id configured' : 'client id configured'
-    );
+    /* The example file's placeholders are not a client id (integration_placeholder()). */
+    $unset = integration_placeholder((string) ($config['client_id'] ?? ''));
+    line($unset ? 'warn' : 'ok', $provider, $unset ? 'no client id configured' : 'client id configured');
 }
 
 /* ---------------------------------------------------------------- polar */
@@ -399,6 +398,16 @@ line($polar['redirect_uri'] === '' ? 'fail' : 'ok', 'Polar redirect', $polar['re
 
 if (db_available()) {
     line(polar_stored() ? 'ok' : 'warn', 'Polar tables', polar_stored() ? 'migration 020 imported' : 'migration 020 not imported yet');
+}
+
+/* Tokens are sealed with the app key before they are stored; without a usable
+   one, connecting is refused ("De server kan tokens nog niet veilig opslaan."). */
+$polarKey = crypto_status();
+line($polarKey['state'] === 'ok' ? 'ok' : 'fail', 'Polar tokens',
+    $polarKey['state'] === 'ok' ? 'can be stored encrypted (' . CRYPTO_KEY_VARIABLE . ' from ' . $polarKey['source'] . ')'
+        : 'cannot be stored: ' . $polarKey['message']);
+if ($polarKey['state'] !== 'ok') {
+    $problems++;
 }
 
 line(function_exists('curl_init') ? 'ok' : 'fail', 'Polar HTTP', function_exists('curl_init') ? 'curl available' : 'the curl extension is missing');

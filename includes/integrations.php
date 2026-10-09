@@ -95,47 +95,45 @@ if (!function_exists('integration_providers')) {
     }
 
     /**
-     * Whether this provider could actually be connected right now.
-     *
-     * Two separate things have to be true, and the settings screen says which
-     * one is missing rather than showing a button that fails on the far side:
-     *
-     *   cloud transport   a phone's data cannot be reached from a server at
-     *                     all, so no amount of configuration makes it work
-     *   credentials       a client id and secret, and somewhere to come back to
+     * Whether this provider could actually be connected right now: exactly
+     * when integration_blocked_reason() has nothing to say, so the button and
+     * the line under it can never disagree.
      */
     function integration_configured(string $provider): bool
     {
-        $meta = integration_providers()[$provider] ?? null;
-
-        if ($meta === null) {
-            return false;
-        }
-
-        /* A phone source is ready when the app that reads it exists. There is
-           nothing to configure on this side — the server half is done — so the
-           only question is whether there is anything to pair with. */
-        if ($meta['transport'] === 'device') {
-            return !empty(integration_config($provider)['app_available']);
-        }
-
-        $config = integration_config($provider);
-
-        foreach (['client_id', 'client_secret', 'redirect_uri'] as $key) {
-            if (empty($config[$key])) {
-                return false;
-            }
-        }
-
-        if (isset($meta['check']) && function_exists($meta['check']) && ($meta['check'])() !== null) {
-            return false;
-        }
-
-        /* Tokens have to be storable before a connection is worth starting. */
-        return crypto_available();
+        return integration_blocked_reason($provider) === null;
     }
 
-    /** Why a provider cannot be connected, for the owner. Null when it can. */
+    /**
+     * A credential that is filled in with the words of an example file — the
+     * placeholders of config/integrations.local.php.example — rather than
+     * with a real value. Copying the example and filling in one provider
+     * leaves the others' placeholders behind, and those must read as "not
+     * set up", never as set up.
+     */
+    function integration_placeholder(string $value): bool
+    {
+        $value = trim($value);
+
+        return $value === ''
+            || str_starts_with($value, 'PUT-')
+            || str_contains($value, 'your-domain.tld')
+            || (bool) preg_match('/x{8,}|^0{6,}-/i', $value);
+    }
+
+    /**
+     * Why a provider cannot be connected, for the owner. Null when it can.
+     *
+     * For a cloud source, in this order — each a different fix:
+     *
+     *   connect flow   its sign-in pages exist (api/integrations/<provider>/
+     *                  callback.php): Google Health's were never built
+     *   credentials    a client id, secret and redirect URI that are real
+     *   its own check  what only that provider needs (Polar: migration 020)
+     *   the app key    tokens can be sealed before they are stored
+     *                  (includes/crypto.php: OWNIFY_APP_KEY or app_key in
+     *                  config/app.local.php). Never stored without it.
+     */
     function integration_blocked_reason(string $provider): ?string
     {
         $meta = integration_providers()[$provider] ?? null;
@@ -144,16 +142,23 @@ if (!function_exists('integration_providers')) {
             return 'Onbekende koppeling.';
         }
 
+        /* A phone source is ready when the app that reads it exists. There is
+           nothing to configure on this side — the server half is done — so the
+           only question is whether there is anything to pair with. */
         if ($meta['transport'] === 'device') {
             return empty(integration_config($provider)['app_available'])
                 ? ($meta['unavailable'] ?? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.')
                 : null;
         }
 
+        if (!is_file(dirname(__DIR__) . '/api/integrations/' . basename($provider) . '/callback.php')) {
+            return 'Deze koppeling is nog niet beschikbaar in Ownify.';
+        }
+
         $config = integration_config($provider);
 
         foreach (['client_id', 'client_secret', 'redirect_uri'] as $key) {
-            if (empty($config[$key])) {
+            if (integration_placeholder((string) ($config[$key] ?? ''))) {
                 return 'Deze koppeling is op de server nog niet ingesteld.';
             }
         }
@@ -163,6 +168,8 @@ if (!function_exists('integration_providers')) {
         }
 
         if (!crypto_available()) {
+            /* The why (missing, invalid, no libsodium) is in the server log
+               (crypto_check()) and tools/check-config.php — never on a page. */
             return 'De server kan tokens nog niet veilig opslaan.';
         }
 

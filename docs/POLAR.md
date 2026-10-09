@@ -165,7 +165,34 @@ https://ownify.acits.nl/api/integrations/polar/callback.php
 
 Write down the client id and secret it shows.
 
-### 2. Give the server the id and secret
+### 2. The app key: tokens are stored encrypted
+
+Polar's tokens are sealed with Ownify's app key before they go in the database
+(`includes/crypto.php`). Without a usable key, connecting is refused — for
+Polar and for every other cloud source — with *"De server kan tokens nog niet
+veilig opslaan."* The key is read, first one wins, from the environment
+variable `OWNIFY_APP_KEY` (or `$_SERVER['OWNIFY_APP_KEY']`), the old name
+`JOLU_APP_KEY`, then `config/app.local.php` → `'app_key'`: 32 random bytes,
+base64-encoded (44 characters ending in `=`).
+
+On Hestia, create `config/app.local.php` once (the deploy never carries or
+overwrites it), in Hestia's **File Manager**:
+`/home/<hestia-user>/web/ownify.acits.nl/public_html/config/`. Copy
+`app.local.php.example` to `app.local.php` and replace
+`PUT-32-BYTES-OF-BASE64-HERE` with a key:
+
+- with SSH: `php tools/check-config.php --generate-key`, or
+  `openssl rand -base64 32`;
+- without: in your own browser's developer console (F12 › Console), on any page:
+  `btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))`
+  — generated on your computer, sent nowhere.
+
+Keep a copy somewhere safe (a password manager). Losing or changing the key
+makes every stored token unreadable, and everyone has to connect Polar again.
+Never commit it, mail it or paste it into a chat. Full background:
+[DATABASE.md](DATABASE.md#where-to-put-it-on-hestia).
+
+### 3. Give the server the id and secret
 
 The code reads `POLAR_CLIENT_ID` and `POLAR_CLIENT_SECRET` from the
 environment first, then from `config/integrations.local.php`. Never put them
@@ -174,7 +201,7 @@ in `config/integrations.php` or anywhere in the repository.
 **Recommended on Hestia — the local file.** It is the same mechanism as
 `config/database.local.php` and `config/app.local.php`, which already work on
 this server. It is git-ignored, so the deploy never carries or overwrites it.
-It is also the only place the cron job (step 4) reads as well as the website:
+It is also the only place the cron job (step 5) reads as well as the website:
 PHP on the command line does not see a PHP-FPM pool's environment.
 
 ```bash
@@ -210,13 +237,13 @@ why the file is the recommended way.
 `POLAR_REDIRECT_URI` overrides the redirect URL. It is only needed on another
 address, such as a local copy; the live one is the default.
 
-### 3. The database
+### 4. The database
 
 Import `database/migrations/020-polar.sql` in phpMyAdmin: select the database
 first, then Import. Re-running it is safe. Until it is imported, the Polar row
 says the database is not yet updated, and nothing else changes.
 
-### 4. The schedule
+### 5. The schedule
 
 In Hestia: **Cron Jobs › Add**, every 30 minutes (minute `*/30`, everything
 else `*`), with the command:
@@ -229,11 +256,15 @@ Use the PHP version the site runs if `php` is another one, e.g. `php8.3`.
 `tools/` cannot be reached over the web (`tools/.htaccess`), and the script
 refuses anything but the command line.
 
-### 5. Check
+### 6. Check
 
 `php tools/check-config.php` reports Polar (whether the id and secret are set
 and where they come from, never their values), the redirect URL, migration
-020 and curl. The Polar row in Instellingen then shows **Koppelen**.
+020, whether tokens can be stored encrypted ("Polar tokens"), and curl.
+Without SSH, Hestia › Web › ownify.acits.nl › Logs › error log says it as
+well: a line `[ownify] configuration: OWNIFY_APP_KEY is not set …` or
+`… is not 32 bytes of base64 …` means step 2 is not done yet; no such line
+after a page load means the key is usable. The Polar row in Instellingen then shows **Koppelen**.
 
 ## Testing
 
@@ -263,7 +294,7 @@ features). It checks 76 things:
 - **Disconnect and schedule**: disconnecting keeps the data and other
   sources, and the cron script runs.
 
-**By hand, on the live site**, once steps 1–5 are done:
+**By hand, on the live site**, once steps 1–6 are done:
 
 1. Website: Instellingen › Apparaten & Gezondheid › Polar › **Koppelen**.
    Polar's page names Ownify and the data it asks for. Agree. You come back
