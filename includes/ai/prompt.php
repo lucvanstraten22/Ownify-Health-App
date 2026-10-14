@@ -14,6 +14,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/goals.php';
 
 if (!function_exists('ai_system_instruction')) {
@@ -26,8 +28,13 @@ if (!function_exists('ai_system_instruction')) {
     {
         $parts = (array) require dirname(__DIR__, 2) . '/config/ai-prompt.php';
 
-        /* The board's own limit (config/goals.php), not a number written here. */
-        $text = strtr(implode("\n\n", array_map('trim', array_values($parts))), ['{goal_limit}' => (string) GOAL_MAX_ACTIVE]);
+        /* The board's own limit (config/goals.php), not a number written here;
+           the language and units the person uses Ownify in (includes/i18n.php). */
+        $text = strtr(implode("\n\n", array_map('trim', array_values($parts))), [
+            '{goal_limit}' => (string) GOAL_MAX_ACTIVE,
+            '{language}'   => i18n_locale() === 'en' ? 'English' : 'Dutch (Nederlands)',
+            '{units}'      => units_imperial() ? 'imperial' : 'metric',
+        ]);
 
         if ($digest !== []) {
             $text .= "\n\nEARLIER IN THIS CONVERSATION — older questions from the user, not repeated below:\n- "

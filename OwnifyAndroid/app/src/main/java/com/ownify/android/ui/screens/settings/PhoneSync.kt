@@ -1,5 +1,9 @@
 package com.ownify.android.ui.screens.settings
 
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.trn
+import com.ownify.android.i18n.OwnifyFormat
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -115,7 +119,7 @@ fun rememberPhoneHealth(): PhoneHealth {
 }
 
 /**
- * "Deze telefoon": Health Connect's state on this phone as metric rows, the
+ * tr("Deze telefoon"): Health Connect's state on this phone as metric rows, the
  * last sync, and the buttons that ask for access — every read type at once,
  * then reading while Ownify is closed.
  */
@@ -139,50 +143,50 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) { OwnifySync.refresh(context) }
 
     Column(modifier.fillMaxWidth()) {
-        Caption("Deze telefoon")
+        Caption(tr("Deze telefoon"))
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
             PhoneRow(
                 "Health Connect",
                 when {
                     !health.known -> "—"
-                    health.available -> "Beschikbaar"
-                    health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> "Moet worden bijgewerkt"
-                    else -> "Niet beschikbaar"
+                    health.available -> tr("Beschikbaar")
+                    health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> tr("Moet worden bijgewerkt")
+                    else -> tr("Niet beschikbaar")
                 },
                 first = true
             )
             if (health.available) {
                 PhoneRow(
-                    "Toegang",
+                    tr("Toegang"),
                     when (health.granted) {
-                        health.total -> "Alle gegevens"
-                        0 -> "Geen toegang"
-                        else -> "${health.granted} van ${health.total} soorten"
+                        health.total -> tr("Alle gegevens")
+                        0 -> tr("Geen toegang")
+                        else -> trf("%d van %d soorten", health.granted, health.total)
                     },
                     empty = health.granted == 0
                 )
                 PhoneRow(
-                    "Op de achtergrond",
+                    tr("Op de achtergrond"),
                     when (health.background) {
-                        BackgroundRead.GRANTED -> "Toegestaan"
-                        BackgroundRead.NOT_GRANTED -> "Niet toegestaan"
-                        BackgroundRead.NOT_SUPPORTED -> "Niet ondersteund"
+                        BackgroundRead.GRANTED -> tr("Toegestaan")
+                        BackgroundRead.NOT_GRANTED -> tr("Niet toegestaan")
+                        BackgroundRead.NOT_SUPPORTED -> tr("Niet ondersteund")
                         else -> "—"
                     },
                     empty = health.background != BackgroundRead.GRANTED
                 )
             }
             PhoneRow(
-                "Automatisch",
-                if (active) intervalText() else "Uit",
+                tr("Automatisch"),
+                if (active) intervalText() else tr("Uit"),
                 empty = !active
             )
             PhoneRow(
-                "Laatste synchronisatie",
-                record.lastSuccessAt?.let(::moment) ?: "Nog nooit",
+                tr("Laatste synchronisatie"),
+                record.lastSuccessAt?.let(::moment) ?: tr("Nog nooit"),
                 empty = record.lastSuccessAt == null
             )
-            record.lastOutcome?.let { PhoneRow("Status", outcomeText(it)) }
+            record.lastOutcome?.let { PhoneRow(tr("Status"), outcomeText(it)) }
         }
 
         // What can be asked for, only when it is missing.
@@ -193,15 +197,15 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                 if (needsInstall) {
                     Btn(
-                        if (health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) "Health Connect bijwerken" else "Health Connect installeren",
+                        if (health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) tr("Health Connect bijwerken") else tr("Health Connect installeren"),
                         onClick = { openStore(context) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (needsRead) Btn("Toegang geven", onClick = { askRead.launch(HealthPermissions) }, modifier = Modifier.fillMaxWidth())
+                if (needsRead) Btn(tr("Toegang geven"), onClick = { askRead.launch(HealthPermissions) }, modifier = Modifier.fillMaxWidth())
                 if (needsBackground) {
                     Btn(
-                        "Op de achtergrond toestaan",
+                        tr("Op de achtergrond toestaan"),
                         onClick = { askBackground.launch(setOf(OwnifyBackgroundSync.BACKGROUND_PERMISSION)) },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -211,13 +215,13 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
     }
 }
 
-/** "Nu synchroniseren": this phone's sync, now — the same pipeline as the automatic one. */
+/** tr("Nu synchroniseren"): this phone's sync, now — the same pipeline as the automatic one. */
 @Composable
 fun SyncNowButton(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val syncing = OwnifySync.state == OwnifySyncState.Syncing
     Btn(
-        if (syncing) "Synchroniseren…" else "Nu synchroniseren",
+        if (syncing) tr("Synchroniseren…") else tr("Nu synchroniseren"),
         onClick = { OwnifySync.sync(context) },
         enabled = !syncing,
         modifier = modifier
@@ -229,12 +233,12 @@ fun SyncNowButton(modifier: Modifier = Modifier) {
 fun SyncResult(modifier: Modifier = Modifier) {
     val line: String? = when (val state = OwnifySync.state) {
         OwnifySyncState.Idle -> null
-        OwnifySyncState.Syncing -> "Synchroniseren…"
+        OwnifySyncState.Syncing -> tr("Synchroniseren…")
         is OwnifySyncState.Failed -> state.message
         is OwnifySyncState.Synced -> {
             val result = state.summary.result
             val points = result.points.joinToString("") { "\n+${it.points} — ${it.label}" }
-            "Gesynchroniseerd: ${result.written} ${if (result.written == 1) "nieuwe meting" else "nieuwe metingen"}, ${result.skipped} al bekend." + points
+            trf("Gesynchroniseerd: %s, %d al bekend.", trn(result.written, "%d nieuwe meting", "%d nieuwe metingen"), result.skipped) + points
         }
     }
     if (line != null) {
@@ -282,35 +286,36 @@ fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolea
 
 private fun intervalText(): String {
     val hours = OwnifyBackgroundSync.INTERVAL.toHours()
-    return if (hours == 1L) "Elk uur" else "Elke $hours uur"
+    return if (hours == 1L) tr("Elk uur") else trf("Elke %d uur", hours)
 }
 
 /**
  * A moment the way the website writes a sync (settings_sync_label()):
- * "Vandaag, 14:35", "Gisteren, 09:12", "3-9-2026, 18:02".
+ * "Vandaag, 14:35", "Gisteren, 09:12", "3-9-2026, 18:02" — in English
+ * "Today, 14:35", "Yesterday, 09:12", "9/3/2026, 18:02".
  */
 internal fun moment(instant: Instant, today: LocalDate = LocalDate.now()): String {
     val at = instant.atZone(ZoneId.systemDefault())
     val time = at.format(DateTimeFormatter.ofPattern("HH:mm"))
     val day = at.toLocalDate()
     return when (day) {
-        today -> "Vandaag, $time"
-        today.minusDays(1) -> "Gisteren, $time"
-        else -> "${day.dayOfMonth}-${day.monthValue}-${day.year}, $time"
+        today -> tr("Vandaag") + ", " + time
+        today.minusDays(1) -> tr("Gisteren") + ", " + time
+        else -> OwnifyFormat.date(day, "numeric") + ", " + time
     }
 }
 
 /** How the last sync went, in the app's words (OwnifySyncOutcomeKind keeps its own, for the tests). */
 internal fun outcomeText(kind: OwnifySyncOutcomeKind): String = when (kind) {
-    OwnifySyncOutcomeKind.SYNCED -> "Gesynchroniseerd"
-    OwnifySyncOutcomeKind.OFFLINE -> "Ownify was niet bereikbaar — wordt vanzelf opnieuw geprobeerd"
-    OwnifySyncOutcomeKind.SERVER_TROUBLE -> "Ownify had een probleem — wordt vanzelf opnieuw geprobeerd"
-    OwnifySyncOutcomeKind.READ_FAILED -> "Health Connect kon niet worden gelezen — wordt opnieuw geprobeerd"
-    OwnifySyncOutcomeKind.NEEDS_HEALTH_ACCESS -> "Geef toegang tot Health Connect om automatisch te synchroniseren"
-    OwnifySyncOutcomeKind.NEEDS_BACKGROUND_ACCESS -> "Synchroniseert terwijl Ownify open is; sta de achtergrond toe voor daarna"
-    OwnifySyncOutcomeKind.NO_HEALTH_CONNECT -> "Health Connect is niet beschikbaar op deze telefoon"
-    OwnifySyncOutcomeKind.NOT_CONNECTED -> "Niet verbonden met Ownify"
-    OwnifySyncOutcomeKind.EXPIRED -> "De koppeling met Ownify is verlopen"
+    OwnifySyncOutcomeKind.SYNCED -> tr("Gesynchroniseerd")
+    OwnifySyncOutcomeKind.OFFLINE -> tr("Ownify was niet bereikbaar — wordt vanzelf opnieuw geprobeerd")
+    OwnifySyncOutcomeKind.SERVER_TROUBLE -> tr("Ownify had een probleem — wordt vanzelf opnieuw geprobeerd")
+    OwnifySyncOutcomeKind.READ_FAILED -> tr("Health Connect kon niet worden gelezen — wordt opnieuw geprobeerd")
+    OwnifySyncOutcomeKind.NEEDS_HEALTH_ACCESS -> tr("Geef toegang tot Health Connect om automatisch te synchroniseren")
+    OwnifySyncOutcomeKind.NEEDS_BACKGROUND_ACCESS -> tr("Synchroniseert terwijl Ownify open is; sta de achtergrond toe voor daarna")
+    OwnifySyncOutcomeKind.NO_HEALTH_CONNECT -> tr("Health Connect is niet beschikbaar op deze telefoon")
+    OwnifySyncOutcomeKind.NOT_CONNECTED -> tr("Niet verbonden met Ownify")
+    OwnifySyncOutcomeKind.EXPIRED -> tr("De koppeling met Ownify is verlopen")
 }
 
 /** Health Connect's own page in the Play Store: to install it, or bring it up to date. */

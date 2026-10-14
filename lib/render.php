@@ -6,6 +6,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 if (!function_exists('e')) {
     /** Escape for HTML text/attribute context. */
     function e(?string $value): string
@@ -61,7 +63,17 @@ if (!function_exists('score_text')) {
     /** Display value for a score: the number, or an em dash while empty. */
     function score_text(mixed $value): string
     {
-        return has_value($value) ? (string) $value : '—';
+        if (!has_value($value)) {
+            return '—';
+        }
+
+        /* A fraction in the reader's way of writing it: 1,5 or 1.5. */
+        if (is_float($value) && function_exists('i18n_number')) {
+            $text = (string) $value;
+            return i18n_number($value, str_contains($text, '.') ? strlen(substr((string) strrchr($text, '.'), 1)) : 0, false);
+        }
+
+        return (string) $value;
     }
 }
 
@@ -94,15 +106,11 @@ if (!function_exists('today_parts')) {
     {
         $date = $date ?? new DateTimeImmutable('now');
 
-        $days = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'];
-        $months = [
-            1 => 'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-            'juli', 'augustus', 'september', 'oktober', 'november', 'december',
-        ];
-
+        /* In the reader's language: "dinsdag" / "15 september", or
+           "Tuesday" / "September 15". */
         return [
-            'weekday' => $days[(int) $date->format('w')],
-            'date'    => sprintf('%d %s', (int) $date->format('j'), $months[(int) $date->format('n')]),
+            'weekday' => i18n_weekday((int) $date->format('w')),
+            'date'    => i18n_date($date, 'day_month'),
         ];
     }
 }
@@ -113,7 +121,7 @@ if (!function_exists('today_label')) {
     {
         $parts = today_parts($date);
 
-        return $parts['weekday'] . ' ' . $parts['date'];
+        return i18n_locale() === 'en' ? $parts['weekday'] . ', ' . $parts['date'] : $parts['weekday'] . ' ' . $parts['date'];
     }
 }
 

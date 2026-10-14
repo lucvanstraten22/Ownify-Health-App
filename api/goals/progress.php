@@ -44,15 +44,25 @@ if ($goal['status'] === 'completed') {
 }
 
 $raw   = $_POST['value'] ?? null;
-$raw   = $raw === null ? '' : str_replace(',', '.', trim((string) $raw));
+$raw   = $raw === null ? '' : trim((string) $raw);
 $value = null;
 
 if ($raw !== '') {
-    if (!is_numeric($raw) || (float) $raw < 0 || (float) $raw > 1e9) {
+    /* "72,5" or "72.5", "1.234" or "1,234": as the person writes it. */
+    $typed = i18n_parse_number($raw);
+
+    if ($typed === null || $typed < 0 || $typed > 1e9) {
         api_fail('Vul een geldig getal in.', 422);
     }
 
-    $value = (float) $raw;
+    $value = $typed;
+
+    /* Typed in the goal's shown unit (`input_units`, Instellingen ›
+       Eenheden): a result of 176 lb is kept as 79.8 kg, once, here. A form
+       that does not say typed the stored unit, as before. */
+    if (($_POST['input_units'] ?? 'metric') === 'imperial') {
+        $value = goal_unit_typed($value, goal_unit_shown(goal_manual_unit($goal['target_unit'] ?? null), true));
+    }
 }
 
 $written = goal_record_entry($userId, $goal, $value);

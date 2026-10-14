@@ -20,7 +20,7 @@ $suffix  = $session['detail'];
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar <?= e($session['back']) ?>">
+                        aria-label="<?= e(tf('Terug naar %s', $session['back'])) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e($session['back']) ?></span>
                 </button>
@@ -46,7 +46,7 @@ $suffix  = $session['detail'];
                         <div class="chart__range is-active" data-range="session"
                              data-x="<?= e((string) json_encode($heart['x'])) ?>"
                              data-y="<?= e((string) json_encode((object) ['heart' => $heart['lines'][0]['y'] ?? []])) ?>">
-                            <?php component('heart-plot', $data + ['plot' => $heart, 'plot_id' => 's' . $session['id'], 'series' => 'Hartslag', 'suffix' => $suffix, 'empty' => $heart['empty']]); ?>
+                            <?php component('heart-plot', $data + ['plot' => $heart, 'plot_id' => 's' . $session['id'], 'series' => t('Hartslag'), 'suffix' => $suffix, 'empty' => $heart['empty']]); ?>
                         </div>
                     </div>
                     <?php if ($heart['has_data']): ?>

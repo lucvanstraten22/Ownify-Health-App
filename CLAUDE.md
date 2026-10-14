@@ -25,6 +25,17 @@ for Dark, `:root[data-theme="light"]` for White) and `OwnifyPalette` /
 — never a literal white, black or ground grey in a component. Anything new
 must look right in both themes. `docs/THEME.md` explains the roles.
 
+## Two languages, two unit systems
+
+Ownify is Dutch and English, metric and imperial, on both apps:
+`docs/I18N.md`. Code and config are written in Dutch; every user-facing
+string goes through `t()`/`tf()`/`tn()` (PHP), `T.t()`… (scripts) or
+`tr()`/`trf()`/`trn()` (Kotlin) with the literal Dutch, and gets its English
+in `lang/en/` — then `php tools/i18n-build.php` (and `--check` must pass).
+Numbers and dates go through the i18n helpers, never a fixed Dutch format.
+Measurements are stored in kg, cm, km/m, °C and seconds per km and are only
+converted where they are shown or typed; never store a converted value.
+
 ## Charts over time
 
 Every chart that shows something over days, on both apps — the Verloop,
@@ -41,7 +52,7 @@ dates or positions.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 14.2**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 15.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher.
@@ -55,4 +66,4 @@ by 10.0):
 
 Every commit title starts with the new version number, then the
 description: `10.1 Show the version in commit titles`.
-The next version is 14.3 for a small update, or 15.0 for a big one.
+The next version is 15.1 for a small update, or 16.0 for a big one.

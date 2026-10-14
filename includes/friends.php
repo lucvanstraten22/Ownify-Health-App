@@ -45,6 +45,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/user.php';
 
@@ -153,7 +155,7 @@ if (!function_exists('friend_pair')) {
             error_log('[ownify] friends: user_profiles has no allow_friend_requests yet, so the switch cannot be saved — '
                 . 'import database/migrations/011-friend-requests-setting.sql');
 
-            return ['ok' => false, 'error' => 'Deze instelling kan nog niet worden opgeslagen.'];
+            return ['ok' => false, 'error' => t('Deze instelling kan nog niet worden opgeslagen.')];
         }
 
         db_run(
@@ -182,10 +184,10 @@ if (!function_exists('friend_pair')) {
         $username = ltrim(trim($username), '@');
 
         if ($username === '') {
-            return ['ok' => false, 'code' => 'empty', 'error' => 'Vul een gebruikersnaam in.'];
+            return ['ok' => false, 'code' => 'empty', 'error' => t('Vul een gebruikersnaam in.')];
         }
 
-        $missing = ['ok' => false, 'code' => 'not_found', 'error' => 'Er is geen account met deze gebruikersnaam.'];
+        $missing = ['ok' => false, 'code' => 'not_found', 'error' => t('Er is geen account met deze gebruikersnaam.')];
 
         /* Nothing that could not be a username is looked up at all. */
         if (mb_strlen($username) > 30 || !preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
@@ -224,11 +226,11 @@ if (!function_exists('friend_pair')) {
         $open     = $relation === 'none' && friend_requests_allowed($otherId);
 
         $status = match ($relation) {
-            'self'     => 'Dit ben jij',
-            'friends'  => 'Jullie zijn vrienden',
-            'outgoing' => 'Verzoek verstuurd',
-            'incoming' => 'Wil vrienden met je worden',
-            default    => $open ? 'Nog geen vrienden' : 'Accepteert geen vriendverzoeken',
+            'self'     => t('Dit ben jij'),
+            'friends'  => t('Jullie zijn vrienden'),
+            'outgoing' => t('Verzoek verstuurd'),
+            'incoming' => t('Wil vrienden met je worden'),
+            default    => $open ? t('Nog geen vrienden') : t('Accepteert geen vriendverzoeken'),
         };
 
         return [
@@ -256,33 +258,33 @@ if (!function_exists('friend_pair')) {
             => ['ok' => false, 'code' => $code, 'error' => $error, 'relation' => friend_relation($fromUserId, $toUserId)];
 
         if ($fromUserId === $toUserId) {
-            return $fail('self', 'Je kunt jezelf niet toevoegen.');
+            return $fail('self', t('Je kunt jezelf niet toevoegen.'));
         }
 
         $other = user_public_profile($toUserId);
 
         if ($other === null) {
-            return $fail('not_found', 'Er is geen account met deze gebruikersnaam.');
+            return $fail('not_found', t('Er is geen account met deze gebruikersnaam.'));
         }
 
         if (block_exists($fromUserId, $toUserId)) {
             // Deliberately vague: a block should not be announced.
-            return $fail('blocked', 'Dit verzoek kan niet worden verstuurd.');
+            return $fail('blocked', t('Dit verzoek kan niet worden verstuurd.'));
         }
 
         $name = (string) $other['username'];
 
         switch (friend_relation($fromUserId, $toUserId)) {
             case 'friends':
-                return $fail('friends', 'Jullie zijn al vrienden.');
+                return $fail('friends', t('Jullie zijn al vrienden.'));
             case 'outgoing':
-                return $fail('outgoing', 'Je hebt ' . $name . ' al een vriendverzoek gestuurd.');
+                return $fail('outgoing', tf('Je hebt %s al een vriendverzoek gestuurd.', $name));
             case 'incoming':
-                return $fail('incoming', $name . ' heeft jou al een vriendverzoek gestuurd. Je kunt het hier accepteren of weigeren.');
+                return $fail('incoming', tf('%s heeft jou al een vriendverzoek gestuurd. Je kunt het hier accepteren of weigeren.', $name));
         }
 
         if (!friend_requests_allowed($toUserId)) {
-            return $fail('closed', $name . ' accepteert geen vriendverzoeken.');
+            return $fail('closed', tf('%s accepteert geen vriendverzoeken.', $name));
         }
 
         /* Fifty friends, both ways. Checked here rather than at the endpoint
@@ -290,11 +292,11 @@ if (!function_exists('friend_pair')) {
            recipient too — otherwise a full account could be pushed past the
            limit by other people asking. */
         if (count(friend_ids($fromUserId)) >= FRIEND_LIMIT) {
-            return $fail('limit', 'Je hebt het maximum van ' . FRIEND_LIMIT . ' vrienden bereikt.');
+            return $fail('limit', tf('Je hebt het maximum van %d vrienden bereikt.', FRIEND_LIMIT));
         }
 
         if (count(friend_ids($toUserId)) >= FRIEND_LIMIT) {
-            return $fail('limit', 'Dit account heeft het maximum aantal vrienden bereikt.');
+            return $fail('limit', t('Dit account heeft het maximum aantal vrienden bereikt.'));
         }
 
         /* A new request, or a declined one asked again. One statement, so two
@@ -318,9 +320,9 @@ if (!function_exists('friend_pair')) {
 
         return match ($relation) {
             'outgoing' => ['ok' => true, 'code' => null, 'error' => null, 'relation' => 'outgoing'],
-            'incoming' => $fail('incoming', $name . ' heeft jou al een vriendverzoek gestuurd. Je kunt het hier accepteren of weigeren.'),
-            'friends'  => $fail('friends', 'Jullie zijn al vrienden.'),
-            default    => $fail('failed', 'Het verzoek kon niet worden verstuurd.'),
+            'incoming' => $fail('incoming', tf('%s heeft jou al een vriendverzoek gestuurd. Je kunt het hier accepteren of weigeren.', $name)),
+            'friends'  => $fail('friends', t('Jullie zijn al vrienden.')),
+            default    => $fail('failed', t('Het verzoek kon niet worden verstuurd.')),
         };
     }
 
@@ -331,32 +333,32 @@ if (!function_exists('friend_pair')) {
     function friend_respond(int $userId, int $otherId, string $action): array
     {
         if (!in_array($action, ['accepted', 'declined'], true)) {
-            return ['ok' => false, 'code' => 'invalid', 'error' => 'Onbekende actie.'];
+            return ['ok' => false, 'code' => 'invalid', 'error' => t('Onbekende actie.')];
         }
 
         $row = friend_row($userId, $otherId);
 
         if ($row === null || $row['status'] !== 'pending' || $userId === $otherId) {
-            return ['ok' => false, 'code' => 'gone', 'error' => 'Dit verzoek staat niet meer open.'];
+            return ['ok' => false, 'code' => 'gone', 'error' => t('Dit verzoek staat niet meer open.')];
         }
 
         if ((int) $row['requested_by'] === $userId) {
             return ['ok' => false, 'code' => 'own', 'error' => $action === 'accepted'
-                ? 'Je kunt je eigen verzoek niet accepteren.'
-                : 'Je kunt je eigen verzoek niet weigeren.'];
+                ? t('Je kunt je eigen verzoek niet accepteren.')
+                : t('Je kunt je eigen verzoek niet weigeren.')];
         }
 
         if ($action === 'accepted') {
             if (block_exists($userId, $otherId)) {
-                return ['ok' => false, 'code' => 'blocked', 'error' => 'Dit verzoek kan niet worden geaccepteerd.'];
+                return ['ok' => false, 'code' => 'blocked', 'error' => t('Dit verzoek kan niet worden geaccepteerd.')];
             }
 
             if (count(friend_ids($userId)) >= FRIEND_LIMIT) {
-                return ['ok' => false, 'code' => 'limit', 'error' => 'Je hebt het maximum van ' . FRIEND_LIMIT . ' vrienden bereikt.'];
+                return ['ok' => false, 'code' => 'limit', 'error' => tf('Je hebt het maximum van %d vrienden bereikt.', FRIEND_LIMIT)];
             }
 
             if (count(friend_ids($otherId)) >= FRIEND_LIMIT) {
-                return ['ok' => false, 'code' => 'limit', 'error' => 'Dit account heeft het maximum aantal vrienden bereikt.'];
+                return ['ok' => false, 'code' => 'limit', 'error' => t('Dit account heeft het maximum aantal vrienden bereikt.')];
             }
         }
 
@@ -367,7 +369,7 @@ if (!function_exists('friend_pair')) {
         );
 
         if ($done === null || $done->rowCount() === 0) {
-            return ['ok' => false, 'code' => 'gone', 'error' => 'Dit verzoek staat niet meer open.'];
+            return ['ok' => false, 'code' => 'gone', 'error' => t('Dit verzoek staat niet meer open.')];
         }
 
         return ['ok' => true, 'code' => null, 'error' => null, 'relation' => $action === 'accepted' ? 'friends' : 'none'];
@@ -384,7 +386,7 @@ if (!function_exists('friend_pair')) {
         );
 
         if ($done === null || $done->rowCount() === 0) {
-            return ['ok' => false, 'code' => 'not_friends', 'error' => 'Jullie zijn geen vrienden.'];
+            return ['ok' => false, 'code' => 'not_friends', 'error' => t('Jullie zijn geen vrienden.')];
         }
 
         return ['ok' => true, 'code' => null, 'error' => null, 'relation' => 'none'];
@@ -402,7 +404,7 @@ if (!function_exists('friend_pair')) {
         );
 
         if ($done === null || $done->rowCount() === 0) {
-            return ['ok' => false, 'code' => 'gone', 'error' => 'Er staat geen verzoek van jou open.'];
+            return ['ok' => false, 'code' => 'gone', 'error' => t('Er staat geen verzoek van jou open.')];
         }
 
         return ['ok' => true, 'code' => null, 'error' => null, 'relation' => 'none'];
@@ -499,7 +501,7 @@ if (!function_exists('friend_pair')) {
     function user_block_add(int $blockerId, int $blockedId): array
     {
         if ($blockerId === $blockedId) {
-            return ['ok' => false, 'error' => 'Je kunt jezelf niet blokkeren.'];
+            return ['ok' => false, 'error' => t('Je kunt jezelf niet blokkeren.')];
         }
 
         db_run(

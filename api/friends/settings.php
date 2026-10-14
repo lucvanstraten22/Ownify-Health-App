@@ -30,6 +30,6 @@ if (!$result['ok']) {
 api_ok([
     'allow_requests' => friend_requests_allowed($userId),
     'message'        => $value === '1'
-        ? 'Anderen kunnen je een vriendverzoek sturen.'
-        : 'Niemand kan je nu een nieuw vriendverzoek sturen.',
+        ? t('Anderen kunnen je een vriendverzoek sturen.')
+        : t('Niemand kan je nu een nieuw vriendverzoek sturen.'),
 ]);

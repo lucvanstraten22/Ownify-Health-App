@@ -26,7 +26,7 @@ header('Referrer-Policy: no-referrer');     // the code must not leak onward
 $app = '../../';
 
 if (!db_available() || !google_signin_configured()) {
-    auth_flash('Inloggen met Google is op dit moment niet beschikbaar.', 'error', 'account');
+    auth_flash(t('Inloggen met Google is op dit moment niet beschikbaar.'), 'error', 'account');
     header('Location: ' . $app, true, 303);
     exit;
 }
@@ -42,7 +42,7 @@ if ($result['mode'] === 'revoke') {
         'account',
         $result['outcome'] === 'revoked' ? null : [
             'href'  => GOOGLE_ACCOUNT_CONNECTIONS_URL,
-            'label' => 'Apps met toegang tot je Google-account',
+            'label' => t('Apps met toegang tot je Google-account'),
         ]
     );
 

@@ -37,7 +37,7 @@ header("Content-Security-Policy: frame-ancestors 'none'");
 $app = '../../../';
 
 if (!db_available() || !polar_stored()) {
-    auth_flash('Polar koppelen is op dit moment niet beschikbaar.', 'error', 'settings-devices');
+    auth_flash(t('Polar koppelen is op dit moment niet beschikbaar.'), 'error', 'settings-devices');
     header('Location: ' . $app, true, 303);
     exit;
 }
@@ -69,18 +69,18 @@ if ($result['client'] === 'web') {
 
 /* ------------------------------------------- the app's browser: a page */
 
-$data  = require dirname(__DIR__, 3) . '/config/dashboard.php';
+$data  = config_copy('dashboard');
 $title = match ($outcome) {
-    'confirm'   => 'Polar koppelen',
-    'connected' => 'Polar is gekoppeld',
-    'cancelled' => 'Niet gekoppeld',
-    default     => 'Koppelen is niet gelukt',
+    'confirm'   => t('Polar koppelen'),
+    'connected' => t('Polar is gekoppeld'),
+    'cancelled' => t('Niet gekoppeld'),
+    default     => t('Koppelen is niet gelukt'),
 };
 
 $page = static function () use ($data, $title, $outcome, $result): void {
     ?>
 <!DOCTYPE html>
-<html lang="nl" data-theme="<?= e(app_theme()) ?>">
+<html lang="<?= e(i18n_locale()) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>">
 <head>
     <base href="../../../">
 <?php component('document-head', ['app' => $data['app'], 'styles' => ['theme', 'components', 'connect']]); ?>
@@ -92,27 +92,27 @@ $page = static function () use ($data, $title, $outcome, $result): void {
 
         <?php if ($outcome === 'confirm'): ?>
             <p class="connect__text">
-                Je Polar-gegevens (trainingen, slaap, stappen, hartslag en Nightly Recharge) worden gekoppeld aan het Ownify-account
-                <strong><?= e($result['confirm']['username']) ?></strong>.
+                <?= sprintf(e(t('Je Polar-gegevens (trainingen, slaap, stappen, hartslag en Nightly Recharge) worden gekoppeld aan het Ownify-account %s.')),
+                    '<strong>' . e($result['confirm']['username']) . '</strong>') ?>
             </p>
             <?php if (!empty($result['confirm']['signed_in_as'])): ?>
                 <p class="connect__text connect__warn" role="alert">
-                    Let op: in deze browser ben je ingelogd als <strong><?= e($result['confirm']['signed_in_as']) ?></strong>,
-                    niet als <strong><?= e($result['confirm']['username']) ?></strong>. Heb je het koppelen niet zelf in de app gestart, kies dan Annuleren.
+                    <?= sprintf(e(t('Let op: in deze browser ben je ingelogd als %1$s, niet als %2$s. Heb je het koppelen niet zelf in de app gestart, kies dan Annuleren.')),
+                        '<strong>' . e($result['confirm']['signed_in_as']) . '</strong>', '<strong>' . e($result['confirm']['username']) . '</strong>') ?>
                 </p>
             <?php else: ?>
-                <p class="connect__text connect__text--quiet">Is dit niet jouw account? Kies dan Annuleren.</p>
+                <p class="connect__text connect__text--quiet"><?= e(t('Is dit niet jouw account? Kies dan Annuleren.')) ?></p>
             <?php endif; ?>
             <form class="connect__actions" method="post" action="api/integrations/polar/callback.php">
                 <input type="hidden" name="token" value="<?= e($result['confirm']['token']) ?>">
-                <button class="btn btn--primary press" type="submit" name="action" value="confirm">Koppelen</button>
-                <button class="btn press" type="submit" name="action" value="cancel">Annuleren</button>
+                <button class="btn btn--primary press" type="submit" name="action" value="confirm"><?= e(t('Koppelen')) ?></button>
+                <button class="btn press" type="submit" name="action" value="cancel"><?= e(t('Annuleren')) ?></button>
             </form>
         <?php elseif ($outcome === 'connected'): ?>
-            <p class="connect__text">Je gegevens worden nu opgehaald. Ga terug naar de Ownify-app; dit venster kun je sluiten.</p>
+            <p class="connect__text"><?= e(t('Je gegevens worden nu opgehaald. Ga terug naar de Ownify-app; dit venster kun je sluiten.')) ?></p>
         <?php else: ?>
-            <p class="connect__text"><?= e($result['message']) ?></p>
-            <p class="connect__text connect__text--quiet">Ga terug naar de Ownify-app; dit venster kun je sluiten.</p>
+            <p class="connect__text"><?= e(t((string) $result['message'])) ?></p>
+            <p class="connect__text connect__text--quiet"><?= e(t('Ga terug naar de Ownify-app; dit venster kun je sluiten.')) ?></p>
         <?php endif; ?>
     </main>
 </body>

@@ -89,7 +89,7 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
                 <?php endif; ?>
 
                 <div class="compass-plot"<?php if ($chart['has_data']): ?>
-                     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
+                     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="health-history-hint-<?= e($suffix) ?>"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
                     <?php /* The grid's levels, named: the height is the period's own,

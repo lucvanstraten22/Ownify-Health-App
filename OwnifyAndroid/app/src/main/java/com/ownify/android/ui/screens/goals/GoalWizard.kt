@@ -1,5 +1,10 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.i18n.OwnifyFormat
+import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.trn
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -89,10 +94,7 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyType
 import com.ownify.android.ui.theme.LocalAccent
-import java.math.RoundingMode
-import java.text.NumberFormat
 import java.time.LocalDate
-import java.util.Locale
 import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -184,7 +186,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
         saving = true
         error = null
         scope.launch {
-            when (val outcome = OwnifyActions.form(context, "api/goals/create.php", payload(draft), "Dit doel kon niet worden opgeslagen.")) {
+            when (val outcome = OwnifyActions.form(context, "api/goals/create.php", payload(draft, goals), tr("Dit doel kon niet worden opgeslagen."))) {
                 is Outcome.Done -> {
                     createdId = outcome.body.opt("goal_id")?.toString()
                     done = true
@@ -221,7 +223,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                     }
                     val stepLabel = words.steps.getOrNull(step - 1)?.label.orEmpty()
                     T(
-                        if (done) words.steps.getOrNull(TOTAL - 1)?.label.orEmpty() else "Stap $step van $TOTAL · $stepLabel",
+                        if (done) words.steps.getOrNull(TOTAL - 1)?.label.orEmpty() else trf("Stap %1\$d van %2\$d", step, TOTAL) + " · " + stepLabel,
                         JStyle.Tiny,
                         Modifier.padding(top = Ownify.Space2).semantics { liveRegion = LiveRegionMode.Polite }
                     )
@@ -545,7 +547,7 @@ private fun TargetStep(draft: Draft, goals: Goals) {
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
                 verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
             ) {
-                units.forEach { unit -> Suggestion(unit) { draft.unit = unit } }
+                units.forEach { unit -> Suggestion(unitLabel(unit, goals.unitLabels)) { draft.unit = unitLabel(unit, goals.unitLabels) } }
             }
         }
     }
@@ -560,7 +562,7 @@ private fun TargetStep(draft: Draft, goals: Goals) {
                 label = if (type == "streak") words["target_streak"] else words["target_days"],
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
             )
-            T(if (type == "streak") "dagen op rij" else "dagen", JStyle.Meta)
+            T(if (type == "streak") tr("dagen op rij") else tr("dagen"), JStyle.Meta)
         }
     }
 
@@ -634,8 +636,8 @@ private fun DurationStep(draft: Draft, goals: Goals) {
         ) {
             T(duration.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
             T(
-                if (ok) "t/m ${dutchDate(endDate(duration.days))}"
-                else (words.copy["too_short"] ?: "Te kort voor %s").replaceFirst("%s", daysText(draft.days) + if (draft.type == "streak") " op rij" else ""),
+                if (ok) trf("t/m %s", dutchDate(endDate(duration.days)))
+                else (words.copy["too_short"] ?: tr("Te kort voor %s")).replaceFirst("%s", if (draft.type == "streak") trf("%s op rij", daysText(draft.days)) else daysText(draft.days)),
                 OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true),
                 Modifier.padding(top = 2.dp)
             )
@@ -644,7 +646,7 @@ private fun DurationStep(draft: Draft, goals: Goals) {
 
     val chosen = goals.durations.firstOrNull { it.key == draft.duration }
     if (chosen != null) {
-        WizardNote("Van ${dutchDate(LocalDate.now())} t/m ${dutchDate(endDate(chosen.days))} · nog ${spanText(chosen.days)}", null)
+        WizardNote(trf("Van %1\$s t/m %2\$s · nog %3\$s", dutchDate(LocalDate.now()), dutchDate(endDate(chosen.days)), spanText(chosen.days)), null)
     }
 }
 
@@ -670,8 +672,8 @@ private fun SummaryStep(draft: Draft, goals: Goals, hasPrimary: Boolean) {
         words["summary_goal"] to draft.name.trim().ifEmpty { "—" },
         words["summary_category"] to (category?.let { "${it.label} · ${type?.label.orEmpty()}" } ?: "—"),
         words["summary_target"] to (targetText(draft, goals) ?: "—"),
-        words["summary_source"] to (if (draft.sourceKind == "manual") words.copy["source_manual"] ?: "Geen data mogelijk" else draft.sourceLabel.ifEmpty { "—" }),
-        words["summary_duration"] to (duration?.let { "${it.label} · t/m ${dutchDate(endDate(it.days))}" } ?: "—")
+        words["summary_source"] to (if (draft.sourceKind == "manual") words.copy["source_manual"] ?: tr("Geen data mogelijk") else draft.sourceLabel.ifEmpty { "—" }),
+        words["summary_duration"] to (duration?.let { it.label + " · " + trf("t/m %s", dutchDate(endDate(it.days))) } ?: "—")
     )
 
     // .wizard__summary
@@ -693,7 +695,7 @@ private fun SummaryStep(draft: Draft, goals: Goals, hasPrimary: Boolean) {
 
     FieldLabel(words["priority_label"], Modifier.padding(top = Ownify.Space5))
     RangeSwitch(
-        options = listOf("primary" to goals.labels["primary_chip"].orEmpty(), "secondary" to "Secundair"),
+        options = listOf("primary" to goals.labels["primary_chip"].orEmpty(), "secondary" to tr("Secundair")),
         selected = draft.priority,
         onSelect = { draft.priority = it },
         wide = true,
@@ -730,7 +732,7 @@ private fun DoneStep(draft: Draft, goals: Goals) {
             targetLabel = targetText(draft, goals) ?: "—",
             paused = false,
             completed = false,
-            deadline = duration?.let { "Nog ${spanText(it.days)} · t/m ${dutchDate(endDate(it.days))}" }.orEmpty(),
+            deadline = duration?.let { trf("Nog %s", spanText(it.days)) + " · " + trf("t/m %s", dutchDate(endDate(it.days))) }.orEmpty(),
             pausedChip = null
         ),
         variant = if (draft.priority == "primary") "primary" else "secondary",
@@ -874,16 +876,16 @@ private fun targetText(draft: Draft, goals: Goals): String? {
         draft.type == "milestone" -> {
             if (!positive(draft.value)) return null
             withUnit(draft.value, draft.amountUnit) + when (draft.better) {
-                "decrease" -> " · " + words["better_down"].lowercase(Locale.forLanguageTag("nl"))
-                "increase" -> " · " + words["better_up"].lowercase(Locale.forLanguageTag("nl"))
+                "decrease" -> " · " + words["better_down"].lowercase(OwnifyFormat.locale())
+                "increase" -> " · " + words["better_up"].lowercase(OwnifyFormat.locale())
                 else -> ""
             }
         }
         draft.countsDays -> {
             if (!wholeDays(draft.days)) return null
-            var text = daysText(draft.days) + if (draft.type == "streak") " op rij" else ""
+            var text = if (draft.type == "streak") trf("%s op rij", daysText(draft.days)) else daysText(draft.days)
             if (draft.needsDaily && positive(draft.daily)) {
-                text += " · " + (if (draft.floor == "decrease") "hoogstens " else "minstens ") + withUnit(draft.daily, draft.sourceUnit) + " per dag"
+                text += " · " + trf("%s per dag", withUnit(draft.daily, draft.sourceUnit).let { if (draft.floor == "decrease") trf("hoogstens %s", it) else trf("minstens %s", it) })
             }
             text
         }
@@ -892,8 +894,12 @@ private fun targetText(draft: Draft, goals: Goals): String? {
     }
 }
 
-/** What api/goals/create.php expects: only what applies to the chosen type. */
-private fun payload(draft: Draft): Map<String, String> = buildMap {
+/**
+ * What api/goals/create.php expects: only what applies to the chosen type,
+ * with the units the figures were typed in (Instellingen → Eenheden) — the
+ * server keeps them in kg, km, cm and °C.
+ */
+private fun payload(draft: Draft, goals: Goals): Map<String, String> = buildMap {
     put("name", draft.name)
     put("category", draft.category ?: "other")
     put("type", draft.type.orEmpty())
@@ -910,31 +916,39 @@ private fun payload(draft: Draft): Map<String, String> = buildMap {
         }
     } else {
         put("target_value", draft.value)
-        if (!draft.auto) put("target_unit", draft.unit)
+        if (!draft.auto) put("target_unit", unitKey(draft.unit, goals.unitLabels))
         if (draft.type == "milestone") put("direction", draft.better.orEmpty())
     }
+    put("input_units", OwnifyLanguage.units)
 }
 
 // ---------------------------------------------- goal-wizard.js, word for word
 
-private val MONTHS = listOf("jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec")
+/** "4 okt", "Oct 4": dates in the reader's language, as lib/goals.php writes them. */
+internal fun dutchDate(date: LocalDate): String = OwnifyFormat.date(date, "day_mon")
 
-/** "4 okt". */
-internal fun dutchDate(date: LocalDate): String = "${date.dayOfMonth} ${MONTHS[date.monthValue - 1]}"
+/** A unit as the reader sees it ("lb", "steps"), from the one kept ("kg", "stappen"). */
+internal fun unitLabel(unit: String, labels: Map<String, String>): String = labels[unit] ?: unit
+
+/** …and back: what was typed or tapped, as the unit kept. */
+internal fun unitKey(text: String, labels: Map<String, String>): String {
+    val typed = text.trim()
+    return labels.entries.lastOrNull { it.value == typed }?.key ?: typed
+}
 
 /** Today plus [days], on the phone's own calendar. */
 internal fun endDate(days: Int): LocalDate = LocalDate.now().plusDays(days.toLong())
 
 /** "3 maanden", "6 weken", "1 jaar". */
 internal fun spanText(days: Int): String = when {
-    days >= 330 -> Math.round(days / 365.0).let { if (it == 1L) "1 jaar" else "$it jaar" }
-    days >= 60 -> "${Math.round(days / 30.0)} maanden"
-    days >= 45 -> "${Math.round(days / 7.0)} weken"
-    else -> if (days == 1) "1 dag" else "$days dagen"
+    days >= 330 -> Math.round(days / 365.0).let { if (it == 1L) tr("1 jaar") else trf("%d jaar", it) }
+    days >= 60 -> trf("%d maanden", Math.round(days / 30.0))
+    days >= 45 -> trf("%d weken", Math.round(days / 7.0))
+    else -> trn(days, "%d dag", "%d dagen")
 }
 
-/** "1 dag", "30 dagen" — the number as it was typed. */
-internal fun daysText(n: String): String = if (jsNumber(n) == 1.0) "1 dag" else "$n dagen"
+/** "1 dag", "30 dagen". */
+internal fun daysText(n: String): String = trn(jsNumber(n)?.toInt() ?: 0, "%d dag", "%d dagen")
 
 /** JavaScript's `Number(text)` for what can be typed here: blank is 0, anything unreadable is null. */
 internal fun jsNumber(text: String): Double? {
@@ -944,7 +958,7 @@ internal fun jsNumber(text: String): Double? {
 }
 
 internal fun positive(text: String): Boolean {
-    val n = jsNumber(text.replaceFirst(',', '.')) ?: return false
+    val n = OwnifyFormat.parseNumber(text) ?: return false
     return text.trim().isNotEmpty() && n > 0
 }
 
@@ -953,16 +967,10 @@ internal fun wholeDays(text: String): Boolean {
     return text.trim().isNotEmpty() && n >= 1 && Math.floor(n) == n && n <= 365
 }
 
-/** "10.000": the way the rest of the app writes a number (`toLocaleString('nl-NL')`, at most two decimals). */
+/** "10.000" or "10,000": the way the rest of the app writes a number, at most two decimals. */
 internal fun dutchNumber(text: String): String {
-    val n = jsNumber(text.replaceFirst(',', '.')) ?: return text
-    val format = NumberFormat.getNumberInstance(Locale.forLanguageTag("nl-NL")).apply {
-        maximumFractionDigits = 2
-        roundingMode = RoundingMode.HALF_UP
-    }
-    // JavaScript rounds the shortest decimal that reads back as the number
-    // ("2.355" → 2,36), not its binary value (2.35499…, which would give 2,35).
-    return format.format(java.math.BigDecimal(n.toString()))
+    val n = OwnifyFormat.parseNumber(text) ?: return text
+    return OwnifyFormat.numberTrim(n, 2)
 }
 
 internal fun withUnit(number: String, unit: String): String =

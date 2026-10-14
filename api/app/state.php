@@ -37,7 +37,7 @@ api_require_database();
 
 $userId = api_require_account_user();
 
-$data = require dirname(__DIR__, 2) . '/config/dashboard.php';
+$data = config_copy('dashboard');
 
 /* The session's own state when the website asks, the token's account when
    the app does — the same shape either way. */

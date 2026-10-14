@@ -44,8 +44,8 @@ if (array_key_exists('ai_consent', $_POST)) {
     api_ok([
         'ai_consent' => $allowed,
         'message'    => $allowed
-            ? 'Ownify AI staat aan.'
-            : 'Ownify AI staat uit. Er gaat niets naar Gemini.',
+            ? t('Ownify AI staat aan.')
+            : t('Ownify AI staat uit. Er gaat niets naar Gemini.'),
     ]);
 }
 
@@ -66,6 +66,6 @@ $shown = leaderboard_avatar_shown($userId);
 api_ok([
     'leaderboard_avatar' => $shown,
     'message'            => $shown
-        ? 'Je profielfoto staat op de ranglijst.'
-        : 'Op de ranglijst staat nu je initiaal in plaats van je foto.',
+        ? t('Je profielfoto staat op de ranglijst.')
+        : t('Op de ranglijst staat nu je initiaal in plaats van je foto.'),
 ]);

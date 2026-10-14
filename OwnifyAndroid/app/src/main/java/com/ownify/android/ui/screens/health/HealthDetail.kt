@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -95,7 +97,7 @@ import com.ownify.android.ui.design.focusSafely
 @Composable
 fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
-        DetailColumn(scroll, back = "Gezondheid", backAria = "Terug naar Gezondheid") {
+        DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid")) {
             HeroCard(area)
             area.rating?.let { NutritionRating(area, it) }
             // An area drawn — Slaap (docs/SLEEP.md), Training (docs/TRAINING.md) — instead
@@ -130,11 +132,11 @@ private fun HeroCard(area: Area) {
         ScoreRing(
             value = score.value,
             max = score.max,
-            scale = if (empty) "Nog geen gegevens" else "van ${score.max}",
+            scale = if (empty) tr("Nog geen gegevens") else trf("van %s", score.max),
             label = area.label,
             play = play,
             accent = LocalAccent.current,
-            description = "${area.label}: " + if (empty) "nog geen gegevens" else "${score.value} van ${score.max}",
+            description = area.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", score.value, score.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = Ownify.Space4, bottom = Ownify.Space3)
@@ -173,7 +175,7 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
         val rating = value.trim()
         error = null
         if (!Regex("^(10|[1-9])$").matches(rating)) {
-            error = "Kies een cijfer van 1 tot 10."
+            error = tr("Kies een cijfer van 1 tot 10.")
             // health-rating.js: back into the field.
             field.focusSafely()
             return
@@ -181,7 +183,7 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
         focus.clearFocus()
         saving = true
         scope.launch {
-            val outcome = OwnifyActions.form(context, "api/health/rating.php", mapOf("rating" to rating), "Dit kon niet worden opgeslagen.")
+            val outcome = OwnifyActions.form(context, "api/health/rating.php", mapOf("rating" to rating), tr("Dit kon niet worden opgeslagen."))
             saving = false
             when (outcome) {
                 is Outcome.Done -> status = outcome.body.optString("message").ifEmpty { "Opgeslagen." }
@@ -240,7 +242,7 @@ fun EditorError(text: String, modifier: Modifier = Modifier) {
 
 /** `components/metric-tiles.php`: "Vandaag" and its numbers, two to a row. */
 @Composable
-internal fun MetricTiles(tiles: List<Metric>, title: String = "Vandaag", count: Boolean = true) {
+internal fun MetricTiles(tiles: List<Metric>, title: String = tr("Vandaag"), count: Boolean = true) {
     val (play, sight) = rememberPlayOnSight()
     val gap = if (LocalScreen.current.narrow) Ownify.Space2 else Ownify.Space3
 
@@ -268,7 +270,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count:
             .border(1.dp, Ownify.GlassHairline, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .clearAndSetSemantics {
-                contentDescription = "${metric.label}: " + (metric.value?.let { v -> if (metric.unit.isNotEmpty()) "$v ${metric.unit}" else v } ?: "nog geen gegevens")
+                contentDescription = "${metric.label}: " + (metric.value?.let { v -> if (metric.unit.isNotEmpty()) "$v ${metric.unit}" else v } ?: tr("nog geen gegevens"))
             }
     ) {
         T(metric.label, JStyle.Tiny)
@@ -310,7 +312,7 @@ private fun SleepTimeline(timeline: Timeline) {
         }
 
         // .hypnogram
-        val label = timeline.title + if (filled) "" else ": nog geen gegevens"
+        val label = timeline.title + if (filled) "" else ": " + tr("nog geen gegevens")
         if (filled) {
             Row(
                 Modifier

@@ -16,7 +16,7 @@ $auth     = $data['auth'];
 $actions  = $settings['actions'];
 $profile  = $settings['profile'];
 ?>
-<section class="screen page" data-page="settings" aria-label="Instellingen"
+<section class="screen page" data-page="settings" aria-label="<?= e(t('Instellingen')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
@@ -31,7 +31,7 @@ $profile  = $settings['profile'];
                 <!-- Who this is, before anything about the app. -->
                 <button type="button" class="card settings-identity press reveal"
                         data-detail-open="settings-account"
-                        aria-label="Account openen">
+                        aria-label="<?= e(t('Account openen')) ?>">
                     <span class="settings-identity__avatar" aria-hidden="true">
                         <?php if (!empty($profile['avatar'])): ?>
                             <img src="<?= e($profile['avatar']) ?>" alt="">
@@ -42,10 +42,10 @@ $profile  = $settings['profile'];
 
                     <span class="settings-identity__text">
                         <span class="settings-identity__name">
-                            <?= e($auth['signed_in'] ? (string) $profile['username'] : 'Niet ingelogd') ?>
+                            <?= e($auth['signed_in'] ? (string) $profile['username'] : t('Niet ingelogd')) ?>
                         </span>
                         <span class="settings-identity__meta">
-                            <?= e($auth['signed_in'] ? 'Profiel en gegevens beheren' : 'Log in via de accountknop rechtsboven') ?>
+                            <?= e($auth['signed_in'] ? t('Profiel en gegevens beheren') : t('Log in via de accountknop rechtsboven')) ?>
                         </span>
                     </span>
 
@@ -55,7 +55,7 @@ $profile  = $settings['profile'];
                 <?php foreach ($settings['groups'] as $index => $group): ?>
                     <?php
                     /* The account group is the identity card above it. */
-                    if ($group['label'] === 'Account') {
+                    if ($group['label'] === t('Account')) {
                         continue;
                     }
                     component('settings-group', $data + ['group' => $group, 'group_index' => (string) $index]);
@@ -63,7 +63,7 @@ $profile  = $settings['profile'];
                 <?php endforeach; ?>
 
                 <!-- ------------------------------------------ account actions -->
-                <section class="settings-actions reveal" aria-label="Accountacties">
+                <section class="settings-actions reveal" aria-label="<?= e(t('Accountacties')) ?>">
 
                     <button type="button" class="btn settings-logout press" data-settings-logout
                             <?= $auth['signed_in'] ? '' : 'disabled' ?>>

@@ -16,8 +16,8 @@ android {
         targetSdk = 37
 
         // Automatically increased by GitHub Actions for release builds.
-        versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 36
-        versionName = System.getenv("OWNIFY_VERSION_NAME") ?: "14.2"
+        versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 37
+        versionName = System.getenv("OWNIFY_VERSION_NAME") ?: "15.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -82,6 +82,13 @@ android {
                     "robolectric.pixelCopyRenderMode",
                     "hardware"
                 )
+
+                // The tests are a Dutch phone, whatever the machine running
+                // them is (docs/I18N.md); a test of English asks for it
+                // outright. Robolectric's own tests get it from
+                // src/test/resources/robolectric.properties.
+                it.systemProperty("user.language", "nl")
+                it.systemProperty("user.country", "NL")
             }
         }
     }

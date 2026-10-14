@@ -16,6 +16,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var root = document.querySelector('[data-setup]');
     if (!root) { return; }
 
@@ -59,7 +61,7 @@
                 });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             });
     }
 

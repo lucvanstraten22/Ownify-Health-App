@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 14.2'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 15.0'],
             ],
         ],
     ],
@@ -135,7 +135,7 @@ return [
     ],
 
     /* Shown once at the foot of every screen that offers a choice. */
-    'not_saved' => 'Voorkeuren worden nog niet bewaard.',
+    'not_saved' => 'De eerste dag van de week wordt nog niet bewaard.',
 
     /* ========================================================= detail screens
      * Each screen is a list of blocks. The template switches on `type`, so a
@@ -393,14 +393,21 @@ return [
             'icon'  => 'globe',
             'lede'  => 'De taal van de app.',
             'blocks' => [
+                /* Saved on the account (api/profile/preferences.php), so the
+                   website and the app agree. Automatisch: the browser's or the
+                   phone's language, Dutch when that is neither — never stored
+                   as a choice (includes/i18n.php). The language names are each
+                   in their own language, as everywhere. */
                 [
                     'type'     => 'choice',
                     'title'    => 'Taal',
                     'name'     => 'language',
-                    'selected' => 'nl',
+                    'saves'    => true,
+                    'selected' => 'auto',
                     'options'  => [
-                        ['key' => 'nl', 'label' => 'Nederlands', 'note' => 'Standaard'],
-                        ['key' => 'en', 'label' => 'English',    'note' => 'Nog niet vertaald', 'disabled' => true],
+                        ['key' => 'auto', 'label' => 'Automatisch', 'note' => 'Volgt de taal van je apparaat'],
+                        ['key' => 'nl',   'label' => 'Nederlands',  'note' => 'Dutch'],
+                        ['key' => 'en',   'label' => 'English',     'note' => 'Engels'],
                     ],
                 ],
             ],
@@ -418,25 +425,31 @@ return [
                 /* Eenheden: as it was on a screen of its own. */
                 ['type' => 'section', 'title' => 'Eenheden', 'icon' => 'ruler', 'lede' => 'Hoe lengte, gewicht en afstand worden getoond.'],
 
+                /* Saved on the account (api/profile/preferences.php). Only how
+                   values are shown and typed: nothing stored changes. */
                 [
                     'type'     => 'choice',
                     'title'    => 'Stelsel',
                     'name'     => 'units',
+                    'saves'    => true,
                     'selected' => 'metric',
                     'options'  => [
-                        ['key' => 'metric',   'label' => 'Metrisch', 'note' => 'kg · cm · km'],
-                        ['key' => 'imperial', 'label' => 'Imperiaal','note' => 'lb · inch · mijl', 'disabled' => true],
+                        ['key' => 'metric',   'label' => 'Metrisch',  'note' => 'kg · cm · km · °C'],
+                        ['key' => 'imperial', 'label' => 'Imperiaal', 'note' => 'lb · ft/in · mi · °F'],
                     ],
                 ],
 
+                /* Filled in for the units in force (settings_prepare()). */
                 [
                     'type'  => 'rows',
                     'title' => 'Nu in gebruik',
+                    'name'  => 'units_now',
                     'items' => [
-                        ['label' => 'Gewicht',  'value' => 'kilogram (kg)'],
-                        ['label' => 'Lengte',   'value' => 'centimeter (cm)'],
-                        ['label' => 'Afstand',  'value' => 'kilometer (km)'],
-                        ['label' => 'Energie',  'value' => 'kilocalorie (kcal)'],
+                        ['label' => 'Gewicht',     'value' => 'kilogram (kg)'],
+                        ['label' => 'Lengte',      'value' => 'centimeter (cm)'],
+                        ['label' => 'Afstand',     'value' => 'kilometer (km)'],
+                        ['label' => 'Temperatuur', 'value' => 'graden Celsius (°C)'],
+                        ['label' => 'Energie',     'value' => 'kilocalorie (kcal)'],
                     ],
                 ],
 
@@ -495,7 +508,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 14.2'],
+                        ['label' => 'Versie',  'value' => 'Beta 15.0'],
                     ],
                 ],
 

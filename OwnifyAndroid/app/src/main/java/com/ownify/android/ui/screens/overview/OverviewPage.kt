@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.overview
 
+import com.ownify.android.i18n.OwnifyFormat
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -169,13 +172,13 @@ private fun HealthScoreCard(data: AppData) {
                 val date = if (screen.narrow) data.today.date else "${data.today.weekday} ${data.today.date}"
                 T(date, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
             }
-            Chip(data.focusLabel, dot = true, modifier = Modifier.semantics { contentDescription = "Gekozen focus: ${data.focusLabel}" })
+            Chip(data.focusLabel, dot = true, modifier = Modifier.semantics { contentDescription = tr("Gekozen focus") + ": " + data.focusLabel })
         }
 
         ScoreRing(
             value = overall.value,
             max = overall.max,
-            scale = if (empty) overall.caption else "van ${overall.max}",
+            scale = if (empty) overall.caption else trf("van %s", overall.max),
             label = overall.label,
             play = play,
             modifier = Modifier
@@ -188,8 +191,8 @@ private fun HealthScoreCard(data: AppData) {
         val label = if (!compass.available) Modifier else Modifier.semantics(mergeDescendants = true) {
             role = Role.Button
             contentDescription = overall.label + ": " +
-                (if (empty) overall.caption.lowercase() else "${overall.value} van ${overall.max}") +
-                (compass.direction?.let { ", " + it.label.lowercase() } ?: "")
+                (if (empty) overall.caption.lowercase(OwnifyFormat.locale()) else trf("%1\$s van %2\$s", overall.value, overall.max)) +
+                (compass.direction?.let { ", " + it.label.lowercase(OwnifyFormat.locale()) } ?: "")
             onClick(label = compass.open) { open(); true }
         }
         Row(Modifier.fillMaxWidth().then(label), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -272,7 +275,7 @@ private fun GoalTrack(goal: GoalCard, set: Boolean, play: Boolean) {
     val hovered by hover.collectIsHoveredAsState()
     var held by remember { mutableStateOf(false) }
     val share = ((goal.progress ?: 0) / 100f).coerceIn(0f, 1f)
-    val reading = goal.reading ?: "${goal.progress}% van je doel"
+    val reading = goal.reading ?: trf("%d%% van je doel", goal.progress ?: 0)
     val shown = set && (held || hovered)
     val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "reading")
     val lift by animateDpAsState(if (shown) 4.dp else (-2).dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "reading-lift")
@@ -289,7 +292,7 @@ private fun GoalTrack(goal: GoalCard, set: Boolean, play: Boolean) {
                     emptyHeight = 6.dp,
                     modifier = Modifier
                         .padding(top = barTop)
-                        .semantics { contentDescription = if (set) "${goal.progress}% — $reading" else "Nog geen doel ingesteld" }
+                        .semantics { contentDescription = if (set) "${goal.progress}% — $reading" else tr("Nog geen doel ingesteld") }
                 )
                 Milestones(goal)
             }
@@ -540,7 +543,7 @@ private fun ScrollTop(scroll: ScrollState) {
                 .clickable(interaction, indication = null, role = Role.Button, enabled = show) {
                     scope.launch { scroll.animateScrollTo(0) }
                 }
-                .semantics { contentDescription = "Terug naar je dagscore" },
+                .semantics { contentDescription = tr("Terug naar je dagscore") },
             contentAlignment = Alignment.Center
         ) {
             JIcon(OwnifyIcons.chevron, color = Ownify.TextSecondary)

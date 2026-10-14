@@ -57,6 +57,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
@@ -671,17 +673,17 @@ if (!function_exists('google_signin_config')) {
             => ['outcome' => $outcome, 'mode' => $mode, 'message' => $message];
 
         $failed = match ($mode) {
-            'link'   => 'Google koppelen is niet gelukt. Probeer het opnieuw.',
+            'link'   => t('Google koppelen is niet gelukt. Probeer het opnieuw.'),
             'revoke' => GOOGLE_SIGNIN_NOT_REVOKED,
-            default  => 'Inloggen met Google is niet gelukt. Probeer het opnieuw.',
+            default  => t('Inloggen met Google is niet gelukt. Probeer het opnieuw.'),
         };
 
         if (!is_array($flow) || !is_string($flow['state'] ?? null) || !is_int($flow['started'] ?? null)) {
-            return $out('error', 'Deze aanmelding is verlopen of al gebruikt. Begin opnieuw.');
+            return $out('error', t('Deze aanmelding is verlopen of al gebruikt. Begin opnieuw.'));
         }
 
         if (time() - $flow['started'] > GOOGLE_SIGNIN_FLOW_TTL) {
-            return $out('error', 'Deze aanmelding duurde te lang en is verlopen. Begin opnieuw.');
+            return $out('error', t('Deze aanmelding duurde te lang en is verlopen. Begin opnieuw.'));
         }
 
         $state = $query['state'] ?? null;
@@ -695,8 +697,8 @@ if (!function_exists('google_signin_config')) {
         if (isset($query['error'])) {
             return match ($mode) {
                 'revoke' => $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED),
-                'link'   => $out('cancelled', 'Google koppelen is geannuleerd.'),
-                default  => $out('cancelled', 'Inloggen met Google is geannuleerd.'),
+                'link'   => $out('cancelled', t('Google koppelen is geannuleerd.')),
+                default  => $out('cancelled', t('Inloggen met Google is geannuleerd.')),
             };
         }
 
@@ -711,7 +713,7 @@ if (!function_exists('google_signin_config')) {
         if ($tokens === null || $keys === null) {
             return $mode === 'revoke'
                 ? $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED)
-                : $out('error', 'Google kon je aanmelding niet bevestigen. Probeer het opnieuw.');
+                : $out('error', t('Google kon je aanmelding niet bevestigen. Probeer het opnieuw.'));
         }
 
         $verified = google_signin_verify($tokens['id_token'], $keys, google_signin_config()['client_id'], (string) $flow['nonce']);
@@ -738,7 +740,7 @@ if (!function_exists('google_signin_config')) {
 
         /* The account that asked must be the account that is still signed in. */
         if ($userId === null || $userId !== (int) ($flow['user_id'] ?? 0)) {
-            return $out('error', 'Log eerst in om Google aan je account te koppelen.');
+            return $out('error', t('Log eerst in om Google aan je account te koppelen.'));
         }
 
         $owner = db_value(
@@ -748,8 +750,8 @@ if (!function_exists('google_signin_config')) {
 
         if ($owner !== null) {
             return (int) $owner === $userId
-                ? $out('linked', 'Dit Google-account was al aan je account gekoppeld.')
-                : $out('error', 'Dit Google-account hoort al bij een ander Ownify-account.');
+                ? $out('linked', t('Dit Google-account was al aan je account gekoppeld.'))
+                : $out('error', t('Dit Google-account hoort al bij een ander Ownify-account.'));
         }
 
         $existing = db_value(
@@ -758,7 +760,7 @@ if (!function_exists('google_signin_config')) {
         );
 
         if ($existing !== null) {
-            return $out('error', 'Je account is al aan een ander Google-account gekoppeld.');
+            return $out('error', t('Je account is al aan een ander Google-account gekoppeld.'));
         }
 
         try {
@@ -769,10 +771,10 @@ if (!function_exists('google_signin_config')) {
             );
         } catch (PDOException $e) {
             /* Lost a race on the unique key to somebody linking the same account. */
-            return $out('error', 'Dit Google-account hoort al bij een ander Ownify-account.');
+            return $out('error', t('Dit Google-account hoort al bij een ander Ownify-account.'));
         }
 
-        return $out('linked', 'Google is gekoppeld. Je kunt voortaan ook met Google inloggen.');
+        return $out('linked', t('Google is gekoppeld. Je kunt voortaan ook met Google inloggen.'));
     }
 
     /**
@@ -800,7 +802,7 @@ if (!function_exists('google_signin_config')) {
         }
 
         return $revoked
-            ? $out('revoked', 'Je account is verwijderd, en Ownify is ook uit je Google-account gehaald.')
+            ? $out('revoked', t('Je account is verwijderd, en Ownify is ook uit je Google-account gehaald.'))
             : $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
     }
 
@@ -852,7 +854,7 @@ if (!function_exists('google_signin_config')) {
 
         if ($identity !== null) {
             if ($identity['status'] !== 'active') {
-                return ['outcome' => 'error', 'error' => 'Dit account is niet actief.'];
+                return ['outcome' => 'error', 'error' => t('Dit account is niet actief.')];
             }
 
             db_run('UPDATE user_auth_identities SET last_login_at = NOW() WHERE id = ?', [(int) $identity['id']]);
@@ -863,13 +865,13 @@ if (!function_exists('google_signin_config')) {
         /* A new account needs an address Google vouches for: it is what the
            check below compares, and an unverified one proves nothing. */
         if ($email === null) {
-            return ['outcome' => 'error', 'error' => 'Google gaf geen bevestigd e-mailadres door. Gebruik een Google-account met een bevestigd adres, of maak een account aan met e-mail en wachtwoord.'];
+            return ['outcome' => 'error', 'error' => t('Google gaf geen bevestigd e-mailadres door. Gebruik een Google-account met een bevestigd adres, of maak een account aan met e-mail en wachtwoord.')];
         }
 
         if (google_signin_email_taken($email)) {
             return [
                 'outcome'  => 'error',
-                'error'    => 'Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.',
+                'error'    => t('Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.'),
                 'conflict' => true,
             ];
         }
@@ -951,12 +953,12 @@ if (!function_exists('google_signin_config')) {
         $pending = google_signin_pending();
 
         if ($pending === null) {
-            return ['ok' => false, 'error' => 'Je Google-aanmelding is verlopen. Begin opnieuw met Google.', 'expired' => true];
+            return ['ok' => false, 'error' => t('Je Google-aanmelding is verlopen. Begin opnieuw met Google.'), 'expired' => true];
         }
 
         $pdo = db();
         if ($pdo === null) {
-            return ['ok' => false, 'error' => 'Geen databaseverbinding.'];
+            return ['ok' => false, 'error' => t('Geen databaseverbinding.')];
         }
 
         $username = trim($username);
@@ -967,7 +969,7 @@ if (!function_exists('google_signin_config')) {
         }
 
         if (user_username_taken($username)) {
-            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.'];
+            return ['ok' => false, 'error' => t('Deze gebruikersnaam is al bezet.')];
         }
 
         /* Ten minutes is long enough for either of these to have changed. */
@@ -978,12 +980,12 @@ if (!function_exists('google_signin_config')) {
 
         if ($linked !== null) {
             google_signin_cancel();
-            return ['ok' => false, 'error' => 'Dit Google-account hoort inmiddels bij een account. Log opnieuw in met Google.', 'expired' => true];
+            return ['ok' => false, 'error' => t('Dit Google-account hoort inmiddels bij een account. Log opnieuw in met Google.'), 'expired' => true];
         }
 
         if (google_signin_email_taken($pending['email'])) {
             google_signin_cancel();
-            return ['ok' => false, 'error' => 'Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.', 'expired' => true];
+            return ['ok' => false, 'error' => t('Er bestaat al een account met dit e-mailadres. Log in met je wachtwoord en koppel Google via Instellingen.'), 'expired' => true];
         }
 
         try {
@@ -1015,7 +1017,7 @@ if (!function_exists('google_signin_config')) {
             }
 
             /* A race on the username or on the Google id lands here. */
-            return ['ok' => false, 'error' => 'Dit account kon niet worden aangemaakt. Kies een andere gebruikersnaam of probeer het opnieuw.'];
+            return ['ok' => false, 'error' => t('Dit account kon niet worden aangemaakt. Kies een andere gebruikersnaam of probeer het opnieuw.')];
         }
 
         google_signin_cancel();

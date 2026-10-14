@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 
@@ -343,7 +345,7 @@ if (!function_exists('goals_for_user')) {
 
         $building = true;
         try {
-            $board = goals_prepare(hydrate_goals(require $root . '/config/goals.php', $userId));
+            $board = goals_prepare(hydrate_goals(config_copy('goals'), $userId));
         } finally {
             $building = false;
         }
@@ -382,7 +384,7 @@ if (!function_exists('goals_for_user')) {
         require_once $root . '/lib/goals.php';
         require_once $root . '/lib/hydrate-goals.php';
 
-        $board = goals_prepare(hydrate_goals(require $root . '/config/goals.php', $userId));
+        $board = goals_prepare(hydrate_goals(config_copy('goals'), $userId));
         $heir  = goals_successor($board, (string) $goalId, $shown);
 
         return $heir !== null && goal_set_primary($userId, (int) $heir);

@@ -25,29 +25,29 @@ $friends   = $community['friends'] ?? [];
 $allowed   = !empty($community['allow_requests']);
 
 $notes = [
-    'on'  => 'Anderen kunnen je een vriendverzoek sturen.',
-    'off' => 'Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.',
+    'on'  => t('Anderen kunnen je een vriendverzoek sturen.'),
+    'off' => t('Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.'),
 ];
 ?>
 <div class="account__view friends" data-account-view="friends" hidden>
 
     <!-- ------------------------------------------------ Vriend toevoegen -->
-    <section class="friends__section" aria-label="Vriend toevoegen">
+    <section class="friends__section" aria-label="<?= e(t('Vriend toevoegen')) ?>">
         <button type="button" class="btn press friends__add" data-friends-add
                 aria-expanded="false" aria-controls="friends-search">
             <?= icon('plus', 'friends__add-icon') ?>
-            <span>Vriend toevoegen</span>
+            <span><?= e(t('Vriend toevoegen')) ?></span>
         </button>
 
         <form class="account__form friends__search" id="friends-search" data-friends-search novalidate hidden>
-            <label class="account__label" for="friends-username">Gebruikersnaam</label>
+            <label class="account__label" for="friends-username"><?= e(t('Gebruikersnaam')) ?></label>
             <div class="account__row">
                 <input class="account__input" type="text" id="friends-username" name="username"
                        maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"
-                       placeholder="Gebruikersnaam" required>
-                <button type="submit" class="btn press">Zoeken</button>
+                       placeholder="<?= e(t('Gebruikersnaam')) ?>" required>
+                <button type="submit" class="btn press"><?= e(t('Zoeken')) ?></button>
             </div>
-            <p class="account__hint">Vul de volledige gebruikersnaam in.</p>
+            <p class="account__hint"><?= e(t('Vul de volledige gebruikersnaam in.')) ?></p>
 
             <p class="account__error friends__error" data-friends-search-error role="alert" hidden></p>
 
@@ -57,10 +57,10 @@ $notes = [
 
     <!-- ------------------------------------------------ Vriendverzoeken -->
     <section class="friends__section" data-friends-requests aria-labelledby="friends-requests-title">
-        <h3 class="account__label" id="friends-requests-title">Vriendverzoeken</h3>
+        <h3 class="account__label" id="friends-requests-title"><?= e(t('Vriendverzoeken')) ?></h3>
 
         <?php if ($incoming === []): ?>
-            <p class="account__hint friends__empty">Geen nieuwe vriendverzoeken.</p>
+            <p class="account__hint friends__empty"><?= e(t('Geen nieuwe vriendverzoeken.')) ?></p>
         <?php else: ?>
             <ul class="friends__list" role="list">
                 <?php foreach ($incoming as $person): ?>
@@ -70,7 +70,7 @@ $notes = [
         <?php endif; ?>
 
         <?php if ($sent !== []): ?>
-            <h4 class="account__label friends__sublabel">Verstuurd</h4>
+            <h4 class="account__label friends__sublabel"><?= e(t('Verstuurd')) ?></h4>
             <ul class="friends__list" role="list">
                 <?php foreach ($sent as $person): ?>
                     <?php component('friend-person', $data + ['person' => $person, 'person_kind' => 'sent']); ?>
@@ -84,7 +84,7 @@ $notes = [
             aria-checked="<?= $allowed ? 'true' : 'false' ?>"
             data-note-on="<?= e($notes['on']) ?>" data-note-off="<?= e($notes['off']) ?>">
         <span class="account__toggle-text">
-            <span class="account__toggle-label">Vriendverzoeken toestaan</span>
+            <span class="account__toggle-label"><?= e(t('Vriendverzoeken toestaan')) ?></span>
             <span class="account__toggle-note" data-friends-toggle-note><?= e($allowed ? $notes['on'] : $notes['off']) ?></span>
         </span>
         <span class="switch<?= $allowed ? ' is-on' : '' ?>" aria-hidden="true"><span class="switch__knob"></span></span>
@@ -92,10 +92,10 @@ $notes = [
 
     <!-- --------------------------------------------------------- Vrienden -->
     <section class="friends__section" data-friends-list aria-labelledby="friends-list-title">
-        <h3 class="account__label" id="friends-list-title">Vrienden (<?= e((string) count($friends)) ?>)</h3>
+        <h3 class="account__label" id="friends-list-title"><?= e(t('Vrienden')) ?> (<?= e((string) count($friends)) ?>)</h3>
 
         <?php if ($friends === []): ?>
-            <p class="account__hint friends__empty">Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam.</p>
+            <p class="account__hint friends__empty"><?= e(t('Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam.')) ?></p>
         <?php else: ?>
             <ul class="friends__list" role="list">
                 <?php foreach ($friends as $person): ?>
@@ -112,7 +112,7 @@ $notes = [
     </template>
 
     <template data-friends-sent>
-        <span class="friend__done"><?= icon('check') ?><span>Verzoek verstuurd</span></span>
+        <span class="friend__done"><?= icon('check') ?><span><?= e(t('Verzoek verstuurd')) ?></span></span>
     </template>
 
 </div>

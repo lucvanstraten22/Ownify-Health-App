@@ -32,6 +32,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/time-axis.php';
 
 if (!defined('GOAL_CHART_W')) {
@@ -62,36 +64,38 @@ if (!function_exists('goal_chart_build')) {
         require_once dirname(__DIR__) . '/includes/goal-progress.php';
 
         if ($mode === 'streak' || $mode === 'count') {
-            return ['word' => 'dagen', 'one' => 'dag', 'axis' => 'dagen', 'scale' => 1.0, 'decimals' => 0, 'attached' => false];
+            return ['word' => t('dagen'), 'one' => t('dag'), 'axis' => t('dagen'), 'scale' => 1.0, 'offset' => 0.0,
+                    'decimals' => 0, 'attached' => false, 'stored' => 'dagen'];
         }
 
+        /* In the reader's language and units (goal_unit_shown()): a kg goal
+           in imperial is drawn in lb, from the same stored kilos. */
         if (($goal['tracking'] ?? 'manual') !== 'auto') {
-            $word = trim((string) ($goal['target_unit'] ?? ''));
+            $unit = goal_unit_shown(['decimals' => 1] + goal_manual_unit($goal['target_unit'] ?? null));
 
-            return ['word' => $word, 'one' => $word, 'axis' => $word, 'scale' => 1.0, 'decimals' => 1, 'attached' => false];
+            return $unit + ['axis' => $unit['word']];
         }
 
-        $unit = goal_source_unit($goal['source_kind'] ?? null, $goal['source_key'] ?? null);
+        $unit = goal_unit_shown(goal_source_unit($goal['source_kind'] ?? null, $goal['source_key'] ?? null));
 
         return $unit + ['axis' => $unit['word']];
     }
 
-    /** Dutch digits: a point for thousands, a comma for decimals, no trailing zeroes. */
+    /** Digits as the reader writes them (1.234,5 or 1,234.5), no trailing zeroes. */
     function goal_chart_number(float $value, int $decimals): string
     {
-        $text = number_format($value, $decimals, ',', '.');
-
-        if ($decimals > 0) {
-            $text = rtrim(rtrim($text, '0'), ',');
-        }
+        $text = i18n_number_trim($value, $decimals);
 
         return $text === '-0' ? '0' : $text;
     }
 
-    /** A value with its unit, the way the tooltip and the end label say it. */
-    function goal_chart_value(float $raw, array $unit): string
+    /**
+     * A value with its unit, the way the tooltip and the end label say it.
+     * $delta: a difference between two values, which takes no offset.
+     */
+    function goal_chart_value(float $raw, array $unit, bool $delta = false): string
     {
-        $shown = $raw * $unit['scale'];
+        $shown = $raw * $unit['scale'] + ($delta ? 0.0 : (float) ($unit['offset'] ?? 0.0));
         $text  = goal_chart_number($shown, $unit['decimals']);
 
         if ($unit['word'] === '') {
@@ -105,14 +109,7 @@ if (!function_exists('goal_chart_build')) {
 
     function goal_chart_month(int $month, bool $long): string
     {
-        static $names = [
-            1 => ['jan', 'januari'], 2 => ['feb', 'februari'], 3 => ['mrt', 'maart'],
-            4 => ['apr', 'april'], 5 => ['mei', 'mei'], 6 => ['jun', 'juni'],
-            7 => ['jul', 'juli'], 8 => ['aug', 'augustus'], 9 => ['sep', 'september'],
-            10 => ['okt', 'oktober'], 11 => ['nov', 'november'], 12 => ['dec', 'december'],
-        ];
-
-        return $names[$month][$long ? 1 : 0];
+        return i18n_month($month, !$long);
     }
 
     /**
@@ -122,9 +119,7 @@ if (!function_exists('goal_chart_build')) {
      */
     function goal_chart_date_long(DateTimeImmutable $day, DateTimeImmutable $today): string
     {
-        $text = (int) $day->format('j') . ' ' . goal_chart_month((int) $day->format('n'), true);
-
-        return $day->format('Y') === $today->format('Y') ? $text : $text . ' ' . $day->format('Y');
+        return i18n_date($day, $day->format('Y') === $today->format('Y') ? 'day_month' : 'day_month_year');
     }
 
     /* ==================================================================
@@ -295,8 +290,9 @@ if (!function_exists('goal_chart_build')) {
             => GOAL_CHART_PAD + time_axis_x($axis, $d->format('Y-m-d')) / 100 * (1 - 2 * GOAL_CHART_PAD);
 
         /* ------------------------------------------------------- Y domain */
-        $values = array_map(static fn (array $p): float => (float) $p['value'] * $unit['scale'], $points);
-        $target = $series['target'] === null ? null : (float) $series['target'] * $unit['scale'];
+        $offset = (float) ($unit['offset'] ?? 0.0);
+        $values = array_map(static fn (array $p): float => (float) $p['value'] * $unit['scale'] + $offset, $points);
+        $target = $series['target'] === null ? null : (float) $series['target'] * $unit['scale'] + $offset;
 
         $low  = min($values);
         $high = max($values);
@@ -366,13 +362,13 @@ if (!function_exists('goal_chart_build')) {
             $note  = [];
 
             if ($mode === 'total') {
-                $note[] = '+ ' . goal_chart_value($value - $prev, $unit);
+                $note[] = '+ ' . goal_chart_value($value - $prev, $unit, true);
             } elseif ($mode === 'count' && $value > $prev) {
-                $note[] = 'Gehaald';
+                $note[] = t('Gehaald');
             }
 
             if (isset($percents[$p['date']])) {
-                $note[] = $percents[$p['date']] . '% van je doel';
+                $note[] = tf('%d%% van je doel', $percents[$p['date']]);
             }
 
             $out[] = [
@@ -457,7 +453,7 @@ if (!function_exists('goal_chart_build')) {
         $endLabel  = [
             'x'     => $named['x'],
             'y'     => $named['y'],
-            'label' => $bestIndex === null ? $named['v'] : 'Beste ' . $named['v'],
+            'label' => $bestIndex === null ? $named['v'] : tf('Beste %s', $named['v']),
             'below' => $named['y'] < 22,   // no room above a point at the top
             /* Ends at its point near the right edge, starts at it near the
                left, and sits over it in between — never off the plot. */
@@ -468,7 +464,7 @@ if (!function_exists('goal_chart_build')) {
         if ($target !== null) {
             $targetOut = [
                 'top'   => round($yOf($target) * 100, 3),
-                'label' => 'Doel ' . goal_chart_value((float) $series['target'], $unit),
+                'label' => tf('Doel %s', goal_chart_value((float) $series['target'], $unit)),
             ];
 
             /* If the end label would sit on the target line, drop it to the
@@ -478,19 +474,13 @@ if (!function_exists('goal_chart_build')) {
             }
         }
 
-        $span = $out[0]['d'] === $lastPoint['d'] ? $out[0]['d'] : $out[0]['d'] . ' tot ' . $lastPoint['d'];
+        $span = $out[0]['d'] === $lastPoint['d'] ? $out[0]['d'] : tf('%1$s tot %2$s', $out[0]['d'], $lastPoint['d']);
         $summary = match ($mode) {
-            'streak' => sprintf('Streak per dag, %s: nu %s.', $span, $lastPoint['v']),
-            'count'  => sprintf('Gehaalde dagen, %s: %s.', $span, $lastPoint['v']),
-            'total'  => sprintf('Totaal, %s: %s.', $span, $lastPoint['v']),
-            default  => sprintf(
-                '%d %s, %s. Beste resultaat %s op %s.',
-                count($out),
-                count($out) === 1 ? 'resultaat' : 'resultaten',
-                $span,
-                $named['v'],
-                $named['d']
-            ),
+            'streak' => tf('Streak per dag, %s: nu %s.', $span, $lastPoint['v']),
+            'count'  => tf('Gehaalde dagen, %s: %s.', $span, $lastPoint['v']),
+            'total'  => tf('Totaal, %s: %s.', $span, $lastPoint['v']),
+            default  => tn(count($out), '%d resultaat', '%d resultaten') . ', '
+                . tf('%1$s. Beste resultaat %2$s op %3$s.', $span, $named['v'], $named['d']),
         };
         if ($targetOut !== null) {
             $summary .= ' ' . $targetOut['label'] . '.';

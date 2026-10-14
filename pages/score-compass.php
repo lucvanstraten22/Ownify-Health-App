@@ -33,7 +33,7 @@ $opportunity = $compass['opportunity'];
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar <?= e($compass['back']) ?>">
+                        aria-label="<?= e(tf('Terug naar %s', $compass['back'])) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e($compass['back']) ?></span>
                 </button>
@@ -48,8 +48,8 @@ $opportunity = $compass['opportunity'];
                     <div class="score-ring" data-ring data-progress="<?= e((string) round($ratio, 4)) ?>"
                          role="img"
                          aria-label="<?= e($overall['label']) ?>: <?= has_value($score['value'])
-                             ? e((string) $score['value']) . ' van ' . e((string) $score['max'])
-                             : 'nog geen gegevens' ?>">
+                             ? e(tf('%1$s van %2$s', (string) $score['value'], (string) $score['max']))
+                             : e(t('nog geen gegevens')) ?>">
                         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
                             <defs>
                                 <linearGradient id="compassRingGradient" x1="0" y1="0" x2="1" y2="1">
@@ -64,7 +64,7 @@ $opportunity = $compass['opportunity'];
 
                         <div class="score-ring__center" aria-hidden="true">
                             <p class="score-ring__number" data-count-to="<?= has_value($score['value']) ? e((string) $score['value']) : '' ?>"><?= e(score_text($score['value'])) ?></p>
-                            <p class="score-ring__scale"><?= has_value($score['value']) ? 'van ' . e((string) $score['max']) : e($overall['caption']) ?></p>
+                            <p class="score-ring__scale"><?= has_value($score['value']) ? e(tf('van %s', (string) $score['max'])) : e($overall['caption']) ?></p>
                         </div>
                     </div>
 

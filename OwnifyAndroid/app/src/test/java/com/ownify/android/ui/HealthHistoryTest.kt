@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config
  * (health-history-demo.json), checked against that same list of days.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
 class HealthHistoryTest {
 
     @get:Rule

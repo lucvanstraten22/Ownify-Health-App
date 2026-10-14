@@ -58,7 +58,7 @@ import org.robolectric.annotation.Config
  * when it closes the panel is as it was.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class LoginKeyboardTest {
 
     @get:Rule

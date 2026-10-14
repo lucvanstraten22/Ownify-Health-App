@@ -25,9 +25,9 @@ $ratio = score_ratio($score['value'], $score['max']);
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar Gezondheid">
+                        aria-label="<?= e(t('Terug naar Gezondheid')) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
-                    <span class="pill__label">Gezondheid</span>
+                    <span class="pill__label"><?= e(t('Gezondheid')) ?></span>
                 </button>
             </div>
         </header>
@@ -41,8 +41,8 @@ $ratio = score_ratio($score['value'], $score['max']);
                     <div class="score-ring" data-ring data-progress="<?= e((string) round($ratio, 4)) ?>"
                          role="img"
                          aria-label="<?= e($area['label']) ?>: <?= has_value($score['value'])
-                             ? e((string) $score['value']) . ' van ' . e((string) $score['max'])
-                             : 'nog geen gegevens' ?>">
+                             ? e(tf('%1$s van %2$s', (string) $score['value'], (string) $score['max']))
+                             : e(t('nog geen gegevens')) ?>">
                         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
                             <circle class="score-ring__track" cx="80" cy="80" r="68"/>
                             <circle class="score-ring__value" cx="80" cy="80" r="68" data-ring-value/>
@@ -50,7 +50,7 @@ $ratio = score_ratio($score['value'], $score['max']);
 
                         <div class="score-ring__center" aria-hidden="true">
                             <p class="score-ring__number" data-count-to="<?= has_value($score['value']) ? e((string) $score['value']) : '' ?>"><?= e(score_text($score['value'])) ?></p>
-                            <p class="score-ring__scale"><?= has_value($score['value']) ? 'van ' . e((string) $score['max']) : 'Nog geen gegevens' ?></p>
+                            <p class="score-ring__scale"><?= has_value($score['value']) ? e(tf('van %s', (string) $score['max'])) : e(t('Nog geen gegevens')) ?></p>
                         </div>
                     </div>
 

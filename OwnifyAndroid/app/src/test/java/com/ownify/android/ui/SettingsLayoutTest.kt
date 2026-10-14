@@ -41,7 +41,7 @@ import org.robolectric.annotation.Config
  * Contact.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
 class SettingsLayoutTest {
 
     @get:Rule

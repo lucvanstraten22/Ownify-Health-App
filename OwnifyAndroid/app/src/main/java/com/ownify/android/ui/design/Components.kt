@@ -1,5 +1,7 @@
 package com.ownify.android.ui.design
 
+import com.ownify.android.i18n.OwnifyFormat
+import com.ownify.android.i18n.trf
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -140,7 +142,7 @@ fun T(
         out
     }
     BasicText(
-        text = if (uppercase) text.uppercase(java.util.Locale.forLanguageTag("nl")) else text,
+        text = if (uppercase) text.uppercase(OwnifyFormat.locale()) else text,
         modifier = modifier.cssLineBox(resolved),
         style = resolved,
         maxLines = maxLines,
@@ -565,7 +567,7 @@ fun ScoreRing(
         modifier
             .size(size)
             .clearAndSetSemantics {
-                contentDescription = description ?: if (value != null) "$label: $value van $max" else "$label: $scale"
+                contentDescription = description ?: if (value != null) label + ": " + trf("%1\$s van %2\$s", value, max) else "$label: $scale"
             },
         contentAlignment = Alignment.Center
     ) {

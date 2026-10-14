@@ -22,6 +22,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/health-score.php';
 
@@ -39,6 +41,20 @@ if (!function_exists('hydrate_health')) {
 
         $date   = $date ?? date('Y-m-d');
         $values = hydrate_health_values($userId, $date);
+
+        /* In the reader's units (includes/i18n.php): a distance in km, a skin
+           temperature in °C or an elevation in m is shown in mi, °F or ft —
+           its value and its unit, converted here, once, for the page. */
+        foreach ($health['metrics'] ?? [] as $key => $metric) {
+            $stored = (string) ($metric['unit'] ?? '');
+            if ($stored === '' || units_label($stored) === $stored) {
+                continue;
+            }
+            if (isset($values[$key]) && is_numeric($values[$key])) {
+                $values[$key] = round((float) units_out((float) $values[$key], $stored), units_spec($stored)['decimals']);
+            }
+            $health['metrics'][$key]['unit'] = units_label($stored);
+        }
 
         /* Area scores come from the Health Score engine — the last 168 hours
            up to this moment — never from the values map: one place decides
@@ -71,7 +87,7 @@ if (!function_exists('hydrate_health')) {
 
             $health['lede'] = sprintf(
                 (string) $health['lede_collecting'],
-                $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen'),
+                tn($needed, '%d dag', '%d dagen'),
                 $minDays
             );
 
@@ -108,7 +124,7 @@ if (!function_exists('hydrate_health')) {
                 $needed = max(1, $minDays - $result['days']);
                 $health['areas'][$areaKey]['empty'] = sprintf(
                     (string) $area['collecting'],
-                    $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen')
+                    tn($needed, '%d dag', '%d dagen')
                 );
             }
         }

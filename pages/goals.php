@@ -23,7 +23,7 @@ $hasAny  = $goals['active'] !== [];
    Dutch copy is ever written a second time in JavaScript (goals_script_copy()). */
 $copy = goals_script_copy($goals);
 ?>
-<section class="screen page" data-page="goals" aria-label="Doelen"
+<section class="screen page" data-page="goals" aria-label="<?= e(t('Doelen')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
@@ -53,7 +53,7 @@ $copy = goals_script_copy($goals);
                         'segment_options'  => $goals['views'],
                         'segment_selected' => $view,
                         'segment_attr'     => 'data-goal-view',
-                        'segment_label'    => 'Actieve of behaalde doelen',
+                        'segment_label'    => t('Actieve of behaalde doelen'),
                     ]);
                     ?>
 
@@ -114,7 +114,7 @@ $copy = goals_script_copy($goals);
                             <?php endforeach; ?>
                         </div>
 
-                        <p class="goals-slots">Behaalde doelen tellen niet mee voor je <?= (int) $goals['limits']['active'] ?> actieve plekken.</p>
+                        <p class="goals-slots"><?= e(tf('Behaalde doelen tellen niet mee voor je %d actieve plekken.', (int) $goals['limits']['active'])) ?></p>
 
                     <?php endif; ?>
 

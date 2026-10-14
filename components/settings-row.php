@@ -17,7 +17,7 @@ $meta = $row['value'] ?? $row['hint'] ?? null;
 ?>
 <button type="button" class="settings-row press"
         data-detail-open="settings-<?= e($row['id']) ?>"
-        aria-label="<?= e($row['label']) ?><?= $meta !== null ? ' — ' . e((string) $meta) : '' ?>. Open instellingen.">
+        aria-label="<?= e($row['label']) ?><?= $meta !== null ? ' — ' . e((string) $meta) : '' ?>. <?= e(t('Open instellingen.')) ?>">
 
     <span class="settings-row__mark" aria-hidden="true"><?= icon($row['icon']) ?></span>
 

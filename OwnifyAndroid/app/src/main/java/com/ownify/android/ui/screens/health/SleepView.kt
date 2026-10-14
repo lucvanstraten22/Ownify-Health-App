@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -191,7 +193,7 @@ private fun NightPlot(night: SleepNight, modifier: Modifier) {
         return best
     }
 
-    fun spoken(i: Int) = blocks.getOrNull(i)?.let { b -> "${night.rows.getOrNull(b.row)?.label.orEmpty()}, ${b.began} tot ${b.ended}" }.orEmpty()
+    fun spoken(i: Int) = blocks.getOrNull(i)?.let { b -> night.rows.getOrNull(b.row)?.label.orEmpty() + ", " + trf("%1\$s tot %2\$s", b.began, b.ended) }.orEmpty()
 
     val dim = reading >= 0
     Box(
@@ -206,9 +208,9 @@ private fun NightPlot(night: SleepNight, modifier: Modifier) {
                         stateDescription = if (reading >= 0) spoken(reading) else ""
                         liveRegion = LiveRegionMode.Polite
                         customActions = listOf(
-                            CustomAccessibilityAction("Volgende fase") { show(if (reading < 0) 0 else minOf(blocks.lastIndex, reading + 1)); true },
-                            CustomAccessibilityAction("Vorige fase") { show(if (reading < 0) 0 else maxOf(0, reading - 1)); true },
-                            CustomAccessibilityAction("Fase verbergen") { hide(); true }
+                            CustomAccessibilityAction(tr("Volgende fase")) { show(if (reading < 0) 0 else minOf(blocks.lastIndex, reading + 1)); true },
+                            CustomAccessibilityAction(tr("Vorige fase")) { show(if (reading < 0) 0 else maxOf(0, reading - 1)); true },
+                            CustomAccessibilityAction(tr("Fase verbergen")) { hide(); true }
                         )
                     }
                     .pointerInput(blocks) {

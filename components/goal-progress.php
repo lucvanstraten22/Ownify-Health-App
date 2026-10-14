@@ -8,7 +8,7 @@ $ratio   = score_ratio($goal['progress'], 100);
 
 /* What the bar says when you point at it, focus it or hold it: the goal's own
    numbers ("85 kg van 100 kg"), or its percentage when it has none. */
-$reading = $isSet ? (string) ($goal['reading'] ?? ($goal['progress'] . '% van je doel')) : null;
+$reading = $isSet ? (string) ($goal['reading'] ?? tf('%d%% van je doel', (int) $goal['progress'])) : null;
 $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 ?>
 <section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
@@ -30,7 +30,7 @@ $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
              fill's end; unset there is nothing to read. */ ?>
     <div class="goal__track"<?= $isSet ? ' data-goal-track tabindex="0" aria-describedby="goal-reading"' : '' ?>>
         <div class="meter meter--goal" role="img"
-             aria-label="<?= $isSet ? e((string) $goal['progress']) . '% — ' . e($reading) : 'Nog geen doel ingesteld' ?>">
+             aria-label="<?= $isSet ? e((string) $goal['progress']) . '% — ' . e($reading) : e(t('Nog geen doel ingesteld')) ?>">
             <span class="meter__fill" data-bar data-progress="<?= e((string) round($ratio, 4)) ?>"></span>
         </div>
 

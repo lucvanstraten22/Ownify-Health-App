@@ -1,5 +1,6 @@
 package com.ownify.android.ui.app
 
+import com.ownify.android.i18n.tr
 import android.animation.ValueAnimator
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animate
@@ -171,7 +172,7 @@ private fun Tabbar(items: List<NavItem>, current: String, glassAt: () -> Float, 
         modifier
             .width(screen.tabbarWidth)
             .height(Ownify.TabbarHeight)
-            .semantics { contentDescription = "Hoofdnavigatie" },
+            .semantics { contentDescription = tr("Hoofdnavigatie") },
         style = Panes.Tabbar,
         shape = shape,
         sheen = { drawSheen(shape) }

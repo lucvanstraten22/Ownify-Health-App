@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -471,7 +472,7 @@ private fun HeartZonesLegend(zones: HeartZones) {
 @Composable
 fun TrainingSessionDetail(session: TrainingSession, heart: HeartChart, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.TRAINING) {
-        DetailColumn(scroll, back = session.back, backAria = "Terug naar ${session.back}") {
+        DetailColumn(scroll, back = session.back, backAria = trf("Terug naar %s", session.back)) {
             PageIntro(session.title, "${session.date} · ${session.time}", Modifier.reveal())
             JCard(Modifier.fillMaxWidth().reveal()) {
                 HeartHead(session.heartTitle)

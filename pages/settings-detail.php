@@ -43,9 +43,9 @@ foreach ($page['blocks'] as $block) {
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar Instellingen">
+                        aria-label="<?= e(t('Terug naar Instellingen')) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
-                    <span class="pill__label">Instellingen</span>
+                    <span class="pill__label"><?= e(t('Instellingen')) ?></span>
                 </button>
             </div>
         </header>
@@ -75,10 +75,10 @@ foreach ($page['blocks'] as $block) {
                                 <?php endif; ?>
                             </span>
                             <p class="settings-hero__name">
-                                <?= e($profile['username'] ?? 'Niet ingelogd') ?>
+                                <?= e($profile['username'] ?? t('Niet ingelogd')) ?>
                             </p>
                             <p class="settings-hero__meta">
-                                <?= e(trim(((string) ($profile['first_name'] ?? '')) . ' ' . ((string) ($profile['last_name'] ?? ''))) ?: 'Naam nog niet ingevuld') ?>
+                                <?= e(trim(((string) ($profile['first_name'] ?? '')) . ' ' . ((string) ($profile['last_name'] ?? ''))) ?: t('Naam nog niet ingevuld')) ?>
                             </p>
                         </section>
 
@@ -131,7 +131,7 @@ foreach ($page['blocks'] as $block) {
 
                                     <div class="settings-field is-empty">
                                         <span class="settings-field__text">
-                                            <span class="settings-field__label">Niet ingelogd</span>
+                                            <span class="settings-field__label"><?= e(t('Niet ingelogd')) ?></span>
                                         </span>
                                         <span class="settings-field__value">—</span>
                                     </div>
@@ -140,12 +140,12 @@ foreach ($page['blocks'] as $block) {
 
                                     <div class="settings-field <?= $email !== null ? 'is-filled' : 'is-empty' ?>">
                                         <span class="settings-field__text">
-                                            <span class="settings-field__label">E-mail en wachtwoord</span>
+                                            <span class="settings-field__label"><?= e(t('E-mail en wachtwoord')) ?></span>
                                             <span class="settings-field__note">
-                                                <?= e($email !== null ? 'Inloggen met je gebruikersnaam of e-mailadres' : 'Je logt in met Google') ?>
+                                                <?= e($email !== null ? t('Inloggen met je gebruikersnaam of e-mailadres') : t('Je logt in met Google')) ?>
                                             </span>
                                         </span>
-                                        <span class="settings-field__value"><?= e($email['email'] ?? 'Niet ingesteld') ?></span>
+                                        <span class="settings-field__value"><?= e($email['email'] ?? t('Niet ingesteld')) ?></span>
                                     </div>
 
                                     <?php if ($google !== null): ?>
@@ -153,9 +153,9 @@ foreach ($page['blocks'] as $block) {
                                         <div class="settings-field is-filled">
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
-                                                <span class="settings-field__note">Gekoppeld — je kunt ook met Google inloggen</span>
+                                                <span class="settings-field__note"><?= e(t('Gekoppeld — je kunt ook met Google inloggen')) ?></span>
                                             </span>
-                                            <span class="settings-field__value"><?= e($google['email'] ?? 'Gekoppeld') ?></span>
+                                            <span class="settings-field__value"><?= e($google['email'] ?? t('Gekoppeld')) ?></span>
                                             <?= icon('check', 'settings-field__mark') ?>
                                         </div>
 
@@ -164,9 +164,9 @@ foreach ($page['blocks'] as $block) {
                                         <button type="button" class="settings-field press is-editable is-empty" data-google-link>
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
-                                                <span class="settings-field__note">Koppel Google om daarmee in te loggen</span>
+                                                <span class="settings-field__note"><?= e(t('Koppel Google om daarmee in te loggen')) ?></span>
                                             </span>
-                                            <span class="settings-field__value">Koppel Google</span>
+                                            <span class="settings-field__value"><?= e(t('Koppel Google')) ?></span>
                                             <?= icon('chevron-right', 'settings-field__mark') ?>
                                         </button>
 
@@ -176,7 +176,7 @@ foreach ($page['blocks'] as $block) {
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
                                             </span>
-                                            <span class="settings-field__value">Nog niet beschikbaar</span>
+                                            <span class="settings-field__value"><?= e(t('Nog niet beschikbaar')) ?></span>
                                         </div>
 
                                     <?php endif; ?>

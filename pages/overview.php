@@ -9,7 +9,7 @@
  */
 declare(strict_types=1);
 ?>
-<section class="screen page" data-page="overview" aria-label="Overzicht"
+<section class="screen page" data-page="overview" aria-label="<?= e(t('Overzicht')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>

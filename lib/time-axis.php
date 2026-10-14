@@ -35,6 +35,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 if (!function_exists('time_axis')) {
 
     /** The standard periods: how many days, what a point is, how far apart the dates are. */
@@ -173,7 +175,7 @@ if (!function_exists('time_axis')) {
 
         /* A week names every day in full; longer periods their month where it begins. */
         if ($days === 7 || $previous === null || $previous->format('n') !== $date->format('n')) {
-            return $day . ' ' . $month;
+            return i18n_locale() === 'en' ? $month . ' ' . $day : $day . ' ' . $month;     // "Oct 8", "8 okt"
         }
 
         return $day;
@@ -210,7 +212,7 @@ if (!function_exists('time_axis')) {
 
     function time_axis_month(int $month): string
     {
-        return ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][$month - 1];
+        return i18n_month($month, true);
     }
 
     /**

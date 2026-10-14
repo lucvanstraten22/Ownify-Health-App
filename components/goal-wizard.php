@@ -45,7 +45,7 @@ $total  = count($steps);
                 <?php endfor; ?>
             </ol>
             <p class="wizard__count" data-wizard-count aria-live="polite">
-                Stap 1 van <?= e((string) $total) ?> · <?= e($steps[1]['label']) ?>
+                <?= e(tf('Stap %1$d van %2$d', 1, $total)) ?> · <?= e($steps[1]['label']) ?>
             </p>
         </div>
 
@@ -191,7 +191,7 @@ $total  = count($steps);
                     <div class="wizard__row">
                         <input class="wizard__input wizard__input--number" type="number" id="wizard-target-days"
                                data-wizard-days inputmode="numeric" step="1" min="1" max="365" placeholder="30">
-                        <span class="wizard__suffix" data-wizard-days-suffix>dagen op rij</span>
+                        <span class="wizard__suffix" data-wizard-days-suffix><?= e(t('dagen op rij')) ?></span>
                     </div>
                 </div>
 
@@ -281,7 +281,7 @@ $total  = count($steps);
                     <button type="button" class="range-switch__option" data-wizard-priority="primary"
                             aria-pressed="false"><?= e($goals['labels']['primary_chip']) ?></button>
                     <button type="button" class="range-switch__option is-active" data-wizard-priority="secondary"
-                            aria-pressed="true">Secundair</button>
+                            aria-pressed="true"><?= e(t('Secundair')) ?></button>
                 </div>
 
                 <p class="wizard__note wizard__note--quiet" data-wizard-swap hidden>

@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/includes/goals.php';
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/goal-progress.php';
@@ -195,95 +197,99 @@ if (!function_exists('hydrate_goals')) {
         /* "minstens 10.000 stappen": what one day has to reach to count. */
         $daily = null;
         if (!$manual && ($row['daily_target'] ?? null) !== null) {
-            $daily = ($decrease ? 'hoogstens ' : 'minstens ')
-                . goal_unit_text((float) $row['daily_target'], goal_source_unit($row['source_kind'], $row['source_key']));
+            $daily = tf($decrease ? 'hoogstens %s' : 'minstens %s',
+                goal_unit_text((float) $row['daily_target'], goal_source_unit($row['source_kind'], $row['source_key'])));
         }
 
         $out = [
-            'current' => null, 'current_title' => 'Nu', 'target' => null, 'daily' => $daily,
+            'current' => null, 'current_title' => t('Nu'), 'target' => null, 'daily' => $daily,
             'facts' => [], 'note' => null, 'days_chip' => null, 'days_note' => null, 'entry' => null,
         ];
 
         switch ($kind) {
             case 'streak':
-                $out['current_title'] = 'Huidige streak';
+                $out['current_title'] = t('Huidige streak');
                 $out['current']       = $progress['streak'] === null ? null : goal_days_text($progress['streak']);
-                $out['target']        = $target === null ? null : goal_days_text($target) . ' op rij';
+                $out['target']        = $target === null ? null : tf('%s op rij', goal_days_text($target));
 
                 if ($progress['longest'] !== null) {
-                    $out['facts'][] = ['label' => 'Langste streak', 'value' => goal_days_text($progress['longest'])];
+                    $out['facts'][] = ['label' => t('Langste streak'), 'value' => goal_days_text($progress['longest'])];
                 }
 
                 $out['note'] = $manual
-                    ? 'Vink elke dag af die gelukt is. Alleen dagen achter elkaar tellen: een dag zonder vinkje breekt je streak.'
-                    : 'Elke dag met ' . $daily . ' telt. Alleen dagen achter elkaar tellen: een dag die dat niet haalt, of zonder gegevens, breekt je streak.';
+                    ? t('Vink elke dag af die gelukt is. Alleen dagen achter elkaar tellen: een dag zonder vinkje breekt je streak.')
+                    : tf('Elke dag met %s telt. Alleen dagen achter elkaar tellen: een dag die dat niet haalt, of zonder gegevens, breekt je streak.', $daily);
 
-                $out['days_chip'] = $progress['streak'] === null ? null : 'Nu ' . $progress['streak'] . ' op rij';
+                $out['days_chip'] = $progress['streak'] === null ? null : tf('Nu %d op rij', $progress['streak']);
                 $out['days_note'] = $manual
-                    ? 'Vandaag telt zodra je hem afvinkt, en breekt je streak pas als de dag voorbij is.'
-                    : 'Een dag zonder gegevens is niet gemist, maar ook niet gehaald: daarna begint je streak opnieuw. Vandaag telt pas als hij gehaald is.';
+                    ? t('Vandaag telt zodra je hem afvinkt, en breekt je streak pas als de dag voorbij is.')
+                    : t('Een dag zonder gegevens is niet gemist, maar ook niet gehaald: daarna begint je streak opnieuw. Vandaag telt pas als hij gehaald is.');
                 $out['entry'] = [
                     'kind'  => 'tick',
-                    'label' => 'Vandaag gelukt',
-                    'note'  => 'Eén vinkje per dag. Een dag zonder vinkje breekt je streak.',
+                    'label' => t('Vandaag gelukt'),
+                    'note'  => t('Eén vinkje per dag. Een dag zonder vinkje breekt je streak.'),
                 ];
                 break;
 
             case 'accumulate':
-                $out['current_title'] = 'Totaal';
+                $out['current_title'] = t('Totaal');
                 $out['current']       = hydrate_goal_figure($row, $progress['total'], $days);
                 $out['target']        = hydrate_goal_figure($row, $target, $days);
 
                 if ($days) {
                     $out['note'] = $manual
-                        ? 'Vink elke dag af die gelukt is. Elke dag telt op, ook als ze niet achter elkaar liggen.'
-                        : 'Elke dag met ' . $daily . ' telt als één dag. Ze hoeven niet achter elkaar te liggen.';
-                    $out['days_chip'] = $progress['met'] . ' van ' . ($target === null ? '—' : (int) $target) . ' dagen';
-                    $out['days_note'] = 'Dagen zonder gegevens tellen niet mee als gemist, en ook niet als gehaald.';
+                        ? t('Vink elke dag af die gelukt is. Elke dag telt op, ook als ze niet achter elkaar liggen.')
+                        : tf('Elke dag met %s telt als één dag. Ze hoeven niet achter elkaar te liggen.', $daily);
+                    $out['days_chip'] = tf('%1$d van %2$s dagen', $progress['met'], $target === null ? '—' : (string) (int) $target);
+                    $out['days_note'] = t('Dagen zonder gegevens tellen niet mee als gemist, en ook niet als gehaald.');
                     $out['entry']     = [
                         'kind'  => 'tick',
-                        'label' => 'Vandaag gelukt',
-                        'note'  => 'Eén vinkje per dag. Elke gelukte dag telt op.',
+                        'label' => t('Vandaag gelukt'),
+                        'note'  => t('Eén vinkje per dag. Elke gelukte dag telt op.'),
                     ];
                 } else {
-                    $out['note']  = 'Alles telt op tot één totaal. Een dag zonder gegevens voegt niets toe, maar haalt ook niets af.';
+                    $unitWord     = hydrate_goal_unit_word($row);
+                    $out['note']  = t('Alles telt op tot één totaal. Een dag zonder gegevens voegt niets toe, maar haalt ook niets af.');
                     $out['entry'] = [
                         'kind'        => 'add',
-                        'label'       => 'Hoeveel komt erbij?',
-                        'button'      => 'Toevoegen',
-                        'placeholder' => 'Hoeveel' . (trim((string) $row['target_unit']) === '' ? '' : ' ' . trim((string) $row['target_unit'])),
-                        'note'        => 'Elke invoer telt op bij je totaal, ook twee keer op één dag.',
+                        'label'       => t('Hoeveel komt erbij?'),
+                        'button'      => t('Toevoegen'),
+                        'placeholder' => $unitWord === '' ? t('Hoeveel') : tf('Hoeveel %s', $unitWord),
+                        'note'        => t('Elke invoer telt op bij je totaal, ook twee keer op één dag.'),
+                        'unit'        => $unitWord,
                     ];
                 }
                 break;
 
             default:
-                $out['current_title'] = 'Beste resultaat';
+                $out['current_title'] = t('Beste resultaat');
                 $out['current']       = hydrate_goal_figure($row, $progress['best'], false);
                 $out['target']        = hydrate_goal_figure($row, $target, false);
 
                 if ($progress['latest'] !== null && $progress['latest'] != $progress['best']) {
-                    $out['facts'][] = ['label' => 'Laatste resultaat', 'value' => (string) hydrate_goal_figure($row, $progress['latest'], false)];
+                    $out['facts'][] = ['label' => t('Laatste resultaat'), 'value' => (string) hydrate_goal_figure($row, $progress['latest'], false)];
                 }
 
                 if ($decrease && $progress['start'] !== null) {
-                    $out['facts'][] = ['label' => 'Startpunt', 'value' => (string) hydrate_goal_figure($row, $progress['start'], false)];
+                    $out['facts'][] = ['label' => t('Startpunt'), 'value' => (string) hydrate_goal_figure($row, $progress['start'], false)];
                 }
 
                 $out['note'] = $decrease
-                    ? 'Je laagste resultaat telt, gemeten vanaf je startpunt. Een hoger resultaat later verlaagt je voortgang niet.'
-                    : 'Je beste resultaat telt. Een minder goed resultaat later verlaagt je voortgang niet.';
+                    ? t('Je laagste resultaat telt, gemeten vanaf je startpunt. Een hoger resultaat later verlaagt je voortgang niet.')
+                    : t('Je beste resultaat telt. Een minder goed resultaat later verlaagt je voortgang niet.');
 
                 if ($target === null) {
-                    $out['note'] = 'Dit doel heeft geen doelwaarde, dus er is geen percentage. Je beste resultaat wordt wel bijgehouden.';
+                    $out['note'] = t('Dit doel heeft geen doelwaarde, dus er is geen percentage. Je beste resultaat wordt wel bijgehouden.');
                 }
 
+                $unitWord     = hydrate_goal_unit_word($row);
                 $out['entry'] = [
                     'kind'        => 'result',
-                    'label'       => 'Nieuw resultaat',
-                    'button'      => 'Opslaan',
-                    'placeholder' => 'Resultaat' . (trim((string) $row['target_unit']) === '' ? '' : ' in ' . trim((string) $row['target_unit'])),
-                    'note'        => 'Vul elk resultaat in dat je haalt. Het beste telt; een minder resultaat verlaagt niets.',
+                    'label'       => t('Nieuw resultaat'),
+                    'button'      => t('Opslaan'),
+                    'placeholder' => $unitWord === '' ? t('Resultaat') : tf('Resultaat in %s', $unitWord),
+                    'note'        => t('Vul elk resultaat in dat je haalt. Het beste telt; een minder resultaat verlaagt niets.'),
+                    'unit'        => $unitWord,
                 ];
                 break;
         }
@@ -320,17 +326,17 @@ if (!function_exists('hydrate_goals')) {
 
             $text = match (true) {
                 $value === null                        => '',
-                $manual && $countsDays                 => 'Gelukt',
-                $manual && $kind === 'accumulate'      => '+ ' . hydrate_goal_figure($goal, $value, false),
-                !$manual && $kind === 'streak'         => goal_days_text($value) . ' op rij',
+                $manual && $countsDays                 => t('Gelukt'),
+                $manual && $kind === 'accumulate'      => '+ ' . goal_unit_text($value, goal_manual_unit($goal['target_unit'] ?? null), true),
+                !$manual && $kind === 'streak'         => tf('%s op rij', goal_days_text($value)),
                 default                                => (string) hydrate_goal_figure($goal, $value, $countsDays),
             };
 
             return [
                 'label' => match (true) {
-                    $days === 0 => 'Vandaag',
-                    $days === 1 => 'Gisteren',
-                    default     => $days . ' dagen geleden',
+                    $days === 0 => t('Vandaag'),
+                    $days === 1 => t('Gisteren'),
+                    default     => tf('%d dagen geleden', $days),
                 },
                 'meta'  => $r['percent_complete'] === null
                     ? ''
@@ -364,18 +370,26 @@ if (!function_exists('hydrate_goals')) {
         return $out;
     }
 
-    /** "86 kg", or null when there is no value to label. */
+    /**
+     * "86 kg", or null when there is no value to label — a goal kept by hand,
+     * in its own unit, as the reader reads it ("189.6 lb", "10,000 steps").
+     */
     function hydrate_goal_label(?float $value, ?string $unit): ?string
     {
         if ($value === null) {
             return null;
         }
 
-        $number = fmod($value, 1.0) === 0.0
-            ? number_format($value, 0, ',', '.')
-            : rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',');
+        return goal_unit_text($value, goal_manual_unit($unit));
+    }
 
-        return $unit === null || $unit === '' ? $number : $number . ' ' . $unit;
+    /**
+     * The unit a goal kept by hand is typed in, as the entry box says it
+     * ("lb" for a kg goal in imperial); empty when it has none.
+     */
+    function hydrate_goal_unit_word(array $row): string
+    {
+        return goal_unit_shown(goal_manual_unit($row['target_unit'] ?? null))['word'];
     }
 
     /** A stored category the interface no longer offers still has to render. */

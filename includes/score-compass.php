@@ -37,6 +37,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/health-score.php';
 
 if (!function_exists('score_compass')) {
@@ -242,7 +244,7 @@ if (!function_exists('score_compass')) {
     {
         if ($days > 0 && !empty($area['collecting'])) {
             $needed = max(1, $minDays - $days);
-            return sprintf((string) $area['collecting'], $needed . ' ' . ($needed === 1 ? 'dag' : 'dagen'));
+            return sprintf((string) $area['collecting'], tn($needed, '%d dag', '%d dagen'));
         }
 
         return (string) ($area['empty'] ?? '');
@@ -390,7 +392,7 @@ if (!function_exists('score_compass')) {
         $out['state']     = 'filled';
         $out['direction'] = ['key' => $key, 'label' => $copy['directions'][$key]];
         $out['text']      = $text;
-        $out['aria']      = sprintf($t['aria'], count($dates), ': ' . mb_strtolower($copy['directions'][$key]) . ', van ' . $from . ' naar ' . $to);
+        $out['aria']      = sprintf($t['aria'], count($dates), ': ' . tf('%1$s, van %2$s naar %3$s', mb_strtolower($copy['directions'][$key]), $from, $to));
 
         return $out;
     }
@@ -597,9 +599,11 @@ if (!function_exists('score_compass')) {
     /** A date, with its year when that is not the current one: "7 okt 2025". */
     function score_compass_date_in(string $date, string $year, bool $short = false): string
     {
-        $text = score_compass_date($date, $short);
+        if (substr($date, 0, 4) === $year) {
+            return score_compass_date($date, $short);
+        }
 
-        return substr($date, 0, 4) === $year ? $text : $text . ' ' . substr($date, 0, 4);
+        return i18n_date($date, $short ? 'day_mon_year' : 'day_month_year');
     }
 
     /** The values at the given positions that have a score. */
@@ -1101,7 +1105,7 @@ if (!function_exists('score_compass')) {
                     $percent = (int) round(abs($change) * 100);
                     $fact    = $percent === 0
                         ? sprintf($text['same'], $what)
-                        : sprintf($text['fact'], $what, $percent . '% ' . ($change > 0 ? 'beter' : 'minder goed'));
+                        : sprintf($text['fact'], $what, tf($change > 0 ? '%d%% beter' : '%d%% minder goed', $percent));
                     return [$fact, $text['relation']];
                 }
                 break;
@@ -1196,7 +1200,7 @@ if (!function_exists('score_compass')) {
 
         return count($items) < 2
             ? (string) ($items[0] ?? '')
-            : implode(', ', array_slice($items, 0, -1)) . ' en ' . end($items);
+            : implode(', ', array_slice($items, 0, -1)) . ' ' . t('en') . ' ' . end($items);
     }
 
     /** [singular, plural] by count. */
@@ -1205,10 +1209,10 @@ if (!function_exists('score_compass')) {
         return is_array($forms) ? ($count === 1 ? $forms[0] : $forms[1]) : $forms;
     }
 
-    /** One decimal, with a comma: 7,4. */
+    /** One decimal, as the reader writes it: 7,4 or 7.4. */
     function score_compass_decimal(float $value): string
     {
-        return number_format($value, 1, ',', '');
+        return i18n_number($value, 1, false);
     }
 
     /** Minutes as the app writes durations: 399 -> "6:39". */
@@ -1219,18 +1223,10 @@ if (!function_exists('score_compass')) {
         return sprintf('%d:%02d', intdiv($minutes, 60), $minutes % 60);
     }
 
-    /** "2026-09-03" -> "3 september", or "3 sep". */
+    /** "2026-09-03" -> "3 september", or "3 sep" — "September 3", "Sep 3". */
     function score_compass_date(string $date, bool $short = false): string
     {
-        static $months = [
-            1 => ['jan', 'januari'], ['feb', 'februari'], ['mrt', 'maart'], ['apr', 'april'],
-            ['mei', 'mei'], ['jun', 'juni'], ['jul', 'juli'], ['aug', 'augustus'],
-            ['sep', 'september'], ['okt', 'oktober'], ['nov', 'november'], ['dec', 'december'],
-        ];
-
-        $day = new DateTimeImmutable($date);
-
-        return (int) $day->format('j') . ' ' . $months[(int) $day->format('n')][$short ? 0 : 1];
+        return i18n_date($date, $short ? 'day_mon' : 'day_month');
     }
 
     function score_compass_ucfirst(string $text): string

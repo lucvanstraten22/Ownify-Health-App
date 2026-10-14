@@ -14,6 +14,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 if (!function_exists('goals_prepare')) {
     /**
      * Builds the page model: expanded goals, split by view, in priority order,
@@ -24,6 +26,17 @@ if (!function_exists('goals_prepare')) {
     {
         $today  = $today ?? new DateTimeImmutable('today');
         $source = $config['goals'];
+
+        /* The wizard's unit suggestions as the reader sees them — "lb" for
+           "kg" in imperial, "steps" for "stappen" in English — keyed by the
+           unit a goal keeps (goal_unit_shown()). */
+        require_once dirname(__DIR__) . '/includes/goal-progress.php';
+        $config['unit_labels'] = [];
+        foreach ($config['categories'] ?? [] as $category) {
+            foreach ($category['units'] ?? [] as $unit) {
+                $config['unit_labels'][$unit] = goal_unit_shown(goal_manual_unit($unit))['word'];
+            }
+        }
 
         $active    = [];
         $completed = [];
@@ -301,8 +314,8 @@ if (!function_exists('goals_expand')) {
                 'key'   => $domain,
                 'label' => $goal['source_label'],
                 'note'  => $goal['daily_label'] !== null
-                    ? 'Elke dag ' . $goal['daily_label']
-                    : ($shape['label'] ?? '') . ' · uit je eigen gegevens',
+                    ? tf('Elke dag %s', $goal['daily_label'])
+                    : tf('%s · uit je eigen gegevens', (string) ($shape['label'] ?? '')),
             ] + $shape;
         } elseif (!empty($goal['is_manual'])) {
             $resolved[] = $config['sources']['manual'] + ['key' => 'manual'];
@@ -350,14 +363,14 @@ if (!function_exists('goals_remaining_text')) {
         }
 
         if ($days < 0) {
-            return 'Periode voorbij';
+            return t('Periode voorbij');
         }
 
         if ($days === 0) {
             return $config['labels']['last_day'];
         }
 
-        return 'Nog ' . goals_span_text($days);
+        return tf('Nog %s', goals_span_text($days));
     }
 }
 
@@ -367,22 +380,22 @@ if (!function_exists('goals_span_text')) {
     {
         if ($days >= 330) {
             $years = (int) round($days / 365);
-            return $years === 1 ? '1 jaar' : $years . ' jaar';
+            return $years === 1 ? t('1 jaar') : tf('%d jaar', $years);
         }
 
         if ($days >= 60) {
             $months = (int) round($days / 30);
-            return $months . ' maanden';
+            return tf('%d maanden', $months);
         }
 
         /* Days stay days for a good six weeks: "nog 18 dagen" is what a
            person counting down actually says, and "3 weken" loses the day. */
         if ($days >= 45) {
             $weeks = (int) round($days / 7);
-            return $weeks . ' weken';
+            return tf('%d weken', $weeks);
         }
 
-        return $days === 1 ? '1 dag' : $days . ' dagen';
+        return tn($days, '%d dag', '%d dagen');
     }
 }
 
@@ -399,7 +412,7 @@ if (!function_exists('goals_deadline_line')) {
         if ($goal['is_completed']) {
             $line = $goal['end_label'] !== null
                 ? sprintf($config['labels']['completed_on'], $goal['end_label'])
-                : 'Behaald';
+                : t('Behaald');
 
             if ($goal['took_label'] !== null) {
                 $line .= ' · ' . sprintf($config['labels']['took'], $goal['took_label']);
@@ -417,7 +430,7 @@ if (!function_exists('goals_deadline_line')) {
         $line = (string) $goal['remaining'];
 
         if ($goal['end_label'] !== null) {
-            $line .= ' · t/m ' . $goal['end_label'];
+            $line .= ' · ' . tf('t/m %s', $goal['end_label']);
         }
 
         return $line;
@@ -452,12 +465,7 @@ if (!function_exists('goals_date_short')) {
 
     function goals_date_short(DateTimeInterface $date): string
     {
-        $months = [
-            1 => 'jan', 'feb', 'mrt', 'apr', 'mei', 'jun',
-            'jul', 'aug', 'sep', 'okt', 'nov', 'dec',
-        ];
-
-        return sprintf('%d %s', (int) $date->format('j'), $months[(int) $date->format('n')]);
+        return i18n_date($date, 'day_mon');
     }
 }
 
@@ -510,6 +518,7 @@ if (!function_exists('goals_script_copy')) {
                 $goals['durations']
             ),
             'wizard'    => $goals['wizard'],
+            'unit_labels' => $goals['unit_labels'] ?? [],
         ];
     }
 }

@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/render.php';
 require_once __DIR__ . '/health.php';
 require_once __DIR__ . '/community.php';
@@ -61,11 +63,19 @@ if (!function_exists('app_page_data')) {
 
         $data['focus'] = $setup['focus'];
 
+        /* The language and units everything below is written in
+           (includes/i18n.php): `chosen` null means the device decides. */
+        $data['i18n'] = [
+            'locale' => i18n_locale(),
+            'chosen' => i18n_chosen(),
+            'units'  => units_system(),
+        ];
+
         /* The config files describe the shape of each page — which areas
            exist, what they are called, in what unit. The values come from
            the signed-in user's own records; anything they have not recorded
            stays null and renders empty. */
-        $data['health'] = hydrate_health(require $config . '/health.php', $userId);
+        $data['health'] = hydrate_health(config_copy('health'), $userId);
 
         /* The ring is the average of whichever pillars have a score, derived
            on every render rather than stored, so it can never disagree with
@@ -103,7 +113,7 @@ if (!function_exists('app_page_data')) {
         /* The Scorekompas behind the ring: what the score is made of, what
            is changing, the person's own earlier scores and where the most
            room is — read from the same engine, never scored again. */
-        $compass         = require $config . '/compass.php';
+        $compass         = config_copy('compass');
         $scoreDays       = [];
         $data['compass'] = hydrate_compass($compass, $data, $userId, $scoreDays);
 
@@ -152,10 +162,10 @@ if (!function_exists('app_page_data')) {
         }
 
         /* Real accounts and real points, or an empty board. */
-        $data['community'] = hydrate_community(require $config . '/community.php', $userId);
+        $data['community'] = hydrate_community(config_copy('community'), $userId);
 
         /* Goals: read for this user, then expanded, split by view and ordered. */
-        $data['goals'] = goals_prepare(hydrate_goals(require $config . '/goals.php', $userId));
+        $data['goals'] = goals_prepare(hydrate_goals(config_copy('goals'), $userId));
 
         /* The line under each page says which of three situations the reader
            is in. An account with data gets no line at all: there is nothing
@@ -177,13 +187,13 @@ if (!function_exists('app_page_data')) {
         $data['ai']['session'] = ai_summary($userId);
 
         /* Settings: integrations resolved, profile read off the signed-in record. */
-        $data['settings'] = settings_prepare(require $config . '/settings.php', $data['auth']);
+        $data['settings'] = settings_prepare(config_copy('settings'), $data['auth']);
 
         /* The first days: the setup a new account starts with, and the card
            Overzicht opens with until the baseline is there. Read from the
            same engine and records as everything above; nothing is scored. */
         if ($firstDays) {
-            $copy = require $config . '/setup.php';
+            $copy = config_copy('setup');
 
             $data['settings']    = hydrate_settings_focus($data['settings'], $copy, $setup, $data['focus_labels']);
             $data['setup']       = hydrate_setup($copy, $data, $userId, $setup);
@@ -348,11 +358,11 @@ if (!function_exists('app_page_data')) {
 
                 $data['goals']['all'][$g]['days'][$d]['day']   = (int) $when->format('j');
                 $data['goals']['all'][$g]['days'][$d]['title'] = goals_date_short($when) . ' · ' . match ($day['state']) {
-                    'met'     => 'gehaald',
-                    'missed'  => 'niet gehaald',
-                    'unknown' => 'geen gegevens',
-                    'pending' => 'vandaag, nog open',
-                    default   => 'nog niet geweest',
+                    'met'     => t('gehaald'),
+                    'missed'  => t('niet gehaald'),
+                    'unknown' => t('geen gegevens'),
+                    'pending' => t('vandaag, nog open'),
+                    default   => t('nog niet geweest'),
                 };
             }
         }

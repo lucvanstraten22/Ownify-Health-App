@@ -22,6 +22,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var LINGER = 1600;      // ms a touch reading stays after the finger lifts
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-night]'), night);
@@ -86,7 +88,7 @@
             place((block[1] + block[2]) / 2);
 
             if (announce && live) {
-                live.textContent = (rows[block[0]] || '') + ', ' + block[3] + ' tot ' + block[4];
+                live.textContent = (rows[block[0]] || '') + ', ' + T.tf('%1$s tot %2$s', block[3], block[4]);
             }
         }
 

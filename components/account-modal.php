@@ -51,7 +51,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             <?php if ($signedIn): ?>
                 <?php /* Back from the Vrienden page to the account. Only there. */ ?>
                 <button type="button" class="account__close account__back press" data-friends-back
-                        aria-label="Terug naar account" hidden>
+                        aria-label="<?= e(t('Terug naar account')) ?>" hidden>
                     <?= icon('chevron-left') ?>
                 </button>
             <?php endif; ?>
@@ -62,15 +62,14 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <?php if ($flows): ?>data-account-title data-title-login="<?= e($titles['login']) ?>" data-title-register="<?= e($titles['register']) ?>"<?php endif; ?>>
                 <?= e($flows ? $titles['login'] : 'Account') ?>
             </h2>
-            <button type="button" class="account__close press" data-account-close aria-label="Sluiten">
+            <button type="button" class="account__close press" data-account-close aria-label="<?= e(t('Sluiten')) ?>">
                 <?= icon('chevron-down') ?>
             </button>
         </div>
 
         <?php if (!$auth['database']): ?>
             <p class="account__notice">
-                Geen databaseverbinding. Importeer <code>database/schema.sql</code> en
-                controleer <code>config/database.php</code>.
+                <?= e(t('Geen databaseverbinding. Importeer database/schema.sql en controleer config/database.php.')) ?>
             </p>
         <?php endif; ?>
 
@@ -107,36 +106,36 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 </span>
                 <div class="account__identity-text">
                     <p class="account__username" data-account-username><?= e($user['username']) ?></p>
-                    <p class="account__meta">Lid sinds <?= e(date('j M Y', strtotime($user['created_at']))) ?></p>
+                    <p class="account__meta"><?= e(t('Lid sinds')) ?> <?= e(i18n_date(new DateTimeImmutable((string) $user['created_at']), 'day_mon_year')) ?></p>
                 </div>
             </div>
 
             <form class="account__form" data-account-form="username" novalidate>
-                <label class="account__label" for="account-username">Gebruikersnaam</label>
+                <label class="account__label" for="account-username"><?= e(t('Gebruikersnaam')) ?></label>
                 <div class="account__row">
                     <input class="account__input" type="text" id="account-username" name="username"
                            value="<?= e($user['username']) ?>" minlength="3" maxlength="30"
                            autocomplete="username" spellcheck="false" required>
-                    <button type="submit" class="btn press">Opslaan</button>
+                    <button type="submit" class="btn press"><?= e(t('Opslaan')) ?></button>
                 </div>
             </form>
 
             <form class="account__form" data-account-form="avatar" novalidate>
-                <label class="account__label" for="account-avatar">Profielfoto</label>
+                <label class="account__label" for="account-avatar"><?= e(t('Profielfoto')) ?></label>
                 <div class="account__row">
                     <input class="account__file" type="file" id="account-avatar" name="avatar"
                            accept="image/jpeg,image/png,image/webp" required>
-                    <button type="submit" class="btn press">Uploaden</button>
+                    <button type="submit" class="btn press"><?= e(t('Uploaden')) ?></button>
                 </div>
-                <p class="account__hint">JPG, PNG of WebP, maximaal 3 MB.</p>
+                <p class="account__hint"><?= e(t('JPG, PNG of WebP, maximaal 3 MB.')) ?></p>
             </form>
 
             <div class="account__form">
-                <p class="account__label" id="account-friends-label">Vrienden</p>
+                <p class="account__label" id="account-friends-label"><?= e(t('Vrienden')) ?></p>
                 <button type="button" class="account__nav press" data-friends-open
                         aria-labelledby="account-friends-label account-friends-summary">
                     <span class="account__nav-text" id="account-friends-summary" data-friends-summary>
-                        <span><?= e($friendCount === 0 ? 'Nog geen vrienden' : $friendCount . ($friendCount === 1 ? ' vriend' : ' vrienden')) ?></span>
+                        <span><?= e($friendCount === 0 ? t('Nog geen vrienden') : $friendCount . ($friendCount === 1 ? ' vriend' : ' vrienden')) ?></span>
                         <?php if ($requestCount > 0): ?>
                             <span class="account__badge"><?= e($requestCount . ($requestCount === 1 ? ' verzoek' : ' verzoeken')) ?></span>
                         <?php endif; ?>
@@ -146,7 +145,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             </div>
 
             <form class="account__form" data-account-form="logout">
-                <button type="submit" class="btn btn--ghost press account__logout">Uitloggen</button>
+                <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Uitloggen')) ?></button>
             </form>
 
             </div>
@@ -160,31 +159,29 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                      server session, and the account only exists once this
                      form is accepted. */ ?>
             <div class="account__step" data-account-step="google-username">
-                <p class="account__username">Kies je gebruikersnaam</p>
+                <p class="account__username"><?= e(t('Kies je gebruikersnaam')) ?></p>
                 <p class="account__meta">
-                    Google heeft <?= e($pending['email']) ?> bevestigd. Kies nog een
-                    gebruikersnaam; daarna is je account klaar.
+                    <?= e(tf('Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.', (string) $pending['email'])) ?>
                 </p>
 
                 <form class="account__form" data-account-form="google-username" novalidate>
                     <div class="account__field">
-                        <label class="account__label" for="account-google-username">Gebruikersnaam</label>
+                        <label class="account__label" for="account-google-username"><?= e(t('Gebruikersnaam')) ?></label>
                         <input class="account__input" type="text" id="account-google-username" name="username"
                                minlength="3" maxlength="30" autocomplete="username" spellcheck="false"
                                autocapitalize="none" required>
-                        <p class="account__hint">3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.</p>
+                        <p class="account__hint"><?= e(t('3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.')) ?></p>
                     </div>
 
-                    <button type="submit" class="btn account__submit press">Account aanmaken</button>
+                    <button type="submit" class="btn account__submit press"><?= e(t('Account aanmaken')) ?></button>
                 </form>
 
                 <form class="account__form" data-account-form="google-cancel">
-                    <button type="submit" class="btn btn--ghost press account__logout">Annuleren</button>
+                    <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Annuleren')) ?></button>
                 </form>
 
                 <p class="account__hint account__hint--centred">
-                    Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap
-                    verloopt over <?= e((string) $pending['minutes']) ?> <?= $pending['minutes'] === 1 ? 'minuut' : 'minuten' ?>.
+                    <?= e(tn((int) $pending['minutes'], 'Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuut.', 'Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuten.')) ?>
                 </p>
             </div>
 
@@ -193,7 +190,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             <form class="account__form" data-account-form="email" novalidate>
 
                 <div class="account__field">
-                    <label class="account__label" for="account-username">Gebruikersnaam</label>
+                    <label class="account__label" for="account-username"><?= e(t('Gebruikersnaam')) ?></label>
                     <input class="account__input" type="text" id="account-username" name="username"
                            maxlength="30" autocomplete="username" spellcheck="false" required>
                 </div>
@@ -201,18 +198,18 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <?php /* Only registration needs an address; signing in resolves
                          the username itself. */ ?>
                 <div class="account__field" data-account-only="register" hidden>
-                    <label class="account__label" for="account-email">E-mailadres</label>
+                    <label class="account__label" for="account-email"><?= e(t('E-mailadres')) ?></label>
                     <input class="account__input" type="email" id="account-email" name="email"
                            autocomplete="email">
                 </div>
 
                 <div class="account__field">
-                    <label class="account__label" for="account-password">Wachtwoord</label>
+                    <label class="account__label" for="account-password"><?= e(t('Wachtwoord')) ?></label>
                     <input class="account__input" type="password" id="account-password" name="password"
                            minlength="8" autocomplete="current-password" required>
                 </div>
 
-                <button type="submit" class="btn account__submit press" data-account-submit>Inloggen</button>
+                <button type="submit" class="btn account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
             </form>
 
             <?php /* Google is secondary: a small mark, no label. It is a
@@ -221,7 +218,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                      by design. */ ?>
             <div class="account__socials">
                 <button type="button" class="social press" data-account-provider="google"
-                        aria-label="Doorgaan met Google" <?= $providers['google'] ? '' : 'disabled' ?>>
+                        aria-label="<?= e(t('Doorgaan met Google')) ?>" <?= $providers['google'] ? '' : 'disabled' ?>>
                     <svg class="social__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23Z"/>
@@ -232,7 +229,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             </div>
 
             <?php if (!$providers['google']): ?>
-                <p class="account__hint account__hint--centred">Google is nog niet gekoppeld.</p>
+                <p class="account__hint account__hint--centred"><?= e(t('Google is nog niet gekoppeld.')) ?></p>
             <?php endif; ?>
 
         <?php endif; ?>

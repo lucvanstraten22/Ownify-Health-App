@@ -144,13 +144,21 @@ check('Systeem, Donker and Licht are offered, and nothing is disabled', array_co
     && array_filter($choice['options'], static fn (array $o): bool => !empty($o['disabled'])) === []);
 check('the theme is a choice that saves', ($choice['saves'] ?? false) === true);
 
+/* Language and units are kept too since 15.0 (docs/I18N.md); every other
+   choice still says it is not. */
 $others = [];
 foreach ($settings['pages'] as $id => $page) {
     foreach ($page['blocks'] as $block) {
-        if (($block['type'] ?? '') === 'choice' && ($block['name'] ?? '') !== 'theme') {
-            $others[] = $id;
-            check("$id: still says its choice is not kept", empty($block['saves']));
+        $name = $block['name'] ?? '';
+        if (($block['type'] ?? '') !== 'choice' || $name === 'theme') {
+            continue;
         }
+        if (in_array($name, ['language', 'units'], true)) {
+            check("$id: the $name choice saves", ($block['saves'] ?? false) === true);
+            continue;
+        }
+        $others[] = $id;
+        check("$id: still says its choice is not kept", empty($block['saves']));
     }
 }
 check('there are other choices to tell apart', $others !== []);

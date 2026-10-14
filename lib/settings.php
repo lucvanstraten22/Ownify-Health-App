@@ -15,6 +15,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 if (!function_exists('settings_prepare')) {
     /**
      * Resolves the integrations, the profile and the row summaries that depend
@@ -40,7 +42,7 @@ if (!function_exists('settings_prepare')) {
             $integration['connected'] = $integration['status'] === 'connected';
             $integration['account']   = $state['account'] ?? null;
             $integration['last_sync'] = settings_sync_label($state['last_sync_at'] ?? null);
-            $integration['error']     = $state['last_error'] ?? null;
+            $integration['error']     = integration_message_shown($state['last_error'] ?? null);   // stored in Dutch
             $integration['transport'] = $state['transport'] ?? 'cloud';
             /* A sync running now (a cloud source, after connecting or on
                "Nu synchroniseren"), so the row can say so. */
@@ -95,7 +97,7 @@ if (!function_exists('settings_prepare')) {
         $settings = settings_set_state_value(
             $settings,
             'devices',
-            'Laatste sync',
+            t('Laatste sync'),          // the config's label, as config_copy() has it
             settings_last_sync_across($live)
         );
 
@@ -131,7 +133,7 @@ if (!function_exists('settings_prepare')) {
         $settings = settings_set_row_value(
             $settings,
             'account',
-            $auth['signed_in'] ? (string) $auth['user']['username'] : 'Niet ingelogd'
+            $auth['signed_in'] ? (string) $auth['user']['username'] : t('Niet ingelogd')
         );
 
         /* Systeem, Dark or White Mode, as this browser chose it
@@ -139,6 +141,7 @@ if (!function_exists('settings_prepare')) {
            shows the phone's own choice in its place. */
         require_once __DIR__ . '/theme.php';
         $settings = settings_use_theme($settings, app_theme_preference());
+        $settings = settings_use_language_units($settings);
 
         return $settings;
     }
@@ -166,15 +169,88 @@ if (!function_exists('settings_use_theme')) {
     }
 }
 
+if (!function_exists('settings_use_language_units')) {
+    /**
+     * Taal and Eenheden as they are in force (includes/i18n.php): the ticked
+     * option, the main page's rows, and what "Nu in gebruik" names.
+     */
+    function settings_use_language_units(array $settings): array
+    {
+        $language = i18n_chosen() ?? 'auto';
+        $units    = units_system();
+
+        foreach (['language', 'preferences'] as $pageId) {
+            foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
+                $name = $block['name'] ?? '';
+
+                if (($block['type'] ?? '') === 'choice' && $name === 'language') {
+                    $settings['pages'][$pageId]['blocks'][$b]['selected'] = $language;
+
+                    /* Each language is named in itself; the other one also
+                       in the language on screen ("English — Engels"). */
+                    foreach ($block['options'] as $o => $option) {
+                        if (in_array($option['key'], I18N_LOCALES, true) && $option['key'] === i18n_locale()) {
+                            $settings['pages'][$pageId]['blocks'][$b]['options'][$o]['note'] = '';
+                        }
+                    }
+                }
+
+                if (($block['type'] ?? '') === 'choice' && $name === 'units') {
+                    $settings['pages'][$pageId]['blocks'][$b]['selected'] = $units;
+                }
+
+                if (($block['type'] ?? '') === 'rows' && $name === 'units_now' && $units === 'imperial') {
+                    $settings['pages'][$pageId]['blocks'][$b]['items'] = [
+                        ['label' => t('Gewicht'),     'value' => t('pond (lb)')],
+                        ['label' => t('Lengte'),      'value' => t('voet en inch (ft/in)')],
+                        ['label' => t('Afstand'),     'value' => t('mijl (mi)')],
+                        ['label' => t('Temperatuur'), 'value' => t('graden Fahrenheit (°F)')],
+                        ['label' => t('Energie'),     'value' => t('kilocalorie (kcal)')],
+                    ];
+                }
+            }
+        }
+
+        /* "Versie Beta 15.0": the word in the language on screen. */
+        foreach ($settings['groups'] as $g => $group) {
+            foreach ($group['rows'] as $r => $row) {
+                if ($row['id'] === 'about' && str_starts_with((string) ($row['value'] ?? ''), 'Versie ')) {
+                    $settings['groups'][$g]['rows'][$r]['value'] = t('Versie') . substr((string) $row['value'], 6);
+                }
+            }
+        }
+
+        $settings = settings_set_row_value($settings, 'language', match ($language) {
+            'en'    => 'English',
+            'nl'    => 'Nederlands',
+            default => t('Automatisch'),
+        });
+
+        $week = $settings['pages']['preferences']['blocks'] ?? [];
+        $day  = t('Maandag');
+        foreach ($week as $block) {
+            if (($block['name'] ?? '') === 'week') {
+                foreach ($block['options'] as $option) {
+                    if ($option['key'] === ($block['selected'] ?? 'monday')) {
+                        $day = (string) $option['label'];
+                    }
+                }
+            }
+        }
+
+        return settings_set_row_value($settings, 'preferences', ($units === 'imperial' ? t('Imperiaal') : t('Metrisch')) . ' · ' . $day);
+    }
+}
+
 if (!function_exists('settings_device_summary')) {
     /** How many sources are attached, in words a person would use. */
     function settings_device_summary(int $connected): string
     {
         if ($connected === 0) {
-            return 'Geen verbonden';
+            return t('Geen verbonden');
         }
 
-        return $connected === 1 ? '1 verbonden' : $connected . ' verbonden';
+        return tf('%d verbonden', $connected);
     }
 }
 
@@ -226,7 +302,7 @@ if (!function_exists('settings_profile')) {
             'last_name'     => $user['last_name'] ?? null,
             'date_of_birth' => settings_date($user['date_of_birth'] ?? null),
             'gender'        => settings_gender($user['gender'] ?? null),
-            'age'           => isset($user['age']) && $user['age'] !== null ? $user['age'] . ' jaar' : null,
+            'age'           => isset($user['age']) && $user['age'] !== null ? tf('%d jaar', (int) $user['age']) : null,
             'height'        => settings_measurement($user['height'] ?? null),
             'weight'        => settings_measurement($user['weight'] ?? null),
             'activity_level' => settings_activity_level($user['activity_level'] ?? null),
@@ -249,22 +325,23 @@ if (!function_exists('settings_profile')) {
 }
 
 if (!function_exists('settings_measurement')) {
-    /** "182 cm" from the measurement row, or null while there is none. */
+    /**
+     * "182 cm" from the measurement row, or null while there is none — in the
+     * person's units: "5 ft 11 in", "159.8 lb" (includes/i18n.php). The row
+     * itself stays in cm or kg.
+     */
     function settings_measurement(?array $measurement): ?string
     {
         if ($measurement === null || !isset($measurement['value'])) {
             return null;
         }
 
-        $value = (float) $measurement['value'];
-        $text  = rtrim(rtrim(number_format($value, 1, ',', '.'), '0'), ',');
-
-        return trim($text . ' ' . (string) ($measurement['unit'] ?? ''));
+        return units_format((float) $measurement['value'], (string) ($measurement['unit'] ?? ''));
     }
 }
 
 if (!function_exists('settings_date')) {
-    /** A date of birth as a person writes it: 4 oktober 1998. */
+    /** A date of birth as a person writes it: 4 oktober 1998, October 4, 1998. */
     function settings_date(?string $date): ?string
     {
         if (!$date) {
@@ -277,12 +354,7 @@ if (!function_exists('settings_date')) {
             return null;
         }
 
-        $months = [
-            1 => 'januari', 'februari', 'maart', 'april', 'mei', 'juni',
-            'juli', 'augustus', 'september', 'oktober', 'november', 'december',
-        ];
-
-        return sprintf('%d %s %d', (int) $value->format('j'), $months[(int) $value->format('n')], (int) $value->format('Y'));
+        return i18n_date($value, 'day_month_year');
     }
 }
 
@@ -294,10 +366,10 @@ if (!function_exists('settings_gender')) {
     function settings_gender(?string $gender): ?string
     {
         return match ($gender) {
-            'female'     => 'Vrouw',
-            'male'       => 'Man',
-            'non_binary' => 'Non-binair',
-            'other'      => 'Anders',
+            'female'     => t('Vrouw'),
+            'male'       => t('Man'),
+            'non_binary' => t('Non-binair'),
+            'other'      => t('Anders'),
             default      => null,
         };
     }
@@ -313,8 +385,10 @@ if (!function_exists('settings_field_value')) {
             return null;
         }
 
-        if (isset($field['unit']) && !str_contains($value, $field['unit'])) {
-            return $value . ' ' . $field['unit'];
+        /* A measurement arrives with its unit (settings_measurement), in the
+           person's units; anything else gets the field's. */
+        if (isset($field['unit']) && !preg_match('/\p{L}/u', $value)) {
+            return $value . ' ' . units_label((string) $field['unit']);
         }
 
         return (string) $value;
@@ -329,9 +403,9 @@ if (!function_exists('settings_field_blank')) {
            was true when there was nowhere else to answer it. It is answered
            here now, so it says the same thing every other empty field says. */
         return match ($state ?? $field['edit'] ?? true) {
-            'locked'  => 'Bij onboarding',
-            'derived' => 'Nog onbekend',
-            default   => 'Nog niet ingesteld',
+            'locked'  => t('Bij onboarding'),
+            'derived' => t('Nog onbekend'),
+            default   => t('Nog niet ingesteld'),
         };
     }
 }
@@ -341,11 +415,11 @@ if (!function_exists('settings_activity_level')) {
     function settings_activity_level(?string $level): ?string
     {
         return match ($level) {
-            'sedentary' => 'Weinig beweging',
-            'light'     => 'Licht actief',
-            'moderate'  => 'Gemiddeld actief',
-            'active'    => 'Actief',
-            'athlete'   => 'Sporter',
+            'sedentary' => t('Weinig beweging'),
+            'light'     => t('Licht actief'),
+            'moderate'  => t('Gemiddeld actief'),
+            'active'    => t('Actief'),
+            'athlete'   => t('Sporter'),
             default     => null,
         };
     }
@@ -365,10 +439,7 @@ if (!function_exists('settings_member_since')) {
             return null;
         }
 
-        $months = ['januari', 'februari', 'maart', 'april', 'mei', 'juni',
-                   'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
-
-        return $months[(int) $date->format('n') - 1] . ' ' . $date->format('Y');
+        return i18n_date($date, 'month_year');
     }
 }
 
@@ -418,21 +489,46 @@ if (!function_exists('settings_field_input')) {
             'date_of_birth'           => ['type' => 'date', 'max' => date('Y-m-d'),
                                           'min' => date('Y-m-d', strtotime('-120 years'))],
             'gender'                  => ['type' => 'choice', 'options' => [
-                                             'female'     => 'Vrouw',
-                                             'male'       => 'Man',
-                                             'non_binary' => 'Non-binair',
-                                             'other'      => 'Anders',
+                                             'female'     => t('Vrouw'),
+                                             'male'       => t('Man'),
+                                             'non_binary' => t('Non-binair'),
+                                             'other'      => t('Anders'),
                                           ]],
             /* What the person most wants to understand (includes/setup.php):
                the choices come with the profile, from config/setup.php. */
             'focus'                   => ['type' => 'choice', 'options' => $profile['focus_options'] ?? []],
-            'height'                  => ['type' => 'number', 'min' => 50, 'max' => 260, 'step' => '0.1'],
-            'weight'                  => ['type' => 'number', 'min' => 20, 'max' => 400, 'step' => '0.1'],
+            /* In the person's units (includes/i18n.php): the bounds are the
+               endpoint's 50–260 cm and 20–400 kg, converted. Imperial height
+               is feet and inches, two numbers. */
+            'height'                  => units_imperial()
+                                          ? ['type' => 'feet_inches', 'min' => 20, 'max' => 102, 'step' => '1']
+                                          : ['type' => 'number', 'min' => 50, 'max' => 260, 'step' => '0.1'],
+            'weight'                  => ['type' => 'number', 'min' => (int) ceil(units_out(20, 'kg')),
+                                          'max' => (int) floor(units_out(400, 'kg')), 'step' => '0.1'],
             default                   => ['type' => 'text', 'maxlength' => 120],
         };
 
         $input['value'] = $raw === null ? '' : (string) $raw;
-        $input['unit']  = $field['unit'] ?? '';
+        $input['unit']  = isset($field['unit']) ? units_label((string) $field['unit']) : '';
+
+        /* A measurement starts from its stored value, shown in the person's
+           units, and says which unit comes back (`<key>_unit`), so the
+           endpoint converts exactly once. */
+        if (in_array($key, ['height', 'weight'], true)) {
+            $input['post_unit'] = $input['unit'];
+            if ($raw !== null) {
+                $shown          = units_out((float) $raw, (string) $field['unit']);
+                $input['value'] = $input['type'] === 'feet_inches'
+                    ? (string) (int) round($shown)
+                    : i18n_number_trim($shown, 1, false);
+            }
+            if ($input['type'] === 'feet_inches') {
+                $inches          = $raw === null ? null : (int) round(units_out((float) $raw, 'cm'));
+                $input['feet']   = $inches === null ? '' : (string) intdiv($inches, 12);
+                $input['inches'] = $inches === null ? '' : (string) ($inches % 12);
+                $input['unit']   = 'ft/in';
+            }
+        }
 
         /* Which endpoint saves it. The one-time fields go to their own, which
            is the one that refuses a second write. */
@@ -461,9 +557,9 @@ if (!function_exists('settings_sync_label')) {
         $days = (int) $when->setTime(0, 0)->diff(new DateTimeImmutable('today'))->days;
 
         $day = match (true) {
-            $days === 0 => 'Vandaag',
-            $days === 1 => 'Gisteren',
-            default     => $when->format('j-n-Y'),
+            $days === 0 => t('Vandaag'),
+            $days === 1 => t('Gisteren'),
+            default     => i18n_date($when, 'numeric'),
         };
 
         return $day . ', ' . $when->format('H:i');

@@ -30,7 +30,7 @@ if (($_POST['all'] ?? '') === '1') {
 
     api_ok([
         'deleted' => $deleted,
-        'message' => $deleted === 0 ? 'Er waren geen gesprekken om te wissen.' : 'Je AI-gesprekken zijn gewist.',
+        'message' => $deleted === 0 ? t('Er waren geen gesprekken om te wissen.') : t('Je AI-gesprekken zijn gewist.'),
     ]);
 }
 
@@ -40,4 +40,4 @@ if (!ai_conversation_delete($userId, $conversationId)) {
     api_json(['ok' => false, 'code' => 'not_found', 'error' => ai_error_text('not_found')], 404);
 }
 
-api_ok(['deleted' => 1, 'message' => 'Gesprek verwijderd.']);
+api_ok(['deleted' => 1, 'message' => t('Gesprek verwijderd.')]);

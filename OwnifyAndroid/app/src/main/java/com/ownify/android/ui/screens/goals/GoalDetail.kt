@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -104,7 +107,7 @@ fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
     }
 
     CompositionLocalProvider(LocalAccent provides Accent.of(goal.accent)) {
-        DetailColumn(scroll, back = copy["back"] ?: "Doelen", backAria = "Terug naar Doelen") {
+        DetailColumn(scroll, back = copy["back"] ?: tr("Doelen"), backAria = tr("Terug naar Doelen")) {
             Hero(data, goal)
             val entry = goal.entry
             if (goal.needsInput && !goal.isCompleted && entry != null) ManualEntry(goal, entry, copy)
@@ -129,7 +132,7 @@ private fun Hero(data: AppData, goal: Goal) {
 
     // The hero keeps its line short; the dates are in the rows underneath.
     val heroActive = if (goal.isCompleted) {
-        goal.endLabel?.let { (labels["completed_on"] ?: "%s").replace("%s", it) } ?: "Behaald"
+        goal.endLabel?.let { (labels["completed_on"] ?: "%s").replace("%s", it) } ?: tr("Behaald")
     } else {
         goal.remaining.orEmpty()
     }
@@ -194,7 +197,7 @@ private fun Hero(data: AppData, goal: Goal) {
             emptyHeight = 4.dp,
             modifier = Modifier
                 .padding(top = Ownify.Space3)
-                .semantics { contentDescription = if (empty) "nog geen voortgang" else "${goal.percent}% voltooid" }
+                .semantics { contentDescription = if (empty) tr("nog geen voortgang") else trf("%d%% voltooid", goal.percent) }
         )
 
         T(heroLine, JStyle.Meta, Modifier.padding(top = Ownify.Space3))
@@ -206,9 +209,9 @@ private fun Hero(data: AppData, goal: Goal) {
                 FactRow(goal.currentTitle.ifEmpty { labels["current"].orEmpty() }, goal.currentLabel.ifEmpty { null }, first = true)
                 goal.extraFacts.forEach { (label, value) -> FactRow(label, value) }
                 PeriodRow(
-                    copy["period"] ?: "Periode",
-                    "Gestart: " + goal.startLabel.ifEmpty { "—" },
-                    (if (goal.isCompleted) "Looptijd: " else "Eindigt: ") +
+                    copy["period"] ?: tr("Periode"),
+                    tr("Gestart") + ": " + goal.startLabel.ifEmpty { "—" },
+                    (if (goal.isCompleted) tr("Looptijd") else tr("Eindigt")) + ": " +
                         (if (goal.isCompleted) goal.tookLabel ?: "—" else goal.endLabel ?: labels["no_deadline"].orEmpty())
                 )
             }
@@ -300,15 +303,15 @@ private fun Days(goal: Goal, copy: Map<String, String>) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 IconTile(OwnifyIcons.check)
-                T(copy["days"] ?: "Per dag", JStyle.Eyebrow, Modifier.semantics { heading() })
+                T(copy["days"] ?: tr("Per dag"), JStyle.Eyebrow, Modifier.semantics { heading() })
             }
-            Chip(goal.daysChip ?: "${goal.daysMet} van ${goal.daysTotal}", muted = true)
+            Chip(goal.daysChip ?: trf("%1\$d van %2\$d", goal.daysMet, goal.daysTotal), muted = true)
         }
 
         // .day-calendar: the weekday initials, then the weeks.
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 6.dp).clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("M", "D", "W", "D", "V", "Z", "Z").forEach {
+                (if (OwnifyLanguage.english) listOf("M", "T", "W", "T", "F", "S", "S") else listOf("M", "D", "W", "D", "V", "Z", "Z")).forEach {
                     T(
                         it,
                         OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextFaint, tracking = Ownify.TrackingWide),
@@ -318,7 +321,7 @@ private fun Days(goal: Goal, copy: Map<String, String>) {
                 }
             }
             Column(
-                Modifier.fillMaxWidth().semantics { contentDescription = "${goal.daysMet} van ${goal.daysTotal} dagen gehaald" },
+                Modifier.fillMaxWidth().semantics { contentDescription = trf("%d van %d dagen gehaald", goal.daysMet, goal.daysTotal) },
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 goal.days.chunked(7).forEach { week ->
@@ -389,7 +392,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
     fun save(tick: Boolean) {
         error = null
         if (!tick && value.trim().isEmpty()) {
-            error = "Vul een waarde in."
+            error = tr("Vul een waarde in.")
             // goals.js: back into the field.
             field.focusSafely()
             return
@@ -398,10 +401,14 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
         saving = true
         val fields = buildMap {
             put("goal_id", goal.id)
-            if (!tick) put("value", value.trim())
+            if (!tick) {
+                put("value", value.trim())
+                // Typed in the goal's shown unit (Instellingen → Eenheden); the server keeps kg, km, cm, °C.
+                put("input_units", OwnifyLanguage.units)
+            }
         }
         scope.launch {
-            when (val outcome = OwnifyActions.form(context, "api/goals/progress.php", fields, "Dit kon niet worden opgeslagen.")) {
+            when (val outcome = OwnifyActions.form(context, "api/goals/progress.php", fields, tr("Dit kon niet worden opgeslagen."))) {
                 is Outcome.Done -> value = ""
                 is Outcome.Refused -> error = outcome.message
                 Outcome.SignedOut -> Unit
@@ -415,7 +422,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
 
         if (entry.kind == "tick") {
             Btn(
-                if (entry.done) "Vandaag afgevinkt" else entry.label,
+                if (entry.done) tr("Vandaag afgevinkt") else entry.label,
                 onClick = { save(tick = true) },
                 enabled = !entry.done && !saving,
                 icon = OwnifyIcons.check,
@@ -432,7 +439,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                     actions = KeyboardActions(onDone = { if (!saving) save(tick = false) })
                 )
-                Btn(entry.button ?: copy["manual_save"] ?: "Opslaan", onClick = { save(tick = false) }, enabled = !saving)
+                Btn(entry.button ?: copy["manual_save"] ?: tr("Opslaan"), onClick = { save(tick = false) }, enabled = !saving)
             }
         }
 
@@ -451,7 +458,7 @@ private fun SourceFooter(goal: Goal) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
             if (goal.sourceList.isEmpty()) {
-                T("Dit doel is nog niet aan gezondheidsgegevens gekoppeld.", JStyle.Meta)
+                T(tr("Dit doel is nog niet aan gezondheidsgegevens gekoppeld."), JStyle.Meta)
             } else {
                 goal.sourceList.forEachIndexed { i, source ->
                     val accent = Accent.of(source.accent).color
@@ -473,8 +480,8 @@ private fun SourceFooter(goal: Goal) {
                 }
             }
             CardHint(
-                if (goal.isManual) "Je voortgang verandert alleen door wat je zelf invult."
-                else "Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen."
+                if (goal.isManual) tr("Je voortgang verandert alleen door wat je zelf invult.")
+                else tr("Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.")
             )
         }
     }

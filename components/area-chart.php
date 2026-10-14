@@ -92,7 +92,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
                  data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $ys)) ?>">
 
                 <div class="compass-plot area-chart__plot<?= $levels !== [] ? ' has-levels' : '' ?>"<?php if ($period['has_data']): ?>
-                     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
+                     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="<?= e($suffix) ?>-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
 

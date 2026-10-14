@@ -34,7 +34,7 @@ $account = $data['header']['account'];
            button, so they are seen from every page — not only once the
            account panel is opened. friends.js keeps it in step. */
         $requests = count($data['community']['pending'] ?? []);
-        $requestsLabel = $requests === 1 ? '1 nieuw vriendverzoek' : $requests . ' nieuwe vriendverzoeken';
+        $requestsLabel = tn($requests, '%d nieuw vriendverzoek', '%d nieuwe vriendverzoeken');
         ?>
         <button type="button" class="pill pill--account press" data-account-open
                 aria-label="<?= e($account['aria'] . ($requests > 0 ? ', ' . $requestsLabel : '')) ?>">

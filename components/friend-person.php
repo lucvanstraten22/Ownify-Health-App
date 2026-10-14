@@ -21,8 +21,8 @@ $name   = (string) ($person['username'] ?? '');
 $avatar = $person['avatar_path'] ?? $person['avatar'] ?? null;
 
 $status = match ($kind) {
-    'incoming' => 'Wil vrienden met je worden',
-    'sent'     => 'Verzoek verstuurd',
+    'incoming' => t('Wil vrienden met je worden'),
+    'sent'     => t('Verzoek verstuurd'),
     default    => '',
 };
 ?>
@@ -44,21 +44,21 @@ $status = match ($kind) {
 
     <?php if ($kind === 'incoming'): ?>
         <span class="friend__actions friend__actions--wide" data-friend-actions>
-            <button type="button" class="btn press" data-friend-action="accept">Accepteren</button>
-            <button type="button" class="btn press" data-friend-action="decline">Weigeren</button>
+            <button type="button" class="btn press" data-friend-action="accept"><?= e(t('Accepteren')) ?></button>
+            <button type="button" class="btn press" data-friend-action="decline"><?= e(t('Weigeren')) ?></button>
         </span>
     <?php elseif ($kind === 'friend'): ?>
         <span class="friend__actions" data-friend-actions>
-            <button type="button" class="btn btn--link press" data-friend-action="remove-ask">Verwijderen</button>
+            <button type="button" class="btn btn--link press" data-friend-action="remove-ask"><?= e(t('Verwijderen')) ?></button>
         </span>
 
         <?php /* The one step between a tap and a friendship gone. The safe
                  answer comes first, under the thumb that just tapped. */ ?>
         <span class="friend__confirm" data-friend-confirm hidden>
-            <span class="friend__confirm-text"><?= e($name) ?> verwijderen uit je vrienden?</span>
+            <span class="friend__confirm-text"><?= e(tf('%s verwijderen uit je vrienden?', $name)) ?></span>
             <span class="friend__actions friend__actions--wide">
-                <button type="button" class="btn press" data-friend-action="remove-cancel">Annuleren</button>
-                <button type="button" class="btn confirm__yes--final press" data-friend-action="remove">Verwijderen</button>
+                <button type="button" class="btn press" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
+                <button type="button" class="btn confirm__yes--final press" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
             </span>
         </span>
     <?php else: ?>

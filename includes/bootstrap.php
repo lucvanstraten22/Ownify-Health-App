@@ -28,6 +28,7 @@ require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/crypto.php';
+require_once __DIR__ . '/i18n.php';
 
 /* Guarded for the reason crypto_check() is, below: a deploy lands one file at
    a time, and this file can arrive before the one it would require. Until it
@@ -45,6 +46,11 @@ session_boot();
 if (function_exists('persistent_login_resume')) {
     persistent_login_resume();
 }
+
+/* The signed-in account's language and units, once it is known who is signed
+   in (includes/i18n.php). An app request carrying a token applies its own
+   account when the token is checked (api_require_account_user()). */
+i18n_use_account(current_user_id());
 
 /* ---------------------------------------------------------------------------
  * WHEN A PAGE DIES, SAY SO SOMEWHERE
@@ -89,9 +95,10 @@ if (!function_exists('app_log_fatal')) {
 
         /* Nothing about the failure reaches the visitor — a message here is a
            message to whoever is probing the site. It goes in the log. */
-        echo '<!doctype html><meta charset="utf-8"><title>Even niet beschikbaar</title>'
+        $en = function_exists('i18n_locale') && i18n_locale() === 'en';
+        echo '<!doctype html><meta charset="utf-8"><title>' . ($en ? 'Temporarily unavailable' : 'Even niet beschikbaar') . '</title>'
             . '<p style="font:16px/1.5 system-ui;margin:3rem auto;max-width:28rem;text-align:center">'
-            . 'Er ging iets mis op de server. Probeer het zo opnieuw.</p>';
+            . ($en ? 'Something went wrong on the server. Please try again shortly.' : 'Er ging iets mis op de server. Probeer het zo opnieuw.') . '</p>';
     });
 
     /* A fatal that is not a throwable — memory, a timeout, a parse error in an

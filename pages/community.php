@@ -11,7 +11,7 @@ $community = $data['community'];
 $scope     = $community['default_scope'];
 $period    = $community['default_period'];
 ?>
-<section class="screen page" data-page="community" aria-label="Community"
+<section class="screen page" data-page="community" aria-label="<?= e(t('Community')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="community" data-community>
@@ -25,14 +25,14 @@ $period    = $community['default_period'];
                     'segment_options'  => $community['scopes'],
                     'segment_selected' => $scope,
                     'segment_attr'     => 'data-scope-option',
-                    'segment_label'    => 'Ranglijst kiezen',
+                    'segment_label'    => t('Ranglijst kiezen'),
                 ]);
 
                 component('segmented', $data + [
                     'segment_options'  => $community['periods'],
                     'segment_selected' => $period,
                     'segment_attr'     => 'data-period-option',
-                    'segment_label'    => 'Periode kiezen',
+                    'segment_label'    => t('Periode kiezen'),
                 ]);
                 ?>
             </div>

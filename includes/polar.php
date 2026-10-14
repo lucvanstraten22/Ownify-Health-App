@@ -1306,7 +1306,7 @@ if (!function_exists('polar_config')) {
         return [
             'ok'       => $status !== 'failed',
             'status'   => $status,
-            'message'  => $message ?? ($written > 0 ? 'Polar is gesynchroniseerd.' : 'Polar is gesynchroniseerd. Er was niets nieuws.'),
+            'message'  => integration_message_shown($message ?? ($written > 0 ? 'Polar is gesynchroniseerd.' : 'Polar is gesynchroniseerd. Er was niets nieuws.')),
             'written'  => $written,
             'requests' => $ctx['requests'],
         ];

@@ -1,5 +1,7 @@
 package com.ownify.android.connection
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,12 +52,11 @@ object OwnifySync {
     /** How far back a sync reads — the same for the button and the automatic sync. */
     val RANGE: Duration get() = OwnifySyncRunner.RANGE
 
-    private const val NOT_CONNECTED_MESSAGE = "Log eerst in bij Ownify."
-    private const val NO_HEALTH_CONNECT_MESSAGE = "Health Connect is niet beschikbaar op deze telefoon."
-    private const val NO_PERMISSION_MESSAGE =
-        "Geef Ownify eerst toegang tot Health Connect."
-    private const val READ_FAILED_MESSAGE = "Health Connect kon niet worden gelezen. Probeer het opnieuw."
-    private const val UNEXPECTED_MESSAGE = "Er ging iets mis bij het synchroniseren. Probeer het opnieuw."
+    private val NOT_CONNECTED_MESSAGE: String get() = tr("Log eerst in bij Ownify.")
+    private val NO_HEALTH_CONNECT_MESSAGE: String get() = tr("Health Connect is niet beschikbaar op deze telefoon.")
+    private val NO_PERMISSION_MESSAGE: String get() = tr("Geef Ownify eerst toegang tot Health Connect.")
+    private val READ_FAILED_MESSAGE: String get() = tr("Health Connect kon niet worden gelezen. Probeer het opnieuw.")
+    private val UNEXPECTED_MESSAGE: String get() = tr("Er ging iets mis bij het synchroniseren. Probeer het opnieuw.")
 
     var state: OwnifySyncState by mutableStateOf(OwnifySyncState.Idle)
         private set
@@ -141,7 +142,7 @@ object OwnifySync {
                 val done = if (outcome.done == 0) {
                     ""
                 } else {
-                    " ${outcome.done} van ${outcome.batches} delen waren al verstuurd; opnieuw synchroniseren is veilig."
+                    " " + trf("%1${'$'}d van %2${'$'}d delen waren al verstuurd; opnieuw synchroniseren is veilig.", outcome.done, outcome.batches)
                 }
                 OwnifySyncState.Failed(OwnifyConnection.describe(outcome.failure) + done)
             }

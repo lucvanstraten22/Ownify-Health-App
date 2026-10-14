@@ -90,7 +90,10 @@
         var decimals = (raw.split('.')[1] || '').length;
 
         animate(DURATION, function (t) {
-            el.textContent = (target * t).toFixed(decimals);
+            // 7,5 or 7.5, as the page wrote it (assets/js/i18n.js); whole numbers ungrouped.
+            el.textContent = window.OwnifyI18n
+                ? window.OwnifyI18n.number(target * t, decimals, false)
+                : (target * t).toFixed(decimals);
         });
     }
 

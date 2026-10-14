@@ -1,5 +1,6 @@
 package com.ownify.android.ui.app
 
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -166,9 +167,9 @@ private fun Unreachable(message: String, onRetry: () -> Unit) {
         CompositionLocalProvider(LocalGround provides placement) {
             JCard(Modifier.width(LocalScreen.current.shell)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                    T("Je gegevens konden niet worden geladen", JStyle.Subtitle, align = TextAlign.Center)
+                    T(tr("Je gegevens konden niet worden geladen"), JStyle.Subtitle, align = TextAlign.Center)
                     T(message, JStyle.Meta, align = TextAlign.Center)
-                    Btn("Opnieuw proberen", onClick = onRetry, modifier = Modifier.padding(top = Ownify.Space2))
+                    Btn(tr("Opnieuw proberen"), onClick = onRetry, modifier = Modifier.padding(top = Ownify.Space2))
                 }
             }
         }

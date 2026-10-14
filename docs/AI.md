@@ -227,8 +227,10 @@ data shows apart from interpretation, never correlation as causation; the data
 guess); scope (health only); safety (no diagnoses; for urgent symptoms a
 doctor, 112 in an emergency, 113 for thoughts of suicide); research (general
 knowledge only — it has no live search and never invents studies or
-citations); actions (changes are proposals); and style (Dutch by default,
-informal *je*, short, plain text with a little **bold**). `includes/ai/prompt.php`
+citations); actions (changes are proposals); style (in the language Ownify is shown
+in — informal *je* in Dutch — short, plain text with a little **bold**); and
+units (the person's metric or imperial; the data stays metric and is
+converted only in what it writes — [I18N.md](I18N.md)). `includes/ai/prompt.php`
 joins them with the conversation so far and the data above.
 
 Answers come back as plain text and are turned into paragraphs, headings and
@@ -290,7 +292,7 @@ None accepts a user id; every query filters on the id from the sign-in.
 | `api/ai/delete.php` | `conversation_id`, or `all=1` | deletes one conversation, or all of the person's |
 | `api/profile/privacy.php` | `ai_consent` = `1` / `0` | the Privacy switch: the same answer as `consent.php` |
 
-A refusal carries a `code` and a Dutch sentence (`config/dashboard.php`, `ai` →
+A refusal carries a `code` and a sentence in the reader's language (`config/dashboard.php`, `ai` →
 `errors`) — never Gemini's own text: `consent` 403, `empty` / `too_long` 422,
 `not_found` 404, `limit` 429, `quota` / `unavailable` / `timeout` 503,
 `blocked` 422 (Gemini would not answer this question), `action_gone` 409 (the

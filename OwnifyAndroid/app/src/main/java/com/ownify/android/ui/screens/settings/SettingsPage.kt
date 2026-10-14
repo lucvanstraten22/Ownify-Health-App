@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.settings
 
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -89,7 +90,7 @@ fun SettingsPage(data: AppData, scroll: ScrollState) {
         IdentityCard(data) { shell.openDetail(Detail.SettingsPage("account")) }
 
         // The account group is the identity card above.
-        settings.groups.filter { it.label != "Account" }.forEach { group ->
+        settings.groups.filter { group -> group.rows.none { it.id == "account" } }.forEach { group ->
             Column(Modifier.fillMaxWidth().reveal()) {
                 SettingsEyebrow(group.label)
                 SettingsCard {
@@ -140,7 +141,7 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
                 .clickable(interaction, indication = null, onClick = onClick)
                 .clearAndSetSemantics {
                     role = Role.Button
-                    contentDescription = "Account openen"
+                    contentDescription = tr("Account openen")
                     onClick { onClick(); true }
                 },
             padding = PaddingValues(horizontal = if (narrow) Ownify.Space4 else Ownify.Space5, vertical = Ownify.Space4)
@@ -148,9 +149,9 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space3 else Ownify.Space4)) {
                 AvatarCircle(profile.avatar, if (narrow) 42.dp else 48.dp, 22.dp)
                 Column(Modifier.weight(1f)) {
-                    T(if (signedIn) profile.username.orEmpty() else "Niet ingelogd", JStyle.Subtitle, maxLines = 1, ellipsis = true)
+                    T(if (signedIn) profile.username.orEmpty() else tr("Niet ingelogd"), JStyle.Subtitle, maxLines = 1, ellipsis = true)
                     T(
-                        if (signedIn) "Profiel en gegevens beheren" else "Log in via de accountknop rechtsboven",
+                        if (signedIn) tr("Profiel en gegevens beheren") else tr("Log in via de accountknop rechtsboven"),
                         JStyle.Meta,
                         Modifier.padding(top = 2.dp)
                     )
@@ -180,7 +181,7 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
                 .clickable(interaction, indication = null, onClick = onClick)
                 .clearAndSetSemantics {
                     role = Role.Button
-                    contentDescription = row.label + (meta?.let { " — $it" } ?: "") + ". Open instellingen."
+                    contentDescription = row.label + (meta?.let { " — $it" } ?: "") + ". " + tr("Open instellingen.")
                     onClick { onClick(); true }
                 }
                 .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp),

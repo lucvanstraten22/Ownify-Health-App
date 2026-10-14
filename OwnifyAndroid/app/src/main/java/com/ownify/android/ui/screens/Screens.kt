@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens
 
+import com.ownify.android.i18n.tr
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -147,7 +148,8 @@ private fun WelcomeRoute(paired: Boolean) {
  */
 object SignedOutCopy {
     const val APP_NAME = "Ownify"
-    const val SUBTITLE = "Je slaap, voeding en sport in één helder overzicht."
-    const val LOGIN = "Inloggen"
-    const val REGISTER = "Registreren"
+    /* In the app's language (OwnifyLanguage): the phone's, or the one chosen last. */
+    val SUBTITLE: String get() = tr("Je slaap, voeding en sport in één helder overzicht.")
+    val LOGIN: String get() = tr("Inloggen")
+    val REGISTER: String get() = tr("Registreren")
 }

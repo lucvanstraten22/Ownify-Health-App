@@ -77,8 +77,8 @@ $lowered = array_filter($awards, static fn ($a) => $a['delta'] < 0);
 
 $message = match (true) {
     $earned !== []  => $earned[0]['text'],
-    $lowered !== [] => 'Opgeslagen. Je punten voor deze dag zijn aangepast.',
-    default         => 'Opgeslagen.',
+    $lowered !== [] => t('Opgeslagen. Je punten voor deze dag zijn aangepast.'),
+    default         => t('Opgeslagen.'),
 };
 
 api_ok([

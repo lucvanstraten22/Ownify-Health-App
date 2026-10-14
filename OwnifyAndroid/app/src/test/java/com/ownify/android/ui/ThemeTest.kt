@@ -63,11 +63,11 @@ class ThemeTest {
     fun tearDown() {
         OwnifyThemeStore.forget(context)
         Ownify.use(OwnifyMode.DARK)
-        RuntimeEnvironment.setQualifiers("notnight")
+        RuntimeEnvironment.setQualifiers("+notnight")
     }
 
     /** The phone's own appearance, as Android's dark-theme switch sets it. */
-    private fun phone(dark: Boolean) = RuntimeEnvironment.setQualifiers(if (dark) "night" else "notnight")
+    private fun phone(dark: Boolean) = RuntimeEnvironment.setQualifiers(if (dark) "+night" else "+notnight")
 
     private fun stored(): String? = context.getSharedPreferences("ownify_theme", Context.MODE_PRIVATE).getString("theme", null)
 

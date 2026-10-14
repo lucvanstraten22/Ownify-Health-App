@@ -73,7 +73,7 @@ import org.robolectric.annotation.Config
  * Health Connect is the app's own.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class GoogleSignInFlowTest {
 
     @get:Rule

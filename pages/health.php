@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 $health = $data['health'];
 ?>
-<section class="screen page" data-page="health" aria-label="Gezondheid"
+<section class="screen page" data-page="health" aria-label="<?= e(t('Gezondheid')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>

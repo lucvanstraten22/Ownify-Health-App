@@ -1,5 +1,6 @@
 package com.ownify.android.connection
 
+import com.ownify.android.i18n.OwnifyLanguage
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -371,6 +372,9 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", contentType)
             connection.setRequestProperty("Accept", "application/json")
+            // The language chosen on this phone, else the phone's: the server
+            // answers in it when the account chose none (includes/i18n.php).
+            connection.setRequestProperty("Accept-Language", OwnifyLanguage.header())
 
             if (token != null) {
                 connection.setRequestProperty("Authorization", "Bearer $token")

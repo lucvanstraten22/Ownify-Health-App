@@ -17,6 +17,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/session.php';
 
@@ -71,7 +73,17 @@ if (!function_exists('auth_provider_available')) {
         $flash = $_SESSION['auth_flash'] ?? null;
         unset($_SESSION['auth_flash']);
 
-        return is_array($flash) && is_string($flash['message'] ?? null) ? $flash : null;
+        if (!is_array($flash) || !is_string($flash['message'] ?? null)) {
+            return null;
+        }
+
+        /* Said in the language of the page it lands on (includes/i18n.php). */
+        $flash['message'] = t($flash['message']);
+        if (is_array($flash['link'] ?? null)) {
+            $flash['link']['label'] = t((string) $flash['link']['label']);
+        }
+
+        return $flash;
     }
 
     /* --------------------------------------------------------- validation */
@@ -86,7 +98,7 @@ if (!function_exists('auth_provider_available')) {
         $email = auth_normalise_email($email);
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 191) {
-            return 'Vul een geldig e-mailadres in.';
+            return t('Vul een geldig e-mailadres in.');
         }
 
         return null;
@@ -95,7 +107,7 @@ if (!function_exists('auth_provider_available')) {
     function auth_validate_password(string $password): ?string
     {
         if (mb_strlen($password) < 8) {
-            return 'Kies een wachtwoord van minimaal 8 tekens.';
+            return t('Kies een wachtwoord van minimaal 8 tekens.');
         }
 
         if (mb_strlen($password) > 200) {
@@ -117,7 +129,7 @@ if (!function_exists('auth_provider_available')) {
 
         $pdo = db();
         if ($pdo === null) {
-            return ['ok' => false, 'error' => 'Geen databaseverbinding.'];
+            return ['ok' => false, 'error' => t('Geen databaseverbinding.')];
         }
 
         $error = auth_validate_email($email)
@@ -139,11 +151,11 @@ if (!function_exists('auth_provider_available')) {
            accounts, which the app's registration limit counts
            (api/auth/app-register.php). It never reaches a response. */
         if ($existing !== null) {
-            return ['ok' => false, 'error' => 'Er bestaat al een account met dit e-mailadres.', 'taken' => true];
+            return ['ok' => false, 'error' => t('Er bestaat al een account met dit e-mailadres.'), 'taken' => true];
         }
 
         if (user_username_taken($username)) {
-            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.', 'taken' => true];
+            return ['ok' => false, 'error' => t('Deze gebruikersnaam is al bezet.'), 'taken' => true];
         }
 
         try {
@@ -175,7 +187,7 @@ if (!function_exists('auth_provider_available')) {
             }
 
             // A race on either unique key lands here.
-            return ['ok' => false, 'error' => 'Dit account kon niet worden aangemaakt.'];
+            return ['ok' => false, 'error' => t('Dit account kon niet worden aangemaakt.')];
         }
 
         return ['ok' => true, 'error' => null, 'user_id' => $userId];
@@ -200,7 +212,7 @@ if (!function_exists('auth_provider_available')) {
     function auth_login_password(string $identifier, string $password): array
     {
         if (!db_available()) {
-            return ['ok' => false, 'error' => 'Geen databaseverbinding.'];
+            return ['ok' => false, 'error' => t('Geen databaseverbinding.')];
         }
 
         $identifier = trim($identifier);
@@ -218,7 +230,7 @@ if (!function_exists('auth_provider_available')) {
         /* `credentials` marks the one failure that is a wrong guess, so the
            sign-in limit (includes/auth-throttle.php) counts that and nothing
            else. It never reaches a response. */
-        $generic = ['ok' => false, 'error' => 'Gebruikersnaam of wachtwoord klopt niet.', 'credentials' => true];
+        $generic = ['ok' => false, 'error' => t('Gebruikersnaam of wachtwoord klopt niet.'), 'credentials' => true];
 
         if ($identity === null || empty($identity['password_hash'])) {
             // Spend comparable time so the response cannot be used to probe.
@@ -231,7 +243,7 @@ if (!function_exists('auth_provider_available')) {
         }
 
         if ($identity['status'] !== 'active') {
-            return ['ok' => false, 'error' => 'Dit account is niet actief.'];
+            return ['ok' => false, 'error' => t('Dit account is niet actief.')];
         }
 
         // Keep the stored hash current if the default algorithm moved on.

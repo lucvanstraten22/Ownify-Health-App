@@ -33,7 +33,7 @@ import org.robolectric.annotation.Config
  * swaps its theme-color and color-scheme in place.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "night")
+@Config(sdk = [36], qualifiers = "+night")
 class ThemeSwitchTest {
 
     private val compose = createAndroidComposeRule<MainActivity>()

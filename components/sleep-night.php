@@ -56,7 +56,7 @@ $count  = count($rows);
         </ul>
 
         <div class="sleep-night__plot"<?php if ($staged): ?>
-             data-night-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
+             data-night-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
              aria-label="<?= e($night['aria']) ?>" aria-describedby="sleep-night-hint"<?php else: ?>
              role="img" aria-label="<?= e($night['aria']) ?>"<?php endif; ?>>
             <?php foreach ($rows as $r => $row): ?>

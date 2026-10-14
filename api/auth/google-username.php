@@ -23,7 +23,7 @@ api_require_database();
 
 if (($_POST['action'] ?? 'create') === 'cancel') {
     google_signin_cancel();
-    auth_flash('Aanmelden met Google is geannuleerd. Er is niets opgeslagen.', 'info', 'account');
+    auth_flash(t('Aanmelden met Google is geannuleerd. Er is niets opgeslagen.'), 'info', 'account');
     api_ok();
 }
 

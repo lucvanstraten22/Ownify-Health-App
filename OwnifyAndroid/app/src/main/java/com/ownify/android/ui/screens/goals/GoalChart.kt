@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -128,7 +130,7 @@ fun GoalHistory(goal: Goal, copy: Map<String, String>, footer: @Composable () ->
         }
 
         if (filled) {
-            Plot(goal, chart!!, "$history van ${goal.name}. ${chart.summary}")
+            Plot(goal, chart!!, trf("%1\$s van %2\$s", history, goal.name) + ". " + chart.summary)
         } else {
             EmptyHistory(goal, history, copy["history_empty"].orEmpty())
         }
@@ -148,7 +150,7 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
                     .fillMaxWidth()
                     .height(100.dp)
                     .alpha(0.55f)
-                    .clearAndSetSemantics { contentDescription = "$history: nog geen verloop" }
+                    .clearAndSetSemantics { contentDescription = history + ": " + tr("nog geen verloop") }
             ) {
                 // A 300 × 96 view box, stretched: the lines at a quarter, half and three quarters.
                 val sy = size.height / 96f
@@ -160,7 +162,7 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
             // The week from today, its dates (docs/CHARTS.md); a server from before that: from the start to now.
             val chart = goal.chart
             if (chart != null && chart.xTicks.isNotEmpty()) XTicks(chart, Modifier.padding(top = Ownify.Space2))
-            else Axis(listOf(goal.startLabel.ifEmpty { "Start" }, if (goal.isCompleted) "Behaald" else "Nu"), Modifier.padding(top = Ownify.Space2))
+            else Axis(listOf(goal.startLabel.ifEmpty { tr("Start") }, if (goal.isCompleted) tr("Behaald") else tr("Nu")), Modifier.padding(top = Ownify.Space2))
         }
         T(empty, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = 46.dp), align = TextAlign.Center)
     }
@@ -226,13 +228,13 @@ private fun Plot(goal: Goal, chart: GoalChart, description: String) {
                         liveRegion = LiveRegionMode.Polite
                         // The keyboard's arrows, for a screen reader: step through the readings.
                         customActions = listOf(
-                            CustomAccessibilityAction("Volgende meting") {
+                            CustomAccessibilityAction(tr("Volgende meting")) {
                                 show(if (reading < 0) points.lastIndex else minOf(points.lastIndex, reading + 1)); true
                             },
-                            CustomAccessibilityAction("Vorige meting") {
+                            CustomAccessibilityAction(tr("Vorige meting")) {
                                 show(if (reading < 0) points.lastIndex else maxOf(0, reading - 1)); true
                             },
-                            CustomAccessibilityAction("Meting verbergen") { hide(); true }
+                            CustomAccessibilityAction(tr("Meting verbergen")) { hide(); true }
                         )
                     }
                     .pointerInput(points) {

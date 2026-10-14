@@ -6,6 +6,6 @@
  */
 declare(strict_types=1);
 ?>
-<button type="button" class="fab press" data-scroll-top hidden aria-label="Terug naar je dagscore">
+<button type="button" class="fab press" data-scroll-top hidden aria-label="<?= e(t('Terug naar je dagscore')) ?>">
     <?= icon('chevron') ?>
 </button>

@@ -23,6 +23,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/db.php';
 require_once dirname(__DIR__) . '/user.php';
 require_once dirname(__DIR__) . '/health-data.php';
@@ -269,7 +271,8 @@ if (!function_exists('ai_topics')) {
 
         $put('activity_level', $account['activity_level'] ?? null);
         $profile['member_since'] = substr((string) $account['created_at'], 0, 10);
-        $profile['language']     = (string) ($account['locale'] ?: 'nl');
+        $profile['language']     = i18n_locale();          // what Ownify is shown in now (includes/i18n.php)
+        $profile['units']        = units_system();         // the data stays metric; see the prompt's units part
         $profile['unknown']      = $unknown;
 
         return $profile;
@@ -582,7 +585,7 @@ if (!function_exists('ai_topics')) {
      */
     function ai_block_goals(int $userId, bool $detail): array
     {
-        $config = require dirname(__DIR__, 2) . '/config/goals.php';
+        $config = config_copy('goals');
         $goals  = hydrate_goals($config, $userId)['goals'] ?? [];
         $out    = [];
 
@@ -630,7 +633,7 @@ if (!function_exists('ai_topics')) {
     function ai_block_community(int $userId): array
     {
         $block     = ['friends' => count(friend_ids($userId))];
-        $community = require dirname(__DIR__, 2) . '/config/community.php';
+        $community = config_copy('community');
 
         /* The boards' own scopes (friends, netherlands), so the place is the
            one the Community page shows — outside the top 50 included. */

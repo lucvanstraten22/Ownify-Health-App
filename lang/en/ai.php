@@ -1,0 +1,46 @@
+<?php
+/* English: Ownify AI: proposals and the conversation list */
+declare(strict_types=1);
+
+return [
+
+    /* ---- Ownify AI: proposals and the conversation list */
+    'Doel afronden' => 'Complete goal',
+    'Primair doel maken' => 'Make primary goal',
+    'Secundair maken' => 'Make secondary',
+    'Het doel telt tijdelijk niet mee; je kunt het later hervatten.' => 'The goal does not count for now; you can resume it later.',
+    'Het doel telt weer mee.' => 'The goal counts again.',
+    'Het doel gaat naar Behaald.' => 'The goal moves to Completed.',
+    'Een ander actief doel wordt dan primair.' => 'Another active goal then becomes primary.',
+    'Pauzeren' => 'Pause',
+    'Hervatten' => 'Resume',
+    'Afronden' => 'Complete',
+    'Primair maken' => 'Make primary',
+    'Doel ‘%s’ gepauzeerd.' => 'Goal ‘%s’ paused.',
+    'Doel ‘%s’ hervat.' => 'Goal ‘%s’ resumed.',
+    'Doel ‘%s’ afgerond.' => 'Goal ‘%s’ completed.',
+    '‘%s’ is nu je primaire doel.' => '‘%s’ is now your primary goal.',
+    '‘%s’ is nu een secundair doel.' => '‘%s’ is now a secondary goal.',
+    'Doel toevoegen' => 'Add goal',
+    'Bevestigen' => 'Confirm',
+    'Nieuw doel: %s' => 'New goal: %s',
+    'per dag hoogstens %s' => 'at most %s per day',
+    'per dag minstens %s' => 'at least %s per day',
+    'lager is beter' => 'lower is better',
+    'hoger is beter' => 'higher is better',
+    'zelf bijhouden' => 'tracked yourself',
+    'uit je gegevens: %s' => 'from your data: %s',
+    'looptijd: %s' => 'duration: %s',
+    'geen einddatum' => 'no end date',
+    'primair doel' => 'primary goal',
+    'Doel ‘%s’ toegevoegd. Je vindt het bij Doelen.' => 'Goal ‘%s’ added. You will find it in Goals.',
+    'Het doel kon niet worden toegevoegd: %s.' => 'The goal could not be added: %s.',
+    'Het voorstel' => 'The proposal',
+    'Niet doorgevoerd: %s.' => 'Not carried out: %s.',
+    'Doorgevoerd' => 'Carried out',
+    'Niet doorgevoerd' => 'Not carried out',
+    'Mislukt' => 'Failed',
+    'Verlopen' => 'Expired',
+    'Vandaag %s' => 'Today %s',
+    'Gesprek' => 'Conversation',
+];

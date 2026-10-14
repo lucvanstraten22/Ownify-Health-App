@@ -63,11 +63,11 @@ if (!$result['ok']) {
 }
 
 $messages = [
-    'request' => 'Verzoek verstuurd',
-    'accept'  => 'Jullie zijn nu vrienden.',
-    'decline' => 'Verzoek geweigerd.',
-    'remove'  => $person['username'] . ' is verwijderd uit je vrienden.',
-    'cancel'  => 'Verzoek ingetrokken.',
+    'request' => t('Verzoek verstuurd'),
+    'accept'  => t('Jullie zijn nu vrienden.'),
+    'decline' => t('Verzoek geweigerd.'),
+    'remove'  => tf('%s is verwijderd uit je vrienden.', $person['username']),
+    'cancel'  => t('Verzoek ingetrokken.'),
 ];
 
 api_ok([

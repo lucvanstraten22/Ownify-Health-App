@@ -38,6 +38,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/score-compass.php';
 require_once __DIR__ . '/time-axis.php';
@@ -80,6 +82,18 @@ if (!function_exists('area_charts')) {
     {
         $year = substr($today, 0, 4);
 
+        /* In the reader's units (includes/i18n.php): a series kept in km or
+           °C is drawn, labelled and read out in mi or °F — every value
+           converted once, as it is read (area_metric_days()). */
+        foreach ($chart['series'] as $k => $s) {
+            $stored = (string) ($s['unit'] ?? '');
+            if ($stored !== '' && units_label($stored) !== $stored) {
+                $chart['series'][$k]['stored_unit'] = $stored;
+                $chart['series'][$k]['unit']        = units_label($stored);
+                $chart['series'][$k]['decimals']    = max((int) ($s['decimals'] ?? 0), units_spec($stored)['decimals']);
+            }
+        }
+
         $series = [];
         $starts = [];                         // each series' first day ever, or null
         foreach ($chart['series'] as $s) {
@@ -100,7 +114,7 @@ if (!function_exists('area_charts')) {
             'title'   => (string) $chart['title'],
             'open'    => sprintf((string) $copy['open'], (string) $chart['title']),
             'back'    => (string) $copy['back'],
-            'switch'  => 'Periode kiezen',
+            'switch'  => t('Periode kiezen'),
             'hint'    => (string) $copy['hint'],
             'empty'   => (string) $copy['empty'],
             'series'  => array_map(static fn (array $s): array => [
@@ -131,6 +145,9 @@ if (!function_exists('area_charts')) {
         $decimals = (int) ($s['decimals'] ?? 0);
         $days     = [];
         foreach (health_daily_metric_days($userId, $code, $from, $to) as $date => $value) {
+            if (isset($s['stored_unit'])) {
+                $value = (float) units_out($value, (string) $s['stored_unit']);
+            }
             $days[$date] = [round($value, $decimals), area_chart_text($s, $value), false];
         }
         $first = db_value(
@@ -142,10 +159,10 @@ if (!function_exists('area_charts')) {
         return [$days, $first === null ? null : (string) $first];
     }
 
-    /** "97%", "34,2 °C", "48 ms", "9.420": a value as the reading writes it. */
+    /** "97%", "34,2 °C", "48 ms", "9.420" — "93.6 °F", "9,420": a value as the reading writes it. */
     function area_chart_number(float $value, int $decimals, string $unit): string
     {
-        $text = number_format($value, $decimals, ',', '.');
+        $text = i18n_number($value, $decimals);
 
         return $unit === '' ? $text : ($unit === '%' ? $text . '%' : $text . ' ' . $unit);
     }
@@ -154,11 +171,11 @@ if (!function_exists('area_charts')) {
     function area_chart_text(array $s, float $value): string
     {
         return match ((string) ($s['format'] ?? 'number')) {
-            'hours' => hydrate_hours((int) round($value * 60)) . ' u',
+            'hours' => hydrate_hours((int) round($value * 60)) . ' ' . t('u'),
             'score' => (string) (int) round($value),
             'count' => abs($value - round($value)) < 1e-9
-                ? (int) round($value) . ' ' . ((int) round($value) === 1 ? (string) $s['unit'] : (string) ($s['units'] ?? $s['unit']))
-                : number_format($value, 1, ',', '.') . ' per dag',
+                ? (int) round($value) . ' ' . t((int) round($value) === 1 ? (string) $s['unit'] : (string) ($s['units'] ?? $s['unit']))
+                : tf('%s per dag', i18n_number($value, 1)),
             default => area_chart_number(round($value, (int) ($s['decimals'] ?? 0)), (int) ($s['decimals'] ?? 0), (string) ($s['unit'] ?? '')),
         };
     }
@@ -236,14 +253,14 @@ if (!function_exists('area_charts')) {
             if (array_filter($row['texts'], static fn ($t) => $t !== null) === []) {
                 $row['note'] = (string) ($copy['none'][$grain] ?? '');
             } elseif ($grain !== 'day') {
-                $row['detail'] = ['week' => 'weekgemiddelde', 'month' => 'maandgemiddelde'][$grain];
+                $row['detail'] = ['week' => t('weekgemiddelde'), 'month' => t('maandgemiddelde')][$grain];
             }
 
             $points[] = $row;
         }
 
         $geometry = area_chart_geometry($chart['series'], array_column($points, 'x'), $values, $spacing * (1 - 2 * $pad) * 100, (string) ($chart['scale'] ?? 'own'));
-        $per      = ['day' => 'per dag', 'week' => 'per week', 'month' => 'per maand'][$grain];
+        $per      = ['day' => t('per dag'), 'week' => t('per week'), 'month' => t('per maand')][$grain];
 
         return [
             'key'      => (string) $days,
@@ -297,7 +314,7 @@ if (!function_exists('area_charts')) {
             $out      = [];
             $decimals = goal_chart_step_decimals($step);
             for ($level = $step; $level <= $high + $step / 1000; $level += $step) {
-                $out[] = ['y' => $baseY($level, $high), 'label' => number_format($level, $decimals, ',', '.')];
+                $out[] = ['y' => $baseY($level, $high), 'label' => i18n_number($level, $decimals)];
             }
 
             return $out;
@@ -375,7 +392,7 @@ if (!function_exists('area_charts')) {
         $out      = [];
         $decimals = goal_chart_step_decimals($step);
         for ($level = (floor($low / $step) + 1) * $step; $level < $high - $step / 2; $level += $step) {
-            $out[] = ['y' => area_chart_y($level, $low, $high), 'label' => number_format($level, $decimals, ',', '.')];
+            $out[] = ['y' => area_chart_y($level, $low, $high), 'label' => i18n_number($level, $decimals)];
         }
 
         return $out;

@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.i18n.tr
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -121,7 +122,7 @@ object GoalBoard {
         val app = context.applicationContext
         edits.add(edit)
         scope.launch {
-            val outcome = OwnifyActions.form(app, path, fields, "Deze wijziging kon niet worden opgeslagen.")
+            val outcome = OwnifyActions.form(app, path, fields, tr("Deze wijziging kon niet worden opgeslagen."))
             // Refused: the optimistic change did not stick — show the truth.
             if (outcome is Outcome.Refused) OwnifyAppState.reload(app)
             edits.remove(edit)

@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.account
 
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trn
+import com.ownify.android.i18n.trf
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -95,7 +98,7 @@ private const val MAX_CODE = 16
  * pairing form, reached from a quiet link under the login form.
  *
  * Somebody new after Google has one step left, choosing a username, and the
- * panel is that step until it is done or cancelled — "Account", as on the
+ * panel is that step until it is done or cancelled — tr("Account"), as on the
  * website.
  */
 @Composable
@@ -104,10 +107,10 @@ fun SignedOutPanel(overlay: Overlay.Account, notice: String?, link: OwnifyLink? 
     var flow by rememberSaveable { mutableStateOf(overlay.view) }
     val googleStep = OwnifyConnection.googleStep
     val title = when {
-        googleStep != null -> "Account"
-        flow == "register" -> "Registreren"
-        flow == "pair" -> "Koppelen"
-        else -> "Inloggen"
+        googleStep != null -> tr("Account")
+        flow == "register" -> tr("Registreren")
+        flow == "pair" -> tr("Koppelen")
+        else -> tr("Inloggen")
     }
 
     OverlayFrame(overlay, title = title) { panelModifier ->
@@ -225,12 +228,12 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
         Column {
-            FieldLabel("Gebruikersnaam")
+            FieldLabel(tr("Gebruikersnaam"))
             JInput(
                 username, { username = it.take(MAX_FIELD) },
                 modifier = Modifier.focusRequester(focusFirst),
                 enabled = !working,
-                label = "Gebruikersnaam",
+                label = tr("Gebruikersnaam"),
                 keyboard = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
                     keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next
@@ -249,12 +252,12 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
             }
         }
         Column {
-            FieldLabel("Wachtwoord")
+            FieldLabel(tr("Wachtwoord"))
             JInput(
                 password, { password = it.take(MAX_PASSWORD) },
                 enabled = !working,
                 password = true,
-                label = "Wachtwoord",
+                label = tr("Wachtwoord"),
                 keyboard = KeyboardOptions(imeAction = ImeAction.Done),
                 actions = KeyboardActions(onDone = { submit() })
             )
@@ -262,7 +265,7 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
     }
 
     Btn(
-        if (register) "Account aanmaken" else "Inloggen",
+        if (register) tr("Account aanmaken") else tr("Inloggen"),
         onClick = { submit() },
         enabled = !working && OwnifyConnection.canSignIn,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
@@ -281,10 +284,10 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
             enabled = googleAvailable != false && !working && OwnifyConnection.canSignIn
         )
     }
-    if (googleAvailable == false) FieldHint("Google is nog niet gekoppeld.", centred = true)
+    if (googleAvailable == false) FieldHint(tr("Google is nog niet gekoppeld."), centred = true)
 
     if (!register) {
-        QuietLink("Of koppel deze telefoon met een koppelcode", onPair, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space3))
+        QuietLink(tr("Of koppel deze telefoon met een koppelcode"), onPair, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space3))
     }
 }
 
@@ -319,7 +322,7 @@ private fun GoogleButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifi
             .border(1.dp, Ownify.GlassBorderSoft, CircleShape)
             // Compose still hands a disabled node's click action through; this button does nothing then.
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button) { if (enabled) onClick() }
-            .semantics { contentDescription = "Doorgaan met Google" },
+            .semantics { contentDescription = tr("Doorgaan met Google") },
         contentAlignment = Alignment.Center
     ) {
         GoogleG(Modifier.size(21.dp))
@@ -364,45 +367,45 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     }
 
     // .account__username, .account__meta
-    T("Kies je gebruikersnaam", OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(tr("Kies je gebruikersnaam"), OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em))
     T(
-        "Google heeft ${step.email} bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.",
+        trf("Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.", step.email),
         JStyle.Tiny,
         Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4)
     )
 
     if (auth is OwnifyAuthState.Failed) ErrorBox(auth.message, Modifier.padding(bottom = Ownify.Space4))
 
-    FieldLabel("Gebruikersnaam")
+    FieldLabel(tr("Gebruikersnaam"))
     JInput(
         username, { username = it.take(30) },
         modifier = Modifier.focusRequester(focusFirst),
         enabled = !working,
-        label = "Gebruikersnaam",
+        label = tr("Gebruikersnaam"),
         keyboard = KeyboardOptions(
             capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
             keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done
         ),
         actions = KeyboardActions(onDone = { submit() })
     )
-    FieldHint("3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.")
+    FieldHint(tr("3 tot 30 tekens: letters, cijfers, punt, streepje of underscore."))
 
     Btn(
-        "Account aanmaken",
+        tr("Account aanmaken"),
         onClick = { submit() },
         enabled = !working,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
     Btn(
-        "Annuleren",
+        tr("Annuleren"),
         onClick = { OwnifyConnection.cancelGoogle() },
         enabled = !working,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 
     FieldHint(
-        "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over " +
-            "${step.minutes} ${if (step.minutes == 1) "minuut" else "minuten"}.",
+        trn(step.minutes, "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuut.",
+            "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuten."),
         centred = true
     )
 }
@@ -460,31 +463,31 @@ private fun ColumnScope.PairingForm(onBack: () -> Unit) {
     if (attempted && message != null) ErrorBox(message, Modifier.padding(bottom = Ownify.Space4))
 
     T(
-        "Heb je nog geen account in de app? Koppel deze telefoon met een koppelcode van de website. Je gezondheidsgegevens worden dan gesynchroniseerd; inloggen kan later.",
+        tr("Heb je nog geen account in de app? Koppel deze telefoon met een koppelcode van de website. Je gezondheidsgegevens worden dan gesynchroniseerd; inloggen kan later."),
         OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
         Modifier.padding(bottom = Ownify.Space4)
     )
 
-    FieldLabel("Koppelcode")
+    FieldLabel(tr("Koppelcode"))
     JInput(
         code, { code = it.take(MAX_CODE) },
         enabled = !pairing,
-        placeholder = "8 tekens",
-        label = "Koppelcode",
+        placeholder = tr("8 tekens"),
+        label = tr("Koppelcode"),
         keyboard = KeyboardOptions(
             capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false,
             keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done
         ),
         actions = KeyboardActions(onDone = { submit() })
     )
-    FieldHint("Maak een code op de website: Instellingen › Apparaten & Gezondheid › Health Connect › Koppelen.")
+    FieldHint(tr("Maak een code op de website: Instellingen › Apparaten & Gezondheid › Health Connect › Koppelen."))
 
     Btn(
-        if (pairing) "Koppelen…" else "Koppelen",
+        if (pairing) tr("Koppelen…") else tr("Koppelen"),
         onClick = { submit() },
         enabled = !pairing,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 
-    QuietLink("Terug naar inloggen", onBack, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space3), enabled = !pairing)
+    QuietLink(tr("Terug naar inloggen"), onBack, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space3), enabled = !pairing)
 }

@@ -37,7 +37,7 @@ $h      = (int) $p['height'];
 $edges = $zy === null ? null : array_merge([0.0], array_map(static fn (float $y): float => round(max(0, min(1, 1 - $y / 100)), 4), $zy), [1.0]);
 ?>
 <div class="compass-plot heart-plot<?= $p['grid'] !== [] ? ' has-levels' : '' ?>"<?php if ($p['has_data']): ?>
-     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
+     data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
      aria-label="<?= e($p['aria']) ?>" aria-describedby="<?= e($data['suffix']) ?>-hint"<?php else: ?>
      role="img" aria-label="<?= e($p['aria']) ?>"<?php endif; ?>>
 

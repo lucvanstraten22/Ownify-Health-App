@@ -1,5 +1,10 @@
 package com.ownify.android.ui.screens.account
 
+import java.time.LocalDate
+import com.ownify.android.i18n.trn
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.OwnifyFormat
+import com.ownify.android.i18n.tr
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -104,10 +109,10 @@ import com.ownify.android.ui.screens.community.FRIENDS_ADD
 private const val MAX_PICTURE_BYTES = 8 * 1024 * 1024
 
 /** The server's words for a picture over its limit (user_set_avatar()), for one too large to send. */
-private const val PICTURE_TOO_LARGE = "Kies een afbeelding van maximaal 3 MB."
+private val PICTURE_TOO_LARGE: String get() = tr("Kies een afbeelding van maximaal 3 MB.")
 
 /** The server's words for an upload that did not arrive, for a picture the phone could not read. */
-private const val PICTURE_UNREADABLE = "Uploaden is niet gelukt."
+private val PICTURE_UNREADABLE: String get() = tr("Uploaden is niet gelukt.")
 
 /**
  * The account panel, signed in (components/account-modal.php): who is
@@ -122,7 +127,7 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
     val addFriend = overlay.view == FRIENDS_ADD
     var page by remember { mutableStateOf(if (addFriend) "friends" else "main") }
     val friends = page == "friends"
-    val title = if (friends) "Vrienden" else "Account"
+    val title = if (friends) tr("Vrienden") else tr("Account")
     val scroll = rememberScrollState()
 
     // Each page starts at its top, as showPage() scrolls the sheet back.
@@ -135,7 +140,7 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
             PanelHead(
                 title,
                 onClose = { shell.close(overlay) },
-                leading = if (friends) ({ RoundButton(OwnifyIcons.chevronLeft, "Terug naar account", { page = "main" }) }) else null
+                leading = if (friends) ({ RoundButton(OwnifyIcons.chevronLeft, tr("Terug naar account"), { page = "main" }) }) else null
             )
             if (friends) FriendsView(data, searchFirst = addFriend) else AccountView(data, onFriends = { page = "friends" }, focusFirst = focusFirst)
         }
@@ -168,7 +173,7 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
         error = null
         savingName = true
         scope.launch {
-            val outcome = OwnifyActions.form(context, "api/profile/username.php", mapOf("username" to username), "Er ging iets mis.")
+            val outcome = OwnifyActions.form(context, "api/profile/username.php", mapOf("username" to username), tr("Er ging iets mis."))
             savingName = false
             if (outcome is Outcome.Refused) error = outcome.message
         }
@@ -186,35 +191,35 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
         AvatarCircle(auth.avatar, 52.dp, 22.dp)
         Column(Modifier.weight(1f)) {
             T(auth.username.orEmpty(), JStyle.Subtitle)
-            T("Lid sinds ${memberSince(auth.createdAt)}", JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+            T(tr("Lid sinds") + " " + memberSince(auth.createdAt), JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
         }
     }
 
     // Gebruikersnaam — 24 below the identity (its margin and the form's collapse).
-    FieldLabel("Gebruikersnaam", Modifier.padding(top = Ownify.Space5))
+    FieldLabel(tr("Gebruikersnaam"), Modifier.padding(top = Ownify.Space5))
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         JInput(
             username, { username = it.take(30) },
             modifier = Modifier.weight(1f).then(if (focusFirst != null) Modifier.focusRequester(focusFirst) else Modifier),
-            label = "Gebruikersnaam",
+            label = tr("Gebruikersnaam"),
             keyboard = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
                 keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done
             ),
             actions = KeyboardActions(onDone = { if (!savingName) saveName() })
         )
-        Btn("Opslaan", onClick = ::saveName, enabled = !savingName)
+        Btn(tr("Opslaan"), onClick = ::saveName, enabled = !savingName)
     }
 
     // Profielfoto
-    FieldLabel("Profielfoto", Modifier.padding(top = Ownify.Space4))
+    FieldLabel(tr("Profielfoto"), Modifier.padding(top = Ownify.Space4))
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         FileField(
             picked?.let { fileName(context, it) },
             onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
             modifier = Modifier.weight(1f)
         )
-        Btn("Uploaden", enabled = !uploading, onClick = {
+        Btn(tr("Uploaden"), enabled = !uploading, onClick = {
             error = null
             uploading = true
             scope.launch {
@@ -232,20 +237,20 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
             }
         })
     }
-    FieldHint("JPG, PNG of WebP, maximaal 3 MB.")
+    FieldHint(tr("JPG, PNG of WebP, maximaal 3 MB."))
 
     // Vrienden: a field-shaped button that says where things stand.
-    FieldLabel("Vrienden", Modifier.padding(top = Ownify.Space4))
+    FieldLabel(tr("Vrienden"), Modifier.padding(top = Ownify.Space4))
     NavField(
-        text = if (friendCount == 0) "Nog geen vrienden" else "$friendCount ${if (friendCount == 1) "vriend" else "vrienden"}",
-        badge = if (requestCount > 0) "$requestCount ${if (requestCount == 1) "verzoek" else "verzoeken"}" else null,
+        text = if (friendCount == 0) tr("Nog geen vrienden") else trn(friendCount, "%d vriend", "%d vrienden"),
+        badge = if (requestCount > 0) trn(requestCount, "%d verzoek", "%d verzoeken") else null,
         onClick = onFriends,
-        label = "Vrienden"
+        label = tr("Vrienden")
     )
 
     // Uitloggen: the form's 16 and the button's own 16.
     Btn(
-        "Uitloggen",
+        tr("Uitloggen"),
         onClick = { OwnifyConnection.logout(context) },
         enabled = !signingOut,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space6)
@@ -260,7 +265,7 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
 private suspend fun upload(context: Context, uri: Uri?): Outcome {
     val path = "api/profile/avatar.php"
     if (uri == null) {
-        return OwnifyActions.upload(context, path, "avatar", "", "application/octet-stream", ByteArray(0), "Er ging iets mis.")
+        return OwnifyActions.upload(context, path, "avatar", "", "application/octet-stream", ByteArray(0), tr("Er ging iets mis."))
     }
 
     val resolver = context.contentResolver
@@ -287,7 +292,7 @@ private suspend fun upload(context: Context, uri: Uri?): Outcome {
     if (bytes == null) return Outcome.Refused(PICTURE_UNREADABLE)
 
     val mime = resolver.getType(uri) ?: "application/octet-stream"
-    return OwnifyActions.upload(context, path, "avatar", fileName(context, uri), mime, bytes, "Er ging iets mis.")
+    return OwnifyActions.upload(context, path, "avatar", fileName(context, uri), mime, bytes, tr("Er ging iets mis."))
 }
 
 private fun fileName(context: Context, uri: Uri): String =
@@ -297,14 +302,10 @@ private fun fileName(context: Context, uri: Uri): String =
         }
     }.getOrNull() ?: "foto"
 
-/** PHP's `date('j M Y')` of the account's start, as the panel prints it: "27 Sep 2026". */
+/** The account's start as the website's panel prints it (i18n_date day_mon_year): "27 sep 2026", "Sep 27, 2026". */
 internal fun memberSince(createdAt: String?): String {
-    val parts = createdAt?.take(10)?.split("-") ?: return ""
-    if (parts.size != 3) return ""
-    val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-    val month = parts[1].toIntOrNull()?.let { months.getOrNull(it - 1) } ?: return ""
-    val day = parts[2].toIntOrNull() ?: return ""
-    return "$day $month ${parts[0]}"
+    val date = createdAt?.take(10)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return ""
+    return OwnifyFormat.date(date, "day_mon_year")
 }
 
 /** `.account__avatar`: a circle with a hairline, the picture or the muted user icon. */
@@ -333,7 +334,7 @@ private fun Modifier.fieldBox(fill: Color = Ownify.fill(0.05f)): Modifier {
 
 /**
  * `.account__file`: the picture field. On the website it is the browser's
- * file field (a "Bestand kiezen" button and the chosen name); here the same
+ * file field (a tr("Bestand kiezen") button and the chosen name); here the same
  * field opens Android's photo picker.
  */
 @Composable
@@ -344,15 +345,15 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
             modifier
                 .fillMaxWidth()
                 .fieldBox()
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = "Bestand kiezen", onClick = blurring(onClick))
-                .semantics(mergeDescendants = true) { contentDescription = "Profielfoto: ${name ?: "Geen bestand gekozen"}" }
+                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = tr("Bestand kiezen"), onClick = blurring(onClick))
+                .semantics(mergeDescendants = true) { contentDescription = tr("Profielfoto") + ": " + (name ?: tr("Geen bestand gekozen")) }
                 .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             val shape = RoundedCornerShape(50)
             T(
-                "Bestand kiezen",
+                tr("Bestand kiezen"),
                 OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary),
                 Modifier
                     .clip(shape)
@@ -362,7 +363,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
                 maxLines = 1
             )
             T(
-                name ?: "Geen bestand gekozen",
+                name ?: tr("Geen bestand gekozen"),
                 OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
                 Modifier.weight(1f),
                 maxLines = 1,
@@ -482,7 +483,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
             val outcome = OwnifyActions.form(
                 context, "api/friends/request.php",
                 mapOf("user_id" to personId.toString(), "action" to action),
-                "Er ging iets mis.", reload = false
+                tr("Er ging iets mis."), reload = false
             )
             when (outcome) {
                 is Outcome.Done -> {
@@ -518,13 +519,13 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
         searchError = null
         val name = query.trim()
         if (name.isEmpty()) {
-            searchError = "Vul een gebruikersnaam in."
+            searchError = tr("Vul een gebruikersnaam in.")
             searchField.focusSafely()
             return
         }
         busySearch = true
         scope.launch {
-            val outcome = OwnifyActions.form(context, "api/friends/search.php", mapOf("username" to name), "Er ging iets mis.", reload = false)
+            val outcome = OwnifyActions.form(context, "api/friends/search.php", mapOf("username" to name), tr("Er ging iets mis."), reload = false)
             busySearch = false
             val person = (outcome as? Outcome.Done)?.body?.optJSONObject("person")?.let(Found::parse)
             if (person != null) {
@@ -532,7 +533,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                 rows.remove(RESULT)
             } else if (outcome != Outcome.SignedOut) {
                 found = null
-                searchError = (outcome as? Outcome.Refused)?.message ?: "Er ging iets mis."
+                searchError = (outcome as? Outcome.Refused)?.message ?: tr("Er ging iets mis.")
             }
         }
     }
@@ -546,7 +547,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
         }
     }
     Btn(
-        "Vriend toevoegen",
+        tr("Vriend toevoegen"),
         onClick = {
             searching = !searching
             if (!searching) {
@@ -559,7 +560,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     )
 
     if (searching) {
-        FieldLabel("Gebruikersnaam", Modifier.padding(top = Ownify.Space4))
+        FieldLabel(tr("Gebruikersnaam"), Modifier.padding(top = Ownify.Space4))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             JInput(
                 query, {
@@ -567,17 +568,17 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                     searchError = null
                 },
                 modifier = Modifier.weight(1f).focusRequester(searchField),
-                placeholder = "Gebruikersnaam",
-                label = "Gebruikersnaam",
+                placeholder = tr("Gebruikersnaam"),
+                label = tr("Gebruikersnaam"),
                 keyboard = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
                     keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Search
                 ),
                 actions = KeyboardActions(onSearch = { if (!busySearch) search() })
             )
-            Btn("Zoeken", onClick = ::search, enabled = !busySearch)
+            Btn(tr("Zoeken"), onClick = ::search, enabled = !busySearch)
         }
-        FieldHint("Vul de volledige gebruikersnaam in.")
+        FieldHint(tr("Vul de volledige gebruikersnaam in."))
         searchError?.let { ErrorBox(it, Modifier.padding(top = Ownify.Space3)) }
 
         found?.let { result ->
@@ -598,25 +599,25 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     }
 
     // ------------------------------------------------------ Vriendverzoeken
-    FieldLabel("Vriendverzoeken", Modifier.padding(top = Ownify.Space5))
+    FieldLabel(tr("Vriendverzoeken"), Modifier.padding(top = Ownify.Space5))
     if (community.pending.isEmpty()) {
-        T("Geen nieuwe vriendverzoeken.", JStyle.Tiny)
+        T(tr("Geen nieuwe vriendverzoeken."), JStyle.Tiny)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             community.pending.forEach { person ->
                 val key = "in:${person.id}"
                 val state = rows[key] ?: RowState()
                 PersonRow(
-                    person, state, status = "Wil vrienden met je worden",
+                    person, state, status = tr("Wil vrienden met je worden"),
                     below = if (!state.done) ({ AnswerButtons(state.busy, { act(key, person.id, "accept") }, { act(key, person.id, "decline") }) }) else null
                 )
             }
         }
     }
     if (community.sent.isNotEmpty()) {
-        FieldLabel("Verstuurd", Modifier.padding(top = Ownify.Space4))
+        FieldLabel(tr("Verstuurd"), Modifier.padding(top = Ownify.Space4))
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            community.sent.forEach { person -> PersonRow(person, RowState(), status = "Verzoek verstuurd") }
+            community.sent.forEach { person -> PersonRow(person, RowState(), status = tr("Verzoek verstuurd")) }
         }
     }
 
@@ -641,7 +642,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                     val outcome = OwnifyActions.form(
                         context, "api/friends/settings.php",
                         mapOf("allow_requests" to if (before) "0" else "1"),
-                        "Dit kon niet worden opgeslagen.", reload = false
+                        tr("Dit kon niet worden opgeslagen."), reload = false
                     )
                     toggleBusy = false
                     when (outcome) {
@@ -664,10 +665,10 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     ) {
         InButton {
             Column(Modifier.weight(1f)) {
-                T("Vriendverzoeken toestaan", OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+                T(tr("Vriendverzoeken toestaan"), OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
                 T(
-                    toggleError ?: if (allowed) "Anderen kunnen je een vriendverzoek sturen."
-                    else "Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.",
+                    toggleError ?: if (allowed) tr("Anderen kunnen je een vriendverzoek sturen.")
+                    else tr("Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven."),
                     OwnifyType.style(Ownify.FsTiny, color = if (toggleError != null) Ownify.Attention else Ownify.TextMuted),
                     Modifier.padding(top = 2.dp)
                 )
@@ -677,9 +678,9 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     }
 
     // --------------------------------------------------------------- Vrienden
-    FieldLabel("Vrienden (${community.friends.size})", Modifier.padding(top = Ownify.Space5))
+    FieldLabel(tr("Vrienden") + " (${community.friends.size})", Modifier.padding(top = Ownify.Space5))
     if (community.friends.isEmpty()) {
-        T("Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam.", JStyle.Tiny)
+        T(tr("Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam."), JStyle.Tiny)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             community.friends.forEach { person ->
@@ -688,7 +689,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                 PersonRow(
                     person, state, status = null,
                     trailing = if (!state.confirming && !state.done) ({
-                        LinkButton("Verwijderen", enabled = !state.busy) { rows[key] = state.copy(confirming = true) }
+                        LinkButton(tr("Verwijderen"), enabled = !state.busy) { rows[key] = state.copy(confirming = true) }
                     }) else null,
                     full = if (state.confirming && !state.done) ({
                         RemoveConfirm(
@@ -746,8 +747,8 @@ private fun PersonRow(
 @Composable
 private fun AnswerButtons(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        Btn("Accepteren", onClick = onAccept, enabled = !busy, modifier = Modifier.weight(1f))
-        Btn("Weigeren", onClick = onDecline, enabled = !busy, modifier = Modifier.weight(1f))
+        Btn(tr("Accepteren"), onClick = onAccept, enabled = !busy, modifier = Modifier.weight(1f))
+        Btn(tr("Weigeren"), onClick = onDecline, enabled = !busy, modifier = Modifier.weight(1f))
     }
 }
 
@@ -764,10 +765,10 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        T("$name verwijderen uit je vrienden?", OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+        T(trf("%s verwijderen uit je vrienden?", name), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
         Row(horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            Btn("Annuleren", onClick = onCancel, enabled = !busy, modifier = Modifier.weight(1f))
-            Btn("Verwijderen", onClick = onRemove, enabled = !busy, modifier = Modifier.weight(1f), look = BtnLook.Final)
+            Btn(tr("Annuleren"), onClick = onCancel, enabled = !busy, modifier = Modifier.weight(1f))
+            Btn(tr("Verwijderen"), onClick = onRemove, enabled = !busy, modifier = Modifier.weight(1f), look = BtnLook.Final)
         }
     }
 }
@@ -775,11 +776,11 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
 /** The search's one account, in the lists' shape, with what can be done about it now (applyPerson()). */
 @Composable
 private fun SearchResult(found: Found, state: RowState, onAction: (String) -> Unit) {
-    // The pill says "Verzoek verstuurd"; the line above it would only repeat it.
+    // The pill says tr("Verzoek verstuurd"); the line above it would only repeat it.
     val status = if (found.relation == "outgoing") null else found.status
     val below: (@Composable () -> Unit)? = when {
         found.relation == "none" && found.canRequest -> ({
-            Btn("Vriendverzoek sturen", onClick = { onAction("request") }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+            Btn(tr("Vriendverzoek sturen"), onClick = { onAction("request") }, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
         })
         found.relation == "outgoing" -> ({ SentMark() })
         found.relation == "incoming" -> ({ AnswerButtons(state.busy, { onAction("accept") }, { onAction("decline") }) })
@@ -788,7 +789,7 @@ private fun SearchResult(found: Found, state: RowState, onAction: (String) -> Un
     PersonRow(found.person, state, status = status, below = below)
 }
 
-/** `.friend__done`: "Verzoek verstuurd" once it is — a state, not a button. */
+/** `.friend__done`: tr("Verzoek verstuurd") once it is — a state, not a button. */
 @Composable
 private fun SentMark() {
     val shape = RoundedCornerShape(50)
@@ -804,7 +805,7 @@ private fun SentMark() {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.CenterHorizontally)
     ) {
         JIcon(OwnifyIcons.check, size = 15.dp, color = Ownify.TextPrimary)
-        T("Verzoek verstuurd", OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+        T(tr("Verzoek verstuurd"), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
     }
 }
 

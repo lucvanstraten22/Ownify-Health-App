@@ -1,5 +1,6 @@
 package com.ownify.android.ui.design
 
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -220,13 +221,13 @@ fun HistoryPlot(
                                 liveRegion = LiveRegionMode.Polite
                                 // The keyboard's arrows, for a screen reader: day by day.
                                 customActions = listOf(
-                                    CustomAccessibilityAction("Volgende dag") {
+                                    CustomAccessibilityAction(tr("Volgende dag")) {
                                         show(if (reading < 0) xs.lastIndex else minOf(xs.lastIndex, reading + 1)); true
                                     },
-                                    CustomAccessibilityAction("Vorige dag") {
+                                    CustomAccessibilityAction(tr("Vorige dag")) {
                                         show(if (reading < 0) xs.lastIndex else maxOf(0, reading - 1)); true
                                     },
-                                    CustomAccessibilityAction("Dag verbergen") { hide(); true }
+                                    CustomAccessibilityAction(tr("Dag verbergen")) { hide(); true }
                                 )
                             }
                             .pointerInput(xs, readOnDrag) {

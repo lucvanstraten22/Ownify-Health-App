@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.setup
 
+import com.ownify.android.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.animateColorAsState
@@ -457,9 +458,9 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
         if (needsInstall || needsRead) {
             Btn(
                 when {
-                    needsRead -> "Toegang geven"
-                    health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> "Health Connect bijwerken"
-                    else -> "Health Connect installeren"
+                    needsRead -> tr("Toegang geven")
+                    health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> tr("Health Connect bijwerken")
+                    else -> tr("Health Connect installeren")
                 },
                 onClick = { if (needsRead) askRead.launch(HealthPermissions) else openHealthConnectStore(context) },
                 modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)

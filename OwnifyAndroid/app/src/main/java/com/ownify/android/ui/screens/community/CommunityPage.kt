@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.community
 
+import com.ownify.android.i18n.tr
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -121,7 +122,7 @@ fun CommunityPage(data: AppData) {
                 onSelect = { scope = it },
                 wide = true,
                 optionPadding = if (screen.narrow) Ownify.Space1 else Ownify.Space2,
-                label = "Ranglijst kiezen"
+                label = tr("Ranglijst kiezen")
             )
             RangeSwitch(
                 options = community.periods,
@@ -129,7 +130,7 @@ fun CommunityPage(data: AppData) {
                 onSelect = { period = it },
                 wide = true,
                 optionPadding = if (screen.narrow) Ownify.Space1 else Ownify.Space2,
-                label = "Periode kiezen"
+                label = tr("Periode kiezen")
             )
         }
 

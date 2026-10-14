@@ -80,7 +80,7 @@ import org.robolectric.Shadows.shadowOf
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
 class ScreenshotCapture {
 
     @get:Rule

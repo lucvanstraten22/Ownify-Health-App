@@ -21,8 +21,8 @@ if ($goal['is_paused'])    { $classes[] = 'is-paused'; }
 if ($goal['is_completed']) { $classes[] = 'is-done'; }
 
 $reading = has_value($goal['percent'])
-    ? $goal['percent'] . ' procent van ' . ($goal['target_label'] ?? 'je doel')
-    : 'nog geen voortgang';
+    ? tf('%1$d procent van %2$s', (int) $goal['percent'], (string) ($goal['target_label'] ?? t('je doel')))
+    : t('nog geen voortgang');
 ?>
 <button type="button"
         class="<?= e(implode(' ', $classes)) ?>"

@@ -23,6 +23,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var panel = document.querySelector('[data-account]');
     var view  = panel ? panel.querySelector('[data-account-view="friends"]') : null;
     if (!view) { return; }
@@ -62,11 +64,11 @@
         return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () {
-                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                    return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
                 });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             });
     }
 
@@ -87,7 +89,7 @@
         view.hidden = !friends;
         if (main) { main.hidden = friends; }
         if (back) { back.hidden = !friends; }
-        if (title) { title.textContent = friends ? 'Vrienden' : accountTitle; }
+        if (title) { title.textContent = friends ? T.t('Vrienden') : accountTitle; }
         if (sheet) { sheet.scrollTop = 0; }
     }
 
@@ -168,7 +170,7 @@
         showSearchError(null);
 
         if (!username) {
-            showSearchError('Vul een gebruikersnaam in.');
+            showSearchError(T.t('Vul een gebruikersnaam in.'));
             input.focus();
             return;
         }
@@ -181,7 +183,7 @@
             if (!answer.ok || !answer.person) {
                 result.hidden = true;
                 result.innerHTML = '';
-                showSearchError(answer.error || 'Er ging iets mis.');
+                showSearchError(answer.error || T.t('Er ging iets mis.'));
                 return;
             }
 
@@ -230,15 +232,15 @@
 
         if (person.relation === 'none' && person.can_request) {
             actions.classList.add('friend__actions--single');
-            actions.appendChild(button('Vriendverzoek sturen', 'request'));
+            actions.appendChild(button(T.t('Vriendverzoek sturen'), 'request'));
         } else if (person.relation === 'outgoing') {
             /* The pill says it; the line above it would only repeat it. */
             actions.classList.add('friend__actions--single');
             actions.appendChild(sentMark.content.firstElementChild.cloneNode(true));
             status.hidden = true;
         } else if (person.relation === 'incoming') {
-            actions.appendChild(button('Accepteren', 'accept'));
-            actions.appendChild(button('Weigeren', 'decline'));
+            actions.appendChild(button(T.t('Accepteren'), 'accept'));
+            actions.appendChild(button(T.t('Weigeren'), 'decline'));
         }
 
         actions.hidden = actions.children.length === 0;
@@ -325,7 +327,7 @@
                 if (answer.person && result.contains(row)) {
                     applyPerson(row, answer.person);
                 }
-                rowError(row, answer.error || 'Er ging iets mis.');
+                rowError(row, answer.error || T.t('Er ging iets mis.'));
                 syncResult(answer.person, row);
                 refresh({ lists: false });
                 return;
@@ -375,7 +377,7 @@
                 setToggle(before);
                 var note = toggle.querySelector('[data-friends-toggle-note]');
                 if (note) {
-                    note.textContent = answer.error || 'Dit kon niet worden opgeslagen.';
+                    note.textContent = answer.error || T.t('Dit kon niet worden opgeslagen.');
                     note.classList.add('is-error');
                 }
                 return;

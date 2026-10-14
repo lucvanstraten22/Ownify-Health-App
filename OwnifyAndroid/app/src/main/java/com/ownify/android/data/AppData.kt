@@ -1,5 +1,6 @@
 package com.ownify.android.data
 
+import com.ownify.android.i18n.tr
 import org.json.JSONObject
 
 /**
@@ -28,7 +29,9 @@ data class AppData(
     /** The setup a new account starts with (includes/setup.php); `pending` routes the app to it. */
     val setup: Setup = Setup.parse(null),
     /** Overzicht's card of the first days, or null outside them. */
-    val calibration: Calibration? = null
+    val calibration: Calibration? = null,
+    /** The language and units it is all written in (includes/i18n.php). */
+    val i18n: I18n = I18n("nl", null, "metric")
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -51,11 +54,15 @@ data class AppData(
                 auth = Auth.parse(data.obj("auth")),
                 compass = Compass.parse(data.obj("compass")),
                 setup = Setup.parse(data.obj("setup")),
-                calibration = Calibration.parse(data.obj("calibration"))
+                calibration = Calibration.parse(data.obj("calibration")),
+                i18n = data.obj("i18n").let { I18n(it.str("locale") ?: "nl", it.str("chosen"), it.str("units") ?: "metric") }
             )
         }
     }
 }
+
+/** `locale` "nl" or "en"; `chosen` null when the phone's language decides; `units` "metric" or "imperial". */
+data class I18n(val locale: String, val chosen: String?, val units: String)
 
 // ---------------------------------------------------------------- shell
 
@@ -68,7 +75,7 @@ data class AppInfo(val name: String, val tagline: String) {
 data class WelcomeCopy(val subtitle: String, val login: String, val register: String) {
     companion object {
         fun parse(o: JSONObject?) = WelcomeCopy(
-            o.str("subtitle").orEmpty(), o.str("login") ?: "Inloggen", o.str("register") ?: "Registreren"
+            o.str("subtitle").orEmpty(), o.str("login") ?: tr("Inloggen"), o.str("register") ?: tr("Registreren")
         )
     }
 }
@@ -133,7 +140,7 @@ data class AiCopy(
     val session: AiSession
 ) {
     /** One of the server's sentences for [code], or its general one. */
-    fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: "De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw."
+    fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: tr("De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw.")
 
     /** "Nog 7 van 10 berichten vandaag", or nothing without a limit. */
     fun remainingText(usage: AiUsage): String =
@@ -147,15 +154,15 @@ data class AiCopy(
             closeLabel = o.obj("close").str("label").orEmpty(),
             closeAria = o.obj("close").str("aria").orEmpty(),
             placeholder = o.obj("composer").str("placeholder").orEmpty(),
-            send = o.obj("composer").str("send") ?: "Versturen",
+            send = o.obj("composer").str("send") ?: tr("Versturen"),
             composerAria = o.obj("composer").str("aria").orEmpty(),
-            newChat = o.str("new_chat") ?: "Nieuw gesprek",
-            history = o.str("history") ?: "Gesprekken",
-            historyEmpty = o.str("history_empty") ?: "Nog geen gesprekken.",
-            deleteChat = o.str("delete_chat") ?: "Gesprek verwijderen",
-            thinking = o.str("thinking") ?: "Ownify AI denkt na…",
-            remaining = o.str("remaining") ?: "Nog %d van %d berichten vandaag",
-            retry = o.str("retry") ?: "Opnieuw proberen",
+            newChat = o.str("new_chat") ?: tr("Nieuw gesprek"),
+            history = o.str("history") ?: tr("Gesprekken"),
+            historyEmpty = o.str("history_empty") ?: tr("Nog geen gesprekken."),
+            deleteChat = o.str("delete_chat") ?: tr("Gesprek verwijderen"),
+            thinking = o.str("thinking") ?: tr("Ownify AI denkt na…"),
+            remaining = o.str("remaining") ?: tr("Nog %d van %d berichten vandaag"),
+            retry = o.str("retry") ?: tr("Opnieuw proberen"),
             empty = AiEmptyCopy(
                 o.obj("empty").str("title").orEmpty(),
                 o.obj("empty").str("body").orEmpty(),
@@ -1339,6 +1346,8 @@ data class Goals(
     val detail: Map<String, String>,
     val wizard: WizardCopy,
     val wizardSources: List<SourceGroup>,
+    /** The wizard's unit suggestions as the reader sees them ("lb", "steps"), by the unit kept ("kg", "stappen"). */
+    val unitLabels: Map<String, String>,
     val active: List<Goal>,
     val completed: List<Goal>,
     val primary: Goal?,
@@ -1377,6 +1386,7 @@ data class Goals(
                 detail = o.obj("detail").stringMap(),
                 wizard = WizardCopy.parse(o.obj("wizard")),
                 wizardSources = o.arr("wizard_sources").map(SourceGroup::parse),
+                unitLabels = o.obj("unit_labels").stringMap(),
                 active = o.arr("active").map { same(Goal.parse(it)) },
                 completed = o.arr("completed").map { same(Goal.parse(it)) },
                 primary = same(o.obj("primary")?.let(Goal::parse)),
@@ -1640,7 +1650,7 @@ data class Community(
             periods = o.obj("periods").entries { key, p -> key to p.str("label").orEmpty() },
             defaultScope = o.str("default_scope") ?: "friends",
             defaultPeriod = o.str("default_period") ?: "month",
-            youName = o.obj("you").str("name") ?: "Jij",
+            youName = o.obj("you").str("name") ?: tr("Jij"),
             youAvatar = o.obj("you").str("avatar"),
             labels = o.obj("labels").stringMap(),
             boards = o.obj("boards").entries { scope, periods ->
@@ -1712,7 +1722,7 @@ data class Settings(
                     }
                 )
             },
-            logoutLabel = o.obj("actions").obj("logout").str("label") ?: "Uitloggen",
+            logoutLabel = o.obj("actions").obj("logout").str("label") ?: tr("Uitloggen"),
             delete = o.obj("actions").obj("delete").stringMap(),
             notSaved = o.str("not_saved").orEmpty(),
             pages = o.obj("pages").entries { id, p -> SettingsPage.parse(id, p) },
@@ -1919,13 +1929,19 @@ data class FieldInput(
     val maxLength: Int?,
     val min: String?,
     val max: String?,
-    val options: List<Pair<String, String>>
+    val options: List<Pair<String, String>>,
+    /** The unit a measurement is typed in, sent back as `<key>_unit` (cm/in, kg/lb). */
+    val postUnit: String = "",
+    /** Imperial height (`feet_inches`): the two numbers it starts from. */
+    val feet: String = "",
+    val inches: String = ""
 ) {
     companion object {
         fun parse(o: JSONObject) = FieldInput(
             o.str("type") ?: "text", o.text("value").orEmpty(), o.str("unit").orEmpty(), o.str("endpoint").orEmpty(),
             o.int("maxlength"), o.text("min"), o.text("max"),
-            o.obj("options").stringMap().entries.map { it.key to it.value }
+            o.obj("options").stringMap().entries.map { it.key to it.value },
+            o.str("post_unit").orEmpty(), o.text("feet").orEmpty(), o.text("inches").orEmpty()
         )
     }
 }

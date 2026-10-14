@@ -18,6 +18,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var sheet = document.querySelector('[data-ai]');
     if (!sheet) { return; }
 
@@ -136,7 +138,7 @@
             var again = document.createElement('button');
             again.type = 'button';
             again.className = 'ai-notice__retry';
-            again.textContent = copy.retry || 'Opnieuw proberen';
+            again.textContent = copy.retry || T.t('Opnieuw proberen');
             again.addEventListener('click', function () {
                 setNotice(null);
                 if (typeof retry === 'function') { retry(); }
@@ -152,7 +154,7 @@
         state.usage = usage;
 
         left.textContent = usage.limit > 0
-            ? (copy.remaining || 'Nog %d van %d berichten vandaag').replace('%d', usage.remaining).replace('%d', usage.limit)
+            ? (copy.remaining || T.t('Nog %d van %d berichten vandaag')).replace('%d', usage.remaining).replace('%d', usage.limit)
             : '';
 
         refreshComposer();
@@ -321,7 +323,7 @@
         var dots = document.createElement('span');
         dots.className = 'ai-typing';
         dots.setAttribute('role', 'status');
-        dots.setAttribute('aria-label', copy.thinking || 'Ownify AI denkt na…');
+        dots.setAttribute('aria-label', copy.thinking || T.t('Ownify AI denkt na…'));
         dots.innerHTML = '<span></span><span></span><span></span>';
 
         bubble.appendChild(dots);
@@ -388,7 +390,7 @@
         if (body.usage) { setUsage(body.usage); }
 
         if (answer.status === 401 || answer.status === 419) {
-            setNotice(errors.signed_out || 'Je bent niet meer ingelogd.');
+            setNotice(errors.signed_out || T.t('Je bent niet meer ingelogd.'));
             return;
         }
 
@@ -413,7 +415,7 @@
         var text = answer.status === 0 ? errors.network : (body.error || errors.unavailable);
         var canRetry = answer.status === 0 || code === 'timeout' || code === 'unavailable' || code === 'quota' || !code;
 
-        setNotice(text || 'Er ging iets mis.', canRetry ? retry : null);
+        setNotice(text || T.t('Er ging iets mis.'), canRetry ? retry : null);
     }
 
     /* --------------------------------------------------------------- send */
@@ -592,7 +594,7 @@
 
             if (!answer.body || !answer.body.ok) {
                 consentError.textContent = (answer.body && answer.body.error)
-                    || (answer.status === 0 ? errors.network : errors.unavailable) || 'Dit kon niet worden opgeslagen.';
+                    || (answer.status === 0 ? errors.network : errors.unavailable) || T.t('Dit kon niet worden opgeslagen.');
                 consentError.hidden = false;
                 return;
             }
@@ -636,7 +638,7 @@
         if (!state.conversations.length) {
             var none = document.createElement('li');
             none.className = 'ai-history__empty';
-            none.textContent = copy.empty || 'Nog geen gesprekken.';
+            none.textContent = copy.empty || T.t('Nog geen gesprekken.');
             list.appendChild(none);
             return;
         }
@@ -663,7 +665,7 @@
             remove.type = 'button';
             remove.className = 'ai-history__delete';
             remove.setAttribute('data-ai-delete-conversation', String(conversation.id));
-            remove.setAttribute('aria-label', (copy['delete'] || 'Gesprek verwijderen') + ': ' + conversation.title);
+            remove.setAttribute('aria-label', (copy['delete'] || T.t('Gesprek verwijderen')) + ': ' + conversation.title);
             remove.appendChild(icon('trash'));
 
             item.appendChild(open);
@@ -701,7 +703,7 @@
     function deleteConversation(button) {
         if (!button.classList.contains('is-armed')) {
             button.classList.add('is-armed');
-            button.textContent = (copy['delete'] || 'Gesprek verwijderen') + '?';
+            button.textContent = (copy['delete'] || T.t('Gesprek verwijderen')) + '?';
             return;
         }
 

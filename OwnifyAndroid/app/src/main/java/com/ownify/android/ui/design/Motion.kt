@@ -1,5 +1,6 @@
 package com.ownify.android.ui.design
 
+import com.ownify.android.i18n.OwnifyFormat
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.InfiniteRepeatableSpec
@@ -182,10 +183,12 @@ fun countUpText(text: String, play: Boolean): String {
         if (play && progress.value < 1f) progress.animateTo(1f, tween(1000, easing = EaseOutCubic))
     }
 
-    val number = text.toDoubleOrNull()
-    if (number == null || still || progress.value >= 1f) return text
+    val number = text.toDoubleOrNull() ?: return text
 
+    // 7,5 or 7.5, as the website writes it (OwnifyFormat); whole numbers ungrouped.
     val decimals = text.substringAfter('.', "").length
-    if (!play) return "%.${decimals}f".format(java.util.Locale.ROOT, 0.0)
-    return "%.${decimals}f".format(java.util.Locale.ROOT, number * progress.value)
+    fun shown(value: Double) = OwnifyFormat.number(value, decimals, grouping = false)
+    if (still || progress.value >= 1f) return shown(number)
+    if (!play) return shown(0.0)
+    return shown(number * progress.value)
 }

@@ -18,6 +18,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var page = document.querySelector('[data-settings]');
     if (!page) { return; }
 
@@ -46,7 +48,58 @@
             var key = option.getAttribute('data-choice-key');
             useTheme(key === 'light' || key === 'dark' ? key : 'system', option.querySelector('.settings-option__label'));
         }
+
+        if (name === 'language' || name === 'units') {
+            savePreference(name, option.getAttribute('data-choice-key'), option);
+        }
     });
+
+    /* After a language or units change the page is drawn again: open the
+       screen the choice was made on, as it was left. */
+    window.addEventListener('load', function () {
+        var reopen = null;
+        try { reopen = sessionStorage.getItem('ownify-reopen'); sessionStorage.removeItem('ownify-reopen'); } catch (e) { /* private mode */ }
+        var nav = window.AppNav;
+        if (reopen && nav && nav.pages && nav.details) {
+            nav.pages.goToId('settings');
+            nav.details.open(reopen);
+        }
+    });
+
+    /* ------------------------------------------- the language and the units */
+
+    /**
+     * Taal and Eenheden are kept on the account (api/profile/preferences.php),
+     * so the website and the app agree. Every word and every value on the page
+     * changes with them, so once saved the page is drawn again, opening where
+     * it was (the detail stays open: navigation keeps it in the address).
+     */
+    function savePreference(name, key, option) {
+        var panel = document.querySelector('[data-account]');
+        var body = new FormData();
+
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append(name, key || '');
+
+        var group = document.querySelectorAll('[data-choice="' + name + '"]');
+        Array.prototype.forEach.call(group, function (button) { button.disabled = true; });
+
+        fetch('api/profile/preferences.php', { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) {
+                return response.json().catch(function () { return { ok: false }; });
+            })
+            .catch(function () { return { ok: false }; })
+            .then(function (result) {
+                if (result && result.ok) {
+                    try { sessionStorage.setItem('ownify-reopen', 'settings-' + (name === 'language' ? 'language' : 'preferences')); } catch (e) { /* private mode */ }
+                    window.location.reload();
+                    return;
+                }
+                Array.prototype.forEach.call(group, function (button) { button.disabled = false; });
+                option.classList.remove('is-selected');
+                option.setAttribute('aria-checked', 'false');
+            });
+    }
 
     /* --------------------------------------------------------- the theme */
 
@@ -114,15 +167,15 @@
         fetch('api/profile/privacy.php', { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () {
-                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                    return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
                 });
             })
-            .catch(function () { return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' }; })
+            .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
             .then(function (answer) {
                 toggle.disabled = false;
 
                 if (!answer || !answer.ok) {
-                    setSwitch(toggle, before, (answer && answer.error) || 'Dit kon niet worden opgeslagen.');
+                    setSwitch(toggle, before, (answer && answer.error) || T.t('Dit kon niet worden opgeslagen.'));
                     return;
                 }
 
@@ -189,9 +242,9 @@
 
         fetch(row.getAttribute('data-endpoint'), { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
-                return response.json().catch(function () { return { ok: false, error: 'Onverwacht antwoord van de server.' }; });
+                return response.json().catch(function () { return { ok: false, error: T.t('Onverwacht antwoord van de server.') }; });
             })
-            .catch(function () { return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' }; })
+            .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
             .then(function (answer) {
                 yesButton.disabled = false;
                 confirmBox.hidden = true;
@@ -200,7 +253,7 @@
                 if (note) {
                     note.textContent = answer && answer.ok
                         ? (answer.message || '')
-                        : ((answer && answer.error) || 'Dit kon niet worden gedaan.');
+                        : ((answer && answer.error) || T.t('Dit kon niet worden gedaan.'));
                     note.classList.toggle('is-error', !(answer && answer.ok));
                 }
 
@@ -312,7 +365,7 @@
 
         body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
         button.disabled = true;
-        button.textContent = button.getAttribute('data-busy') || 'Bezig met synchroniseren…';
+        button.textContent = button.getAttribute('data-busy') || T.t('Bezig met synchroniseren…');
         if (result) { result.hidden = true; }
 
         fetch('api/integrations/' + encodeURIComponent(button.getAttribute('data-integration-sync')) + '/sync.php',
@@ -329,7 +382,7 @@
                 button.disabled = false;
                 button.textContent = label;
                 if (result) {
-                    result.textContent = (answer && answer.error) || 'Synchroniseren is niet gelukt. Probeer het opnieuw.';
+                    result.textContent = (answer && answer.error) || T.t('Synchroniseren is niet gelukt. Probeer het opnieuw.');
                     result.classList.add('integration__hint--warn');
                     result.hidden = false;
                 }
@@ -424,13 +477,13 @@
             .catch(function () { return { ok: false }; })
             .then(function (result) {
                 if (!result || !result.ok) {
-                    errorEl.textContent = (result && result.error) || 'Er kon geen code worden gemaakt.';
+                    errorEl.textContent = (result && result.error) || T.t('Er kon geen code worden gemaakt.');
                     errorEl.hidden = false;
                     return;
                 }
 
                 codeEl.textContent = result.code;
-                expiryEl.textContent = 'Geldig voor ' + Math.round((result.expires_in || 600) / 60) + ' minuten.';
+                expiryEl.textContent = T.tf('Geldig voor %d minuten.', Math.round((result.expires_in || 600) / 60));
             });
     }
 
@@ -513,6 +566,37 @@
                 return function () { return chosen; };
             }
 
+            /* Imperial height: feet and inches side by side, read back as
+               inches (posted with height_unit=in, lib/settings.php). */
+            if (spec.type === 'feet_inches') {
+                var pair = document.createElement('div');
+                pair.className = 'field-editor__measure';
+                var parts = [['feet', 'ft', 2, 8], ['inches', 'in', 0, 11]].map(function (part) {
+                    var box = document.createElement('input');
+                    box.className = 'field-editor__input';
+                    box.type = 'number';
+                    box.inputMode = 'numeric';
+                    box.min = part[2];
+                    box.max = part[3];
+                    box.step = '1';
+                    box.value = spec[part[0]] || '';
+                    box.setAttribute('aria-label', part[0] === 'feet' ? T.t('Voet') : T.t('Inch'));
+                    var unitEl = document.createElement('span');
+                    unitEl.className = 'field-editor__unit';
+                    unitEl.textContent = part[1];
+                    pair.appendChild(box);
+                    pair.appendChild(unitEl);
+                    return box;
+                });
+                control.appendChild(pair);
+                return function () {
+                    var feet = parts[0].value.trim(), inches = parts[1].value.trim();
+                    if (feet === '' && inches === '') { return ''; }
+                    var total = (Number(feet) || 0) * 12 + (Number(inches) || 0);
+                    return isFinite(total) ? String(total) : '';
+                };
+            }
+
             var input = document.createElement('input');
             input.className = 'field-editor__input';
             input.type = spec.type === 'number' ? 'number' : spec.type;
@@ -558,6 +642,7 @@
                 key: trigger.getAttribute('data-field-edit'),
                 once: trigger.getAttribute('data-field-once') === '1',
                 endpoint: spec.endpoint,
+                unit: spec.post_unit || '',
                 read: renderControl(spec)
             };
 
@@ -588,13 +673,15 @@
             var value = current.read();
 
             if (value === '') {
-                setError('Vul eerst een waarde in.');
+                setError(T.t('Vul eerst een waarde in.'));
                 return;
             }
 
             var body = new FormData();
             body.append('csrf', csrf());
             body.append(current.key, value);
+            // The unit it was typed in: the endpoint converts once (cm/in, kg/lb).
+            if (current.unit) { body.append(current.key + '_unit', current.unit); }
 
             saveBtn.disabled = true;
             setError('');
@@ -602,17 +689,17 @@
             fetch(current.endpoint, { method: 'POST', body: body, credentials: 'same-origin' })
                 .then(function (response) {
                     return response.json().catch(function () {
-                        return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                        return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
                     });
                 })
                 .catch(function () {
-                    return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                    return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
                 })
                 .then(function (result) {
                     saveBtn.disabled = false;
 
                     if (!result || !result.ok) {
-                        setError((result && result.error) || 'Opslaan is niet gelukt.');
+                        setError((result && result.error) || T.t('Opslaan is niet gelukt.'));
                         return;
                     }
 
@@ -714,7 +801,7 @@
                 return response.json().catch(function () { return { ok: false }; });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.') };
             })
             .then(function (result) {
                 if (result && result.ok) {
@@ -733,7 +820,7 @@
 
                 var error = confirmPanel.querySelector('[data-confirm-error]');
                 if (error) {
-                    error.textContent = (result && result.error) || 'Je account kon niet worden verwijderd.';
+                    error.textContent = (result && result.error) || T.t('Je account kon niet worden verwijderd.');
                     error.hidden = false;
                 }
             });

@@ -43,7 +43,7 @@ import org.robolectric.annotation.Config
  * Slaap.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
 class SleepViewTest {
 
     @get:Rule

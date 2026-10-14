@@ -72,6 +72,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/integrations.php';
 
@@ -209,7 +211,7 @@ if (!function_exists('device_hash')) {
      */
     function device_pair(string $code, array $device = []): array
     {
-        $generic = ['ok' => false, 'error' => 'Deze koppelcode is niet geldig of verlopen.'];
+        $generic = ['ok' => false, 'error' => t('Deze koppelcode is niet geldig of verlopen.')];
 
         $code = strtoupper(trim($code));
 
@@ -245,7 +247,7 @@ if (!function_exists('device_hash')) {
         }
 
         if (device_count($userId, $provider) >= DEVICE_LIMIT_PER_PROVIDER) {
-            return ['ok' => false, 'error' => 'Je hebt het maximum aantal gekoppelde apparaten bereikt.'];
+            return ['ok' => false, 'error' => t('Je hebt het maximum aantal gekoppelde apparaten bereikt.')];
         }
 
         /* 256 bits from the server. Returned now and never again. */
@@ -378,7 +380,7 @@ if (!function_exists('device_hash')) {
     function device_issue_account_token(int $userId, array $device, ?string $presented = null): array
     {
         if (!devices_scoped()) {
-            return ['ok' => false, 'error' => 'Inloggen in de app is op deze server nog niet beschikbaar.', 'status' => 503];
+            return ['ok' => false, 'error' => t('Inloggen in de app is op deze server nog niet beschikbaar.'), 'status' => 503];
         }
 
         /* 256 bits from the server, like a pairing token, and unrelated to
@@ -416,7 +418,7 @@ if (!function_exists('device_hash')) {
         if (device_count($userId, $provider) >= DEVICE_LIMIT_PER_PROVIDER) {
             return [
                 'ok'     => false,
-                'error'  => 'Je hebt het maximum aantal gekoppelde apparaten bereikt. Verwijder er een via Instellingen op de website.',
+                'error'  => t('Je hebt het maximum aantal gekoppelde apparaten bereikt. Verwijder er een via Instellingen op de website.'),
                 'status' => 409,
             ];
         }
@@ -431,7 +433,7 @@ if (!function_exists('device_hash')) {
 
         /* Never a token without the row that makes it work. */
         if ($deviceId === null || $deviceId <= 0) {
-            return ['ok' => false, 'error' => 'Er kon niet worden ingelogd. Probeer het opnieuw.', 'status' => 500];
+            return ['ok' => false, 'error' => t('Er kon niet worden ingelogd. Probeer het opnieuw.'), 'status' => 500];
         }
 
         integration_connect($userId, $provider, ['external_account_label' => $details[0]]);

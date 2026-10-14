@@ -35,6 +35,6 @@ $state = ai_consent_state($userId);
 api_ok([
     'consent' => $state,
     'message' => $state === 'accepted'
-        ? 'Ownify AI staat aan.'
-        : 'Ownify AI staat uit. Er gaat niets naar Gemini.',
+        ? t('Ownify AI staat aan.')
+        : t('Ownify AI staat uit. Er gaat niets naar Gemini.'),
 ]);

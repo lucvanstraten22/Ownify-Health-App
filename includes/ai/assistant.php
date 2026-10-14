@@ -25,6 +25,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/gemini.php';
@@ -40,7 +42,7 @@ if (!function_exists('ai_chat')) {
     {
         static $copy = null;
 
-        return $copy ??= (array) ((require dirname(__DIR__, 2) . '/config/dashboard.php')['ai'] ?? []);
+        return $copy ??= (array) (config_copy('dashboard')['ai'] ?? []);
     }
 
     function ai_error_text(string $code): string
@@ -386,9 +388,9 @@ if (!function_exists('ai_chat')) {
 
         if (!$confirm || !is_array($action)) {
             ai_action_finish($userId, $messageId, 'declined');
-            $title  = (string) ($action['title'] ?? 'Het voorstel');
+            $title  = (string) ($action['title'] ?? t('Het voorstel'));
             $noteId = ai_message_add($userId, $conversationId, 'system',
-                'Niet doorgevoerd: ' . mb_strtolower(mb_substr($title, 0, 1)) . mb_substr($title, 1) . '.');
+                tf('Niet doorgevoerd: %s.', mb_strtolower(mb_substr($title, 0, 1)) . mb_substr($title, 1)));
         } else {
             $result = ai_action_execute($userId, $action);
             ai_action_finish($userId, $messageId, $result['ok'] ? 'done' : 'failed');
@@ -553,8 +555,8 @@ if (!function_exists('ai_chat')) {
                 'title'   => (string) ($action['title'] ?? ''),
                 'summary' => (string) ($action['summary'] ?? ''),
                 'state'   => $state === 'running' ? 'pending' : $state,
-                'confirm' => (string) ($action['confirm'] ?? 'Bevestigen'),
-                'decline' => (string) ($action['decline'] ?? 'Niet nu'),
+                'confirm' => t((string) ($action['confirm'] ?? 'Bevestigen')),
+                'decline' => t((string) ($action['decline'] ?? 'Niet nu')),
                 'status'  => ai_action_status_text($state),
             ];
         }
@@ -565,10 +567,10 @@ if (!function_exists('ai_chat')) {
     function ai_action_status_text(string $state): ?string
     {
         return match ($state) {
-            'done'     => 'Doorgevoerd',
-            'declined' => 'Niet doorgevoerd',
-            'failed'   => 'Mislukt',
-            'expired'  => 'Verlopen',
+            'done'     => t('Doorgevoerd'),
+            'declined' => t('Niet doorgevoerd'),
+            'failed'   => t('Mislukt'),
+            'expired'  => t('Verlopen'),
             default    => null,
         };
     }
@@ -581,18 +583,18 @@ if (!function_exists('ai_chat')) {
 
         $at    = strtotime((string) $row['updated_at']) ?: time();
         $today = strtotime('today');
-        $months = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+        $when  = (new DateTimeImmutable())->setTimestamp($at);
 
         $label = match (true) {
-            $at >= $today              => 'Vandaag ' . date('H:i', $at),
-            $at >= $today - 86400      => 'Gisteren',
-            date('Y', $at) === date('Y') => (int) date('j', $at) . ' ' . $months[(int) date('n', $at) - 1],
-            default                    => (int) date('j', $at) . ' ' . $months[(int) date('n', $at) - 1] . ' ' . date('Y', $at),
+            $at >= $today              => tf('Vandaag %s', date('H:i', $at)),
+            $at >= $today - 86400      => t('Gisteren'),
+            date('Y', $at) === date('Y') => i18n_date($when, 'day_mon'),
+            default                    => i18n_date($when, 'day_mon_year'),
         };
 
         return [
             'id'    => (int) $row['id'],
-            'title' => (string) $row['title'] !== '' ? (string) $row['title'] : 'Gesprek',
+            'title' => (string) $row['title'] !== '' ? (string) $row['title'] : t('Gesprek'),
             'label' => $label,
         ];
     }

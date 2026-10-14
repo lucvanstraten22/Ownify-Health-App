@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -123,7 +125,7 @@ fun GoalsPage(data: AppData, scroll: ScrollState) {
                 selected = view,
                 onSelect = { GoalBoard.view = it },
                 wide = true,
-                label = "Actieve of behaalde doelen"
+                label = tr("Actieve of behaalde doelen")
             )
         }
 
@@ -179,7 +181,7 @@ private fun CompletedView(data: AppData, board: Board) {
             Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 board.completed.forEach { goal -> key(goal.id) { BoardCard(data, goal, "completed", false) } }
             }
-            SlotNote("Behaalde doelen tellen niet mee voor je ${data.goals.limits} actieve plekken.")
+            SlotNote(trf("Behaalde doelen tellen niet mee voor je %d actieve plekken.", data.goals.limits))
         }
     }
 }
@@ -190,7 +192,7 @@ private fun BoardCard(data: AppData, goal: Goal, variant: String, leaving: Boole
     val shell = LocalShell.current
     val labels = data.goals.labels
     val requester = remember { BringIntoViewRequester() }
-    val reading = if (goal.percent != null) "${goal.percent} procent van ${goal.targetLabel.ifEmpty { "je doel" }}" else "nog geen voortgang"
+    val reading = if (goal.percent != null) trf("%1\$d procent van %2\$s", goal.percent, goal.targetLabel.ifEmpty { tr("je doel") }) else tr("nog geen voortgang")
 
     LaunchedEffect(GoalBoard.reveal) {
         if (GoalBoard.reveal == goal.id) {

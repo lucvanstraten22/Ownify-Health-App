@@ -1,5 +1,6 @@
 package com.ownify.android.ui.app
 
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -120,7 +121,7 @@ fun OverlayFrame(
                     if (dismissible && !leaving) Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClickLabel = "Sluiten"
+                        onClickLabel = tr("Sluiten")
                     ) { dismiss() } else Modifier
                 )
         )
@@ -215,7 +216,7 @@ fun PanelHead(
     title: String,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
-    closeLabel: String = "Sluiten",
+    closeLabel: String = tr("Sluiten"),
     leading: (@Composable RowScope.() -> Unit)? = null
 ) {
     Row(

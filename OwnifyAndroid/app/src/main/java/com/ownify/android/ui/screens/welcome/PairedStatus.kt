@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.welcome
 
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,14 +48,14 @@ fun PairedStatus() {
             IconTile(OwnifyIcons.pulse, color = Ownify.Health)
             Column(Modifier.weight(1f)) {
                 val who = (state as? OwnifyState.Connected)?.profile?.username
-                T(if (who != null) "Gekoppeld aan $who" else "Deze telefoon is gekoppeld", JStyle.Eyebrow, Modifier.semantics { heading() })
-                T("Met een koppelcode. Log in om ook je account te gebruiken.", JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+                T(if (who != null) trf("Gekoppeld aan %s", who) else tr("Deze telefoon is gekoppeld"), JStyle.Eyebrow, Modifier.semantics { heading() })
+                T(tr("Met een koppelcode. Log in om ook je account te gebruiken."), JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
             }
         }
 
         if (state is OwnifyState.Failed) {
             T(state.message, JStyle.Meta, Modifier.padding(top = Ownify.Space4))
-            Btn("Opnieuw proberen", onClick = { OwnifyConnection.retry(context) }, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4))
+            Btn(tr("Opnieuw proberen"), onClick = { OwnifyConnection.retry(context) }, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4))
         } else {
             PhoneSection(rememberPhoneHealth(), Modifier.padding(top = Ownify.Space4))
             SyncNowButton(Modifier.fillMaxWidth().padding(top = Ownify.Space4))

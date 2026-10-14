@@ -9,15 +9,17 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 if (!function_exists('community_points')) {
-    /** Points as the Netherlands writes them, or an em dash while empty. */
+    /** Points as the reader writes them (1.250 or 1,250), or an em dash while empty. */
     function community_points(mixed $points): string
     {
         if (!has_value($points) || !is_numeric($points)) {
             return '—';
         }
 
-        return number_format((float) $points, 0, ',', '.');
+        return i18n_number((float) $points);
     }
 }
 

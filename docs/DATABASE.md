@@ -243,7 +243,7 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | Table | Holds |
 | --- | --- |
 | `users` | the account: id, unique username, status, timestamps |
-| `user_profiles` | the person: name, date of birth, gender, avatar, locale, focus, and where the setup a new account starts with stands |
+| `user_profiles` | the person: name, date of birth, gender, avatar, language and units (migration 021, docs/I18N.md), focus, and where the setup a new account starts with stands |
 | `user_auth_identities` | one row per way of signing in |
 | `user_login_tokens` | one row per browser that signed in and has not signed out: a selector and the SHA-256 of a validator |
 
@@ -437,6 +437,17 @@ sealed). Single use, ten minutes, removed with the account.
 database gets both, and the source `polar`, from
 `database/migrations/020-polar.sql`; until then Polar is shown as not yet set
 up and nothing else changes. See [POLAR.md](POLAR.md).
+
+**The language and the units** are `user_profiles.locale` — `nl` or `en`
+when chosen in Instellingen › Taal, NULL to follow the browser's or phone's
+language — and `user_profiles.units`: `imperial`, or NULL for metric. Only
+how things are shown and typed changes: every measurement stays stored in
+kg, cm, km or m and °C, and every stored text in Dutch (the server
+translates it when it is shown). An existing database gets the column, and
+the old default `nl` turned into NULL (it was never anybody's choice), from
+`database/migrations/021-language-and-units.sql`; until then the language
+follows the device, everything is metric, and choosing either says it
+cannot be kept yet. See [I18N.md](I18N.md).
 
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair

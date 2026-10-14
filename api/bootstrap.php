@@ -72,6 +72,15 @@ if (!function_exists('api_json')) {
 
     function api_json(array $payload, int $status = 200): never
     {
+        /* The answer's own sentences in the request's language (includes/i18n.php):
+           an endpoint writes them in Dutch, as everything is written. Only these
+           two keys — never data, which may be somebody's own words. */
+        foreach (['error', 'message'] as $key) {
+            if (isset($payload[$key]) && is_string($payload[$key]) && function_exists('t')) {
+                $payload[$key] = t($payload[$key]);
+            }
+        }
+
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         header('X-Content-Type-Options: nosniff');
@@ -184,6 +193,8 @@ if (!function_exists('api_json')) {
         if (db_value('SELECT id FROM users WHERE id = ? AND status = ?', [$device['user_id'], 'active']) === null) {
             api_fail('Je bent niet ingelogd.', 401);
         }
+
+        i18n_use_account($device['user_id']);
 
         return $device['user_id'];
     }

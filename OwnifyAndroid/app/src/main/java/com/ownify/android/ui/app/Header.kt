@@ -1,5 +1,6 @@
 package com.ownify.android.ui.app
 
+import com.ownify.android.i18n.trn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -102,8 +103,7 @@ fun SharedHeader(
             )
             Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
                 val waiting = when {
-                    requests == 1 -> ", 1 nieuw vriendverzoek"
-                    requests > 1 -> ", $requests nieuwe vriendverzoeken"
+                    requests >= 1 -> ", " + trn(requests, "%d nieuw vriendverzoek", "%d nieuwe vriendverzoeken")
                     else -> ""
                 }
                 HeaderButton(onClick = onAccount, label = accountAria + waiting, dot = requests > 0) {

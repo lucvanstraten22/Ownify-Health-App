@@ -20,6 +20,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var panel = document.querySelector('[data-account]');
     if (!panel) { return; }
 
@@ -109,11 +111,11 @@
         return fetch(url, { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () {
-                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                    return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
                 });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             });
     }
 
@@ -139,7 +141,7 @@
         if (title) { title.textContent = title.getAttribute('data-title-' + mode); }
 
         var submit = panel.querySelector('[data-account-submit]');
-        if (submit) { submit.textContent = mode === 'register' ? 'Account aanmaken' : 'Inloggen'; }
+        if (submit) { submit.textContent = mode === 'register' ? T.t('Account aanmaken') : T.t('Inloggen'); }
 
         var password = panel.querySelector('#account-password');
         if (password) {
@@ -170,7 +172,7 @@
             }
 
             if (button) { button.disabled = false; }
-            onError(result.error || 'Deze aanmelding is nog niet beschikbaar.');
+            onError(result.error || T.t('Deze aanmelding is nog niet beschikbaar.'));
         });
     }
 
@@ -244,7 +246,7 @@
             }
 
             if (!result.ok) {
-                showError(result.error || 'Er ging iets mis.');
+                showError(result.error || T.t('Er ging iets mis.'));
                 return;
             }
 

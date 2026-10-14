@@ -26,6 +26,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/context.php';
 require_once dirname(__DIR__) . '/goal-create.php';
 
@@ -39,7 +41,7 @@ if (!function_exists('ai_tool_declarations')) {
             'description' => 'How many days back from today, 1-' . $max . '. Default ' . $default . '.',
         ];
 
-        $goalConfig = require dirname(__DIR__, 2) . '/config/goals.php';
+        $goalConfig = config_copy('goals');
 
         $sources = [];
         foreach (goal_source_catalogue() as $source) {
@@ -106,8 +108,8 @@ if (!function_exists('ai_tool_declarations')) {
                         'description' => 'Where progress comes from: manual = the user keeps it themselves; metric = a health metric; workout = recorded workouts; measurement = a body measurement.'],
                     'source_key'   => ['type' => 'STRING', 'description' => 'For metric: one of ' . implode(', ', $sources)
                         . '. For workout: minutes or sessions. For measurement: weight, body_fat_pct, waist_cm or lean_mass. Empty for manual.'],
-                    'target_value' => ['type' => 'NUMBER', 'description' => 'The target, in the unit shown for the source (sleep_duration in hours). For a streak, or an accumulate goal that counts days: the number of days.'],
-                    'target_unit'  => ['type' => 'STRING', 'description' => 'Only for manual goals: the unit, e.g. kg, min, km, keer. Max 20 characters.'],
+                    'target_value' => ['type' => 'NUMBER', 'description' => 'The target, in the unit shown for the source (sleep_duration in hours), always metric: kg, km, cm, °C — convert from pounds, miles, inches or °F first. For a streak, or an accumulate goal that counts days: the number of days.'],
+                    'target_unit'  => ['type' => 'STRING', 'description' => 'Only for manual goals: the unit, e.g. kg, min, km, keer — metric for a measurement. Max 20 characters.'],
                     'measure'      => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['amount', 'days'], 'description' => 'Only for accumulate: add up an amount, or count days.'],
                     'daily_target' => ['type' => 'NUMBER', 'description' => 'For a streak or day-counting goal from health data: what makes one day count, in the source\'s unit.'],
                     'direction'    => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['increase', 'decrease'],
@@ -288,8 +290,9 @@ if (!function_exists('ai_tool_declarations')) {
         $turn['proposal'] = [
             'kind'    => 'create_goal',
             'input'   => $input,
-            'title'   => 'Nieuw doel: ' . $check['goal']['name'],
+            'title'   => tf('Nieuw doel: %s', $check['goal']['name']),
             'summary' => $summary,
+            /* Kept as Dutch, said in the reader's language when shown. */
             'confirm' => 'Doel toevoegen',
             'decline' => 'Niet nu',
         ];
@@ -345,8 +348,10 @@ if (!function_exists('ai_tool_declarations')) {
             'kind'    => 'update_goal',
             'goal_id' => $goalId,
             'action'  => $action,
-            'title'   => $labels[$action]['title'] . ': ' . $goal['name'],
-            'summary' => $labels[$action]['summary'],
+            'title'   => t($labels[$action]['title']) . ': ' . $goal['name'],
+            'summary' => t($labels[$action]['summary']),
+            /* Kept as Dutch, the canonical words; said in the reader's
+               language whenever it is shown (ai_message_view()). */
             'confirm' => $labels[$action]['confirm'],
             'decline' => 'Niet nu',
         ];
@@ -369,42 +374,42 @@ if (!function_exists('ai_tool_declarations')) {
         ];
     }
 
-    /** One line that says what a proposed goal is, in the app's words. */
+    /**
+     * One line that says what a proposed goal is, in the app's words — in
+     * the reader's language and units: the goal as checked (its stored,
+     * metric figures), shown as the board would show it.
+     */
     function ai_goal_summary(array $goal, array $input): string
     {
-        $config = require dirname(__DIR__, 2) . '/config/goals.php';
+        $config = config_copy('goals');
         $parts  = [$config['types'][$goal['kind']]['label'] ?? $goal['kind']];
-
-        $typed  = (float) str_replace(',', '.', (string) ($input['target_value'] ?? '0'));
-        $number = static fn (float $v): string => rtrim(rtrim(number_format($v, 2, ',', '.'), '0'), ',');
+        $target = (float) ($goal['target_value'] ?? 0);
 
         if ($goal['target_unit'] === 'dagen') {
-            $parts[] = goal_days_text($typed);
+            $parts[] = goal_days_text($target);
         } elseif ($goal['source_kind'] !== 'manual') {
-            $unit    = goal_source_unit($goal['source_kind'], $goal['source_key'])['word'];
-            $parts[] = trim($number($typed) . ' ' . $unit);
+            $parts[] = goal_unit_text($target, goal_source_unit($goal['source_kind'], $goal['source_key']));
         } else {
-            $parts[] = trim($number($typed) . ' ' . (string) $goal['target_unit']);
+            $parts[] = goal_unit_text($target, goal_manual_unit((string) $goal['target_unit']));
         }
 
         if ($goal['daily_target'] !== null) {
-            $unit    = goal_source_unit($goal['source_kind'], $goal['source_key'])['word'];
-            $daily   = (float) str_replace(',', '.', (string) $input['daily_target']);
-            $parts[] = ($goal['direction'] === 'decrease' ? 'per dag hoogstens ' : 'per dag minstens ') . trim($number($daily) . ' ' . $unit);
+            $daily   = goal_unit_text((float) $goal['daily_target'], goal_source_unit($goal['source_kind'], $goal['source_key']));
+            $parts[] = tf($goal['direction'] === 'decrease' ? 'per dag hoogstens %s' : 'per dag minstens %s', $daily);
         } elseif ($goal['kind'] === 'milestone') {
-            $parts[] = $goal['direction'] === 'decrease' ? 'lager is beter' : 'hoger is beter';
+            $parts[] = $goal['direction'] === 'decrease' ? t('lager is beter') : t('hoger is beter');
         }
 
         $source  = goal_source_find($goal['source_kind'], $goal['source_key']);
-        $parts[] = $source === null ? 'zelf bijhouden' : 'uit je gegevens: ' . mb_strtolower($source['label']);
+        $parts[] = $source === null ? t('zelf bijhouden') : tf('uit je gegevens: %s', mb_strtolower($source['label']));
 
         $duration = $input['duration'] ?? '';
         $parts[]  = isset($config['durations'][$duration])
-            ? 'looptijd: ' . mb_strtolower($config['durations'][$duration]['label'])
-            : 'geen einddatum';
+            ? tf('looptijd: %s', mb_strtolower($config['durations'][$duration]['label']))
+            : t('geen einddatum');
 
         if ($goal['priority'] === 'primary') {
-            $parts[] = 'primair doel';
+            $parts[] = t('primair doel');
         }
 
         return implode(' · ', $parts);
@@ -423,8 +428,8 @@ if (!function_exists('ai_tool_declarations')) {
             $result = goal_create_from_input($userId, $action['input']);
 
             return $result['ok']
-                ? ['ok' => true, 'message' => 'Doel ‘' . $result['goal']['name'] . '’ toegevoegd. Je vindt het bij Doelen.']
-                : ['ok' => false, 'message' => 'Het doel kon niet worden toegevoegd: ' . rtrim((string) $result['error'], '.') . '.'];
+                ? ['ok' => true, 'message' => tf('Doel ‘%s’ toegevoegd. Je vindt het bij Doelen.', $result['goal']['name'])]
+                : ['ok' => false, 'message' => tf('Het doel kon niet worden toegevoegd: %s.', rtrim((string) $result['error'], '.'))];
         }
 
         if (($action['kind'] ?? null) === 'update_goal') {
@@ -434,16 +439,16 @@ if (!function_exists('ai_tool_declarations')) {
             $goal   = goal_get($userId, $goalId);
 
             if ($goal === null || $goal['status'] === 'abandoned' || !isset($labels[$verb])) {
-                return ['ok' => false, 'message' => 'Dit doel bestaat niet meer.'];
+                return ['ok' => false, 'message' => t('Dit doel bestaat niet meer.')];
             }
 
             $ok = goal_apply_action($userId, $goalId, $verb);
 
             return $ok === true
-                ? ['ok' => true, 'message' => sprintf($labels[$verb]['done'], $goal['name'])]
-                : ['ok' => false, 'message' => 'Deze wijziging kon niet worden opgeslagen.'];
+                ? ['ok' => true, 'message' => tf($labels[$verb]['done'], $goal['name'])]
+                : ['ok' => false, 'message' => t('Deze wijziging kon niet worden opgeslagen.')];
         }
 
-        return ['ok' => false, 'message' => 'Dit voorstel kan niet worden uitgevoerd.'];
+        return ['ok' => false, 'message' => t('Dit voorstel kan niet worden uitgevoerd.')];
     }
 }

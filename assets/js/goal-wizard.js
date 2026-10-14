@@ -20,6 +20,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var root = document.querySelector('[data-goal-wizard]');
     if (!root) { return; }
 
@@ -31,7 +33,6 @@
 
     var words     = copy.wizard;
     var TOTAL     = 6;
-    var MONTHS    = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
     var body      = root.querySelector('.wizard__body');
     var count     = root.querySelector('[data-wizard-count]');
@@ -91,19 +92,21 @@
         });
     }
 
+    /* Dates, spans and numbers in the reader's language (assets/js/i18n.js),
+       as lib/goals.php writes them on the board. */
     function dutchDate(date) {
-        return date.getDate() + ' ' + MONTHS[date.getMonth()];
+        return T.date(date, 'day_mon');
     }
 
     function spanText(days) {
-        if (days >= 330) { return Math.round(days / 365) === 1 ? '1 jaar' : Math.round(days / 365) + ' jaar'; }
-        if (days >= 60) { return Math.round(days / 30) + ' maanden'; }
-        if (days >= 45) { return Math.round(days / 7) + ' weken'; }
-        return days === 1 ? '1 dag' : days + ' dagen';
+        if (days >= 330) { return Math.round(days / 365) === 1 ? T.t('1 jaar') : T.tf('%d jaar', Math.round(days / 365)); }
+        if (days >= 60) { return T.tf('%d maanden', Math.round(days / 30)); }
+        if (days >= 45) { return T.tf('%d weken', Math.round(days / 7)); }
+        return T.tn(days, '%d dag', '%d dagen');
     }
 
     function daysText(n) {
-        return Number(n) === 1 ? '1 dag' : n + ' dagen';
+        return T.tn(Number(n), '%d dag', '%d dagen');
     }
 
     function endDate(days) {
@@ -113,16 +116,32 @@
         return date;
     }
 
-    /** "10.000": the way the rest of the app writes a number. */
+    /** "10.000" or "10,000": the way the rest of the app writes a number. */
     function dutchNumber(text) {
-        var n = Number(String(text).replace(',', '.'));
-        if (!isFinite(n)) { return String(text); }
-        return n.toLocaleString('nl-NL', { maximumFractionDigits: 2 });
+        var n = T.parseNumber(text);
+        if (n === null) { return String(text); }
+        return T.numberTrim(n, 2);
     }
 
     function positive(text) {
-        var n = Number(String(text).replace(',', '.'));
-        return String(text).trim() !== '' && isFinite(n) && n > 0;
+        var n = T.parseNumber(text);
+        return String(text).trim() !== '' && n !== null && n > 0;
+    }
+
+    /** A unit as the reader sees it ("lb", "steps"), from the one kept ("kg", "stappen"). */
+    function unitLabel(unit) {
+        var labels = copy.unit_labels || {};
+        return Object.prototype.hasOwnProperty.call(labels, unit) ? labels[unit] : unit;
+    }
+
+    /** …and back: what was typed or tapped, as the unit kept. */
+    function unitKey(text) {
+        var labels = copy.unit_labels || {};
+        var found = String(text || '').trim();
+        Object.keys(labels).forEach(function (key) {
+            if (labels[key] === found) { found = key; }
+        });
+        return found;
     }
 
     function wholeDays(text) {
@@ -164,11 +183,11 @@
 
         if (countsDays()) {
             if (!wholeDays(draft.days)) { return null; }
-            var text = daysText(draft.days) + (draft.type === 'streak' ? ' op rij' : '');
+            var text = draft.type === 'streak' ? T.tf('%s op rij', daysText(draft.days)) : daysText(draft.days);
 
             if (needsDaily() && positive(draft.daily)) {
-                text += ' · ' + (draft.floor === 'decrease' ? 'hoogstens ' : 'minstens ')
-                    + withUnit(draft.daily, draft.sourceUnit) + ' per dag';
+                var daily = withUnit(draft.daily, draft.sourceUnit);
+                text += ' · ' + T.tf('%s per dag', draft.floor === 'decrease' ? T.tf('hoogstens %s', daily) : T.tf('minstens %s', daily));
             }
             return text;
         }
@@ -227,7 +246,7 @@
         });
 
         if (count) {
-            count.textContent = 'Stap ' + step + ' van ' + TOTAL + ' · ' + words.steps[step].label;
+            count.textContent = T.tf('Stap %1$d van %2$d', step, TOTAL) + ' · ' + words.steps[step].label;
         }
 
         if (step === 4) { showTarget(); }
@@ -296,11 +315,11 @@
             var button = document.createElement('button');
             button.type = 'button';
             button.className = 'wizard-suggestion press';
-            button.textContent = unit;
+            button.textContent = unitLabel(unit);
             button.addEventListener('click', function () {
                 var field = root.querySelector('[data-wizard-unit]');
-                field.value = unit;
-                draft.unit = unit;
+                field.value = unitLabel(unit);
+                draft.unit = unitLabel(unit);
                 refresh();
             });
             item.appendChild(button);
@@ -399,7 +418,7 @@
 
         text('[data-wizard-amount-label]', type === 'milestone' ? words.target_best : words.target_total);
         text('[data-wizard-days-label]', type === 'streak' ? words.target_streak : words.target_days);
-        text('[data-wizard-days-suffix]', type === 'streak' ? 'dagen op rij' : 'dagen');
+        text('[data-wizard-days-suffix]', type === 'streak' ? T.t('dagen op rij') : T.t('dagen'));
         text('[data-wizard-tick-note]', type === 'streak' ? words.tick_streak : words.tick_days);
 
         /* Read from health data, the unit is the source's and is shown, not
@@ -459,8 +478,7 @@
 
         if (datesNote) {
             datesNote.hidden = false;
-            datesNote.textContent = 'Van ' + dutchDate(start) + ' t/m ' + dutchDate(endDate(days))
-                + ' · nog ' + spanText(days);
+            datesNote.textContent = T.tf('Van %1$s t/m %2$s · nog %3$s', dutchDate(start), dutchDate(endDate(days)), spanText(days));
         }
 
         refresh();
@@ -477,8 +495,8 @@
 
             if (meta) {
                 meta.textContent = ok
-                    ? 't/m ' + dutchDate(endDate(Number(option.getAttribute('data-days'))))
-                    : (words.too_short || 'Te kort voor %s').replace('%s', daysText(draft.days) + (draft.type === 'streak' ? ' op rij' : ''));
+                    ? T.tf('t/m %s', dutchDate(endDate(Number(option.getAttribute('data-days')))))
+                    : (words.too_short || T.t('Te kort voor %s')).replace('%s', draft.type === 'streak' ? T.tf('%s op rij', daysText(draft.days)) : daysText(draft.days));
             }
 
             if (!ok && draft.duration === key) {
@@ -502,10 +520,10 @@
             : '—');
         set('target', targetText() || '—');
         set('source', draft.sourceKind === 'manual'
-            ? (words.source_manual || 'Geen data mogelijk')
+            ? (words.source_manual || T.t('Geen data mogelijk'))
             : (draft.sourceLabel || '—'));
         set('duration', duration
-            ? duration.label + ' · t/m ' + dutchDate(endDate(duration.days))
+            ? duration.label + ' · ' + T.tf('t/m %s', dutchDate(endDate(duration.days)))
             : '—');
 
         function set(key, value) {
@@ -598,7 +616,7 @@
         var deadline = document.createElement('span');
         deadline.className = 'goal-card__deadline';
         deadline.textContent = duration
-            ? 'Nog ' + spanText(duration.days) + ' · t/m ' + dutchDate(endDate(duration.days))
+            ? T.tf('Nog %s', spanText(duration.days)) + ' · ' + T.tf('t/m %s', dutchDate(endDate(duration.days)))
             : '';
         foot.appendChild(deadline);
 
@@ -640,6 +658,10 @@
         form.append('source_kind', draft.sourceKind || '');
         form.append('source_key', draft.sourceKey || '');
 
+        /* The units the figures were typed in (Instellingen › Eenheden): the
+           server stores lb as kg and mi as km, once. */
+        form.append('input_units', T.units.system);
+
         if (draft.type === 'accumulate') {
             form.append('measure', draft.measure || 'amount');
         }
@@ -653,7 +675,7 @@
             }
         } else {
             form.append('target_value', draft.value);
-            if (!isAuto()) { form.append('target_unit', draft.unit); }
+            if (!isAuto()) { form.append('target_unit', unitKey(draft.unit)); }
             if (draft.type === 'milestone') { form.append('direction', draft.better || ''); }
         }
 
@@ -681,17 +703,17 @@
         fetch('api/goals/create.php', { method: 'POST', body: payload(), credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () {
-                    return { ok: false, error: 'Onverwacht antwoord van de server.' };
+                    return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
                 });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             })
             .then(function (result) {
                 nextBtn.disabled = false;
 
                 if (!result || !result.ok) {
-                    showError((result && result.error) || 'Dit doel kon niet worden opgeslagen.');
+                    showError((result && result.error) || T.t('Dit doel kon niet worden opgeslagen.'));
                     return;
                 }
 

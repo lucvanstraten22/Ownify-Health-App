@@ -18,6 +18,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var page = document.querySelector('[data-goals]');
     if (!page) { return; }
 
@@ -630,7 +632,7 @@
         /* A day is ticked off rather than measured, so a tick sends no value
            and the server marks the day. A result or an amount needs a number. */
         if (save && (!input || input.value.trim() === '')) {
-            if (slot) { slot.textContent = 'Vul een waarde in.'; slot.hidden = false; }
+            if (slot) { slot.textContent = T.t('Vul een waarde in.'); slot.hidden = false; }
             if (input) { input.focus(); }
             return;
         }
@@ -641,7 +643,11 @@
         body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
         body.append('goal_id', goalId);
 
-        if (save && input) { body.append('value', input.value.trim()); }
+        if (save && input) {
+            body.append('value', input.value.trim());
+            // Typed in the units on screen (lb for a kg goal in imperial): stored once, in metric.
+            body.append('input_units', window.OwnifyI18n ? window.OwnifyI18n.units.system : 'metric');
+        }
 
         button.disabled = true;
 
@@ -655,7 +661,7 @@
                     button.disabled = false;
 
                     if (slot) {
-                        slot.textContent = (result && result.error) || 'Dit kon niet worden opgeslagen.';
+                        slot.textContent = (result && result.error) || T.t('Dit kon niet worden opgeslagen.');
                         slot.hidden = false;
                     }
                     return;
@@ -671,7 +677,7 @@
                         button.disabled = false;
                         if (input) { input.value = ''; }
                         if (slot) {
-                            slot.textContent = 'Opgeslagen. Je nieuwe voortgang verschijnt zodra de pagina ververst.';
+                            slot.textContent = T.t('Opgeslagen. Je nieuwe voortgang verschijnt zodra de pagina ververst.');
                             slot.hidden = false;
                         }
                         return;

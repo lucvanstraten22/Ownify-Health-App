@@ -31,6 +31,10 @@ before 1.9.2, which draw it), `recommendation`, `leaderboard`,
 `navigation`, `ai`, `disclaimers`, `disclaimer`, `auth`, `health`,
 `community`, `goals`, `settings` — plus:
 
+- `i18n` — `{locale, chosen, units}`: the language and units everything
+  in `data` is written in (`chosen` null follows the device), which the app
+  adopts and keeps ([I18N.md](I18N.md)). The app sends its language as
+  `Accept-Language`;
 - `today` — `today_parts()`, the date the Overzicht header prints;
 - `focus` — the account's focus (`general` when it never chose one), named
   by `focus_labels`. The order it gives the categories is applied on the
@@ -92,7 +96,7 @@ picture), as the website sends them; `api/goals/update.php` takes JSON too.
 | The setup | `profile/update` (the focus, height, weight), `profile/onboarding` (the birth date), `goals/create`, `setup/finish` |
 | Doelen | `goals/create`, `goals/update`, `goals/progress`, `goals/delete` |
 | Voeding | `health/rating` |
-| Instellingen, account | `profile/update`, `profile/onboarding`, `profile/username`, `profile/avatar`, `profile/delete` |
+| Instellingen, account | `profile/update`, `profile/onboarding`, `profile/username`, `profile/avatar`, `profile/delete`, `profile/preferences` (Taal and Eenheden) |
 | Vrienden | `friends/search`, `friends/request`, `friends/settings` |
 | Apparaten & Gezondheid | `integrations/pairing-code`, `integrations/device-revoke`, `integrations/disconnect` |
 

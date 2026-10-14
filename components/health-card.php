@@ -15,8 +15,8 @@ $ratio = score_ratio($score['value'], $score['max']);
         data-accent="<?= e($area['accent']) ?>"
         data-detail-open="<?= e($area['id']) ?>"
         aria-label="<?= e($area['label']) ?> — <?= has_value($score['value'])
-            ? e((string) $score['value']) . ' van ' . e((string) $score['max'])
-            : 'nog geen gegevens' ?>. Open details.">
+            ? e(tf('%1$s van %2$s', (string) $score['value'], (string) $score['max']))
+            : e(t('nog geen gegevens')) ?>. <?= e(t('Open details.')) ?>">
 
     <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($area['icon']) ?></span>
 

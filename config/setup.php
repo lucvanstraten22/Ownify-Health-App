@@ -180,7 +180,7 @@ return [
             'nutrition'       => 'Je dagcijfers voor voeding lagen tussen %1$s en %2$s.',
             'nutrition_same'  => 'Je gaf je voeding %1$d dagen een %2$s.',
             'training'        => 'Je laatste training duurde %1$d minuten, %2$s.',
-            'weight'          => 'Je startgewicht: %s kg.',
+            'weight'          => 'Je startgewicht: %s.',          // "72,5 kg", or in lb (units_format)
             'today'           => 'vandaag',
             'yesterday'       => 'gisteren',
             'on'              => 'op %s',

@@ -44,6 +44,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-data.php';
 require_once __DIR__ . '/health-signals.php';
@@ -121,7 +123,7 @@ if (!function_exists('goal_sources_available')) {
             $catalogue[] = [
                 'kind'   => 'measurement',
                 'key'    => $key,
-                'label'  => $label,
+                'label'  => t($label),
                 'unit'   => $unit,
                 'domain' => 'body',
                 'daily'  => false,
@@ -129,8 +131,8 @@ if (!function_exists('goal_sources_available')) {
         }
 
         /* Workouts, which are rows rather than readings. */
-        $catalogue[] = ['kind' => 'workout', 'key' => 'minutes',  'label' => 'Trainingsminuten', 'unit' => 'min', 'domain' => 'training', 'daily' => true];
-        $catalogue[] = ['kind' => 'workout', 'key' => 'sessions', 'label' => 'Trainingen',       'unit' => 'x',   'domain' => 'training', 'daily' => true];
+        $catalogue[] = ['kind' => 'workout', 'key' => 'minutes',  'label' => t('Trainingsminuten'), 'unit' => 'min', 'domain' => 'training', 'daily' => true];
+        $catalogue[] = ['kind' => 'workout', 'key' => 'sessions', 'label' => t('Trainingen'),       'unit' => 'x',   'domain' => 'training', 'daily' => true];
 
         /* Everything in the metric catalogue. The aggregation column already
            says whether a metric accumulates over a day, which is exactly the
@@ -140,7 +142,7 @@ if (!function_exists('goal_sources_available')) {
                 $catalogue[] = [
                     'kind'   => 'metric',
                     'key'    => (string) $row['code'],
-                    'label'  => (string) $row['label'],
+                    'label'  => t((string) $row['label']),        // the catalogue's Dutch name, in the reader's language
                     'unit'   => (string) ($row['unit'] ?? ''),
                     'domain' => (string) $row['domain'],
                     'daily'  => $row['aggregation'] === 'sum',
@@ -166,11 +168,11 @@ if (!function_exists('goal_sources_available')) {
     function goal_wizard_sources(): array
     {
         $domainLabels = [
-            'body'      => 'Lichaam',
-            'training'  => 'Beweging en training',
-            'sleep'     => 'Slaap',
-            'nutrition' => 'Voeding',
-            'vital'     => 'Vitale waarden',
+            'body'      => t('Lichaam'),
+            'training'  => t('Beweging en training'),
+            'sleep'     => t('Slaap'),
+            'nutrition' => t('Voeding'),
+            'vital'     => t('Vitale waarden'),
         ];
 
         $byDomain = [];
@@ -188,7 +190,7 @@ if (!function_exists('goal_sources_available')) {
             $sources = [];
 
             foreach ($byDomain[$domain] as $source) {
-                $unit  = goal_source_unit($source['kind'], $source['key']);
+                $unit  = goal_unit_shown(goal_source_unit($source['kind'], $source['key']));
                 $types = ['milestone'];
                 if ($source['kind'] !== 'measurement') {
                     $types[] = 'streak';
@@ -202,7 +204,7 @@ if (!function_exists('goal_sources_available')) {
                     'key'   => $source['key'],
                     'label' => $source['label'],
                     'unit'  => $unit['word'],
-                    'hint'  => $unit['word'] === '' ? 'Uit je eigen gegevens' : 'In ' . $unit['word'],
+                    'hint'  => $unit['word'] === '' ? t('Uit je eigen gegevens') : tf('In %s', $unit['word']),
                     'types' => $types,
                 ];
             }
@@ -289,15 +291,75 @@ if (!function_exists('goal_sources_available')) {
         };
     }
 
-    /** "8 uur", "10.425 stappen", "85%": a stored figure in a source's own words. */
-    function goal_unit_text(float $stored, array $unit): string
+    /**
+     * A goal's unit as the person reads and types it (includes/i18n.php,
+     * docs/I18N.md): its word in their language and, in imperial, kg as lb,
+     * km as mi, cm as in, m as ft and °C as °F. The figure shown is the
+     * stored one times `scale` plus `offset`; goal_unit_typed() is the way
+     * back. What is stored — the value and its unit — never changes.
+     *
+     * $imperial: the units a form says it was typed in; null is the
+     * request's own.
+     *
+     * @return array{word: string, one: string, scale: float, offset: float, decimals: int, attached: bool, stored: string}
+     */
+    function goal_unit_shown(array $unit, ?bool $imperial = null): array
     {
-        $shown = $stored * $unit['scale'];
-        $text  = number_format($shown, $unit['decimals'], ',', '.');
+        $unit    += ['offset' => 0.0];
+        $word     = (string) $unit['word'];
+        $imperial = $imperial ?? units_imperial();
 
-        if ($unit['decimals'] > 0 && str_contains($text, ',')) {
-            $text = rtrim(rtrim($text, '0'), ',');
+        if ($imperial && in_array($word, ['kg', 'km', 'cm', 'm', '°C'], true)) {
+            $spec = ['kg' => ['lb', 2.20462262185, 0.0, 1], 'km' => ['mi', 1 / 1.609344, 0.0, 1],
+                     'cm' => ['in', 1 / 2.54, 0.0, 1], 'm' => ['ft', 1 / 0.3048, 0.0, 0],
+                     '°C' => ['°F', 9 / 5, 32.0, 1]][$word];
+
+            return [
+                'word'     => $spec[0],
+                'one'      => $spec[0],
+                'scale'    => (float) $unit['scale'] * $spec[1],
+                'offset'   => (float) $unit['offset'] * $spec[1] + $spec[2],
+                'decimals' => max((int) $unit['decimals'], $spec[3]),
+                'attached' => (bool) $unit['attached'],
+                'stored'   => $word,
+            ];
         }
+
+        /* "1 keer", "3 keer" — English has a singular here. */
+        $one = $word === 'keer' && i18n_locale() === 'en' ? 'time' : t((string) $unit['one']);
+
+        return ['word' => t($word), 'one' => $one, 'stored' => $word] + $unit;
+    }
+
+    /** A figure typed in a goal's shown unit (goal_unit_shown()), as it is stored. */
+    function goal_unit_typed(float $typed, array $shown): float
+    {
+        return ($typed - (float) ($shown['offset'] ?? 0.0)) / (float) $shown['scale'];
+    }
+
+    /**
+     * A goal kept by hand, described as goal_source_unit() describes a
+     * source: its own unit word ("kg", "reps", "stappen" — one of the
+     * wizard's or the person's own), counted as typed.
+     */
+    function goal_manual_unit(?string $word): array
+    {
+        $word = trim((string) $word);
+        $one  = ['stappen' => 'stap', 'punten' => 'punt', 'dagen' => 'dag', 'trainingen' => 'training'][$word] ?? $word;
+
+        return ['word' => $word, 'one' => $one, 'scale' => 1.0, 'offset' => 0.0, 'decimals' => 2, 'attached' => false];
+    }
+
+    /**
+     * "8 uur", "10.425 stappen", "85%" — "8 h", "10,425 steps", "176.4 lb":
+     * a stored figure in a source's own words, in the reader's language and
+     * units. $delta: a difference between two figures, which takes no offset.
+     */
+    function goal_unit_text(float $stored, array $unit, bool $delta = false): string
+    {
+        $unit  = isset($unit['stored']) ? $unit : goal_unit_shown($unit);
+        $shown = $stored * $unit['scale'] + ($delta ? 0.0 : (float) ($unit['offset'] ?? 0.0));
+        $text  = i18n_number_trim($shown, (int) $unit['decimals']);
 
         if ($text === '-0') {
             $text = '0';
@@ -312,12 +374,12 @@ if (!function_exists('goal_sources_available')) {
         return $unit['attached'] ? $text . $word : $text . ' ' . $word;
     }
 
-    /** "1 dag", "12 dagen". */
+    /** "1 dag", "12 dagen" — "1 day", "12 days". */
     function goal_days_text(int|float $days): string
     {
         $days = (int) round($days);
 
-        return $days === 1 ? '1 dag' : number_format($days, 0, ',', '.') . ' dagen';
+        return $days === 1 ? tn(1, '%d dag', '%d dagen') : tf('%s dagen', i18n_number($days));
     }
 
     /* ==================================================================
@@ -965,7 +1027,7 @@ if (!function_exists('goal_sources_available')) {
     function goal_record_entry(int $userId, array $goal, ?float $value, ?DateTimeImmutable $on = null): array
     {
         if ((int) $goal['user_id'] !== $userId) {
-            return ['ok' => false, 'error' => 'Onbekend doel.'];
+            return ['ok' => false, 'error' => t('Onbekend doel.')];
         }
 
         $day    = ($on ?? new DateTimeImmutable('today'))->format('Y-m-d');
@@ -982,12 +1044,12 @@ if (!function_exists('goal_sources_available')) {
         }
 
         if ($value === null) {
-            return ['ok' => false, 'error' => 'Vul een waarde in.'];
+            return ['ok' => false, 'error' => t('Vul een waarde in.')];
         }
 
         if (goal_kind($goal) === 'accumulate') {
             if ($value <= 0) {
-                return ['ok' => false, 'error' => 'Vul in hoeveel er bij komt.'];
+                return ['ok' => false, 'error' => t('Vul in hoeveel er bij komt.')];
             }
 
             db_run(

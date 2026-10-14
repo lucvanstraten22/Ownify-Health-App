@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
 import com.ownify.android.ui.design.PlotLine
 import com.ownify.android.ui.design.HistoryPlot
@@ -148,7 +150,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                     .clearAndSetSemantics {
                         role = Role.Button
                         contentDescription = "${area.label} — " +
-                            (if (empty) "nog geen gegevens" else "${score.value} van ${score.max}") + ". Open details."
+                            (if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", score.value, score.max)) + ". " + tr("Open details.")
                     },
                 padding = if (narrow) PaddingValues(horizontal = Ownify.Space2, vertical = Ownify.Space3) else PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space4)
             ) {
@@ -383,7 +385,7 @@ fun TrendCard(data: AppData, only: String?) {
                 options = trend.ranges.map { it.key to it.label },
                 selected = selected?.key,
                 onSelect = { range = it },
-                label = "Periode kiezen"
+                label = tr("Periode kiezen")
             )
         }
 
@@ -395,7 +397,7 @@ fun TrendCard(data: AppData, only: String?) {
                 points = selected.points,
                 filled = hasData,
                 wash = only != null,
-                description = "${trend.title} — ${selected.label}" + if (hasData) "" else ": nog geen gegevens",
+                description = "${trend.title} — ${selected.label}" + if (hasData) "" else ": " + tr("nog geen gegevens"),
                 empty = if (hasData) null else trend.empty
             )
         }

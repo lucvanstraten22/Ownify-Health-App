@@ -20,7 +20,7 @@ require __DIR__ . '/lib/app-data.php';
 require __DIR__ . '/components/icons.php';
 
 /** @var array $data */
-$data = require __DIR__ . '/config/dashboard.php';
+$data = config_copy('dashboard');
 
 /* Session state for the header button and the account panel. It has to come
    first now: who is asking decides what every page below is filled with. */
@@ -82,7 +82,7 @@ foreach ($data['navigation'] as $position => $item) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?= e($app['locale']) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
+<html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community',
@@ -91,7 +91,7 @@ foreach ($data['navigation'] as $position => $item) {
 </head>
 <body class="app">
 
-    <a class="skip-link" href="#main">Naar de inhoud</a>
+    <a class="skip-link" href="#main"><?= e(t('Naar de inhoud')) ?></a>
 
     <!-- Shared ground behind every layer: the visual thread between them. -->
     <div class="app__backdrop" aria-hidden="true"></div>

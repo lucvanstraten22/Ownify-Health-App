@@ -28,7 +28,7 @@ declare(strict_types=1);
         <!-- The one-time warning. Shown only for a field that cannot be
              changed again, so it never becomes background noise. -->
         <p class="confirm__body field-editor__once" data-editor-once hidden>
-            Dit kun je één keer invullen. Daarna staat het vast.
+            <?= e(t('Dit kun je één keer invullen. Daarna staat het vast.')) ?>
         </p>
 
         <div class="field-editor__control" data-editor-control></div>
@@ -36,8 +36,8 @@ declare(strict_types=1);
         <p class="field-editor__error" role="alert" data-editor-error hidden></p>
 
         <div class="confirm__row">
-            <button type="button" class="btn press" data-editor-close>Annuleren</button>
-            <button type="submit" class="btn confirm__yes press" data-editor-save>Opslaan</button>
+            <button type="button" class="btn press" data-editor-close><?= e(t('Annuleren')) ?></button>
+            <button type="submit" class="btn confirm__yes press" data-editor-save><?= e(t('Opslaan')) ?></button>
         </div>
 
     </form>

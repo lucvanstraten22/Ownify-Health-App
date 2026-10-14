@@ -47,6 +47,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/health-signals.php';
 require_once __DIR__ . '/leaderboard.php';
@@ -766,11 +768,17 @@ if (!function_exists('points_process')) {
                 continue;
             }
 
+            /* The ledger keeps the Dutch label (point_rules.label); a person
+               reads it in their language. */
+            $label = $change['rule'] === 'weekly_workouts'
+                ? tf('%d trainingen deze week', (int) points_config()['training']['weekly']['workouts'])
+                : t($change['label']);
+
             $lines[] = [
                 'points' => $change['delta'],
-                'label'  => $change['label'],
+                'label'  => $label,
                 'note'   => $change['note'],
-                'text'   => '+' . $change['delta'] . ' punten — ' . $change['label'],
+                'text'   => '+' . tn($change['delta'], '%d punt', '%d punten') . ' — ' . $label,
             ];
         }
 
@@ -798,7 +806,8 @@ if (!function_exists('points_process')) {
         );
     }
 
-    /** "21 september" — for the week a bonus belongs to. */
+    /** "21 september" — for the week a bonus belongs to. Stored in a
+        ledger note, so always Dutch, as the rest of the ledger. */
     function points_short_date(string $date): string
     {
         $months = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli',

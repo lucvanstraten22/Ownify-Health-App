@@ -1,6 +1,8 @@
 package com.ownify.android
 
 import android.os.Bundle
+import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.tr
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +25,8 @@ class PermissionsRationaleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         OwnifyThemeStore.restore(this)
+        // Opened on its own by Health Connect: the language kept on this phone, else the phone's.
+        OwnifyLanguage.restore(this)
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -33,11 +37,8 @@ class PermissionsRationaleActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Ownify reads your steps, distance, active calories, heart rate, sleep, " +
-                            "exercise and nutrition from Health Connect and sends them to your own " +
-                            "Ownify account. With background access it also does this about once an " +
-                            "hour while the app is closed. Ownify only reads: it never changes or " +
-                            "deletes anything in Health Connect."
+                        // One literal: tools/i18n-build.php finds the English by it.
+                        text = tr("Ownify leest je stappen, afstand, actieve calorieën, hartslag, slaap, trainingen en voeding uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.")
                     )
                 }
             }

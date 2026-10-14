@@ -71,10 +71,10 @@ if (api_bearer_token() !== null) {
 
     api_ok([
         'redirect' => null,
-        'message'  => $google ? GOOGLE_SIGNIN_NOT_REVOKED : 'Je account is verwijderd, met alles wat erbij hoorde.',
+        'message'  => $google ? GOOGLE_SIGNIN_NOT_REVOKED : t('Je account is verwijderd, met alles wat erbij hoorde.'),
         'link'     => $google ? [
             'href'  => GOOGLE_ACCOUNT_CONNECTIONS_URL,
-            'label' => 'Apps met toegang tot je Google-account',
+            'label' => t('Apps met toegang tot je Google-account'),
         ] : null,
     ]);
 }
@@ -95,11 +95,11 @@ if ($result['google_sub'] !== null) {
            asked. The link was removed on this side; the rest is by hand. */
         auth_flash(GOOGLE_SIGNIN_NOT_REVOKED, 'info', 'account', [
             'href'  => GOOGLE_ACCOUNT_CONNECTIONS_URL,
-            'label' => 'Apps met toegang tot je Google-account',
+            'label' => t('Apps met toegang tot je Google-account'),
         ]);
     }
 } else {
-    auth_flash('Je account is verwijderd, met alles wat erbij hoorde.', 'ok', 'account');
+    auth_flash(t('Je account is verwijderd, met alles wat erbij hoorde.'), 'ok', 'account');
 }
 
 api_ok(['redirect' => $redirect]);

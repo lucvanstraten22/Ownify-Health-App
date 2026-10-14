@@ -14,6 +14,8 @@
 (function () {
     'use strict';
 
+    var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
+
     var card = document.querySelector('[data-nutrition-rating]');
     if (!card) { return; }
 
@@ -41,7 +43,7 @@
         showError(null);
 
         if (!/^(10|[1-9])$/.test(value)) {
-            showError('Kies een cijfer van 1 tot 10.');
+            showError(T.t('Kies een cijfer van 1 tot 10.'));
             input.focus();
             return;
         }
@@ -57,13 +59,13 @@
                 return response.json().catch(function () { return { ok: false }; });
             })
             .catch(function () {
-                return { ok: false, error: 'Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.' };
+                return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             })
             .then(function (result) {
                 button.disabled = false;
 
                 if (!result || !result.ok) {
-                    showError((result && result.error) || 'Dit kon niet worden opgeslagen.');
+                    showError((result && result.error) || T.t('Dit kon niet worden opgeslagen.'));
                     return;
                 }
 

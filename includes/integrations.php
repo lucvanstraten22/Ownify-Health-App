@@ -25,6 +25,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/crypto.php';
 
@@ -44,12 +46,12 @@ if (!function_exists('integration_providers')) {
             'google_health' => [
                 'label'     => 'Google Health',
                 'transport' => 'cloud',
-                'note'      => 'Fitbit en Pixel Watch, via je Google-account',
+                'note'      => t('Fitbit en Pixel Watch, via je Google-account'),
             ],
             'polar' => [
                 'label'     => 'Polar',
                 'transport' => 'cloud',
-                'note'      => 'Polar-horloges en -sensoren, via Polar Flow',
+                'note'      => t('Polar-horloges en -sensoren, via Polar Flow'),
                 /* What Polar needs beyond every cloud source: its own
                    credentials and migration 020 (includes/polar.php). */
                 'check'     => 'polar_problem',
@@ -57,7 +59,7 @@ if (!function_exists('integration_providers')) {
             'google_health_connect' => [
                 'label'     => 'Health Connect',
                 'transport' => 'device',
-                'note'      => 'Android — vereist de Ownify-app op je telefoon',
+                'note'      => t('Android — vereist de Ownify-app op je telefoon'),
             ],
         ];
     }
@@ -131,7 +133,7 @@ if (!function_exists('integration_providers')) {
         $meta = integration_providers()[$provider] ?? null;
 
         if ($meta === null) {
-            return 'Onbekende koppeling.';
+            return t('Onbekende koppeling.');
         }
 
         /* A phone source is ready when the app that reads it exists. There is
@@ -139,19 +141,19 @@ if (!function_exists('integration_providers')) {
            only question is whether there is anything to pair with. */
         if ($meta['transport'] === 'device') {
             return empty(integration_config($provider)['app_available'])
-                ? ($meta['unavailable'] ?? 'Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.')
+                ? ($meta['unavailable'] ?? t('Deze gegevens staan op je telefoon. Koppelen kan zodra de Ownify-app er is.'))
                 : null;
         }
 
         if (!is_file(dirname(__DIR__) . '/api/integrations/' . basename($provider) . '/callback.php')) {
-            return 'Deze koppeling is nog niet beschikbaar in Ownify.';
+            return t('Deze koppeling is nog niet beschikbaar in Ownify.');
         }
 
         $config = integration_config($provider);
 
         foreach (['client_id', 'client_secret', 'redirect_uri'] as $key) {
             if (integration_placeholder((string) ($config[$key] ?? ''))) {
-                return 'Deze koppeling is op de server nog niet ingesteld.';
+                return t('Deze koppeling is op de server nog niet ingesteld.');
             }
         }
 
@@ -162,7 +164,7 @@ if (!function_exists('integration_providers')) {
         if (!crypto_available()) {
             /* The why (missing, invalid, no libsodium) is in the server log
                (crypto_check()) and tools/check-config.php — never on a page. */
-            return 'De server kan tokens nog niet veilig opslaan.';
+            return t('De server kan tokens nog niet veilig opslaan.');
         }
 
         return null;
@@ -256,14 +258,14 @@ if (!function_exists('integration_providers')) {
     function integration_connect(int $userId, string $provider, array $connection): array
     {
         if (!integration_known($provider)) {
-            return ['ok' => false, 'error' => 'Onbekende koppeling.'];
+            return ['ok' => false, 'error' => t('Onbekende koppeling.')];
         }
 
         $needsTokens = ($connection['access_token'] ?? null) !== null
             || ($connection['refresh_token'] ?? null) !== null;
 
         if ($needsTokens && !crypto_available()) {
-            return ['ok' => false, 'error' => 'De server kan tokens niet veilig opslaan. Stel OWNIFY_APP_KEY in.'];
+            return ['ok' => false, 'error' => t('De server kan tokens niet veilig opslaan. Stel OWNIFY_APP_KEY in.')];
         }
 
         db_run(
@@ -389,6 +391,31 @@ if (!function_exists('integration_providers')) {
               WHERE user_id = ? AND provider = ?',
             [$reason === null ? null : mb_substr($reason, 0, 255), $userId, $provider]
         );
+    }
+
+    /**
+     * A source's stored message (user_integrations.last_error, a sync's
+     * answer) in the reader's language. Stored in Dutch, as every message is
+     * written; the two Polar sentences that name categories are put together
+     * again from their parts.
+     */
+    function integration_message_shown(?string $stored): ?string
+    {
+        if ($stored === null || $stored === '' || i18n_locale() === 'nl') {
+            return $stored;
+        }
+
+        $list = static fn (string $names): string => implode(', ', array_map(static fn (string $n): string => t(trim($n)), explode(',', $names)));
+
+        if (preg_match('/^Polar gaf geen toegang tot (.+)\. Accepteer de toestemmingen in je Polar-account \(account\.polar\.com\) en koppel Polar opnieuw\.$/u', $stored, $m)) {
+            return tf('Polar gaf geen toegang tot %s. Accepteer de toestemmingen in je Polar-account (account.polar.com) en koppel Polar opnieuw.', $list($m[1]));
+        }
+
+        if (preg_match('/^Niet alles kon worden opgehaald \((.+)\)\. Het wordt later opnieuw geprobeerd\.$/u', $stored, $m)) {
+            return tf('Niet alles kon worden opgehaald (%s). Het wordt later opnieuw geprobeerd.', $list($m[1]));
+        }
+
+        return t($stored);
     }
 
     /** Records how a sync went. `partial` means some categories failed. */

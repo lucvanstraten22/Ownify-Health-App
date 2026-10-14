@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyResult
+import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.tr
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,9 +52,9 @@ sealed interface AppLoad {
  */
 object OwnifyAppState {
 
-    const val UNREACHABLE = OwnifyConnection.UNREACHABLE_MESSAGE
-    const val SERVER_TROUBLE = "Er ging iets mis op de server. Probeer het opnieuw."
-    const val UNEXPECTED = "Onverwacht antwoord van de server."
+    val UNREACHABLE: String get() = OwnifyConnection.UNREACHABLE_MESSAGE
+    val SERVER_TROUBLE: String get() = tr("Er ging iets mis op de server. Probeer het opnieuw.")
+    val UNEXPECTED: String get() = tr("Onverwacht antwoord van de server.")
 
     var load: AppLoad by mutableStateOf(AppLoad.Idle)
         private set
@@ -110,6 +112,8 @@ object OwnifyAppState {
             when (val result = OwnifyConnection.api.appState(token)) {
                 is OwnifyResult.Success -> {
                     val parsed = withContext(Dispatchers.Default) { runCatching { AppData.parse(result.value) }.getOrNull() }
+                    // The account's language and units first, so the pages arrive in them.
+                    if (parsed != null) OwnifyLanguage.adopt(context, parsed.i18n.locale, parsed.i18n.chosen, parsed.i18n.units)
                     load = if (parsed != null) AppLoad.Ready(parsed) else AppLoad.Failed(UNEXPECTED, before)
                     return
                 }

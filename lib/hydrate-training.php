@@ -31,6 +31,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/health-signals.php';
 require_once dirname(__DIR__) . '/includes/health-totals.php';
@@ -94,16 +96,19 @@ if (!function_exists('hydrate_training')) {
                     'date'     => $day,
                     'time'     => date('H:i', $w['start']),
                     'duration' => $w['minutes'] === null ? null : hydrate_training_minutes((float) $w['minutes']),
-                    'open'     => sprintf((string) $copy['open'], $label, score_compass_lcfirst($day)),
+                    /* "Open Hardlopen van gisteren" — "Open Running on Monday": a
+                       weekday keeps its capital in English. */
+                    'open'     => sprintf((string) $copy['open'], $label, i18n_locale() === 'en' && !in_array($day, [(string) $copy['today'], (string) $copy['yesterday']], true)
+                        ? $day : mb_strtolower(mb_substr($day, 0, 1)) . mb_substr($day, 1)),
                 ];
             }, $recent),
         ];
     }
 
-    /** "Hardlopen", "Krachttraining", "Training": the session's kind as Ownify names it. */
+    /** "Hardlopen", "Krachttraining", "Training": the session's kind as Ownify names it, in the reader's language. */
     function hydrate_training_kind(string $type): string
     {
-        return score_compass_ucfirst(health_activity_label($type));
+        return score_compass_ucfirst(t(score_compass_ucfirst(health_activity_label($type))));
     }
 
     /** "Vandaag", "Gisteren", or "5 okt" ("5 okt 2025" in another year). */
@@ -123,7 +128,7 @@ if (!function_exists('hydrate_training')) {
     {
         $whole = (int) round($minutes);
 
-        return $whole < 60 ? $whole . ' min' : hydrate_hours($whole) . ' u';
+        return $whole < 60 ? $whole . ' min' : hydrate_hours($whole) . ' ' . t('u');
     }
 
     /* ==================================================================
@@ -333,7 +338,7 @@ if (!function_exists('hydrate_training')) {
         return [
             'title'   => (string) $cfg['title'],
             'label'   => (string) $cfg['label'],
-            'switch'  => 'Periode kiezen',
+            'switch'  => t('Periode kiezen'),
             'hint'    => (string) $cfg['hint'],
             'empty'   => (string) $cfg['empty'],
             'prev'    => (string) $cfg['prev'],
@@ -501,15 +506,19 @@ if (!function_exists('hydrate_training')) {
                 $stats[] = ['key' => $key, 'label' => (string) $copy['stats'][$key], 'value' => $value, 'unit' => $unit];
             }
         };
-        $num = static fn (?float $v, int $decimals = 0): ?string => $v === null || $v <= 0 ? null : number_format($v, $decimals, ',', '.');
+        $num = static fn (?float $v, int $decimals = 0): ?string => $v === null || $v <= 0 ? null : i18n_number($v, $decimals);
 
         if ($w['minutes'] !== null) {
             $whole = (int) round((float) $w['minutes']);
-            $whole < 60 ? $put('duration', (string) $whole, 'min') : $put('duration', hydrate_hours($whole), 'u');
+            $whole < 60 ? $put('duration', (string) $whole, 'min') : $put('duration', hydrate_hours($whole), t('u'));
         }
 
-        $km = $w['km'] ?? $window('distance');
-        $put('distance', $num($km, $km !== null && $km < 1 ? 2 : 1), 'km');
+        /* Distance, pace, speed and elevation in the reader's units
+           (includes/i18n.php): converted here, from the stored km, km/h and
+           m, for the page only. */
+        $km    = $w['km'] ?? $window('distance');
+        $miles = $km === null ? null : units_out((float) $km, 'km');
+        $put('distance', $num($miles, $miles !== null && $miles < 1 ? 2 : 1), units_label('km'));
 
         /* Pace or speed only from the session's own distance or speed: the
            readings during it (a phone's steps on a bike ride) are not the
@@ -517,10 +526,10 @@ if (!function_exists('hydrate_training')) {
         $kmh = $w['kmh'];                               // its speed, or its own distance over its time
         if ($kmh !== null && $kmh > 0) {
             if (hydrate_training_paced($w['type'])) {
-                $pace = (int) round(3600 / $kmh);               // seconds per km
-                $put('pace', sprintf('%d:%02d', intdiv($pace, 60), $pace % 60), '/km');
+                $pace = (int) round(3600 / $kmh * units_spec('min/km')['factor']);   // seconds per km, or per mile
+                $put('pace', sprintf('%d:%02d', intdiv($pace, 60), $pace % 60), '/' . units_label('km'));
             } else {
-                $put('speed', $num($kmh, 1), 'km/u');
+                $put('speed', $num(units_out((float) $kmh, 'km/h'), 1), units_imperial() ? units_label('km/h') : t('km/u'));
             }
         }
 
@@ -535,7 +544,7 @@ if (!function_exists('hydrate_training')) {
         $put('max_hr', $num($max), 'bpm');
 
         $put('floors', $num($window('floors')), '');
-        $put('elevation', $num(isset($row['elevation_gain_m']) ? (float) $row['elevation_gain_m'] : null), 'm');
+        $put('elevation', $num(isset($row['elevation_gain_m']) ? units_out((float) $row['elevation_gain_m'], 'm') : null), units_label('m'));
         $put('cadence', $num(isset($row['avg_cadence']) ? (float) $row['avg_cadence'] : null), '/min');
         $put('active_minutes', $num($window('active_minutes')), 'min');
 
@@ -545,7 +554,7 @@ if (!function_exists('hydrate_training')) {
             'id'     => (string) $w['id'],
             'detail' => 'training-session-' . $w['id'],
             'title'  => $label,
-            'date'   => score_compass_ucfirst(hydrate_training_weekday($date)) . ' ' . score_compass_date_in($date, substr($today, 0, 4)),
+            'date'   => score_compass_ucfirst(hydrate_training_weekday($date)) . (i18n_locale() === 'en' ? ', ' : ' ') . score_compass_date_in($date, substr($today, 0, 4)),
             'time'   => date('H:i', $start) . ' – ' . date('H:i', $end),
             'back'   => (string) $copy['back'],
             'stats_title' => (string) $copy['stats_title'],
@@ -568,7 +577,7 @@ if (!function_exists('hydrate_training')) {
 
     function hydrate_training_weekday(string $date): string
     {
-        return ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'][(int) (new DateTimeImmutable($date))->format('w')];
+        return i18n_weekday((int) (new DateTimeImmutable($date))->format('w'));
     }
 
     /**

@@ -41,6 +41,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 
 /** Wrong passwords allowed per name and address, per window. */
@@ -141,11 +143,8 @@ if (!function_exists('auth_throttle_available')) {
     {
         $minutes = max(1, (int) ceil($seconds / 60));
 
-        return sprintf(
-            'Te veel mislukte pogingen. Probeer het over %d %s opnieuw.',
-            $minutes,
-            $minutes === 1 ? 'minuut' : 'minuten'
-        );
+        return tn($minutes, 'Te veel mislukte pogingen. Probeer het over %d minuut opnieuw.',
+            'Te veel mislukte pogingen. Probeer het over %d minuten opnieuw.');
     }
 
     /**

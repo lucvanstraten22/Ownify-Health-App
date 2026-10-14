@@ -37,7 +37,7 @@ $height = 120.0;
             <h2 class="card__eyebrow" id="trend-title-<?= e($suffix) ?>"><?= e($trend['title']) ?></h2>
         </div>
 
-        <div class="range-switch" role="group" aria-label="Periode kiezen">
+        <div class="range-switch" role="group" aria-label="<?= e(t('Periode kiezen')) ?>">
             <?php foreach ($trend['ranges'] as $rangeKey => $range):
                 $isFirst = $rangeKey === array_key_first($trend['ranges']);
                 ?>
@@ -57,7 +57,7 @@ $height = 120.0;
 
                 <svg class="chart__svg" viewBox="0 0 <?= (int) $width ?> <?= (int) $height ?>"
                      preserveAspectRatio="none" role="img"
-                     aria-label="<?= e($trend['title']) ?> — <?= e($range['label']) ?><?= $hasData ? '' : ': nog geen gegevens' ?>">
+                     aria-label="<?= e($trend['title']) ?> — <?= e($range['label']) ?><?= $hasData ? '' : ': ' . e(t('nog geen gegevens')) ?>">
 
                     <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
                         <line class="chart__grid" x1="0" x2="<?= (int) $width ?>"

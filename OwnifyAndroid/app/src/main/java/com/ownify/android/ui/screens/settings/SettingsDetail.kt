@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.ownify.android.data.AppData
 import com.ownify.android.data.Integration
+import com.ownify.android.i18n.tr
 import com.ownify.android.data.Outcome
 import com.ownify.android.data.OwnifyActions
 import com.ownify.android.data.OwnifyAppState
@@ -116,7 +117,7 @@ import com.ownify.android.ui.theme.LocalTracking
  */
 @Composable
 fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
-    DetailColumn(scroll, back = "Instellingen", backAria = "Terug naar Instellingen") {
+    DetailColumn(scroll, back = tr("Instellingen"), backAria = tr("Terug naar Instellingen")) {
         PageIntro(page.title, page.lede, Modifier.reveal())
         page.blocks.forEachIndexed { n, block ->
             when (block) {
@@ -145,8 +146,8 @@ private fun IdentityHero(data: AppData) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             AvatarCircle(profile.avatar, 68.dp, 28.dp)
-            T(profile.username ?: "Niet ingelogd", OwnifyType.style(20.sp, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
-            T(name.ifEmpty { "Naam nog niet ingevuld" }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
+            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(20.sp, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(name.ifEmpty { tr("Naam nog niet ingevuld") }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
         }
     }
 }
@@ -299,25 +300,25 @@ private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
         SettingsEyebrow(block.title)
         SettingsCard {
             if (!auth.signedIn) {
-                StaticField("Niet ingelogd", null, "—", filled = false)
+                StaticField(tr("Niet ingelogd"), null, "—", filled = false)
             } else {
                 StaticField(
-                    "E-mail en wachtwoord",
-                    if (email != null) "Inloggen met je gebruikersnaam of e-mailadres" else "Je logt in met Google",
-                    email?.second ?: "Niet ingesteld",
+                    tr("E-mail en wachtwoord"),
+                    if (email != null) tr("Inloggen met je gebruikersnaam of e-mailadres") else tr("Je logt in met Google"),
+                    email?.second ?: tr("Niet ingesteld"),
                     filled = email != null
                 )
                 when {
-                    google != null -> StaticField("Google", "Gekoppeld — je kunt ook met Google inloggen", google.second ?: "Gekoppeld", filled = true, check = true, divided = true)
+                    google != null -> StaticField("Google", tr("Gekoppeld — je kunt ook met Google inloggen"), google.second ?: tr("Gekoppeld"), filled = true, check = true, divided = true)
                     auth.googleAvailable -> FieldRow(
-                        ProfileField("google", "Google", "Koppel Google om daarmee in te loggen", null, null, null, "editable", null, "Koppel Google", null),
+                        ProfileField("google", "Google", tr("Koppel Google om daarmee in te loggen"), null, null, null, "editable", null, tr("Koppel Google"), null),
                         divided = true
                     ) {
                         runCatching {
                             context.startActivity(Intent(Intent.ACTION_VIEW, OwnifyConnection.api.siteUrl.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }
-                    else -> StaticField("Google", null, "Nog niet beschikbaar", filled = false, divided = true)
+                    else -> StaticField("Google", null, tr("Nog niet beschikbaar"), filled = false, divided = true)
                 }
             }
         }
@@ -404,7 +405,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
     fun post(action: String, path: String, field: String, value: String) {
         busy = action
         scope.launch {
-            OwnifyActions.form(context, path, mapOf(field to value), "Er ging iets mis.")
+            OwnifyActions.form(context, path, mapOf(field to value), tr("Er ging iets mis."))
             busy = null
         }
     }
@@ -432,7 +433,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                     .clearAndSetSemantics {
                         role = Role.Button
                         contentDescription = (labels["expand"] ?: "%s").replace("%s", item.label) + ", $statusText"
-                        stateDescription = if (open) "Uitgeklapt" else "Ingeklapt"
+                        stateDescription = if (open) tr("Uitgeklapt") else tr("Ingeklapt")
                         onClick { open = !open; true }
                     }
                     .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3),
@@ -523,7 +524,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                         busy = "sync"
                                         result = null
                                         scope.launch {
-                                            val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/sync.php", emptyMap(), "Synchroniseren is niet gelukt. Probeer het opnieuw.")
+                                            val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/sync.php", emptyMap(), tr("Synchroniseren is niet gelukt. Probeer het opnieuw."))
                                             if (outcome is Outcome.Refused) result = outcome.message
                                             busy = null
                                         }
@@ -554,7 +555,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                         busy = "connect"
                                         result = null
                                         scope.launch {
-                                            when (val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/start.php", emptyMap(), "Koppelen kan nu niet. Probeer het opnieuw.", reload = false)) {
+                                            when (val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/start.php", emptyMap(), tr("Koppelen kan nu niet. Probeer het opnieuw."), reload = false)) {
                                                 is Outcome.Done -> outcome.body.optString("url").takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { url ->
                                                     runCatching {
                                                         context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -612,15 +613,36 @@ private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vec
  * A choice: one option ticked. The tick moves; nothing is stored (settings.js)
  * — except the theme's, which is kept on this phone (OwnifyThemeStore) and
  * turns the app Dark or White at once, or the phone's way on Systeem; its tick
- * is the choice kept.
+ * is the choice kept. The language and the units (`saves`) are kept on the
+ * account (api/profile/preferences.php), as on the website: the pages are
+ * read again, and arrive in the new language and units.
  */
 @Composable
 private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice) {
     val narrow = LocalScreen.current.narrow
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val theme = block.name == "theme"
-    var picked by rememberSaveable("$pageId/$index") { mutableStateOf(block.selected) }
+    val account = block.saves && !theme
+    var picked by rememberSaveable("$pageId/$index/${block.selected}") { mutableStateOf(block.selected) }
+    var busy by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<String?>(null) }
     val selected = if (theme) OwnifyThemeStore.choice.key else picked
+
+    /** The account's language or units: saved, then the pages in them. */
+    fun save(key: String) {
+        val before = picked
+        picked = key
+        busy = true
+        problem = null
+        scope.launch {
+            when (val outcome = OwnifyActions.form(context, "api/profile/preferences.php", mapOf(block.name.orEmpty() to key), tr("Dit kon niet worden opgeslagen."))) {
+                is Outcome.Refused -> { picked = before; problem = outcome.message }
+                else -> Unit
+            }
+            busy = false
+        }
+    }
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
         InButton {
@@ -636,8 +658,12 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                             .press(interaction, enabled = !option.disabled)
                             .fillMaxWidth()
                             .settingsRow(i > 0, fill)
-                            .clickable(interaction, indication = null, enabled = !option.disabled, role = Role.RadioButton) {
-                                if (theme) OwnifyThemeStore.choose(context, OwnifyThemeChoice.of(option.key)) else picked = option.key
+                            .clickable(interaction, indication = null, enabled = !option.disabled && !busy, role = Role.RadioButton) {
+                                when {
+                                    theme -> OwnifyThemeStore.choose(context, OwnifyThemeChoice.of(option.key))
+                                    account -> if (option.key != picked) save(option.key)
+                                    else -> picked = option.key
+                                }
                             }
                             .semantics(mergeDescendants = true) {
                                 this.selected = on
@@ -673,6 +699,7 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                 }
             }
         }
+        problem?.let { IntegrationHint(it, OwnifyIcons.info, warn = true) }
     }
 }
 
@@ -784,7 +811,7 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
                     val outcome = OwnifyActions.form(
                         context, "api/profile/privacy.php",
                         mapOf(key to if (before) "0" else "1"),
-                        "Dit kon niet worden opgeslagen.", reload = false
+                        tr("Dit kon niet worden opgeslagen."), reload = false
                     )
                     busy = false
                     when (outcome) {
@@ -879,7 +906,7 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
                     Btn(item.confirm, enabled = !busy, look = look, onClick = {
                         busy = true
                         scope.launch {
-                            val outcome = OwnifyActions.form(context, item.endpoint, item.fields, "Dit kon niet worden gedaan.", reload = false)
+                            val outcome = OwnifyActions.form(context, item.endpoint, item.fields, tr("Dit kon niet worden gedaan."), reload = false)
                             busy = false
                             asking = false
                             when (outcome) {

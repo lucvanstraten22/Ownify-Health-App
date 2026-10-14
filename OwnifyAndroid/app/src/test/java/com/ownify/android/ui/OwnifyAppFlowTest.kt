@@ -91,7 +91,7 @@ import org.robolectric.annotation.Config
 private const val ONE_PIXEL_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class OwnifyAppFlowTest {
 
     @get:Rule

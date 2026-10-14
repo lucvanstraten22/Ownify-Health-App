@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.overview
 
+import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -102,7 +104,7 @@ import com.ownify.android.ui.theme.ScoreBand
 fun ScoreCompassDetail(data: AppData, scroll: ScrollState) {
     val compass = data.compass
     CompositionLocalProvider(LocalAccent provides Accent.HEALTH) {
-        DetailColumn(scroll, back = compass.back, backAria = "Terug naar ${compass.back}") {
+        DetailColumn(scroll, back = compass.back, backAria = trf("Terug naar %s", compass.back)) {
             HeroCard(data)
             CompositionCard(compass.composition)
             TrendCard(compass.trend)
@@ -146,10 +148,10 @@ private fun HeroCard(data: AppData) {
         ScoreRing(
             value = compass.score,
             max = compass.max,
-            scale = if (empty) overall.caption else "van ${compass.max}",
+            scale = if (empty) overall.caption else trf("van %s", compass.max),
             label = overall.label,
             play = play,
-            description = "${overall.label}: " + if (empty) "nog geen gegevens" else "${compass.score} van ${compass.max}",
+            description = overall.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", compass.score, compass.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = Ownify.Space4, bottom = Ownify.Space3)

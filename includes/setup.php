@@ -33,6 +33,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/health-score.php';
 
 if (!function_exists('setup_stored')) {
@@ -389,7 +391,9 @@ if (!function_exists('setup_stored')) {
 
         foreach ($order as $id) {
             $days = (int) ($in['results'][$id]['days'] ?? 0);
-            $unit = $p['units'][$id] ?? ['dag', 'dagen'];
+            /* A word pair, not a field the copy translates on its own
+               (I18N_IDENTIFIERS keeps `units` as it is): translated here. */
+            $unit = array_map('t', $p['units'][$id] ?? ['dag', 'dagen']);
 
             $how = null;
             if ($days === 0) {
@@ -479,7 +483,7 @@ if (!function_exists('setup_stored')) {
                 case 'weight':
                     $weight = $in['weight'] ?? null;
                     if ($weight !== null && ($weight['unit'] ?? 'kg') === 'kg') {
-                        return sprintf($o['weight'], setup_decimal((float) $weight['value']));
+                        return sprintf($o['weight'], units_format((float) $weight['value'], 'kg'));
                     }
                     break;
 
@@ -607,7 +611,7 @@ if (!function_exists('setup_stored')) {
 
         $last = array_pop($names);
 
-        return implode(', ', $names) . ' en ' . $last;
+        return implode(', ', $names) . ' ' . t('en') . ' ' . $last;
     }
 
     /** A day's cijfers averaged per date, oldest first: date => cijfer. */
@@ -744,26 +748,21 @@ if (!function_exists('setup_stored')) {
         return sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
     }
 
-    /** One decimal, with a comma, without ",0": 7 -> "7", 7.46 -> "7,5". */
+    /** One decimal, without ",0": 7 -> "7", 7.46 -> "7,5" (or "7.5"). */
     function setup_decimal(float $value): string
     {
-        $text = number_format($value, 1, ',', '');
-
-        return str_ends_with($text, ',0') ? substr($text, 0, -2) : $text;
+        return i18n_number_trim($value, 1, false);
     }
 
-    /** Hours as a person says them: 7 -> "7", 7.5 -> "7,5". */
+    /** Hours as a person says them: 7 -> "7", 7.5 -> "7,5" (or "7.5"). */
     function setup_decimal_trim(float $value): string
     {
-        return rtrim(rtrim(number_format($value, 2, ',', ''), '0'), ',');
+        return i18n_number_trim($value, 2, false);
     }
 
     /** "vandaag", "gisteren", or "op 2 oktober". */
     function setup_day_ref(string $date, string $today, array $o): string
     {
-        static $months = [1 => 'januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli',
-                          'augustus', 'september', 'oktober', 'november', 'december'];
-
         if ($date === $today) {
             return $o['today'];
         }
@@ -774,7 +773,7 @@ if (!function_exists('setup_stored')) {
             return $o['yesterday'];
         }
 
-        return sprintf($o['on'], (int) $day->format('j') . ' ' . $months[(int) $day->format('n')]);
+        return sprintf($o['on'], i18n_date($day, 'day_month'));
     }
 
     function setup_ucfirst(string $text): string

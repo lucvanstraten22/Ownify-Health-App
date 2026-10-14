@@ -28,7 +28,7 @@ $chart  = $goal['chart'];
 /* The hero keeps its line short: the dates live in the rows underneath, so
    repeating "t/m 4 okt" here would say the same thing twice. */
 $heroActive = $goal['is_completed']
-    ? ($goal['end_label'] !== null ? sprintf($labels['completed_on'], $goal['end_label']) : 'Behaald')
+    ? ($goal['end_label'] !== null ? sprintf($labels['completed_on'], $goal['end_label']) : t('Behaald'))
     : (string) $goal['remaining'];
 $heroPaused = $labels['paused_line'];
 $heroLine   = $goal['is_paused'] ? $heroPaused : $heroActive;
@@ -51,7 +51,7 @@ $height = 96.0;
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar Doelen">
+                        aria-label="<?= e(t('Terug naar Doelen')) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e($copy['back']) ?></span>
                 </button>
@@ -94,7 +94,7 @@ $height = 96.0;
                     </div>
 
                     <div class="meter meter--hero" role="img"
-                         aria-label="<?= has_value($goal['percent']) ? e((string) $goal['percent']) . '% voltooid' : 'nog geen voortgang' ?>">
+                         aria-label="<?= has_value($goal['percent']) ? e(tf('%d%% voltooid', (int) $goal['percent'])) : e(t('nog geen voortgang')) ?>">
                         <span class="meter__fill" data-bar data-progress="<?= e((string) round($goal['ratio'], 4)) ?>"></span>
                     </div>
 
@@ -116,11 +116,11 @@ $height = 96.0;
                         <?php /* Gestart and Eindigt (Looptijd, once behaald) together,
                                  under one name: the goal's period. */ ?>
                         <div class="metric-row metric-row--period" data-goal-period>
-                            <span class="metric-row__label"><?= e($copy['period'] ?? 'Periode') ?></span>
+                            <span class="metric-row__label"><?= e($copy['period'] ?? t('Periode')) ?></span>
                             <span class="metric-row__value goal-period">
-                                <span class="goal-period__part">Gestart: <?= e((string) ($goal['start_label'] ?? '—')) ?></span>
+                                <span class="goal-period__part"><?= e(t('Gestart')) ?>: <?= e((string) ($goal['start_label'] ?? '—')) ?></span>
                                 <span class="goal-period__dot" aria-hidden="true">·</span>
-                                <span class="goal-period__part"><?= $goal['is_completed'] ? 'Looptijd' : 'Eindigt' ?>: <?= e((string) ($goal['is_completed']
+                                <span class="goal-period__part"><?= e($goal['is_completed'] ? t('Looptijd') : t('Eindigt')) ?>: <?= e((string) ($goal['is_completed']
                                     ? ($goal['took_label'] ?? '—')
                                     : ($goal['end_label'] ?? $labels['no_deadline']))) ?></span>
                             </span>
@@ -156,7 +156,7 @@ $height = 96.0;
                             <button type="button" class="btn goal-check__button press" data-goal-tick="<?= e($id) ?>"
                                     <?= !empty($entry['done']) ? 'disabled' : '' ?>>
                                 <?= icon('check', 'goal-check__icon') ?>
-                                <?= e(!empty($entry['done']) ? 'Vandaag afgevinkt' : $entry['label']) ?>
+                                <?= e(!empty($entry['done']) ? t('Vandaag afgevinkt') : $entry['label']) ?>
                             </button>
                         <?php else: ?>
                             <div class="goal-entry">
@@ -164,9 +164,10 @@ $height = 96.0;
                                 <input class="wizard__input goal-entry__input" type="number" step="any" min="0"
                                        inputmode="decimal" id="goal-value-<?= e($id) ?>"
                                        data-goal-value="<?= e($id) ?>"
-                                       placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>">
+                                       placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>"
+                                       data-goal-unit="<?= e((string) ($entry['unit'] ?? '')) ?>">
                                 <button type="button" class="btn press" data-goal-save="<?= e($id) ?>">
-                                    <?= e($entry['button'] ?? $copy['manual_save'] ?? 'Opslaan') ?>
+                                    <?= e($entry['button'] ?? $copy['manual_save'] ?? t('Opslaan')) ?>
                                 </button>
                             </div>
                         <?php endif; ?>
@@ -219,8 +220,8 @@ $height = 96.0;
 
                                     <div class="goal-chart__frame">
                                         <div class="goal-chart__plot" data-goal-plot data-gesture-own tabindex="0"
-                                             role="group" aria-roledescription="grafiek"
-                                             aria-label="<?= e($copy['history'] . ' van ' . $goal['name'] . '. ' . $chart['summary']) ?>"
+                                             role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
+                                             aria-label="<?= e(tf('%1$s van %2$s', $copy['history'], $goal['name']) . '. ' . $chart['summary']) ?>"
                                              aria-describedby="goal-chart-hint-<?= e($id) ?>">
 
                                             <svg class="chart__svg goal-chart__svg"
@@ -296,15 +297,15 @@ $height = 96.0;
                                     <?php component('chart-axis', ['ticks' => $chart['x_ticks'], 'class' => 'goal-chart__x']); ?>
 
                                     <p class="sr-only" id="goal-chart-hint-<?= e($id) ?>">
-                                        Gebruik de pijltjestoetsen om door de metingen te lopen.
+                                        <?= e(t('Gebruik de pijltjestoetsen om door de metingen te lopen.')) ?>
                                     </p>
                                     <p class="sr-only" aria-live="polite" data-goal-live></p>
 
                                     <?php /* The table view: every value reachable without
                                              hovering, which is what a screen reader reads. */ ?>
                                     <table class="sr-only">
-                                        <caption><?= e($copy['history'] . ' van ' . $goal['name']) ?></caption>
-                                        <thead><tr><th scope="col">Datum</th><th scope="col">Waarde</th><th scope="col">Die dag</th></tr></thead>
+                                        <caption><?= e(tf('%1$s van %2$s', $copy['history'], $goal['name'])) ?></caption>
+                                        <thead><tr><th scope="col"><?= e(t('Datum')) ?></th><th scope="col"><?= e(t('Waarde')) ?></th><th scope="col"><?= e(t('Die dag')) ?></th></tr></thead>
                                         <tbody>
                                             <?php foreach ($chart['points'] as $point): ?>
                                                 <tr><td><?= e($point['d']) ?></td><td><?= e($point['v']) ?></td><td><?= e($point['n'] ?? '') ?></td></tr>
@@ -321,7 +322,7 @@ $height = 96.0;
                             <div class="chart__range is-active" data-range="goal">
                                 <svg class="chart__svg" viewBox="0 0 <?= (int) $width ?> <?= (int) $height ?>"
                                      preserveAspectRatio="none" role="img"
-                                     aria-label="<?= e($copy['history']) ?>: nog geen verloop">
+                                     aria-label="<?= e($copy['history']) ?>: <?= e(t('nog geen verloop')) ?>">
                                     <?php foreach ([0.25, 0.5, 0.75] as $line): ?>
                                         <line class="chart__grid" x1="0" x2="<?= (int) $width ?>"
                                               y1="<?= round(12 + $line * ($height - 24), 1) ?>"
@@ -334,8 +335,8 @@ $height = 96.0;
                                     <?php component('chart-axis', ['ticks' => $goal['chart']['x_ticks']]); ?>
                                 <?php else: ?>
                                     <ul class="chart__axis" role="list">
-                                        <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? 'Start')) ?></li>
-                                        <li class="chart__tick" style="left: 100%;"><?= $goal['is_completed'] ? 'Behaald' : 'Nu' ?></li>
+                                        <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? t('Start'))) ?></li>
+                                        <li class="chart__tick" style="left: 100%;"><?= e($goal['is_completed'] ? t('Behaald') : t('Nu')) ?></li>
                                     </ul>
                                 <?php endif; ?>
                             </div>
@@ -349,7 +350,7 @@ $height = 96.0;
                              and how the goal moves. */ ?>
                     <div class="goal-chart__source" data-goal-source>
                         <?php if ($goal['source_list'] === []): ?>
-                            <p class="card__lede card__lede--small">Dit doel is nog niet aan gezondheidsgegevens gekoppeld.</p>
+                            <p class="card__lede card__lede--small"><?= e(t('Dit doel is nog niet aan gezondheidsgegevens gekoppeld.')) ?></p>
                         <?php else: ?>
                             <?php foreach ($goal['source_list'] as $source): ?>
                                 <div class="metric-row" data-accent="<?= e($source['accent']) ?>">
@@ -362,8 +363,8 @@ $height = 96.0;
                             <?php endforeach; ?>
                         <?php endif; ?>
                         <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e(!empty($goal['is_manual'])
-                            ? 'Je voortgang verandert alleen door wat je zelf invult.'
-                            : 'Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.') ?></p>
+                            ? t('Je voortgang verandert alleen door wat je zelf invult.')
+                            : t('Je voortgang werkt zichzelf bij zodra er nieuwe gegevens binnenkomen.')) ?></p>
                     </div>
                 </section>
 
@@ -385,22 +386,22 @@ $height = 96.0;
                         <div class="card__head">
                             <div class="card__head-group">
                                 <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
-                                <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? 'Per dag') ?></h2>
+                                <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? t('Per dag')) ?></h2>
                             </div>
                             <span class="chip chip--muted">
-                                <?= e($goal['days_chip'] ?? ($goal['days_met'] . ' van ' . $goal['days_total'])) ?>
+                                <?= e($goal['days_chip'] ?? tf('%1$d van %2$d', $goal['days_met'], $goal['days_total'])) ?>
                             </span>
                         </div>
 
                         <div class="day-calendar">
                             <ol class="day-calendar__head" role="list" aria-hidden="true">
-                                <?php foreach (['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
+                                <?php foreach (i18n_locale() === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
                                     <li><?= e($initial) ?></li>
                                 <?php endforeach; ?>
                             </ol>
 
                             <ol class="day-blocks" role="list"
-                                aria-label="<?= e(sprintf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
+                                aria-label="<?= e(tf('%d van %d dagen gehaald', $goal['days_met'], $goal['days_total'])) ?>">
                                 <?php foreach ($goal['days'] as $day): ?>
                                     <?php if ($day['state'] === 'before'): ?>
                                         <li class="day-block is-before" aria-hidden="true"></li>
@@ -408,11 +409,11 @@ $height = 96.0;
                                         <?php $when = new DateTimeImmutable($day['date']); ?>
                                         <li class="day-block is-<?= e($day['state']) ?>"
                                             title="<?= e(goals_date_short($when) . ' · ' . match ($day['state']) {
-                                                'met'     => 'gehaald',
-                                                'missed'  => 'niet gehaald',
-                                                'unknown' => 'geen gegevens',
-                                                'pending' => 'vandaag, nog open',
-                                                default   => 'nog niet geweest',
+                                                'met'     => t('gehaald'),
+                                                'missed'  => t('niet gehaald'),
+                                                'unknown' => t('geen gegevens'),
+                                                'pending' => t('vandaag, nog open'),
+                                                default   => t('nog niet geweest'),
                                             }) ?>"><span><?= e($when->format('j')) ?></span></li>
                                     <?php endif; ?>
                                 <?php endforeach; ?>

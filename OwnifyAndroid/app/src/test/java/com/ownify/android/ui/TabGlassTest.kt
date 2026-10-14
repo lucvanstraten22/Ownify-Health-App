@@ -51,7 +51,7 @@ import org.robolectric.annotation.Config
  * finger, and the tabs themselves never move.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class TabGlassTest {
 
     @get:Rule

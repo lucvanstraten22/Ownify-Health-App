@@ -13,6 +13,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/db.php';
 
 /** The side, in pixels, of the small copy of a profile picture the boards and friends lists show. */
@@ -29,11 +31,11 @@ if (!function_exists('user_validate_username')) {
         $username = trim($username);
 
         if (mb_strlen($username) < 3 || mb_strlen($username) > 30) {
-            return 'Kies een gebruikersnaam van 3 tot 30 tekens.';
+            return t('Kies een gebruikersnaam van 3 tot 30 tekens.');
         }
 
         if (!preg_match('/^[A-Za-z0-9._-]+$/', $username)) {
-            return 'Gebruik alleen letters, cijfers, punt, streepje of underscore.';
+            return t('Gebruik alleen letters, cijfers, punt, streepje of underscore.');
         }
 
         return null;
@@ -63,14 +65,14 @@ if (!function_exists('user_validate_username')) {
         }
 
         if (user_username_taken($username, $userId)) {
-            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.'];
+            return ['ok' => false, 'error' => t('Deze gebruikersnaam is al bezet.')];
         }
 
         try {
             db_run('UPDATE users SET username = ? WHERE id = ?', [$username, $userId]);
         } catch (PDOException $e) {
             // Lost a race against another registration on the unique key.
-            return ['ok' => false, 'error' => 'Deze gebruikersnaam is al bezet.'];
+            return ['ok' => false, 'error' => t('Deze gebruikersnaam is al bezet.')];
         }
 
         return ['ok' => true, 'error' => null, 'username' => $username];
@@ -203,7 +205,7 @@ if (!function_exists('user_validate_username')) {
             $allowed = ['sedentary', 'light', 'moderate', 'active', 'athlete'];
 
             if ($level !== '' && !in_array($level, $allowed, true)) {
-                return ['ok' => false, 'error' => 'Onbekend activiteitsniveau.'];
+                return ['ok' => false, 'error' => t('Onbekend activiteitsniveau.')];
             }
 
             $set[]    = '`activity_level` = ?';
@@ -246,19 +248,19 @@ if (!function_exists('user_validate_username')) {
 
         if ($dateOfBirth !== null && $dateOfBirth !== '') {
             if ($current['date_of_birth'] !== null) {
-                return ['ok' => false, 'error' => 'Je geboortedatum staat al vast.'];
+                return ['ok' => false, 'error' => t('Je geboortedatum staat al vast.')];
             }
 
             $date = DateTimeImmutable::createFromFormat('Y-m-d', $dateOfBirth);
 
             if ($date === false || $date->format('Y-m-d') !== $dateOfBirth) {
-                return ['ok' => false, 'error' => 'Vul een geldige geboortedatum in.'];
+                return ['ok' => false, 'error' => t('Vul een geldige geboortedatum in.')];
             }
 
             $age = (int) $date->diff(new DateTimeImmutable('today'))->y;
 
             if ($date > new DateTimeImmutable('today') || $age > 120) {
-                return ['ok' => false, 'error' => 'Vul een geldige geboortedatum in.'];
+                return ['ok' => false, 'error' => t('Vul een geldige geboortedatum in.')];
             }
 
             $set[]    = '`date_of_birth` = ?';
@@ -267,11 +269,11 @@ if (!function_exists('user_validate_username')) {
 
         if ($gender !== null && $gender !== '') {
             if (($current['gender'] ?? 'undisclosed') !== 'undisclosed') {
-                return ['ok' => false, 'error' => 'Je geslacht staat al vast.'];
+                return ['ok' => false, 'error' => t('Je geslacht staat al vast.')];
             }
 
             if (!in_array($gender, ['female', 'male', 'non_binary', 'other', 'undisclosed'], true)) {
-                return ['ok' => false, 'error' => 'Onbekende waarde.'];
+                return ['ok' => false, 'error' => t('Onbekende waarde.')];
             }
 
             $set[]    = '`gender` = ?';
@@ -352,15 +354,15 @@ if (!function_exists('user_validate_username')) {
     function user_set_avatar(int $userId, array $file, string $uploadRoot): array
     {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return ['ok' => false, 'error' => 'Uploaden is niet gelukt.'];
+            return ['ok' => false, 'error' => t('Uploaden is niet gelukt.')];
         }
 
         if (!is_uploaded_file($file['tmp_name'])) {
-            return ['ok' => false, 'error' => 'Ongeldige upload.'];
+            return ['ok' => false, 'error' => t('Ongeldige upload.')];
         }
 
         if (($file['size'] ?? 0) > 3 * 1024 * 1024) {
-            return ['ok' => false, 'error' => 'Kies een afbeelding van maximaal 3 MB.'];
+            return ['ok' => false, 'error' => t('Kies een afbeelding van maximaal 3 MB.')];
         }
 
         $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
@@ -369,24 +371,24 @@ if (!function_exists('user_validate_username')) {
         $mime = (string) $finfo->file($file['tmp_name']);
 
         if (!isset($allowed[$mime])) {
-            return ['ok' => false, 'error' => 'Gebruik een JPG-, PNG- of WebP-afbeelding.'];
+            return ['ok' => false, 'error' => t('Gebruik een JPG-, PNG- of WebP-afbeelding.')];
         }
 
         // Confirm it really decodes as an image, not just that it claims to.
         $dimensions = @getimagesize($file['tmp_name']);
         if ($dimensions === false) {
-            return ['ok' => false, 'error' => 'Dit bestand is geen geldige afbeelding.'];
+            return ['ok' => false, 'error' => t('Dit bestand is geen geldige afbeelding.')];
         }
 
         $directory = rtrim($uploadRoot, '/') . '/avatars';
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            return ['ok' => false, 'error' => 'Opslaan is niet gelukt.'];
+            return ['ok' => false, 'error' => t('Opslaan is niet gelukt.')];
         }
 
         $name = sprintf('u%d-%s.%s', $userId, bin2hex(random_bytes(8)), $allowed[$mime]);
 
         if (!move_uploaded_file($file['tmp_name'], $directory . '/' . $name)) {
-            return ['ok' => false, 'error' => 'Opslaan is niet gelukt.'];
+            return ['ok' => false, 'error' => t('Opslaan is niet gelukt.')];
         }
 
         $previous = db_value('SELECT avatar_path FROM user_profiles WHERE user_id = ?', [$userId]);
@@ -605,7 +607,7 @@ if (!function_exists('user_validate_username')) {
     function user_delete_account(int $userId, string $uploadRoot): array
     {
         if (!db_available()) {
-            return ['ok' => false, 'error' => 'Geen databaseverbinding.', 'google_sub' => null];
+            return ['ok' => false, 'error' => t('Geen databaseverbinding.'), 'google_sub' => null];
         }
 
         $googleSub = db_value(
@@ -617,7 +619,7 @@ if (!function_exists('user_validate_username')) {
         $statement = db_run('DELETE FROM users WHERE id = ?', [$userId]);
 
         if ($statement === null || $statement->rowCount() !== 1) {
-            return ['ok' => false, 'error' => 'Dit account kon niet worden verwijderd.', 'google_sub' => null];
+            return ['ok' => false, 'error' => t('Dit account kon niet worden verwijderd.'), 'google_sub' => null];
         }
 
         /* Files: only ever inside our own avatar directory, and only this

@@ -26,7 +26,7 @@ $shown  = trim((string) ($_POST['successor'] ?? ''));
 
 $successor = null;
 if ($goalId > 0) {
-    $board     = goals_prepare(hydrate_goals(require dirname(__DIR__, 2) . '/config/goals.php', $userId));
+    $board     = goals_prepare(hydrate_goals(config_copy('goals'), $userId));
     $successor = goals_successor($board, (string) $goalId, $shown === '' ? null : $shown);
 }
 

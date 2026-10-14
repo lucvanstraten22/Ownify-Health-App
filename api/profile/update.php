@@ -63,15 +63,43 @@ $limits = [
     'weight' => ['unit' => 'kg', 'min' => 20,  'max' => 400],
 ];
 
+/* Typed in the unit the form names (`height_unit`: cm or in, `weight_unit`:
+   kg or lb — Instellingen › Eenheden); a form that names none is in cm and
+   kg, as before. Converted here, once, and stored in cm and kg. An imperial
+   height may also arrive as "5 ft 11 in". */
+$accepted = ['height' => ['cm', 'in'], 'weight' => ['kg', 'lb']];
+
 foreach ($limits as $type => $limit) {
     if (!array_key_exists($type, $_POST) || $_POST[$type] === '') {
         continue;
     }
 
-    $value = (float) str_replace(',', '.', (string) $_POST[$type]);
+    $unit = (string) ($_POST[$type . '_unit'] ?? $limit['unit']);
+    $text = (string) $_POST[$type];
+    $what = $type === 'height' ? t('lengte') : t('gewicht');
+
+    if (!in_array($unit, $accepted[$type], true)) {
+        api_fail(tf('Vul een geldige waarde in voor %s.', $what), 422);
+    }
+
+    $typed = $unit === 'in' && !is_numeric(str_replace(',', '.', trim($text)))
+        ? units_parse_feet_inches($text)
+        : i18n_parse_number($text);
+
+    if ($typed === null) {
+        api_fail(tf('Vul een geldige waarde in voor %s.', $what), 422);
+    }
+
+    if ($unit === 'in' && is_numeric(str_replace(',', '.', trim($text)))) {
+        [$value] = units_canonical($typed, 'in');
+    } elseif ($unit === 'in') {
+        $value = $typed;                       // units_parse_feet_inches() answers in cm
+    } else {
+        [$value] = units_canonical($typed, $unit);
+    }
 
     if ($value < $limit['min'] || $value > $limit['max']) {
-        api_fail('Vul een geldige waarde in voor ' . ($type === 'height' ? 'lengte' : 'gewicht') . '.', 422);
+        api_fail(tf('Vul een geldige waarde in voor %s.', $what), 422);
     }
 
     user_record_measurement($userId, $type, $value, $limit['unit']);

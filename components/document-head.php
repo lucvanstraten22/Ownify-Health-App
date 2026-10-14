@@ -15,7 +15,7 @@ $theme  = app_theme_head($app);     // lib/theme.php
     <meta name="theme-color" content="<?= e($theme['theme_color']) ?>"
           data-theme-dark="<?= e($app['theme_color']) ?>" data-theme-light="<?= e($app['theme_color_light'] ?? '#FBFAFA') ?>">
     <meta name="color-scheme" content="<?= e($theme['color_scheme']) ?>">
-    <meta name="description" content="<?= e($app['name']) ?> — dagelijks overzicht van slaap, voeding en sport.">
+    <meta name="description" content="<?= e($app['name']) ?> — <?= e(t('dagelijks overzicht van slaap, voeding en sport.')) ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="<?= e($theme['status_bar']) ?>">
     <meta name="mobile-web-app-capable" content="yes">
@@ -76,6 +76,14 @@ $theme  = app_theme_head($app);     // lib/theme.php
         window.ownifyTheme = { apply: apply, follow: follow };
     })();
     </script>
+
+    <?php /* The language and units for the scripts (assets/js/i18n.js,
+             docs/I18N.md): the English catalogue only on an English page,
+             and before every other script, which are deferred too. */ ?>
+    <?php if (function_exists('i18n_locale') && i18n_locale() === 'en'): ?>
+    <script src="<?= e(asset('assets/js/lang-en.js')) ?>" defer></script>
+    <?php endif; ?>
+    <script src="<?= e(asset('assets/js/i18n.js')) ?>" defer></script>
 
     <?php foreach ($styles as $style): ?>
     <link rel="stylesheet" href="<?= e(asset('assets/css/' . $style . '.css')) ?>">

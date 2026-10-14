@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
+import com.ownify.android.i18n.OwnifyLanguage
 import com.ownify.android.ui.app.OwnifyApp
 import com.ownify.android.ui.screens.OwnifyScreens
 import com.ownify.android.ui.theme.Ownify
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         systemBars(OwnifyThemeStore.restore(this))
+        OwnifyLanguage.restore(this)
         super.onCreate(savedInstanceState)
 
         setContent {

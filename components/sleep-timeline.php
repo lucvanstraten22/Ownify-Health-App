@@ -27,7 +27,7 @@ $hasData = $total > 0;
     </div>
 
     <div class="hypnogram" role="img"
-         aria-label="<?= e($timeline['title']) ?><?= $hasData ? '' : ': nog geen gegevens' ?>">
+         aria-label="<?= e($timeline['title']) ?><?= $hasData ? '' : ': ' . e(t('nog geen gegevens')) ?>">
         <?php if ($hasData): ?>
             <?php foreach ($stages as $stage):
                 if ((int) ($stage['share'] ?? 0) <= 0) { continue; }

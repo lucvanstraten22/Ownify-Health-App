@@ -61,7 +61,7 @@ import org.robolectric.annotation.Config
  * automatic sync runs — against a server on localhost.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class PhoneSyncUiTest {
 
     @get:Rule

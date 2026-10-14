@@ -24,6 +24,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
+
 require_once __DIR__ . '/goals.php';
 require_once __DIR__ . '/goal-progress.php';
 
@@ -45,24 +47,24 @@ if (!function_exists('goal_create_from_input')) {
         $name = trim((string) ($in['name'] ?? ''));
 
         if ($name === '' || mb_strlen($name) > 120) {
-            return $fail('Geef je doel een naam van maximaal 120 tekens.');
+            return $fail(t('Geef je doel een naam van maximaal 120 tekens.'));
         }
 
         if (!goal_has_room($userId)) {
-            return $fail(sprintf('Je hebt al %d actieve doelen. Behaal er een of verwijder er een.', GOAL_MAX_ACTIVE), 409);
+            return $fail(tf('Je hebt al %d actieve doelen. Behaal er een of verwijder er een.', GOAL_MAX_ACTIVE), 409);
         }
 
-        $config   = require dirname(__DIR__) . '/config/goals.php';
+        $config   = config_copy('goals');
         $category = (string) ($in['category'] ?? 'other');
         $type     = (string) ($in['type'] ?? '');
         $duration = (string) ($in['duration'] ?? '');
 
         if (!isset($config['categories'][$category])) {
-            return $fail('Onbekende categorie.');
+            return $fail(t('Onbekende categorie.'));
         }
 
         if (!isset($config['types'][$type])) {
-            return $fail('Kies of dit een mijlpaal, een streak of een optelling is.');
+            return $fail(t('Kies of dit een mijlpaal, een streak of een optelling is.'));
         }
 
         /* Duration is a named period, so the end date is derived here rather
@@ -89,13 +91,13 @@ if (!function_exists('goal_create_from_input')) {
         $sourceKey  = trim((string) ($in['source_key'] ?? ''));
 
         if ($sourceKind === '') {
-            return $fail('Kies waar je voortgang vandaan komt, of kies "Geen data mogelijk".');
+            return $fail(t('Kies waar je voortgang vandaan komt, of kies "Geen data mogelijk".'));
         }
 
         $source = $sourceKind === 'manual' ? null : goal_source_find($sourceKind, $sourceKey);
 
         if ($sourceKind !== 'manual' && $source === null) {
-            return $fail('Deze gegevensbron bestaat niet.');
+            return $fail(t('Deze gegevensbron bestaat niet.'));
         }
 
         $isAuto = $source !== null;
@@ -106,14 +108,20 @@ if (!function_exists('goal_create_from_input')) {
         $summable = $isAuto && ($source['kind'] === 'workout' || $source['daily']);
 
         if ($type === 'streak' && $isAuto && $source['kind'] === 'measurement') {
-            return $fail('Een streak telt dagen. Kies een bron die elke dag iets meet, of houd hem zelf bij.');
+            return $fail(t('Een streak telt dagen. Kies een bron die elke dag iets meet, of houd hem zelf bij.'));
         }
 
         if ($type === 'accumulate' && $isAuto && !$summable) {
-            return $fail('Deze bron kun je niet optellen. Kies een bron die zich over de dag opbouwt, zoals stappen of trainingen.');
+            return $fail(t('Deze bron kun je niet optellen. Kies een bron die zich over de dag opbouwt, zoals stappen of trainingen.'));
         }
 
         /* ----------------------------------------------------------- numbers */
+
+        /* The units the figures were typed in (Instellingen › Eenheden,
+           `input_units`): a target of 176 in lb is stored as 79.8 kg, once,
+           here. A form that does not say — an app from before the units —
+           typed kg and km, as it always did. */
+        $imperialInput = ($in['input_units'] ?? 'metric') === 'imperial';
 
         $number = static function (string $field) use ($in): ?float {
             $raw = $in[$field] ?? null;
@@ -130,9 +138,8 @@ if (!function_exists('goal_create_from_input')) {
                 return null;
             }
 
-            $raw = str_replace(',', '.', trim((string) $raw));
-
-            return is_numeric($raw) ? (float) $raw : NAN;
+            /* "72,5", "72.5", "1.234,5" or "1,234.5": as the person writes it. */
+            return i18n_parse_number((string) $raw) ?? NAN;
         };
 
         /* Optellen measures either an amount or a number of days. A Streak is
@@ -143,18 +150,18 @@ if (!function_exists('goal_create_from_input')) {
         $targetValue = $number('target_value');
 
         if ($targetValue === null || is_nan($targetValue) || $targetValue <= 0 || $targetValue > 1e9) {
-            return $fail($countsDays ? 'Vul in hoeveel dagen.' : 'Vul een geldige doelwaarde in.');
+            return $fail($countsDays ? t('Vul in hoeveel dagen.') : t('Vul een geldige doelwaarde in.'));
         }
 
         if ($countsDays) {
             if (floor($targetValue) !== $targetValue || $targetValue > 3660) {
-                return $fail('Vul een heel aantal dagen in.');
+                return $fail(t('Vul een heel aantal dagen in.'));
             }
 
             /* Thirty days in a row cannot happen in a week. Refused now rather
                than left to sit at 23% until it quietly runs out. */
             if ($periodDays !== null && $targetValue > $periodDays) {
-                return $fail(sprintf(
+                return $fail(tf(
                     '%s passen niet in deze periode van %s. Kies een langere periode of minder dagen.',
                     goal_days_text($targetValue),
                     goal_days_text($periodDays)
@@ -168,15 +175,15 @@ if (!function_exists('goal_create_from_input')) {
         $dailyTarget = $number('daily_target');
 
         if ($dailyTarget !== null && (is_nan($dailyTarget) || $dailyTarget <= 0 || $dailyTarget > 1e9)) {
-            return $fail('Vul een geldig dagdoel in.');
+            return $fail(t('Vul een geldig dagdoel in.'));
         }
 
         if ($countsDays && $isAuto && $dailyTarget === null) {
-            return $fail('Vul in wanneer een dag telt als gelukt.');
+            return $fail(t('Vul in wanneer een dag telt als gelukt.'));
         }
 
         if ($dailyTarget !== null && !($countsDays && $isAuto)) {
-            return $fail('Voor dit doel kun je geen dagdoel instellen.');
+            return $fail(t('Voor dit doel kun je geen dagdoel instellen.'));
         }
 
         /* Which way is better — asked outright rather than assumed, because
@@ -189,8 +196,8 @@ if (!function_exists('goal_create_from_input')) {
         if ($type === 'milestone' || ($countsDays && $isAuto)) {
             if (!in_array($direction, ['increase', 'decrease'], true)) {
                 return $fail($type === 'milestone'
-                    ? 'Kies of een hoger of een lager resultaat beter is.'
-                    : 'Kies of een dag minstens of hoogstens dit moet halen.');
+                    ? t('Kies of een hoger of een lager resultaat beter is.')
+                    : t('Kies of een dag minstens of hoogstens dit moet halen.'));
             }
         } else {
             $direction = 'increase';
@@ -207,27 +214,37 @@ if (!function_exists('goal_create_from_input')) {
             $targetUnit = 'dagen';
         } elseif ($isAuto) {
             $unit        = goal_source_unit($source['kind'], $source['key']);
-            $targetValue = $targetValue / $unit['scale'];
+            $targetValue = goal_unit_typed($targetValue, goal_unit_shown($unit, $imperialInput));
             $targetUnit  = $unit['scale'] === 1.0 ? $unit['word'] : $source['unit'];
         } else {
             $targetUnit = trim((string) ($in['target_unit'] ?? ''));
 
             if (mb_strlen($targetUnit) > 20) {
-                return $fail('Die eenheid is te lang.');
+                return $fail(t('Die eenheid is te lang.'));
+            }
+
+            /* A unit typed in imperial ("lb", "mi") is kept in its metric
+               one, as everything measured is; so is kg typed by somebody
+               whose figures are in pounds. */
+            [, $metric] = units_canonical(1.0, $targetUnit);
+            if ($metric !== $targetUnit) {
+                [$targetValue, $targetUnit] = units_canonical($targetValue, $targetUnit);
+            } elseif ($imperialInput) {
+                $targetValue = goal_unit_typed($targetValue, goal_unit_shown(goal_manual_unit($targetUnit), true));
             }
 
             if (goal_unit_is_days($targetUnit)) {
                 /* "dagen" is a count of days whatever it was typed as, and a
                    Mijlpaal of "30 dagen" is not one result: it is Optellen. */
                 if ($type === 'milestone') {
-                    return $fail('Tel je dagen? Kies dan Optellen of Streak.');
+                    return $fail(t('Tel je dagen? Kies dan Optellen of Streak.'));
                 }
                 $targetUnit = 'dagen';
             }
         }
 
         if ($dailyTarget !== null) {
-            $dailyTarget = $dailyTarget / goal_source_unit($source['kind'], $source['key'])['scale'];
+            $dailyTarget = goal_unit_typed($dailyTarget, goal_unit_shown(goal_source_unit($source['kind'], $source['key']), $imperialInput));
         }
 
         $goal = [
@@ -253,7 +270,7 @@ if (!function_exists('goal_create_from_input')) {
         $goalId = goal_create($userId, $goal);
 
         if ($goalId === null) {
-            return $fail('Dit doel kon niet worden opgeslagen.', 500);
+            return $fail(t('Dit doel kon niet worden opgeslagen.'), 500);
         }
 
         /* Compute it once now, so a goal made against data that already

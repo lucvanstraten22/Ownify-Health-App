@@ -1,5 +1,7 @@
 package com.ownify.android.connection
 
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.getValue
@@ -95,36 +97,25 @@ sealed interface OwnifyAuthState {
  */
 object OwnifyConnection {
 
-    const val EXPIRED_MESSAGE = "De koppeling met Ownify is verlopen. Koppel deze telefoon opnieuw."
-    const val SESSION_EXPIRED_MESSAGE = "Je sessie is verlopen. Log opnieuw in."
-    const val LOGGED_OUT_MESSAGE = "Je bent uitgelogd."
+    val EXPIRED_MESSAGE: String get() = tr("De koppeling met Ownify is verlopen. Koppel deze telefoon opnieuw.")
+    val SESSION_EXPIRED_MESSAGE: String get() = tr("Je sessie is verlopen. Log opnieuw in.")
+    val LOGGED_OUT_MESSAGE: String get() = tr("Je bent uitgelogd.")
     /** No answer from Ownify at all: offline, or the server out of reach — the website's words too. */
-    const val UNREACHABLE_MESSAGE = "Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw."
-    const val LOGGED_OUT_UNREACHED_MESSAGE =
-        "Je bent uitgelogd op deze telefoon. Ownify was niet bereikbaar; " +
-            "verwijder dit apparaat zo nodig via Instellingen op de website."
-
-    private const val INVALID_CODE_MESSAGE =
-        "Vul de koppelcode van 8 tekens van de Ownify-website in."
-    private const val NOT_STORED_MESSAGE =
-        "Deze telefoon kon de koppeling niet veilig bewaren. Koppel opnieuw met een nieuwe code."
-    private const val UNEXPECTED_MESSAGE =
-        "Er ging iets mis bij het verbinden met Ownify. Probeer het opnieuw."
-
-    private const val GOOGLE_WORKING_MESSAGE = "Inloggen met Google..."
-    private const val GOOGLE_FAILED_MESSAGE = "Inloggen met Google is niet gelukt. Probeer het opnieuw."
-    private const val GOOGLE_NO_ACCOUNT_MESSAGE =
-        "Er staat geen Google-account op deze telefoon. Voeg er een toe in de instellingen van je telefoon en probeer het opnieuw."
-    private const val GOOGLE_UNAVAILABLE_MESSAGE =
-        "Inloggen met Google werkt niet op deze telefoon: Google Play-services ontbreken of zijn verouderd."
-    private const val GOOGLE_INTERRUPTED_MESSAGE = "Inloggen met Google werd onderbroken. Probeer het opnieuw."
-    private const val GOOGLE_EXPIRED_MESSAGE = "Je Google-aanmelding is verlopen. Begin opnieuw met Google."
-    private const val USERNAME_EMPTY_MESSAGE = "Kies een gebruikersnaam."
-
-    private const val LOGIN_EMPTY_MESSAGE = "Vul je gebruikersnaam en wachtwoord in."
-    private const val REGISTER_EMPTY_MESSAGE = "Vul een gebruikersnaam, e-mailadres en wachtwoord in."
-    private const val ACCOUNT_NOT_STORED_MESSAGE =
-        "Deze telefoon kon je sessie niet veilig bewaren. Log opnieuw in."
+    val UNREACHABLE_MESSAGE: String get() = tr("Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.")
+    val LOGGED_OUT_UNREACHED_MESSAGE: String get() = tr("Je bent uitgelogd op deze telefoon. Ownify was niet bereikbaar; verwijder dit apparaat zo nodig via Instellingen op de website.")
+    private val INVALID_CODE_MESSAGE: String get() = tr("Vul de koppelcode van 8 tekens van de Ownify-website in.")
+    private val NOT_STORED_MESSAGE: String get() = tr("Deze telefoon kon de koppeling niet veilig bewaren. Koppel opnieuw met een nieuwe code.")
+    private val UNEXPECTED_MESSAGE: String get() = tr("Er ging iets mis bij het verbinden met Ownify. Probeer het opnieuw.")
+    private val GOOGLE_WORKING_MESSAGE: String get() = tr("Inloggen met Google...")
+    private val GOOGLE_FAILED_MESSAGE: String get() = tr("Inloggen met Google is niet gelukt. Probeer het opnieuw.")
+    private val GOOGLE_NO_ACCOUNT_MESSAGE: String get() = tr("Er staat geen Google-account op deze telefoon. Voeg er een toe in de instellingen van je telefoon en probeer het opnieuw.")
+    private val GOOGLE_UNAVAILABLE_MESSAGE: String get() = tr("Inloggen met Google werkt niet op deze telefoon: Google Play-services ontbreken of zijn verouderd.")
+    private val GOOGLE_INTERRUPTED_MESSAGE: String get() = tr("Inloggen met Google werd onderbroken. Probeer het opnieuw.")
+    private val GOOGLE_EXPIRED_MESSAGE: String get() = tr("Je Google-aanmelding is verlopen. Begin opnieuw met Google.")
+    private val USERNAME_EMPTY_MESSAGE: String get() = tr("Kies een gebruikersnaam.")
+    private val LOGIN_EMPTY_MESSAGE: String get() = tr("Vul je gebruikersnaam en wachtwoord in.")
+    private val REGISTER_EMPTY_MESSAGE: String get() = tr("Vul een gebruikersnaam, e-mailadres en wachtwoord in.")
+    private val ACCOUNT_NOT_STORED_MESSAGE: String get() = tr("Deze telefoon kon je sessie niet veilig bewaren. Log opnieuw in.")
 
     var state: OwnifyState by mutableStateOf(OwnifyState.Checking)
         private set
@@ -245,7 +236,7 @@ object OwnifyConnection {
                 // already used, or the maximum number of phones is reached.
                 is OwnifyResult.Unauthorized ->
                     state = OwnifyState.NotConnected(
-                        "Koppelen is niet gelukt: " + (result.message ?: "de code is ongeldig of verlopen.")
+                        trf("Koppelen is niet gelukt: %s", result.message ?: tr("de code is ongeldig of verlopen."))
                     )
 
                 is OwnifyResult.Failure ->
@@ -270,7 +261,7 @@ object OwnifyConnection {
             return
         }
 
-        signIn(context, "Inloggen...") { current -> api.login(name, password, deviceLabel(), current) }
+        signIn(context, tr("Inloggen...")) { current -> api.login(name, password, deviceLabel(), current) }
     }
 
     /** Creates a Ownify account (app-register.php) and signs in as it, like [login]. */
@@ -283,7 +274,7 @@ object OwnifyConnection {
             return
         }
 
-        signIn(context, "Account aanmaken...") { current -> api.register(address, name, password, deviceLabel(), current) }
+        signIn(context, tr("Account aanmaken...")) { current -> api.register(address, name, password, deviceLabel(), current) }
     }
 
     /**
@@ -394,7 +385,7 @@ object OwnifyConnection {
         val store = store(context)
 
         job = scope.launch {
-            auth = OwnifyAuthState.Working("Account aanmaken...")
+            auth = OwnifyAuthState.Working(tr("Account aanmaken..."))
 
             val current = withContext(Dispatchers.IO) { store.load() }
 
@@ -459,7 +450,7 @@ object OwnifyConnection {
         val store = store(context)
 
         job = scope.launch {
-            auth = OwnifyAuthState.Working("Uitloggen...")
+            auth = OwnifyAuthState.Working(tr("Uitloggen..."))
 
             val signedOut = withContext(Dispatchers.IO) {
                 credentialLock.withLock {
@@ -690,13 +681,13 @@ object OwnifyConnection {
                 EXPIRED_MESSAGE
 
             is OwnifyResult.HttpError ->
-                "Ownify is nu niet beschikbaar (HTTP ${failure.status}). Probeer het later opnieuw."
+                trf("Ownify is nu niet beschikbaar (HTTP %d). Probeer het later opnieuw.", failure.status)
 
             OwnifyResult.NetworkError ->
                 UNREACHABLE_MESSAGE
 
             OwnifyResult.InvalidResponse ->
-                "Ownify gaf een onverwacht antwoord. Probeer het later opnieuw."
+                tr("Ownify gaf een onverwacht antwoord. Probeer het later opnieuw.")
         }
 
     /**
@@ -705,22 +696,22 @@ object OwnifyConnection {
      * the name exists or not), "too many attempts, try again in N minutes",
      * an address or username that is taken — otherwise what kind of trouble.
      */
-    internal fun describeSignIn(failure: OwnifyResult.Failure, unauthorized: String = "Gebruikersnaam of wachtwoord klopt niet."): String =
+    internal fun describeSignIn(failure: OwnifyResult.Failure, unauthorized: String = tr("Gebruikersnaam of wachtwoord klopt niet.")): String =
         when (failure) {
             is OwnifyResult.Unauthorized ->
                 failure.message ?: unauthorized
 
             is OwnifyResult.HttpError ->
                 failure.message ?: when (failure.status) {
-                    429 -> "Te veel pogingen. Probeer het later opnieuw."
-                    else -> "Ownify is nu niet beschikbaar (HTTP ${failure.status}). Probeer het later opnieuw."
+                    429 -> tr("Te veel pogingen. Probeer het later opnieuw.")
+                    else -> trf("Ownify is nu niet beschikbaar (HTTP %d). Probeer het later opnieuw.", failure.status)
                 }
 
             OwnifyResult.NetworkError ->
                 UNREACHABLE_MESSAGE
 
             OwnifyResult.InvalidResponse ->
-                "Ownify gaf een onverwacht antwoord. Probeer het later opnieuw."
+                tr("Ownify gaf een onverwacht antwoord. Probeer het later opnieuw.")
         }
 
     /**

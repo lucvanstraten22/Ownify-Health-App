@@ -122,7 +122,10 @@ CREATE TABLE `user_profiles` (
     `activity_level` ENUM('sedentary','light','moderate','active','athlete')
                     NULL COMMENT 'Self-declared; drives targets, not a measurement',
     `avatar_path`   VARCHAR(255) NULL COMMENT 'Relative path under uploads/, never a client filename',
-    `locale`        VARCHAR(10)  NOT NULL DEFAULT 'nl',
+    `locale`        VARCHAR(10)  NULL DEFAULT NULL
+                    COMMENT 'nl or en when chosen in Instellingen › Taal; NULL follows the device',
+    `units`         ENUM('metric','imperial') NULL DEFAULT NULL
+                    COMMENT 'Instellingen › Eenheden; NULL is metric. Only how values are shown and typed',
     `allow_friend_requests` TINYINT(1) NOT NULL DEFAULT 1
                     COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
     `leaderboard_avatar` TINYINT(1) NOT NULL DEFAULT 1

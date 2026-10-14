@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 $registry = $data['health']['metrics'];
 $tiles    = $data['tiles'];
-$title    = $data['tiles_title'] ?? 'Vandaag';
+$title    = $data['tiles_title'] ?? t('Vandaag');
 ?>
 <section class="card card--tiles reveal" aria-labelledby="tiles-<?= e($data['area']['id']) ?>">
 

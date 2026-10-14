@@ -18,7 +18,7 @@ $area  = (string) $data['chart_area'];
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
                 <button type="button" class="pill pill--back press" data-detail-close
-                        aria-label="Terug naar <?= e($chart['back']) ?>">
+                        aria-label="<?= e(tf('Terug naar %s', $chart['back'])) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e($chart['back']) ?></span>
                 </button>

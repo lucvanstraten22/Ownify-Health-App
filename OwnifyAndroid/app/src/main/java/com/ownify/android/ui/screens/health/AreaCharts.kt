@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -286,7 +287,7 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
  */
 @Composable
 fun AreaChartDetail(chart: AreaChart, area: String, scroll: ScrollState) {
-    DetailColumn(scroll, back = chart.back, backAria = "Terug naar ${chart.back}") {
+    DetailColumn(scroll, back = chart.back, backAria = trf("Terug naar %s", chart.back)) {
         PageIntro(chart.title, null, Modifier.reveal())
         AreaChartCard(chart, Accent.of(area))
     }

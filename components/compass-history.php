@@ -83,7 +83,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
                 <?php endif; ?>
 
                 <div class="compass-plot" data-accent="health"<?php if ($chart['has_data']): ?>
-                     data-compass-plot data-gesture-own tabindex="0" role="group" aria-roledescription="grafiek"
+                     data-compass-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="compass-history-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
                     <?php /* The grid's levels, named: the height is the period's own,

@@ -45,7 +45,7 @@ import org.robolectric.annotation.Config
  * period with its four zones, HRV and Hartbelasting; a session's own page.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36], qualifiers = "w412dp-h915dp-port-420dpi")
+@Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
 class TrainingViewTest {
 
     @get:Rule

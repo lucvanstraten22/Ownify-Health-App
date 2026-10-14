@@ -52,7 +52,7 @@ foreach ($data['settings']['integrations'] as $source) {
 
     <?php /* A tap anywhere else closes. A button, so a screen reader has a way
              out as well; Escape does the same from a keyboard. */ ?>
-    <button type="button" class="devices__scrim" data-devices-close tabindex="-1" aria-label="Sluiten"></button>
+    <button type="button" class="devices__scrim" data-devices-close tabindex="-1" aria-label="<?= e(t('Sluiten')) ?>"></button>
 
     <div class="devices__frame shell">
         <div class="devices__panel card">

@@ -27,6 +27,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/health-signals.php';
 require_once dirname(__DIR__) . '/includes/score-compass.php';
@@ -247,7 +249,7 @@ if (!function_exists('hydrate_sleep')) {
             foreach (health_nights_on($userId, $from, $to) as $date => $night) {
                 if ($night['in_bed'] !== null && $night['in_bed'] > 0) {
                     $minutes = (int) round((float) $night['in_bed']);
-                    $days[(string) $date] = [$minutes / 60, hydrate_hours($minutes) . ' u', false];
+                    $days[(string) $date] = [$minutes / 60, hydrate_hours($minutes) . ' ' . t('u'), false];
                 }
             }
             $first = db_value('SELECT MIN(night_of) FROM sleep_sessions WHERE user_id = ? AND time_in_bed_minutes > 0', [$userId]);

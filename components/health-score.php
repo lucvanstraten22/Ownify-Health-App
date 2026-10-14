@@ -20,7 +20,7 @@ $state  = state_class($overall['value']);
 $compass   = $data['compass'] ?? null;
 $direction = $compass['direction'] ?? null;
 $openLabel = $compass === null ? '' : $overall['label'] . ': '
-    . (has_value($overall['value']) ? $overall['value'] . ' van ' . $overall['max'] : mb_strtolower($overall['caption']))
+    . (has_value($overall['value']) ? tf('%1$s van %2$s', (string) $overall['value'], (string) $overall['max']) : mb_strtolower($overall['caption']))
     . ($direction !== null ? ', ' . mb_strtolower($direction['label']) : '')
     . '. ' . $compass['open'] . '.';
 ?>
@@ -31,7 +31,7 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
             <h1 class="card__title" id="overview-title"><?= e($overview['title']) ?></h1>
             <p class="card__meta"><span class="card__meta-day"><?= e($today['weekday']) ?> </span><?= e($today['date']) ?></p>
         </div>
-        <span class="chip chip--focus" title="Gekozen focus">
+        <span class="chip chip--focus" title="<?= e(t('Gekozen focus')) ?>">
             <span class="chip__dot" aria-hidden="true"></span>
             <?= e($focusLabel) ?>
         </span>
@@ -40,7 +40,7 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
     <div class="score-ring" data-ring data-progress="<?= e((string) round($ratio, 4)) ?>"
          role="img"
          aria-label="<?= e($overall['label']) ?>: <?= has_value($overall['value'])
-             ? e((string) $overall['value']) . ' van ' . e((string) $overall['max'])
+             ? e(tf('%1$s van %2$s', (string) $overall['value'], (string) $overall['max']))
              : e($overall['caption']) ?>">
         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
             <defs>
@@ -58,7 +58,7 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
             <p class="score-ring__number" data-count-to="<?= has_value($overall['value']) ? e((string) $overall['value']) : '' ?>">
                 <?= e(score_text($overall['value'])) ?>
             </p>
-            <p class="score-ring__scale"><?= has_value($overall['value']) ? 'van ' . e((string) $overall['max']) : e($overall['caption']) ?></p>
+            <p class="score-ring__scale"><?= has_value($overall['value']) ? e(tf('van %s', (string) $overall['max'])) : e($overall['caption']) ?></p>
         </div>
     </div>
 

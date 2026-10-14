@@ -1,6 +1,7 @@
 package com.ownify.android.ui
 
 import com.ownify.android.connection.OwnifySyncOutcomeKind
+import com.ownify.android.i18n.OwnifyLanguage
 import com.ownify.android.ui.screens.account.memberSince
 import com.ownify.android.ui.screens.community.avatarAccent
 import com.ownify.android.ui.screens.community.initial
@@ -13,8 +14,10 @@ import com.ownify.android.ui.screens.settings.outcomeText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -23,9 +26,16 @@ import org.junit.Test
  * sent — and each must write exactly what the website's own helper writes.
  * The expected values are the website's output, taken from its PHP and
  * JavaScript (lib/community.php, lib/goals.php, lib/settings.php,
- * assets/js/goal-wizard.js, account-modal.php's date('j M Y')).
+ * assets/js/goal-wizard.js, account-modal.php's i18n_date()) — in Dutch,
+ * the language these tests run in; I18nTest has them in English.
  */
 class PresentationHelpersTest {
+
+    @Before
+    fun dutch() = OwnifyLanguage.use("nl")
+
+    @After
+    fun reset() = OwnifyLanguage.use("nl")
 
     @Test
     fun `points - community_points(), the Dutch thousands dot, a dash for none`() {
@@ -57,9 +67,9 @@ class PresentationHelpersTest {
     }
 
     @Test
-    fun `member since - PHP's date('j M Y')`() {
-        assertEquals("27 Sep 2026", memberSince("2026-09-27 14:35:39"))
-        assertEquals("3 Jan 2026", memberSince("2026-01-03 00:00:00"))
+    fun `member since - i18n_date(day_mon_year)`() {
+        assertEquals("27 sep 2026", memberSince("2026-09-27 14:35:39"))
+        assertEquals("3 jan 2026", memberSince("2026-01-03 00:00:00"))
         assertEquals("", memberSince(null))
         assertEquals("", memberSince("not a date"))
     }
@@ -89,11 +99,12 @@ class PresentationHelpersTest {
     }
 
     @Test
-    fun `numbers - goal-wizard's dutchNumber(), toLocaleString('nl-NL') to two decimals`() {
+    fun `numbers - goal-wizard's dutchNumber(), parseNumber() then toLocaleString('nl-NL') to two decimals`() {
         val expected = mapOf(
             "10000" to "10.000", "8000" to "8.000", "1234567" to "1.234.567",
             "2,5" to "2,5", "2.345" to "2,35", "2.355" to "2,36", "0.005" to "0,01",
-            "abc" to "abc", "" to "0", "12 " to "12", "-3,456" to "-3,46", "1e3" to "1.000"
+            "abc" to "abc", "" to "", "12 " to "12", "-3,456" to "-3,46", "1e3" to "1e3",
+            "1.234,5" to "1.234,5", "1,234.5" to "1.234,5"
         )
         for ((typed, text) in expected) assertEquals("'$typed'", text, dutchNumber(typed))
     }

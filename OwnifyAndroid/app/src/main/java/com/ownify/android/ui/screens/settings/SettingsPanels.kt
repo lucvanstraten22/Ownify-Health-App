@@ -49,6 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import com.ownify.android.data.AppData
 import com.ownify.android.data.FieldInput
 import com.ownify.android.data.OwnifyActions
@@ -161,6 +163,8 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     val field = remember(overlay.key) { findField(data, overlay.key) }
     val input = field?.input
     var value by remember(overlay.key) { mutableStateOf(input?.value.orEmpty()) }
+    var feet by remember(overlay.key) { mutableStateOf(input?.feet.orEmpty()) }
+    var inches by remember(overlay.key) { mutableStateOf(input?.inches.orEmpty()) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -168,16 +172,23 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     if (field == null || input == null) return
 
     fun save() {
-        val sent = value.trim()
+        // Imperial height is sent as inches, with height_unit=in (lib/settings.php).
+        val sent = if (input.type == "feet_inches") {
+            if (feet.isBlank() && inches.isBlank()) "" else ((feet.trim().toIntOrNull() ?: 0) * 12 + (inches.trim().toIntOrNull() ?: 0)).toString()
+        } else value.trim()
         if (sent.isEmpty()) {
-            error = "Vul eerst een waarde in."
+            error = tr("Vul eerst een waarde in.")
             return
         }
         focus.clearFocus()
         error = null
         saving = true
+        val fields = buildMap {
+            put(field.key, sent)
+            if (input.postUnit.isNotEmpty()) put(field.key + "_unit", input.postUnit)
+        }
         scope.launch {
-            when (val outcome = OwnifyActions.form(context, input.endpoint, mapOf(field.key to sent), "Opslaan is niet gelukt.")) {
+            when (val outcome = OwnifyActions.form(context, input.endpoint, fields, tr("Opslaan is niet gelukt."))) {
                 is Outcome.Done -> shell.close(overlay)
                 is Outcome.Refused -> error = outcome.message
                 Outcome.SignedOut -> Unit
@@ -189,13 +200,34 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     ConfirmFrame(overlay, title = field.label, start = true) {
         ConfirmTitle(field.label, align = TextAlign.Start)
         if (field.state == "once") {
-            ConfirmBody("Dit kun je één keer invullen. Daarna staat het vast.", align = TextAlign.Start, color = Ownify.Attention)
+            ConfirmBody(tr("Dit kun je één keer invullen. Daarna staat het vast."), align = TextAlign.Start, color = Ownify.Attention)
         }
 
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
             when (input.type) {
                 "choice" -> ChoiceControl(input, value) { value = it }
                 "date" -> DateControl(input, value, field.label) { value = it }
+                "feet_inches" -> {
+                    // Feet and inches side by side, as the website's editor.
+                    val first = rememberFocusOnOpen()
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        JInput(
+                            feet, { feet = it.filter(Char::isDigit).take(1) },
+                            modifier = Modifier.weight(1f).focusRequester(first),
+                            label = tr("Voet"),
+                            keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+                        )
+                        T("ft", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary))
+                        JInput(
+                            inches, { inches = it.filter(Char::isDigit).take(2) },
+                            modifier = Modifier.weight(1f),
+                            label = tr("Inch"),
+                            keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            actions = KeyboardActions(onDone = { if (!saving) save() })
+                        )
+                        T("in", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary))
+                    }
+                }
                 else -> {
                     // open(): the field takes focus, so the keyboard is there.
                     val first = rememberFocusOnOpen()
@@ -219,8 +251,8 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
         error?.let { EditorError(it) }
 
         ConfirmRow(
-            { Btn("Annuleren", onClick = { shell.close(overlay) }, modifier = it) },
-            { Btn("Opslaan", onClick = ::save, enabled = !saving, look = YesLook, modifier = it) }
+            { Btn(tr("Annuleren"), onClick = { shell.close(overlay) }, modifier = it) },
+            { Btn(tr("Opslaan"), onClick = ::save, enabled = !saving, look = YesLook, modifier = it) }
         )
     }
 }
@@ -356,12 +388,12 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                             deleting = true
                             error = null
                             scope.launch {
-                                val outcome = OwnifyActions.deleteAccount(context, "Je account kon niet worden verwijderd.")
+                                val outcome = OwnifyActions.deleteAccount(context, tr("Je account kon niet worden verwijderd."))
                                 if (outcome is Outcome.Refused) {
                                     // The website's words for the two ways there is no answer.
                                     error = when (outcome.message) {
-                                        OwnifyAppState.UNREACHABLE -> "Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw."
-                                        OwnifyAppState.UNEXPECTED -> "Je account kon niet worden verwijderd."
+                                        OwnifyAppState.UNREACHABLE -> tr("Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.")
+                                        OwnifyAppState.UNEXPECTED -> tr("Je account kon niet worden verwijderd.")
                                         else -> outcome.message
                                     }
                                     deleting = false
@@ -402,11 +434,11 @@ fun PairingPanel(overlay: Overlay.Pairing, data: AppData) {
         error = null
         asking = true
         scope.launch {
-            when (val outcome = OwnifyActions.form(context, "api/integrations/pairing-code.php", mapOf("provider" to overlay.provider), "Er kon geen code worden gemaakt.", reload = false)) {
+            when (val outcome = OwnifyActions.form(context, "api/integrations/pairing-code.php", mapOf("provider" to overlay.provider), tr("Er kon geen code worden gemaakt."), reload = false)) {
                 is Outcome.Done -> {
                     code = outcome.body.optString("code").takeIf { it.isNotEmpty() }
                     val seconds = outcome.body.optInt("expires_in", 600).takeIf { it > 0 } ?: 600
-                    expiry = "Geldig voor ${Math.round(seconds / 60.0)} minuten."
+                    expiry = trf("Geldig voor %d minuten.", Math.round(seconds / 60.0))
                 }
                 is Outcome.Refused -> error = outcome.message
                 Outcome.SignedOut -> Unit
@@ -417,9 +449,9 @@ fun PairingPanel(overlay: Overlay.Pairing, data: AppData) {
 
     LaunchedEffect(overlay) { request() }
 
-    ConfirmFrame(overlay, title = "Koppelcode") {
-        ConfirmTitle("Koppelcode")
-        ConfirmBody("Open de Ownify-app op je telefoon en voer deze code in.")
+    ConfirmFrame(overlay, title = tr("Koppelcode")) {
+        ConfirmTitle(tr("Koppelcode"))
+        ConfirmBody(tr("Open de Ownify-app op je telefoon en voer deze code in."))
         T(
             code ?: "••••••••",
             OwnifyType.style(28.sp, FontWeight.SemiBold, tracking = 0.18.em).copy(fontFamily = FontFamily.Monospace),
@@ -429,8 +461,8 @@ fun PairingPanel(overlay: Overlay.Pairing, data: AppData) {
         T(expiry.orEmpty(), JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
         error?.let { EditorError(it) }
         ConfirmRow(
-            { Btn("Sluiten", onClick = { shell.close(overlay) }, modifier = it) },
-            { Btn("Nieuwe code", onClick = ::request, enabled = !asking, look = YesLook, modifier = it) }
+            { Btn(tr("Sluiten"), onClick = { shell.close(overlay) }, modifier = it) },
+            { Btn(tr("Nieuwe code"), onClick = ::request, enabled = !asking, look = YesLook, modifier = it) }
         )
     }
 }

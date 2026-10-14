@@ -32,7 +32,7 @@ $goal    = $byId['goal'];
 $source  = $connect['source'];
 ?>
 <!DOCTYPE html>
-<html lang="<?= e($app['locale']) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
+<html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'goals', 'setup',
