@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.settings
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.composed
 import com.ownify.android.i18n.tr
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -144,7 +147,8 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
                     contentDescription = tr("Account openen")
                     onClick { onClick(); true }
                 },
-            padding = PaddingValues(horizontal = if (narrow) Ownify.Space4 else Ownify.Space5, vertical = Ownify.Space4)
+            // The rows' own inner padding, so the avatar and chevron line up with theirs.
+            padding = PaddingValues(horizontal = if (narrow) Ownify.Space3 else Ownify.Space4, vertical = Ownify.Space4)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space3 else Ownify.Space4)) {
                 AvatarCircle(profile.avatar, if (narrow) 42.dp else 48.dp, 22.dp)
@@ -177,7 +181,8 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
             Modifier
                 .press(interaction)
                 .fillMaxWidth()
-                .settingsRow(divided, fill)
+                // The line starts at the text: padding, the 30 dp mark, the gap.
+                .settingsRow(divided, fill, inset = if (narrow) Ownify.Space3 + 30.dp + Ownify.Space2 else Ownify.Space4 + 30.dp + Ownify.Space3)
                 .clickable(interaction, indication = null, onClick = onClick)
                 .clearAndSetSemantics {
                     role = Role.Button
@@ -261,10 +266,13 @@ fun Hairline() {
 /**
  * A settings card's row: `min-height: 56px` in `box-sizing: border-box`,
  * and on every row after the card's first (`.settings-card > * + *`) the
- * hairline as its top border, inside that height. A short row is 56 with
- * its line, as on the website; a taller one grows by the line.
+ * hairline at its top, inside that height. A short row is 56 with its line,
+ * as on the website; a taller one grows by the line. The line starts at
+ * [inset] — where the row's text does (`--row-inset`): the row's padding,
+ * plus the mark and the gap on a row that has one — and runs to the edge.
  */
-fun Modifier.settingsRow(divided: Boolean, fill: Color = Color.Transparent): Modifier =
+fun Modifier.settingsRow(divided: Boolean, fill: Color = Color.Transparent, inset: Dp? = null): Modifier = composed {
+    val start = inset ?: if (LocalScreen.current.narrow) Ownify.Space3 else Ownify.Space4
     heightIn(min = 56.dp)
         .then(if (fill != Color.Transparent) Modifier.background(fill) else Modifier)
         .then(
@@ -272,8 +280,10 @@ fun Modifier.settingsRow(divided: Boolean, fill: Color = Color.Transparent): Mod
                 Modifier
                     .drawWithContent {
                         drawContent()
-                        drawRect(Ownify.GlassHairline, size = Size(size.width, 1.dp.roundToPx().toFloat()))
+                        val x = start.toPx()
+                        drawRect(Ownify.GlassHairline, topLeft = Offset(x, 0f), size = Size(size.width - x, 1.dp.roundToPx().toFloat()))
                     }
                     .padding(top = 1.dp)
             } else Modifier
         )
+}

@@ -23,8 +23,11 @@
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-card);
     background: var(--surface-gradient);
-    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
-    backdrop-filter: blur(var(--blur-card)) saturate(130%);
+    /* No live blur: a card sits in the page's flow over the still, smooth
+       ground, where a blur changes nothing you can see but is recomposited on
+       every scrolled frame. Translucency is for what floats — the header,
+       the tab bar, sheets, popovers, tooltips. The Android app draws its
+       cards the same way (Surfaces.kt, cardSurface). */
     box-shadow: var(--shadow-inset), var(--shadow-card);
     overflow: hidden;
 }
@@ -91,7 +94,7 @@
 }
 
 .card__subtitle {
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }
@@ -104,7 +107,7 @@
     color: var(--text-muted);
 }
 
-.card__meta--small { font-size: var(--fs-tiny); }
+.card__meta--small { font-size: var(--fs-tiny); letter-spacing: var(--tracking-small); }
 
 .card__lede {
     margin-inline: auto;
@@ -129,7 +132,8 @@
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -149,22 +153,37 @@
     position: sticky;
     top: 0;
     z-index: 20;
+    isolation: isolate;
     padding-top: calc(var(--safe-top) + var(--space-3));
     padding-bottom: var(--space-3);
     border-bottom: 1px solid transparent;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
-/* Scrolled: a solid tint that fades out at the bottom edge, so content
-   slides under the header instead of colliding with it. */
-.app-header.is-scrolled {
+/* Scrolled: a tint over the page blurred behind it, and the two fade out
+   together towards the bottom edge — a scroll edge, not a line. The blur
+   used to stop at the header's box while its tint faded, which left a hard
+   seam across the cards. The layer reaches --edge-fade past the box so the
+   fade has room; it sits behind the header's own content. Mirrored in
+   Header.kt (HeaderFrame). */
+.app-header::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 calc(-1 * var(--edge-fade)) 0;
+    z-index: -1;
     background: linear-gradient(180deg,
-        rgba(var(--ground), 0.95) 0%,
-        rgba(var(--ground), 0.88) 58%,
+        rgba(var(--ground), var(--veil-top)) 0%,
+        rgba(var(--ground), var(--veil-mid)) 50%,
         rgba(var(--ground), 0) 100%);
     -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(140%);
     backdrop-filter: blur(var(--blur-bar)) saturate(140%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 50%, transparent 100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
 }
+
+.app-header.is-scrolled::before { opacity: 1; }
 
 /* The five main pages share one header (index.php). It is laid over the rail
    instead of scrolling inside a page, so it stays exactly where it is while
@@ -247,7 +266,7 @@
             rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
             rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
             rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), 0.46);
+        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
     -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     box-shadow:
@@ -342,6 +361,37 @@
     cursor: not-allowed;
 }
 
+/* Every control drawn smaller than --hit-min takes taps over at least that
+   much: an invisible margin, centred on it, as far as it falls short — none
+   at all along a side that is already long enough. Nothing is drawn, and
+   what it overlaps (padding, a gap) holds nothing else to tap. */
+.btn,
+.pill--back,
+.pill--close,
+.account__close,
+.range-switch__option,
+.heart-chart__step,
+.settings-delete,
+.ai-handle {
+    position: relative;
+}
+
+.btn::after,
+.pill--back::after,
+.pill--close::after,
+.account__close::after,
+.range-switch__option::after,
+.heart-chart__step::after,
+.settings-delete::after,
+.ai-handle::after {
+    content: "";
+    position: absolute;
+    top: min(0px, calc(50% - var(--hit-min) / 2));
+    right: min(0px, calc(50% - var(--hit-min) / 2));
+    bottom: min(0px, calc(50% - var(--hit-min) / 2));
+    left: min(0px, calc(50% - var(--hit-min) / 2));
+}
+
 /* --------------------------------------------------------------------------
    Primary score ring
    -------------------------------------------------------------------------- */
@@ -413,11 +463,18 @@
     font-variant-numeric: tabular-nums;
 }
 
-.is-empty .score-ring__number { color: var(--text-secondary); }
+/* No score yet: a calm, smaller dash rather than a bold bar at score size
+   (Components.kt ScoreRing and HealthPage do the same). */
+.is-empty .score-ring__number {
+    font-size: calc(var(--fs-score) * 0.6);
+    font-weight: 400;
+    color: var(--text-muted);
+}
 
 .score-ring__scale {
     margin-top: var(--space-2);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -434,9 +491,10 @@
     gap: var(--space-2);
     margin-top: var(--space-4);
     padding: var(--space-3) var(--space-2);
-    border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    /* A well inside the card: a fill, no outline of its own. */
+    border: 1px solid transparent;
+    border-radius: var(--radius-inner);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
 }
 
 .legend__item {
@@ -466,6 +524,7 @@
 
 .legend__label {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
     white-space: nowrap;
 }
@@ -474,6 +533,7 @@
    name, not a second label. */
 .legend__value {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -500,7 +560,12 @@
     font-variant-numeric: tabular-nums;
 }
 
-.is-empty .score-value__number { color: var(--text-secondary); }
+.is-empty .score-value .score-value__number {
+    margin-inline-end: 3px;
+    font-size: calc(var(--fs-score-sm) * 0.6);
+    font-weight: 400;
+    color: var(--text-muted);
+}
 
 .score-value__max {
     font-size: var(--fs-small);
@@ -525,14 +590,16 @@
     transition: width 1000ms var(--ease-out);
 }
 
+/* Empty, the bar keeps its height and draws its dotted line inside it, so
+   whatever sits under it (the pillars' names) stays on one line with the
+   filled bars beside it. Components.kt (Meter) does the same. */
 .is-empty .meter {
-    height: 4px;
     background: repeating-linear-gradient(90deg,
         rgba(var(--ink), 0.11) 0 2px,
-        transparent 2px 8px);
+        transparent 2px 8px) center / 100% 4px no-repeat;
 }
 
-.is-empty .meter--goal { height: 6px; }
+.is-empty .meter--goal { background-size: 100% 6px; }
 
 .meter--goal { height: 10px; }
 
@@ -621,9 +688,9 @@
     align-items: start;
     gap: var(--space-3);
     padding: var(--space-3);
-    border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    border: 1px solid transparent;
+    border-radius: var(--radius-inner);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
 }
 
 .insights__marker {
@@ -664,7 +731,7 @@
 }
 
 .goal__name {
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }
@@ -734,11 +801,12 @@
 
 .milestones__item.is-reached .milestones__dot {
     background: var(--health);
-    box-shadow: 0 0 0 3px rgba(60, 158, 114, 0.18);
+    box-shadow: 0 0 0 3px var(--health-fill);
 }
 
 .milestones__label {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -807,7 +875,8 @@
 }
 
 .goal__note {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -865,8 +934,8 @@
 }
 
 .board__row--self {
-    background: rgba(60, 158, 114, 0.1);
-    border-color: rgba(60, 158, 114, 0.22);
+    background: var(--health-wash);
+    border-color: var(--health-edge);
 }
 
 .board__row--self .board__name { color: var(--text-primary); font-weight: 600; }
@@ -896,12 +965,31 @@
 
 .app-dock > * { pointer-events: auto; }
 
+/* The bottom scroll edge: behind the grip and the tab bar the page fades to
+   its own foot colour, so text no longer runs under the grip or shows
+   through the glass behind the labels. Taps and swipes pass straight
+   through it. Mirrored in Dock.kt (DockEdge). */
+.app-dock::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: -1;
+    height: calc(var(--dock-clearance) + var(--ai-handle-height) + var(--dock-fade));
+    background: linear-gradient(0deg,
+        rgba(var(--ground-deep), 0.86) 0%,
+        rgba(var(--ground-deep), 0.78) calc(var(--dock-clearance) * 0.6),
+        rgba(var(--ground-deep), 0.5) calc(var(--dock-clearance) + var(--ai-handle-height) * 0.5),
+        rgba(var(--ground-deep), 0) 100%);
+    pointer-events: none;
+}
+
 /* Pull-up affordance, and a tap target for anyone not using the gesture. */
 .ai-handle {
     display: grid;
     place-items: center;
     width: 128px;
-    height: 40px;
+    height: var(--ai-handle-height);
     border-radius: var(--radius-pill);
 }
 
@@ -949,7 +1037,7 @@
             rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
             rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 44%,
             rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), 0.62);
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
     /* The blur is what makes it translucent rather than see-through: the
        page's colour and brightness still move under the glass, its words do
        not survive the trip.
@@ -1087,14 +1175,16 @@
 .tab__glow,
 .tabbar__glass {
     border-radius: var(--radius-pill);
-    background: linear-gradient(178deg,
-        rgba(255, 255, 255, calc(0.20 * var(--glint-k))) 0%,
-        rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 48%,
-        rgba(255, 255, 255, calc(0.085 * var(--glint-k))) 100%);
+    background:
+        linear-gradient(var(--tab-selected-tint), var(--tab-selected-tint)),
+        linear-gradient(178deg,
+            rgba(255, 255, 255, calc(0.20 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 48%,
+            rgba(255, 255, 255, calc(0.085 * var(--glint-k))) 100%);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, calc(0.28 * var(--glint-k))),
         inset 0 -1px 0 rgba(255, 255, 255, calc(0.05 * var(--glint-k))),
-        0 2px 7px rgba(var(--shade), calc(0.20 * var(--shade-k)));
+        0 2px 7px rgba(var(--shade), calc(var(--tab-selected-shade) * var(--shade-k)));
     pointer-events: none;
 }
 
@@ -1192,7 +1282,8 @@
 .disclaimer {
     margin-top: var(--space-2);
     padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
 }

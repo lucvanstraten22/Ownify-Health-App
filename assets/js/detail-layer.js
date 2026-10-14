@@ -97,6 +97,9 @@
         place(opening ? 1 : 0);
         nav.refresh();
 
+        /* Reduced motion: the detail arriving, or the page it uncovers, fades in. */
+        nav.fadeIn(opening ? detail : (parent || deck.querySelector('.rail')));
+
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(function () {
             settleTimer = null;

@@ -342,7 +342,7 @@ foreach ($page['blocks'] as $block) {
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
                             <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
 
-                            <div class="card">
+                            <div class="card settings-rows">
                                 <div class="metric-rows">
                                     <?php foreach ($block['items'] as $item): ?>
                                         <div class="metric-row">

@@ -146,7 +146,7 @@ private fun Hero(data: AppData, goal: Goal) {
                 T("${goal.categoryLabel} · ${goal.typeLabel}", JStyle.Caption, uppercase = true)
                 T(
                     goal.name,
-                    OwnifyType.style(if (narrow) 19.sp else 22.sp, FontWeight.SemiBold, tracking = (-0.025).em, lineHeight = 1.2.em),
+                    OwnifyType.style(if (narrow) Ownify.FsTitle3 else Ownify.FsTitle1, FontWeight.SemiBold, tracking = (-0.025).em, lineHeight = 1.2.em),
                     Modifier.padding(top = Ownify.Space1).semantics { heading() }
                 )
             }
@@ -170,19 +170,19 @@ private fun Hero(data: AppData, goal: Goal) {
                 T(
                     countUpText(goal.percent?.toString() ?: "—", play && !empty),
                     OwnifyType.style(
-                        if (narrow) 38.4.sp else LocalScreen.current.fsScore, FontWeight.Bold,
+                        if (narrow) Ownify.FsScoreMd else LocalScreen.current.fsScore, FontWeight.Bold,
                         if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
                         tracking = (-0.045).em, lineHeight = 1.em, tabular = true
                     ),
                     Modifier.alignByBaseline()
                 )
-                if (!empty) T("%", OwnifyType.style(17.sp, color = Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 3.dp))
+                if (!empty) T("%", OwnifyType.style(Ownify.FsHeadline, color = Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 3.dp))
             }
             Column(Modifier.alignByBaseline(), horizontalAlignment = Alignment.End) {
                 T(labels["target"].orEmpty(), JStyle.Caption, uppercase = true, align = TextAlign.End)
                 T(
                     goal.targetLabel.ifEmpty { "—" },
-                    OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em, tabular = true),
+                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em, tabular = true),
                     Modifier.padding(top = Ownify.Space1),
                     align = TextAlign.End
                 )
@@ -509,7 +509,7 @@ private fun RowFrame(first: Boolean, content: @Composable androidx.compose.found
 private fun LabelWithNote(label: String, note: String, modifier: Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
-        if (note.isNotEmpty()) T(note, JStyle.Tiny)
+        if (note.isNotEmpty()) T(note, JStyle.Footnote)
     }
 }
 
@@ -568,8 +568,8 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                         .fillMaxWidth()
                         .padding(top = Ownify.Space2)
                         .clip(shape)
-                        .background(Ownify.AttentionWash.copy(alpha = 0.10f))
-                        .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.34f), shape)
+                        .background(Ownify.AttentionWash)
+                        .border(1.dp, Ownify.AttentionEdge, shape)
                         .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSmall))
@@ -582,7 +582,7 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                                 GoalBoard.delete(context, goal.id)
                             },
                             modifier = Modifier.weight(1f),
-                            look = BtnLook(border = Ownify.AttentionWash.copy(alpha = 0.45f), fill = Ownify.AttentionWash.copy(alpha = 0.18f))
+                            look = BtnLook(border = Ownify.AttentionStrong, fill = Ownify.AttentionFill)
                         )
                     }
                 }

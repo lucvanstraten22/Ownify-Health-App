@@ -253,12 +253,14 @@
      */
     function settle(target) {
         target = nav.clamp(target, 0, pages.length - 1);
+        var moved = target !== index;
         drag = null;
         index = target;
 
         rail.classList.remove('is-dragging');
         deck.dataset.pageState = 'moving';
         place(target);
+        if (moved) { nav.fadeIn(pages[target]); }
 
         document.documentElement.dataset.activePage = currentId();
         syncTabs();

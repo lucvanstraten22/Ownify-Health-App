@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');   // read live: it can change while open
 
     /* ------------------------------------------------ scroll-linked chrome */
 
@@ -202,7 +202,7 @@
 
         if (fab) {
             fab.addEventListener('click', function () {
-                scroller.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+                scroller.scrollTo({ top: 0, behavior: reduceQuery.matches ? 'auto' : 'smooth' });
                 var main = document.getElementById('main');
                 if (main) { main.focus({ preventScroll: true }); }
             });
@@ -217,7 +217,7 @@
         var items = document.querySelectorAll('.reveal');
         if (!items.length) { return; }
 
-        if (reduceMotion || !('IntersectionObserver' in window)) {
+        if (reduceQuery.matches || !('IntersectionObserver' in window)) {
             Array.prototype.forEach.call(items, function (item) {
                 item.classList.add('is-visible');
             });

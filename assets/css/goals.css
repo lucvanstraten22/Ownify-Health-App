@@ -7,14 +7,9 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   Page head — title, the add button and the Actief / Behaald switch
-
-   The page runs a little tighter to the header than the others do: three
-   goals, two labels and a note have to land on one screen, and every pixel
-   above the first card is one the third card does not get.
+   Page head — title, the add button and the Actief / Behaald switch. The
+   title starts where every page's does (--page-intro-top).
    -------------------------------------------------------------------------- */
-[data-page="goals"] .app__main { padding-top: var(--space-3); }
-
 .goals-intro {
     display: flex;
     flex-direction: column;
@@ -70,7 +65,8 @@
     align-items: center;
     gap: var(--space-2);
     padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -112,7 +108,8 @@
 
 .goals-slots {
     padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -159,7 +156,7 @@
 .goal-card__name {
     display: block;
     margin-top: 2px;
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
     color: var(--text-primary);
@@ -240,19 +237,23 @@
 }
 
 /* The whole of the priority signal, and it costs three pixels. */
+/* It stops a corner's radius short of the top and the bottom and has round
+   ends, so the card's curve never cuts it into a crescent. GoalsPage.kt
+   draws the same. */
 .goal-card--primary::after {
     content: "";
     position: absolute;
-    inset-block: 0;
+    inset-block: var(--radius-card);
     inset-inline-start: 0;
     width: 3px;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
     background: linear-gradient(180deg,
         var(--accent),
         color-mix(in srgb, var(--accent) 35%, transparent));
     pointer-events: none;
 }
 
-.goal-card--primary .goal-card__name { font-size: 1.1875rem; }
+.goal-card--primary .goal-card__name { font-size: var(--fs-title-3); }
 .goal-card--primary .meter--goal { height: 10px; }
 
 /* --- secondary: the same card, a little quieter ------------------------ */
@@ -275,11 +276,11 @@
 .goal-card--completed .icon-tile .icon { width: 17px; height: 17px; }
 
 .goal-card--secondary .meter--goal { height: 8px; }
-.goal-card--secondary .goal-card__percent-value { font-size: 1.5rem; }
+.goal-card--secondary .goal-card__percent-value { font-size: var(--fs-figure); }
 
 /* --- completed: finished, not faded out -------------------------------- */
 .goal-card--completed .meter--goal { height: 8px; }
-.goal-card--completed .goal-card__percent-value { font-size: 1.5rem; }
+.goal-card--completed .goal-card__percent-value { font-size: var(--fs-figure); }
 
 .goal-card__done {
     display: grid;
@@ -397,7 +398,7 @@
 
 .goal-hero__name {
     margin-top: var(--space-1);
-    font-size: 1.375rem;
+    font-size: var(--fs-title-1);
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.2;
@@ -435,7 +436,7 @@
 
 .goal-hero__percent-sign {
     margin-left: 3px;
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     color: var(--text-muted);
 }
 
@@ -451,7 +452,7 @@
 .goal-hero__target strong {
     display: block;
     margin-top: var(--space-1);
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
     text-transform: none;
@@ -513,7 +514,8 @@
 }
 
 .goal-source__note {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -577,7 +579,8 @@
 .goal-manage__hint {
     display: block;
     margin-top: var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     font-weight: 400;
     color: var(--text-secondary);
 }
@@ -586,9 +589,9 @@
 .goal-confirm {
     margin-top: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid rgba(191, 168, 99, 0.34);
+    border: 1px solid var(--attention-edge);
     border-radius: var(--radius-md);
-    background: rgba(191, 168, 99, 0.10);
+    background: var(--attention-wash);
 }
 
 .goal-confirm[hidden] { display: none; }
@@ -606,8 +609,8 @@
 }
 
 .goal-confirm__yes {
-    border-color: rgba(191, 168, 99, 0.45);
-    background: rgba(191, 168, 99, 0.18);
+    border-color: var(--attention-strong);
+    background: var(--attention-fill);
 }
 
 /* ==========================================================================
@@ -688,6 +691,7 @@
 .wizard__count {
     margin-top: var(--space-2);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -719,7 +723,7 @@
 }
 
 .wizard__title {
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }
@@ -755,15 +759,16 @@
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-label);
+    font-size: var(--fs-input);
 }
 
-.wizard__input::placeholder { color: var(--text-faint); }
+.wizard__input::placeholder { color: var(--text-muted); }
 
 .wizard__input:focus-visible {
     outline: none;
-    border-color: color-mix(in srgb, var(--health) 50%, transparent);
+    border-color: var(--health-strong);
     background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
+    box-shadow: var(--focus-halo);
 }
 
 .wizard__row {
@@ -797,7 +802,8 @@
 
 .wizard__hint {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -818,6 +824,7 @@
     border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
     white-space: nowrap;
     transition: background-color var(--transition-fast), border-color var(--transition-fast);
@@ -844,7 +851,8 @@
     border: 0;
     padding: 0;
     background: none;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -920,13 +928,14 @@
 .wizard-type__hint {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .wizard-type[aria-pressed="true"] {
-    border-color: rgba(60, 158, 114, 0.40);
-    background: rgba(60, 158, 114, 0.12);
+    border-color: var(--health-strong);
+    background: var(--health-fill);
 }
 
 /* ---------------------------------------------------------- 4 · durations */
@@ -966,13 +975,14 @@
     display: block;
     margin-top: 2px;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
 }
 
 .wizard-duration[aria-pressed="true"] {
-    border-color: rgba(60, 158, 114, 0.40);
-    background: rgba(60, 158, 114, 0.12);
+    border-color: var(--health-strong);
+    background: var(--health-fill);
 }
 
 /* ------------------------------------------------------------ 5 · summary */
@@ -1018,7 +1028,7 @@
 .wizard__done-mark {
     margin-inline: auto;
     color: var(--health);
-    background: rgba(60, 158, 114, 0.14);
+    background: var(--health-fill);
 }
 
 .wizard__preview { margin-top: var(--space-4); }
@@ -1045,8 +1055,8 @@
 
 .wizard__next {
     flex: 1;
-    border-color: rgba(60, 158, 114, 0.38);
-    background: rgba(60, 158, 114, 0.16);
+    border-color: var(--health-strong);
+    background: var(--health-fill);
 }
 
 .wizard__next[hidden] { display: none; }
@@ -1064,12 +1074,12 @@
     .goal-card--secondary,
     .goal-card--completed { padding: var(--space-3); }
 
-    .goal-card--primary .goal-card__name { font-size: 1.0625rem; }
-    .goal-card__percent-value { font-size: 1.5rem; }
+    .goal-card--primary .goal-card__name { font-size: var(--fs-headline); }
+    .goal-card__percent-value { font-size: var(--fs-figure); }
     .goal-card__target { font-size: var(--fs-small); }
 
-    .goal-hero__percent-value { font-size: 2.4rem; }
-    .goal-hero__name { font-size: 1.1875rem; }
+    .goal-hero__percent-value { font-size: var(--fs-score-md); }
+    .goal-hero__name { font-size: var(--fs-title-3); }
 
     .wizard__grid { grid-template-columns: minmax(0, 1fr); }
     .wizard__durations { grid-template-columns: minmax(0, 1fr); }
@@ -1146,6 +1156,7 @@
     border: 1px solid transparent;
     background: var(--glass-soft);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-faint);
 }
@@ -1238,16 +1249,22 @@
    repeating "kg" on every tick. */
 .goal-chart__unit {
     margin: 0 0 6px;
-    text-align: right;
+    text-align: left;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
+/* The gutter, 8, the plot: the levels are named on the left, as on every
+   chart over time (docs/CHARTS.md; GoalChart.kt does the same). */
 .goal-chart__frame {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--gutter);
+    grid-template-columns: var(--gutter) minmax(0, 1fr);
     column-gap: var(--space-2);
 }
+
+.goal-chart__frame > .goal-chart__plot { grid-column: 2; grid-row: 1; }
+.goal-chart__frame > .goal-chart__y { grid-column: 1; grid-row: 1; }
 
 .goal-chart__plot {
     position: relative;
@@ -1311,6 +1328,7 @@
     position: absolute;
     transform: translate(-100%, calc(-100% - 9px));
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
@@ -1389,6 +1407,7 @@
    one, because it is what the finger went looking for. */
 .goal-chart__tip-date {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     line-height: 1.25;
     color: var(--text-muted);
 }
@@ -1404,6 +1423,7 @@
 /* What the day did and how far the goal was then: "+ 2,5 km · 62% van je doel". */
 .goal-chart__tip-note {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     line-height: 1.25;
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
@@ -1435,6 +1455,7 @@
     right: 0;
     transform: translateY(-50%);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
     white-space: nowrap;
@@ -1442,10 +1463,10 @@
 
 /* The X axis spans the plot only, not the gutter beside it. */
 .goal-chart__x {
-    margin-right: calc(var(--gutter) + var(--space-2));
+    margin-left: calc(var(--gutter) + var(--space-2));
 }
 
-.goal-chart__x .chart__tick.is-center { transform: translateX(-50%); }
+.goal-chart__x .chart__tick.is-center { transform: translateX(calc(-50% + var(--edge-shift, 0px))); }
 .goal-chart__x .chart__tick.is-start  { transform: none; }
 .goal-chart__x .chart__tick.is-end    { transform: translateX(-100%); }
 

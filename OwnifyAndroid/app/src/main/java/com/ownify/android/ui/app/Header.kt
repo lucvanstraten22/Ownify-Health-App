@@ -1,5 +1,11 @@
 package com.ownify.android.ui.app
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.layout
 import com.ownify.android.i18n.trn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -37,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import com.ownify.android.ui.design.hitArea
 import com.ownify.android.ui.design.GlassFilter
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.OwnifyIcons
@@ -116,9 +123,10 @@ fun SharedHeader(
 
 /**
  * The header's frame: safe top + 12 above, 12 below and a 1 px line; clear
- * at rest, tinted and blurred once the page under it moves. The switch is
- * immediate, as on the website: a gradient and a backdrop filter do not
- * transition.
+ * at rest, tinted and blurred once the page under it moves (`.app-header::before`).
+ * The tint and the blur fade out together towards the bottom and reach
+ * [Ownify.EdgeFade] past the frame — a scroll edge, not a line — and the
+ * veil fades in and out over `--transition-fast`, as on the website.
  */
 @Composable
 fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
@@ -126,18 +134,36 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Comp
     val backdrop = LocalBackdrop.current
     val ground = LocalGround.current
     val blurLayer = rememberBlurLayer()
+    val veil by animateFloatAsState(if (scrolled) 1f else 0f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "veil")
 
     Box(modifier.fillMaxWidth()) {
-        if (scrolled) {
+        if (veil > 0f) {
             Box(
                 Modifier
                     .matchParentSize()
+                    .layout { measurable, constraints ->
+                        val extra = Ownify.EdgeFade.roundToPx()
+                        val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + extra))
+                        layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                    }
+                    .graphicsLayer {
+                        alpha = veil
+                        compositingStrategy = CompositingStrategy.Offscreen
+                    }
+                    // mask-image: the blur fades with the tint.
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
                     .glassBackdrop(backdrop, RectangleShape, ScrolledFilter, blurLayer, ground)
                     .drawBehind {
                         drawRect(
                             Brush.verticalGradient(
                                 0f to Ownify.BgMain.copy(alpha = 0.95f),
-                                0.58f to Ownify.BgMain.copy(alpha = 0.88f),
+                                0.5f to Ownify.BgMain.copy(alpha = 0.88f),
                                 1f to Ownify.BgMain.copy(alpha = 0f)
                             )
                         )
@@ -169,9 +195,12 @@ fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, conte
     ) {
         Pane(
             Modifier
-                .size(Ownify.HeaderButton)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-                .semantics { contentDescription = label },
+                .hitArea(
+                    Modifier
+                        .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                        .semantics { contentDescription = label }
+                )
+                .size(Ownify.HeaderButton),
             style = if (pressed) Panes.HeaderButtonPressed else Panes.HeaderButton,
             content = content
         )

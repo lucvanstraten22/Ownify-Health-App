@@ -11,10 +11,13 @@
    -------------------------------------------------------------------------- */
 .page-intro { padding-inline: var(--space-2); }
 
+/* A page's own title: one step above every card title, so the page has a
+   clear top level (JStyle.LargeTitle in the app). */
 .page-intro__title {
-    font-size: var(--fs-section);
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: var(--fs-large-title);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: var(--tracking-large-title);
 }
 
 .page-intro__lede {
@@ -100,6 +103,7 @@
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     color: var(--text-muted);
     transition: color var(--transition-fast), background-color var(--transition-fast);
@@ -177,6 +181,7 @@
     top: 0;
     transform: translateX(-50%);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -240,9 +245,11 @@
 
 /* A chart over time names its dates each centred under its day
    (components/chart-axis.php, docs/CHARTS.md). */
+/* Centred under its day; --edge-shift (chart-axis.js) moves an end date in
+   by just as much as would stick out past the axis. */
 .chart__axis--days .chart__tick,
 .chart__axis--days .chart__tick:first-child,
-.chart__axis--days .chart__tick:last-child { transform: translateX(-50%); text-align: center; }
+.chart__axis--days .chart__tick:last-child { transform: translateX(calc(-50% + var(--edge-shift, 0px))); text-align: center; }
 
 /* Over 30 and 90 days, two rows: the day over its month where the month
    begins. A history card keeps the room for both rows in every period, so
@@ -276,6 +283,7 @@
 
 .health-history__tip-label {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     line-height: 1.4;
     color: var(--text-secondary);
 }
@@ -284,6 +292,7 @@
 
 .health-history__tip-none {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     line-height: 1.4;
     color: var(--text-muted);
 }
@@ -307,12 +316,13 @@
 
 .metric-tile__label {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .metric-tile__value {
     margin-top: var(--space-1);
-    font-size: 1.25rem;
+    font-size: var(--fs-title-2);
     font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.03em;
@@ -367,6 +377,7 @@
 .metric-row__unit {
     margin-left: 3px;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 500;
     color: var(--text-muted);
 }
@@ -508,9 +519,9 @@
         gap: var(--space-2);
     }
 
-    .health-card .score-value__number { font-size: 1.5rem; }
-    .health-card .score-value__max { font-size: var(--fs-tiny); }
-    .health-card__label { font-size: var(--fs-tiny); }
+    .health-card .score-value__number { font-size: var(--fs-figure); }
+    .health-card .score-value__max { font-size: var(--fs-tiny); letter-spacing: var(--tracking-small); }
+    .health-card__label { font-size: var(--fs-tiny); letter-spacing: var(--tracking-small); }
     .health-card .icon-tile { width: 28px; height: 28px; }
 
     .metric-tiles { gap: var(--space-2); }

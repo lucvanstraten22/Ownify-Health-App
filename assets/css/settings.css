@@ -35,9 +35,23 @@
     overflow: hidden;
 }
 
-/* Every direct child of a settings card is a row, whatever it is. */
+/* Every direct child of a settings card is a row, whatever it is. The
+   hairline between two rows starts where the row's text does — after the
+   icon on a row that has one — and runs to the card's edge, as a grouped
+   list's does (SettingsPage.kt, settingsRow). */
 .settings-card > * + * {
-    border-top: 1px solid var(--glass-hairline);
+    position: relative;
+}
+
+.settings-card > * + *::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: var(--row-inset, var(--space-4));
+    right: 0;
+    height: 1px;
+    background: var(--glass-hairline);
+    pointer-events: none;
 }
 
 /* --------------------------------------------------------------------------
@@ -59,6 +73,8 @@
 }
 
 .settings-row {
+    /* Its text starts after the padding, the 30px mark and the gap. */
+    --row-inset: calc(var(--space-4) + 30px + var(--space-3));
     grid-template-columns: auto minmax(0, 1fr) auto;
     transition: background-color var(--transition-fast);
 }
@@ -117,7 +133,9 @@
     align-items: center;
     gap: var(--space-4);
     width: 100%;
-    padding: var(--space-4) var(--space-5);
+    /* The rows' own inner padding, so its avatar and chevron line up with
+       the icons and chevrons in the cards under it. */
+    padding: var(--space-4);
     text-align: left;
     transition: transform var(--transition-fast);
 }
@@ -146,7 +164,7 @@
 
 .settings-identity__name {
     display: block;
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
     overflow: hidden;
@@ -180,7 +198,8 @@
 .settings-logout__icon { width: 17px; height: 17px; }
 
 .settings-actions__note {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -250,7 +269,8 @@
 .settings-field__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -314,7 +334,7 @@
 
 .settings-hero__name {
     margin-top: var(--space-3);
-    font-size: 1.25rem;
+    font-size: var(--fs-title-2);
     font-weight: 600;
     letter-spacing: -0.02em;
 }
@@ -344,7 +364,8 @@
 .settings-option__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -410,7 +431,8 @@
     display: block;
     margin-top: var(--space-1);
     max-width: 44ch;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -432,7 +454,8 @@
 .settings-toggle__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -497,8 +520,6 @@
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-card);
     background: var(--surface-gradient-quiet);
-    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
-    backdrop-filter: blur(var(--blur-card)) saturate(130%);
     box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
     overflow: hidden;
     transition: border-color var(--transition-slow);
@@ -538,7 +559,8 @@
 .integration__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -551,6 +573,7 @@
     gap: var(--space-2);
     flex: none;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -566,7 +589,7 @@
 
 .integration.is-connected .integration__dot {
     background: var(--health);
-    box-shadow: 0 0 0 3px rgba(60, 158, 114, 0.18);
+    box-shadow: 0 0 0 3px var(--health-fill);
 }
 
 .integration__chevron {
@@ -625,6 +648,7 @@
    stop lining up with each other. */
 .device__id span {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -645,9 +669,14 @@
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     transition: color var(--transition-fast);
 }
+
+/* "Nu in gebruik" and the other plain lists of values: the same inner
+   padding as the choice lists beside them, so their text starts on one line. */
+.card.settings-rows { padding: var(--space-3) var(--space-4); }
 
 .btn--link:hover,
 .btn--link:focus-visible { color: var(--text-primary); }
@@ -665,7 +694,8 @@
     align-items: center;
     gap: var(--space-2);
     margin-top: var(--space-3);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -741,12 +771,12 @@
 .confirm__mark {
     margin-inline: auto;
     color: var(--attention);
-    background: rgba(191, 168, 99, 0.16);
+    background: var(--attention-fill);
 }
 
 .confirm__title {
     margin-top: var(--space-3);
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }
@@ -765,8 +795,8 @@
 }
 
 .confirm__yes {
-    border-color: rgba(191, 168, 99, 0.45);
-    background: rgba(191, 168, 99, 0.18);
+    border-color: var(--attention-strong);
+    background: var(--attention-fill);
 }
 
 .confirm__note {
@@ -776,7 +806,8 @@
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: left;
 }
@@ -802,9 +833,9 @@
 .confirm__error {
     margin-top: var(--space-3);
     padding: var(--space-3);
-    border: 1px solid rgba(191, 168, 99, 0.34);
+    border: 1px solid var(--attention-edge);
     border-radius: var(--radius-sm);
-    background: rgba(191, 168, 99, 0.10);
+    background: var(--attention-wash);
     font-size: var(--fs-small);
     color: var(--text-primary);
     text-align: left;
@@ -820,11 +851,11 @@
     .settings-field,
     .settings-option,
     .settings-state,
-    .settings-toggle { padding-inline: var(--space-3); }
+    .settings-toggle { padding-inline: var(--space-3); --row-inset: var(--space-3); }
 
-    .settings-row { gap: var(--space-2); }
+    .settings-row { gap: var(--space-2); --row-inset: calc(var(--space-3) + 30px + var(--space-2)); }
 
-    .settings-identity { padding-inline: var(--space-4); gap: var(--space-3); }
+    .settings-identity { padding-inline: var(--space-3); gap: var(--space-3); }
     .settings-identity__avatar { width: 42px; height: 42px; }
 
     .integration__head {
@@ -870,13 +901,14 @@
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-label);
+    font-size: var(--fs-input);
 }
 
 .field-editor__input:focus-visible {
     outline: none;
-    border-color: rgba(60, 158, 114, 0.5);
+    border-color: var(--health-strong);
     background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
+    box-shadow: var(--focus-halo);
 }
 
 /* A number field that carries its unit, so the unit is not left to a label. */
@@ -914,8 +946,8 @@
 }
 
 .field-editor__option.is-active {
-    border-color: rgba(60, 158, 114, 0.5);
-    background: rgba(60, 158, 114, 0.14);
+    border-color: var(--health-strong);
+    background: var(--health-fill);
     color: var(--text-primary);
 }
 
@@ -939,7 +971,7 @@
 .pairing__code {
     margin-top: var(--space-4);
     font-family: var(--font-mono);
-    font-size: 1.75rem;
+    font-size: var(--fs-large-title);
     font-weight: 600;
     letter-spacing: 0.18em;
     text-align: center;
@@ -948,7 +980,8 @@
 
 .pairing__expiry {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
 }

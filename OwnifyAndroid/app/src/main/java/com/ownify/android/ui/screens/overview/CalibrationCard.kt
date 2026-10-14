@@ -146,7 +146,7 @@ private fun StartRow(row: CalibrationStart) {
         Tile(row.icon, row.accent)
         Column(Modifier.weight(1f)) {
             T(row.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em))
-            row.fact?.let { T(it, JStyle.Tiny, Modifier.padding(top = 2.dp)) }
+            row.fact?.let { T(it, JStyle.Footnote, Modifier.padding(top = 2.dp)) }
         }
         ScoreValue(row.value, row.band)
     }

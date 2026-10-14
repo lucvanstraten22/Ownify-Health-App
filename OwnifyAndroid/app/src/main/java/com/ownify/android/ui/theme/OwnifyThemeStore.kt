@@ -74,13 +74,14 @@ object OwnifyThemeStore {
 
     /**
      * In an activity's onCreate, before anything is drawn: the theme on
-     * screen, and the window in it — its ground, its bars and the system's
+     * screen (with the phone's contrast setting, Contrast.kt), and the window in it — its ground, its bars and the system's
      * own pieces (Theme.Ownify.Light when White).
      */
     fun restore(activity: Activity): OwnifyMode {
         choice = preference(activity)
         val mode = choice.mode(phoneDark(activity))
         Ownify.use(mode)
+        Ownify.useMoreContrast(wantsMoreContrast(activity))
         activity.setTheme(if (mode == OwnifyMode.LIGHT) R.style.Theme_Ownify_Light else R.style.Theme_Ownify)
         return mode
     }

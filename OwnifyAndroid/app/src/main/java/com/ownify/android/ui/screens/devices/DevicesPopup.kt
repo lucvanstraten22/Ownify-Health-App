@@ -135,7 +135,7 @@ fun StatusDot(text: String, connected: Boolean) {
                 .size(6.dp)
                 .drawBehind {
                     if (connected) {
-                        drawCircle(Ownify.Health.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
+                        drawCircle(Ownify.HealthFill, radius = size.width / 2f + 3.dp.toPx())
                         drawCircle(Ownify.Health)
                     } else {
                         drawCircle(Ownify.TextFaint)

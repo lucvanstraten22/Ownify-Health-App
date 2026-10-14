@@ -48,6 +48,7 @@
     background: transparent;
     color: var(--text-secondary);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     transition: color var(--transition-fast);
 }
@@ -144,6 +145,7 @@
 
 .setup-choice__line {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -230,7 +232,8 @@
 }
 
 .setup-source__note {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -240,6 +243,7 @@
     gap: 6px;
     flex: none;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     color: var(--text-secondary);
 }
@@ -267,6 +271,7 @@
 .setup-source__sync {
     margin-top: var(--space-2);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -313,7 +318,8 @@
 
 .setup-field__reason {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -326,7 +332,8 @@
 
 .setup-field__note {
     margin-top: var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -377,7 +384,8 @@
 
 .setup-suggestion__summary {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 

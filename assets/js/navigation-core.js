@@ -53,10 +53,25 @@ window.AppNav = (function () {
     var TURN_MIN = 8;      // at least this far, over at least
     var TURN_SPAN = 24;    // this long
 
+    var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
     var api = {
         deck: deck,
-        reduceMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        /* Kept up to date: the setting can change while the page is open. */
+        reduceMotion: reduceQuery.matches,
         duration: 280,
+
+        /**
+         * With reduced motion nothing slides: a layer is placed at once, and
+         * the one arriving — or the one uncovered — fades in instead, briefly
+         * (--reduce-fade, 180ms). The Web Animations API, so the stylesheet's
+         * reduced-motion rule (which stops CSS animations) leaves it alone.
+         * The app does the same (ShellState.kt).
+         */
+        fadeIn: function (el) {
+            if (!api.reduceMotion || !el || typeof el.animate !== 'function') { return; }
+            el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+        },
 
         /** Shared, so every controller can read what the others are doing. */
         state: { aiOpen: false, detailOpen: false },
@@ -155,6 +170,13 @@ window.AppNav = (function () {
             return completes ? base + toward : base;
         }
     };
+
+    function onReduceChange(event) { api.reduceMotion = event.matches; }
+    if (typeof reduceQuery.addEventListener === 'function') {
+        reduceQuery.addEventListener('change', onReduceChange);
+    } else if (typeof reduceQuery.addListener === 'function') {
+        reduceQuery.addListener(onReduceChange);
+    }
 
     if (!deck) { return api; }
 

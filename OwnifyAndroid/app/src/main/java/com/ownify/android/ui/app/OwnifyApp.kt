@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,11 +41,14 @@ import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalStillMotion
+import com.ownify.android.ui.design.rememberReducedMotion
 import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.ground
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.rememberMoreContrast
 
 /** Which screen the app is: the website decides this from the session; the app from its credential. */
 private enum class Route { Splash, Welcome, Paired, App }
@@ -61,8 +65,12 @@ fun OwnifyApp(screens: ShellScreens, signedOut: SignedOutScreens) {
 
     LaunchedEffect(Unit) { OwnifyConnection.start(context) }
 
+    // More contrast, followed while the app is open (restore() set it before the first frame).
+    val moreContrast = rememberMoreContrast()
+    SideEffect { Ownify.useMoreContrast(moreContrast) }
+
     BoxWithConstraints(Modifier.fillMaxSize().background(Ownify.BgDeep)) {
-        CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight)) {
+        CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight), LocalReducedMotion provides rememberReducedMotion()) {
             val state = OwnifyConnection.state
             val last = remember { arrayOf(Route.Splash) }
 

@@ -342,8 +342,8 @@ private fun SetupColumn(data: AppData, setup: Setup, step: String, index: Int, d
 @Composable
 private fun Primary(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val look = BtnLook(
-        border = if (enabled) Ownify.Health.copy(alpha = 0.38f) else Ownify.GlassBorderSoft,
-        fill = if (enabled) Ownify.Health.copy(alpha = 0.16f) else Ownify.GlassSoft
+        border = if (enabled) Ownify.HealthStrong else Ownify.GlassBorderSoft,
+        fill = if (enabled) Ownify.HealthFill else Ownify.GlassSoft
     )
     Btn(label, onClick = onClick, enabled = enabled, look = look, modifier = modifier.heightIn(min = 48.dp))
 }
@@ -442,7 +442,7 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
             OwnifyIcons.named(source.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = if (linked) Ownify.Health else Ownify.TextSecondary) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 T(source.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
-                T(source.note, JStyle.Tiny)
+                T(source.note, JStyle.Footnote)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(Modifier.size(7.dp).clip(CircleShape).background(if (linked) Ownify.Health else Ownify.TextFaint))
@@ -520,11 +520,11 @@ private fun ProfileField(field: SetupField, value: String, onChange: (String, St
                 if (input.unit.isNotEmpty()) T(input.unit, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted))
             }
         }
-        T(field.reason, JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+        T(field.reason, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
         if (!field.locked && field.note != null) {
             Row(Modifier.padding(top = Ownify.Space1), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 JIcon(OwnifyIcons.lock, size = 13.dp, color = Ownify.TextMuted)
-                T(field.note, JStyle.Tiny)
+                T(field.note, JStyle.Footnote)
             }
         }
     }
@@ -559,7 +559,7 @@ private fun ColumnScope.GoalStep(
             T(suggestion.eyebrow, JStyle.Caption, uppercase = true)
             T(suggestion.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em), Modifier.padding(top = Ownify.Space2))
             T(suggestion.basis, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
-            T(suggestion.summary, JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+            T(suggestion.summary, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
             Row(Modifier.padding(top = Ownify.Space4), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 Primary(suggestion.add, enabled = !busy) { onAdd(suggestion.input) }
                 LinkButton(suggestion.decline, enabled = !busy) { onDecline() }

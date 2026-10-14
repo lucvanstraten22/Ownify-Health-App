@@ -113,8 +113,9 @@ fun CommunityPage(data: AppData) {
         ) {
             T(
                 community.title,
-                JStyle.Section,
-                Modifier.padding(horizontal = Ownify.Space2).padding(bottom = Ownify.Space1).semantics { heading() }
+                JStyle.LargeTitle,
+                // `--page-intro-top`: the title starts where every page's does.
+                Modifier.padding(horizontal = Ownify.Space2).padding(top = screen.mainTop, bottom = Ownify.Space1).semantics { heading() }
             )
             RangeSwitch(
                 options = community.scopes.map { it.key to it.label },
@@ -341,7 +342,7 @@ private fun BoardRow(
                 if (sticky != null) {
                     drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows, outline)
                 }
-                if (you) drawBorder(outline, Ownify.Health.copy(alpha = 0.30f))
+                if (you) drawBorder(outline, Ownify.HealthEdge)
                 drawContent()
             }
             .clearAndSetSemantics {

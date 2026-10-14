@@ -30,10 +30,12 @@
 
 .community__title {
     padding-inline: var(--space-2);
+    padding-top: var(--page-intro-top);
     padding-bottom: var(--space-1);
-    font-size: var(--fs-section);
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: var(--fs-large-title);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: var(--tracking-large-title);
 }
 
 /* Two options fill the width; three share it evenly. */
@@ -177,6 +179,7 @@
 .board-row__unit {
     margin-left: 3px;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 500;
     color: var(--text-muted);
 }
@@ -187,7 +190,7 @@
    to whichever edge it would otherwise leave. One element, never a duplicate.
    -------------------------------------------------------------------------- */
 .board-row--you {
-    border-color: rgba(60, 158, 114, 0.30);
+    border-color: var(--health-edge);
     background: linear-gradient(180deg, rgba(60, 158, 114, 0.10), rgba(60, 158, 114, 0.045));
 }
 
@@ -265,6 +268,7 @@
 
 .board-gap__label {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -291,7 +295,7 @@
 
 .board-empty__title {
     margin-top: var(--space-4);
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }

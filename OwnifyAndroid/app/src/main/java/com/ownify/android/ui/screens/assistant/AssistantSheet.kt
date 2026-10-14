@@ -1,5 +1,10 @@
 package com.ownify.android.ui.screens.assistant
 
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -225,7 +230,7 @@ private fun IconPill(icon: ImageVector, label: String, active: Boolean = false, 
                 .size(42.dp)
                 .clip(CircleShape)
                 .background(Ownify.GlassSoft)
-                .border(1.dp, if (active) Ownify.Health.copy(alpha = 0.45f) else Ownify.GlassBorderSoft, CircleShape)
+                .border(1.dp, if (active) Ownify.HealthStrong else Ownify.GlassBorderSoft, CircleShape)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics {
                     contentDescription = label
@@ -241,7 +246,7 @@ private fun IconPill(icon: ImageVector, label: String, active: Boolean = false, 
 /* ------------------------------------------------------------- consent */
 
 private val PrimaryLook: BtnLook
-    get() = BtnLook(border = Ownify.Health.copy(alpha = 0.55f), fill = Ownify.Health.copy(alpha = 0.26f))
+    get() = BtnLook(border = Ownify.HealthStrong, fill = Ownify.HealthEdge)
 
 @Composable
 private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
@@ -276,7 +281,7 @@ private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
                 Btn(consent.accept, onClick = { OwnifyAssistant.decide(context, ai, accept = true) }, Modifier.weight(1f), enabled = !busy, look = PrimaryLook)
                 Btn(consent.decline, onClick = { OwnifyAssistant.decide(context, ai, accept = false) }, Modifier.weight(1f), enabled = !busy)
             }
-            T(consent.footer, JStyle.Tiny, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(consent.footer, JStyle.Footnote, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }
@@ -291,7 +296,7 @@ private fun DeclinedScreen(ai: AiCopy, modifier: Modifier) {
             T(ai.declined.title, JStyle.Section, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
             T(ai.declined.body, JStyle.Lede, Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
             Btn(ai.declined.review, onClick = { OwnifyAssistant.reviewing = true }, Modifier.padding(top = Ownify.Space5).widthIn(min = 220.dp))
-            T(ai.consent.footer, JStyle.Tiny, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(ai.consent.footer, JStyle.Footnote, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }
@@ -361,7 +366,7 @@ private fun EmptyState(ai: AiCopy, modifier: Modifier) {
             )
             T(ai.empty.body, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
             if (!hasData && ai.empty.noData.isNotEmpty()) {
-                T(ai.empty.noData, JStyle.Tiny, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+                T(ai.empty.noData, JStyle.Footnote, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             }
             Column(
                 Modifier.padding(top = Ownify.Space5).widthIn(max = 360.dp).fillMaxWidth(),
@@ -421,7 +426,7 @@ private fun UserBubble(text: String) {
                 .widthIn(max = screen.shell * 0.85f)
                 .clip(shape)
                 .background(Brush.verticalGradient(listOf(Ownify.Health.copy(alpha = 0.22f), Ownify.Health.copy(alpha = 0.14f))))
-                .border(1.dp, Ownify.Health.copy(alpha = 0.28f), shape)
+                .border(1.dp, Ownify.HealthEdge, shape)
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3)
         ) {
             T(text, OwnifyType.style(Ownify.FsBody, lineHeight = 1.45.em))
@@ -525,8 +530,8 @@ private fun ActionCard(ai: AiCopy, messageId: Long, action: AiAction) {
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(if (done) Ownify.GlassSoft else Ownify.Health.copy(alpha = 0.08f))
-            .border(1.dp, if (done) Ownify.GlassBorderSoft else Ownify.Health.copy(alpha = 0.32f), shape)
+            .background(if (done) Ownify.GlassSoft else Ownify.HealthWash)
+            .border(1.dp, if (done) Ownify.GlassBorderSoft else Ownify.HealthEdge, shape)
             .padding(Ownify.Space4)
     ) {
         T(action.title, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
@@ -593,16 +598,31 @@ private fun Composer(ai: AiCopy) {
         notice?.let { NoticeCard(ai, it) }
 
         val shape = RoundedCornerShape(26.dp)
+        // `.ai-composer__form:focus-within`: the strong green edge and the focus halo.
+        var focused by remember { mutableStateOf(false) }
         Row(
             Modifier
                 .fillMaxWidth()
+                .drawBehind {
+                    if (focused) {
+                        val ring = Ownify.FocusHaloWidth.toPx()
+                        val r = 26.dp.toPx() + ring / 2f
+                        drawRoundRect(
+                            color = Ownify.FocusHalo,
+                            topLeft = Offset(-ring / 2f, -ring / 2f),
+                            size = Size(size.width + ring, size.height + ring),
+                            cornerRadius = CornerRadius(r, r),
+                            style = Stroke(ring)
+                        )
+                    }
+                }
                 .clip(shape)
                 .background(Ownify.Glass)
-                .border(1.dp, Ownify.GlassBorder, shape)
+                .border(1.dp, if (focused) Ownify.HealthStrong else Ownify.GlassBorder, shape)
                 .padding(start = Ownify.Space4, end = 6.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            val style = OwnifyType.style(16.sp, color = Ownify.TextPrimary, lineHeight = 1.4.em, tracking = 0.sp)
+            val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary, lineHeight = 1.4.em, tracking = 0.sp)
             BasicTextField(
                 value = a.draft,
                 onValueChange = { a.draft = it.take(2000) },
@@ -610,6 +630,7 @@ private fun Composer(ai: AiCopy) {
                     .weight(1f)
                     .heightIn(min = 40.dp)
                     .padding(vertical = 9.dp)
+                    .onFocusChanged { focused = it.isFocused }
                     .semantics { contentDescription = ai.composerAria },
                 enabled = !out,
                 textStyle = style,
@@ -662,8 +683,8 @@ private fun NoticeCard(ai: AiCopy, notice: AiNotice) {
             .fillMaxWidth()
             .padding(bottom = Ownify.Space2)
             .clip(shape)
-            .background(Ownify.AttentionWash.copy(alpha = 0.10f))
-            .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.32f), shape)
+            .background(Ownify.AttentionWash)
+            .border(1.dp, Ownify.AttentionEdge, shape)
             .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3)
             .semantics { liveRegion = LiveRegionMode.Polite },
         verticalAlignment = Alignment.Top
@@ -726,7 +747,7 @@ private fun HistoryPane(ai: AiCopy) {
                             Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(Ownify.RadiusSm))
-                                .background(if (current) Ownify.Health.copy(alpha = 0.12f) else Color.Transparent),
+                                .background(if (current) Ownify.HealthFill else Color.Transparent),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(

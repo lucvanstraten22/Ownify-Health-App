@@ -148,7 +148,7 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
         // `.area-chart__now`: each series' key with its value, never apart; a pair that does not fit goes to the next line.
         FlowRow(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             val latest = chart.latest
-            val valueStyle = OwnifyType.style(17.sp, FontWeight.Bold, tracking = (-0.02).em, lineHeight = 1.25.em, tabular = true)
+            val valueStyle = OwnifyType.style(Ownify.FsHeadline, FontWeight.Bold, tracking = (-0.02).em, lineHeight = 1.25.em, tabular = true)
             if (latest == null || latest.texts.all { it == null }) {
                 T("—", valueStyle.copy(color = Ownify.TextMuted, fontWeight = FontWeight.SemiBold))
             } else {
@@ -319,7 +319,7 @@ private fun AreaChartCard(chart: AreaChart, accent: Accent) {
             )
         }
         if (filled) {
-            T(chart.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(chart.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }

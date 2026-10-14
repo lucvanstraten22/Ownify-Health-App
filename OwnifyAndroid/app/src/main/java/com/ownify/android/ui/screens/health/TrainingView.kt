@@ -165,7 +165,7 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
         )
         if (sessions.items.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f, fill = false).padding(vertical = Ownify.Space5), contentAlignment = Alignment.Center) {
-                T(sessions.empty, JStyle.Tiny, align = TextAlign.Center)
+                T(sessions.empty, JStyle.Footnote, align = TextAlign.Center)
             }
         } else {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
@@ -259,7 +259,7 @@ private fun HeartCard(heart: HeartChart) {
 
         HeartZonesLegend(heart.zones)
         if (filled) {
-            T(heart.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(heart.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }
@@ -481,7 +481,7 @@ fun TrainingSessionDetail(session: TrainingSession, heart: HeartChart, scroll: S
                 }
                 if (session.heart.hasData) {
                     HeartZonesLegend(heart.zones)
-                    T(heart.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+                    T(heart.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
                 }
             }
             if (session.stats.isNotEmpty()) {

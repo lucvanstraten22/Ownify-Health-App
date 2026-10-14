@@ -1,5 +1,6 @@
 package com.ownify.android.ui.design
 
+import androidx.compose.ui.geometry.CornerRadius
 import com.ownify.android.i18n.OwnifyFormat
 import com.ownify.android.i18n.trf
 import androidx.compose.animation.animateColorAsState
@@ -85,6 +86,7 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.ChromeText
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyType
 import com.ownify.android.ui.theme.LocalTracking
@@ -101,7 +103,10 @@ import androidx.compose.ui.semantics.heading
 
 /** The text classes, each in the theme on screen (so read when used, not kept). */
 object JStyle {
-    /** `.card__title`, `.page-intro__title`, `.score-ring__label`. */
+    /** `.page-intro__title`, `.community__title`: a page's own title, one step above every card title. */
+    val LargeTitle: TextStyle get() = OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold, tracking = Ownify.TrackingLargeTitle, lineHeight = 1.15.em)
+
+    /** `.card__title`, `.score-ring__label`. */
     val Section: TextStyle get() = OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
 
     /** `.card__eyebrow` (its own -0.01em). */
@@ -111,13 +116,16 @@ object JStyle {
     val Caption: TextStyle get() = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
 
     /** `.card__subtitle`, `.goal__name`, `.confirm__title`. */
-    val Subtitle: TextStyle get() = OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em)
+    val Subtitle: TextStyle get() = OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em)
 
     val Meta: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)
     val Lede: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary)
     val Small: TextStyle get() = OwnifyType.style(Ownify.FsSmall)
     val Label: TextStyle get() = OwnifyType.style(Ownify.FsLabel)
     val Tiny: TextStyle get() = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
+
+    /** `--fs-footnote`: a sentence of small print — hints, notes, the disclaimer. 11 sp stays for labels. */
+    val Footnote: TextStyle get() = OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted)
     val Body: TextStyle get() = OwnifyType.Base
 }
 
@@ -136,7 +144,12 @@ fun T(
     val tracking = LocalTracking.current
     val resolved = style.let { s ->
         var out = s
-        if (out.letterSpacing.isUnspecified) out = out.copy(letterSpacing = tracking)
+        // Spacing per size (theme.css `--tracking-small`): small text gets
+        // none of the body's negative spacing, it needs its room.
+        if (out.letterSpacing.isUnspecified) {
+            val small = out.fontSize.isSp && out.fontSize.value <= Ownify.SmallTextMax.value && tracking.value != 0f
+            out = out.copy(letterSpacing = if (small) Ownify.TrackingSmall else tracking)
+        }
         if (color != null) out = out.copy(color = color)
         if (align != null) out = out.copy(textAlign = align)
         out
@@ -405,19 +418,22 @@ fun Pill(
         val shape = RoundedCornerShape(50)
         Row(
             modifier
+                .hitArea(
+                    Modifier
+                        .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
+                        .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
+                )
                 .press(interaction)
                 .heightIn(min = 42.dp)
                 .clip(shape)
                 .background(Ownify.GlassSoft)
                 .border(1.dp, Ownify.GlassBorderSoft, shape)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
-                .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
                 .cssPadding(padding, border = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             if (icon != null) JIcon(icon, size = 18.dp, color = Ownify.TextSecondary)
-            T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary), maxLines = 1)
+            ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary), maxLines = 1) }
         }
     }
 }
@@ -460,14 +476,17 @@ fun Btn(
         val shape = RoundedCornerShape(50)
         Row(
             modifier
+                .hitArea(
+                    Modifier
+                        .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
+                        .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
+                )
                 .press(interaction, enabled = enabled)
                 .alpha(if (enabled) 1f else look.disabledAlpha)
                 .heightIn(min = 42.dp)
                 .clip(shape)
                 .background(look.fill)
                 .border(1.dp, look.border, shape)
-                .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
-                .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
                 .cssPadding(PaddingValues(horizontal = Ownify.Space4), border = 1.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.CenterHorizontally)
@@ -476,7 +495,7 @@ fun Btn(
                 content()
             } else {
                 if (icon != null) JIcon(icon, size = iconSize, color = look.text)
-                T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, look.text), maxLines = 1)
+                ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, look.text), maxLines = 1) }
             }
         }
     }
@@ -508,15 +527,20 @@ fun Meter(
     Box(
         modifier
             .fillMaxWidth()
-            .height(if (empty) emptyHeight else height)
+            // Empty, the bar keeps its height and draws its dotted line
+            // ([emptyHeight] tall) centred inside it, so what sits under it
+            // stays on one line with the filled bars beside it.
+            .height(height)
             .clip(RoundedCornerShape(50))
             .drawBehind {
                 if (empty) {
                     var x = 0f
                     val on = 2.dp.toPx()
                     val period = 8.dp.toPx()
+                    val dash = minOf(emptyHeight.toPx(), size.height)
+                    val y = (size.height - dash) / 2f
                     while (x < size.width) {
-                        drawRect(Ownify.ink(0.11f), topLeft = Offset(x, 0f), size = Size(minOf(on, size.width - x), size.height))
+                        drawRect(Ownify.ink(0.11f), topLeft = Offset(x, y), size = Size(minOf(on, size.width - x), dash))
                         x += period
                     }
                     return@drawBehind
@@ -627,11 +651,13 @@ fun ScoreRing(
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // No score yet: a calm, smaller dash rather than a bold bar at score size.
             T(
                 number,
                 OwnifyType.style(
-                    numberSize, FontWeight.Bold,
-                    if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
+                    if (empty) numberSize * 0.6f else numberSize,
+                    if (empty) FontWeight.Normal else FontWeight.Bold,
+                    if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                     tracking = (-0.045).em, lineHeight = 1.em, tabular = true
                 )
             )
@@ -649,22 +675,22 @@ fun ScoreRing(
 data class LegendItem(val label: String, val value: Int?, val accent: Accent, val dot: Color = accent.color)
 
 /**
- * `.legend`: three equal columns in a quiet 20-radius box, each a dot with
- * its 3 px halo, the name and the score. One column below 360 dp.
+ * `.legend`: three equal columns in a quiet well inside the card (fill only,
+ * `--radius-inner`), each a dot with its 3 px halo, the name and the score.
+ * One column below 360 dp.
  */
 @Composable
 fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boolean = true) {
     val narrow = LocalScreen.current.narrow
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    val shape = RoundedCornerShape(Ownify.RadiusInner)
     val box = modifier
         .fillMaxWidth()
         .clip(shape)
-        .background(Ownify.fill(0.035f))
-        .border(1.dp, Ownify.GlassHairline, shape)
+        .background(Ownify.fill(0.05f))
         .cssPadding(PaddingValues(vertical = Ownify.Space3, horizontal = Ownify.Space2), border = 1.dp)
 
     @Composable
-    fun Item(item: LegendItem, rowModifier: Modifier) {
+    fun Item(item: LegendItem, rowModifier: Modifier) = ChromeText {
         Row(
             rowModifier,
             verticalAlignment = Alignment.CenterVertically,
@@ -726,7 +752,7 @@ fun CardHint(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) JIcon(icon, size = 14.dp, color = Ownify.TextMuted)
-            T(text, JStyle.Tiny, align = if (plain) TextAlign.Start else textAlign)
+            T(text, JStyle.Footnote, align = if (plain) TextAlign.Start else textAlign)
         }
     }
 }
@@ -758,8 +784,8 @@ fun RangeSwitch(
         Row(
             modifier
                 .then(if (wide) Modifier.fillMaxWidth() else Modifier)
-                .clip(shape)
-                .background(Ownify.fill(0.04f))
+                // Not clipped: the options' hit areas reach past its edge, as on the website.
+                .background(Ownify.fill(0.04f), shape)
                 .border(1.dp, Ownify.GlassHairline, shape)
                 .cssPadding(PaddingValues(3.dp), border = 1.dp)
                 .semantics { if (label != null) contentDescription = label },
@@ -776,6 +802,12 @@ fun RangeSwitch(
                 Box(
                     Modifier
                         .then(if (wide) Modifier.weight(1f) else Modifier)
+                        .hitArea(
+                            Modifier
+                                .clickable(enabled = !off, role = Role.Button, onClick = blurring { onSelect(key) })
+                                .semantics { this.selected = active },
+                            across = false
+                        )
                         .alpha(if (off) 0.45f else 1f)
                         .heightIn(min = optionHeight)
                         .drawWithContent {
@@ -789,13 +821,11 @@ fun RangeSwitch(
                             drawContent()
                         }
                         .clip(shape)
-                        .clickable(enabled = !off, role = Role.Button, onClick = blurring { onSelect(key) })
-                        .semantics { this.selected = active }
                         // `border: 1px solid transparent` on every option: it takes room either way.
                         .cssPadding(PaddingValues(horizontal = optionPadding), border = 1.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    T(text, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, color), maxLines = 1)
+                    ChromeText { T(text, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, color), maxLines = 1) }
                 }
             }
         }
@@ -829,8 +859,10 @@ fun Toggle(on: Boolean, modifier: Modifier = Modifier, dimmed: Boolean = false) 
 
 /**
  * `.account__input` (and the wizard's and editor's): at least 44 high, 12
- * either side, the soft border and `.05`, 14 sp; focused, the border turns
- * the green at 50% and the fill `.07`.
+ * either side, the soft border and `.05`, the text at `--fs-input` (16 sp);
+ * focused, the border turns [Ownify.HealthStrong], the fill `.07`, and a soft
+ * 3 dp halo (`--focus-halo`) surrounds it. The placeholder is in the muted
+ * text colour — the faint one is for graphics, never text.
  */
 @Composable
 fun JInput(
@@ -843,12 +875,12 @@ fun JInput(
     password: Boolean = false,
     enabled: Boolean = true,
     radius: Dp = Ownify.RadiusSm,
-    textSize: TextUnit = Ownify.FsLabel,
+    textSize: TextUnit = Ownify.FsInput,
     label: String? = null
 ) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(radius)
-    val border = if (focused) Ownify.Health.copy(alpha = 0.5f) else Ownify.GlassBorderSoft
+    val border = if (focused) Ownify.HealthStrong else Ownify.GlassBorderSoft
     val fill = if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f)
     // A field's text, like a button's, keeps `letter-spacing: normal`.
     val style = OwnifyType.style(textSize, color = Ownify.TextPrimary, lineHeight = 1.3.em, tracking = 0.sp)
@@ -872,6 +904,20 @@ fun JInput(
             Box(
                 Modifier
                     .heightIn(min = 44.dp)
+                    .drawBehind {
+                        if (focused) {
+                            // box-shadow: 0 0 0 3px — a ring just outside the border.
+                            val ring = Ownify.FocusHaloWidth.toPx()
+                            val r = radius.toPx() + ring / 2f
+                            drawRoundRect(
+                                color = Ownify.FocusHalo,
+                                topLeft = Offset(-ring / 2f, -ring / 2f),
+                                size = Size(size.width + ring, size.height + ring),
+                                cornerRadius = CornerRadius(r, r),
+                                style = Stroke(ring)
+                            )
+                        }
+                    }
                     .clip(shape)
                     .background(fill)
                     .border(1.dp, border, shape)
@@ -879,7 +925,7 @@ fun JInput(
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (value.isEmpty() && placeholder.isNotEmpty()) {
-                    T(placeholder, style.copy(color = Ownify.TextFaint), maxLines = 1)
+                    T(placeholder, style.copy(color = Ownify.TextMuted), maxLines = 1)
                 }
                 inner()
             }
@@ -926,7 +972,7 @@ fun Disclaimer(text: String, modifier: Modifier = Modifier) {
     if (text.isBlank()) return
     T(
         text,
-        JStyle.Tiny,
+        JStyle.Footnote,
         modifier.fillMaxWidth().padding(top = Ownify.Space2).padding(horizontal = Ownify.Space2),
         align = TextAlign.Center
     )
@@ -937,7 +983,7 @@ fun Disclaimer(text: String, modifier: Modifier = Modifier) {
 fun PageIntro(title: String, lede: String?, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(horizontal = Ownify.Space2)) {
         // `h1.page-intro__title`: the page's heading.
-        T(title, JStyle.Section, Modifier.semantics { heading() })
+        T(title, JStyle.LargeTitle, Modifier.semantics { heading() })
         if (!lede.isNullOrBlank()) {
             T(lede, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }

@@ -102,7 +102,7 @@
             rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
             rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
             rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), 0.46);
+        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
     -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     box-shadow:
@@ -126,7 +126,7 @@
         linear-gradient(180deg,
             rgba(60, 158, 114, 0.30) 0%,
             rgba(60, 158, 114, 0.18) 100%),
-        rgba(var(--pane-body), 0.46);
+        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
 }
 
 /* The rim: a hairline that catches the light, as on the tab bar. */

@@ -270,7 +270,7 @@ private fun PartRow(part: CompassPart, play: Boolean) {
             emptyHeight = 4.dp,
             fill = SolidColor(band)
         )
-        part.note?.let { T(it, JStyle.Tiny) }
+        part.note?.let { T(it, JStyle.Footnote) }
     }
 }
 
@@ -330,7 +330,7 @@ private fun TrendCard(trend: CompassTrend) {
             DayPanel(day, trend.readout)
             T(
                 trend.readout.hint,
-                JStyle.Tiny,
+                JStyle.Footnote,
                 Modifier.fillMaxWidth().padding(top = Ownify.Space3),
                 align = TextAlign.Center
             )
@@ -417,7 +417,7 @@ private fun DayPanel(day: CompassDay, readout: CompassReadout) {
             }
             ScoreValue(day.value, day.band)
         }
-        day.note?.let { T(it, JStyle.Tiny, Modifier.padding(top = Ownify.Space2)) }
+        day.note?.let { T(it, JStyle.Footnote, Modifier.padding(top = Ownify.Space2)) }
 
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
             Rule()
@@ -577,7 +577,7 @@ private fun CompareRow(row: CompassRow, first: Boolean) {
         ) {
             Column(Modifier.weight(1f)) {
                 T(row.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
-                T(row.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                T(row.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
             }
             ScoreValue(row.value, row.band)
         }

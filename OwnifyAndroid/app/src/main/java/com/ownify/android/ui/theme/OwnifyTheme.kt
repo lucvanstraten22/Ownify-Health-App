@@ -9,6 +9,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -41,6 +43,21 @@ enum class OwnifyMode(val key: String) {
         fun of(key: String?): OwnifyMode = if (key == LIGHT.key) LIGHT else DARK
     }
 }
+
+/**
+ * theme.css's `@media (prefers-contrast: more)`, for one theme: the second
+ * and third text tiers and the glass edges, stepped up. Used while the phone
+ * asks for more contrast ([Ownify.useMoreContrast]).
+ */
+@Immutable
+class MoreContrast(
+    val textSecondary: Color,
+    val textMuted: Color,
+    val textFaint: Color,
+    val glassBorder: Color,
+    val glassBorderSoft: Color,
+    val glassHairline: Color
+)
 
 /**
  * Everything that differs between the two themes, for one of them:
@@ -109,6 +126,8 @@ class OwnifyPalette(
     val scrim: Color,
     val scrimK: Float,
     val ground: Color,
+    /** `--ground-deep`: [bgDeep] as a veil — the page's foot, where the dock fades it. */
+    val groundDeep: Color,
     val paneBody: Color,
     val tintBase: Color,
     val tintKeep: Float,
@@ -117,7 +136,12 @@ class OwnifyPalette(
     val tipSurface: Color,
     val tipSurfaceSolid: Color,
     val boardYou: Pair<Color, Color>,
-    val switchKnob: Color
+    val switchKnob: Color,
+    /** `--tab-selected-tint` and `--tab-selected-shade`: the chosen tab's pane, firmer in White Mode. */
+    val tabSelectedTint: Color,
+    val tabSelectedShade: Float,
+    /** `@media (prefers-contrast: more)`: what steps up while the phone asks for more contrast. */
+    val more: MoreContrast
 ) {
     companion object {
 
@@ -161,13 +185,24 @@ class OwnifyPalette(
             scrim = Color.Black,
             scrimK = 1f,
             ground = Color(48, 45, 47),
+            groundDeep = Color(37, 34, 35),
             paneBody = Color(30, 28, 29),
             tintBase = Color.White,
             tintKeep = 1f,
             tipSurface = Color(40, 40, 42).copy(alpha = 0.92f),
             tipSurfaceSolid = Color(46, 42, 44).copy(alpha = 0.97f),
             boardYou = Color(46, 57, 52).copy(alpha = 0.97f) to Color(42, 52, 48).copy(alpha = 0.96f),
-            switchKnob = white(0.55f)
+            switchKnob = white(0.55f),
+            tabSelectedTint = Color(36, 28, 32).copy(alpha = 0f),
+            tabSelectedShade = 0.20f,
+            more = MoreContrast(
+                textSecondary = white(0.86f),
+                textMuted = white(0.76f),
+                textFaint = white(0.60f),
+                glassBorder = white(0.24f),
+                glassBorderSoft = white(0.18f),
+                glassHairline = white(0.14f)
+            )
         )
 
         /**
@@ -217,13 +252,24 @@ class OwnifyPalette(
             scrim = Color(38, 30, 34),
             scrimK = 0.5f,
             ground = Color(251, 250, 250),
+            groundDeep = Color(240, 237, 238),
             paneBody = Color(214, 210, 212),
             tintBase = Color(0xFF1D1A1C),
             tintKeep = 0.4f,
             tipSurface = white(0.94f),
             tipSurfaceSolid = white(0.97f),
             boardYou = Color(234, 245, 239).copy(alpha = 0.97f) to Color(226, 240, 233).copy(alpha = 0.96f),
-            switchKnob = Color.White
+            switchKnob = Color.White,
+            tabSelectedTint = warm(0.075f),
+            tabSelectedShade = 0.55f,
+            more = MoreContrast(
+                textSecondary = text(0.86f),
+                textMuted = text(0.78f),
+                textFaint = text(0.62f),
+                glassBorder = warm(0.20f),
+                glassBorderSoft = warm(0.16f),
+                glassHairline = warm(0.14f)
+            )
         )
 
         fun of(mode: OwnifyMode): OwnifyPalette = if (mode == OwnifyMode.LIGHT) Light else Dark
@@ -258,6 +304,18 @@ object Ownify {
         palette = OwnifyPalette.of(mode)
     }
 
+    /**
+     * Whether the phone asks for more contrast (Contrast.kt): then the text
+     * tiers and glass edges are [OwnifyPalette.more]'s, as the website's
+     * `prefers-contrast: more`. State, like [palette].
+     */
+    var moreContrast: Boolean by mutableStateOf(false)
+        private set
+
+    fun useMoreContrast(more: Boolean) {
+        moreContrast = more
+    }
+
     // --- surfaces ---------------------------------------------------------
     val BgMain: Color get() = palette.bgMain
     val BgDeep: Color get() = palette.bgDeep
@@ -266,9 +324,9 @@ object Ownify {
     val Glass: Color get() = palette.glass
     val GlassStrong: Color get() = palette.glassStrong
     val GlassSoft: Color get() = palette.glassSoft
-    val GlassBorder: Color get() = palette.glassBorder
-    val GlassBorderSoft: Color get() = palette.glassBorderSoft
-    val GlassHairline: Color get() = palette.glassHairline
+    val GlassBorder: Color get() = if (moreContrast) palette.more.glassBorder else palette.glassBorder
+    val GlassBorderSoft: Color get() = if (moreContrast) palette.more.glassBorderSoft else palette.glassBorderSoft
+    val GlassHairline: Color get() = if (moreContrast) palette.more.glassHairline else palette.glassHairline
 
     // --- category colours: WHICH part of health, whatever the score -------
     // Exactly the website's --sleep, --nutrition, --training (+ -light), in both themes.
@@ -298,9 +356,10 @@ object Ownify {
     /**
      * The attention gold as the website writes out its washes and borders —
      * `rgba(191, 168, 99, a)` — in both themes: only text and icons take
-     * [Attention]'s deeper White Mode value.
+     * [Attention]'s deeper White Mode value. The washes behind a warning are
+     * [AttentionWash] … [AttentionStrong]; this is for the backdrop's glow.
      */
-    val AttentionWash = Color(0xFFBFA863)
+    val AttentionGold = Color(0xFFBFA863)
 
     /** `--zone-N`: heart-rate zone [n] (1–4), grey to the brightest Training orange; null-safe outside 1–4. */
     fun zone(n: Int): Color = palette.zones[(n - 1).coerceIn(0, 3)]
@@ -316,11 +375,11 @@ object Ownify {
 
     // --- text -------------------------------------------------------------
     val TextPrimary: Color get() = palette.textPrimary
-    val TextSecondary: Color get() = palette.textSecondary
-    val TextMuted: Color get() = palette.textMuted
+    val TextSecondary: Color get() = if (moreContrast) palette.more.textSecondary else palette.textSecondary
+    val TextMuted: Color get() = if (moreContrast) palette.more.textMuted else palette.textMuted
 
     /** For graphics (inactive dots), never for text. */
-    val TextFaint: Color get() = palette.textFaint
+    val TextFaint: Color get() = if (moreContrast) palette.more.textFaint else palette.textFaint
 
     /** The error red the wizard, the editor and the rating use (`--error`). */
     val Error: Color get() = palette.error
@@ -350,6 +409,12 @@ object Ownify {
     /** `--board-you-surface`: your own row pinned to the board's foot, top and bottom. */
     val BoardYouFrom: Color get() = palette.boardYou.first
     val BoardYouTo: Color get() = palette.boardYou.second
+
+    /** `--tab-selected-tint`: over the chosen tab's pane (White Mode only). */
+    val TabSelectedTint: Color get() = palette.tabSelectedTint
+
+    /** `--tab-selected-shade`: the chosen tab's shadow, before `--shade-k`. */
+    val TabSelectedShade: Float get() = palette.tabSelectedShade
 
     /** `--switch-knob`: a switch's knob while it is off. */
     val SwitchKnob: Color get() = palette.switchKnob
@@ -381,6 +446,9 @@ object Ownify {
     /** `--ground`: [BgMain] as a veil of the page itself. */
     fun ground(alpha: Float): Color = palette.ground.copy(alpha = alpha)
 
+    /** `--ground-deep`: [BgDeep] as a veil, for the page's foot behind the dock. */
+    fun groundDeep(alpha: Float): Color = palette.groundDeep.copy(alpha = alpha)
+
     /** `--pane-body`: the floating glass's own tint under its sheen. */
     fun paneBody(alpha: Float): Color = palette.paneBody.copy(alpha = alpha)
 
@@ -400,6 +468,8 @@ object Ownify {
     val RadiusCard = 28.dp
     val RadiusMd = 20.dp
     val RadiusSm = 14.dp
+    /** `--radius-inner`: a block inside a card — a fill, no outline of its own. */
+    val RadiusInner = 14.dp
 
     // --- spacing ----------------------------------------------------------
     val Space1 = 4.dp
@@ -430,8 +500,60 @@ object Ownify {
     val FsTiny = 11.sp
     val FsTab = 10.sp
 
+    // The named steps between and above those (theme.css, the same names),
+    // so no screen writes a size of its own. TokenParityTest checks each.
+    /** `--fs-footnote`: a sentence of small print. */
+    val FsFootnote = 12.sp
+    /** `--fs-input`: text typed in a field. */
+    val FsInput = 16.sp
+    /** `--fs-headline`: a goal's or a block's name. */
+    val FsHeadline = 17.sp
+    /** `--fs-title-3`: the primary goal's name. */
+    val FsTitle3 = 19.sp
+    /** `--fs-title-2`: a figure's heading. */
+    val FsTitle2 = 20.sp
+    /** `--fs-title-1`: a detail's title. */
+    val FsTitle1 = 22.sp
+    /** `--fs-figure`: a secondary percentage. */
+    val FsFigure = 24.sp
+    /** `--fs-large-title`: a page's title. */
+    val FsLargeTitle = 28.sp
+    /** `--fs-score-md`: a goal's hero on a narrow screen. */
+    val FsScoreMd = 38.4.sp
+
     /** `--tracking-wide: 0.08em`, the uppercase labels. */
     val TrackingWide = 0.08.em
+
+    /**
+     * Letter spacing per size (theme.css `--tracking-*`): small text — 12 sp
+     * and below — none, body -0.01em, titles -0.02em, the page's title
+     * -0.025em. Text whose style names none takes [TrackingSmall] at 12 sp or
+     * below (see `T()`), the body's otherwise.
+     */
+    val TrackingSmall = 0.em
+    val TrackingBody = (-0.01).em
+    val TrackingTitle = (-0.02).em
+    val TrackingLargeTitle = (-0.025).em
+    /** The largest size [TrackingSmall] applies to. */
+    val SmallTextMax = 12.sp
+
+    // --- tinted states ------------------------------------------------------
+    // theme.css's `--health-wash` … `--attention-strong`: the green and the
+    // gold as surfaces in four strengths — a wash behind something positive,
+    // the fill of a chosen or reached thing, its edge, a focused or primary
+    // edge — instead of an alpha per screen. The same in both themes.
+    val HealthWash = Color(60, 158, 114).copy(alpha = 0.10f)
+    val HealthFill = Color(60, 158, 114).copy(alpha = 0.16f)
+    val HealthEdge = Color(60, 158, 114).copy(alpha = 0.30f)
+    val HealthStrong = Color(60, 158, 114).copy(alpha = 0.50f)
+    val AttentionWash = Color(191, 168, 99).copy(alpha = 0.10f)
+    val AttentionFill = Color(191, 168, 99).copy(alpha = 0.18f)
+    val AttentionEdge = Color(191, 168, 99).copy(alpha = 0.34f)
+    val AttentionStrong = Color(191, 168, 99).copy(alpha = 0.45f)
+
+    /** `--focus-halo: 0 0 0 3px`: the ring around a focused field. */
+    val FocusHalo = Color(60, 158, 114).copy(alpha = 0.24f)
+    val FocusHaloWidth = 3.dp
 
     // --- layout -----------------------------------------------------------
     val TabbarHeight = 54.dp
@@ -444,6 +566,23 @@ object Ownify {
     val HeaderButton = 46.dp
     val HeaderIcon = 24.dp
     val SheenOverhang = 16.dp
+
+    /**
+     * Scroll edges (theme.css `--edge-fade`, `--dock-fade`): how far the
+     * header's veil reaches past its box, and the dock's above the grip.
+     */
+    val EdgeFade = 16.dp
+    val DockFade = 28.dp
+    /** `--ai-handle-height`: the assistant's grip and its tap target. */
+    val AiHandleHeight = 40.dp
+
+    /**
+     * The smallest area a finger can hit, whatever size a control is drawn at:
+     * Android's 48 dp, as the website's `--hit-min` is Apple's 44 px
+     * (PARITY.md). Compose's hit test reaches a smaller control within it;
+     * TouchTargetTest holds every control to it.
+     */
+    val HitMin = 48.dp
 
     /** `--shell-w: min(92vw, 33.5rem)`. */
     val ShellMax = 536.dp
@@ -461,6 +600,12 @@ object Ownify {
     /** CSS `ease`, and `--transition-fast` (180 ms). */
     val Ease = CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)
     const val FastMs = 180
+
+    /**
+     * `--reduce-fade`: with reduced motion (the system's "Remove animations")
+     * nothing slides or rises; what arrives fades in over this instead.
+     */
+    const val ReduceFadeMs = 180
 
     /** The count-ups and the meters: 1000 ms, ease-out cubic. */
     val EaseOutCubic = CubicBezierEasing(0.33f, 1f, 0.68f, 1f)
@@ -548,6 +693,22 @@ enum class ScoreBand {
  * (see [InButton]).
  */
 val LocalTracking = compositionLocalOf { (-0.15).sp }
+
+/**
+ * The most the phone's text size enlarges the chrome's labels (A3): the tab
+ * bar's, a button's or pill's, a switch's options, a chart legend. They sit
+ * in boxes of a set height and one line, so past 130% they would be cut off
+ * — as iOS keeps its bars' labels; the page's own text grows all the way.
+ */
+const val ChromeFontScaleMax = 1.3f
+
+/** [content] with the phone's text size at most [ChromeFontScaleMax]: for the chrome's labels only. */
+@Composable
+fun ChromeText(content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    if (density.fontScale <= ChromeFontScaleMax) content()
+    else CompositionLocalProvider(LocalDensity provides Density(density.density, ChromeFontScaleMax), content = content)
+}
 
 /** What a `<button>` holds: its text keeps `letter-spacing: normal` unless its own rule says otherwise. */
 @Composable

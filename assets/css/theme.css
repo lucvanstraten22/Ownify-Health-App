@@ -79,6 +79,9 @@
     --radius-md: 20px;
     --radius-sm: 14px;
     --radius-pill: 999px;
+    /* A block inside a card (the score legend, an insight): smaller than the
+       card's own corner, so the two read as one shape set in the other. */
+    --radius-inner: 14px;
 
     /* --- spacing scale -------------------------------------------------- */
     --space-1: 4px;
@@ -152,7 +155,9 @@
     --scrim: 0, 0, 0;
     --scrim-k: 1;
     --ground: 48, 45, 47;
+    --ground-deep: 37, 34, 35;          /* --bg-deep as channels: the page's foot */
     --pane-body: 30, 28, 29;
+    --pane-solid: 0;                    /* 0–1: how solid the floating glass is at least (reduced transparency) */
 
     /* Text tinted by an accent (a chip, a status): the accent mixed with
        --tint-base, keeping that share of the base the rule names times
@@ -162,6 +167,12 @@
     --tint-keep: 1;
 
     /* The few surfaces that are near-solid rather than glass. */
+    /* The chosen tab's pane: in Dark Mode the brighter glass is enough; on
+       white glass it would vanish, so White Mode lays a faint warm-dark tint
+       over it and casts a firmer shadow (--tab-selected-shade × --shade-k). */
+    --tab-selected-tint: rgba(36, 28, 32, 0);
+    --tab-selected-shade: 0.20;
+
     --tip-surface: rgba(40, 40, 42, 0.92);          /* a value floating over a bar */
     --tip-surface-solid: rgba(46, 42, 44, 0.97);    /* the chart's reading */
     --board-you-surface: linear-gradient(180deg, rgba(46, 57, 52, 0.97), rgba(42, 52, 48, 0.96));
@@ -169,6 +180,26 @@
 
     /* The error red of the wizard, the editor and the rating. */
     --error: #ff8b8b;
+
+    /* --- tinted states ----------------------------------------------------
+       The app's green and the attention gold as surfaces, in four strengths
+       instead of an alpha per rule: a wash behind something positive, the
+       fill of a chosen or reached thing, its edge, and the strong edge of a
+       focused field or a primary button. Mirrored in OwnifyTheme.kt
+       (Ownify.HealthWash …). The same in White Mode. */
+    --health-wash: rgba(60, 158, 114, 0.10);
+    --health-fill: rgba(60, 158, 114, 0.16);
+    --health-edge: rgba(60, 158, 114, 0.30);
+    --health-strong: rgba(60, 158, 114, 0.50);
+    --attention-wash: rgba(191, 168, 99, 0.10);
+    --attention-fill: rgba(191, 168, 99, 0.18);
+    --attention-edge: rgba(191, 168, 99, 0.34);
+    --attention-strong: rgba(191, 168, 99, 0.45);
+
+    /* A focused field: its edge in --health-strong and this soft 3px halo
+       around it, so where you are typing is plain in both themes. Mirrored
+       in Components.kt (JInput). */
+    --focus-halo: 0 0 0 3px rgba(60, 158, 114, 0.24);
 
     /* --- typography ------------------------------------------------------ */
 
@@ -186,11 +217,13 @@
        uses, so Apple devices would keep using the system copy and download
        nothing. Text precedes Display because most type in this app is UI-sized.
 
-       Nothing after that is a design choice, it is what is left when SF Pro is
-       absent: Helvetica Neue is the nearest grotesque most non-Apple machines
-       have, then whatever the system calls sans-serif. */
+       Where SF Pro is absent, each system's own interface face, so the text
+       reads native there too and the tracking tuned for SF does not cramp a
+       stand-in: Segoe UI (Variable on Windows 11) on Windows, Roboto on
+       Android and ChromeOS — the face the Android app itself is set in — then
+       Helvetica Neue, the system's UI font, and whatever it calls sans-serif. */
     --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-        "Helvetica Neue", sans-serif;
+        "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
 
     /* The same idea for the two file paths in the setup notice: SF Mono is the
        monospace member of this family, and ui-monospace is how you ask for it
@@ -206,6 +239,28 @@
     --fs-small: 0.8125rem; /* captions             13px */
     --fs-tiny: 0.6875rem;  /* eyebrow / tabs       11px */
 
+    /* The named steps between and above those, so no rule writes a size of
+       its own. Mirrored in OwnifyTheme.kt (Ownify.FsFootnote …) and checked
+       against it by the app's TokenParityTest. */
+    --fs-footnote: 0.75rem;     /* a sentence of small print   12px */
+    --fs-input: 1rem;           /* text typed in a field       16px — iOS zooms into anything smaller */
+    --fs-headline: 1.0625rem;   /* a goal's or a block's name  17px */
+    --fs-title-3: 1.1875rem;    /* the primary goal's name     19px */
+    --fs-title-2: 1.25rem;      /* a figure's heading          20px */
+    --fs-title-1: 1.375rem;     /* a detail's title            22px */
+    --fs-figure: 1.5rem;        /* a secondary percentage      24px */
+    --fs-large-title: 1.75rem;  /* a page's title              28px */
+    --fs-score-md: 2.4rem;      /* a goal's hero, narrow       38px */
+
+    /* Letter spacing is set per size, never once for all: small text gets
+       none (it needs its room), body text -0.01em, titles -0.02em, the big
+       numbers their own tighter values. A rule that names no spacing at 12px
+       or below takes --tracking-small. */
+    --tracking-small: 0em;
+    --tracking-body: -0.01em;
+    --tracking-title: -0.02em;
+    --tracking-large-title: -0.025em;
+
     --tracking-wide: 0.08em;
 
     /* --- motion ---------------------------------------------------------- */
@@ -216,6 +271,9 @@
     /* Screen-to-screen transition: same family as the micro-interactions,
        just long enough to read as a push and short enough to feel instant. */
     --screen-duration: 280ms;
+
+    /* With reduced motion, the one fade that replaces every movement. */
+    --reduce-fade: 180ms;
     --screen-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
     /* --- layout ---------------------------------------------------------- */
@@ -237,6 +295,22 @@
        #glass-refraction (scale 19, so ±9.5px) or that layer's own edge
        arrives at the cut and shows. */
     --sheen-overhang: 16px;
+
+    /* Scroll edges: where floating chrome meets the content scrolling under
+       it, the page fades instead of colliding. --edge-fade is how far the
+       header's veil reaches past its box; --dock-fade how far the dock's
+       reaches above the assistant's grip. Mirrored in OwnifyTheme.kt. */
+    --edge-fade: 16px;
+    --veil-top: 0.95;                   /* the header's veil: how solid at its top … */
+    --veil-mid: 0.88;                   /* … and halfway down, before it fades out */
+    --dock-fade: 28px;
+    --ai-handle-height: 40px;
+
+    /* The smallest area a finger can hit, whatever size a control is drawn
+       at (Apple's 44 pt): a smaller one is given an invisible margin up to
+       it (components.css). Android's own minimum is 48 dp (OwnifyTheme.kt
+       HitMin; PARITY.md). */
+    --hit-min: 44px;
 
     /* The tab's interior. Every number here applies to all five tabs alike:
        the icons are normalised on their own grid instead, so nothing is
@@ -275,6 +349,11 @@
     --header-btn: 46px;
     --header-icon: 24px;
     --header-height: 56px;
+
+    /* The space between the header and a page's title — the same on every
+       page, so a title does not jump when you swipe between tabs (24, 32
+       from 600px). Mirrored in Screen.kt (mainTop). */
+    --page-intro-top: var(--space-5);
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -316,7 +395,7 @@ body {
     font-family: var(--font-sans);
     font-size: var(--fs-body);
     line-height: 1.5;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -471,7 +550,7 @@ button {
 }
 
 .app__main {
-    padding-top: var(--space-5);
+    padding-top: var(--page-intro-top);
     /* Reserves room for the tab bar, the home indicator and the floating
        control, so the last block is never hidden behind fixed chrome. */
     padding-bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-6) + var(--space-5));
@@ -558,6 +637,12 @@ button {
     to { transform: translateX(100%); }
 }
 
+/* Reduced motion is not "no feedback": nothing slides, rises, grows or
+   turns, and the loops stop — but what fades or changes colour still does,
+   briefly (--reduce-fade). Movement is placed at once; a screen, a detail or
+   the sheet that arrives fades in instead (navigation-core.js, fadeIn); a
+   press dims rather than shrinks; count-ups and meters show their end at
+   once (dashboard.js). The app does the same (Motion.kt, ShellState.kt). */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
 
@@ -566,10 +651,20 @@ button {
     *::after {
         animation-duration: 0.001ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.001ms !important;
+        transition-property: opacity, color, background-color, border-color, box-shadow, fill, stroke !important;
+        transition-duration: var(--reduce-fade) !important;
+        transition-timing-function: ease-out !important;
     }
 
-    .js .reveal { opacity: 1; transform: none; }
+    .js .reveal { transform: none; }
+
+    .press:not(.fab):active,
+    .goal-card:active,
+    .pill--devices:active,
+    .pill--account:active {
+        transform: none !important;
+        opacity: 0.72;
+    }
 }
 
 /* ==========================================================================
@@ -661,14 +756,57 @@ button {
     --scrim: 38, 30, 34;
     --scrim-k: 0.5;
     --ground: 251, 250, 250;
+    --ground-deep: 240, 237, 238;
     --pane-body: 214, 210, 212;
 
     --tint-base: #1D1A1C;
     --tint-keep: 0.4;
+
+    --tab-selected-tint: rgba(36, 28, 32, 0.075);
+    --tab-selected-shade: 0.55;
 
     --tip-surface: rgba(255, 255, 255, 0.94);
     --tip-surface-solid: rgba(255, 255, 255, 0.97);
     --board-you-surface: linear-gradient(180deg, rgba(234, 245, 239, 0.97), rgba(226, 240, 233, 0.96));
     --switch-knob: #FFFFFF;
     --error: #C2453E;
+}
+
+/* ==========================================================================
+   Accessibility settings — tokens only; no component changes.
+
+   More contrast (macOS "Increase contrast", Windows contrast themes, iOS
+   "Increase Contrast"): the second and third text tiers and every glass edge
+   step up, in both themes. The Android app reads its own contrast setting
+   into the same values (OwnifyTheme.kt, OwnifyPalette.more).
+   ========================================================================== */
+@media (prefers-contrast: more) {
+    :root {
+        --text-secondary: rgba(255, 255, 255, 0.86);
+        --text-muted: rgba(255, 255, 255, 0.76);
+        --text-faint: rgba(255, 255, 255, 0.60);
+        --glass-border: rgba(255, 255, 255, 0.24);
+        --glass-border-soft: rgba(255, 255, 255, 0.18);
+        --glass-hairline: rgba(255, 255, 255, 0.14);
+    }
+
+    :root[data-theme="light"] {
+        --text-secondary: rgba(29, 26, 28, 0.86);
+        --text-muted: rgba(29, 26, 28, 0.78);
+        --text-faint: rgba(29, 26, 28, 0.62);
+        --glass-border: rgba(36, 28, 32, 0.20);
+        --glass-border-soft: rgba(36, 28, 32, 0.16);
+        --glass-hairline: rgba(36, 28, 32, 0.14);
+    }
+}
+
+/* Reduced transparency (macOS, iOS): the floating glass — the tab bar, the
+   header's buttons — turns near-solid, and the header's veil solid where it
+   starts. Web only: Android has no such setting (PARITY.md). */
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --pane-solid: 0.94;
+        --veil-top: 1;
+        --veil-mid: 0.97;
+    }
 }

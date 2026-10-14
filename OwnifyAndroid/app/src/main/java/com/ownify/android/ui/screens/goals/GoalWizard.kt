@@ -264,8 +264,8 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                         error = error,
                         next = {
                             val look = BtnLook(
-                                border = if (done || complete) Ownify.Health.copy(alpha = 0.38f) else Ownify.GlassBorderSoft,
-                                fill = if (done || complete) Ownify.Health.copy(alpha = 0.16f) else Ownify.GlassSoft
+                                border = if (done || complete) Ownify.HealthStrong else Ownify.GlassBorderSoft,
+                                fill = if (done || complete) Ownify.HealthFill else Ownify.GlassSoft
                             )
                             if (done) {
                                 Btn(words["done_close"], onClick = ::close, look = look, modifier = Modifier.fillMaxWidth())
@@ -601,7 +601,7 @@ private fun TargetStep(draft: Draft, goals: Goals) {
             )
             if (draft.sourceUnit.isNotEmpty()) T(draft.sourceUnit, JStyle.Meta)
         }
-        T(words["daily_hint"], JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+        T(words["daily_hint"], JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
     }
 
     if (days && !auto) {
@@ -703,7 +703,7 @@ private fun SummaryStep(draft: Draft, goals: Goals, hasPrimary: Boolean) {
     )
     // Only worth saying when there is in fact a primary goal to displace.
     if (draft.priority == "primary" && hasPrimary) {
-        T(words["priority_swap"], JStyle.Tiny, Modifier.padding(top = Ownify.Space4))
+        T(words["priority_swap"], JStyle.Footnote, Modifier.padding(top = Ownify.Space4))
     }
 }
 
@@ -716,7 +716,7 @@ private fun DoneStep(draft: Draft, goals: Goals) {
     val duration = goals.durations.firstOrNull { it.key == draft.duration }
 
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        IconTile(OwnifyIcons.chart, color = Ownify.Health, background = Ownify.Health.copy(alpha = 0.14f))
+        IconTile(OwnifyIcons.chart, color = Ownify.Health, background = Ownify.HealthFill)
         T(words["done_title"], JStyle.Subtitle, Modifier.padding(top = Ownify.Space3).semantics { heading() }, align = TextAlign.Center)
     }
 
@@ -792,7 +792,7 @@ private fun Suggestion(text: String, onClick: () -> Unit) {
 private fun Option(label: String, hint: String, chosen: Boolean, onClick: () -> Unit) {
     Choice(chosen = chosen, accent = Ownify.Health, green = true, onClick = onClick, modifier = Modifier.fillMaxWidth(), press = false) {
         T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
-        if (hint.isNotEmpty()) T(hint, JStyle.Tiny, Modifier.padding(top = 2.dp))
+        if (hint.isNotEmpty()) T(hint, JStyle.Footnote, Modifier.padding(top = 2.dp))
     }
 }
 

@@ -1,7 +1,8 @@
 package com.ownify.android.ui.app
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import com.ownify.android.i18n.tr
-import android.animation.ValueAnimator
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDpAsState
@@ -64,10 +65,12 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.ownify.android.data.NavItem
+import com.ownify.android.ui.design.hitArea
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.Pane
 import com.ownify.android.ui.design.Panes
@@ -76,6 +79,7 @@ import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.cssLinearGradient
 import com.ownify.android.ui.design.cssRadialGradient
 import com.ownify.android.ui.design.drawBoxShadows
+import com.ownify.android.ui.theme.ChromeText
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
 import kotlin.math.abs
@@ -113,6 +117,7 @@ fun Dock(
     Column(
         modifier
             .fillMaxWidth()
+            .dockEdge(bottom)
             .padding(bottom = if (screen.desktop) Ownify.Space5 else 0.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -138,6 +143,33 @@ fun Dock(
 
 private fun Rect.toDp(density: Float) = Rect(left / density, top / density, right / density, bottom / density)
 
+/**
+ * `.app-dock::before`, the bottom scroll edge: behind the grip and the tab
+ * bar the page fades to its own foot colour ([Ownify.groundDeep]), reaching
+ * [Ownify.DockFade] above the grip — so text no longer runs under the grip
+ * or shows through the glass behind the labels. Drawn only; touches pass
+ * through to whatever is under it.
+ */
+private fun Modifier.dockEdge(safeBottom: androidx.compose.ui.unit.Dp): Modifier = drawBehind {
+    val clearance = (Ownify.TabbarHeight + Ownify.DockGap + safeBottom).toPx()
+    val handle = Ownify.AiHandleHeight.toPx()
+    val height = clearance + handle + Ownify.DockFade.toPx()
+    val top = size.height - height
+    fun at(fromBottom: Float) = (1f - fromBottom / height).coerceIn(0f, 1f)
+    drawRect(
+        brush = Brush.verticalGradient(
+            0f to Ownify.groundDeep(0f),
+            at(clearance + handle * 0.5f) to Ownify.groundDeep(0.5f),
+            at(clearance * 0.6f) to Ownify.groundDeep(0.78f),
+            1f to Ownify.groundDeep(0.86f),
+            startY = top,
+            endY = size.height
+        ),
+        topLeft = Offset(0f, top),
+        size = Size(size.width, height)
+    )
+}
+
 /** `.ai-handle`: a 128 × 40 target around a 38 × 4 grip that widens to 50 and brightens under the finger. */
 @Composable
 private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier) {
@@ -148,9 +180,12 @@ private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier
 
     Box(
         modifier
-            .size(128.dp, 40.dp)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onOpen)
-            .semantics { contentDescription = aria },
+            .hitArea(
+                Modifier
+                    .clickable(interaction, indication = null, role = Role.Button, onClick = onOpen)
+                    .semantics { contentDescription = aria }
+            )
+            .size(128.dp, Ownify.AiHandleHeight),
         contentAlignment = Alignment.Center
     ) {
         Box(Modifier.size(grip, 4.dp).background(tone, RoundedCornerShape(50)))
@@ -215,7 +250,7 @@ private const val GlassThin = 0.25f
  */
 @Composable
 private fun TabGlass(count: Int, at: () -> Float, modifier: Modifier) {
-    val still = LocalStillMotion.current || !remember { ValueAnimator.areAnimatorsEnabled() }
+    val still = LocalStillMotion.current || LocalReducedMotion.current
     var x by remember { mutableFloatStateOf(at()) }
     var v by remember { mutableFloatStateOf(0f) }
     val shadows = LocalGraphicsContext.current.shadowContext
@@ -275,9 +310,11 @@ internal const val TabGlassTag = "tab-glass"
 private fun DrawScope.drawTabGlass(shadows: androidx.compose.ui.graphics.shadow.ShadowContext) {
     val pill = RoundedCornerShape(50)
     val outline = pill.createOutline(size, layoutDirection, this)
-    drawBoxShadows(pill, listOf(BoxShadow(y = 2.dp, blur = 7.dp, color = Ownify.shade(0.20f))), shadows, outline)
+    drawBoxShadows(pill, listOf(BoxShadow(y = 2.dp, blur = 7.dp, color = Ownify.shade(Ownify.TabSelectedShade))), shadows, outline)
     val path = Path().apply { addOutline(outline) }
     drawPath(path, cssLinearGradient(178f, size, Stop(0f, Ownify.glint(0.20f)), Stop(0.48f, Ownify.glint(0.115f)), Stop(1f, Ownify.glint(0.085f))))
+    // White Mode: a faint warm-dark tint over the glass, so the chosen tab does not vanish on white.
+    drawPath(path, Ownify.TabSelectedTint)
     drawBoxShadows(
         pill,
         listOf(
@@ -357,11 +394,13 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
             verticalArrangement = Arrangement.spacedBy(Ownify.TabGap)
         ) {
             OwnifyIcons.named(item.icon)?.let { JIcon(it, size = Ownify.TabIcon, color = color) }
-            T(
-                item.label,
-                OwnifyType.style(Ownify.FsTab, FontWeight.Medium, color, tracking = (-0.012).em, lineHeight = 1.em),
-                maxLines = 1
-            )
+            ChromeText {
+                T(
+                    item.label,
+                    OwnifyType.style(Ownify.FsTab, FontWeight.Medium, color, tracking = (-0.012).em, lineHeight = 1.em),
+                    maxLines = 1
+                )
+            }
         }
     }
 }

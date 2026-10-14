@@ -91,6 +91,7 @@ import com.ownify.android.ui.design.rememberSvgPaths
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.design.stretched
 import com.ownify.android.ui.theme.Accent
+import com.ownify.android.ui.theme.ChromeText
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyType
@@ -164,22 +165,30 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                     }
 
                     // .score-value--centred: the number and "/100" on one baseline.
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    // A third of the screen wide: its figure and name grow with the
+                    // phone's text size only as far as the chrome's (its detail grows fully).
+                    ChromeText { Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        // Empty: the calm dash (`.is-empty .score-value .score-value__number`).
                         T(
                             countUpText(score.value?.toString() ?: "—", play && !empty),
                             OwnifyType.style(
-                                if (narrow) 24.sp else Ownify.FsScoreSm, FontWeight.Bold,
-                                if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
+                                when {
+                                    empty -> Ownify.FsScoreSm * 0.6f
+                                    narrow -> Ownify.FsFigure
+                                    else -> Ownify.FsScoreSm
+                                },
+                                if (empty) FontWeight.Normal else FontWeight.Bold,
+                                if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                                 tracking = (-0.035).em, lineHeight = 1.em, tabular = true
                             ),
-                            Modifier.alignByBaseline()
+                            Modifier.alignByBaseline().padding(end = if (empty) 3.dp else 0.dp)
                         )
                         T(
                             "/${score.max}",
                             OwnifyType.style(if (narrow) Ownify.FsTiny else Ownify.FsSmall, color = Ownify.TextMuted),
                             Modifier.alignByBaseline()
                         )
-                    }
+                    } }
 
                     Meter(
                         share = if (empty || score.max <= 0) null else (score.value!!.toFloat() / score.max).coerceIn(0f, 1f),
@@ -187,7 +196,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                         accent = accent.color
                     )
 
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+                    ChromeText { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                         T(
                             area.label,
                             // `.health-card__label`'s own -0.01em.
@@ -195,7 +204,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                             maxLines = 1
                         )
                         JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 13.dp, color = Ownify.TextMuted)
-                    }
+                    } }
                 }
             }
         }
@@ -347,7 +356,7 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
             )
         }
         if (filled) {
-            T(if (only == null) history.hint else history.hintOne, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(if (only == null) history.hint else history.hintOne, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }

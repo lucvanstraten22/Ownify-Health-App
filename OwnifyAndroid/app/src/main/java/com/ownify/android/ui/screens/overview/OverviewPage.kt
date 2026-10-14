@@ -256,7 +256,7 @@ private fun GoalProgressCard(goal: GoalCard) {
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
             ) {
                 Btn(goal.ctaLabel, onClick = { shell.tab("goals") }, enabled = goal.ctaEnabled)
-                T(goal.ctaNote, JStyle.Tiny, Modifier.weight(1f))
+                T(goal.ctaNote, JStyle.Footnote, Modifier.weight(1f))
             }
         }
     }
@@ -377,7 +377,7 @@ private fun Milestones(goal: GoalCard) {
                             .size(DOT)
                             .drawBehind {
                                 if (milestone.reached) {
-                                    drawCircle(Ownify.Health.copy(alpha = 0.18f), radius = size.width / 2f + 3.dp.toPx())
+                                    drawCircle(Ownify.HealthFill, radius = size.width / 2f + 3.dp.toPx())
                                     drawCircle(Ownify.Health)
                                 } else {
                                     drawCircle(Ownify.ink(0.18f))
@@ -419,13 +419,13 @@ private fun InsightsCard(insights: Insights) {
             for (item in insights.items) {
                 val accent = Accent.of(item.accent).color
                 val empty = item.state == "empty"
-                val shape = RoundedCornerShape(Ownify.RadiusMd)
+                // `.insights__item`: a well inside the card — fill only, `--radius-inner`.
+                val shape = RoundedCornerShape(Ownify.RadiusInner)
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .clip(shape)
-                        .background(Ownify.fill(0.035f))
-                        .border(1.dp, Ownify.GlassHairline, shape)
+                        .background(Ownify.fill(0.05f))
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                 ) {

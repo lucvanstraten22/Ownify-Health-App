@@ -123,8 +123,16 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             <form class="account__form" data-account-form="avatar" novalidate>
                 <label class="account__label" for="account-avatar"><?= e(t('Profielfoto')) ?></label>
                 <div class="account__row">
-                    <input class="account__file" type="file" id="account-avatar" name="avatar"
-                           accept="image/jpeg,image/png,image/webp" required>
+                    <?php /* The browser's own file control, hidden behind the same field
+                             the app draws: a "Bestand kiezen" pill and the chosen
+                             name (account.js keeps the name). */ ?>
+                    <label class="account__file">
+                        <input class="account__file-input" type="file" id="account-avatar" name="avatar"
+                               accept="image/jpeg,image/png,image/webp" required data-account-file>
+                        <span class="account__file-button" aria-hidden="true"><?= e(t('Bestand kiezen')) ?></span>
+                        <span class="account__file-name" data-account-file-name
+                              data-empty="<?= e(t('Geen bestand gekozen')) ?>"><?= e(t('Geen bestand gekozen')) ?></span>
+                    </label>
                     <button type="submit" class="btn press"><?= e(t('Uploaden')) ?></button>
                 </div>
                 <p class="account__hint"><?= e(t('JPG, PNG of WebP, maximaal 3 MB.')) ?></p>

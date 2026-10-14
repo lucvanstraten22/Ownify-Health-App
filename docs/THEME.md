@@ -93,6 +93,17 @@ White Mode, the worst of a card, a well inside a card and the ground
 
 Every text tier reaches WCAG AA, and none is lower than Dark Mode gives it.
 
+**More contrast.** When the device asks for it — `prefers-contrast: more` in
+the browser; on Android a raised contrast level (Android 14+) or "High
+contrast text" (`ui/theme/Contrast.kt`) — the second and third text tiers and
+the glass edges step up in both themes (`--text-secondary` .86, `--text-muted`
+.76 / .78 in White, `--text-faint` .60 / .62, borders and hairlines about
+double). The values are one block at the end of theme.css and
+`OwnifyPalette.more`; `TokenParityTest` compares them. **Reduced
+transparency** (`prefers-reduced-transparency: reduce`, web only — Android
+has no such setting) makes the floating glass near-solid (`--pane-solid`)
+and the header's veil solid at its top (`--veil-top`, `--veil-mid`).
+
 ## Kept on the device
 
 The theme is a choice of a device, like a phone's own appearance setting, and

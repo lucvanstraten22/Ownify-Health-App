@@ -94,6 +94,17 @@ with bold only.
 - Durations: screen 280 ms `(.22, 1, .36, 1)`, fast 180 ms, slow 420 ms
   `(.22, .61, .36, 1)`; meters and count-ups 1000 ms ease-out-cubic, ring
   1100 ms; reveal 14 dp + fade, staggered 60 ms.
+- Reduced motion — the browser's `prefers-reduced-motion`, Android's "Remove
+  animations" (animator duration scale 0, followed live) — is the same on
+  both: nothing slides, rises, counts up or loops. A page, a detail or the
+  sheet is placed at once and what arrives, or what it uncovers, fades in
+  over `--reduce-fade` (180 ms; `navigation-core.js` `fadeIn`,
+  `ShellState.fadeIn` — run with the animator scale overridden, since
+  Compose would otherwise finish it at once). Reveals fade without rising, a
+  pressed surface dims to 72 % instead of shrinking, numbers show their
+  value.
+- Hover is the website's only: with a mouse, a card that opens lifts and a
+  row takes a faint fill; on a phone there is nothing to hover.
 
 ## Tokens
 
@@ -154,6 +165,11 @@ defaults:
 - A settings card's rows are `min-height: 56px` in `border-box` with the
   hairline as the next row's top border (`settingsRow`), so a short row is 56
   with its line.
+- Type sizes, letter spacing per size (`--tracking-small` 0 at 12 px and
+  below, body −0.01em, titles −0.02em, the large title −0.025em), the tinted
+  states (`--health-wash/fill/edge/strong`, `--attention-…`), the focus halo,
+  `--radius-inner`, the scroll-edge fades and `--reduce-fade` are tokens on
+  both sides; `TokenParityTest` reads theme.css and fails on any that differ.
 - `.settings-field` is its grid (`minmax(0, 1fr) auto auto`): the value takes
   what it needs at the right, the label the rest; `.metric-row` and
   `.card__head` put their value and badge at the end (`space-between`).
@@ -185,6 +201,10 @@ defaults:
 | Taal and Eenheden are kept on the account, as on the website, and also on the phone (`shared_prefs/ownify_language`), for the screens before signing in and after signing out; Automatisch follows the phone's language (docs/I18N.md) | the website keeps the browser's choice in a cookie for those screens; the app sends no cookie, so it sends its choice — or the phone's language — as `Accept-Language` and adopts the state's `i18n` |
 | The app writes its own sentences (sync status, pairing, errors, a few screen-reader labels) from `assets/lang-en.json`, generated from the same catalogue as the website's (`tools/i18n-build.php`) | everything else arrives from the server already in the reader's language and units, as on the website |
 | The Health Connect rationale (`PermissionsRationaleActivity`) is in Ownify's language | it was English only; it has no website counterpart |
+| The smallest touch area is 48 dp in the app and 44 px on the website | each platform's own minimum (Android's 48 dp, Apple's 44 pt). Neither grows anything that is drawn: the website gives a smaller control an invisible `::after` margin (`--hit-min`), the app lays the control out at its drawn size and lets its clickable answer over 48 dp (`Modifier.hitArea`; Compose's own near-miss rule loses to the page scrolling underneath) |
+| More contrast: the browser's `prefers-contrast: more`, Android's contrast level (Android 14+) or "High contrast text" | the same values on both (`OwnifyPalette.more`); each platform has its own setting |
+| Reduced transparency is the website's only | Android has no such setting; the app's glass stays as designed |
+| The phone's text size enlarges the app's text (sp), up to 200 %; the chrome's labels — the tab bar, buttons, pills, switch options, chart legends and the three pillar tiles on Gezondheid — stop at 130 % (`ChromeText`) | they sit in boxes of a set height or a third of the screen and would be cut off past it, as iOS keeps its bars' labels; the page's own text grows fully. A browser's zoom enlarges the whole website evenly, so it has no equivalent. Checked at 130, 150 and 200 % in `FontScaleTest` (Robolectric, not a device): nothing is cut off; a goal card's one-line name, a device's name in the devices popup and a chosen file's name are shortened with "…" at 200 %, as they are by design when long |
 
 ## Verification
 

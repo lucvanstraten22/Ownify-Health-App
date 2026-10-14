@@ -47,6 +47,11 @@ server sends. Its own test is `tools/time-axis-test.php`.
   same day of the month as the window's first day (the last day of a
   shorter month: 31 jan, 28 feb, 31 mrt …). The 13th boundary is not a 13th
   month.
+- **A date at either end stays on the chart.** Each date stands centred
+  under its day; one at the edge that would stick out past the chart moves
+  in by just its overflow, and no further (`assets/js/chart-axis.js`,
+  `--edge-shift`; in the app `TickAxis` and `XTicks`). Every other date
+  stays exactly where its day is.
 - **A chart too narrow for a week's dates** (Slaap's small charts) writes
   them in two rows as 30 and 90 days do — the day over its month, the month
   where it is named (`time_axis_rows()`): the same dates, at the same days.

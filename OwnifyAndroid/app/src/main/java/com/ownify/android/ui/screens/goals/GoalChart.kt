@@ -212,11 +212,16 @@ private fun Plot(goal: Goal, chart: GoalChart, description: String) {
 
     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space5)) {
         if (chart.axisUnit.isNotEmpty()) {
-            T(chart.axisUnit, JStyle.Tiny, Modifier.fillMaxWidth().padding(bottom = 6.dp).clearAndSetSemantics { }, align = TextAlign.End)
+            // Above the gutter, where the numbers it names are.
+            T(chart.axisUnit, JStyle.Tiny, Modifier.fillMaxWidth().padding(bottom = 6.dp).clearAndSetSemantics { }, align = TextAlign.Start)
         }
 
-        // .goal-chart__frame: the plot, 8, the gutter.
+        // .goal-chart__frame: the gutter, 8, the plot — the levels named on the
+        // left, as on every chart over time (docs/CHARTS.md).
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+            // .goal-chart__y: each label on its line, right-aligned in the gutter, next to the plot.
+            YTicks(chart, Modifier.width(Gutter).height(PlotHeight))
+
             Box(
                 Modifier
                     .weight(1f)
@@ -272,12 +277,10 @@ private fun Plot(goal: Goal, chart: GoalChart, description: String) {
                 points.getOrNull(reading)?.let { Reading(it, accent) }
             }
 
-            // .goal-chart__y: each label on its line, right-aligned in the gutter.
-            YTicks(chart, Modifier.width(Gutter).height(PlotHeight))
         }
 
         // .goal-chart__x: under the plot only, each tick aligned as the server says.
-        XTicks(chart, Modifier.padding(top = Ownify.Space2, end = Gutter + Ownify.Space2))
+        XTicks(chart, Modifier.padding(top = Ownify.Space2, start = Gutter + Ownify.Space2))
     }
 }
 
@@ -536,7 +539,8 @@ private fun XTicks(chart: GoalChart, modifier: Modifier) {
                 val x = when (tick.align) {
                     "start" -> left
                     "end" -> left - p.width
-                    else -> left - p.width / 2f
+                    // Centred, but never past either end of the axis.
+                    else -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
                 }
                 p.place(x.toInt(), 0)
             }

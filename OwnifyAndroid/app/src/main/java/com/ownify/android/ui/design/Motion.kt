@@ -2,12 +2,22 @@ package com.ownify.android.ui.design
 
 import com.ownify.android.i18n.OwnifyFormat
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.InfiniteRepeatableSpec
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.MotionDurationScale
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
@@ -41,14 +51,18 @@ val EaseOutCubic = Easing { t -> 1f - (1f - t).pow(3) }
 @Composable
 fun Modifier.press(interaction: MutableInteractionSource, scale: Float = 0.97f, enabled: Boolean = true): Modifier {
     val pressed by interaction.collectIsPressedAsState()
+    val reduced = LocalReducedMotion.current
+    val down = pressed && enabled
     val value by animateFloatAsState(
-        targetValue = if (pressed && enabled) scale else 1f,
+        targetValue = if (down && !reduced) scale else 1f,
         animationSpec = tween(Ownify.FastMs, easing = Ownify.Ease),
         label = "press"
     )
+    // Reduced motion: nothing shrinks; the surface dims to 72% instead.
     return this.graphicsLayer {
         scaleX = value
         scaleY = value
+        alpha = if (down && reduced) 0.72f else 1f
     }
 }
 
@@ -79,13 +93,51 @@ val LocalVisibility = staticCompositionLocalOf { Visibility() }
 val LocalStillMotion = staticCompositionLocalOf { false }
 
 /**
+ * `prefers-reduced-motion: reduce`: the system's "Remove animations"
+ * (animator duration scale 0), followed live. Then nothing slides, rises,
+ * counts up or loops: things are placed at once, and what arrives fades in
+ * over [Ownify.ReduceFadeMs], as on the website.
+ */
+val LocalReducedMotion = compositionLocalOf { false }
+
+/** Reads the system's "Remove animations" and follows it while the app is open. */
+@Composable
+fun rememberReducedMotion(): Boolean {
+    val resolver = LocalContext.current.contentResolver
+    fun read() = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    var reduced by remember { mutableStateOf(read()) }
+    DisposableEffect(resolver) {
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) { reduced = read() }
+        }
+        resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, observer)
+        onDispose { resolver.unregisterContentObserver(observer) }
+    }
+    return reduced
+}
+
+/**
+ * Runs an animation at its own length whatever the system's animator scale:
+ * with "Remove animations" Compose would finish it at once, and the
+ * reduced-motion fades are meant to be seen.
+ */
+val Unscaled: MotionDurationScale = object : MotionDurationScale {
+    override val scaleFactor: Float get() = 1f
+}
+
+/** Fades this to 1 over [Ownify.ReduceFadeMs]: the reduced-motion arrival. */
+suspend fun Animatable<Float, AnimationVector1D>.reduceFadeIn() = withContext(Unscaled) {
+    animateTo(1f, tween(Ownify.ReduceFadeMs, easing = Ownify.EaseOut))
+}
+
+/**
  * An endlessly repeating value (the shimmer, the turning rings, the orb's
  * breath) — or [still] while the layout is being checked, where nothing
  * moves and a test can go idle.
  */
 @Composable
 fun loopValue(from: Float, to: Float, spec: InfiniteRepeatableSpec<Float>, still: Float = from): Float {
-    if (LocalStillMotion.current) return still
+    if (LocalStillMotion.current || LocalReducedMotion.current) return still
     val value by rememberInfiniteTransition(label = "loop").animateFloat(from, to, spec, label = "loop")
     return value
 }
@@ -98,15 +150,19 @@ fun loopValue(from: Float, to: Float, spec: InfiniteRepeatableSpec<Float>, still
 @Composable
 fun Modifier.reveal(): Modifier {
     val still = LocalStillMotion.current
+    val reduced = LocalReducedMotion.current
     val visibility = LocalVisibility.current
     val view = LocalView.current
     val density = LocalDensity.current
-    var seen by remember { mutableStateOf(still) }
+    // Reduced motion: everything is shown at once (interactions.js), fading in without rising.
+    var seen by remember { mutableStateOf(still || reduced) }
     var delayMs by remember { mutableIntStateOf(0) }
     val progress = remember { Animatable(if (still) 1f else 0f) }
 
-    LaunchedEffect(seen) {
-        if (seen && progress.value < 1f) {
+    LaunchedEffect(seen, reduced) {
+        if (reduced && progress.value < 1f) {
+            progress.reduceFadeIn()
+        } else if (seen && progress.value < 1f) {
             delay(delayMs.toLong())
             progress.animateTo(1f, tween(Ownify.SlowMs, easing = Ownify.EaseOut))
         }
@@ -128,7 +184,7 @@ fun Modifier.reveal(): Modifier {
         .graphicsLayer {
             val p = progress.value
             alpha = p
-            translationY = (1f - p) * with(density) { 14.dp.toPx() }
+            translationY = if (reduced) 0f else (1f - p) * with(density) { 14.dp.toPx() }
         }
 }
 
@@ -158,7 +214,7 @@ fun rememberPlayOnSight(): Pair<Boolean, Modifier> {
 /** A value that runs from 0 to [target] once [play] is set: the rings' and bars' 1000/1100 ms ease-out. */
 @Composable
 fun animatedShare(target: Float, play: Boolean, durationMs: Int = 1000, easing: Easing = Ownify.EaseOut): Float {
-    val still = LocalStillMotion.current
+    val still = LocalStillMotion.current || LocalReducedMotion.current
     val value by animateFloatAsState(
         targetValue = if (play || still) target else 0f,
         animationSpec = if (still) tween(0) else tween(durationMs, easing = easing),
@@ -176,7 +232,7 @@ fun animatedShare(target: Float, play: Boolean, durationMs: Int = 1000, easing: 
  */
 @Composable
 fun countUpText(text: String, play: Boolean): String {
-    val still = LocalStillMotion.current
+    val still = LocalStillMotion.current || LocalReducedMotion.current
     val progress = remember { Animatable(if (still) 1f else 0f) }
 
     LaunchedEffect(play) {

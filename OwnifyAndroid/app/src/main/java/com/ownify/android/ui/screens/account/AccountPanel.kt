@@ -63,6 +63,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.ownify.android.data.AppData
 import com.ownify.android.data.OwnifyActions
 import com.ownify.android.data.OwnifyAppState
@@ -88,6 +89,7 @@ import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.Toggle
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.press
+import com.ownify.android.ui.theme.ChromeText
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyType
@@ -333,9 +335,10 @@ private fun Modifier.fieldBox(fill: Color = Ownify.fill(0.05f)): Modifier {
 }
 
 /**
- * `.account__file`: the picture field. On the website it is the browser's
- * file field (a tr("Bestand kiezen") button and the chosen name); here the same
- * field opens Android's photo picker.
+ * `.account__file`: the picture field — a "Bestand kiezen" pill and the
+ * chosen name, the same on the website (which hides the browser's own file
+ * control behind it); here it opens Android's photo picker. The name may take
+ * two lines before it is cut, so "Geen bestand gekozen" fits beside the pill.
  */
 @Composable
 private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -352,21 +355,23 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             val shape = RoundedCornerShape(50)
-            T(
-                tr("Bestand kiezen"),
-                OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary),
-                Modifier
-                    .clip(shape)
-                    .background(Ownify.fill(0.08f))
-                    .border(1.dp, Ownify.GlassBorderSoft, shape)
-                    .cssPadding(PaddingValues(horizontal = Ownify.Space2, vertical = 3.dp), border = 1.dp),
-                maxLines = 1
-            )
+            ChromeText {
+                T(
+                    tr("Bestand kiezen"),
+                    OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary),
+                    Modifier
+                        .clip(shape)
+                        .background(Ownify.fill(0.08f))
+                        .border(1.dp, Ownify.GlassBorderSoft, shape)
+                        .cssPadding(PaddingValues(horizontal = Ownify.Space2, vertical = 3.dp), border = 1.dp),
+                    maxLines = 1
+                )
+            }
             T(
                 name ?: tr("Geen bestand gekozen"),
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
+                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, lineHeight = 1.3.em),
                 Modifier.weight(1f),
-                maxLines = 1,
+                maxLines = 2,
                 ellipsis = true
             )
         }
@@ -601,7 +606,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     // ------------------------------------------------------ Vriendverzoeken
     FieldLabel(tr("Vriendverzoeken"), Modifier.padding(top = Ownify.Space5))
     if (community.pending.isEmpty()) {
-        T(tr("Geen nieuwe vriendverzoeken."), JStyle.Tiny)
+        T(tr("Geen nieuwe vriendverzoeken."), JStyle.Footnote)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             community.pending.forEach { person ->
@@ -680,7 +685,7 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     // --------------------------------------------------------------- Vrienden
     FieldLabel(tr("Vrienden") + " (${community.friends.size})", Modifier.padding(top = Ownify.Space5))
     if (community.friends.isEmpty()) {
-        T(tr("Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam."), JStyle.Tiny)
+        T(tr("Je hebt nog geen vrienden. Voeg iemand toe met zijn of haar gebruikersnaam."), JStyle.Footnote)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             community.friends.forEach { person ->

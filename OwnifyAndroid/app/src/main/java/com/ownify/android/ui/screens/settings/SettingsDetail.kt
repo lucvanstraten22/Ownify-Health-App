@@ -146,7 +146,7 @@ private fun IdentityHero(data: AppData) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             AvatarCircle(profile.avatar, 68.dp, 28.dp)
-            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(20.sp, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(Ownify.FsTitle2, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             T(name.ifEmpty { tr("Naam nog niet ingevuld") }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
         }
     }
@@ -218,7 +218,7 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
             label = {
                 Column {
                     T(field.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
-                    if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                    if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                 }
             },
             value = {
@@ -338,7 +338,7 @@ private fun StaticField(label: String, note: String?, value: String, filled: Boo
         label = {
             Column {
                 T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
-                if (note != null) T(note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                if (note != null) T(note, JStyle.Footnote, Modifier.padding(top = 2.dp))
             }
         },
         value = {
@@ -682,7 +682,7 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                                     if (option.disabled) Ownify.TextSecondary else Ownify.TextPrimary
                                 )
                             )
-                            if (!option.note.isNullOrEmpty()) T(option.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                            if (!option.note.isNullOrEmpty()) T(option.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                         }
                         Box(
                             Modifier.size(22.dp).graphicsLayer {
@@ -732,7 +732,7 @@ private fun StatesBlock(block: SettingsBlock.States) {
                         )
                     }
                     if (!item.note.isNullOrEmpty()) {
-                        T(item.note, JStyle.Tiny, Modifier.padding(top = Ownify.Space1).widthIn(max = chWidth(JStyle.Tiny, 44f)))
+                        T(item.note, JStyle.Footnote, Modifier.padding(top = Ownify.Space1).widthIn(max = chWidth(JStyle.Footnote, 44f)))
                     }
                 }
             }
@@ -768,7 +768,7 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
                     ) {
                         Column(Modifier.weight(1f)) {
                             T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
-                            if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp))
+                            if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                         }
                         Toggle(item.on, dimmed = true)
                     }
@@ -935,7 +935,8 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
 private fun RowsBlock(block: SettingsBlock.Rows) {
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
-        JCard(Modifier.fillMaxWidth()) {
+        // `.card.settings-rows`: the choice lists' inner padding, so the text starts on one line.
+        JCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3)) {
             block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0) }
         }
     }

@@ -497,7 +497,10 @@ fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = fa
             placeables.forEachIndexed { i, p ->
                 val left = ticks[i].x / 100f * constraints.maxWidth
                 val x = when {
-                    centred -> left - p.width / 2f
+                    // Centred under its day, but never past either end of the
+                    // axis: an edge date moves in by just its overflow
+                    // (chart-axis.js on the website does the same).
+                    centred -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
                     i == 0 -> left
                     i == placeables.lastIndex -> left - p.width
                     else -> left - p.width / 2f

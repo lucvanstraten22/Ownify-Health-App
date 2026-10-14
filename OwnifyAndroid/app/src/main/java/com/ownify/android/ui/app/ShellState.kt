@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import com.ownify.android.ui.design.Unscaled
 import com.ownify.android.ui.theme.Ownify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -146,6 +147,39 @@ class ShellState(
     private var aiDrag: Drag? = null
     private var aiJob: Job? = null
 
+    // ------------------------------------------------------ reduced motion
+
+    /**
+     * The system's "Remove animations" (AppShell keeps it current). Then the
+     * rail, a detail and the sheet are placed at once instead of sliding, and
+     * the layer that arrives — or the one uncovered — fades in over
+     * [Ownify.ReduceFadeMs] (navigation-core.js `fadeIn`).
+     */
+    var reduceMotion = false
+
+    /** The layer fading in, and how far: [layerAlpha]. */
+    private var fading by mutableStateOf<Layer?>(null)
+    private var fade by mutableFloatStateOf(1f)
+    private var fadeJob: Job? = null
+
+    enum class Layer { Rail, Detail, Sheet }
+
+    /** How visible [layer] is: 1, unless it is the one fading in. */
+    fun layerAlpha(layer: Layer): Float = if (fading == layer) fade else 1f
+
+    private fun fadeIn(layer: Layer) {
+        fadeJob?.cancel()
+        fading = layer
+        fade = 0f
+        fadeJob = scope.launch(Unscaled) {
+            animate(0f, 1f, animationSpec = tween(Ownify.ReduceFadeMs, easing = Ownify.EaseOut)) { v, _ -> fade = v }
+            fading = null
+        }
+    }
+
+    /** What closing the sheet uncovers: an open detail, otherwise the page. */
+    private val uncovered: Layer get() = if (detail != null && detailShown) Layer.Detail else Layer.Rail
+
     /** Where a vertical swipe may start: the dock to open, the sheet's top to close. */
     var dockZones: List<Rect> = emptyList()
     var sheetTopZone: Rect? = null
@@ -192,7 +226,10 @@ class ShellState(
         val target = pageIds.indexOf(id)
         if (target < 0) return
         if (target == index && railDrag == null) {
-            scope.launch { scrolls[id]?.animateScrollTo(0) }
+            scope.launch {
+                val scroll = scrolls[id] ?: return@launch
+                if (reduceMotion) scroll.scrollTo(0) else scroll.animateScrollTo(0)
+            }
             return
         }
         if (detail != null && detailShown) {
@@ -265,10 +302,16 @@ class ShellState(
 
     private fun settleRail(target: Int) {
         val clamped = target.coerceIn(0, pageIds.lastIndex)
+        val moved = clamped != index
         railDrag = null
         railHeld = false
         index = clamped
         railJob?.cancel()
+        if (reduceMotion) {
+            rail = clamped.toFloat()
+            if (moved) fadeIn(Layer.Rail)
+            return
+        }
         railJob = scope.launch {
             animate(rail, clamped.toFloat(), animationSpec = tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) { v, _ -> rail = v }
         }
@@ -280,28 +323,46 @@ class ShellState(
         detailShown = opening
         detailJob?.cancel()
         val closing = detail
+        if (reduceMotion) {
+            detailProgress = target
+            if (opening) fadeIn(Layer.Detail) else landClosed(closing)
+            return
+        }
         detailJob = scope.launch {
             animate(detailProgress, target, animationSpec = tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) { v, _ -> detailProgress = v }
-            if (!opening && detail == closing) {
-                val back = under
-                if (back != null) {
-                    // Back to the detail it opened over, as it was left.
-                    under = null
-                    detail = back
-                    detailScroll = underScroll
-                    detailProgress = 1f
-                    detailShown = true
-                } else {
-                    detail = null
-                }
-            }
+            if (!opening) landClosed(closing)
+        }
+    }
+
+    /** A detail that has gone: back to the one it opened over, or off. */
+    private fun landClosed(closing: Detail?) {
+        if (detail != closing) return
+        val back = under
+        if (back != null) {
+            // Back to the detail it opened over, as it was left.
+            under = null
+            detail = back
+            detailScroll = underScroll
+            detailProgress = 1f
+            detailShown = true
+            if (reduceMotion) fadeIn(Layer.Detail)
+        } else {
+            detail = null
+            if (reduceMotion) fadeIn(Layer.Rail)
         }
     }
 
     private fun settleAi(target: Float) {
+        val opening = target == 1f
+        val changed = opening != aiOpen
         aiDrag = null
-        aiOpen = target == 1f
+        aiOpen = opening
         aiJob?.cancel()
+        if (reduceMotion) {
+            aiProgress = target
+            if (changed) fadeIn(if (opening) Layer.Sheet else uncovered)
+            return
+        }
         aiJob = scope.launch {
             animate(aiProgress, target, animationSpec = tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) { v, _ -> aiProgress = v }
         }

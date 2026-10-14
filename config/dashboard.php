@@ -103,17 +103,18 @@ return [
 
         /* Ring legend — the three pillars the score averages, each with its own
          * score beside it. `area` points at the Gezondheid area the row reads
-         * from, which is why the Sport row can carry the Training score without
-         * either name having to change. The three count equally, so there are
-         * no weights here. Values are DERIVED, like the overall score.
-         * `accent` is the pillar's own category colour and never changes;
-         * `score_band` (high | mid | low, or null without a score) is how high
-         * its score is — the colour of the dot beside it — filled in by
-         * health_contributor_scores() from config/scoring.php. */
+         * from. Each row is named as its area is everywhere else (Slaap,
+         * Voeding, Training), so a pillar has one name across the app. The
+         * three count equally, so there are no weights here. Values are
+         * DERIVED, like the overall score. `accent` is the pillar's own
+         * category colour and never changes; `score_band` (high | mid | low,
+         * or null without a score) is how high its score is — the colour of
+         * the dot beside it — filled in by health_contributor_scores() from
+         * config/scoring.php. */
         'contributors' => [
             ['area' => 'sleep',     'label' => 'Slaap',   'accent' => 'sleep',     'value' => null, 'score_band' => null],
             ['area' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition', 'value' => null, 'score_band' => null],
-            ['area' => 'training',  'label' => 'Sport',   'accent' => 'training',  'value' => null, 'score_band' => null],
+            ['area' => 'training',  'label' => 'Training', 'accent' => 'training',  'value' => null, 'score_band' => null],
         ],
 
     ],

@@ -78,8 +78,8 @@
 }
 
 .account__error {
-    border-color: rgba(191, 168, 99, 0.34);
-    background: rgba(191, 168, 99, 0.10);
+    border-color: var(--attention-edge);
+    background: var(--attention-wash);
     color: var(--text-primary);
 }
 
@@ -126,7 +126,7 @@
 .account__avatar .icon { width: 22px; height: 22px; }
 
 .account__username {
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 600;
     letter-spacing: -0.015em;
 }
@@ -134,6 +134,7 @@
 .account__meta {
     margin-top: var(--space-1);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -171,22 +172,66 @@
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-label);
+    font-size: var(--fs-input);
 }
 
+/* The picture field, as the app draws it (AccountPanel.kt, FileField): a
+   "Bestand kiezen" pill and the chosen name — two lines at most — over the
+   browser's own file control, which stays focusable but out of sight. */
 .account__file {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     padding-block: var(--space-2);
-    font-size: var(--fs-small);
-    color: var(--text-secondary);
+    cursor: pointer;
 }
 
-.account__input::placeholder { color: var(--text-faint); }
+.account__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
 
-.account__input:focus-visible,
-.account__file:focus-visible {
+.account__file-button {
+    flex: none;
+    padding: 3px var(--space-2);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--fill), calc(0.08 * var(--fill-k)));
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: normal;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.account__file-name {
+    flex: 1;
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: var(--fs-small);
+    line-height: 1.3;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+}
+
+.account__file:focus-within {
+    border-color: var(--health-strong);
+    box-shadow: var(--focus-halo);
+}
+
+.account__input::placeholder { color: var(--text-muted); }
+
+.account__input:focus-visible {
     outline: none;
-    border-color: rgba(60, 158, 114, 0.5);
+    border-color: var(--health-strong);
     background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
+    box-shadow: var(--focus-halo);
 }
 
 .account__submit,
@@ -197,7 +242,8 @@
 
 .account__hint {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -328,6 +374,7 @@
     border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--health) 22%, transparent);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     font-weight: 600;
     white-space: nowrap;
 }
@@ -402,6 +449,7 @@
 .friend__status {
     margin-top: 2px;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
@@ -496,7 +544,8 @@
 .account__toggle-note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 

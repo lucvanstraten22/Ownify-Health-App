@@ -114,7 +114,7 @@ fun SleepNightCard(night: SleepNight) {
             night.asleep?.let { asleep ->
                 Column(horizontalAlignment = Alignment.End) {
                     Row {
-                        T(asleep, OwnifyType.style(20.sp, FontWeight.Bold, tracking = (-0.03).em, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
+                        T(asleep, OwnifyType.style(Ownify.FsTitle2, FontWeight.Bold, tracking = (-0.03).em, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
                         T("u", OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextMuted, lineHeight = 1.1.em), Modifier.alignByBaseline().padding(start = 3.dp))
                     }
                     T(
@@ -151,7 +151,7 @@ fun SleepNightCard(night: SleepNight) {
             T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
         }
         if (night.staged) {
-            T(night.hint, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(night.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
 }

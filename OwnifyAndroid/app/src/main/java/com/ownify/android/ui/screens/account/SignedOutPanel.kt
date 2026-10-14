@@ -176,8 +176,8 @@ fun ErrorBox(text: String, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Ownify.AttentionWash.copy(alpha = 0.10f))
-            .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.34f), shape)
+            .background(Ownify.AttentionWash)
+            .border(1.dp, Ownify.AttentionEdge, shape)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )
@@ -194,7 +194,7 @@ fun FieldLabel(text: String, modifier: Modifier = Modifier) {
 fun FieldHint(text: String, modifier: Modifier = Modifier, centred: Boolean = false) {
     T(
         text,
-        JStyle.Tiny,
+        JStyle.Footnote,
         modifier.fillMaxWidth().padding(top = if (centred) Ownify.Space3 else Ownify.Space2),
         align = if (centred) TextAlign.Center else TextAlign.Start
     )
@@ -367,7 +367,7 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     }
 
     // .account__username, .account__meta
-    T(tr("Kies je gebruikersnaam"), OwnifyType.style(17.sp, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(tr("Kies je gebruikersnaam"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
     T(
         trf("Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.", step.email),
         JStyle.Tiny,

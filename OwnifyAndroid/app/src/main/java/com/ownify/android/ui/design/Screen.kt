@@ -39,7 +39,7 @@ data class ScreenMetrics(val width: Dp, val height: Dp) {
             else -> Ownify.FsScore
         }
 
-    val fsBrand: TextUnit get() = if (narrow) 20.sp else Ownify.FsBrand
+    val fsBrand: TextUnit get() = if (narrow) Ownify.FsTitle2 else Ownify.FsBrand
 
     /** `.tabbar` width: `min(94vw, 27.5rem)`, 97vw below 360, the column from 900. */
     val tabbarWidth: Dp
@@ -56,6 +56,7 @@ data class ScreenMetrics(val width: Dp, val height: Dp) {
     val stackGap: Dp get() = if (wide) Ownify.Space5 else Ownify.Space4
 
     /** `.app__main` padding-top. */
+    /** `--page-intro-top`: the space between the header and every page's title. */
     val mainTop: Dp get() = if (wide) Ownify.Space6 else Ownify.Space5
 
     /** `.score-ring` size: `min(50vw, 184px)`. */

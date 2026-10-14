@@ -124,7 +124,7 @@
 
 .area-chart__value,
 .area-chart__none {
-    font-size: 1.0625rem;
+    font-size: var(--fs-headline);
     font-weight: 700;
     line-height: 1.25;
     letter-spacing: -0.02em;
@@ -136,6 +136,7 @@
 
 .area-chart__when {
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -175,12 +176,14 @@
     height: 2.5em;                    /* two rows of the dates' own size */
     margin-top: var(--space-1);
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     line-height: 1.2;
 }
 .area-chart--mini .chart__empty {
     top: 50%;
     padding-inline: 0;
     font-size: var(--fs-tiny);
+    letter-spacing: var(--tracking-small);
     transform: translateY(-50%);
 }
 

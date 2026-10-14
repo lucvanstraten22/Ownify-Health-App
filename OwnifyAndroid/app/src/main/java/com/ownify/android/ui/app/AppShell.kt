@@ -43,6 +43,7 @@ import com.ownify.android.ui.design.Ground
 import com.ownify.android.ui.design.GroundPlacement
 import com.ownify.android.ui.design.LocalBackdrop
 import com.ownify.android.ui.design.LocalGround
+import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.LocalVisibility
 import com.ownify.android.ui.design.Visibility
@@ -87,6 +88,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
     val pageIds = remember(data.navigation) { data.navigation.map { it.id } }
     val start = remember(data.navigation) { data.navigation.firstOrNull { it.active }?.id ?: "overview" }
     val shell = remember(pageIds) { ShellState(pageIds, start, scope) }
+    shell.reduceMotion = LocalReducedMotion.current
 
     // For tests and screenshots: the shell, to move it as a finger would.
     LaunchedEffect(shell) { onShell?.invoke(shell) }
@@ -227,7 +229,7 @@ private fun Rail(shell: ShellState, data: AppData, screens: ShellScreens, modifi
                         val offset = i - shell.rail
                         translationX = offset * with(density) { width.toPx() }
                         // Nothing to draw more than a page away.
-                        alpha = if (offset <= -1f || offset >= 1f) 0f else 1f
+                        alpha = if (offset <= -1f || offset >= 1f) 0f else shell.layerAlpha(ShellState.Layer.Rail)
                     }
                     .then(if (hidden) Modifier.clearAndSetSemantics { } else Modifier)
             ) {
@@ -275,7 +277,10 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
     Box(
         Modifier
             .fillMaxSize()
-            .graphicsLayer { translationX = (1f - progress) * with(density) { width.toPx() } }
+            .graphicsLayer {
+                translationX = (1f - progress) * with(density) { width.toPx() }
+                if (detail == shell.detail) alpha = shell.layerAlpha(ShellState.Layer.Detail)
+            }
             .drawWithContent {
                 // Lifted off the rail while it is anywhere but parked.
                 drawBoxShadows(
@@ -308,7 +313,10 @@ private fun Sheet(shell: ShellState, content: @Composable () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .graphicsLayer { translationY = (1f - shell.aiProgress) * with(density) { height.toPx() } }
+            .graphicsLayer {
+                translationY = (1f - shell.aiProgress) * with(density) { height.toPx() }
+                alpha = shell.layerAlpha(ShellState.Layer.Sheet)
+            }
             .drawWithContent {
                 drawBoxShadows(shape, listOf(BoxShadow(y = (-18).dp, blur = 42.dp, color = Ownify.shade(0.36f))), shadows)
                 drawContent()

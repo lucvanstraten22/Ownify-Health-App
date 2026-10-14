@@ -12,7 +12,7 @@
 (function () {
     'use strict';
 
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');   // read live: it can change while open
     var DURATION = 1000;
 
     /* ------------------------------------------------------------- helpers */
@@ -32,7 +32,7 @@
 
     /** Runs fn(progress 0..1) each frame for `duration` ms. */
     function animate(duration, fn) {
-        if (reduceMotion) { fn(1); return; }
+        if (reduceQuery.matches) { fn(1); return; }
 
         var start = null;
 

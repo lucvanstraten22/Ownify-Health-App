@@ -279,7 +279,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count:
                 // A figure written as it is ("1:12", "5:50", "1.468") is not counted up.
                 if (count) countUpText(metric.value ?: "—", play && !empty) else metric.value ?: "—",
                 OwnifyType.style(
-                    20.sp,
+                    Ownify.FsTitle2,
                     if (empty) FontWeight.SemiBold else FontWeight.Bold,
                     if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
                     tracking = (-0.03).em, lineHeight = 1.1.em, tabular = true

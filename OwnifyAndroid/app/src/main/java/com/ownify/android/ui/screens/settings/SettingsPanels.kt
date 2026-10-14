@@ -85,7 +85,7 @@ import com.ownify.android.ui.design.blurring
 
 /** `.confirm__yes`: the answer that goes ahead, in the caution colour. */
 private val YesLook: BtnLook
-    get() = BtnLook(border = Ownify.AttentionWash.copy(alpha = 0.45f), fill = Ownify.AttentionWash.copy(alpha = 0.18f))
+    get() = BtnLook(border = Ownify.AttentionStrong, fill = Ownify.AttentionFill)
 
 /** `.confirm__scrim` is a little darker than the account panel's. */
 private const val CONFIRM_SCRIM = 0.55f
@@ -267,8 +267,8 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
                 val interaction = remember { MutableInteractionSource() }
                 val shape = RoundedCornerShape(Ownify.RadiusSm)
                 val fast = tween<Color>(Ownify.FastMs, easing = Ownify.Ease)
-                val border by animateColorAsState(if (active) Ownify.Health.copy(alpha = 0.5f) else Ownify.GlassBorderSoft, fast, label = "border")
-                val fill by animateColorAsState(if (active) Ownify.Health.copy(alpha = 0.14f) else Ownify.fill(0.04f), fast, label = "fill")
+                val border by animateColorAsState(if (active) Ownify.HealthStrong else Ownify.GlassBorderSoft, fast, label = "border")
+                val fill by animateColorAsState(if (active) Ownify.HealthFill else Ownify.fill(0.04f), fast, label = "fill")
                 Row(
                     Modifier
                         .press(interaction)
@@ -345,7 +345,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
 
     ConfirmFrame(overlay, title = if (step == 1) copy["title"].orEmpty() else copy["final_title"].orEmpty()) {
         if (step == 1) {
-            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionWash.copy(alpha = 0.16f))
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
             ConfirmTitle(copy["title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
             ConfirmRow(
@@ -357,7 +357,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                 Hairline()
                 Row(Modifier.fillMaxWidth().padding(top = Ownify.Space4), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                     JIcon(OwnifyIcons.lock, Modifier.padding(top = 1.dp), size = 14.dp, color = Ownify.TextMuted)
-                    T(copy["note"].orEmpty(), JStyle.Tiny, Modifier.weight(1f))
+                    T(copy["note"].orEmpty(), JStyle.Footnote, Modifier.weight(1f))
                 }
             }
         } else {
@@ -373,8 +373,8 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .fillMaxWidth()
                         .padding(top = Ownify.Space3)
                         .clip(shape)
-                        .background(Ownify.AttentionWash.copy(alpha = 0.10f))
-                        .border(1.dp, Ownify.AttentionWash.copy(alpha = 0.34f), shape)
+                        .background(Ownify.AttentionWash)
+                        .border(1.dp, Ownify.AttentionEdge, shape)
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )
@@ -454,11 +454,11 @@ fun PairingPanel(overlay: Overlay.Pairing, data: AppData) {
         ConfirmBody(tr("Open de Ownify-app op je telefoon en voer deze code in."))
         T(
             code ?: "••••••••",
-            OwnifyType.style(28.sp, FontWeight.SemiBold, tracking = 0.18.em).copy(fontFamily = FontFamily.Monospace),
+            OwnifyType.style(Ownify.FsLargeTitle, FontWeight.SemiBold, tracking = 0.18.em).copy(fontFamily = FontFamily.Monospace),
             Modifier.fillMaxWidth().padding(top = Ownify.Space4).semantics { liveRegion = LiveRegionMode.Polite },
             align = TextAlign.Center
         )
-        T(expiry.orEmpty(), JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
+        T(expiry.orEmpty(), JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
         error?.let { EditorError(it) }
         ConfirmRow(
             { Btn(tr("Sluiten"), onClick = { shell.close(overlay) }, modifier = it) },

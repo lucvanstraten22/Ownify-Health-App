@@ -99,6 +99,14 @@
         place(opening ? 1 : 0);
         applyReachability(opening);
 
+        /* Reduced motion: the sheet arriving, or what it uncovers (an open
+           detail, otherwise the page), fades in. */
+        if (changed) {
+            nav.fadeIn(opening ? sheet
+                : (deck.dataset.detailState === 'open' && deck.querySelector('[data-detail-stack]'))
+                    || deck.querySelector('.rail'));
+        }
+
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(function () {
             settleTimer = null;

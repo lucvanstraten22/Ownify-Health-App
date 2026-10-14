@@ -49,7 +49,7 @@ fun PairedStatus() {
             Column(Modifier.weight(1f)) {
                 val who = (state as? OwnifyState.Connected)?.profile?.username
                 T(if (who != null) trf("Gekoppeld aan %s", who) else tr("Deze telefoon is gekoppeld"), JStyle.Eyebrow, Modifier.semantics { heading() })
-                T(tr("Met een koppelcode. Log in om ook je account te gebruiken."), JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+                T(tr("Met een koppelcode. Log in om ook je account te gebruiken."), JStyle.Footnote, Modifier.padding(top = Ownify.Space1))
             }
         }
 

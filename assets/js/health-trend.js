@@ -13,7 +13,7 @@
     var charts = document.querySelectorAll('[data-chart]');
     if (!charts.length) { return; }
 
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');   // read live: it can change while open
 
     function activeRange(chart) {
         return chart.querySelector('.chart__range.is-active');
@@ -60,7 +60,7 @@
             line.classList.remove('is-drawn');
             line.classList.add('is-drawing');
 
-            if (reduceMotion) {
+            if (reduceQuery.matches) {
                 line.classList.remove('is-drawing');
                 line.classList.add('is-drawn');
                 return;

@@ -1,5 +1,9 @@
 package com.ownify.android.ui.screens.goals
 
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
 import androidx.compose.animation.animateColorAsState
@@ -105,8 +109,7 @@ fun GoalsPage(data: AppData, scroll: ScrollState) {
     val labels = goals.labels
     val addWizard = { shell.open(Overlay.Wizard) }
 
-    // `[data-page="goals"] .app__main { padding-top: 12px }`
-    PageColumn(scroll, mainTop = Ownify.Space3) {
+    PageColumn(scroll) {
         // .goals-intro
         Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             Row(
@@ -115,7 +118,7 @@ fun GoalsPage(data: AppData, scroll: ScrollState) {
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
             ) {
                 Column(Modifier.weight(1f)) {
-                    T(goals.title, JStyle.Section, Modifier.semantics { heading() })
+                    T(goals.title, JStyle.LargeTitle, Modifier.semantics { heading() })
                     if (goals.lede.isNotEmpty()) T(goals.lede, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
                 }
                 AddButton(enabled = board.canAdd, label = labels["add_aria"].orEmpty(), onClick = addWizard)
@@ -220,7 +223,7 @@ private fun Eyebrow(text: String, modifier: Modifier = Modifier) {
 /** `.goals-slots`: how many places are left. */
 @Composable
 private fun SlotNote(text: String) {
-    T(text, JStyle.Tiny, Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2))
+    T(text, JStyle.Footnote, Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2))
 }
 
 /** `.goals-empty`: nothing here yet — its icon, what to know, and (on Actief) the way to start. */
@@ -349,6 +352,7 @@ fun GoalCard(
         val to by animateColorAsState(if (quiet) CardStyle.Quiet.to else CardStyle.Default.to, slow, label = "to")
         val border by animateColorAsState(if (quiet) Ownify.GlassBorderSoft else Ownify.GlassBorder, slow, label = "border")
         val bar by animateFloatAsState(if (model.paused) 0.35f else 1f, tween(Ownify.SlowMs, easing = Ownify.EaseOut), label = "bar")
+        val stripeInset = LocalScreen.current.cardRadius
 
         val padding = when {
             primary && narrow -> PaddingValues(Ownify.Space4)
@@ -381,14 +385,30 @@ fun GoalCard(
                     )
                     .drawWithContent {
                         drawContent()
-                        // .goal-card--primary::after — the accent along the left edge.
+                        // .goal-card--primary::after — the accent along the left edge,
+                        // a corner's radius short of the top and the bottom, round
+                        // at its ends, so the card's curve never cuts it.
                         if (primary) {
-                            drawRect(
-                                Brush.verticalGradient(listOf(accent.color, Ownify.mix(accent.color, 0.35f, Color.Transparent))),
-                                topLeft = Offset.Zero,
-                                size = Size(3.dp.toPx(), size.height),
-                                alpha = bar
-                            )
+                            val inset = stripeInset.toPx()
+                            val length = size.height - inset * 2
+                            if (length > 0f) {
+                                val w = 3.dp.toPx()
+                                // Flat against the card's side, round at the far edge:
+                                // `border-radius: 0 999px 999px 0`.
+                                val stripe = Path().apply {
+                                    addRect(Rect(0f, inset, w / 2f, inset + length))
+                                    addRoundRect(RoundRect(0f, inset, w, inset + length, CornerRadius(w / 2f, w / 2f)))
+                                }
+                                drawPath(
+                                    stripe,
+                                    Brush.verticalGradient(
+                                        listOf(accent.color, Ownify.mix(accent.color, 0.35f, Color.Transparent)),
+                                        startY = inset,
+                                        endY = inset + length
+                                    ),
+                                    alpha = bar
+                                )
+                            }
                         }
                     },
                 style = CardStyle.Default.copy(from = from, to = to, border = border),
@@ -406,7 +426,7 @@ fun GoalCard(
                             T(
                                 model.name,
                                 OwnifyType.style(
-                                    if (primary && !narrow) 19.sp else 17.sp, FontWeight.SemiBold,
+                                    if (primary && !narrow) Ownify.FsTitle3 else Ownify.FsHeadline, FontWeight.SemiBold,
                                     if (model.paused) Ownify.TextSecondary else Ownify.TextPrimary,
                                     tracking = (-0.015).em
                                 ),
@@ -431,7 +451,7 @@ fun GoalCard(
                             T(
                                 countUpText(model.percent?.toString() ?: "—", play && !empty),
                                 OwnifyType.style(
-                                    if (primary && !narrow) Ownify.FsScoreSm else 24.sp, FontWeight.Bold,
+                                    if (primary && !narrow) Ownify.FsScoreSm else Ownify.FsFigure, FontWeight.Bold,
                                     if ((empty && !preview) || model.paused) Ownify.TextSecondary else Ownify.TextPrimary,
                                     tracking = (-0.035).em, lineHeight = 1.em, tabular = true
                                 ),

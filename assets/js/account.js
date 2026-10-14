@@ -201,6 +201,20 @@
         });
     });
 
+    /* -------------------------------------------------------- the picture */
+
+    /* The field shows the chosen file's name, as the app does. */
+    function showFileName(input) {
+        var name = input.closest('.account__file').querySelector('[data-account-file-name]');
+        if (!name) { return; }
+        var file = input.files && input.files[0];
+        name.textContent = file ? file.name : name.getAttribute('data-empty');
+    }
+
+    panel.addEventListener('change', function (event) {
+        if (event.target.matches('[data-account-file]')) { showFileName(event.target); }
+    });
+
     /* --------------------------------------------------------------- forms */
 
     panel.addEventListener('submit', function (event) {
@@ -264,6 +278,8 @@
             if (kind === 'avatar' && result.avatar) {
                 applyAvatar(result.avatar);
                 form.reset();
+                var picked = form.querySelector('[data-account-file]');
+                if (picked) { showFileName(picked); }
             }
         });
     });

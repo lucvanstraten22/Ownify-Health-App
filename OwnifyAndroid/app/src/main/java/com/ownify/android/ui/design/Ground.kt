@@ -38,7 +38,7 @@ data class Ground(val washes: List<Wash>) {
         val App = Ground(
             listOf(
                 Wash(0.90f, 0.55f, 0.12f, 0.00f, Ownify.Health.copy(alpha = 0.14f), 0.62f),
-                Wash(0.80f, 0.50f, 0.96f, 0.12f, Ownify.AttentionWash.copy(alpha = 0.10f), 0.58f),
+                Wash(0.80f, 0.50f, 0.96f, 0.12f, Ownify.AttentionGold.copy(alpha = 0.10f), 0.58f),
                 Wash(1.20f, 0.70f, 0.50f, 1.04f, Ownify.AmbientOlive.copy(alpha = 0.08f), 0.60f)
             )
         )
@@ -55,7 +55,7 @@ data class Ground(val washes: List<Wash>) {
         val Assistant = Ground(
             listOf(
                 Wash(0.86f, 0.48f, 0.80f, 0.02f, Ownify.Health.copy(alpha = 0.16f), 0.62f),
-                Wash(0.72f, 0.44f, 0.10f, 0.24f, Ownify.AttentionWash.copy(alpha = 0.08f), 0.60f),
+                Wash(0.72f, 0.44f, 0.10f, 0.24f, Ownify.AttentionGold.copy(alpha = 0.08f), 0.60f),
                 Wash(1.20f, 0.64f, 0.50f, 1.04f, Ownify.AmbientOlive.copy(alpha = 0.08f), 0.62f)
             )
         )
