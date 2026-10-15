@@ -770,8 +770,9 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
                 }
                 T(
                     item.label,
-                    OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary, lineHeight = 1.em),
-                    Modifier.padding(top = 5.dp),
+                    // 1.3: room for the descenders (p, g), as on the website.
+                    OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary, lineHeight = 1.3.em),
+                    Modifier.padding(top = 3.dp),
                     maxLines = 1, ellipsis = true
                 )
             }
