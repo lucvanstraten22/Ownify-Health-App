@@ -91,6 +91,17 @@ if (!function_exists('icon')) {
                 // add a goal
                 'plus'     => '<path d="M12 5.4v13.2M5.4 12h13.2"/>',
 
+                // a challenge's five-digit code: Code invoeren
+                'hash'     => '<path d="M10 4.6 8.4 19.4M15.6 4.6 14 19.4M5.4 9.2h13.6M5 14.8h13.6"/>',
+
+                // copying a code — two sheets, the front one whole
+                'copy'     => '<rect x="8.6" y="8.6" width="11" height="11" rx="2.4"/>'
+                    . '<path d="M15.4 8.6V6.8a2.4 2.4 0 0 0-2.4-2.4H6.8a2.4 2.4 0 0 0-2.4 2.4V13a2.4 2.4 0 0 0 2.4 2.4h1.8"/>',
+
+                // sharing a code — an arrow up out of an open box
+                'share'    => '<path d="M12 14.4V3.8M8.2 7.4 12 3.6l3.8 3.8"/>'
+                    . '<path d="M8.4 10.4H7a2.4 2.4 0 0 0-2.4 2.4v5.4A2.4 2.4 0 0 0 7 20.6h10a2.4 2.4 0 0 0 2.4-2.4v-5.4a2.4 2.4 0 0 0-2.4-2.4h-1.4"/>',
+
                 // sending a message — an arrow up, the stroke the rest share
                 'arrow-up' => '<path d="M12 19.2V5.2M6.4 10.8 12 5.2l5.6 5.6"/>',
 

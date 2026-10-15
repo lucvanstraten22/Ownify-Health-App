@@ -250,6 +250,20 @@ if (db_available()) {
                 . '— import database/migrations/018-sleep-stages.sql');
         }
 
+        /* Not fatal: without them Community shows the leaderboard card only,
+           and no challenge can be made or joined (docs/CHALLENGES.md). */
+        $challengeTables = (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name IN ('challenges', 'challenge_members')"
+        );
+
+        if ($challengeTables === 2) {
+            line('ok', 'challenges', 'challenges and challenge_members are there: Community has Uitdagingen');
+        } else {
+            line('warn', 'challenges', 'the challenge tables are missing, so Community shows the leaderboard only '
+                . '— import database/migrations/022-challenges.sql');
+        }
+
         /* Not fatal: without GD the boards and friends lists show each
            picture as uploaded (up to 3 MB) instead of a small copy. */
         if (!function_exists('imagecreatetruecolor')) {

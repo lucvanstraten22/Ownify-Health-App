@@ -25,6 +25,10 @@
 --      users.username, user_profiles.avatar_path,
 --      user_period_points.points / .position
 --
+--  SHARED WITH THE PEOPLE YOU CHOSE (a challenge you joined yourself)
+--      your total for that one challenge — worked out from your synced data
+--      for its own period and metric only, shown to its participants
+--
 --  PRIVATE (the owner and authorised services only)
 --      user_measurements, health_metrics, sleep_sessions, nutrition_entries,
 --      workouts, workout_hr_zones, daily_scores, goals, goal_progress,
@@ -55,6 +59,8 @@ DROP TABLE IF EXISTS `leaderboard_best_positions`;
 DROP TABLE IF EXISTS `user_period_points`;
 DROP TABLE IF EXISTS `point_events`;
 DROP TABLE IF EXISTS `point_rules`;
+DROP TABLE IF EXISTS `challenge_members`;
+DROP TABLE IF EXISTS `challenges`;
 DROP TABLE IF EXISTS `user_blocks`;
 DROP TABLE IF EXISTS `friendships`;
 DROP TABLE IF EXISTS `user_devices`;
@@ -749,6 +755,53 @@ CREATE TABLE `user_blocks` (
         REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_block_blocked` FOREIGN KEY (`blocked_id`)
         REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- Uitdagingen (docs/CHALLENGES.md). A challenge is Samen — everybody adds up
+-- towards one target — or Wedstrijd — the most wins, and a tie on the last
+-- day goes on until somebody leads. Anybody with its five-digit code can look
+-- at it and then join it themselves until it is over; friends can also be
+-- invited, and an invitation is only ever accepted by the person invited.
+-- A participant sees the others' usernames, pictures (as the boards show
+-- them) and totals for the challenge — the totals are worked out from the
+-- synced data when shown, never copied in here.
+CREATE TABLE `challenges` (
+    `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `code`        CHAR(5) NULL COMMENT 'Five digits; works until the challenge is over. NULL once handed to a newer challenge',
+    `creator_id`  BIGINT UNSIGNED NULL COMMENT 'NULL once that account is deleted; the challenge goes on for the others',
+    `kind`        ENUM('together','versus') NOT NULL COMMENT 'Samen: one shared target. Wedstrijd: the most wins',
+    `metric`      ENUM('workouts','steps','active_minutes','distance','sleep_nights') NOT NULL,
+    `target`      DECIMAL(12,3) NULL COMMENT 'Samen only, stored units: workouts, steps, minutes, km, nights',
+    `name`        VARCHAR(60) NOT NULL,
+    `start_date`  DATE NOT NULL,
+    `end_date`    DATE NOT NULL COMMENT 'The last day, inclusive. A Wedstrijd tied on it goes on until somebody leads',
+    `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_challenge_code` (`code`),
+    KEY `idx_challenge_creator` (`creator_id`),
+    KEY `idx_challenge_end` (`end_date`),
+    CONSTRAINT `chk_challenge_dates` CHECK (`end_date` >= `start_date`),
+    CONSTRAINT `fk_challenge_creator` FOREIGN KEY (`creator_id`)
+        REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `challenge_members` (
+    `challenge_id` BIGINT UNSIGNED NOT NULL,
+    `user_id`      BIGINT UNSIGNED NOT NULL,
+    `status`       ENUM('invited','joined','declined','left') NOT NULL,
+    `invited_by`   BIGINT UNSIGNED NULL,
+    `joined_at`    DATETIME NULL COMMENT 'Counts from this day (or the start, when that is later)',
+    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`challenge_id`, `user_id`),
+    KEY `idx_member_user_status` (`user_id`, `status`),
+    CONSTRAINT `fk_member_challenge` FOREIGN KEY (`challenge_id`)
+        REFERENCES `challenges` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_member_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_member_inviter` FOREIGN KEY (`invited_by`)
+        REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

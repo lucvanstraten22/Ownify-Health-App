@@ -230,6 +230,22 @@ class FakeOwnifyServer {
     var stateBody: String = FakeOwnifyServer::class.java.classLoader!!.getResource("state-demo.json").readText()
 
     /**
+     * Uitdagingen (api/challenges/…php): what each endpoint answers — status
+     * and body — by its file name. One not named answers ok with a message.
+     */
+    val challengeReplies = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, String>>()
+
+    /** The pages with Uitdagingen in them: challenges-state.json's, as a demo account's would be. */
+    fun withChallenges() {
+        val fixture = JSONObject(FakeOwnifyServer::class.java.classLoader!!.getResource("challenges-state.json").readText())
+        val state = JSONObject(stateBody)
+        val data = state.getJSONObject("data")
+        data.put("challenges", fixture.getJSONObject("challenges"))
+        data.getJSONObject("community").put("preview", fixture.getJSONObject("preview"))
+        stateBody = state.toString()
+    }
+
+    /**
      * A new account's setup is waiting (includes/setup.php): the pages carry
      * `setup` from setup-pending.json until api/setup/finish.php, as the
      * real server's do. [setupGoals] are the active goals the setup shows as
@@ -485,6 +501,15 @@ class FakeOwnifyServer {
                         savePrivacy(on)
                         reply(exchange, 200, """{"ok":true,"leaderboard_avatar":$on,"message":"Opgeslagen."}""")
                     }
+                }
+            }
+            // Uitdagingen: the answer it was given, the account token only.
+            path.contains("/challenges/") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Je bent niet ingelogd."}""")
+                else {
+                    val (status, answer) = challengeReplies[path.substringAfterLast('/')] ?: (200 to """{"ok":true,"message":"Gedaan"}""")
+                    reply(exchange, status, answer)
                 }
             }
             // Ownify AI (api/ai/…php), as the real one answers, with the account token only.

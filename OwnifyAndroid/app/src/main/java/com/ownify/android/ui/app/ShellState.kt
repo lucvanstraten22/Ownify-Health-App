@@ -51,6 +51,26 @@ sealed interface Detail {
         override val parent: Detail get() = HealthArea("training")
     }
 
+    /** Community's Ranglijst: the full board, behind the card (pages/leaderboard.php). */
+    data object Leaderboard : Detail {
+        override val key get() = "leaderboard"
+    }
+
+    /** Uitdagingen: every challenge you are in or invited to (pages/challenges.php). */
+    data object Challenges : Detail {
+        override val key get() = "challenges"
+    }
+
+    /**
+     * One challenge (pages/challenge-detail.php): over Uitdagingen when it
+     * was opened there ([overList]), over Community when its tile there was
+     * tapped — and its back pill says which.
+     */
+    data class Challenge(val id: Int, val overList: Boolean) : Detail {
+        override val key get() = "challenge:$id"
+        override val parent: Detail? get() = if (overList) Challenges else null
+    }
+
     /** The detail this one opens over, or null: it opens over the rail. */
     val parent: Detail? get() = null
 }
@@ -63,6 +83,14 @@ sealed interface Overlay {
     data object DeleteAccount : Overlay
     data class EditField(val key: String) : Overlay
     data class Pairing(val provider: String) : Overlay
+
+    /** Uitdagingen's one bottom sheet, in its five uses (components/challenge-sheet.php). */
+    data object ChallengeCreate : Overlay
+    data object ChallengeCode : Overlay
+    /** An invitation of yours, to look at before Meedoen. */
+    data class ChallengeReview(val id: Int) : Overlay
+    data class ChallengeInvite(val id: Int) : Overlay
+    data class ChallengeLeave(val id: Int) : Overlay
 }
 
 /**

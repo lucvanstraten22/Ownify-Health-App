@@ -85,7 +85,7 @@ foreach ($data['navigation'] as $position => $item) {
 <html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($focus) ?>" data-active-page="<?= e($startPage) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
-        'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community',
+        'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community', 'challenges',
         'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training',
     ]]); ?>
 </head>
@@ -187,6 +187,16 @@ foreach ($data['navigation'] as $position => $item) {
                 <?php page('goal-detail', ['goal' => $goal] + $data); ?>
             <?php endforeach; ?>
 
+            <?php /* Community's two: the leaderboard, and Uitdagingen with each
+                     challenge on a page of its own over it (docs/CHALLENGES.md). */ ?>
+            <?php page('leaderboard', $data); ?>
+            <?php if (!empty($data['challenges']['available']) && is_file(__DIR__ . '/pages/challenges.php')): ?>
+                <?php page('challenges', $data); ?>
+                <?php foreach (array_merge($data['challenges']['running'], $data['challenges']['ended']) as $challenge): ?>
+                    <?php page('challenge-detail', ['challenge' => $challenge] + $data); ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
             <?php foreach ($data['settings']['pages'] as $pageId => $settingsPage): ?>
                 <?php page('settings-detail', $data + [
                     'settings_page'    => $settingsPage,
@@ -214,6 +224,9 @@ foreach ($data['navigation'] as $position => $item) {
     component('settings-pairing', $data);
     component('account-modal', $data);
     component('devices-popup', $data);
+    if (!empty($data['challenges']['available'])) {
+        component('challenge-sheet', $data);
+    }
     ?>
 
     <script src="<?= e(asset('assets/js/dashboard.js')) ?>" defer></script>
@@ -232,6 +245,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/sleep.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/training.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/community.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/challenges.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goals.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/settings.js')) ?>" defer></script>

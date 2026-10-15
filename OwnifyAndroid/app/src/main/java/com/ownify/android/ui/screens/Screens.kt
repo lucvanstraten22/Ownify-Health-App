@@ -24,7 +24,15 @@ import com.ownify.android.ui.design.rememberBackdrop
 import com.ownify.android.ui.screens.account.AccountPanel
 import com.ownify.android.ui.screens.account.SignedOutPanel
 import com.ownify.android.ui.screens.assistant.AssistantSheet
+import com.ownify.android.ui.screens.community.ChallengeCodeSheet
+import com.ownify.android.ui.screens.community.ChallengeCreateSheet
+import com.ownify.android.ui.screens.community.ChallengeDetail
+import com.ownify.android.ui.screens.community.ChallengeInviteSheet
+import com.ownify.android.ui.screens.community.ChallengeLeaveSheet
+import com.ownify.android.ui.screens.community.ChallengeReviewSheet
+import com.ownify.android.ui.screens.community.ChallengesDetail
 import com.ownify.android.ui.screens.community.CommunityPage
+import com.ownify.android.ui.screens.community.LeaderboardDetail
 import com.ownify.android.ui.screens.devices.DevicesPopup
 import com.ownify.android.ui.screens.goals.GoalDetail
 import com.ownify.android.ui.screens.goals.GoalBoard
@@ -60,7 +68,7 @@ object OwnifyScreens {
                 "overview" -> OverviewPage(data, scroll)
                 "health" -> HealthPage(data, scroll)
                 "goals" -> GoalsPage(data, scroll)
-                "community" -> CommunityPage(data)
+                "community" -> CommunityPage(data, scroll)
                 "settings" -> SettingsPage(data, scroll)
             }
         },
@@ -74,6 +82,9 @@ object OwnifyScreens {
                 is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.let { view ->
                     view.session(detail.id)?.let { TrainingSessionDetail(it, view.heart, scroll) }
                 }
+                Detail.Leaderboard -> LeaderboardDetail(data)
+                Detail.Challenges -> ChallengesDetail(data, scroll)
+                is Detail.Challenge -> data.challenges.view(detail.id)?.let { ChallengeDetail(data, it, detail.overList, scroll) }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },
@@ -85,6 +96,11 @@ object OwnifyScreens {
                 Overlay.DeleteAccount -> DeleteConfirm(overlay, data)
                 is Overlay.EditField -> FieldEditor(overlay, data)
                 is Overlay.Pairing -> PairingPanel(overlay, data)
+                Overlay.ChallengeCreate -> ChallengeCreateSheet(Overlay.ChallengeCreate, data)
+                Overlay.ChallengeCode -> ChallengeCodeSheet(Overlay.ChallengeCode, data)
+                is Overlay.ChallengeReview -> ChallengeReviewSheet(overlay, data)
+                is Overlay.ChallengeInvite -> ChallengeInviteSheet(overlay, data)
+                is Overlay.ChallengeLeave -> ChallengeLeaveSheet(overlay, data)
             }
         },
         setup = { data -> SetupScreen(data) }

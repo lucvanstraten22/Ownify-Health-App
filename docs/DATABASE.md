@@ -286,6 +286,8 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | `point_events` | the ledger: one row per award, at most one per `award_key` |
 | `user_period_points` | points per period, plus the national position |
 | `leaderboard_best_positions` | best rank ever reached |
+| `challenges` | a challenge (Uitdagingen): Samen or Wedstrijd, what it counts, its target (Samen, stored units), its name, first and last day, and its five-digit code — which works until the last day and is `NULL` once a later challenge was given it ([CHALLENGES.md](CHALLENGES.md)) |
+| `challenge_members` | who is in a challenge and how: `invited` (by whom), `joined` (since when — what they do counts from that day), `declined` or `left`. Nobody's health is copied in here: totals are worked out when shown |
 
 **Ownify AI — private** ([AI.md](AI.md))
 
@@ -449,6 +451,12 @@ the old default `nl` turned into NULL (it was never anybody's choice), from
 follows the device, everything is metric, and choosing either says it
 cannot be kept yet. See [I18N.md](I18N.md).
 
+**Uitdagingen** are `challenges` and `challenge_members`, from
+`database/migrations/022-challenges.sql`; until it is imported Community shows
+the leaderboard card only. Deleting an account takes its memberships with it;
+a challenge it made goes on for the others (`creator_id` becomes NULL). See
+[CHALLENGES.md](CHALLENGES.md).
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
@@ -467,7 +475,7 @@ Two classes of data, and the boundary is deliberate.
 | `users.username` | every health table |
 | `user_profiles.avatar_path` | `user_measurements` |
 | `user_period_points.points`, `.position` | `goals`, `goal_progress` |
-| | `ai_conversations`, `ai_messages`, `ai_usage` |
+| your total for a challenge you joined yourself — to its participants only | `ai_conversations`, `ai_messages`, `ai_usage` |
 
 The rules:
 
@@ -809,6 +817,11 @@ private data is returned.
 | `api/friends/settings.php` | `user_profiles.allow_friend_requests` of the signed-in account |
 | `api/profile/privacy.php` | `user_profiles.leaderboard_avatar`, or `ai_consent` (with its version and time), of the signed-in account |
 | `api/friends/block.php` | `user_blocks`, and deletes the pair's `friendships` row |
+| `api/challenges/create.php` | a `challenges` row with a fresh five-digit code, its maker `joined` in `challenge_members`, the chosen friends `invited` (friends only) |
+| `api/challenges/lookup.php` | reads only — but a wrong code counts in `auth_attempts` (`challenge_code`), five in fifteen minutes, as a wrong password does |
+| `api/challenges/join.php` | `challenge_members` → `joined`, on the person's own tap only: through an invitation they have, or the code (checked again, and counted when wrong) |
+| `api/challenges/respond.php` | `challenge_members` → `declined` (an invitation) or `left` (what they contributed no longer counts; the code lets them back in while it runs) |
+| `api/challenges/invite.php` | `challenge_members` → `invited`, for your own friends, while it runs; never somebody in it, already invited, or who turned it down |
 | `api/ai/consent.php` | `user_profiles.ai_consent`, `ai_consent_version`, `ai_consent_at` |
 | `api/ai/chat.php` | `ai_usage` (reserved before Gemini is asked, given back if it fails); on an answer, the question and the answer in `ai_messages`, a new `ai_conversations` row for a first question (the oldest beyond 50 are deleted), and a proposal still waiting in that conversation marked expired; `ai_service_state` when Gemini's free quota is used up. A "ja" or "nee" to a proposal does what `action.php` does |
 | `api/ai/action.php` | carries out or turns down one proposal: `goals` through the same code as `api/goals/create.php` and `update.php`, `ai_messages.action_state`, and a note from Ownify in `ai_messages` |

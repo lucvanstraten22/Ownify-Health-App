@@ -30,6 +30,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -147,6 +148,13 @@ class OwnifyAppFlowTest {
 
     /** The overview's score card: the pages have arrived. */
     private fun waitForPages() = waitFor("Gezondheidsscore")
+
+    /** Since 18.0 the leaderboard is a page of its own, behind Community's Ranglijst card. */
+    private fun openLeaderboard() {
+        waitFor("Toon alles")
+        compose.onAllNodes(hasText("Toon alles", substring = true) and hasClickAction()).onFirst().performClick()
+        waitFor("All-time")
+    }
 
     // ------------------------------------------------------------- signed out
 
@@ -828,6 +836,7 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
         button("Community").performClick()
+        openLeaderboard()
         waitFor("Vrienden")
 
         val add = hasContentDescription("Vrienden toevoegen") and hasClickAction()
@@ -873,6 +882,7 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
         button("Community").performClick()
+        openLeaderboard()
         waitFor("Vrienden")
 
         compose.waitUntil(15_000) { com.ownify.android.ui.app.Avatars.cached(path) != null }

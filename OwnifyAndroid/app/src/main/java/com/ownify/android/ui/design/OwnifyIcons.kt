@@ -206,6 +206,29 @@ object OwnifyIcons {
         )
     }
 
+    /** `hash` */
+    val hash: ImageVector by lazy {
+        icon("hash", null,
+            "M10 4.6 8.4 19.4M15.6 4.6 14 19.4M5.4 9.2h13.6M5 14.8h13.6"
+        )
+    }
+
+    /** `copy` */
+    val copy: ImageVector by lazy {
+        icon("copy", null,
+            "M11 8.6H17.2A2.4 2.4 0 0 1 19.6 11V17.2A2.4 2.4 0 0 1 17.2 19.6H11A2.4 2.4 0 0 1 8.6 17.2V11A2.4 2.4 0 0 1 11 8.6Z",
+            "M15.4 8.6V6.8a2.4 2.4 0 0 0-2.4-2.4H6.8a2.4 2.4 0 0 0-2.4 2.4V13a2.4 2.4 0 0 0 2.4 2.4h1.8"
+        )
+    }
+
+    /** `share` */
+    val share: ImageVector by lazy {
+        icon("share", null,
+            "M12 14.4V3.8M8.2 7.4 12 3.6l3.8 3.8",
+            "M8.4 10.4H7a2.4 2.4 0 0 0-2.4 2.4v5.4A2.4 2.4 0 0 0 7 20.6h10a2.4 2.4 0 0 0 2.4-2.4v-5.4a2.4 2.4 0 0 0-2.4-2.4h-1.4"
+        )
+    }
+
     /** `arrow-up` */
     val arrowUp: ImageVector by lazy {
         icon("arrow-up", null,
@@ -352,6 +375,9 @@ object OwnifyIcons {
         "chevron-right" to chevronRight,
         "lock" to lock,
         "plus" to plus,
+        "hash" to hash,
+        "copy" to copy,
+        "share" to share,
         "arrow-up" to arrowUp,
         "chat" to chat,
         "check" to check,

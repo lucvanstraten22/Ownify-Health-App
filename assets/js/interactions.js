@@ -170,9 +170,10 @@
     function bindChrome(scroller, header, fab) {
         var ticking = false;
         /* A detail page's bar takes the page's name once its hero — the name
-           under the ring — has gone under the bar (health.css .is-titled). */
+           under the ring, or a page's own title ([data-hero-name]) — has gone
+           under the bar (health.css .is-titled). */
         var title = header ? header.querySelector('.detail__title') : null;
-        var name = title ? scroller.querySelector('.card--hero .score-ring__label') : null;
+        var name = title ? scroller.querySelector('.card--hero .score-ring__label, [data-hero-name]') : null;
 
         if (!header && !fab) { return; }
 

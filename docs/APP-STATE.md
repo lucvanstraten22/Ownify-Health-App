@@ -56,6 +56,16 @@ before 1.9.2, which draw it), `recommendation`, `leaderboard`,
   ([FIRST-DAYS.md](FIRST-DAYS.md#who-sees-it-once));
 - `calibration` — the card Overzicht opens with in the first days (the
   baseline being built, the first score, the starting point), or `null`;
+- `challenges` — Uitdagingen ([CHALLENGES.md](CHALLENGES.md)): `available`
+  (migration 022 is in), `you`, `invites` (each with its `review`), `running`
+  and `ended` (each challenge with its people, bar, figures and every
+  sentence written), `friends`, `summary`, `note`, `copy`, and what Nieuwe
+  uitdaging needs — `metrics` in the reader's units, `kinds`, `lengths` with
+  their dates from today and next Monday, `from`, `preview`. A person in it
+  is a username, a picture as the boards show it, and a total: never an id,
+  except a friend's in `friends` and `invitable`, to invite;
+- `community.preview` — Community's Ranglijst card: the top of the friends'
+  board this month, and the line about the one ahead of you;
 - the values the templates work out while they render, worked out by the
   same functions (`app_state_rendered()`):
   - `health.areas.*.highlights` and `health.areas.*.groups.*.metrics` —
@@ -98,6 +108,7 @@ picture), as the website sends them; `api/goals/update.php` takes JSON too.
 | Voeding | `health/rating` |
 | Instellingen, account | `profile/update`, `profile/onboarding`, `profile/username`, `profile/avatar`, `profile/delete`, `profile/preferences` (Taal and Eenheden) |
 | Vrienden | `friends/search`, `friends/request`, `friends/settings` |
+| Uitdagingen | `challenges/create`, `challenges/lookup`, `challenges/join`, `challenges/respond`, `challenges/invite` (these take JSON too) |
 | Apparaten & Gezondheid | `integrations/pairing-code`, `integrations/device-revoke`, `integrations/disconnect` |
 
 After a write the app reads `state.php` again, as the website reloads or

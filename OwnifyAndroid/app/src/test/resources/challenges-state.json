@@ -1,0 +1,1281 @@
+{
+ "challenges": {
+  "available": true,
+  "you": {
+   "name": "dm_sanne",
+   "initial": "D",
+   "accent": "sleep",
+   "avatar": null,
+   "you": true
+  },
+  "invites": [
+   {
+    "id": 19,
+    "name": "Samen 500 km fietsen",
+    "icon": "flag",
+    "accent": "training",
+    "me": "invited",
+    "kind_line": "Samen · Afstand",
+    "inviter": {
+     "name": "bram_fietst",
+     "initial": "B",
+     "accent": "sleep",
+     "avatar": null,
+     "you": false
+    },
+    "invite_text": "nodigt je uit voor Samen 500 km fietsen",
+    "from_text": "Van bram_fietst · Bekijken",
+    "faces": {
+     "people": [
+      {
+       "name": "bram_fietst",
+       "initial": "B",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false
+      },
+      {
+       "name": "noor_e",
+       "initial": "N",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false
+      },
+      {
+       "name": "ruben",
+       "initial": "R",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false
+      }
+     ],
+     "more": 0,
+     "label": "3 deelnemers"
+    },
+    "review": {
+     "id": 19,
+     "name": "Samen 500 km fietsen",
+     "icon": "flag",
+     "accent": "training",
+     "invited": true,
+     "code": null,
+     "title": "Uitnodiging",
+     "by": "bram_fietst nodigt je uit",
+     "facts": [
+      [
+       "Soort",
+       "Samen, naar één doel"
+      ],
+      [
+       "Wat",
+       "500 km samen"
+      ],
+      [
+       "Periode",
+       "1 okt – 14 nov · nog 30 dagen"
+      ],
+      [
+       "Gemaakt door",
+       "bram_fietst"
+      ]
+     ],
+     "people_label": "Doen mee",
+     "faces": {
+      "people": [
+       {
+        "name": "bram_fietst",
+        "initial": "B",
+        "accent": "sleep",
+        "avatar": null,
+        "you": false
+       },
+       {
+        "name": "noor_e",
+        "initial": "N",
+        "accent": "sleep",
+        "avatar": null,
+        "you": false
+       },
+       {
+        "name": "ruben",
+        "initial": "R",
+        "accent": "sleep",
+        "avatar": null,
+        "you": false
+       }
+      ],
+      "more": 0,
+      "label": "3 deelnemers"
+     },
+     "privacy": "Als je meedoet, zien de deelnemers je gebruikersnaam en je totaal aan kilometers voor deze uitdaging. Verder niets.",
+     "late": "De uitdaging loopt al. Wat je vanaf vandaag doet, telt mee.",
+     "joined": "Samen 500 km fietsen staat nu bij je uitdagingen. Wat je vanaf vandaag doet, telt mee."
+    }
+   }
+  ],
+  "running": [
+   {
+    "id": 18,
+    "name": "Wie zet de meeste stappen?",
+    "kind": "versus",
+    "metric": "steps",
+    "icon": "bolt",
+    "accent": "training",
+    "state": "running",
+    "me": "joined",
+    "kind_label": "Wedstrijd",
+    "kind_line": "Wedstrijd · Stappen",
+    "left": "Nog 3 dagen",
+    "deadline": "Nog 3 dagen · t/m 18 okt",
+    "period": "12 okt – 18 okt",
+    "subtitle": "12 okt – 18 okt · nog 3 dagen",
+    "start": "2026-10-12",
+    "end": "2026-10-18",
+    "people": [
+     {
+      "name": "daan",
+      "initial": "D",
+      "accent": "training",
+      "avatar": null,
+      "you": false,
+      "value": 38039,
+      "value_text": "38.039",
+      "tone": 1,
+      "rank": 1,
+      "share": 1,
+      "share_text": "",
+      "label": "daan"
+     },
+     {
+      "name": "noor_e",
+      "initial": "N",
+      "accent": "sleep",
+      "avatar": null,
+      "you": false,
+      "value": 34271,
+      "value_text": "34.271",
+      "tone": 2,
+      "rank": 2,
+      "share": 0.9009,
+      "share_text": "",
+      "label": "noor_e"
+     },
+     {
+      "name": "bram_fietst",
+      "initial": "B",
+      "accent": "sleep",
+      "avatar": null,
+      "you": false,
+      "value": 33407,
+      "value_text": "33.407",
+      "tone": 3,
+      "rank": 3,
+      "share": 0.8782,
+      "share_text": "",
+      "label": "bram_fietst"
+     },
+     {
+      "name": "dm_sanne",
+      "initial": "D",
+      "accent": "sleep",
+      "avatar": null,
+      "you": true,
+      "value": 30178,
+      "value_text": "30.178",
+      "tone": 0,
+      "rank": 4,
+      "share": 0.7933,
+      "share_text": "",
+      "label": "Jij"
+     }
+    ],
+    "people_title": "Stand",
+    "count_text": "4 deelnemers",
+    "faces": {
+     "people": [
+      {
+       "name": "daan",
+       "initial": "D",
+       "accent": "training",
+       "avatar": null,
+       "you": false,
+       "value": 38039,
+       "value_text": "38.039",
+       "tone": 1,
+       "rank": 1,
+       "share": 1,
+       "share_text": "",
+       "label": "daan"
+      },
+      {
+       "name": "noor_e",
+       "initial": "N",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false,
+       "value": 34271,
+       "value_text": "34.271",
+       "tone": 2,
+       "rank": 2,
+       "share": 0.9009,
+       "share_text": "",
+       "label": "noor_e"
+      },
+      {
+       "name": "bram_fietst",
+       "initial": "B",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false,
+       "value": 33407,
+       "value_text": "33.407",
+       "tone": 3,
+       "rank": 3,
+       "share": 0.8782,
+       "share_text": "",
+       "label": "bram_fietst"
+      },
+      {
+       "name": "dm_sanne",
+       "initial": "D",
+       "accent": "sleep",
+       "avatar": null,
+       "you": true,
+       "value": 30178,
+       "value_text": "30.178",
+       "tone": 0,
+       "rank": 4,
+       "share": 0.7933,
+       "share_text": "",
+       "label": "Jij"
+      }
+     ],
+     "more": 0,
+     "label": "4 deelnemers"
+    },
+    "pending": null,
+    "code": "61965",
+    "share_text": "Doe mee met “Wie zet de meeste stappen?” in Ownify: vul code 61965 in bij Community › Uitdagingen.",
+    "note": "Telt mee: stappen uit gekoppelde bronnen. Gemaakt door jou.",
+    "can_leave": true,
+    "invitable": [
+     {
+      "id": 79,
+      "name": "lotte",
+      "initial": "L",
+      "accent": "nutrition",
+      "avatar": null
+     },
+     {
+      "id": 81,
+      "name": "mila",
+      "initial": "M",
+      "accent": "nutrition",
+      "avatar": null
+     },
+     {
+      "id": 84,
+      "name": "ruben",
+      "initial": "R",
+      "accent": "sleep",
+      "avatar": null
+     }
+    ],
+    "rank": 4,
+    "winner": null,
+    "bar": {
+     "type": "lead",
+     "value": 0.7933,
+     "label": "4e van 4"
+    },
+    "tile": {
+     "strong": "4e",
+     "rest": "van 4 · 30.178"
+    },
+    "line": {
+     "strong": "4e van 4",
+     "rest": "",
+     "sub": "Nog 3.229 stappen tot bram_fietst"
+    },
+    "big": {
+     "figure": "4e",
+     "of": "van 4 · 30.178 stappen",
+     "line": "Nog 3.229 stappen tot bram_fietst",
+     "tone": "neutral"
+    }
+   },
+   {
+    "id": 17,
+    "name": "100 trainingen in oktober",
+    "kind": "together",
+    "metric": "workouts",
+    "icon": "dumbbell",
+    "accent": "training",
+    "state": "running",
+    "me": "joined",
+    "kind_label": "Samen",
+    "kind_line": "Samen · Trainingen",
+    "left": "Nog 16 dagen",
+    "deadline": "Nog 16 dagen · t/m 31 okt",
+    "period": "1 okt – 31 okt",
+    "subtitle": "1 okt – 31 okt · nog 16 dagen",
+    "start": "2026-10-01",
+    "end": "2026-10-31",
+    "people": [
+     {
+      "name": "dm_sanne",
+      "initial": "D",
+      "accent": "sleep",
+      "avatar": null,
+      "you": true,
+      "value": 12,
+      "value_text": "12",
+      "tone": 0,
+      "rank": 1,
+      "share": 0.2927,
+      "share_text": "29%",
+      "label": "Jij"
+     },
+     {
+      "name": "mila",
+      "initial": "M",
+      "accent": "nutrition",
+      "avatar": null,
+      "you": false,
+      "value": 10,
+      "value_text": "10",
+      "tone": 1,
+      "rank": 2,
+      "share": 0.2439,
+      "share_text": "24%",
+      "label": "mila"
+     },
+     {
+      "name": "ruben",
+      "initial": "R",
+      "accent": "sleep",
+      "avatar": null,
+      "you": false,
+      "value": 7,
+      "value_text": "7",
+      "tone": 2,
+      "rank": 3,
+      "share": 0.1707,
+      "share_text": "17%",
+      "label": "ruben"
+     },
+     {
+      "name": "daan",
+      "initial": "D",
+      "accent": "training",
+      "avatar": null,
+      "you": false,
+      "value": 6,
+      "value_text": "6",
+      "tone": 3,
+      "rank": 4,
+      "share": 0.1463,
+      "share_text": "15%",
+      "label": "daan"
+     },
+     {
+      "name": "lotte",
+      "initial": "L",
+      "accent": "nutrition",
+      "avatar": null,
+      "you": false,
+      "value": 6,
+      "value_text": "6",
+      "tone": 4,
+      "rank": 4,
+      "share": 0.1463,
+      "share_text": "15%",
+      "label": "lotte"
+     }
+    ],
+    "people_title": "Wie draagt wat bij",
+    "count_text": "5 deelnemers",
+    "faces": {
+     "people": [
+      {
+       "name": "dm_sanne",
+       "initial": "D",
+       "accent": "sleep",
+       "avatar": null,
+       "you": true,
+       "value": 12,
+       "value_text": "12",
+       "tone": 0,
+       "rank": 1,
+       "share": 0.2927,
+       "share_text": "29%",
+       "label": "Jij"
+      },
+      {
+       "name": "mila",
+       "initial": "M",
+       "accent": "nutrition",
+       "avatar": null,
+       "you": false,
+       "value": 10,
+       "value_text": "10",
+       "tone": 1,
+       "rank": 2,
+       "share": 0.2439,
+       "share_text": "24%",
+       "label": "mila"
+      },
+      {
+       "name": "ruben",
+       "initial": "R",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false,
+       "value": 7,
+       "value_text": "7",
+       "tone": 2,
+       "rank": 3,
+       "share": 0.1707,
+       "share_text": "17%",
+       "label": "ruben"
+      },
+      {
+       "name": "daan",
+       "initial": "D",
+       "accent": "training",
+       "avatar": null,
+       "you": false,
+       "value": 6,
+       "value_text": "6",
+       "tone": 3,
+       "rank": 4,
+       "share": 0.1463,
+       "share_text": "15%",
+       "label": "daan"
+      }
+     ],
+     "more": 1,
+     "label": "5 deelnemers"
+    },
+    "pending": {
+     "people": [
+      {
+       "name": "noor_e",
+       "initial": "N",
+       "accent": "sleep",
+       "avatar": null,
+       "you": false
+      }
+     ],
+     "text": "noor_e is uitgenodigd"
+    },
+    "code": "43646",
+    "share_text": "Doe mee met “100 trainingen in oktober” in Ownify: vul code 43646 in bij Community › Uitdagingen.",
+    "note": "Telt mee: trainingen uit gekoppelde bronnen. Gemaakt door lotte.",
+    "can_leave": true,
+    "invitable": [
+     {
+      "id": 83,
+      "name": "bram_fietst",
+      "initial": "B",
+      "accent": "sleep",
+      "avatar": null
+     }
+    ],
+    "target": 100,
+    "total": 41,
+    "percent": 41,
+    "reached": false,
+    "bar": {
+     "type": "stack",
+     "segments": [
+      {
+       "you": true,
+       "tone": 0,
+       "part": 0.12
+      },
+      {
+       "you": false,
+       "tone": 1,
+       "part": 0.1
+      },
+      {
+       "you": false,
+       "tone": 2,
+       "part": 0.07
+      },
+      {
+       "you": false,
+       "tone": 3,
+       "part": 0.06
+      },
+      {
+       "you": false,
+       "tone": 4,
+       "part": 0.06
+      }
+     ],
+     "rest": 0.59,
+     "label": "41 van 100 trainingen"
+    },
+    "tile": {
+     "strong": "41%",
+     "rest": "41 van 100"
+    },
+    "line": {
+     "strong": "41",
+     "rest": "van 100 trainingen",
+     "sub": "4 trainingen achter op schema"
+    },
+    "big": {
+     "figure": "41",
+     "of": "van 100 trainingen",
+     "line": "4 trainingen achter op schema · dag 15 van 31",
+     "tone": "behind"
+    }
+   },
+   {
+    "id": 21,
+    "name": "Samen 2.000 actieve minuten in 2 weken",
+    "kind": "together",
+    "metric": "active_minutes",
+    "icon": "pulse",
+    "accent": "training",
+    "state": "upcoming",
+    "me": "joined",
+    "kind_label": "Samen",
+    "kind_line": "Samen · Actieve minuten",
+    "left": "Begint ma 19 okt",
+    "deadline": "Begint ma 19 okt · t/m 1 nov",
+    "period": "19 okt – 1 nov",
+    "subtitle": "19 okt – 1 nov · begint ma 19 okt",
+    "start": "2026-10-19",
+    "end": "2026-11-01",
+    "people": [
+     {
+      "name": "daan",
+      "initial": "D",
+      "accent": "training",
+      "avatar": null,
+      "you": false,
+      "value": 0,
+      "value_text": "0",
+      "tone": 1,
+      "rank": 1,
+      "share": 0,
+      "share_text": "0%",
+      "label": "daan"
+     },
+     {
+      "name": "dm_sanne",
+      "initial": "D",
+      "accent": "sleep",
+      "avatar": null,
+      "you": true,
+      "value": 0,
+      "value_text": "0",
+      "tone": 0,
+      "rank": 1,
+      "share": 0,
+      "share_text": "0%",
+      "label": "Jij"
+     }
+    ],
+    "people_title": "Wie draagt wat bij",
+    "count_text": "2 deelnemers",
+    "faces": {
+     "people": [
+      {
+       "name": "daan",
+       "initial": "D",
+       "accent": "training",
+       "avatar": null,
+       "you": false,
+       "value": 0,
+       "value_text": "0",
+       "tone": 1,
+       "rank": 1,
+       "share": 0,
+       "share_text": "0%",
+       "label": "daan"
+      },
+      {
+       "name": "dm_sanne",
+       "initial": "D",
+       "accent": "sleep",
+       "avatar": null,
+       "you": true,
+       "value": 0,
+       "value_text": "0",
+       "tone": 0,
+       "rank": 1,
+       "share": 0,
+       "share_text": "0%",
+       "label": "Jij"
+      }
+     ],
+     "more": 0,
+     "label": "2 deelnemers"
+    },
+    "pending": null,
+    "code": "93012",
+    "share_text": "Doe mee met “Samen 2.000 actieve minuten in 2 weken” in Ownify: vul code 93012 in bij Community › Uitdagingen.",
+    "note": "Telt mee: actieve minuten uit gekoppelde bronnen. Gemaakt door daan.",
+    "can_leave": true,
+    "invitable": [
+     {
+      "id": 83,
+      "name": "bram_fietst",
+      "initial": "B",
+      "accent": "sleep",
+      "avatar": null
+     },
+     {
+      "id": 79,
+      "name": "lotte",
+      "initial": "L",
+      "accent": "nutrition",
+      "avatar": null
+     },
+     {
+      "id": 81,
+      "name": "mila",
+      "initial": "M",
+      "accent": "nutrition",
+      "avatar": null
+     },
+     {
+      "id": 82,
+      "name": "noor_e",
+      "initial": "N",
+      "accent": "sleep",
+      "avatar": null
+     },
+     {
+      "id": 84,
+      "name": "ruben",
+      "initial": "R",
+      "accent": "sleep",
+      "avatar": null
+     }
+    ],
+    "target": 2000,
+    "total": 0,
+    "percent": 0,
+    "reached": false,
+    "bar": {
+     "type": "stack",
+     "segments": [
+      {
+       "you": false,
+       "tone": 1,
+       "part": 0
+      },
+      {
+       "you": true,
+       "tone": 0,
+       "part": 0
+      }
+     ],
+     "rest": 1,
+     "label": "0 van 2.000 actieve minuten"
+    },
+    "tile": {
+     "strong": "0%",
+     "rest": "0 van 2.000"
+    },
+    "line": {
+     "strong": "0",
+     "rest": "van 2.000 actieve minuten",
+     "sub": "Begint ma 19 okt"
+    },
+    "big": {
+     "figure": "0",
+     "of": "van 2.000 actieve minuten",
+     "line": "Begint ma 19 okt",
+     "tone": "neutral"
+    }
+   }
+  ],
+  "ended": [
+   {
+    "id": 20,
+    "name": "Zeven dagen trainen",
+    "kind": "versus",
+    "metric": "workouts",
+    "icon": "dumbbell",
+    "accent": "training",
+    "state": "ended",
+    "me": "joined",
+    "kind_label": "Wedstrijd",
+    "kind_line": "Wedstrijd · Trainingen",
+    "left": "Afgelopen op 9 okt",
+    "deadline": "Afgelopen op 9 okt",
+    "period": "3 okt – 9 okt",
+    "subtitle": "3 okt – 9 okt · afgelopen op 9 okt",
+    "start": "2026-10-03",
+    "end": "2026-10-09",
+    "people": [
+     {
+      "name": "dm_sanne",
+      "initial": "D",
+      "accent": "sleep",
+      "avatar": null,
+      "you": true,
+      "value": 6,
+      "value_text": "6",
+      "tone": 0,
+      "rank": 1,
+      "share": 1,
+      "share_text": "",
+      "label": "Jij"
+     },
+     {
+      "name": "mila",
+      "initial": "M",
+      "accent": "nutrition",
+      "avatar": null,
+      "you": false,
+      "value": 4,
+      "value_text": "4",
+      "tone": 1,
+      "rank": 2,
+      "share": 0.6667,
+      "share_text": "",
+      "label": "mila"
+     },
+     {
+      "name": "daan",
+      "initial": "D",
+      "accent": "training",
+      "avatar": null,
+      "you": false,
+      "value": 3,
+      "value_text": "3",
+      "tone": 2,
+      "rank": 3,
+      "share": 0.5,
+      "share_text": "",
+      "label": "daan"
+     },
+     {
+      "name": "lotte",
+      "initial": "L",
+      "accent": "nutrition",
+      "avatar": null,
+      "you": false,
+      "value": 3,
+      "value_text": "3",
+      "tone": 3,
+      "rank": 3,
+      "share": 0.5,
+      "share_text": "",
+      "label": "lotte"
+     }
+    ],
+    "people_title": "Stand",
+    "count_text": "4 deelnemers",
+    "faces": {
+     "people": [
+      {
+       "name": "dm_sanne",
+       "initial": "D",
+       "accent": "sleep",
+       "avatar": null,
+       "you": true,
+       "value": 6,
+       "value_text": "6",
+       "tone": 0,
+       "rank": 1,
+       "share": 1,
+       "share_text": "",
+       "label": "Jij"
+      },
+      {
+       "name": "mila",
+       "initial": "M",
+       "accent": "nutrition",
+       "avatar": null,
+       "you": false,
+       "value": 4,
+       "value_text": "4",
+       "tone": 1,
+       "rank": 2,
+       "share": 0.6667,
+       "share_text": "",
+       "label": "mila"
+      },
+      {
+       "name": "daan",
+       "initial": "D",
+       "accent": "training",
+       "avatar": null,
+       "you": false,
+       "value": 3,
+       "value_text": "3",
+       "tone": 2,
+       "rank": 3,
+       "share": 0.5,
+       "share_text": "",
+       "label": "daan"
+      },
+      {
+       "name": "lotte",
+       "initial": "L",
+       "accent": "nutrition",
+       "avatar": null,
+       "you": false,
+       "value": 3,
+       "value_text": "3",
+       "tone": 3,
+       "rank": 3,
+       "share": 0.5,
+       "share_text": "",
+       "label": "lotte"
+      }
+     ],
+     "more": 0,
+     "label": "4 deelnemers"
+    },
+    "pending": null,
+    "code": null,
+    "share_text": null,
+    "note": "Telt mee: trainingen uit gekoppelde bronnen. Gemaakt door mila.",
+    "can_leave": false,
+    "invitable": [],
+    "rank": 1,
+    "winner": {
+     "name": "dm_sanne",
+     "initial": "D",
+     "accent": "sleep",
+     "avatar": null,
+     "you": true
+    },
+    "bar": {
+     "type": "lead",
+     "value": 1,
+     "label": "1e van 4"
+    },
+    "tile": {
+     "strong": "1e",
+     "rest": "van 4 · 6"
+    },
+    "line": {
+     "strong": "Jij won",
+     "rest": "",
+     "sub": "6 trainingen"
+    },
+    "big": {
+     "figure": "1e",
+     "of": "van 4 · 6 trainingen",
+     "line": "Jij won",
+     "tone": "ahead"
+    }
+   }
+  ],
+  "friends": [
+   {
+    "id": 83,
+    "name": "bram_fietst",
+    "initial": "B",
+    "accent": "sleep",
+    "avatar": null
+   },
+   {
+    "id": 80,
+    "name": "daan",
+    "initial": "D",
+    "accent": "training",
+    "avatar": null
+   },
+   {
+    "id": 79,
+    "name": "lotte",
+    "initial": "L",
+    "accent": "nutrition",
+    "avatar": null
+   },
+   {
+    "id": 81,
+    "name": "mila",
+    "initial": "M",
+    "accent": "nutrition",
+    "avatar": null
+   },
+   {
+    "id": 82,
+    "name": "noor_e",
+    "initial": "N",
+    "accent": "sleep",
+    "avatar": null
+   },
+   {
+    "id": 84,
+    "name": "ruben",
+    "initial": "R",
+    "accent": "sleep",
+    "avatar": null
+   }
+  ],
+  "summary": "3 bezig · 1 uitnodiging",
+  "copy": {
+   "metrics": {
+    "workouts": {
+     "label": "Trainingen",
+     "icon": "dumbbell",
+     "accent": "training",
+     "unit": "",
+     "one": "%s training",
+     "many": "%s trainingen",
+     "what": "trainingen",
+     "versus": "Wie traint het vaakst?",
+     "step": 10,
+     "per_week": 20
+    },
+    "steps": {
+     "label": "Stappen",
+     "icon": "bolt",
+     "accent": "training",
+     "unit": "",
+     "one": "%s stap",
+     "many": "%s stappen",
+     "what": "stappen",
+     "versus": "Wie zet de meeste stappen?",
+     "step": 50000,
+     "per_week": 250000
+    },
+    "active_minutes": {
+     "label": "Actieve minuten",
+     "icon": "pulse",
+     "accent": "training",
+     "unit": "",
+     "one": "%s actieve minuut",
+     "many": "%s actieve minuten",
+     "what": "actieve minuten",
+     "versus": "Wie beweegt het meest?",
+     "step": 250,
+     "per_week": 1000
+    },
+    "distance": {
+     "label": "Afstand",
+     "icon": "flag",
+     "accent": "training",
+     "unit": "km",
+     "one": "%s km",
+     "many": "%s km",
+     "what": "kilometers",
+     "versus": "Wie legt de meeste afstand af?",
+     "step": 25,
+     "per_week": 100
+    },
+    "sleep_nights": {
+     "label": "Nachten van 7 uur",
+     "icon": "moon",
+     "accent": "sleep",
+     "unit": "",
+     "one": "%s nacht van 7 uur",
+     "many": "%s nachten van 7 uur",
+     "what": "nachten van 7 uur",
+     "versus": "Wie slaapt het vaakst 7 uur?",
+     "step": 10,
+     "per_week": 25
+    }
+   },
+   "kinds": {
+    "together": {
+     "label": "Samen",
+     "hint": "Jullie tellen samen op naar één doel."
+    },
+    "versus": {
+     "label": "Wedstrijd",
+     "hint": "Ieder voor zich; wie het meest haalt, wint. Bij gelijkspel gaat het door tot er een winnaar is."
+    }
+   },
+   "lengths": {
+    "1w": {
+     "label": "1 week",
+     "weeks": 1
+    },
+    "2w": {
+     "label": "2 weken",
+     "weeks": 2
+    },
+    "month": {
+     "label": "1 maand",
+     "weeks": 4
+    }
+   },
+   "page": {
+    "title": "Uitdagingen",
+    "lede": "Samen of tegen elkaar, met wie jij kiest.",
+    "create": "Nieuwe uitdaging",
+    "join": "Code invoeren",
+    "invites": "Uitnodigingen",
+    "running": "Bezig",
+    "ended": "Afgelopen",
+    "empty_title": "Nog geen uitdagingen",
+    "empty_body": "Maak er een en nodig vrienden uit, of vul de code in die je van iemand kreeg.",
+    "back": "Community"
+   },
+   "detail": {
+    "back": "Uitdagingen",
+    "contributions": "Wie draagt wat bij",
+    "standings": "Stand",
+    "share_title": "Iemand erbij halen",
+    "copy": "Code kopiëren",
+    "share": "Code delen",
+    "invite": "Vrienden uitnodigen",
+    "invite_hint": "Ze doen pas mee als ze zelf meedoen",
+    "leave": "Uitdaging verlaten",
+    "leave_title": "Uitdaging verlaten?",
+    "leave_body": "Je doet dan niet meer mee, en wat je bijdroeg telt niet meer. Met de code kun je later weer meedoen, zolang hij loopt.",
+    "leave_confirm": "Verlaten",
+    "cancel": "Annuleren"
+   },
+   "code": {
+    "title": "Code invoeren",
+    "hint": "Vul de 5 cijfers in die je van een vriend kreeg. Je ziet eerst waar je aan meedoet.",
+    "label": "Code van 5 cijfers",
+    "searching": "Zoeken…"
+   },
+   "review": {
+    "title_invite": "Uitnodiging",
+    "title_code": "Meedoen?",
+    "kind_label": "Soort",
+    "what": "Wat",
+    "period": "Periode",
+    "creator": "Gemaakt door",
+    "people": "Doen mee",
+    "join": "Meedoen",
+    "decline": "Afwijzen",
+    "later": "Niet nu",
+    "joined_title": "Je doet mee",
+    "close": "Sluiten",
+    "see": "Bekijken"
+   },
+   "create": {
+    "title": "Nieuwe uitdaging",
+    "kind_label": "Soort",
+    "metric": "Wat tellen jullie?",
+    "target": "Samen naar",
+    "less": "Minder",
+    "more": "Meer",
+    "length": "Hoe lang?",
+    "from_today": "Vanaf vandaag",
+    "name": "Naam",
+    "name_example": "Bijvoorbeeld: 100 trainingen in oktober",
+    "friends": "Vrienden uitnodigen",
+    "friends_hint": "Ze doen pas mee als ze zelf op Meedoen tikken. Je krijgt ook een code.",
+    "no_friends": "Nog geen vrienden. Deel straks de code, of voeg vrienden toe in je account.",
+    "pick_first": "Kies eerst wat jullie tellen",
+    "make": "Uitdaging maken",
+    "preview_empty": "Kies hieronder wat jullie tellen",
+    "preview_name": "Je uitdaging",
+    "made_title": "Je uitdaging staat klaar",
+    "made_code": "Code om mee te doen",
+    "made_hint": "Wie de code invult, ziet eerst wat het is en doet pas mee na Meedoen.",
+    "copy": "Kopiëren",
+    "share": "Delen",
+    "open": "Naar je uitdaging"
+   },
+   "invite": {
+    "title": "Vrienden uitnodigen",
+    "body": "Ze krijgen een uitnodiging en doen pas mee als ze zelf op Meedoen tikken.",
+    "none": "Al je vrienden doen mee of zijn uitgenodigd.",
+    "pick": "Kiezen",
+    "picked": "Gekozen",
+    "send": "Uitnodigen",
+    "cancel": "Annuleren"
+   }
+  },
+  "metrics": [
+   {
+    "label": "Trainingen",
+    "icon": "dumbbell",
+    "accent": "training",
+    "unit": "",
+    "one": "%s training",
+    "many": "%s trainingen",
+    "what": "trainingen",
+    "versus": "Wie traint het vaakst?",
+    "step": 10,
+    "per_week": 20,
+    "key": "workouts",
+    "unit_shown": "",
+    "targets": {
+     "1w": 20,
+     "2w": 40,
+     "month": 80
+    }
+   },
+   {
+    "label": "Stappen",
+    "icon": "bolt",
+    "accent": "training",
+    "unit": "",
+    "one": "%s stap",
+    "many": "%s stappen",
+    "what": "stappen",
+    "versus": "Wie zet de meeste stappen?",
+    "step": 50000,
+    "per_week": 250000,
+    "key": "steps",
+    "unit_shown": "",
+    "targets": {
+     "1w": 250000,
+     "2w": 500000,
+     "month": 1000000
+    }
+   },
+   {
+    "label": "Actieve minuten",
+    "icon": "pulse",
+    "accent": "training",
+    "unit": "",
+    "one": "%s actieve minuut",
+    "many": "%s actieve minuten",
+    "what": "actieve minuten",
+    "versus": "Wie beweegt het meest?",
+    "step": 250,
+    "per_week": 1000,
+    "key": "active_minutes",
+    "unit_shown": "",
+    "targets": {
+     "1w": 1000,
+     "2w": 2000,
+     "month": 4000
+    }
+   },
+   {
+    "label": "Afstand",
+    "icon": "flag",
+    "accent": "training",
+    "unit": "km",
+    "one": "%s km",
+    "many": "%s km",
+    "what": "kilometers",
+    "versus": "Wie legt de meeste afstand af?",
+    "step": 25,
+    "per_week": 100,
+    "key": "distance",
+    "unit_shown": "km",
+    "targets": {
+     "1w": 100,
+     "2w": 200,
+     "month": 400
+    }
+   },
+   {
+    "label": "Nachten van 7 uur",
+    "icon": "moon",
+    "accent": "sleep",
+    "unit": "",
+    "one": "%s nacht van 7 uur",
+    "many": "%s nachten van 7 uur",
+    "what": "nachten van 7 uur",
+    "versus": "Wie slaapt het vaakst 7 uur?",
+    "step": 10,
+    "per_week": 25,
+    "key": "sleep_nights",
+    "unit_shown": "",
+    "targets": {
+     "1w": 30,
+     "2w": 50,
+     "month": 100
+    }
+   }
+  ],
+  "kinds": [
+   {
+    "key": "together",
+    "label": "Samen",
+    "hint": "Jullie tellen samen op naar één doel."
+   },
+   {
+    "key": "versus",
+    "label": "Wedstrijd",
+    "hint": "Ieder voor zich; wie het meest haalt, wint. Bij gelijkspel gaat het door tot er een winnaar is."
+   }
+  ],
+  "lengths": [
+   {
+    "key": "1w",
+    "label": "1 week",
+    "periods": {
+     "today": "15 okt – 21 okt",
+     "monday": "19 okt – 25 okt"
+    },
+    "name_pattern": "Samen %s in een week"
+   },
+   {
+    "key": "2w",
+    "label": "2 weken",
+    "periods": {
+     "today": "15 okt – 28 okt",
+     "monday": "19 okt – 1 nov"
+    },
+    "name_pattern": "Samen %s in 2 weken"
+   },
+   {
+    "key": "month",
+    "label": "1 maand",
+    "periods": {
+     "today": "15 okt – 14 nov",
+     "monday": "19 okt – 18 nov"
+    },
+    "name_pattern": "Samen %s in een maand"
+   }
+  ],
+  "from": [
+   {
+    "key": "today",
+    "label": "Vanaf vandaag"
+   },
+   {
+    "key": "monday",
+    "label": "Vanaf ma 19 okt"
+   }
+  ],
+  "note": "Uitdagingen staan los van je punten op de ranglijst.",
+  "preview": {
+   "together": "%s samen",
+   "versus": "Wie de meeste %s haalt",
+   "alone": "Alleen jij, tot iemand meedoet"
+  }
+ },
+ "preview": {
+  "title": "Ranglijst",
+  "sub": "Vrienden · deze maand",
+  "rows": [
+   {
+    "rank": 1,
+    "name": "bram_fietst",
+    "points": 0,
+    "self": false,
+    "avatar": null
+   },
+   {
+    "rank": 2,
+    "name": "daan",
+    "points": 0,
+    "self": false,
+    "avatar": null
+   },
+   {
+    "rank": 3,
+    "name": "dm_sanne",
+    "points": 0,
+    "self": true,
+    "avatar": null
+   },
+   {
+    "rank": 4,
+    "name": "lotte",
+    "points": 0,
+    "self": false,
+    "avatar": null
+   }
+  ],
+  "line": "Gelijk met daan"
+ }
+}

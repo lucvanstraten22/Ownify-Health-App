@@ -88,6 +88,18 @@
             Array.prototype.forEach.call(board.querySelectorAll('.reveal'), function (item) { item.classList.add('is-visible'); });
             Array.prototype.forEach.call(board.querySelectorAll('.card'), function (item) { item.dataset.animated = 'true'; });
         });
+
+        /* Community's own page shows the top of the friends' board too, and
+           who your friends are decides Uitdagingen's invitations: both follow. */
+        var home = document.querySelector('[data-community-home]');
+        var freshHome = fresh.querySelector('[data-community-home]');
+        if (home && freshHome) {
+            home.innerHTML = freshHome.innerHTML;
+            Array.prototype.forEach.call(home.querySelectorAll('.reveal'), function (item) { item.classList.add('is-visible'); });
+        }
+        var data = document.querySelector('[data-challenges-data]');
+        var freshData = fresh.querySelector('[data-challenges-data]');
+        if (data && freshData) { data.textContent = freshData.textContent; }
     }
 
     /** Fetches the page as the server now renders it, and swaps its board rows in. */

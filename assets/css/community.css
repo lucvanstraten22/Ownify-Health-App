@@ -1,5 +1,5 @@
 /* ==========================================================================
-   community.css — the leaderboard page.
+   community.css — the leaderboard (Ranglijst, behind Community's card).
 
    No new tokens: everything comes from theme.css, and the segmented control
    is the one the health trend already uses.
@@ -18,6 +18,11 @@
    Head — header, title and the two controls. Never scrolls.
    -------------------------------------------------------------------------- */
 .community__head { flex: none; }
+
+/* On its own page (pages/leaderboard.php) the head starts with the back
+   pill instead of the shared header, so it needs no room for that. */
+.leaderboard-detail .community__head { padding-top: 0; }
+.leaderboard-detail .community__title { padding-top: var(--space-2); }
 
 /* Kept deliberately shallow: every pixel here is a pixel the leaderboard
    does not get. */

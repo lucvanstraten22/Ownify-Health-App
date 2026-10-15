@@ -73,8 +73,8 @@ class ShellScreens(
     val detail: @Composable (detail: Detail, data: AppData, scroll: ScrollState) -> Unit,
     val assistant: @Composable (data: AppData) -> Unit,
     val overlay: @Composable (overlay: Overlay, data: AppData) -> Unit,
-    /** The page whose header stays clear because its head never scrolls (Community). */
-    val fixedHead: Set<String> = setOf("community"),
+    /** A page whose header stays clear because its head never scrolls (none since 18.0: Community scrolls). */
+    val fixedHead: Set<String> = emptySet(),
     /** A new account's setup, shown instead of everything above while the server says it is pending. */
     val setup: @Composable (data: AppData) -> Unit = {}
 )
@@ -116,6 +116,9 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id) != null
             is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.session(detail.id) != null
             Detail.ScoreCompass -> data.compass.available
+            Detail.Leaderboard -> true
+            Detail.Challenges -> data.challenges.available
+            is Detail.Challenge -> data.challenges.view(detail.id) != null
         }
         if (!exists) shell.closeDetail()
     }
@@ -206,6 +209,9 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
                     screens.overlay(overlay, data)
                 }
             }
+
+            // What an action did, for a moment, over everything (`.ch-toast`).
+            ToastHost()
         }
     }
 }
@@ -275,6 +281,9 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
         is Detail.TrainingSession -> Accent.TRAINING
         is Detail.SettingsPage -> Accent.HEALTH
         Detail.ScoreCompass -> Accent.HEALTH
+        Detail.Leaderboard -> Accent.HEALTH
+        Detail.Challenges -> Accent.TRAINING
+        is Detail.Challenge -> Accent.of(data.challenges.view(detail.id)?.accent)
     }
     val ground = remember(detail.key, accent) { GroundPlacement(Ground.detail(accent)) }
     val visibility = remember(detail.key) { Visibility() }
@@ -376,6 +385,8 @@ fun DetailColumn(
     back: String,
     backAria: String,
     title: String? = null,
+    /** The bar's title beside the back pill instead of centred over it (Uitdagingen, a challenge). */
+    titleBeside: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shell = LocalShell.current
@@ -391,7 +402,7 @@ fun DetailColumn(
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
             DetailHeader(
                 back, backAria, scrolled, onBack = shell::closeDetail,
-                title = title, heroBottom = { heroName.floatValue }
+                title = title, heroBottom = { heroName.floatValue }, titleBeside = titleBeside
             )
         }
     }

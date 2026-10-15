@@ -25,6 +25,10 @@ require_once __DIR__ . '/settings.php';
 require_once __DIR__ . '/hydrate-health.php';
 require_once __DIR__ . '/hydrate-goals.php';
 require_once __DIR__ . '/hydrate-community.php';
+if (is_file(dirname(__DIR__) . '/includes/challenges.php') && is_file(__DIR__ . '/challenges-ui.php')) {
+    require_once dirname(__DIR__) . '/includes/challenges.php';
+    require_once __DIR__ . '/challenges-ui.php';
+}
 require_once __DIR__ . '/hydrate-compass.php';
 if (is_file(__DIR__ . '/hydrate-sleep.php')) {
     require_once __DIR__ . '/hydrate-sleep.php';
@@ -163,6 +167,13 @@ if (!function_exists('app_page_data')) {
 
         /* Real accounts and real points, or an empty board. */
         $data['community'] = hydrate_community(config_copy('community'), $userId);
+
+        /* Uitdagingen: the ones this account is in or invited to, worked out
+           from synced data, and what Nieuwe uitdaging needs (docs/CHALLENGES.md).
+           Guarded as the first days are: a deploy lands one file at a time. */
+        $data['challenges'] = function_exists('challenges_for')
+            ? challenges_for($userId)
+            : ['available' => false, 'invites' => [], 'running' => [], 'ended' => []];
 
         /* Goals: read for this user, then expanded, split by view and ordered. */
         $data['goals'] = goals_prepare(hydrate_goals(config_copy('goals'), $userId));

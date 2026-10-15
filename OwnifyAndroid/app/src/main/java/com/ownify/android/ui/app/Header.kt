@@ -263,7 +263,13 @@ fun DetailHeader(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     title: String? = null,
-    heroBottom: () -> Float = { Float.MAX_VALUE }
+    heroBottom: () -> Float = { Float.MAX_VALUE },
+    /**
+     * The title beside the back pill, giving way to it, rather than centred
+     * over it: for pages whose back pill names a page ("Uitdagingen") and
+     * whose names run long (challenges.css `.challenge-detail .detail__title`).
+     */
+    titleBeside: Boolean = false
 ) {
     val screen = LocalScreen.current
     val still = LocalStillMotion.current
@@ -285,9 +291,22 @@ fun DetailHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Pill(back, onClick = onBack, icon = OwnifyIcons.chevronLeft, contentDescription = backAria)
+            if (titleBeside && title != null && shown.value > 0f) {
+                T(
+                    title,
+                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = Ownify.TrackingTitle),
+                    Modifier
+                        .weight(1f)
+                        .padding(start = Ownify.Space3)
+                        .graphicsLayer { alpha = shown.value }
+                        .clearAndSetSemantics { testTag = DETAIL_TITLE },
+                    maxLines = 1,
+                    ellipsis = true
+                )
+            }
         }
         // The page's name, beside the back pill; the heading below stays the one read out.
-        if (title != null && shown.value > 0f) {
+        if (!titleBeside && title != null && shown.value > 0f) {
             T(
                 title,
                 OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = Ownify.TrackingTitle),

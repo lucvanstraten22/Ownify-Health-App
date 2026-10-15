@@ -39,6 +39,8 @@ if (!function_exists('hydrate_community')) {
            as the boards show it. */
         $community['you']['avatar'] = ($userId !== null && db_available()) ? avatar_small(leaderboard_avatar_of($userId)) : null;
 
+        $community['preview'] = hydrate_community_preview($community);
+
         /* What the account panel's Vrienden page shows: friends, requests
            both ways, and the account's own "Vriendverzoeken toestaan". */
         if ($userId !== null && db_available()) {
@@ -59,6 +61,53 @@ if (!function_exists('hydrate_community')) {
         }
 
         return $community;
+    }
+
+    /**
+     * The Ranglijst card on Community: the top of the default board (Vrienden,
+     * this month) — four rows, or the top three and you when you are further
+     * down — and one line about the person directly ahead of you.
+     */
+    function hydrate_community_preview(array $community): array
+    {
+        $scope  = $community['default_scope'];
+        $period = $community['default_period'];
+        $board  = $community['boards'][$scope][$period] ?? ['entries' => [], 'you' => ['rank' => null, 'points' => null]];
+
+        $entries = $board['entries'];
+        $rows    = array_slice($entries, 0, 4);
+        $mine    = null;
+
+        foreach ($entries as $index => $entry) {
+            if (!empty($entry['self'])) {
+                $mine = $index;
+            }
+        }
+
+        if ($mine !== null && $mine >= 4) {
+            $rows = array_merge(array_slice($entries, 0, 3), [$entries[$mine]]);
+        }
+
+        $line = '';
+
+        if ($mine !== null && $mine > 0) {
+            $ahead = $entries[$mine - 1];
+            $gap   = (int) $ahead['points'] - (int) $entries[$mine]['points'];
+            $line  = $gap > 0
+                ? tf('Nog %s pt tot %s', i18n_number($gap), (string) $ahead['name'])
+                : tf('Gelijk met %s', (string) $ahead['name']);
+        } elseif ($mine === 0 && count($entries) > 1) {
+            $line = t('Jij staat bovenaan');
+        } elseif ($entries === [] || count($entries) === 1) {
+            $line = t('Voeg vrienden toe om je met hen te meten.');
+        }
+
+        return [
+            'title' => $community['labels']['board_head'],
+            'sub'   => $community['scopes'][$scope]['label'] . ' · ' . t('deze maand'),
+            'rows'  => $rows,
+            'line'  => $line,
+        ];
     }
 
     /** One scope/period board, in the shape the leaderboard component renders. */

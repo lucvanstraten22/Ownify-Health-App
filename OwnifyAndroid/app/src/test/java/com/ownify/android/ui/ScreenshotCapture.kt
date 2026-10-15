@@ -322,6 +322,31 @@ class ScreenshotCapture {
         shoot("community")
     }
 
+    // Community's two (18.0): the leaderboard and Uitdagingen, a challenge of each kind, and the sheets.
+    @Test fun leaderboard() = detail("community", Detail.Leaderboard, "leaderboard")
+    @Test fun challenges() = detail("community", Detail.Challenges, "challenges", 700)
+
+    @Test
+    fun challengeSamen() {
+        val view = data().challenges.running.firstOrNull { !it.versus && it.state == "running" } ?: return
+        detail("community", Detail.Challenge(view.id, overList = true), "challenge-samen", 700)
+    }
+
+    @Test
+    fun challengeVersus() {
+        val view = data().challenges.running.firstOrNull { it.versus } ?: return
+        detail("community", Detail.Challenge(view.id, overList = true), "challenge-versus", 700)
+    }
+
+    @Test fun challengeCreate() = panel(Overlay.ChallengeCreate, "challenge-create", "community")
+    @Test fun challengeCode() = panel(Overlay.ChallengeCode, "challenge-code", "community")
+
+    @Test
+    fun challengeReview() {
+        val invite = data().challenges.invites.firstOrNull() ?: return
+        panel(Overlay.ChallengeReview(invite.id), "challenge-review", "community")
+    }
+
     @Test
     fun settings() {
         app { tab("settings") }

@@ -31,7 +31,9 @@ data class AppData(
     /** Overzicht's card of the first days, or null outside them. */
     val calibration: Calibration? = null,
     /** The language and units it is all written in (includes/i18n.php). */
-    val i18n: I18n = I18n("nl", null, "metric")
+    val i18n: I18n = I18n("nl", null, "metric"),
+    /** Uitdagingen (includes/challenges.php): the ones you are in or invited to. */
+    val challenges: Challenges = Challenges.parse(null)
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -55,7 +57,8 @@ data class AppData(
                 compass = Compass.parse(data.obj("compass")),
                 setup = Setup.parse(data.obj("setup")),
                 calibration = Calibration.parse(data.obj("calibration")),
-                i18n = data.obj("i18n").let { I18n(it.str("locale") ?: "nl", it.str("chosen"), it.str("units") ?: "metric") }
+                i18n = data.obj("i18n").let { I18n(it.str("locale") ?: "nl", it.str("chosen"), it.str("units") ?: "metric") },
+                challenges = Challenges.parse(data.obj("challenges"))
             )
         }
     }
@@ -1639,7 +1642,9 @@ data class Community(
     val badgesTitle: String,
     val badgesBody: String,
     /** "Vrienden toevoegen": the first row of every Vrienden board, never Nederland's. */
-    val addFriends: String? = null
+    val addFriends: String? = null,
+    /** Community's Ranglijst card: the top of the friends' board this month. */
+    val preview: BoardPreview = BoardPreview.parse(null)
 ) {
     companion object {
         fun parse(o: JSONObject?) = Community(
@@ -1662,7 +1667,8 @@ data class Community(
             allowRequests = o.bool("allow_requests"),
             badgesTitle = o.obj("badges").str("title").orEmpty(),
             badgesBody = o.obj("badges").str("body").orEmpty(),
-            addFriends = o.str("add_friends")?.takeIf { it.isNotBlank() }
+            addFriends = o.str("add_friends")?.takeIf { it.isNotBlank() },
+            preview = BoardPreview.parse(o.obj("preview"))
         )
     }
 }
