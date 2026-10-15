@@ -105,7 +105,8 @@ fun Modifier.glassBackdrop(
     shape: Shape,
     filter: GlassFilter,
     blurLayer: GraphicsLayer?,
-    ground: GroundPlacement? = null
+    ground: GroundPlacement? = null,
+    amount: (() -> Float)? = null
 ): Modifier {
     if (backdrop == null || blurLayer == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
         return this
@@ -120,13 +121,21 @@ fun Modifier.glassBackdrop(
             val here = coordinates
             if (scene != null && here != null && here.isAttached) {
                 val at = here.positionInRoot()
+                // [amount] (read here, in the draw) takes the frost from none to all of
+                // [filter] — a panel materialising (OverlayFrame) — without recomposing.
+                val a = amount?.invoke()?.coerceIn(0f, 1f) ?: 1f
+                val now = if (a >= 1f) filter else GlassFilter(
+                    filter.blur * a,
+                    saturate = 1f + (filter.saturate - 1f) * a,
+                    brightness = 1f + (filter.brightness - 1f) * a
+                )
                 if (ground != null) {
                     val outline = shape.createOutline(size, layoutDirection, this)
                     clipPath(Path().apply { addOutline(outline) }, ClipOp.Intersect) {
-                        drawGround(ground.ground, ground.size, origin = ground.origin - at, saturate = filter.saturate, brightness = filter.brightness)
+                        drawGround(ground.ground, ground.size, origin = ground.origin - at, saturate = now.saturate, brightness = now.brightness)
                     }
                 }
-                drawThroughGlass(scene, blurLayer, at - backdrop.origin, shape, filter)
+                drawThroughGlass(scene, blurLayer, at - backdrop.origin, shape, now)
             }
             drawContent()
         }

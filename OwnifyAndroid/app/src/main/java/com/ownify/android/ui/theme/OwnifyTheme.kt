@@ -584,6 +584,16 @@ object Ownify {
      */
     val HitMin = 48.dp
 
+    /** `--hero-ring`: a hero's ring at most — the Overzicht's score, a detail's, the Scorekompas's (ScreenMetrics.heroRingSize). */
+    val HeroRing = 244.dp
+
+    /** `--veil-deep-top` / `--veil-deep-mid`: a detail bar's scroll edge once the page's name is in it. */
+    const val VeilDeepTop = 0.97f
+    const val VeilDeepMid = 0.94f
+
+    /** `--panel-frost`: a floating panel's frost is [BlurCard] at this saturation (130%). */
+    const val PanelSaturate = 1.3f
+
     /** `--shell-w: min(92vw, 33.5rem)`. */
     val ShellMax = 536.dp
     const val ShellShare = 0.92f
@@ -606,6 +616,18 @@ object Ownify {
      * nothing slides or rises; what arrives fades in over this instead.
      */
     const val ReduceFadeMs = 180
+
+    /**
+     * `--ease-out-strong` and the Phase 2 motion: a floating panel arrives — its
+     * frost, its scale from .96 and its opacity together — in [PanelInMs] and
+     * leaves in [PanelOutMs]; a press goes in in [PressInMs] and comes back in
+     * [PressOutMs], so the press answers at once and the release settles.
+     */
+    val EaseOutStrong = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+    const val PanelInMs = 240
+    const val PanelOutMs = 180
+    const val PressInMs = 140
+    const val PressOutMs = 240
 
     /** The count-ups and the meters: 1000 ms, ease-out cubic. */
     val EaseOutCubic = CubicBezierEasing(0.33f, 1f, 0.68f, 1f)

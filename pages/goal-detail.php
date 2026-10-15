@@ -69,7 +69,10 @@ $height = 96.0;
                         <span class="icon-tile" aria-hidden="true"><?= icon($goal['icon']) ?></span>
                         <div class="goal-hero__heads">
                             <p class="goal-hero__category"><?= e($goal['category_label']) ?> · <?= e($goal['type_label']) ?></p>
-                            <h1 class="goal-hero__name" id="goal-title-<?= e($id) ?>"><?= e($goal['name']) ?></h1>
+                            <?php /* A long name (over 40 characters, the wizard allows 120) steps down
+                                     to Title 3 with balanced lines — all of it, nothing cut
+                                     (goals.css .is-long; GoalDetail.kt GOAL_NAME_LONG). */ ?>
+                            <h1 class="goal-hero__name<?= mb_strlen((string) $goal['name']) > 40 ? ' is-long' : '' ?>" id="goal-title-<?= e($id) ?>"><?= e($goal['name']) ?></h1>
                         </div>
                     </div>
 

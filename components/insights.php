@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 $insights = $data['insights'];
+/* Nothing to show yet: the card stays, quieter (components.css .is-empty). */
+$allEmpty = array_filter($insights['items'], static fn ($item) => ($item['state'] ?? 'empty') !== 'empty') === [];
 ?>
-<section class="card card--insights reveal" aria-labelledby="insights-title">
+<section class="card card--insights reveal<?= $allEmpty ? ' is-empty' : '' ?>" aria-labelledby="insights-title">
 
     <div class="card__head card__head--compact">
         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>

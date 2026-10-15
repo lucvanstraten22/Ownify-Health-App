@@ -169,6 +169,10 @@
 
     function bindChrome(scroller, header, fab) {
         var ticking = false;
+        /* A detail page's bar takes the page's name once its hero — the name
+           under the ring — has gone under the bar (health.css .is-titled). */
+        var title = header ? header.querySelector('.detail__title') : null;
+        var name = title ? scroller.querySelector('.card--hero .score-ring__label') : null;
 
         if (!header && !fab) { return; }
 
@@ -178,6 +182,11 @@
 
             if (header) {
                 header.classList.toggle('is-scrolled', y > 8);
+            }
+
+            if (name) {
+                header.classList.toggle('is-titled',
+                    y > 8 && name.getBoundingClientRect().bottom <= header.getBoundingClientRect().bottom);
             }
 
             if (fab) {

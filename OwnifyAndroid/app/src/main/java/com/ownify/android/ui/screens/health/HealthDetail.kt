@@ -87,6 +87,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.focusSafely
+import com.ownify.android.ui.app.heroName
 
 /**
  * One health area in full (pages/health-detail.php), in the order it
@@ -97,7 +98,7 @@ import com.ownify.android.ui.design.focusSafely
 @Composable
 fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
-        DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid")) {
+        DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid"), title = area.label) {
             HeroCard(area)
             area.rating?.let { NutritionRating(area, it) }
             // An area drawn — Slaap (docs/SLEEP.md), Training (docs/TRAINING.md) — instead
@@ -121,14 +122,14 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     }
 }
 
-/** `.card--hero`: the ring in the area's accent, its name, what the score says — or why there is none. */
+/** `.card--hero`, on the ground: the ring in the area's colour, its name, what the score says — or why there is none. */
 @Composable
 private fun HeroCard(area: Area) {
     val (play, sight) = rememberPlayOnSight()
     val score = area.score
     val empty = score.value == null
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
+    Column(Modifier.fillMaxWidth().reveal().then(sight).padding(top = Ownify.Space1, bottom = Ownify.Space2)) {
         ScoreRing(
             value = score.value,
             max = score.max,
@@ -139,9 +140,9 @@ private fun HeroCard(area: Area) {
             description = area.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", score.value, score.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = Ownify.Space4, bottom = Ownify.Space3)
+                .padding(top = Ownify.Space6, bottom = Ownify.Space5)
         )
-        T(area.label, JStyle.Section, Modifier.fillMaxWidth().semantics { heading() }, align = TextAlign.Center)
+        T(area.label, JStyle.HeroLabel, Modifier.fillMaxWidth().semantics { heading() }.heroName(), align = TextAlign.Center)
         T(
             area.summary,
             JStyle.Lede,

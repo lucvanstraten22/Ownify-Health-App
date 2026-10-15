@@ -55,6 +55,11 @@ import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyThemeStore
 import kotlinx.coroutines.CancellationException
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.composed
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.MutableFloatState
 
 /** The shell, for the screens inside it: where to go, what to open. */
 val LocalShell = staticCompositionLocalOf<ShellState> { error("No shell") }
@@ -361,26 +366,44 @@ fun PageColumn(
 /**
  * A detail page (`article.detail` > `.screen__scroll`): its own header with
  * the back pill, sticky over its own column, which takes the tint and blur
- * once the column has moved 8 dp — the column recorded for that blur.
+ * once the column has moved 8 dp — the column recorded for that blur. With a
+ * [title] (Slaap, Voeding, Training, the Scorekompas) the bar takes the page's
+ * name once its hero's name ([heroName]) has gone under it.
  */
 @Composable
 fun DetailColumn(
     scroll: ScrollState,
     back: String,
     backAria: String,
+    title: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shell = LocalShell.current
     val density = LocalDensity.current
     val (backdrop, layer) = rememberBackdrop()
     val scrolled by remember(scroll) { derivedStateOf { scroll.value > with(density) { 8.dp.roundToPx() } } }
+    val heroName = remember { mutableFloatStateOf(Float.MAX_VALUE) }
 
     Box(Modifier.fillMaxSize()) {
-        PageColumn(scroll, Modifier.recordBackdrop(backdrop, layer), top = detailHeaderSpace(), content = content)
+        CompositionLocalProvider(LocalHeroName provides heroName) {
+            PageColumn(scroll, Modifier.recordBackdrop(backdrop, layer), top = detailHeaderSpace(), content = content)
+        }
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
-            DetailHeader(back, backAria, scrolled, onBack = shell::closeDetail)
+            DetailHeader(
+                back, backAria, scrolled, onBack = shell::closeDetail,
+                title = title, heroBottom = { heroName.floatValue }
+            )
         }
     }
+}
+
+/** Where a detail page's hero name ends (its bottom, in the window), for the bar's title. */
+internal val LocalHeroName = staticCompositionLocalOf<MutableFloatState?> { null }
+
+/** The name under a detail page's hero ring: the bar takes the page's name once this has gone under it. */
+fun Modifier.heroName(): Modifier = composed {
+    val sink = LocalHeroName.current
+    if (sink == null) this else this.onGloballyPositioned { sink.floatValue = it.boundsInWindow().bottom }
 }
 
 /** `--dock-clearance`: the tab bar, its gap and the safe bottom. */

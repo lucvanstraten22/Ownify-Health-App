@@ -440,7 +440,7 @@
         var widths = {};
         each(root, '[data-bar]', function (bar, index) {
             var card = bar.closest('[data-goal-card]');
-            widths[card ? 'card-' + card.dataset.goalCard : 'bar-' + index] = bar.style.width || '';
+            widths[card ? 'card-' + card.dataset.goalCard : 'bar-' + index] = bar.style.getPropertyValue('--meter-fill');
         });
         return widths;
     }
@@ -460,9 +460,9 @@
             var from = widths ? widths[card ? 'card-' + card.dataset.goalCard : 'bar-' + index] : '';
             var to = Math.max(0, Math.min(1, parseFloat(bar.getAttribute('data-progress')) || 0));
 
-            if (from) { bar.style.width = from; }
+            if (from) { bar.style.setProperty('--meter-fill', from); }
             window.requestAnimationFrame(function () {
-                window.requestAnimationFrame(function () { bar.style.width = (to * 100) + '%'; });
+                window.requestAnimationFrame(function () { bar.style.setProperty('--meter-fill', String(to)); });
             });
         });
 

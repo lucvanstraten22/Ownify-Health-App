@@ -43,9 +43,10 @@
     padding: var(--space-4);
     pointer-events: auto;
     opacity: 0;
-    transform: translateY(-6px) scale(0.98);
+    /* It grows out of the button it came from. */
+    transform: scale(0.96);
     transform-origin: top left;
-    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+    transition: var(--panel-out);
 }
 
 .devices.is-open .devices__scrim { opacity: 1; }

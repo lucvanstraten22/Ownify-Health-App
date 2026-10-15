@@ -85,6 +85,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.focusSafely
+import androidx.compose.ui.text.style.LineBreak
 
 /**
  * One goal in full (pages/goal-detail.php), in the order it matters: the goal
@@ -120,6 +121,9 @@ fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
 
 /** Sections 1 and 2: the name, the chips, the percentage against the target, the bar, the facts. */
 @OptIn(ExperimentalLayoutApi::class)
+/** Characters (code points) past which a goal's name is long (pages/goal-detail.php: mb_strlen > 40). */
+internal const val GOAL_NAME_LONG = 40
+
 @Composable
 private fun Hero(data: AppData, goal: Goal) {
     val goals = data.goals
@@ -144,9 +148,16 @@ private fun Hero(data: AppData, goal: Goal) {
             OwnifyIcons.named(goal.icon)?.let { IconTile(it, color = accent) }
             Column(Modifier.weight(1f)) {
                 T("${goal.categoryLabel} · ${goal.typeLabel}", JStyle.Caption, uppercase = true)
+                // A long name steps down to Title 3 with balanced lines (`.goal-hero__name.is-long`).
+                val long = goal.name.codePointCount(0, goal.name.length) > GOAL_NAME_LONG
                 T(
                     goal.name,
-                    OwnifyType.style(if (narrow) Ownify.FsTitle3 else Ownify.FsTitle1, FontWeight.SemiBold, tracking = (-0.025).em, lineHeight = 1.2.em),
+                    if (long) {
+                        OwnifyType.style(Ownify.FsTitle3, FontWeight.SemiBold, tracking = Ownify.TrackingTitle, lineHeight = 1.25.em)
+                            .copy(lineBreak = LineBreak.Heading)
+                    } else {
+                        OwnifyType.style(if (narrow) Ownify.FsTitle3 else Ownify.FsTitle1, FontWeight.SemiBold, tracking = (-0.025).em, lineHeight = 1.2.em)
+                    },
                     Modifier.padding(top = Ownify.Space1).semantics { heading() }
                 )
             }

@@ -180,11 +180,19 @@
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
-.ai-suggestion:hover,
 .ai-suggestion:focus-visible {
     border-color: var(--glass-border);
     background: var(--glass);
     color: var(--text-primary);
+}
+
+/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
+@media (hover: hover) and (pointer: fine) {
+    .ai-suggestion:hover {
+        border-color: var(--glass-border);
+        background: var(--glass);
+        color: var(--text-primary);
+    }
 }
 
 /* --------------------------------------------------------------------------
@@ -416,8 +424,12 @@
     cursor: pointer;
 }
 
-.ai-btn--primary:hover,
 .ai-btn--primary:focus-visible { background: color-mix(in srgb, var(--health-edge), var(--health-strong)); }
+
+/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
+@media (hover: hover) and (pointer: fine) {
+    .ai-btn--primary:hover { background: color-mix(in srgb, var(--health-edge), var(--health-strong)); }
+}
 
 /* Thinking: three dots in the assistant's pane. */
 .ai-typing {
@@ -603,7 +615,7 @@
     background: var(--health);
     color: #fff;
     cursor: pointer;
-    transition: opacity var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast);
+    transition: opacity var(--transition-fast), transform var(--press-out) var(--ease-out-strong), background-color var(--transition-fast);
 }
 
 .ai-send .icon { width: 20px; height: 20px; stroke-width: 2; }
@@ -758,9 +770,13 @@
 
 .ai-history__delete .icon { width: 18px; height: 18px; }
 
-.ai-history__delete:hover,
 .ai-history__delete:focus-visible,
 .ai-history__delete.is-armed { color: var(--text-primary); }
+
+/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
+@media (hover: hover) and (pointer: fine) {
+    .ai-history__delete:hover { color: var(--text-primary); }
+}
 
 .ai-history__delete.is-armed {
     width: auto;

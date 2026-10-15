@@ -125,11 +125,11 @@
         each(node, '[data-bar]', function (bar, index) {
             var target = clamp01(parseFloat(bar.getAttribute('data-progress')));
 
-            if (bars[index]) { bar.style.width = bars[index]; }
+            if (bars[index]) { bar.style.setProperty('--meter-fill', bars[index]); }
 
             window.requestAnimationFrame(function () {
                 window.requestAnimationFrame(function () {
-                    bar.style.width = (target * 100) + '%';
+                    bar.style.setProperty('--meter-fill', String(target));
                 });
             });
         });
@@ -141,7 +141,7 @@
         var rings = [];
         var bars  = [];
         each(current, '[data-ring-value]', function (circle) { rings.push(circle.style.strokeDashoffset); });
-        each(current, '[data-bar]', function (bar) { bars.push(bar.style.width); });
+        each(current, '[data-bar]', function (bar) { bars.push(bar.style.getPropertyValue('--meter-fill')); });
 
         var node = document.importNode(next, true);
         current.parentNode.replaceChild(node, current);

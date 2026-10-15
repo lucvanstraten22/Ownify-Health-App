@@ -109,6 +109,9 @@ object JStyle {
     /** `.card__title`, `.score-ring__label`. */
     val Section: TextStyle get() = OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
 
+    /** `.card--hero .score-ring__label`: the name under a hero's ring. */
+    val HeroLabel: TextStyle get() = OwnifyType.style(Ownify.FsTitle2, FontWeight.Bold, tracking = Ownify.TrackingTitle)
+
     /** `.card__eyebrow` (its own -0.01em). */
     val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em)
 
@@ -563,10 +566,12 @@ fun Meter(
 }
 
 /**
- * `.score-ring`: a 10-wide track at `.07` round a glow, and the value drawn
- * from 12 o'clock clockwise with round caps over 1100 ms — in the health →
- * activity → nutrition gradient on Overzicht, in the area's accent on a
- * detail page. Empty, the track is a dotted line and the number reads "—".
+ * A hero's ring (`.card--hero .score-ring`), standing on the ground: an
+ * 8-wide track at `.08`, and the value drawn from 12 o'clock clockwise with
+ * round caps over 1100 ms in the page's colour — [accent]'s light shade where
+ * it starts, its own colour where it ends (the app's green on Overzicht and
+ * the Scorekompas, an area's colour on its page) — with a soft, still light
+ * behind it. Empty, the track is a dotted line, the number a calm "—".
  */
 @Composable
 fun ScoreRing(
@@ -576,16 +581,15 @@ fun ScoreRing(
     label: String,
     play: Boolean,
     modifier: Modifier = Modifier,
-    size: Dp = LocalScreen.current.ringSize,
-    accent: Accent? = null,
-    numberSize: TextUnit = LocalScreen.current.fsScore,
+    size: Dp = LocalScreen.current.heroRingSize,
+    accent: Accent = Accent.HEALTH,
     description: String? = null
 ) {
     val empty = value == null
     val target = if (value == null || max <= 0) 0f else (value.toFloat() / max).coerceIn(0f, 1f)
     val shown = animatedShare(target, play, durationMs = 1100)
     val number = countUpText(value?.toString() ?: "—", play && !empty)
-    val glow = accent?.color ?: Ownify.Health
+    val fsScore = LocalScreen.current.fsScore
 
     Box(
         modifier
@@ -597,19 +601,34 @@ fun ScoreRing(
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val unit = this.size.width / 160f
-            // ::before — inset 18%, a radial glow reaching transparent at 70% of the corner distance.
-            val side = this.size.width * 0.64f
-            val glowColor = if (empty) Ownify.glint(0.05f) else glow.copy(alpha = 0.16f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    0f to glowColor,
-                    0.7f to glowColor.copy(alpha = 0f),
-                    center = center,
-                    radius = side * 0.70710677f
-                ),
-                radius = side / 2f,
-                center = center
-            )
+            if (empty) {
+                // ::before — inset 18%, a faint light reaching transparent at 70% of the corner distance.
+                val side = this.size.width * 0.64f
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to Ownify.glint(0.05f),
+                        0.7f to Ownify.glint(0f),
+                        center = center,
+                        radius = side * 0.70710677f
+                    ),
+                    radius = side / 2f,
+                    center = center
+                )
+            } else {
+                // ::before — inset -26%: the page's colour at 30%, 10% at 36% and gone at 66% of the corner distance.
+                val reach = this.size.width * 1.52f * 0.70710677f
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to accent.color.copy(alpha = 0.30f),
+                        0.36f to accent.color.copy(alpha = 0.10f),
+                        0.66f to accent.color.copy(alpha = 0f),
+                        center = center,
+                        radius = reach
+                    ),
+                    radius = reach,
+                    center = center
+                )
+            }
 
             val r = 68f * unit
             if (empty) {
@@ -625,27 +644,35 @@ fun ScoreRing(
                 return@Canvas
             }
 
-            drawCircle(color = Ownify.ink(0.07f), radius = r, style = Stroke(10f * unit))
+            drawCircle(color = Ownify.ink(0.08f), radius = r, style = Stroke(8f * unit))
 
             if (shown > 0f) {
                 val topLeft = Offset(center.x - r, center.y - r)
                 val arc = Size(r * 2, r * 2)
-                // The SVG is turned -90°, gradient and all: from the bottom-left to the top-right.
-                val brush = if (accent != null) SolidColor(accent.color) else Brush.linearGradient(
-                    0f to Ownify.Sleep,
-                    0.55f to Ownify.Training,
-                    1f to Ownify.Nutrition,
-                    start = Offset(topLeft.x, topLeft.y + arc.height),
-                    end = Offset(topLeft.x + arc.width, topLeft.y)
-                )
+                // drop-shadow(0 0 5px …55%): a wider, faint stroke under the value.
                 drawArc(
-                    brush = brush,
+                    color = accent.color.copy(alpha = 0.22f),
                     startAngle = -90f,
                     sweepAngle = 360f * shown,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arc,
-                    style = Stroke(10f * unit, cap = StrokeCap.Round)
+                    style = Stroke(15f * unit, cap = StrokeCap.Round)
+                )
+                // The SVG is turned -90°, gradient and all: from the bottom-left to the top-right.
+                drawArc(
+                    brush = Brush.linearGradient(
+                        0f to accent.light,
+                        1f to accent.color,
+                        start = Offset(topLeft.x, topLeft.y + arc.height),
+                        end = Offset(topLeft.x + arc.width, topLeft.y)
+                    ),
+                    startAngle = -90f,
+                    sweepAngle = 360f * shown,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arc,
+                    style = Stroke(8f * unit, cap = StrokeCap.Round)
                 )
             }
         }
@@ -655,14 +682,66 @@ fun ScoreRing(
             T(
                 number,
                 OwnifyType.style(
-                    if (empty) numberSize * 0.6f else numberSize,
+                    if (empty) fsScore * 0.6f else fsScore * 1.32f,
                     if (empty) FontWeight.Normal else FontWeight.Bold,
                     if (empty) Ownify.TextMuted else Ownify.TextPrimary,
-                    tracking = (-0.045).em, lineHeight = 1.em, tabular = true
+                    tracking = if (empty) (-0.045).em else (-0.05).em, lineHeight = 1.em, tabular = true
                 )
             )
-            Spacer(Modifier.height(Ownify.Space2))
-            T(scale, JStyle.Tiny)
+            if (empty) {
+                Spacer(Modifier.height(Ownify.Space2))
+                T(scale, JStyle.Tiny)
+            } else {
+                Spacer(Modifier.height(Ownify.Space1))
+                T(scale, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, tracking = 0.sp))
+            }
+        }
+    }
+}
+
+/**
+ * The three pillars under the Overzicht's hero (`.card--hero .legend`):
+ * capsules of the card glass — `--surface-gradient`, `--glass-border-soft`,
+ * the inset top light — where the number leads and the name, with its
+ * score-coloured dot, follows. Three across on every phone.
+ */
+@Composable
+fun PillarCapsules(items: List<LegendItem>, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(Ownify.RadiusInner)
+    val style = CardStyle(
+        from = Ownify.SurfaceFrom,
+        to = Ownify.SurfaceTo,
+        border = Ownify.GlassBorderSoft,
+        shadows = listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true))
+    )
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        items.forEach { item ->
+            JCard(Modifier.weight(1f), style = style, shape = shape, padding = PaddingValues(Ownify.Space3)) {
+                T(
+                    item.value?.toString() ?: "—",
+                    OwnifyType.style(
+                        Ownify.FsTitle2,
+                        if (item.value == null) FontWeight.Normal else FontWeight.Bold,
+                        if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
+                        tracking = Ownify.TrackingTitle, lineHeight = 1.25.em, tabular = true
+                    )
+                )
+                Row(
+                    Modifier.padding(top = Ownify.Space1),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .drawBehind {
+                                drawCircle(Ownify.mix(item.dot, 0.18f, Color.Transparent), radius = size.width / 2f + 3.dp.toPx())
+                                drawCircle(item.dot)
+                            }
+                    )
+                    T(item.label, JStyle.Footnote.copy(color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
+                }
+            }
         }
     }
 }

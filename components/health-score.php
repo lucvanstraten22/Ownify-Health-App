@@ -44,10 +44,12 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
              : e($overall['caption']) ?>">
         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
             <defs>
+                <?php /* The app's green, lighter where it starts: one score, one colour.
+                         (A rainbow of the three pillars suggested segments the
+                         score does not have.) */ ?>
                 <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%"   stop-color="var(--sleep)"/>
-                    <stop offset="55%"  stop-color="var(--training)"/>
-                    <stop offset="100%" stop-color="var(--nutrition)"/>
+                    <stop offset="0%"   style="stop-color: var(--accent-light)"/>
+                    <stop offset="100%" style="stop-color: var(--accent)"/>
                 </linearGradient>
             </defs>
             <circle class="score-ring__track" cx="80" cy="80" r="68"/>

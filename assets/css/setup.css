@@ -55,8 +55,12 @@
 
 .setup__logout { margin-right: calc(-1 * var(--space-2)); }
 
-.setup__link:hover,
 .setup__link:focus-visible { color: var(--text-primary); }
+
+/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
+@media (hover: hover) and (pointer: fine) {
+    .setup__link:hover { color: var(--text-primary); }
+}
 
 /* --------------------------------------------------------------------------
    Progress and steps — the goal wizard's
@@ -119,7 +123,7 @@
     color: var(--text-primary);
     text-align: left;
     transition: border-color var(--transition-fast), background-color var(--transition-fast),
-        transform var(--transition-fast);
+        transform var(--press-out) var(--ease-out-strong);
 }
 
 .setup-choice .icon-tile {

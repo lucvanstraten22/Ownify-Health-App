@@ -58,6 +58,19 @@ import com.ownify.android.ui.design.glassBackdrop
 import com.ownify.android.ui.design.rememberBlurLayer
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
+import kotlinx.coroutines.withContext
+import com.ownify.android.ui.design.Unscaled
+import com.ownify.android.ui.design.LocalStillMotion
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.animation.core.Animatable
 
 /** `--app-header-space`: safe top + 12 + the 46 button + 12 + the 1 px line. */
 @Composable
@@ -129,7 +142,7 @@ fun SharedHeader(
  * veil fades in and out over `--transition-fast`, as on the website.
  */
 @Composable
-fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean = false, content: @Composable BoxScope.() -> Unit) {
     val top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
     val backdrop = LocalBackdrop.current
     val ground = LocalGround.current
@@ -142,7 +155,8 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Comp
                 Modifier
                     .matchParentSize()
                     .layout { measurable, constraints ->
-                        val extra = Ownify.EdgeFade.roundToPx()
+                        // A bar with a title in it reaches further (`.detail__top.is-titled::before`).
+                        val extra = (if (deep) Ownify.EdgeFade * 2.5f else Ownify.EdgeFade).roundToPx()
                         val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + extra))
                         layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
                     }
@@ -162,8 +176,8 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Comp
                     .drawBehind {
                         drawRect(
                             Brush.verticalGradient(
-                                0f to Ownify.BgMain.copy(alpha = 0.95f),
-                                0.5f to Ownify.BgMain.copy(alpha = 0.88f),
+                                0f to Ownify.BgMain.copy(alpha = if (deep) Ownify.VeilDeepTop else 0.95f),
+                                (if (deep) 0.62f else 0.5f) to Ownify.BgMain.copy(alpha = if (deep) Ownify.VeilDeepMid else 0.88f),
                                 1f to Ownify.BgMain.copy(alpha = 0f)
                             )
                         )
@@ -183,7 +197,11 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, content: @Comp
 fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, content: @Composable BoxScope.() -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "button")
+    val scale by animateFloatAsState(
+        if (pressed) 0.96f else 1f,
+        tween(if (pressed) Ownify.PressInMs else Ownify.PressOutMs, easing = Ownify.EaseOutStrong),
+        label = "button"
+    )
 
     Box(
         Modifier
@@ -230,19 +248,57 @@ fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, conte
     }
 }
 
+/** The bar's title, for tests (it is hidden from TalkBack: the hero's heading is the one read). */
+internal const val DETAIL_TITLE = "detail-title"
+
 /**
  * A detail page's own header: the back pill ("Gezondheid", "Doelen",
  * "Instellingen") where the shared header's devices button is.
  */
 @Composable
-fun DetailHeader(back: String, backAria: String, scrolled: Boolean, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun DetailHeader(
+    back: String,
+    backAria: String,
+    scrolled: Boolean,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    heroBottom: () -> Float = { Float.MAX_VALUE }
+) {
     val screen = LocalScreen.current
-    HeaderFrame(scrolled, modifier) {
+    val still = LocalStillMotion.current
+    var barBottom by remember { mutableFloatStateOf(0f) }
+    // `.detail__top.is-titled`: the hero's name has gone under the bar.
+    // ([scrolled] is a plain parameter, so it is read here, not captured in the derived state.)
+    val heroUnder by remember { derivedStateOf { heroBottom() <= barBottom } }
+    val titled = title != null && scrolled && heroUnder
+    // `.detail__title`: fades in over --transition-fast — also with reduced motion, as the website's does.
+    val shown = remember { Animatable(0f) }
+    LaunchedEffect(titled, still) {
+        val target = if (titled) 1f else 0f
+        if (still) shown.snapTo(target) else withContext(Unscaled) { shown.animateTo(target, tween(Ownify.FastMs, easing = Ownify.Ease)) }
+    }
+
+    HeaderFrame(scrolled, modifier.onGloballyPositioned { barBottom = it.boundsInWindow().bottom }, deep = titled) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = (screen.width - screen.shell) / 2),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Pill(back, onClick = onBack, icon = OwnifyIcons.chevronLeft, contentDescription = backAria)
+        }
+        // The page's name, beside the back pill; the heading below stays the one read out.
+        if (title != null && shown.value > 0f) {
+            T(
+                title,
+                OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = Ownify.TrackingTitle),
+                Modifier
+                    .align(Alignment.Center)
+                    .widthIn(max = screen.shell * 0.4f)
+                    .graphicsLayer { alpha = shown.value }
+                    .clearAndSetSemantics { testTag = DETAIL_TITLE },
+                maxLines = 1,
+                ellipsis = true
+            )
         }
     }
 }

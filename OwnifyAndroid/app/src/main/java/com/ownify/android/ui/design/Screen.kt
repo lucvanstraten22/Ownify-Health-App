@@ -59,8 +59,8 @@ data class ScreenMetrics(val width: Dp, val height: Dp) {
     /** `--page-intro-top`: the space between the header and every page's title. */
     val mainTop: Dp get() = if (wide) Ownify.Space6 else Ownify.Space5
 
-    /** `.score-ring` size: `min(50vw, 184px)`. */
-    val ringSize: Dp get() = min(width * 0.5f, 184.dp)
+    /** A hero's ring (`.card--hero .score-ring`): `min(62vw, var(--hero-ring))`. */
+    val heroRingSize: Dp get() = min(width * 0.62f, Ownify.HeroRing)
 }
 
 val LocalScreen = staticCompositionLocalOf { ScreenMetrics(412.dp, 915.dp) }

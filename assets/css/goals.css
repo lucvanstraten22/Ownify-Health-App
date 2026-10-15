@@ -42,7 +42,7 @@
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow-inset), 0 6px 16px rgba(var(--shade), calc(0.22 * var(--shade-k)));
     color: var(--text-primary);
-    transition: transform var(--transition-fast), background-color var(--transition-fast),
+    transition: transform var(--press-out) var(--ease-out-strong), background-color var(--transition-fast),
         opacity var(--transition-fast);
 }
 
@@ -127,7 +127,7 @@
     width: 100%;
     text-align: left;
     /* The transform is the priority change; opacity is pause and delete. */
-    transition: transform var(--transition-fast), opacity var(--transition-slow),
+    transition: transform var(--press-out) var(--ease-out-strong), opacity var(--transition-slow),
         border-color var(--transition-slow), background-color var(--transition-slow);
 }
 
@@ -225,7 +225,7 @@
     height: 15px;
     flex: none;
     color: var(--text-muted);
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .goal-card:active .goal-card__chevron { transform: translateX(2px); }
@@ -402,6 +402,15 @@
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.2;
+}
+
+/* A long name — over 40 characters — at Title 3 with balanced lines: calm, and
+   all of it readable. */
+.goal-hero__name.is-long {
+    font-size: var(--fs-title-3);
+    letter-spacing: var(--tracking-title);
+    line-height: 1.25;
+    text-wrap: balance;
 }
 
 .goal-hero__chips {
@@ -647,8 +656,8 @@
     width: min(100%, 27rem);
     max-height: 100%;
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
-    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+    transform: scale(0.96);
+    transition: var(--panel-out);
 }
 
 .wizard.is-open .wizard__scrim { opacity: 1; }
@@ -706,11 +715,9 @@
 
 .wizard__step[hidden] { display: none; }
 
-.wizard__step.is-active { animation: wizard-in var(--screen-duration) var(--screen-ease) both; }
-
-.wizard__body[data-dir="back"] .wizard__step.is-active {
-    animation-name: wizard-in-back;
-}
+/* A step's arrival is goal-wizard.js's (enter): interruptible, so a quick
+   tap carries on from where the step is instead of restarting. The keyframes
+   below are the first-run setup's (setup.css). */
 
 @keyframes wizard-in {
     from { opacity: 0; transform: translateX(14px); }
@@ -876,7 +883,7 @@
     background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
     text-align: left;
     transition: border-color var(--transition-fast), background-color var(--transition-fast),
-        transform var(--transition-fast);
+        transform var(--press-out) var(--ease-out-strong);
 }
 
 .wizard-tile:active { transform: scale(0.97); }
@@ -953,7 +960,7 @@
     background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
     text-align: left;
     transition: border-color var(--transition-fast), background-color var(--transition-fast),
-        transform var(--transition-fast);
+        transform var(--press-out) var(--ease-out-strong);
 }
 
 .wizard-duration:active { transform: scale(0.97); }

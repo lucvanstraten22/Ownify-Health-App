@@ -102,7 +102,9 @@ double). The values are one block at the end of theme.css and
 `OwnifyPalette.more`; `TokenParityTest` compares them. **Reduced
 transparency** (`prefers-reduced-transparency: reduce`, web only — Android
 has no such setting) makes the floating glass near-solid (`--pane-solid`)
-and the header's veil solid at its top (`--veil-top`, `--veil-mid`).
+and drops the panels' frost (`--panel-frost`, `--panel-frost-closed`), and
+makes the header's veil solid at its top (`--veil-top`, `--veil-mid`; a
+detail's bar with its title in it: `--veil-deep-top`, `--veil-deep-mid`).
 
 ## Kept on the device
 

@@ -29,6 +29,9 @@ $ratio = score_ratio($score['value'], $score['max']);
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e(t('Gezondheid')) ?></span>
                 </button>
+                <?php /* The page's name, in the bar once the hero has scrolled away
+                         (interactions.js); the heading below stays the one read out. */ ?>
+                <span class="detail__title" aria-hidden="true"><?= e($area['label']) ?></span>
             </div>
         </header>
 
@@ -43,7 +46,15 @@ $ratio = score_ratio($score['value'], $score['max']);
                          aria-label="<?= e($area['label']) ?>: <?= has_value($score['value'])
                              ? e(tf('%1$s van %2$s', (string) $score['value'], (string) $score['max']))
                              : e(t('nog geen gegevens')) ?>">
-                        <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
+                        <?php /* The area's own colour, lighter where it starts — as the Overzicht's ring is the app's green. */ ?>
+                        <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true"
+                             style="--ring-paint: url(#ringGradient-<?= e($area['id']) ?>)">
+                            <defs>
+                                <linearGradient id="ringGradient-<?= e($area['id']) ?>" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%"   style="stop-color: var(--accent-light)"/>
+                                    <stop offset="100%" style="stop-color: var(--accent)"/>
+                                </linearGradient>
+                            </defs>
                             <circle class="score-ring__track" cx="80" cy="80" r="68"/>
                             <circle class="score-ring__value" cx="80" cy="80" r="68" data-ring-value/>
                         </svg>

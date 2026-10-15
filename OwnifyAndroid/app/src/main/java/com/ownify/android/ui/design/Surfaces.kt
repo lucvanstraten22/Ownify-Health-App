@@ -57,6 +57,19 @@ data class CardStyle(
                 )
             )
 
+        /**
+         * `.card--insights.is-empty`, `.card--recommendation.is-empty`: what is
+         * not there yet steps down from glass to a well — `--fill` at .03, the
+         * hairline, no shadow (and no top light: [JCard]'s `highlight`).
+         */
+        val Dimmed: CardStyle
+            get() = CardStyle(
+                from = Ownify.fill(0.03f),
+                to = Ownify.fill(0.03f),
+                border = Ownify.GlassHairline,
+                shadows = emptyList()
+            )
+
         /** `.card--patterns / --recommendation / --leaderboard`: `--surface-gradient-quiet`. */
         val Quiet: CardStyle
             get() = CardStyle(
@@ -189,12 +202,13 @@ fun JCard(
     style: CardStyle = CardStyle.Default,
     shape: Shape = cardShape(),
     padding: PaddingValues = PaddingValues(Ownify.Space5),
+    highlight: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shadows = LocalGraphicsContext.current.shadowContext
     Column(
         modifier = modifier
-            .cardSurface(shape, style, LocalGround.current, shadows)
+            .cardSurface(shape, style, LocalGround.current, shadows, highlight)
             // The 1 px border takes room, as `.card`'s does (border-box).
             .cssPadding(padding, border = 1.dp),
         content = content

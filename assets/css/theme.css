@@ -105,6 +105,9 @@
        the backdrop at large radii and the resampling puts the detail back. It
        is also the cheaper number on a phone. */
     --pane-blur: 10px;
+    --panel-frost: blur(var(--blur-card)) saturate(130%);   /* a floating panel's own frost (components.css) */
+    --panel-frost-closed: blur(0px) saturate(100%);         /* … and where it starts from as it arrives */
+    --hero-ring: 244px;   /* the hero's ring at most (min(62vw, …)); OwnifyTheme.kt HeroRing */
     --pane-saturate: 190%;
     --pane-brightness: 108%;
 
@@ -276,6 +279,25 @@
     --reduce-fade: 180ms;
     --screen-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
+    /* Phase 2 motion (B5). The strong ease-out is for what answers the user:
+       a floating panel arriving — its frost, scale and opacity together, in
+       240 ms, and gone again in 180 — and a press, in at 140 ms and back at
+       240, so the press answers at once and the release settles. Mirrored in
+       OwnifyTheme.kt (EaseOutStrong, PanelInMs, PanelOutMs, PressInMs, PressOutMs). */
+    --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+    --panel-in-duration: 240ms;
+    --panel-out-duration: 180ms;
+    --press-in: 140ms;
+    --press-out: 240ms;
+    --panel-in: opacity var(--panel-in-duration) var(--ease-out-strong),
+        transform var(--panel-in-duration) var(--ease-out-strong),
+        -webkit-backdrop-filter var(--panel-in-duration) var(--ease-out-strong),
+        backdrop-filter var(--panel-in-duration) var(--ease-out-strong);
+    --panel-out: opacity var(--panel-out-duration) var(--ease-out-strong),
+        transform var(--panel-out-duration) var(--ease-out-strong),
+        -webkit-backdrop-filter var(--panel-out-duration) var(--ease-out-strong),
+        backdrop-filter var(--panel-out-duration) var(--ease-out-strong);
+
     /* --- layout ---------------------------------------------------------- */
     /* One source of truth for the page column: content, header, tab bar and
        the floating control all align to --shell-w. */
@@ -303,6 +325,8 @@
     --edge-fade: 16px;
     --veil-top: 0.95;                   /* the header's veil: how solid at its top … */
     --veil-mid: 0.88;                   /* … and halfway down, before it fades out */
+    --veil-deep-top: 0.97;              /* a detail's bar with its title in it: */
+    --veil-deep-mid: 0.94;              /* more solid, and reaching 2.5 × --edge-fade */
     --dock-fade: 28px;
     --ai-handle-height: 40px;
 
@@ -606,9 +630,23 @@ button {
     transform: none;
 }
 
-/* Press feedback for every tappable surface. */
-.press { transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast); }
-.press:active { transform: scale(0.97); }
+/* Press feedback for every tappable surface: in at --press-in, back at
+   --press-out (the press answers at once, the release settles). */
+.press { transition: transform var(--press-out) var(--ease-out-strong), background-color var(--transition-fast), border-color var(--transition-fast); }
+.press:active { transform: scale(0.97); transition-duration: var(--press-in); }
+
+/* Every other surface that settles under the finger, and the chevrons that
+   nudge with it, take the same timing: in at --press-in, back at --press-out
+   (their own rules set the release). */
+:is(.btn, .social, .ai-send, .pill--devices, .pill--account, .fab, .goals-add, .goal-card,
+    .wizard-tile, .wizard-duration, .setup-choice, .area-chart--mini, .settings-identity):active,
+.card--opens:has(.card__open:active),
+.card--hero.card--opens:has(.card__open:active) :is(.score-ring, .score-ring__label),
+.card--opens:has(.card__open:active) .card__open-chevron,
+.goal-card:active .goal-card__chevron,
+.health-card:active .health-card__chevron,
+:is(.settings-row, .settings-identity):active .settings-row__chevron,
+.integration__head:active .integration__chevron { transition-duration: var(--press-in); }
 
 /* Neutral loading placeholder for data that does not exist yet. */
 .skeleton {
@@ -806,7 +844,11 @@ button {
 @media (prefers-reduced-transparency: reduce) {
     :root {
         --pane-solid: 0.94;
+        --panel-frost: none;
+        --panel-frost-closed: none;
         --veil-top: 1;
         --veil-mid: 0.97;
+        --veil-deep-top: 1;
+        --veil-deep-mid: 0.99;
     }
 }

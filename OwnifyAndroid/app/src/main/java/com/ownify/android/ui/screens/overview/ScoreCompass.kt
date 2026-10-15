@@ -91,6 +91,7 @@ import com.ownify.android.ui.theme.LocalAccent
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
 import com.ownify.android.ui.theme.ScoreBand
+import com.ownify.android.ui.app.heroName
 
 /**
  * The Scorekompas (pages/score-compass.php): the Health Score explained,
@@ -104,7 +105,7 @@ import com.ownify.android.ui.theme.ScoreBand
 fun ScoreCompassDetail(data: AppData, scroll: ScrollState) {
     val compass = data.compass
     CompositionLocalProvider(LocalAccent provides Accent.HEALTH) {
-        DetailColumn(scroll, back = compass.back, backAria = trf("Terug naar %s", compass.back)) {
+        DetailColumn(scroll, back = compass.back, backAria = trf("Terug naar %s", compass.back), title = compass.title) {
             HeroCard(data)
             CompositionCard(compass.composition)
             TrendCard(compass.trend)
@@ -136,7 +137,7 @@ fun DirectionChip(direction: CompassDirection, modifier: Modifier = Modifier) {
     )
 }
 
-/** `.card--hero`: the overall score's ring, as on Overzicht — its gradient, its glow. */
+/** `.card--hero`, on the ground: the overall score's ring, as on Overzicht — the app's green, its light. */
 @Composable
 private fun HeroCard(data: AppData) {
     val compass = data.compass
@@ -144,7 +145,7 @@ private fun HeroCard(data: AppData) {
     val (play, sight) = rememberPlayOnSight()
     val empty = compass.score == null
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
+    Column(Modifier.fillMaxWidth().reveal().then(sight).padding(top = Ownify.Space1, bottom = Ownify.Space2)) {
         ScoreRing(
             value = compass.score,
             max = compass.max,
@@ -154,9 +155,9 @@ private fun HeroCard(data: AppData) {
             description = overall.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", compass.score, compass.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = Ownify.Space4, bottom = Ownify.Space3)
+                .padding(top = Ownify.Space6, bottom = Ownify.Space5)
         )
-        T(compass.title, JStyle.Section, Modifier.fillMaxWidth().semantics { heading() }, align = TextAlign.Center)
+        T(compass.title, JStyle.HeroLabel, Modifier.fillMaxWidth().semantics { heading() }.heroName(), align = TextAlign.Center)
         compass.direction?.let { DirectionChip(it, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space2)) }
         T(
             compass.lede,

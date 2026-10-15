@@ -118,7 +118,7 @@
     height: 15px;
     flex: none;
     color: var(--text-faint);
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .settings-row:active .settings-row__chevron,
@@ -137,7 +137,7 @@
        the icons and chevrons in the cards under it. */
     padding: var(--space-4);
     text-align: left;
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .settings-identity:active { transform: scale(0.99); }
@@ -597,7 +597,7 @@
     height: 16px;
     flex: none;
     color: var(--text-faint);
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .integration__head[aria-expanded="true"] .integration__chevron { transform: rotate(180deg); }
@@ -678,8 +678,12 @@
    padding as the choice lists beside them, so their text starts on one line. */
 .card.settings-rows { padding: var(--space-3) var(--space-4); }
 
-.btn--link:hover,
 .btn--link:focus-visible { color: var(--text-primary); }
+
+/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
+@media (hover: hover) and (pointer: fine) {
+    .btn--link:hover { color: var(--text-primary); }
+}
 
 .integration__actions {
     display: flex;
@@ -757,8 +761,8 @@
     width: min(100%, 23rem);
     text-align: center;
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
-    transition: opacity var(--transition-fast), transform var(--screen-duration) var(--screen-ease);
+    transform: scale(0.96);
+    transition: var(--panel-out);
 }
 
 .confirm.is-open .confirm__scrim { opacity: 1; }

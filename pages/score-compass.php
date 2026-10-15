@@ -37,6 +37,7 @@ $opportunity = $compass['opportunity'];
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e($compass['back']) ?></span>
                 </button>
+                <span class="detail__title" aria-hidden="true"><?= e($compass['title']) ?></span>
             </div>
         </header>
 
@@ -53,9 +54,8 @@ $opportunity = $compass['opportunity'];
                         <svg class="score-ring__svg" viewBox="0 0 160 160" aria-hidden="true">
                             <defs>
                                 <linearGradient id="compassRingGradient" x1="0" y1="0" x2="1" y2="1">
-                                    <stop offset="0%"   stop-color="var(--sleep)"/>
-                                    <stop offset="55%"  stop-color="var(--training)"/>
-                                    <stop offset="100%" stop-color="var(--nutrition)"/>
+                                    <stop offset="0%"   style="stop-color: var(--accent-light)"/>
+                                    <stop offset="100%" style="stop-color: var(--accent)"/>
                                 </linearGradient>
                             </defs>
                             <circle class="score-ring__track" cx="80" cy="80" r="68"/>

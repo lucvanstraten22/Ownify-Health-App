@@ -74,7 +74,7 @@
         if (target <= 0) { return; }
 
         window.requestAnimationFrame(function () {
-            bar.style.width = (target * 100) + '%';
+            bar.style.setProperty('--meter-fill', String(target));
         });
     }
 

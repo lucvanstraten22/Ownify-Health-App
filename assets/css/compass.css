@@ -11,11 +11,17 @@
    the card opens the Scorekompas, and the card presses in like a goal card.
    -------------------------------------------------------------------------- */
 .card--opens {
-    transition: transform var(--transition-fast), border-color var(--transition-fast),
+    transition: transform var(--press-out) var(--ease-out-strong), border-color var(--transition-fast),
         box-shadow var(--transition-fast);
 }
 
 .card--opens:has(.card__open:active) { transform: scale(0.97); }
+
+/* A hero has no card to press: its ring and its name settle instead. */
+.card--hero.card--opens { transition: none; }
+.card--hero.card--opens:has(.card__open:active) { transform: none; }
+.card--hero.card--opens :is(.score-ring, .score-ring__label) { transition: transform var(--press-out) var(--ease-out-strong); }
+.card--hero.card--opens:has(.card__open:active) :is(.score-ring, .score-ring__label) { transform: scale(0.97); }
 
 .card__open {
     display: inline-flex;
@@ -45,7 +51,7 @@
     width: 15px;
     height: 15px;
     color: var(--text-muted);
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .card--opens:has(.card__open:active) .card__open-chevron { transform: translateX(1px); }
@@ -64,7 +70,7 @@
 .score-direction__icon {
     width: 13px;
     height: 13px;
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 [data-direction="flat"] .score-direction__icon { transform: rotate(90deg); }

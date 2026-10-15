@@ -72,7 +72,7 @@
     width: 13px;
     height: 13px;
     color: var(--text-muted);
-    transition: transform var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
 .health-card:active .health-card__chevron { transform: translateX(1px); }
@@ -499,14 +499,46 @@
 }
 
 .detail__bar {
+    position: relative;
     display: flex;
     align-items: center;
+}
+
+/* Once the hero has scrolled away, the page's name stands in the bar beside
+   the back pill (interactions.js sets .is-titled; Header.kt DetailHeader does
+   the same), and the bar's scroll edge reaches further and more solidly, so
+   the name never sits on text. */
+.detail__title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: 40%;
+    overflow: hidden;
+    transform: translate(-50%, -50%);
+    font-size: var(--fs-headline);
+    font-weight: 600;
+    letter-spacing: var(--tracking-title);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+}
+
+.detail__top.is-titled .detail__title { opacity: 1; }
+
+.detail__top.is-titled::before {
+    bottom: calc(-2.5 * var(--edge-fade));
+    background: linear-gradient(180deg,
+        rgba(var(--ground), var(--veil-deep-top)) 0%,
+        rgba(var(--ground), var(--veil-deep-mid)) 62%,
+        rgba(var(--ground), 0) 100%);
 }
 
 .pill--back { padding-inline: var(--space-2) var(--space-3); }
 
 /* The ring on a detail page takes that area's accent. */
-.detail .score-ring__value { stroke: var(--accent); }
+.detail .score-ring__value { stroke: var(--ring-paint, var(--accent)); }
 .detail .score-ring::before { background: radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
 .detail .is-empty .score-ring::before { background: radial-gradient(circle, rgba(255, 255, 255, calc(0.05 * var(--glint-k))), transparent 70%); }
 

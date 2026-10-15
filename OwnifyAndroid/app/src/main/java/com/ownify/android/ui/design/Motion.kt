@@ -53,9 +53,10 @@ fun Modifier.press(interaction: MutableInteractionSource, scale: Float = 0.97f, 
     val pressed by interaction.collectIsPressedAsState()
     val reduced = LocalReducedMotion.current
     val down = pressed && enabled
+    // In at --press-in, back at --press-out: the press answers at once, the release settles.
     val value by animateFloatAsState(
         targetValue = if (down && !reduced) scale else 1f,
-        animationSpec = tween(Ownify.FastMs, easing = Ownify.Ease),
+        animationSpec = tween(if (down) Ownify.PressInMs else Ownify.PressOutMs, easing = Ownify.EaseOutStrong),
         label = "press"
     )
     // Reduced motion: nothing shrinks; the surface dims to 72% instead.
@@ -126,8 +127,11 @@ val Unscaled: MotionDurationScale = object : MotionDurationScale {
 }
 
 /** Fades this to 1 over [Ownify.ReduceFadeMs]: the reduced-motion arrival. */
-suspend fun Animatable<Float, AnimationVector1D>.reduceFadeIn() = withContext(Unscaled) {
-    animateTo(1f, tween(Ownify.ReduceFadeMs, easing = Ownify.EaseOut))
+suspend fun Animatable<Float, AnimationVector1D>.reduceFadeIn() = reduceFadeTo(1f)
+
+/** Fades this to [target] over [Ownify.ReduceFadeMs], whatever the system's animator scale. */
+suspend fun Animatable<Float, AnimationVector1D>.reduceFadeTo(target: Float) = withContext(Unscaled) {
+    animateTo(target, tween(Ownify.ReduceFadeMs, easing = Ownify.EaseOut))
 }
 
 /**

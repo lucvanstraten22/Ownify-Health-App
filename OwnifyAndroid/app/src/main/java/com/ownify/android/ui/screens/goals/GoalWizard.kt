@@ -7,6 +7,7 @@ import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.trn
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -100,6 +101,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.focusSafely
 import com.ownify.android.ui.design.blurring
+import com.ownify.android.ui.design.LocalReducedMotion
+import com.ownify.android.ui.design.reduceFadeIn
 
 private const val TOTAL = 6
 
@@ -163,6 +166,8 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
     var error by remember { mutableStateOf<String?>(null) }
     var createdId by remember { mutableStateOf<String?>(null) }
     val body = rememberScrollState()
+    // The step on its way in, shared by every step so a quick tap carries on from where it is.
+    val entry = remember { Animatable(0f) }
     val hasPrimary = GoalBoard.board(goals).primary != null
 
     fun close() {
@@ -238,7 +243,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                         .verticalScroll(body)
                 ) {
                     key(if (done) 0 else step) {
-                        StepIn(direction) {
+                        StepIn(direction, entry) {
                             if (done) {
                                 DoneStep(draft, goals)
                             } else {
@@ -346,18 +351,54 @@ private fun Foot(
     }
 }
 
-/** `wizard-in`: a step arrives from 14 dp to the side it came from, and fades in. */
+/** Where a step's arrival begins: where the one before it is, or the start when that one had arrived. */
+internal fun stepFrom(now: Float, still: Boolean): Float = if (still) 1f else if (now >= 1f) 0f else now.coerceAtLeast(0f)
+
+/**
+ * `wizard-in`: a step arrives from 14 dp to the side it came from, and fades in.
+ *
+ * With a shared [entry] (the goal wizard) the arrival is interruptible: a step
+ * that comes while the previous one is still on its way picks up from where
+ * that one is — its distance and its opacity — instead of starting over, so
+ * quick taps never flash or jump. With reduced motion it only fades (180 ms).
+ */
 @Composable
-internal fun StepIn(direction: Int, content: @Composable ColumnScope.() -> Unit) {
+internal fun StepIn(
+    direction: Int,
+    entry: Animatable<Float, AnimationVector1D>? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
     val still = LocalStillMotion.current
-    val progress = remember { Animatable(if (still) 1f else 0f) }
-    LaunchedEffect(Unit) { progress.animateTo(1f, tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) }
+    if (entry == null) {
+        val progress = remember { Animatable(if (still) 1f else 0f) }
+        LaunchedEffect(Unit) { progress.animateTo(1f, tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = progress.value
+                    translationX = (1f - progress.value) * 14.dp.toPx() * direction
+                },
+            content = content
+        )
+        return
+    }
+    val reduced = LocalReducedMotion.current
+    // Where the previous step is now (or the start, when it had arrived): this one begins there.
+    val from = remember { stepFrom(entry.value, still) }
+    var started by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        entry.snapTo(from)
+        started = true
+        if (reduced) entry.reduceFadeIn() else entry.animateTo(1f, tween(Ownify.ScreenMs, easing = Ownify.ScreenEase))
+    }
     Column(
         Modifier
             .fillMaxWidth()
             .graphicsLayer {
-                alpha = progress.value
-                translationX = (1f - progress.value) * 14.dp.toPx() * direction
+                val p = if (started) entry.value else from
+                alpha = p
+                translationX = if (reduced) 0f else (1f - p) * 14.dp.toPx() * direction
             },
         content = content
     )

@@ -63,7 +63,7 @@
     overflow: visible;                /* the reading may rise over the card's edge */
     padding: var(--space-4);
     cursor: pointer;
-    transition: transform var(--transition-fast), border-color var(--transition-fast);
+    transition: transform var(--press-out) var(--ease-out-strong), border-color var(--transition-fast);
 }
 
 .area-chart--mini:active { transform: scale(0.985); }

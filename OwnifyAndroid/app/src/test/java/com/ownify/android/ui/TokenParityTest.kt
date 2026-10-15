@@ -1,5 +1,6 @@
 package com.ownify.android.ui
 
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
@@ -114,8 +115,18 @@ class TokenParityTest {
             "tabbar-height" to Ownify.TabbarHeight, "dock-gap" to Ownify.DockGap, "tab-icon" to Ownify.TabIcon,
             "tab-gap" to Ownify.TabGap, "header-btn" to Ownify.HeaderButton, "header-icon" to Ownify.HeaderIcon,
             "radius-inner" to Ownify.RadiusInner, "edge-fade" to Ownify.EdgeFade, "dock-fade" to Ownify.DockFade,
-            "ai-handle-height" to Ownify.AiHandleHeight,
+            "ai-handle-height" to Ownify.AiHandleHeight, "hero-ring" to Ownify.HeroRing,
         )) dp(name, value)
+    }
+
+    @Test
+    fun `a floating panel's frost and a titled detail bar`() {
+        // --panel-frost: blur(var(--blur-card)) saturate(130%) — the panel's glass on Android (panelGlass).
+        val frost = raw("panel-frost")
+        assertTrue("--panel-frost blurs by --blur-card: $frost", frost.contains("blur(var(--blur-card))"))
+        near("--panel-frost's saturation", Regex("""saturate\((\d+)%\)""").find(frost)!!.groupValues[1].toFloat() / 100f, Ownify.PanelSaturate)
+        near("--veil-deep-top", raw("veil-deep-top").toFloat(), Ownify.VeilDeepTop)
+        near("--veil-deep-mid", raw("veil-deep-mid").toFloat(), Ownify.VeilDeepMid)
     }
 
     @Test
@@ -157,6 +168,14 @@ class TokenParityTest {
         assertEquals("--transition-fast", ms("transition-fast"), Ownify.FastMs)
         assertEquals("--transition-slow", ms("transition-slow"), Ownify.SlowMs)
         assertEquals("--reduce-fade", ms("reduce-fade"), Ownify.ReduceFadeMs)
+        assertEquals("--panel-in-duration", ms("panel-in-duration"), Ownify.PanelInMs)
+        assertEquals("--panel-out-duration", ms("panel-out-duration"), Ownify.PanelOutMs)
+        assertEquals("--press-in", ms("press-in"), Ownify.PressInMs)
+        assertEquals("--press-out", ms("press-out"), Ownify.PressOutMs)
+        for ((name, easing) in listOf("ease-out-strong" to Ownify.EaseOutStrong, "screen-ease" to Ownify.ScreenEase)) {
+            val (a, b, c, d) = Regex("""cubic-bezier\(([^)]*)\)""").find(raw(name))!!.groupValues[1].split(",").map { it.trim().toFloat() }
+            assertEquals("--$name", CubicBezierEasing(a, b, c, d), easing)
+        }
     }
 
     @Test

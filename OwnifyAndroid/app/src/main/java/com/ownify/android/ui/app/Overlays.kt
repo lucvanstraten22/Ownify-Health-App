@@ -69,15 +69,38 @@ import com.ownify.android.ui.design.glassBackdrop
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.rememberBlurLayer
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.design.LocalReducedMotion
+import com.ownify.android.ui.design.reduceFadeTo
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+
+/**
+ * A panel [arrival] of the way there (0–1): its opacity, its scale (from .96)
+ * and how much of its frost it has — `--panel-in` / `--panel-out`. With
+ * reduced motion only the opacity moves.
+ */
+internal data class PanelLook(val alpha: Float, val scale: Float, val frost: Float)
+
+internal fun panelLook(arrival: Float, reduced: Boolean): PanelLook {
+    val p = arrival.coerceIn(0f, 1f)
+    return if (reduced) PanelLook(p, 1f, 1f) else PanelLook(p, 0.96f + 0.04f * p, p)
+}
+
+/** How far a panel has materialised (0–1), for its frost ([panelGlass]); null outside a panel. */
+val LocalPanelArrival = staticCompositionLocalOf<(() -> Float)?> { null }
 
 /** Where a panel sits: in the middle (the account panel, the wizard, a confirmation) or hanging from the header (devices). */
 enum class Placement { Center, UnderHeader }
 
 /**
  * A panel in front of everything (`[data-overlay]`): the scrim — what is
- * behind blurred 3 px and dimmed — and the panel on it, which fades in while
- * it rises 10 dp and grows from 98% (`--screen-duration`), and leaves the
- * same way. A tap on the scrim closes it, unless [dismissible] is off.
+ * behind blurred 3 px and dimmed — fading in over `--transition-fast`, and the
+ * panel on it, which materialises: its frost ([panelGlass]), its scale from
+ * .96 and its opacity arrive together in [Ownify.PanelInMs] on the strong
+ * ease-out, and leave the same way in [Ownify.PanelOutMs] (`--panel-in`,
+ * `--panel-out`). The devices panel grows out of its button, top left. With
+ * reduced motion it only fades (180 ms), the frost already there. A tap on the
+ * scrim closes it, unless [dismissible] is off.
  */
 @Composable
 fun OverlayFrame(
@@ -93,7 +116,8 @@ fun OverlayFrame(
     val shell = LocalShell.current
     val leaving = shell.isLeaving(overlay)
     val shown = remember { Animatable(0f) }
-    val rise = remember { Animatable(0f) }
+    val arrival = remember { Animatable(0f) }
+    val reduced = LocalReducedMotion.current
     val backdrop = LocalBackdrop.current
     val scrimBlur = rememberBlurLayer()
     val insets = WindowInsets.safeDrawing.asPaddingValues()
@@ -102,7 +126,13 @@ fun OverlayFrame(
         val target = if (leaving) 0f else 1f
         kotlinx.coroutines.coroutineScope {
             launch { shown.animateTo(target, tween(Ownify.FastMs, easing = Ownify.Ease)) }
-            launch { rise.animateTo(target, tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) }
+            launch {
+                if (reduced) {
+                    arrival.reduceFadeTo(target)
+                } else {
+                    arrival.animateTo(target, tween(if (leaving) Ownify.PanelOutMs else Ownify.PanelInMs, easing = Ownify.EaseOutStrong))
+                }
+            }
         }
         if (leaving) shell.finish(overlay)
     }
@@ -147,19 +177,18 @@ fun OverlayFrame(
             val panelModifier = Modifier
                 .widthIn(max = maxWidth)
                 .graphicsLayer {
-                    alpha = shown.value
-                    val t = 1f - rise.value
-                    if (placement == Placement.Center) {
-                        translationY = 10.dp.toPx() * t
-                    } else {
-                        translationY = -6.dp.toPx() * t
-                        transformOrigin = TransformOrigin(0f, 0f)
-                    }
-                    scaleX = 1f - 0.02f * t
-                    scaleY = 1f - 0.02f * t
+                    val look = panelLook(arrival.value, reduced)
+                    alpha = look.alpha
+                    if (placement == Placement.UnderHeader) transformOrigin = TransformOrigin(0f, 0f)
+                    scaleX = look.scale
+                    scaleY = look.scale
                 }
                 .semantics { paneTitle = title }
-            panel(panelModifier)
+            // The panel's frost arrives with it (reduced motion: there from the start).
+            val frost = remember(reduced) { { panelLook(arrival.value, reduced).frost } }
+            CompositionLocalProvider(LocalPanelArrival provides frost) {
+                panel(panelModifier)
+            }
         }
     }
 }
@@ -174,8 +203,9 @@ fun Modifier.panelGlass(shape: Shape = cardShape(), scrim: Float = 0.52f, style:
     val backdrop = LocalBackdrop.current
     val layer = rememberBlurLayer()
     val shadows = LocalGraphicsContext.current.shadowContext
+    val arrival = LocalPanelArrival.current
     return this
-        .glassBackdrop(backdrop, shape, GlassFilter(24.dp, saturate = 1.3f), layer)
+        .glassBackdrop(backdrop, shape, GlassFilter(Ownify.BlurCard, saturate = Ownify.PanelSaturate), layer, amount = arrival)
         .drawBehind {
             val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawBehind)) }
             clipPath(path, ClipOp.Intersect) { drawRect(Ownify.scrim(scrim)) }

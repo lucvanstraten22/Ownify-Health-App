@@ -87,7 +87,6 @@ import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.OwnifyIcons
-import com.ownify.android.ui.design.Legend
 import com.ownify.android.ui.design.LegendItem
 import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.LocalStillMotion
@@ -106,6 +105,7 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.ScoreBand
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
+import com.ownify.android.ui.design.PillarCapsules
 
 /**
  * Overzicht (pages/overview.php): in a new account's first days the card of
@@ -131,8 +131,10 @@ fun OverviewPage(data: AppData, scroll: ScrollState) {
 
 /**
  * `components/health-score.php`: the dominant block — the ring, its number
- * and what it is made of. The whole card opens the Scorekompas
- * ([ScoreCompassDetail]), and says where the score is heading.
+ * and what it is made of — standing on the ground, not in a card
+ * (`.card--hero`): "Vandaag" is the page's title, as every page's is. A tap
+ * anywhere on it opens the Scorekompas ([ScoreCompassDetail]); the ring and
+ * its name settle under the finger. It says where the score is heading.
  */
 @Composable
 private fun HealthScoreCard(data: AppData) {
@@ -148,11 +150,12 @@ private fun HealthScoreCard(data: AppData) {
 
     val open = { shell.openDetail(Detail.ScoreCompass) }
 
-    // `.card--opens`: a tap anywhere on the card opens it, and the card presses
-    // in — as the label's button covers the card on the website. Only the
-    // label is the button for TalkBack, so the rest of the card reads as before.
+    // `.card--opens`: a tap anywhere on the hero opens it — as the label's
+    // button covers it on the website. Only the label is the button for
+    // TalkBack, so the rest reads as before. There is no card to press in:
+    // the ring and its name settle instead.
+    val settles = if (!compass.available) Modifier else Modifier.press(interaction)
     val opens = if (!compass.available) Modifier else Modifier
-        .press(interaction)
         .pointerInput(Unit) {
             detectTapGestures(
                 onPress = { at ->
@@ -164,13 +167,13 @@ private fun HealthScoreCard(data: AppData) {
             )
         }
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight).then(opens)) {
+    Column(Modifier.fillMaxWidth().reveal().then(sight).then(opens).padding(top = Ownify.Space1, bottom = Ownify.Space2)) {
         // .card__head: the day and the chosen focus.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
-                T(data.overview.title, JStyle.Section, Modifier.semantics { heading() })
+                T(data.overview.title, JStyle.LargeTitle, Modifier.semantics { heading() })
                 val date = if (screen.narrow) data.today.date else "${data.today.weekday} ${data.today.date}"
-                T(date, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
+                T(date, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.padding(top = 2.dp))
             }
             Chip(data.focusLabel, dot = true, modifier = Modifier.semantics { contentDescription = tr("Gekozen focus") + ": " + data.focusLabel })
         }
@@ -183,7 +186,8 @@ private fun HealthScoreCard(data: AppData) {
             play = play,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = Ownify.Space4, bottom = Ownify.Space3)
+                .padding(top = Ownify.Space6, bottom = Ownify.Space5)
+                .then(settles)
         )
 
         // The label, with the way in beside it (`.card__open-chevron`): the button,
@@ -195,8 +199,8 @@ private fun HealthScoreCard(data: AppData) {
                 (compass.direction?.let { ", " + it.label.lowercase(OwnifyFormat.locale()) } ?: "")
             onClick(label = compass.open) { open(); true }
         }
-        Row(Modifier.fillMaxWidth().then(label), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            T(overall.label, JStyle.Section)
+        Row(Modifier.fillMaxWidth().then(settles).then(label), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            T(overall.label, JStyle.HeroLabel)
             if (compass.available) {
                 JIcon(OwnifyIcons.chevronRight, Modifier.padding(start = 1.dp).offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextMuted)
             }
@@ -212,7 +216,7 @@ private fun HealthScoreCard(data: AppData) {
             align = TextAlign.Center
         )
 
-        Legend(overviewLegend(data.overview.contributors), Modifier.padding(top = Ownify.Space4))
+        PillarCapsules(overviewLegend(data.overview.contributors), Modifier.padding(top = Ownify.Space5))
 
         if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
     }
@@ -410,23 +414,33 @@ private fun Milestones(goal: GoalCard) {
 
 private val DOT = 7.dp
 
-/** `components/insights.php`. */
+/**
+ * `components/insights.php`. With nothing in it yet it stays, quieter
+ * (`.card--insights.is-empty`): a well instead of glass, its rows divided by
+ * hairlines; a real insight gets the full card back.
+ */
 @Composable
 private fun InsightsCard(insights: Insights) {
-    JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle)
+    val dimmed = insights.items.all { it.state == "empty" }
+    JCard(Modifier.fillMaxWidth().reveal(), style = if (dimmed) CardStyle.Dimmed else CardStyle.Default, highlight = !dimmed) {
+        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle, dimmed = dimmed)
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            for (item in insights.items) {
+            insights.items.forEachIndexed { index, item ->
                 val accent = Accent.of(item.accent).color
                 val empty = item.state == "empty"
                 // `.insights__item`: a well inside the card — fill only, `--radius-inner`.
                 val shape = RoundedCornerShape(Ownify.RadiusInner)
+                val row = if (!dimmed) Modifier
+                    .clip(shape)
+                    .background(Ownify.fill(0.05f))
+                    .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
+                else Modifier
+                    .drawBehind { if (index > 0) drawRect(Ownify.GlassHairline, size = size.copy(height = 1.dp.toPx())) }
+                    .cssPadding(PaddingValues(vertical = Ownify.Space3), border = 1.dp)
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .clip(shape)
-                        .background(Ownify.fill(0.05f))
-                        .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
+                        .then(row),
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                 ) {
                     Box(
@@ -445,11 +459,15 @@ private fun InsightsCard(insights: Insights) {
     }
 }
 
-/** `components/recommendation.php`: at most one, and never an instruction. */
+/**
+ * `components/recommendation.php`: at most one, and never an instruction.
+ * There is none yet for anyone, so it is the quiet empty card
+ * (`.card--recommendation.is-empty`).
+ */
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
-    JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Quiet) {
-        CompactHead(OwnifyIcons.solidSparkle, rec.title)
+    JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Dimmed, highlight = false) {
+        CompactHead(OwnifyIcons.solidSparkle, rec.title, dimmed = true)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         CardHint(rec.note, icon = null, plain = true)
@@ -463,7 +481,7 @@ private fun RecommendationCard(rec: Recommendation) {
  * the body.
  */
 @Composable
-fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral) {
+fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral, dimmed: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,
@@ -471,7 +489,7 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
     ) {
         IconTile(icon, color = Color.White, background = tile, border = tile)
         Column(Modifier.weight(1f)) {
-            T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
+            T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
             if (meta != null) T(meta, JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
         }
     }

@@ -232,14 +232,64 @@
         nextBtn.disabled = !isComplete(step);
     }
 
+    /* ------------------------------------------------- a step arriving */
+
+    /*
+     * The step arriving slides in 14 px from the side it came from and fades
+     * in (--screen-duration, --screen-ease). It can be interrupted: a tap while
+     * a step is still on its way carries on from where that one is on screen —
+     * its opacity, its offset — instead of starting again from nothing. With
+     * reduced motion it only fades (180 ms), as everything that arrives does.
+     */
+    var entering = null;        // { el, anim }: the step on its way in
+    var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    /** Where the step on its way in is now, and stop it there; null when none is moving. */
+    function carry() {
+        if (!entering || entering.anim.playState !== 'running') { return null; }
+        var style = window.getComputedStyle(entering.el);
+        var x = 0;
+        if (style.transform && style.transform !== 'none' && typeof window.DOMMatrixReadOnly === 'function') {
+            x = new window.DOMMatrixReadOnly(style.transform).m41;
+        }
+        var now = { opacity: parseFloat(style.opacity), dist: Math.abs(x) };
+        entering.anim.cancel();
+        entering = null;
+        return now;
+    }
+
+    function enter(section, direction, from) {
+        if (!section || typeof section.animate !== 'function' || root.hidden) { return; }
+        var opacity = from ? from.opacity : 0;
+        var frames;
+        var timing;
+        if (reduceQuery.matches) {
+            frames = [{ opacity: opacity }, { opacity: 1 }];
+            timing = { duration: 180, easing: 'ease-out' };
+        } else {
+            var x = (from ? from.dist : 14) * (direction === -1 ? -1 : 1);
+            var css = window.getComputedStyle(document.documentElement);
+            frames = [{ opacity: opacity, transform: 'translateX(' + x + 'px)' }, { opacity: 1, transform: 'none' }];
+            timing = {
+                duration: parseFloat(css.getPropertyValue('--screen-duration')) || 280,
+                easing: css.getPropertyValue('--screen-ease').trim() || 'cubic-bezier(0.22, 1, 0.36, 1)'
+            };
+        }
+        entering = { el: section, anim: section.animate(frames, timing) };
+    }
+
     function paint(direction) {
         body.setAttribute('data-dir', direction === -1 ? 'back' : 'forward');
 
+        var from = carry();
+        var arriving = null;
         each('[data-wizard-step]', function (section) {
             var isActive = section.getAttribute('data-wizard-step') === String(step);
             section.hidden = !isActive;
             section.classList.toggle('is-active', isActive);
+            if (isActive) { arriving = section; }
         });
+        enter(arriving, direction, from);
 
         each('[data-wizard-bar]', function (bar) {
             bar.classList.toggle('is-done', Number(bar.getAttribute('data-wizard-bar')) <= step);
@@ -726,11 +776,15 @@
     function showDone() {
         buildPreview();
 
+        var from = carry();
+        var arriving = null;
         each('[data-wizard-step]', function (section) {
             var isDone = section.getAttribute('data-wizard-step') === 'done';
             section.hidden = !isDone;
             section.classList.toggle('is-active', isDone);
+            if (isDone) { arriving = section; }
         });
+        enter(arriving, 1, from);
 
         each('[data-wizard-bar]', function (bar) { bar.classList.add('is-done'); });
 
@@ -784,6 +838,8 @@
 
         root.hidden = false;
         window.requestAnimationFrame(function () { root.classList.add('is-open'); });
+        carry();    // a step still arriving from just before (reopened while closing) stops
+        enter(root.querySelector('.wizard__step.is-active'), 1, null);
 
         var first = root.querySelector('[data-wizard-category]');
         if (first) { first.focus({ preventScroll: true }); }
