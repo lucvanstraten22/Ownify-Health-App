@@ -1010,7 +1010,6 @@ INSERT INTO `health_metric_types` (`code`, `label`, `unit`, `domain`, `aggregati
     ('total_energy',      'Totale calorieën',     'kcal', 'training',  'sum'),
     ('active_minutes',    'Actieve minuten',      'min',  'training',  'sum'),
     ('floors',            'Verdiepingen',         '',     'training',  'sum'),
-    ('vo2max',            'VO2max',               'ml/kg/min', 'training', 'last'),
     ('readiness',         'Herstel',              '/100', 'training',  'last'),
     ('training_load',     'Belasting',            '',     'training',  'last');
 

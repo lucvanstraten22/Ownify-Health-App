@@ -209,16 +209,15 @@ return [
 
         /* Is this person getting better than they were? Only ever compared
            with their own earlier results in the window: pace over a
-           distance, VO2max, and results on their own strength or
-           performance goals. Relative change (recent half vs earlier half)
+           distance, and results on their own strength or performance
+           goals. Relative change (recent half vs earlier half)
            -> score; holding steady is average. */
         'progression' => [
             'min_samples'     => 4,
             'min_km'          => 1.0,
             'goal_categories' => ['strength', 'performance', 'training'],
-            /* VO2max readings and goal results must span at least this many
-               days before they say anything about a trend. */
-            'vo2_min_days'    => 14,
+            /* Goal results must span at least this many days before they
+               say anything about a trend. */
             'goal_min_days'   => 7,
             /* A single signal moves the average by at most this much, so one
                odd measurement cannot decide the whole component. */

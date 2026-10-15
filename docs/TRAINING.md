@@ -12,7 +12,7 @@ Training ──┬── the score                              (unchanged)
            │   Verdiepingen       │ Actieve minuten
            ├── Hartslag            Vandaag | 7 dagen | 30 dagen | 90 dagen | 1 jaar
            ├── HRV                │ Hartbelasting
-           ├── Conditie en herstel what no chart shows (VO₂max, rusthartslag, herstel)
+           ├── Conditie en herstel what no chart shows (rusthartslag, herstel)
            └── Verloop             the training score over time (unchanged)
 ```
 

@@ -176,10 +176,10 @@ check('distinct days, not ratings: 3 ratings on 2 days are still 2 days, no scor
 
 $two   = schedule([1, 3], 45, static fn () => 'moderate');
 $three = schedule([1, 3, 5], 45, static fn () => 'moderate');
-check('2 training days: no training score', health_score_training($two, [], [], [], $now)['score'] === null);
-check('3 training days: a training score', is_int(health_score_training($three, [], [], [], $now)['score']));
+check('2 training days: no training score', health_score_training($two, [], [], $now)['score'] === null);
+check('3 training days: a training score', is_int(health_score_training($three, [], [], $now)['score']));
 
-$none = ['nights' => [], 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []];
+$none = ['nights' => [], 'ratings' => [], 'workouts' => [], 'goals' => []];
 check('2 days in every category: no overall score, never a 0',
     health_score_at(['nights' => nights(2, 8), 'ratings' => array_slice($ratings3, 0, 2)] + $none, $asOf)['overall']['score'] === null);
 $unlocked = health_score_at(['nights' => nights(3, 8)] + $none, $asOf);
@@ -337,9 +337,9 @@ $sensible = schedule(range_days(84, 0, 1, [0, 2, 4, 5]), 60,
 $excessive = schedule(range_days(84, 0), 120, static fn () => 'hard');
 $little    = schedule(range_days(84, 0, 7), 30, static fn () => 'easy');
 
-$s = health_score_training($sensible, [], [], [], $now);
-$x = health_score_training($excessive, [], [], [], $now);
-$l = health_score_training($little, [], [], [], $now);
+$s = health_score_training($sensible, [], [], $now);
+$x = health_score_training($excessive, [], [], $now);
+$l = health_score_training($little, [], [], $now);
 
 check('4 sessions a week with rest days beats 2 hours of hard training every day',
     $s['score'] > $x['score'], $s['score'] . ' vs ' . $x['score']);
@@ -359,20 +359,20 @@ $paced = static function (float $from, float $to): array {
     }
     return $out;
 };
-$better = health_score_training($paced(10.0, 11.0), [], [], [], $now)['components']['progression'];
-$same   = health_score_training($paced(10.0, 10.0), [], [], [], $now)['components']['progression'];
-$worse  = health_score_training($paced(11.0, 10.0), [], [], [], $now)['components']['progression'];
+$better = health_score_training($paced(10.0, 11.0), [], [], $now)['components']['progression'];
+$same   = health_score_training($paced(10.0, 10.0), [], [], $now)['components']['progression'];
+$worse  = health_score_training($paced(11.0, 10.0), [], [], $now)['components']['progression'];
 check('progression is relative to yourself: faster > steady > slower', $better > $same && $same > $worse,
     "$better / $same / $worse");
 check('without anything to compare, progression is left out, not zero',
-    health_score_training($sensible, [], [], [], $now)['components']['progression'] === null);
+    health_score_training($sensible, [], [], $now)['components']['progression'] === null);
 
 $goalUp = [['direction' => 'increase', 'entries' => [
     ['at' => $now - 60 * $day, 'value' => 80.0], ['at' => $now - 40 * $day, 'value' => 82.5],
     ['at' => $now - 20 * $day, 'value' => 85.0], ['at' => $now - 5 * $day, 'value' => 87.5],
 ]]];
 check('a strength goal going up counts as progression',
-    health_score_training($sensible, [], [], $goalUp, $now)['components']['progression'] > 60);
+    health_score_training($sensible, [], $goalUp, $now)['components']['progression'] > 60);
 
 /* ====================================================================== */
 section('the overall score is the average of the categories that have one');
@@ -397,7 +397,7 @@ $edge[] = night($start->getTimestamp() + 60, 8);     // ended a minute inside th
 $edge[] = night($start->getTimestamp() - 60, 8);     // ended a minute before it
 usort($edge, static fn ($a, $b) => $a['end'] <=> $b['end']);
 
-$data = ['nights' => $edge, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []];
+$data = ['nights' => $edge, 'ratings' => [], 'workouts' => [], 'goals' => []];
 check('a night one minute inside the window counts, one minute outside does not',
     health_score_at($data, $asOf)['sleep']['days'] === 6, (string) health_score_at($data, $asOf)['sleep']['days']);
 check('an hour later the window has moved past the older of the two',
@@ -406,15 +406,15 @@ check('an hour later the window has moved past the older of the two',
 $monthEdge = new DateTimeImmutable('2026-10-01 09:00:00');
 $lateSept  = array_map(static fn ($i) => night((new DateTimeImmutable('2026-09-30 07:00'))->modify('-' . $i . ' days')->getTimestamp(), 8), range(0, 2));
 check('on the 1st of a month last month still counts — no calendar reset',
-    is_int(health_score_at(['nights' => $lateSept, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []], $monthEdge)['sleep']['score']));
+    is_int(health_score_at(['nights' => $lateSept, 'ratings' => [], 'workouts' => [], 'goals' => []], $monthEdge)['sleep']['score']));
 
 $old = array_map(static fn ($i) => night($asOf->modify('-' . (8 + $i) . ' days')->getTimestamp(), 8), range(0, 9));
 check('data older than 168 hours gives no score at all',
-    health_score_at(['nights' => $old, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []], $asOf)['sleep']['score'] === null);
+    health_score_at(['nights' => $old, 'ratings' => [], 'workouts' => [], 'goals' => []], $asOf)['sleep']['score'] === null);
 
 $month = array_map(static fn ($i) => night($asOf->setTime(7, 0)->modify('-' . $i . ' days')->getTimestamp(), 8), range(10, 80));
 $recent = [rating($now - 3600, 6), rating($now - 30 * 3600, 6), rating($now - 54 * 3600, 6)];
-$both = health_score_at(['nights' => $month, 'ratings' => $recent, 'workouts' => [], 'vo2' => [], 'goals' => []], $asOf);
+$both = health_score_at(['nights' => $month, 'ratings' => $recent, 'workouts' => [], 'goals' => []], $asOf);
 check('70 nights 10 to 80 days ago count for nothing now: the current score no longer reaches back 90 days',
     $both['sleep']['score'] === null && $both['sleep']['days'] === 0 && $both['overall']['score'] === 60,
     json_encode([$both['sleep']['days'], $both['overall']['score']]));
@@ -426,7 +426,7 @@ section('three days without new input: the category stops counting, it does not 
    cijfers are given on the same days; workouts on 16, 17 and 18 September. */
 $day1  = new DateTimeImmutable('2026-09-20 15:00:00');
 $at    = static fn (string $date, string $time) => (new DateTimeImmutable($date . ' ' . $time))->getTimestamp();
-$rest  = ['vo2' => [], 'goals' => []];
+$rest  = ['goals' => []];
 $sleepNights = [night($at('2026-09-18', '07:00'), 7.5), night($at('2026-09-19', '07:05'), 8.0), night($at('2026-09-20', '06:55'), 7.8)];
 $cijfers     = [rating($at('2026-09-18', '20:00'), 7), rating($at('2026-09-19', '20:00'), 8), rating($at('2026-09-20', '12:00'), 7)];
 $sessions    = [workout(1, $at('2026-09-16', '18:00'), 45, 'moderate'), workout(2, $at('2026-09-17', '18:00'), 40, 'hard'),

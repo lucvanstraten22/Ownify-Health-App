@@ -226,7 +226,7 @@ if (!function_exists('score_compass')) {
         return null;
     }
 
-    /** What progression compared, as words: "tempo en VO2max". */
+    /** What progression compared, as words: "tempo en doelresultaten". */
     function score_compass_signals(array $signals, array $names): ?string
     {
         $used = [];
@@ -1236,7 +1236,7 @@ if (!function_exists('score_compass')) {
 
     function score_compass_lcfirst(string $text): string
     {
-        /* Keep abbreviations (REM, VO2max) as they are. */
+        /* Keep abbreviations (REM, HRV) as they are. */
         return preg_match('/^\p{Lu}\p{Lu}/u', $text) ? $text : mb_strtolower(mb_substr($text, 0, 1)) . mb_substr($text, 1);
     }
 }

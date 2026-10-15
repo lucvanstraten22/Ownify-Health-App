@@ -289,7 +289,6 @@ if (!function_exists('hydrate_health')) {
             'total_energy'     => 'total_energy',
             'active_minutes'   => 'active_minutes',
             'floors'           => 'floors',
-            'vo2max'           => 'vo2max',
             'readiness'        => 'readiness',
             'training_load'    => 'training_load',
         ];

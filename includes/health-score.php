@@ -327,28 +327,10 @@ if (!function_exists('health_score_now')) {
             }
         }
 
-        $vo2 = [];
-        $vo2Type = health_metric_type_id('vo2max');
-
-        if ($vo2Type !== null) {
-            foreach (db_all(
-                'SELECT value, recorded_at FROM health_metrics
-                  WHERE user_id = ? AND metric_type_id = ? AND recorded_at > ? AND recorded_at <= ?
-               ORDER BY recorded_at',
-                [$userId, $vo2Type, $fromSql, $toSql]
-            ) as $row) {
-                $at = strtotime((string) $row['recorded_at']);
-                if ($at !== false && (float) $row['value'] > 0) {
-                    $vo2[] = ['at' => $at, 'value' => (float) $row['value']];
-                }
-            }
-        }
-
         return [
             'nights'   => health_nights($userId, $fromSql, $toSql),
             'ratings'  => $ratings,
             'workouts' => $workouts,
-            'vo2'      => $vo2,
             'goals'    => health_score_goal_results($userId, $from, $to),
         ];
     }
@@ -413,7 +395,6 @@ if (!function_exists('health_score_now')) {
         $nights   = array_values(array_filter($data['nights'], static fn ($n) => $in($n['end'])));
         $ratings  = array_values(array_filter($data['ratings'], static fn ($r) => $in($r['at'])));
         $workouts = array_values(array_filter($data['workouts'], static fn ($w) => $in($w['start'])));
-        $vo2      = array_values(array_filter($data['vo2'], static fn ($v) => $in($v['at'])));
 
         $goals = [];
         foreach ($data['goals'] as $goal) {
@@ -427,7 +408,7 @@ if (!function_exists('health_score_now')) {
         $sleep     = health_score_validity(health_score_sleep($nights), 'sleep', array_column($nights, 'date'), $today);
         $nutrition = health_score_validity(health_score_nutrition($ratings), 'nutrition', array_column($ratings, 'date'), $today);
         $training  = health_score_validity(
-            health_score_training($workouts, $nights, $vo2, $goals, $to),
+            health_score_training($workouts, $nights, $goals, $to),
             'training',
             array_map(static fn ($w) => date('Y-m-d', $w['start']), $workouts),
             $today
@@ -645,7 +626,7 @@ if (!function_exists('health_score_now')) {
      * started tracking three weeks ago is measured over three weeks, not
      * thirteen.
      */
-    function health_score_training(array $workouts, array $nights, array $vo2, array $goals, int $to): array
+    function health_score_training(array $workouts, array $nights, array $goals, int $to): array
     {
         $cfg   = health_scoring_config();
         $t     = $cfg['training'];
@@ -681,7 +662,7 @@ if (!function_exists('health_score_now')) {
 
         $progressionFacts = [];
         $balanceFacts     = [];
-        $progression = health_score_progression($workouts, $vo2, $goals, $progressionFacts);
+        $progression = health_score_progression($workouts, $goals, $progressionFacts);
         $balance     = health_score_balance($workouts, $nights, array_keys($dates), $first, $to, $weeks, $balanceFacts);
 
         $components = [
@@ -707,18 +688,18 @@ if (!function_exists('health_score_now')) {
     /**
      * Is this person improving on their own earlier results? Each signal is
      * a relative change, recent half against earlier half of the window:
-     * pace per kind of distance activity, VO2max, and results on their own
-     * strength or performance goals. Null when there is nothing to compare.
+     * pace per kind of distance activity, and results on their own strength
+     * or performance goals. Null when there is nothing to compare.
      *
      * $facts, when given, receives how many signals of each kind were
      * compared and their average change, as the score used it.
      */
-    function health_score_progression(array $workouts, array $vo2, array $goals, ?array &$facts = null): ?float
+    function health_score_progression(array $workouts, array $goals, ?array &$facts = null): ?float
     {
         $p       = health_scoring_config()['training']['progression'];
         $min     = (int) $p['min_samples'];
         $changes = [];
-        $signals = ['pace' => 0, 'vo2' => 0, 'goals' => 0];
+        $signals = ['pace' => 0, 'goals' => 0];
 
         /* Pace, per kind of activity with a distance. */
         $byType = [];
@@ -738,19 +719,6 @@ if (!function_exists('health_score_now')) {
                     $changes[] = $recent / $earlier - 1;
                     $signals['pace']++;
                 }
-            }
-        }
-
-        /* VO2max, from the first third of the readings to the last. */
-        if (count($vo2) >= 2 && end($vo2)['at'] - $vo2[0]['at'] >= (int) $p['vo2_min_days'] * 86400) {
-            $third   = max(1, intdiv(count($vo2), 3));
-            $values  = array_column($vo2, 'value');
-            $earlier = health_median(array_slice($values, 0, $third));
-            $recent  = health_median(array_slice($values, -$third));
-
-            if ($earlier > 0) {
-                $changes[] = $recent / $earlier - 1;
-                $signals['vo2']++;
             }
         }
 

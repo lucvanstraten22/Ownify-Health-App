@@ -457,6 +457,12 @@ the leaderboard card only. Deleting an account takes its memberships with it;
 a challenge it made goes on for the others (`creator_id` becomes NULL). See
 [CHALLENGES.md](CHALLENGES.md).
 
+**VO2max** is no longer an Ownify metric (18.6):
+`database/migrations/023-remove-vo2max.sql` deletes its readings and its
+`health_metric_types` row, and turns a goal tracked from it into one kept by
+hand (its name, target and recorded days stay). Until it is imported nothing
+reads or shows VO2max any more; only the goal wizard still offers it.
+
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair
 had, neither can find or ask the other, and `friend_ids()` filters both
@@ -666,7 +672,7 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
 | --- | --- |
 | Sleep | 45% duration + 30% regularity + 25% quality. **Duration**: each night's main sleep on the duration curve (95 at 7:30, 100 at 8:00, 96 at 8:30, 84 at 7:00, 62 at 6:00), averaged over the nights. **Regularity**: the night-to-night standard deviation of bedtime and wake time (40% each, measured on the clock, so 23:50 and 00:10 are 20 minutes apart) and of the duration (20%), each on its curve (15 min or less is 100, an hour 56 for the times). **Quality**: each night's efficiency, time awake, deep and REM share on their curves — only what the device measured — averaged over at least 3 such nights. |
 | Nutrition | The day's rating × 10 (several on one day count as their average), averaged over the rated days. |
-| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity, VO2max and the person's own strength and performance goal results; holding steady is 60 — in 168 hours there are often too few results for it, and then it is left out and the others weigh more. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before — which a 7-day window does not hold, so they are not scored), heavy days back to back, and sleep in the nights after training. |
+| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity and the person's own strength and performance goal results; holding steady is 60 — in 168 hours there are often too few results for it, and then it is left out and the others weigh more. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before — which a 7-day window does not hold, so they are not scored), heavy days back to back, and sleep in the nights after training. |
 | Overall | The average of the categories that have a score (`score_combine()`). None of them: no score, never a 0. |
 
 What counts as one night or one workout is decided once, in

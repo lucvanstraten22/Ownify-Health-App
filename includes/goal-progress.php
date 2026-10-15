@@ -100,7 +100,8 @@ if (!function_exists('goal_sources_available')) {
      * nothing can be offered that the app cannot actually read.
      *
      * `daily` marks the ones where "every day" is a sensible thing to ask —
-     * a total that resets each day. Nobody sets a daily target for VO2max.
+     * a total that resets each day. Nobody sets a daily target for a resting
+     * heart rate.
      */
     function goal_source_catalogue(): array
     {
@@ -284,7 +285,6 @@ if (!function_exists('goal_sources_available')) {
             'respiratory_rate' => $make('/min', 0, 1.0, null, true),
             'skin_temp'        => $make('°C', 1),
             'active_minutes'   => $make('min'),
-            'vo2max'           => $make('ml/kg/min', 1),
             'nutrition_rating' => $make('/10', 1, 1.0, null, true),
             'readiness'        => $make('/100', 0, 1.0, null, true),
             default            => $make(''),

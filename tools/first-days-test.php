@@ -106,7 +106,7 @@ function card(int $day, array $records, string $focus = 'general', array $extra 
 
     $start = new DateTimeImmutable(SETUP_DAY);
     $now   = $start->modify('+' . ($day - 1) . ' days')->setTime(21, 0);
-    $read  = ($records + ['nights' => [], 'ratings' => [], 'workouts' => []]) + ['vo2' => [], 'goals' => []];
+    $read  = ($records + ['nights' => [], 'ratings' => [], 'workouts' => []]) + ['goals' => []];
 
     /* Only what had happened by then: a test walks forward in time. */
     $read['nights']   = array_values(array_filter($read['nights'], static fn ($n) => $n['end'] <= $now->getTimestamp()));
@@ -218,7 +218,7 @@ check('day 3: not enough yet — said, not scored', $s3['phase'] === 'building' 
 
 $s4 = card(4, ['nights' => $nights]);
 check('day 4: the first score appears', $s4['phase'] === 'first_score' && $s4['title'] === 'Je eerste slaapscore', json_encode([$s4['phase'], $s4['title']]));
-$engine = health_score_at(['nights' => array_slice($nights, 0, 3), 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []],
+$engine = health_score_at(['nights' => array_slice($nights, 0, 3), 'ratings' => [], 'workouts' => [], 'goals' => []],
     (new DateTimeImmutable(SETUP_DAY))->modify('+3 days')->setTime(21, 0));
 check('day 4: the score is the engine\'s own, unchanged', $s4['first']['value'] === $engine['sleep']['score'] && $engine['sleep']['score'] !== null,
     json_encode([$s4['first']['value'], $engine['sleep']['score']]));
@@ -249,7 +249,7 @@ $h3 = card(3, ['nights' => $synced]);
 check('day 3: the starting point', $h3['phase'] === 'baseline' && $h3['title'] === $cal['baseline']['title']
     && $h3['lede'] === $cal['baseline']['lede']);
 check('day 3: only the category with enough data', count($h3['baseline']) === 1 && $h3['baseline'][0]['id'] === 'sleep'
-    && $h3['baseline'][0]['value'] === health_score_at(['nights' => $synced, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []],
+    && $h3['baseline'][0]['value'] === health_score_at(['nights' => $synced, 'ratings' => [], 'workouts' => [], 'goals' => []],
         (new DateTimeImmutable(SETUP_DAY))->modify('+2 days')->setTime(21, 0))['sleep']['score']);
 check('day 3: its fact, from the engine\'s own facts', $h3['baseline'][0]['fact'] === 'Gemiddeld 6:56 per nacht', (string) $h3['baseline'][0]['fact']);
 check('day 3: what is still missing', $h3['note'] === 'Voeding en training komen erbij zodra er 3 dagen van zijn.', (string) $h3['note']);

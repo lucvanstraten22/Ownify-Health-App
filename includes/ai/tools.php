@@ -64,7 +64,7 @@ if (!function_exists('ai_tool_declarations')) {
             ],
             [
                 'name'        => 'get_training_summary',
-                'description' => "The user's workouts (type, duration, distance, speed, heart rate, effort), totals per week, and VO2max, readiness and training load where measured.",
+                'description' => "The user's workouts (type, duration, distance, speed, heart rate, effort), totals per week, and readiness and training load where measured.",
                 'parameters'  => ['type' => 'OBJECT', 'properties' => ['days' => $days(90, 28)]],
             ],
             [

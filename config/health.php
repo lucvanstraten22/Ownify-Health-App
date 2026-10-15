@@ -89,7 +89,6 @@ return [
         'avg_hr'           => ['label' => 'Gem. hartslag',   'unit' => 'bpm',  'availability' => 'device'],
         'max_hr'           => ['label' => 'Max. hartslag',   'unit' => 'bpm',  'availability' => 'device'],
         'hr_zones'         => ['label' => 'Hartslagzones',   'unit' => '',     'availability' => 'device'],
-        'vo2max'           => ['label' => 'VO₂max',          'unit' => 'ml/kg/min', 'availability' => 'device'],
         'cadence'          => ['label' => 'Cadans',          'unit' => 'spm',  'availability' => 'device'],
         'elevation'        => ['label' => 'Hoogtemeters',    'unit' => 'm',    'availability' => 'device'],
         'readiness'        => ['label' => 'Herstel',         'unit' => '/100', 'availability' => 'device'],
@@ -424,7 +423,6 @@ return [
                     'title'   => 'Conditie en herstel',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
-                        ['key' => 'vo2max',     'value' => null],
                         ['key' => 'resting_hr', 'value' => null],
                         ['key' => 'readiness',  'value' => null],
                     ],

@@ -202,7 +202,6 @@ without eventually duplicating them.
 | `HeartRateVariabilityRmssd` | metric `hrv` | |
 | `OxygenSaturation` | metric `spo2` | |
 | `RespiratoryRate` | metric `respiratory_rate` | |
-| `Vo2Max` | metric `vo2max` | |
 | `SkinTemperature`, `BodyTemperature` | metric `skin_temp` | |
 | `Hydration` | metric `water` | litres |
 | `Nutrition` | a meal + its nutrients | sodium grams → milligrams |
@@ -211,7 +210,9 @@ without eventually duplicating them.
 | `BodyFat` | measurement `body_fat_pct` | |
 | `LeanBodyMass` | measurement `lean_mass` | |
 
-Anything else is reported in `unmapped` and ignored. Adding one is a case in
+Anything else is reported in `unmapped` and ignored — `Vo2Max` too, since
+18.6: Ownify no longer reads VO2max (the app never asked for it; migration
+023 removed what was stored). Adding one is a case in
 `health_connect_map_one()` — server side, no app release.
 
 **Two apps, one walk.** Health Connect holds every connected app's records

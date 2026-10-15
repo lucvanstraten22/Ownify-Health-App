@@ -151,8 +151,6 @@ if (!function_exists('health_connect_map')) {
                                         health_connect_number($r['percentage'] ?? null), $start, $origin),
             'RespiratoryRate'      => health_connect_metric($id, 'respiratory_rate',
                                         health_connect_number($r['rate'] ?? null), $start, $origin),
-            'Vo2Max'               => health_connect_metric($id, 'vo2max',
-                                        health_connect_number($r['vo2MillilitersPerMinuteKilogram'] ?? null), $start, $origin),
             'SkinTemperature', 'BodyTemperature' => health_connect_metric($id, 'skin_temp',
                                         health_connect_number($r['temperature']['celsius'] ?? null), $start, $origin),
             'Hydration'            => health_connect_metric($id, 'water',

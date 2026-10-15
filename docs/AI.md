@@ -247,7 +247,7 @@ with the id from the session — never an id Gemini names.
 | --- | --- |
 | `get_health_summary` | the Health Score and its parts as recorded day by day, up to 90 days back |
 | `get_sleep_summary` | nights, averages and sleep-time measurements, up to 90 days |
-| `get_training_summary` | workouts, weekly totals, VO2max and load, up to 90 days |
+| `get_training_summary` | workouts, weekly totals, readiness and load, up to 90 days |
 | `get_recent_activity` | steps, distance, active minutes, calories, floors per day |
 | `get_nutrition_summary` | ratings, calories, macros, water, meals, and the targets |
 | `get_goals` | the goals as they stand now, optionally the last completed ones |

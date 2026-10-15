@@ -133,7 +133,7 @@ return [
             'balance'     => 'Gemiddeld %s trainingsdagen per week',
         ],
         /* What progression compared, in the order it lists them. */
-        'signals' => ['pace' => 'tempo', 'vo2' => 'VO2max', 'goals' => 'doelresultaten'],
+        'signals' => ['pace' => 'tempo', 'goals' => 'doelresultaten'],
     ],
 
     /* ------------------------------------------------------------------

@@ -57,7 +57,7 @@ if (!function_exists('ai_topics')) {
                 'supplement*', 'creatine', 'nutrition', 'food', 'eat', 'eating', 'meal*', 'protein*', 'carb*',
                 'diet*', 'sugar*', 'hydrat*', 'fiber*', 'fibre*'],
             'training' => ['train*', 'sport*', 'workout*', 'oefening*', 'hardlo*', 'rennen', 'renn*', 'run',
-                'runs', 'running', 'fiets*', 'zwem*', 'kracht*', 'gym', 'fitness', 'cardio', 'hartslag*', 'vo2*',
+                'runs', 'running', 'fiets*', 'zwem*', 'kracht*', 'gym', 'fitness', 'cardio', 'hartslag*',
                 'conditie', 'km', '5k', '10k', 'marathon*', 'interval*', 'herstel*', 'recovery', 'spier*',
                 'muscle*', 'exercise*', 'lift*', 'squat*', 'bench*', 'deadlift*', 'pace', 'tempo', 'belasting',
                 'training load'],
@@ -475,7 +475,7 @@ if (!function_exists('ai_topics')) {
             'note'         => 'counts_for_score is false for very short sessions and for a second recording of the same session.',
         ];
 
-        foreach (['vo2max' => 1, 'readiness' => 0, 'training_load' => 0] as $code => $decimals) {
+        foreach (['readiness' => 0, 'training_load' => 0] as $code => $decimals) {
             $series = ai_series($userId, $code, $from, $to, $decimals);
             if ($series !== []) {
                 $block['measurements'][$code] = $series;

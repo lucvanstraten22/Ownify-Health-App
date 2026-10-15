@@ -371,8 +371,8 @@ check('intensity: mostly hard is "kleiner aandeel"', $f === '14 van je 20 traini
 check('intensity: all easy is "groter aandeel"', $r === 'Een groter aandeel zware trainingen zou samengaan met een hogere intensiteitsscore.', $r);
 
 [$f, $r] = $explain('training', 'progression', result(70, 20, ['progression' => 52.0],
-    ['progression' => ['signals' => ['pace' => 1, 'vo2' => 1, 'goals' => 0], 'change' => -0.021]]));
-check('progression: what was compared and how it went', $f === 'Je recente resultaten voor tempo en VO2max zijn gemiddeld 2% minder goed dan je eerdere.', $f);
+    ['progression' => ['signals' => ['pace' => 1, 'goals' => 1], 'change' => -0.021]]));
+check('progression: what was compared and how it went', $f === 'Je recente resultaten voor tempo en doelresultaten zijn gemiddeld 2% minder goed dan je eerdere.', $f);
 
 $balance = static fn (array $parts) => $explain('training', 'balance', result(70, 20, ['balance' => 60.0], ['balance' => $parts + [
     'frequency' => ['value' => 4.0, 'score' => 100.0], 'rest' => ['value' => 2, 'score' => 100.0],

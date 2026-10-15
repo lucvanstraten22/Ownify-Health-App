@@ -264,6 +264,15 @@ if (db_available()) {
                 . '— import database/migrations/022-challenges.sql');
         }
 
+        /* Not fatal: VO2max is no longer read, shown or scored (18.6); the
+           catalogue row only keeps it as a source the goal wizard offers. */
+        if (db_value("SELECT COUNT(*) FROM health_metric_types WHERE code = 'vo2max'") > 0) {
+            line('warn', 'VO2max', 'VO2max is still in the metric catalogue, so the goal wizard still offers it '
+                . '— import database/migrations/023-remove-vo2max.sql');
+        } else {
+            line('ok', 'VO2max', 'VO2max is out of the metric catalogue');
+        }
+
         /* Not fatal: without GD the boards and friends lists show each
            picture as uploaded (up to 3 MB) instead of a small copy. */
         if (!function_exists('imagecreatetruecolor')) {
