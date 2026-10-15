@@ -95,7 +95,6 @@ import com.ownify.android.ui.design.Toggle
 import com.ownify.android.ui.design.cardShape
 import com.ownify.android.ui.design.chWidth
 import com.ownify.android.ui.design.cssPadding
-import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.screens.account.AvatarCircle
 import com.ownify.android.ui.screens.account.LinkButton
@@ -209,7 +208,6 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
 
         FieldColumns(
             Modifier
-                .then(if (live) Modifier.press(interaction) else Modifier)
                 .fillMaxWidth()
                 .settingsRow(divided, fill)
                 .then(if (live) Modifier.clickable(interaction, indication = null, role = Role.Button, onClick = onEdit) else Modifier)
@@ -655,7 +653,6 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                     val mark by animateFloatAsState(if (on) 1f else 0f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "mark")
                     Row(
                         Modifier
-                            .press(interaction, enabled = !option.disabled)
                             .fillMaxWidth()
                             .settingsRow(i > 0, fill)
                             .clickable(interaction, indication = null, enabled = !option.disabled && !busy, role = Role.RadioButton) {

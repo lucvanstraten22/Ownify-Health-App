@@ -1041,3 +1041,9 @@
 .settings-action__buttons .btn { min-height: 38px; cursor: pointer; }
 
 .settings-action .settings-toggle__note.is-error { color: var(--attention); }
+
+/* A row that fills under the finger stays full width: the fill is its
+   feedback. Scaled as well, the card showed through at both ends — light
+   bars on White, dark ones on Dark. (SettingsPage.kt and SettingsDetail.kt
+   do the same.) */
+:is(.settings-row, .settings-field, .settings-option, .settings-toggle--live, .integration__head).press:active { transform: none; }

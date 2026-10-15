@@ -179,7 +179,6 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
 
         Row(
             Modifier
-                .press(interaction)
                 .fillMaxWidth()
                 // The line starts at the text: padding, the 30 dp mark, the gap.
                 .settingsRow(divided, fill, inset = if (narrow) Ownify.Space3 + 30.dp + Ownify.Space2 else Ownify.Space4 + 30.dp + Ownify.Space3)
