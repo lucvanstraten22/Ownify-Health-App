@@ -321,7 +321,9 @@ class OwnifyAppFlowTest {
         show()
 
         waitFor("Gekoppeld aan sanne")
-        compose.onAllNodesWithText("Nu synchroniseren").fetchSemanticsNodes().isNotEmpty().let(::assertTrue)
+        // How its sync stands; it runs on its own, so there is no button to start it.
+        waitFor("DEZE TELEFOON")
+        assertTrue(compose.onAllNodesWithText("Nu synchroniseren").fetchSemanticsNodes().isEmpty())
         assertTrue(server.requestsTo("state.php").isEmpty())
         assertEquals(OwnifyCredential(TEST_TOKEN, OwnifyScope.SYNC), MemoryTokenStorage.load())
     }

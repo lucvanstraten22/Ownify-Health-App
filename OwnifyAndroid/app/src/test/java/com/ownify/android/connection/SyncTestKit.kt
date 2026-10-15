@@ -503,6 +503,27 @@ class FakeOwnifyServer {
                     }
                 }
             }
+            // Instellingen › Voorkeuren (api/profile/preferences.php): kept on the account, read back in the pages.
+            path.endsWith("/profile/preferences.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else reply(exchange, 200, savePreferences(form(body)).toString())
+            }
+            // A paired phone's name (api/integrations/device-rename.php): only the name, empty its own again.
+            path.endsWith("/integrations/device-rename.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                val fields = form(body)
+                val name = fields["name"].orEmpty().trim()
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    name.length > 40 -> reply(exchange, 422, """{"ok":false,"error":"Een naam heeft hooguit 40 tekens."}""")
+                    else -> {
+                        val answer = renameDevice(fields["device"]?.toIntOrNull() ?: 0, name)
+                        if (answer == null) reply(exchange, 404, """{"ok":false,"error":"Dit apparaat is niet gekoppeld."}""")
+                        else reply(exchange, 200, answer.toString())
+                    }
+                }
+            }
             // Uitdagingen: the answer it was given, the account token only.
             path.contains("/challenges/") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
@@ -661,6 +682,66 @@ class FakeOwnifyServer {
     }
 
     /** The answer to the consent question, stored — and read back in the pages, as ai_summary() and settings_prepare() would. */
+    /**
+     * Voorkeuren saved as the real endpoint saves them (migration 024): the
+     * account's `i18n` in the pages, the week's choice, the switches and
+     * their notes — and the answer it gives.
+     */
+    fun savePreferences(fields: Map<String, String>): JSONObject {
+        val state = JSONObject(stateBody)
+        val data = state.getJSONObject("data")
+        val i18n = data.optJSONObject("i18n") ?: JSONObject().put("locale", "nl").put("chosen", JSONObject.NULL).put("units", "metric")
+            .put("week_start", "monday").put("text_large", false).put("contrast_more", false).put("motion_off", false)
+        fields["week"]?.let { i18n.put("week_start", if (it == "sunday") "sunday" else "monday") }
+        fields["units"]?.let { i18n.put("units", if (it == "imperial") "imperial" else "metric") }
+        val switches = listOf("text_large", "contrast_more", "motion_off")
+        switches.forEach { key -> fields[key]?.let { i18n.put(key, it == "1") } }
+        data.put("i18n", i18n)
+
+        val blocks = data.getJSONObject("settings").getJSONObject("pages").getJSONObject("preferences").getJSONArray("blocks")
+        for (b in 0 until blocks.length()) {
+            val block = blocks.getJSONObject(b)
+            if (block.optString("name") == "week") block.put("selected", i18n.getString("week_start"))
+            val items = block.optJSONArray("items") ?: continue
+            for (i in 0 until items.length()) {
+                val item = items.optJSONObject(i) ?: continue
+                val key = item.optString("key").takeIf { it in switches } ?: continue
+                val on = i18n.optBoolean(key)
+                when (block.optString("type")) {
+                    "toggles" -> item.put("on", on).put("note", item.optString(if (on) "note_on" else "note_off"))
+                    "states" -> item.put("value", item.optString(if (on) "value_on" else "value_off"))
+                        .put("note", item.optString(if (on) "note_on" else "note_off"))
+                        .put("tone", if (on) "on" else "neutral")
+                }
+            }
+        }
+        stateBody = state.toString()
+
+        val answer = JSONObject().put("ok", true).put("locale", i18n.optString("locale", "nl")).put("chosen", i18n.opt("chosen") ?: JSONObject.NULL)
+            .put("units", i18n.optString("units", "metric")).put("week", i18n.getString("week_start"))
+        switches.forEach { answer.put(it, i18n.optBoolean(it)) }
+        return answer.put("message", "Opgeslagen.")
+    }
+
+    /** A phone's name as device_rename() keeps it: this account's phone only; empty gives it its own name back. */
+    fun renameDevice(id: Int, name: String): JSONObject? {
+        val state = JSONObject(stateBody)
+        val integrations = state.getJSONObject("data").getJSONObject("settings").getJSONArray("integrations")
+        for (n in 0 until integrations.length()) {
+            val devices = integrations.getJSONObject(n).optJSONArray("devices") ?: continue
+            for (i in 0 until devices.length()) {
+                val device = devices.getJSONObject(i)
+                if (device.optInt("id") != id) continue
+                val own = device.optString("own", device.optString("label"))
+                device.put("label", name.ifEmpty { own }).put("custom", name.isNotEmpty())
+                stateBody = state.toString()
+                return JSONObject().put("ok", true).put("device", id).put("name", device.getString("label"))
+                    .put("custom", name.isNotEmpty()).put("message", "Naam bewaard.")
+            }
+        }
+        return null
+    }
+
     fun saveConsent(consent: String) {
         aiConsent = consent
         val state = JSONObject(stateBody)

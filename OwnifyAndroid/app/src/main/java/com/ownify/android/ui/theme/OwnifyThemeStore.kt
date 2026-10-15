@@ -1,5 +1,6 @@
 package com.ownify.android.ui.theme
 
+import com.ownify.android.i18n.OwnifyPreferences
 import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
@@ -81,7 +82,8 @@ object OwnifyThemeStore {
         choice = preference(activity)
         val mode = choice.mode(phoneDark(activity))
         Ownify.use(mode)
-        Ownify.useMoreContrast(wantsMoreContrast(activity))
+        // The phone's contrast, or the account's Extra contrast (OwnifyPreferences, restored first).
+        Ownify.useMoreContrast(wantsMoreContrast(activity) || OwnifyPreferences.contrastMore)
         activity.setTheme(if (mode == OwnifyMode.LIGHT) R.style.Theme_Ownify_Light else R.style.Theme_Ownify)
         return mode
     }

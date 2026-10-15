@@ -15,12 +15,14 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.semantics.SemanticsActions
+import com.ownify.android.i18n.OwnifyPreferences
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -102,7 +104,10 @@ class ScreenshotCapture {
     }
 
     @After
-    fun dark() = Ownify.use(OwnifyMode.DARK)
+    fun dark() {
+        Ownify.use(OwnifyMode.DARK)
+        OwnifyPreferences.use()
+    }
 
     private fun data(file: String = state): AppData = AppData.parse(JSONObject(File(file).readText()).getJSONObject("data"))
 
@@ -133,6 +138,8 @@ class ScreenshotCapture {
 
     private fun app(file: String = state, then: ShellState.() -> Unit = {}) {
         val data = data(file)
+        // The account's Voorkeuren, as the app adopts them from the state.
+        data.i18n.let { OwnifyPreferences.use(it.weekStart, it.textLarge, it.contrastMore, it.motionOff) }
         preload(data)
         frame { AppShell(data, OwnifyScreens.shell, onShell = { shell = it }) }
         compose.waitForIdle()
@@ -437,6 +444,18 @@ class ScreenshotCapture {
     @Test fun goal300() = detail("goals", Detail.GoalPage("300"), "goal-300", 760)
     @Test fun settingsAccount() = detail("settings", Detail.SettingsPage("account"), "settings-account", 760, 1520)
     @Test fun settingsDevices() = detail("settings", Detail.SettingsPage("devices"), "settings-devices", 600)
+    /** Apparaten & Gezondheid with this phone's source open: its phones, each with its two links. */
+    @Test fun settingsDevicesOpen() {
+        app { tab("settings") }
+        compose.runOnUiThread { shell.openDetail(Detail.SettingsPage("devices")) }
+        settle()
+        compose.onNode(hasContentDescription("Health Connect", substring = true) and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
+        settle()
+        shoot("settings-devices-open")
+        scroll(420, detail = true)
+        shoot("settings-devices-open-2")
+    }
     @Test fun settingsPrivacy() = detail("settings", Detail.SettingsPage("privacy"), "settings-privacy", 700)
 
     /** Apparaten & Gezondheid with Polar open: its rows, its buttons and what disconnecting means. */

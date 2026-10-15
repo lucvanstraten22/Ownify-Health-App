@@ -257,6 +257,75 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     }
 }
 
+/**
+ * A phone's name (Instellingen › Apparaten & Gezondheid › Naam wijzigen): the
+ * field editor's panel, as on the website, with the name its owner gave it —
+ * empty while it has its own — and a line saying what saving does. Only the
+ * name changes (api/integrations/device-rename.php): never the pairing, the
+ * sync or the data; empty gives it its own name back.
+ */
+@Composable
+fun DeviceNameEditor(overlay: Overlay.RenameDevice, data: AppData) {
+    val shell = LocalShell.current
+    val context = LocalContext.current
+    val focus = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    val labels = data.settings.integrationLabels
+    val device = remember(overlay.device) { data.settings.integrations.flatMap { it.devices }.firstOrNull { it.id == overlay.device } }
+    var value by remember(overlay.device) { mutableStateOf(if (device?.custom == true) device.label else "") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(device) { if (device == null) shell.close(overlay) }
+    if (device == null) return
+    val own = device.own ?: device.label
+    val title = labels["rename_title"] ?: tr("Apparaatnaam")
+
+    fun save() {
+        focus.clearFocus()
+        error = null
+        saving = true
+        scope.launch {
+            val fields = mapOf("device" to device.id.toString(), "name" to value.trim())
+            when (val outcome = OwnifyActions.form(context, "api/integrations/device-rename.php", fields, tr("Opslaan is niet gelukt."))) {
+                is Outcome.Done -> shell.close(overlay)
+                is Outcome.Refused -> error = outcome.message
+                Outcome.SignedOut -> Unit
+            }
+            saving = false
+        }
+    }
+
+    ConfirmFrame(overlay, title = title, start = true) {
+        ConfirmTitle(title, align = TextAlign.Start)
+        val first = rememberFocusOnOpen()
+        JInput(
+            value, { value = it.take(DEVICE_NAME_MAX) },
+            modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4).focusRequester(first),
+            placeholder = own,
+            label = title,
+            keyboard = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+            actions = KeyboardActions(onDone = { if (!saving) save() })
+        )
+        // `.field-editor__note`: what saving does, and what empty gives back.
+        T(
+            listOfNotNull(labels["rename_note"], labels["rename_own"]?.replace("%s", own)).joinToString(" "),
+            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            Modifier.fillMaxWidth().padding(top = Ownify.Space2)
+        )
+
+        error?.let { EditorError(it) }
+
+        ConfirmRow(
+            { Btn(tr("Annuleren"), onClick = { shell.close(overlay) }, modifier = it) },
+            { Btn(tr("Opslaan"), onClick = ::save, enabled = !saving, look = YesLook, modifier = it) }
+        )
+    }
+}
+
+/** The longest name a phone can be given: includes/devices.php's DEVICE_NAME_MAX. */
+private const val DEVICE_NAME_MAX = 40
+
 /** `.field-editor__options`: the answers, one under the other; the chosen one in the green. */
 @Composable
 private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -> Unit) {

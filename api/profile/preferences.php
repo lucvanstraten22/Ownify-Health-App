@@ -1,12 +1,16 @@
 <?php
 /**
- * Instellingen › Taal and › Voorkeuren › Eenheden: the signed-in account's
- * language and units (includes/i18n.php, docs/I18N.md). One or both per
- * request:
+ * Instellingen › Taal and › Voorkeuren: the signed-in account's language,
+ * units, first day of the week and accessibility choices (includes/i18n.php,
+ * docs/I18N.md). Any of them per request:
  *
- *   language   auto | nl | en   auto forgets the choice: the app follows the
- *                               browser's or the phone's language again
- *   units      metric | imperial
+ *   language       auto | nl | en   auto forgets the choice: the app follows
+ *                                   the browser's or the phone's language again
+ *   units          metric | imperial
+ *   week           monday | sunday  where a week starts (migration 024)
+ *   text_large     0 | 1            Toegankelijkheid › Grotere tekst
+ *   contrast_more  0 | 1            Toegankelijkheid › Extra contrast
+ *   motion_off     0 | 1            Toegankelijkheid › Animaties uit
  *
  * Kept on the account, so the choice is the same on the website and in the
  * app and survives signing out and in. The website also keeps the language
@@ -31,9 +35,29 @@ if (!i18n_columns_present()) {
 
 $language = isset($_POST['language']) ? (string) $_POST['language'] : null;
 $units    = isset($_POST['units']) ? (string) $_POST['units'] : null;
+$week     = isset($_POST['week']) ? (string) $_POST['week'] : null;
 
-if ($language === null && $units === null) {
+/* The three switches: '1' on, '0' off. */
+$switches = [];
+foreach (['text_large', 'contrast_more', 'motion_off'] as $key) {
+    if (isset($_POST[$key])) {
+        if (!in_array((string) $_POST[$key], ['0', '1'], true)) {
+            api_fail('Onbekende waarde.', 422);
+        }
+        $switches[$key] = (string) $_POST[$key] === '1' ? 1 : 0;
+    }
+}
+
+if ($language === null && $units === null && $week === null && $switches === []) {
     api_fail('Kies een taal of eenheden.', 422);
+}
+
+if (($week !== null || $switches !== []) && !preferences_columns_present()) {
+    api_fail('De database is nog niet bijgewerkt voor deze voorkeuren (migratie 024).', 503);
+}
+
+if ($week !== null && !in_array($week, ['monday', 'sunday'], true)) {
+    api_fail('Onbekende eerste dag van de week.', 422);
 }
 
 if ($language !== null && !in_array($language, ['auto', 'nl', 'en'], true)) {
@@ -69,9 +93,25 @@ if ($units !== null) {
     $state['units'] = $units;
 }
 
+if ($week !== null) {
+    db_run('UPDATE user_profiles SET week_start = ? WHERE user_id = ?', [$week === 'sunday' ? 'sunday' : null, $userId]);
+    $state = &i18n_state();
+    $state['week_start'] = $week;
+}
+
+foreach ($switches as $key => $on) {
+    /* $key is one of the three names above, never the request's own text. */
+    db_run('UPDATE user_profiles SET ' . $key . ' = ? WHERE user_id = ?', [$on, $userId]);
+    $state = &i18n_state();
+    $state[$key] = (bool) $on;
+}
+
 api_ok([
     'locale'  => i18n_locale(),
     'chosen'  => i18n_chosen(),
     'units'   => units_system(),
+    'week'    => week_start(),
+    /* As privacy.php answers a switch: its key and whether it is on now. */
+    ...accessibility_choices(),
     'message' => t('Opgeslagen.'),
 ]);

@@ -68,12 +68,16 @@ if (!function_exists('app_page_data')) {
         $data['focus'] = $setup['focus'];
 
         /* The language and units everything below is written in
-           (includes/i18n.php): `chosen` null means the device decides. */
+           (includes/i18n.php): `chosen` null means the device decides. With
+           them the account's other Voorkeuren: where its week starts
+           (`week_start`) and Toegankelijkheid's three choices, which the app
+           applies on top of what the phone says. */
         $data['i18n'] = [
-            'locale' => i18n_locale(),
-            'chosen' => i18n_chosen(),
-            'units'  => units_system(),
-        ];
+            'locale'     => i18n_locale(),
+            'chosen'     => i18n_chosen(),
+            'units'      => units_system(),
+            'week_start' => week_start(),
+        ] + accessibility_choices();
 
         /* The config files describe the shape of each page — which areas
            exist, what they are called, in what unit. The values come from

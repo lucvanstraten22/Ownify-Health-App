@@ -144,8 +144,9 @@ check('Systeem, Donker and Licht are offered, and nothing is disabled', array_co
     && array_filter($choice['options'], static fn (array $o): bool => !empty($o['disabled'])) === []);
 check('the theme is a choice that saves', ($choice['saves'] ?? false) === true);
 
-/* Language and units are kept too since 15.0 (docs/I18N.md); every other
-   choice still says it is not. */
+/* Language and units are kept too since 15.0 (docs/I18N.md), and the first
+   day of the week since 19.0: every choice Settings offers is kept now, and
+   none may say otherwise. */
 $others = [];
 foreach ($settings['pages'] as $id => $page) {
     foreach ($page['blocks'] as $block) {
@@ -153,15 +154,11 @@ foreach ($settings['pages'] as $id => $page) {
         if (($block['type'] ?? '') !== 'choice' || $name === 'theme') {
             continue;
         }
-        if (in_array($name, ['language', 'units'], true)) {
-            check("$id: the $name choice saves", ($block['saves'] ?? false) === true);
-            continue;
-        }
-        $others[] = $id;
-        check("$id: still says its choice is not kept", empty($block['saves']));
+        $others[] = $name;
+        check("$id: the $name choice saves", ($block['saves'] ?? false) === true);
     }
 }
-check('there are other choices to tell apart', $others !== []);
+check('language, units and the week are the other choices', $others === ['language', 'units', 'week'], implode(', ', $others));
 
 $asLight = settings_use_theme($settings, 'light');
 check('White: Licht is ticked', theme_choice($asLight)['selected'] === 'light');
@@ -221,13 +218,16 @@ check('Dark roles are the original white, black and greys',
 check('Dark multipliers are all 1', array_unique(array_map(static fn (string $k): string => $darkTokens[$k],
     ['fill-k', 'lift-k', 'glint-k', 'shade-k', 'scrim-k', 'tint-keep'])) === ['1']);
 
-/* Outside the two token blocks, nobody writes a white, a black or the
-   ground's greys as a colour of their own: they are roles. */
-$tokenBlocks = '/:root(\[data-theme="light"\])? \{.*?\n\}/s';
+/* Outside the token blocks — the two themes, and Extra contrast's twins of
+   the more-contrast block (19.0) — nobody writes a white, a black or the
+   ground's greys as a colour of their own: they are roles. A mask is not a
+   colour: only its alpha counts, and it is never painted. */
+$tokenBlocks = '/:root(\[data-contrast="more"\])?(\[data-theme="light"\])? \{.*?\n\}/s';
+$masks       = '/^\s*(-webkit-)?mask(-image)?\s*:.*$/m';
 $literal     = '/rgba\(\s*(255\s*,\s*255\s*,\s*255|0\s*,\s*0\s*,\s*0|48\s*,\s*45\s*,\s*47|30\s*,\s*28\s*,\s*29)\s*,\s*[0-9.]+\s*\)/';
 foreach (glob($root . '/assets/css/*.css') ?: [] as $file) {
     $text  = (string) file_get_contents($file);
-    $outer = basename($file) === 'theme.css' ? (string) preg_replace($tokenBlocks, '', $text) : $text;
+    $outer = (string) preg_replace($masks, '', basename($file) === 'theme.css' ? (string) preg_replace($tokenBlocks, '', $text) : $text);
     preg_match_all($literal, $outer, $found);
     check(basename($file) . ': every white, black and ground grey is a role', $found[0] === [], implode(' ', array_slice($found[0], 0, 3)));
 }

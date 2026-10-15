@@ -40,7 +40,6 @@ import com.ownify.android.ui.design.ScreenMetrics
 import com.ownify.android.ui.screens.settings.HealthPermissions
 import com.ownify.android.ui.screens.settings.PhoneHealth
 import com.ownify.android.ui.screens.settings.PhoneSection
-import com.ownify.android.ui.screens.settings.SyncNowButton
 import com.ownify.android.ui.screens.settings.SyncResult
 import com.ownify.android.ui.theme.OwnifyTheme
 import org.junit.After
@@ -57,8 +56,9 @@ import org.robolectric.annotation.Config
  * This phone's Health Connect section (Instellingen › Apparaten &
  * Gezondheid, and the paired phone's opening screen): what it says for each
  * state of Health Connect and its permissions, what it offers to fix, and
- * "Nu synchroniseren" through the real sync pipeline — the same one the
- * automatic sync runs — against a server on localhost.
+ * what a sync through the real pipeline — the one the automatic sync runs —
+ * shows, against a server on localhost. There is no button to start one
+ * (19.0): the sync runs on its own; these start it through the service.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
@@ -107,7 +107,6 @@ class PhoneSyncUiTest {
             CompositionLocalProvider(LocalStillMotion provides true, LocalScreen provides ScreenMetrics(412.dp, 915.dp)) {
                 Column {
                     PhoneSection(health)
-                    SyncNowButton()
                     SyncResult()
                 }
             }
@@ -185,16 +184,19 @@ class PhoneSyncUiTest {
         assertTrue(HealthPermissions.all { it.startsWith("android.permission.health.READ_") })
     }
 
-    // ----------------------------------------------------------- syncing now
+    // ----------------------------------------------------------- a sync
+
+    /** A sync, as the automatic one starts it: through the service, on the main thread. */
+    private fun sync() = compose.runOnUiThread { OwnifySync.sync(context) }
 
     @Test
-    fun `Nu synchroniseren - the day's records sent with the Bearer token, the result and the time shown`() {
+    fun `a sync - the day's records sent with the Bearer token, the result and the time shown`() {
         MemoryTokenStorage.token = TEST_TOKEN
         TestSyncEnvironment.records = SyncFixtures.day("a")
         show(health(HealthConnectClient.SDK_AVAILABLE, granted = IngestPayload.TYPES.size, background = BackgroundRead.GRANTED))
 
         shows("Nog nooit")
-        compose.onNode(hasText("Nu synchroniseren") and hasClickAction()).performClick()
+        sync()
 
         // The sync's steps come back on the main thread: turn its looper while waiting.
         waitUntil("the sync to end") { OwnifySync.state is OwnifySyncState.Synced }
@@ -213,12 +215,12 @@ class PhoneSyncUiTest {
         TestSyncEnvironment.records = SyncFixtures.day("a")
         show(health(HealthConnectClient.SDK_AVAILABLE, granted = IngestPayload.TYPES.size, background = BackgroundRead.GRANTED))
 
-        compose.onNode(hasText("Nu synchroniseren") and hasClickAction()).performClick()
+        sync()
 
         waitUntil("the pairing to be forgotten") { MemoryTokenStorage.load() == null && OwnifySync.state !is OwnifySyncState.Syncing }
         compose.waitForIdle()
         assertTrue(OwnifyConnection.state is OwnifyState.NotConnected)
-        // The button's line leaves it to the connection, as the sync always has.
+        // The sync's line leaves it to the connection, as it always has.
         assertEquals(OwnifySyncState.Idle, OwnifySync.state)
         shows("De koppeling met Ownify is verlopen")
     }
@@ -230,7 +232,7 @@ class PhoneSyncUiTest {
         TestSyncEnvironment.api = OwnifyApi("http://127.0.0.1:9/")
         show(health(HealthConnectClient.SDK_AVAILABLE, granted = IngestPayload.TYPES.size, background = BackgroundRead.GRANTED))
 
-        compose.onNode(hasText("Nu synchroniseren") and hasClickAction()).performClick()
+        sync()
 
         waitUntil("the sync to end") { OwnifySync.state is OwnifySyncState.Failed }
         compose.waitForIdle()

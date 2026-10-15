@@ -82,6 +82,8 @@ sealed interface Overlay {
     data object Wizard : Overlay
     data object DeleteAccount : Overlay
     data class EditField(val key: String) : Overlay
+    /** A paired phone's name ([device]: its id), in the field editor's panel. */
+    data class RenameDevice(val device: Int) : Overlay
     data class Pairing(val provider: String) : Overlay
 
     /** Uitdagingen's one bottom sheet, in its five uses (components/challenge-sheet.php). */

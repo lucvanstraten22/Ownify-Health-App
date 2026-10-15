@@ -1096,6 +1096,9 @@
     .wizard__panel { transform: none; }
     .wizard__step.is-active { animation: none; }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .wizard__panel { transform: none; }
+:root[data-motion="reduce"] .wizard__step.is-active { animation: none; }
 
 /* Two glyphs live in the pause button; only one is ever shown. */
 .goal-manage__swap { display: inline-flex; }
@@ -1495,3 +1498,5 @@
 @media (prefers-reduced-motion: reduce) {
     .goal-chart__end { transition: none; }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .goal-chart__end { transition: none; }

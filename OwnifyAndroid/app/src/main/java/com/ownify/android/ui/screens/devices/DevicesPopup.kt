@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +35,8 @@ import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.design.StatusBadge
+import com.ownify.android.ui.design.StatusTone
 import com.ownify.android.ui.theme.OwnifyType
 
 /** One line of the popup: a paired phone, or a source without phones. */
@@ -122,30 +123,7 @@ private fun DeviceRow(line: DeviceLine) {
             T(line.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
             if (line.source != null) T(line.source, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
         }
-        StatusDot(line.state, line.connected)
-    }
-}
-
-/** `.devices__status` / `.integration__status`: a 6 dot and a word; green with its halo when connected. */
-@Composable
-fun StatusDot(text: String, connected: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        Box(
-            Modifier
-                .size(6.dp)
-                .drawBehind {
-                    if (connected) {
-                        drawCircle(Ownify.HealthFill, radius = size.width / 2f + 3.dp.toPx())
-                        drawCircle(Ownify.Health)
-                    } else {
-                        drawCircle(Ownify.TextFaint)
-                    }
-                }
-        )
-        T(
-            text,
-            OwnifyType.style(Ownify.FsTiny, color = if (connected) Ownify.tint(Ownify.Health, 0.34f) else Ownify.TextMuted),
-            maxLines = 1
-        )
+        // Only what is linked is listed: not connected means it needs a look.
+        StatusBadge(line.state, if (line.connected) StatusTone.On else StatusTone.Warn, textSize = Ownify.FsFootnote)
     }
 }

@@ -243,7 +243,7 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | Table | Holds |
 | --- | --- |
 | `users` | the account: id, unique username, status, timestamps |
-| `user_profiles` | the person: name, date of birth, gender, avatar, language and units (migration 021, docs/I18N.md), focus, and where the setup a new account starts with stands |
+| `user_profiles` | the person: name, date of birth (age is worked out from it, never stored), gender, avatar, language and units (migration 021, docs/I18N.md), the first day of the week and three accessibility choices (migration 024), focus, and where the setup a new account starts with stands |
 | `user_auth_identities` | one row per way of signing in |
 | `user_login_tokens` | one row per browser that signed in and has not signed out: a selector and the SHA-256 of a validator |
 
@@ -462,6 +462,27 @@ a challenge it made goes on for the others (`creator_id` becomes NULL). See
 `health_metric_types` row, and turns a goal tracked from it into one kept by
 hand (its name, target and recorded days stay). Until it is imported nothing
 reads or shows VO2max any more; only the goal wizard still offers it.
+
+**Voorkeuren and phone names** (19.0):
+`database/migrations/024-preferences-and-device-names.sql` adds
+`user_profiles.week_start` (`sunday`, or NULL for Monday — where a week
+begins in a goal's day calendar and Ownify AI's weekly totals),
+`text_large`, `contrast_more` and `motion_off` (Voorkeuren ›
+Toegankelijkheid, each 0 or 1, on whatever the device says; see
+[THEME.md](THEME.md)), and `user_devices.custom_label`: the name the owner gave
+a paired phone in Instellingen › Apparaten & Gezondheid. It is shown instead
+of `label` — what the phone calls itself, which the app rewrites when it
+signs in again — and only the owner changes it (`api/integrations/device-rename.php`,
+one phone of their own at a time, at most 40 characters; empty gives the
+phone its own name back). Renaming changes nothing else: not the token, the
+pairing, the sync or the data. Every new column starts empty or 0, which is
+how the app behaved before; until it is imported the switches and the week
+cannot be kept (the endpoints answer 503) and a phone cannot be renamed.
+
+There is no `age` column: Leeftijd is no longer a field in Instellingen
+(19.0). Whatever needs an age — the nutrition targets, the estimated maximum
+heart rate, Ownify AI's context — works it out from `date_of_birth` when it
+needs it (`user_age()`), as it already did.
 
 **Blocking is separate from friendship** because it is one-directional: A can
 block B without B blocking A. A block wins: it deletes whatever row the pair

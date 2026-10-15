@@ -132,6 +132,17 @@ CREATE TABLE `user_profiles` (
                     COMMENT 'nl or en when chosen in Instellingen › Taal; NULL follows the device',
     `units`         ENUM('metric','imperial') NULL DEFAULT NULL
                     COMMENT 'Instellingen › Eenheden; NULL is metric. Only how values are shown and typed',
+    -- Voorkeuren (migration 024): where a week starts, and the three
+    -- accessibility choices that hold whatever the device says. On the
+    -- account, so the website and the app agree.
+    `week_start`    ENUM('monday','sunday') NULL DEFAULT NULL
+                    COMMENT 'Voorkeuren › Eerste dag van de week; NULL is Monday',
+    `text_large`    TINYINT(1) NOT NULL DEFAULT 0
+                    COMMENT 'Toegankelijkheid › Grotere tekst: 1 = larger text, whatever the device says',
+    `contrast_more` TINYINT(1) NOT NULL DEFAULT 0
+                    COMMENT 'Toegankelijkheid › Extra contrast: 1 = stronger borders and text',
+    `motion_off`    TINYINT(1) NOT NULL DEFAULT 0
+                    COMMENT 'Toegankelijkheid › Animaties uit: 1 = no animations, whatever the device says',
     `allow_friend_requests` TINYINT(1) NOT NULL DEFAULT 1
                     COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
     `leaderboard_avatar` TINYINT(1) NOT NULL DEFAULT 1
@@ -602,6 +613,7 @@ CREATE TABLE `user_devices` (
     `token_hash`   CHAR(64) NOT NULL COMMENT 'sha256 of the device token',
     `scope`        ENUM('sync','account') NOT NULL DEFAULT 'sync' COMMENT 'sync: pairing code, uploads only. account: signed in in the app, acts as the account',
     `label`        VARCHAR(80) NULL COMMENT 'What to call it on screen',
+    `custom_label` VARCHAR(80) NULL DEFAULT NULL COMMENT 'The name the owner gave it; shown instead of label, never rewritten by the app',
     `platform`     VARCHAR(40) NULL COMMENT 'android, ios',
     `app_version`  VARCHAR(40) NULL,
     `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

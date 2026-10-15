@@ -109,8 +109,10 @@ Polar v4 sends no notifications, so Ownify asks:
 1. **Right after connecting**: the callback answers first and then fetches
    the last **28 days** (`fastcgi_finish_request()` on the live server). The
    row reads "Bezig met synchroniseren…" while it runs.
-2. **Nu synchroniseren**, on the website and in the app
-   (`api/integrations/polar/sync.php`).
+2. **On request** (`api/integrations/polar/sync.php`): since 19.0 there is
+   no "Nu synchroniseren" button on the website or in the app — the two
+   moments around it are enough — but installed apps from before 19.0 still
+   call it, so it stays.
 3. **On a schedule**: `tools/polar-sync.php` from cron (below). It syncs
    whoever has not synced for 55 minutes.
 
@@ -301,8 +303,8 @@ features). It checks 76 things:
    to Instellingen with "Polar is gekoppeld…"; the row shows *Verbonden*,
    your watch, and soon a last-sync time. Trainingen, Slaap and the heart
    rate fill with the last 28 days.
-2. Press **Nu synchroniseren**: "Gesynchroniseerd", and no training or night
-   appears twice.
+2. Wait for the hourly sync (or run `tools/polar-sync.php` once): the row's
+   last sync moves on, and no training or night appears twice.
 3. Android: the same row › **Koppelen** opens the browser. After Polar, the
    page names your Ownify account. Press **Koppelen**, go back to the app,
    and the row shows *Verbonden*.

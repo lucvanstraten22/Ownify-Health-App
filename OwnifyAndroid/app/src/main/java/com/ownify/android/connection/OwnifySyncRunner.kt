@@ -94,7 +94,7 @@ internal sealed interface OwnifySyncOutcome {
 }
 
 /**
- * THE sync — the only one. The "Nu synchroniseren" button (OwnifySync.sync) and the
+ * THE sync — the only one. A run asked for in the app (OwnifySync.sync) and the
  * background worker (OwnifySyncWorker) both run exactly this:
  *
  *   1. the stored token — none: nothing is read or sent;
@@ -109,7 +109,7 @@ internal sealed interface OwnifySyncOutcome {
  * Nothing here adds up, removes or judges a record.
  *
  * One run at a time: an automatic run that finds one going leaves it to it;
- * the button waits for it and then runs, as it always has.
+ * one asked for in the app waits for it and then runs, as it always has.
  *
  * A 401 forgets the token only if it is still the stored one. Signing in on a
  * paired phone replaces the sync token with an account token, and a run that

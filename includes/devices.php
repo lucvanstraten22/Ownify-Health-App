@@ -85,6 +85,8 @@ if (!defined('DEVICE_PAIRING_TTL')) {
 /** How many phones one account may pair per source. */
 if (!defined('DEVICE_LIMIT_PER_PROVIDER')) {
     define('DEVICE_LIMIT_PER_PROVIDER', 5);
+    /* The longest name an owner can give a phone: it has to fit a row. */
+    define('DEVICE_NAME_MAX', 40);
 }
 
 /** Days an account token keeps working unused. Every use starts them again. */
@@ -486,10 +488,14 @@ if (!function_exists('device_hash')) {
         );
     }
 
-    /** The phones on one account. No tokens — there is nothing to show. */
+    /**
+     * The phones on one account. No tokens — there is nothing to show.
+     * `custom_label` is the name the owner gave it (migration 024), or null.
+     */
     function devices_for_user(int $userId, ?string $provider = null): array
     {
-        $sql = 'SELECT id, provider, label, platform, app_version, created_at, last_seen_at, last_sync_at
+        $sql = 'SELECT id, provider, label, ' . (device_names_present() ? 'custom_label, ' : 'NULL AS custom_label, ')
+             . 'platform, app_version, created_at, last_seen_at, last_sync_at
                   FROM user_devices
                  WHERE user_id = ? AND ' . device_live_sql();
         $params = [$userId];
@@ -500,6 +506,77 @@ if (!function_exists('device_hash')) {
         }
 
         return db_all($sql . ' ORDER BY created_at', $params);
+    }
+
+    /* ------------------------------------------------------------ names */
+
+    /** Migration 024: a name of the owner's own for each phone. */
+    function device_names_present(): bool
+    {
+        static $present = null;
+
+        return $present ??= (bool) db_value(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_devices' AND COLUMN_NAME = 'custom_label'"
+        );
+    }
+
+    /**
+     * What a phone is called on screen: the owner's name for it, else what
+     * the phone calls itself, else "Naamloos apparaat". One rule, for the
+     * devices screen, the header's quick look and the app alike.
+     */
+    function device_display_name(array $device): string
+    {
+        foreach (['custom_label', 'label'] as $column) {
+            $name = trim((string) ($device[$column] ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return t('Naamloos apparaat');
+    }
+
+    /**
+     * A name as typed, ready to keep: one line, spaces tidied, at most
+     * DEVICE_NAME_MAX characters. '' asks for the phone's own name again;
+     * false is a name too long to keep.
+     */
+    function device_name_clean(string $name): string|false
+    {
+        $name = trim((string) preg_replace('/\s+/u', ' ', $name));
+
+        return mb_strlen($name) > DEVICE_NAME_MAX ? false : $name;
+    }
+
+    /**
+     * Renames ONE of the owner's live phones; '' gives it its own name back.
+     * Only the name: token, source, sync and data stay. Null when the id is
+     * not one of this account's live phones.
+     *
+     * @return array{name: string, custom: bool}|null
+     */
+    function device_rename(int $userId, int $deviceId, string $name): ?array
+    {
+        $device = db_one(
+            'SELECT id, label, custom_label FROM user_devices
+              WHERE id = ? AND user_id = ? AND ' . device_live_sql(),
+            [$deviceId, $userId]
+        );
+
+        if ($device === null) {
+            return null;
+        }
+
+        db_run(
+            'UPDATE user_devices SET custom_label = ? WHERE id = ? AND user_id = ?',
+            [$name === '' ? null : $name, $deviceId, $userId]
+        );
+
+        $device['custom_label'] = $name === '' ? null : $name;
+
+        return ['name' => device_display_name($device), 'custom' => $name !== ''];
     }
 
     /**

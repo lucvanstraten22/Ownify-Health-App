@@ -17,7 +17,7 @@ data class OwnifySyncRecord(
     /** When a sync last ran at all. */
     val lastAttemptAt: Instant? = null,
     val lastOutcome: OwnifySyncOutcomeKind? = null,
-    /** Whether the last run was the button or automatic. */
+    /** Whether the last run was automatic, or asked for in the app. */
     val lastWasAutomatic: Boolean = false,
     /** Records the server stored in the last successful sync — a count, nothing more. */
     val lastWritten: Int? = null

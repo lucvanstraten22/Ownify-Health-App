@@ -276,7 +276,7 @@
 
 .settings-field__value {
     font-size: var(--fs-small);
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-secondary);
     text-align: right;
     min-width: 0;
@@ -413,14 +413,18 @@
     min-width: 0;
 }
 
+/* A fact's value: the same ink and weight as every value in Settings — not
+   the accent, which read as a link to something that is not there. */
 .settings-state__value {
     flex: none;
     font-size: var(--fs-small);
-    font-weight: 600;
-    color: var(--health);
-    color: color-mix(in srgb, var(--health) calc(100% - 66% * var(--tint-keep)), var(--tint-base));
+    font-weight: 500;
+    color: var(--text-secondary);
     text-align: right;
 }
+
+/* A status sits level with its label, as a value does. */
+.settings-state__head > .status { align-self: center; }
 
 .settings-state.is-empty .settings-state__value {
     font-weight: 500;
@@ -450,6 +454,10 @@
     font-weight: 500;
     color: var(--text-secondary);
 }
+
+/* A switch that works reads like every other row's label; one that cannot
+   be used yet stays in the quieter ink, with its dimmed switch. */
+.settings-toggle--live .settings-toggle__label { color: var(--text-primary); }
 
 .settings-toggle__note {
     display: block;
@@ -567,30 +575,7 @@
     white-space: nowrap;
 }
 
-.integration__status {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex: none;
-    font-size: var(--fs-tiny);
-    letter-spacing: var(--tracking-small);
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.integration__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--text-faint);
-}
-
-.integration.is-connected .integration__status { color: color-mix(in srgb, var(--health) calc(100% - 66% * var(--tint-keep)), var(--tint-base)); }
-
-.integration.is-connected .integration__dot {
-    background: var(--health);
-    box-shadow: 0 0 0 3px var(--health-fill);
-}
+.integration__status { font-size: var(--fs-footnote); }
 
 .integration__chevron {
     width: 16px;
@@ -675,8 +660,49 @@
 }
 
 /* "Nu in gebruik" and the other plain lists of values: the same inner
-   padding as the choice lists beside them, so their text starts on one line. */
+   padding as the choice lists beside them, so their text starts on one line,
+   and the same label and value as every other row in Settings. */
 .card.settings-rows { padding: var(--space-3) var(--space-4); }
+
+.settings-rows .metric-row__label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.settings-rows .metric-row__value,
+.integration__body .metric-row__value {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* A phone: its name and last sync, then its two quiet actions. */
+.metric-row--device { display: block; }
+
+.device__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.device__actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-1);
+    /* The last link's text ends on the right edge, as one link's did. */
+    margin-right: calc(-1 * var(--space-2));
+}
+
+.device__actions .btn--link { margin-right: 0; }
+
+/* The editor's line under its field: what saving does. */
+.field-editor__note {
+    margin-top: var(--space-2);
+    font-size: var(--fs-footnote);
+    line-height: 1.4;
+    color: var(--text-muted);
+}
 
 .btn--link:focus-visible { color: var(--text-primary); }
 

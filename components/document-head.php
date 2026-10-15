@@ -74,6 +74,48 @@ $theme  = app_theme_head($app);     // lib/theme.php
         else if (device && device.addListener) { device.addListener(follow); }
 
         window.ownifyTheme = { apply: apply, follow: follow };
+
+        /* Voorkeuren › Toegankelijkheid, as the account chose it
+           (includes/i18n.php, migration 024): on <html> before anything is
+           painted, so the stylesheets' twins of the device's own settings
+           apply — data-text, data-contrast, data-motion. The scripts that ask
+           the device about motion or contrast hear the account too: matchMedia
+           answers yes for those two while the account says so, and follows
+           the device otherwise. settings.js switches through here. */
+        var media = window.matchMedia ? window.matchMedia.bind(window) : null;
+        var asked = {
+            motion:   /prefers-reduced-motion:\s*reduce/,
+            contrast: /prefers-contrast:\s*more/
+        };
+
+        function access(choices) {
+            var set = function (name, value, on) {
+                if (on) { root.setAttribute(name, value); } else { root.removeAttribute(name); }
+            };
+            set('data-text', 'large', !!choices.text_large);
+            set('data-contrast', 'more', !!choices.contrast_more);
+            set('data-motion', 'reduce', !!choices.motion_off);
+        }
+
+        access(<?= json_encode(function_exists('accessibility_choices') ? accessibility_choices() : new stdClass()) ?>);
+
+        if (media) {
+            window.matchMedia = function (query) {
+                var device = media(query);
+                var attribute = asked.motion.test(query) ? 'data-motion' : asked.contrast.test(query) ? 'data-contrast' : null;
+                if (!attribute) { return device; }
+                return {
+                    media: device.media,
+                    get matches() { return root.hasAttribute(attribute) || device.matches; },
+                    addEventListener: function (type, fn) { device.addEventListener && device.addEventListener(type, fn); },
+                    removeEventListener: function (type, fn) { device.removeEventListener && device.removeEventListener(type, fn); },
+                    addListener: function (fn) { device.addListener && device.addListener(fn); },
+                    removeListener: function (fn) { device.removeListener && device.removeListener(fn); }
+                };
+            };
+        }
+
+        window.ownifyAccess = { apply: access };
     })();
     </script>
 

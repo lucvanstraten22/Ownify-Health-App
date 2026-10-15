@@ -1106,3 +1106,49 @@ fun PageIntro(title: String, lede: String?, modifier: Modifier = Modifier) {
 /** Width of the column (`--shell-w`), centred: `.shell`. */
 @Composable
 fun Modifier.shell(): Modifier = this.width(LocalScreen.current.shell)
+
+/** What a [StatusBadge] says by its dot: on or connected, needing attention, or neither. */
+enum class StatusTone {
+    On, Warn, Neutral;
+
+    companion object {
+        /** The server's `tone`: "on", "warn", anything else neutral. */
+        fun of(tone: String?): StatusTone = when (tone) {
+            "on" -> On
+            "warn" -> Warn
+            else -> Neutral
+        }
+    }
+}
+
+/**
+ * `.status` (components.css): what is the case, never something to press. A
+ * 6 dot and its word: the word in the secondary ink, the colour only in the
+ * dot — green with its halo while on or connected, gold when something needs
+ * attention, grey otherwise — no border and no fill, so it is never taken for
+ * a button or a choice. Settings' Nu actief (13 sp), a source's connection
+ * and the header's quick look (12 sp, [textSize]).
+ */
+@Composable
+fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, textSize: TextUnit = Ownify.FsSmall) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        Box(
+            Modifier
+                .size(6.dp)
+                .drawBehind {
+                    when (tone) {
+                        StatusTone.On -> {
+                            drawCircle(Ownify.HealthFill, radius = size.width / 2f + 3.dp.toPx())
+                            drawCircle(Ownify.Health)
+                        }
+                        StatusTone.Warn -> {
+                            drawCircle(Ownify.Attention.copy(alpha = Ownify.Attention.alpha * 0.18f), radius = size.width / 2f + 3.dp.toPx())
+                            drawCircle(Ownify.Attention)
+                        }
+                        StatusTone.Neutral -> drawCircle(Ownify.TextFaint)
+                    }
+                }
+        )
+        T(text, OwnifyType.style(textSize, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.3.em), maxLines = 1)
+    }
+}

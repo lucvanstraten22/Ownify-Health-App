@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.map
  *                         older than [STALE_AFTER] — as soon as there is a network
  *   never                 once the token is gone: a 401, or not paired
  *
- * What runs is OwnifySyncWorker, which runs the same pipeline as the button.
+ * What runs is OwnifySyncWorker, which runs the same pipeline as OwnifySync.sync.
  */
 object OwnifyBackgroundSync {
 

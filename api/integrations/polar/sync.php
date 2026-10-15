@@ -1,9 +1,14 @@
 <?php
 /**
- * "Nu synchroniseren" for Polar: fetches the days since the last sync (with
- * a few days' overlap) and imports them, now. For the website (session and
- * CSRF token) and the app (account token). Answers with what happened in one
- * sentence and the connection's state as the settings screen shows it.
+ * A Polar sync now: fetches the days since the last sync (with a few days'
+ * overlap) and imports them. For the website (session and CSRF token) and the
+ * app (account token). Answers with what happened in one sentence and the
+ * connection's state as the settings screen shows it.
+ *
+ * Since 19.0 neither the website nor the app has a button for it — Polar
+ * syncs right after connecting and hourly from cron (tools/polar-sync.php,
+ * docs/POLAR.md) — but installed apps from before 19.0 still have one, so
+ * the endpoint stays.
  *
  * A sync already running answers 409 at once. A connection Polar withdrew
  * answers 409 too — never 401, which to the app means its own sign-in is gone.

@@ -50,7 +50,10 @@ if (!function_exists('i18n_locale')) {
      * The request's language, and whether it was chosen. Settable, so the
      * app's endpoints can apply the account once they know whose token it is.
      *
-     * @return array{locale: string, chosen: ?string, units: string}
+     * With them the account's other Voorkeuren (migration 024): where its
+     * week starts and the three accessibility choices.
+     *
+     * @return array{locale: string, chosen: ?string, units: string, week_start: string, text_large: bool, contrast_more: bool, motion_off: bool}
      */
     function &i18n_state(): array
     {
@@ -62,6 +65,10 @@ if (!function_exists('i18n_locale')) {
                 'locale' => $chosen ?? i18n_from_header($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null),
                 'chosen' => $chosen,
                 'units'  => 'metric',
+                'week_start'    => 'monday',
+                'text_large'    => false,
+                'contrast_more' => false,
+                'motion_off'    => false,
                 'user'   => null,
             ];
         }
@@ -132,7 +139,8 @@ if (!function_exists('i18n_locale')) {
         }
 
         $row = i18n_columns_present()
-            ? db_one('SELECT locale, units FROM user_profiles WHERE user_id = ?', [$userId])
+            ? db_one('SELECT locale, units' . (preferences_columns_present() ? ', week_start, text_large, contrast_more, motion_off' : '')
+                . ' FROM user_profiles WHERE user_id = ?', [$userId])
             : null;
 
         $state['user'] = $userId;
@@ -153,6 +161,76 @@ if (!function_exists('i18n_locale')) {
         }
 
         $state['units'] = ($row['units'] ?? null) === 'imperial' ? 'imperial' : 'metric';
+
+        $state['week_start']    = ($row['week_start'] ?? null) === 'sunday' ? 'sunday' : 'monday';
+        $state['text_large']    = !empty($row['text_large']);
+        $state['contrast_more'] = !empty($row['contrast_more']);
+        $state['motion_off']    = !empty($row['motion_off']);
+    }
+
+    /** Migration 024: the week's first day and the accessibility choices. */
+    function preferences_columns_present(): bool
+    {
+        static $present = null;
+
+        return $present ??= (bool) db_value(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'motion_off'"
+        );
+    }
+
+    /* ========================================================= Voorkeuren */
+
+    /** Where the account's week starts: 'monday' (the default) or 'sunday'. */
+    function week_start(): string
+    {
+        return i18n_state()['week_start'] ?? 'monday';
+    }
+
+    /** The first day of the week as ISO numbers it: 1 Monday, 7 Sunday. */
+    function week_start_iso(): int
+    {
+        return week_start() === 'sunday' ? 7 : 1;
+    }
+
+    /**
+     * The first day of the week $date lies in, as the account counts weeks.
+     */
+    function week_first_day(DateTimeImmutable $date): DateTimeImmutable
+    {
+        $back = ((int) $date->format('N') - week_start_iso() + 7) % 7;
+
+        return $date->modify('-' . $back . ' day');
+    }
+
+    /**
+     * A week's weekday initials, in the language on screen, from the
+     * account's first day: M D W D V Z Z, or Z M D W D V Z from Sunday.
+     *
+     * @return list<string>
+     */
+    function week_initials(): array
+    {
+        $days = i18n_locale() === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['M', 'D', 'W', 'D', 'V', 'Z', 'Z'];
+
+        return week_start() === 'sunday' ? array_merge([$days[6]], array_slice($days, 0, 6)) : $days;
+    }
+
+    /**
+     * Toegankelijkheid, as the account chose it: larger text, more contrast,
+     * no animations — each also when the device says otherwise.
+     *
+     * @return array{text_large: bool, contrast_more: bool, motion_off: bool}
+     */
+    function accessibility_choices(): array
+    {
+        $state = i18n_state();
+
+        return [
+            'text_large'    => (bool) ($state['text_large'] ?? false),
+            'contrast_more' => (bool) ($state['contrast_more'] ?? false),
+            'motion_off'    => (bool) ($state['motion_off'] ?? false),
+        ];
     }
 
     /** Migration 021: the units column (and a locale that may be NULL). */

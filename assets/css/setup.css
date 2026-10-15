@@ -462,6 +462,8 @@
 @media (prefers-reduced-motion: reduce) {
     .setup__step.is-active { animation: none; }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .setup__step.is-active { animation: none; }
 
 /* Focus is moved to a new step's title for screen readers; it is not a control. */
 .setup__title:focus { outline: none; }

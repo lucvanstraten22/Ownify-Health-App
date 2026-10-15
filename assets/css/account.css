@@ -552,3 +552,5 @@
 @media (prefers-reduced-motion: reduce) {
     .account__panel { transform: none; }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .account__panel { transform: none; }

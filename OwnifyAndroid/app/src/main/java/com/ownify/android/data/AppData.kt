@@ -57,15 +57,36 @@ data class AppData(
                 compass = Compass.parse(data.obj("compass")),
                 setup = Setup.parse(data.obj("setup")),
                 calibration = Calibration.parse(data.obj("calibration")),
-                i18n = data.obj("i18n").let { I18n(it.str("locale") ?: "nl", it.str("chosen"), it.str("units") ?: "metric") },
+                i18n = I18n.parse(data.obj("i18n")),
                 challenges = Challenges.parse(data.obj("challenges"))
             )
         }
     }
 }
 
-/** `locale` "nl" or "en"; `chosen` null when the phone's language decides; `units` "metric" or "imperial". */
-data class I18n(val locale: String, val chosen: String?, val units: String)
+/**
+ * `locale` "nl" or "en"; `chosen` null when the phone's language decides;
+ * `units` "metric" or "imperial". The rest is Voorkeuren as the account keeps
+ * it (migration 024): [weekStart] "monday" or "sunday", and the three
+ * Toegankelijkheid switches, each on whatever the phone says.
+ */
+data class I18n(
+    val locale: String,
+    val chosen: String?,
+    val units: String,
+    val weekStart: String = "monday",
+    val textLarge: Boolean = false,
+    val contrastMore: Boolean = false,
+    val motionOff: Boolean = false
+) {
+    companion object {
+        fun parse(o: JSONObject?) = I18n(
+            o.str("locale") ?: "nl", o.str("chosen"), o.str("units") ?: "metric",
+            if (o.str("week_start") == "sunday") "sunday" else "monday",
+            o.bool("text_large"), o.bool("contrast_more"), o.bool("motion_off")
+        )
+    }
+}
 
 // ---------------------------------------------------------------- shell
 
@@ -1777,7 +1798,8 @@ sealed interface SettingsBlock {
         val name: String? = null,
         val saves: Boolean = false
     ) : SettingsBlock
-    data class States(val title: String, val lede: String?, val items: List<StateItem>) : SettingsBlock
+    /** [status]: its values say what is the case now (Voorkeuren's Nu actief), drawn as a status, not as values. */
+    data class States(val title: String, val lede: String?, val items: List<StateItem>, val status: Boolean = false) : SettingsBlock
     data class Toggles(val title: String, val lede: String?, val items: List<ToggleItem>) : SettingsBlock
     data class Rows(val title: String, val items: List<Pair<String, String>>) : SettingsBlock
     /** [title]: the heading it sits under, when it has one (Over de app's Hulp). */
@@ -1801,12 +1823,24 @@ sealed interface SettingsBlock {
                 )
                 "states" -> States(
                     o.str("title").orEmpty(), o.str("lede"),
-                    o.arr("items").map { StateItem(it.str("label").orEmpty(), it.text("value"), it.str("note")) }
+                    o.arr("items").map {
+                        StateItem(
+                            it.str("label").orEmpty(), it.text("value"), it.str("note"),
+                            key = it.str("key"), tone = it.str("tone"),
+                            valueOn = it.text("value_on"), noteOn = it.str("note_on"),
+                            valueOff = it.text("value_off"), noteOff = it.str("note_off")
+                        )
+                    },
+                    status = o.bool("status")
                 )
                 "toggles" -> Toggles(
                     o.str("title").orEmpty(), o.str("lede"),
                     o.arr("items").map {
-                        ToggleItem(it.str("label").orEmpty(), it.str("note"), it.bool("on"), it.str("key"), it.str("note_on"), it.str("note_off"))
+                        ToggleItem(
+                            it.str("label").orEmpty(), it.str("note"), it.bool("on"), it.str("key"), it.str("note_on"), it.str("note_off"),
+                            // Only the app's own endpoints, as a relative path — never anywhere else.
+                            it.str("endpoint")?.takeIf { e -> e.matches(Regex("^api/[a-z0-9/_-]+\\.php$")) }
+                        )
                     }
                 )
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
@@ -1879,11 +1913,29 @@ data class ActionItem(
         }
     }
 }
-data class StateItem(val label: String, val value: String?, val note: String?)
 /**
- * A switch. With a [key] it saves (api/profile/privacy.php): [on] and [note]
- * are the account's own, and [noteOn] / [noteOff] what it says either way;
- * without one it is shown off and disabled, as the feature does not exist yet.
+ * A fact. In a status block ([SettingsBlock.States.status]) it has a [key] —
+ * the Toegankelijkheid switch it follows — and a [tone]: "on" while the
+ * account's own choice holds, "neutral" while the phone decides. [valueOn] /
+ * [noteOn] are what it says with the switch on, [valueOff] / [noteOff] with it
+ * off, so it follows a switch at once.
+ */
+data class StateItem(
+    val label: String,
+    val value: String?,
+    val note: String?,
+    val key: String? = null,
+    val tone: String? = null,
+    val valueOn: String? = null,
+    val noteOn: String? = null,
+    val valueOff: String? = null,
+    val noteOff: String? = null
+)
+/**
+ * A switch. With a [key] it saves — to its [endpoint], else
+ * api/profile/privacy.php: [on] and [note] are the account's own, and
+ * [noteOn] / [noteOff] what it says either way; without one it is shown off
+ * and disabled, as the feature does not exist yet.
  */
 data class ToggleItem(
     val label: String,
@@ -1891,7 +1943,8 @@ data class ToggleItem(
     val on: Boolean,
     val key: String? = null,
     val noteOn: String? = null,
-    val noteOff: String? = null
+    val noteOff: String? = null,
+    val endpoint: String? = null
 )
 
 /** A profile field: `state` is "editable" (true), "once", "locked" or "derived". */
@@ -1980,13 +2033,27 @@ data class Integration(
             o.str("key").orEmpty(), o.str("provider"), o.str("label").orEmpty(), o.str("icon").orEmpty(), o.str("note").orEmpty(),
             o.arr("categories").strings(), o.str("status") ?: "disconnected", o.bool("connected"), o.str("account"),
             o.str("last_sync"), o.str("error"), o.str("transport"), o.bool("available"), o.str("blocked"),
-            o.arr("devices").map { PairedDevice(it.int("id") ?: 0, it.str("label").orEmpty(), it.str("last_sync"), it.str("paired")) },
+            o.arr("devices").map {
+                PairedDevice(it.int("id") ?: 0, it.str("label").orEmpty(), it.str("last_sync"), it.str("paired"), it.str("own"), it.bool("custom"))
+            },
             o.bool("syncing"), o.str("disconnect_note"), o.str("account_label")
         )
     }
 }
 
-data class PairedDevice(val id: Int, val label: String, val lastSync: String?, val paired: String?)
+/**
+ * A phone paired with the account. [label] is the name it is shown by — the
+ * one its owner gave it, else its own — and [own] what the phone calls itself;
+ * [custom] when the owner renamed it (Naam wijzigen, migration 024).
+ */
+data class PairedDevice(
+    val id: Int,
+    val label: String,
+    val lastSync: String?,
+    val paired: String?,
+    val own: String? = null,
+    val custom: Boolean = false
+)
 
 // ------------------------------------------------------------------- auth
 

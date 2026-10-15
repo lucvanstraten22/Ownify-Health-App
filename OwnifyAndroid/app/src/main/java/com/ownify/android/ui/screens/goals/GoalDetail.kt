@@ -1,6 +1,7 @@
 package com.ownify.android.ui.screens.goals
 
 import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.i18n.tr
 import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
@@ -319,10 +320,11 @@ private fun Days(goal: Goal, copy: Map<String, String>) {
             Chip(goal.daysChip ?: trf("%1\$d van %2\$d", goal.daysMet, goal.daysTotal), muted = true)
         }
 
-        // .day-calendar: the weekday initials, then the weeks.
+        // .day-calendar: the weekday initials, then the weeks — from the day
+        // the account's week starts on (Voorkeuren; the server lays the days out from it too).
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 6.dp).clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                (if (OwnifyLanguage.english) listOf("M", "T", "W", "T", "F", "S", "S") else listOf("M", "D", "W", "D", "V", "Z", "Z")).forEach {
+                OwnifyPreferences.weekInitials().forEach {
                     T(
                         it,
                         OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextFaint, tracking = Ownify.TrackingWide),

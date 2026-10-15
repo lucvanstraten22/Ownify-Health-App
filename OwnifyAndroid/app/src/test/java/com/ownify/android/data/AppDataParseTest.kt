@@ -72,8 +72,9 @@ class AppDataParseTest {
         assertEquals(listOf("system" to "Systeem", "dark" to "Donker", "light" to "Licht"), choice.options.map { it.key to it.label })
         assertFalse(choice.options.any { it.disabled })
         val others = data.settings.pages.flatMap { it.blocks }.filterIsInstance<SettingsBlock.Choice>().filter { it.name != "theme" }
-        assertTrue(others.isNotEmpty())
-        assertTrue("the other choices are not kept", others.none { it.saves })
+        // The others are kept on the account (api/profile/preferences.php): the language, the units, the week.
+        assertEquals(listOf("language", "units", "week"), others.filter { it.saves }.map { it.name })
+        assertEquals("every choice is kept", others.size, others.count { it.saves })
 
         fun row(d: AppData) = d.settings.groups.flatMap { it.rows }.single { it.id == "theme" }.value
         assertEquals("Systeem", row(data))
@@ -209,6 +210,11 @@ class AppDataParseTest {
         val hc = data.settings.integrations.single { it.key == "health_connect" }
         assertTrue(hc.connected)
         assertEquals("Demo Pixel", hc.devices.single().label)
+        // Its own name, and not renamed (migration 024).
+        assertEquals("Demo Pixel", hc.devices.single().own)
+        assertFalse(hc.devices.single().custom)
+        // Smartwatch and Slaapring are gone (19.0).
+        assertTrue(data.settings.integrations.none { it.key == "watch" || it.key == "ring" })
 
         assertEquals("sanne_7001", data.auth.username)
         assertFalse(data.auth.hasGoogle)
@@ -592,5 +598,55 @@ class AppDataParseTest {
         assertTrue(baseline.baseline.isNotEmpty())
         assertTrue(baseline.progress.isEmpty())
     }
-}
 
+    @Test
+    fun `Voorkeuren - Nu actief is a status that follows its switches, which save to preferences, and the week saves too`() {
+        for (name in listOf("state-demo.json", "state-new-account.json")) {
+            val data = fixture(name)
+            val blocks = data.settings.page("preferences")!!.blocks
+
+            val now = blocks.filterIsInstance<SettingsBlock.States>().single()
+            assertTrue(name, now.status)
+            assertEquals(listOf("motion_off", "text_large", "contrast_more"), now.items.map { it.key })
+            assertTrue(now.items.all { it.tone == "neutral" && it.valueOn != null && it.noteOn != null && it.valueOff == it.value })
+            // The phone's own words, also once a switch is off again (settings_for_app).
+            assertEquals("De app schaalt mee met de lettergrootte van je telefoon", now.items[1].noteOff)
+
+            val switches = blocks.filterIsInstance<SettingsBlock.Toggles>().single()
+            assertEquals("Eigen instellingen", switches.title)
+            assertEquals(listOf("text_large", "contrast_more", "motion_off"), switches.items.map { it.key })
+            assertTrue(switches.items.all { it.endpoint == "api/profile/preferences.php" && !it.on })
+
+            assertTrue(blocks.filterIsInstance<SettingsBlock.Choice>().single { it.name == "week" }.saves)
+            assertEquals(I18n("nl", null, "metric", "monday", false, false, false), data.i18n)
+
+            // Leeftijd is gone; Geboortedatum stays.
+            val fields = data.settings.page("account")!!.blocks.filterIsInstance<SettingsBlock.Fields>().flatMap { it.fields }.map { it.key }
+            assertFalse(name, "age" in fields)
+            assertTrue(name, "date_of_birth" in fields)
+
+            // Nothing to sync by hand: no sync_now label left.
+            assertNull(data.settings.integrationLabels["sync_now"])
+            assertEquals("Naam wijzigen", data.settings.integrationLabels["rename"])
+        }
+    }
+
+    @Test
+    fun `a switch's endpoint is only ever one of the app's own`() {
+        val o = JSONObject("""{"type":"toggles","title":"T","items":[
+            {"key":"a","label":"A","endpoint":"api/profile/preferences.php"},
+            {"key":"b","label":"B","endpoint":"https://example.com/x.php"},
+            {"key":"c","label":"C","endpoint":"api/../../etc.php"},
+            {"key":"d","label":"D"}]}""")
+        val items = (SettingsBlock.parse(o) as SettingsBlock.Toggles).items
+        assertEquals(listOf("api/profile/preferences.php", null, null, null), items.map { it.endpoint })
+    }
+
+    @Test
+    fun `the i18n block - the account's week and switches, Monday and off when absent`() {
+        assertEquals(I18n("nl", null, "metric"), I18n.parse(null))
+        val sunday = I18n.parse(JSONObject("""{"locale":"en","chosen":"en","units":"imperial","week_start":"sunday","text_large":true,"contrast_more":false,"motion_off":true}"""))
+        assertEquals(I18n("en", "en", "imperial", "sunday", textLarge = true, contrastMore = false, motionOff = true), sunday)
+        assertEquals("monday", I18n.parse(JSONObject("""{"week_start":"friday"}""")).weekStart)
+    }
+}

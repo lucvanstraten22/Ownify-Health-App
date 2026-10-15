@@ -458,9 +458,11 @@ if (!function_exists('ai_topics')) {
             ], static fn ($v) => $v !== null);
         }
 
+        /* Each week by its first day, as the person counts weeks
+           (Voorkeuren › Eerste dag van de week). */
         $weeks = [];
         foreach ($counted as $w) {
-            $week = date('o-\WW', $w['start']);
+            $week = week_first_day(new DateTimeImmutable(date('Y-m-d', $w['start'])))->format('Y-m-d');
             $weeks[$week]['workouts'] = ($weeks[$week]['workouts'] ?? 0) + 1;
             $weeks[$week]['minutes']  = ($weeks[$week]['minutes'] ?? 0) + (int) round((float) ($w['minutes'] ?? 0));
             if ($w['km'] !== null) {
@@ -472,7 +474,8 @@ if (!function_exists('ai_topics')) {
             'days_covered' => $from . ' – ' . $to,
             'workouts'     => $list,
             'per_week'     => $weeks,
-            'note'         => 'counts_for_score is false for very short sessions and for a second recording of the same session.',
+            'note'         => 'counts_for_score is false for very short sessions and for a second recording of the same session. '
+                . 'per_week is keyed by the first day of each week; the user\'s weeks start on ' . (week_start() === 'sunday' ? 'Sunday' : 'Monday') . '.',
         ];
 
         foreach (['readiness' => 0, 'training_load' => 0] as $code => $decimals) {

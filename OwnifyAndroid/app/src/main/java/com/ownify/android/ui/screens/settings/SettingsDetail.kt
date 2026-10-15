@@ -62,6 +62,7 @@ import androidx.core.net.toUri
 import com.ownify.android.data.AppData
 import com.ownify.android.data.Integration
 import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.data.Outcome
 import com.ownify.android.data.OwnifyActions
 import com.ownify.android.data.OwnifyAppState
@@ -98,7 +99,8 @@ import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.screens.account.AvatarCircle
 import com.ownify.android.ui.screens.account.LinkButton
-import com.ownify.android.ui.screens.devices.StatusDot
+import com.ownify.android.ui.design.StatusBadge
+import com.ownify.android.ui.design.StatusTone
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyThemeChoice
@@ -225,11 +227,7 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
                 } else {
                     T(
                         field.value ?: field.blank,
-                        OwnifyType.style(
-                            Ownify.FsSmall,
-                            if (filled) FontWeight.SemiBold else FontWeight.Medium,
-                            if (filled) Ownify.TextSecondary else Ownify.TextMuted
-                        ),
+                        OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
                         align = TextAlign.End,
                         maxLines = 1,
                         ellipsis = true
@@ -342,7 +340,7 @@ private fun StaticField(label: String, note: String?, value: String, filled: Boo
         value = {
             T(
                 value,
-                OwnifyType.style(Ownify.FsSmall, if (filled) FontWeight.SemiBold else FontWeight.Medium, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
                 align = TextAlign.End,
                 maxLines = 1,
                 ellipsis = true
@@ -365,7 +363,9 @@ private fun IntegrationsBlock(data: AppData, block: SettingsBlock.Integrations) 
 /**
  * `components/settings-integration.php`: one health source, its settings
  * folded inside it. Health Connect on this phone also shows the phone's own
- * side, and its "Nu synchroniseren" works here (docs/PARITY.md).
+ * side (docs/PARITY.md). Syncing runs on its own — hourly and when
+ * something changes — so there is no button for it; the status says how it
+ * went.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -378,16 +378,21 @@ private fun IntegrationCard(data: AppData, item: Integration) {
     val shadows = LocalGraphicsContext.current.shadowContext
     var open by rememberSaveable(item.key) { mutableStateOf(false) }
     var busy by remember { mutableStateOf<String?>(null) }
-    // A cloud source's answer (`[data-integration-result]`): why connecting or syncing did not go through.
+    // A cloud source's answer (`[data-integration-result]`): why connecting did not go through.
     var result by remember(item.key) { mutableStateOf<String?>(null) }
     val connected = item.connected
-    val cloud = item.transport != "device"
     val statusText = when (item.status) {
         "connected" -> labels["connected"]
         "revoked" -> labels["revoked"]
         "error" -> labels["error"]
         else -> labels["disconnected"]
     }.orEmpty()
+    // `.status`'s tone: green while connected, gold when it stopped, grey otherwise.
+    val statusTone = when {
+        connected -> StatusTone.On
+        item.status == "error" || item.status == "revoked" -> StatusTone.Warn
+        else -> StatusTone.Neutral
+    }
     val thisPhone = item.key == "health_connect"
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -443,11 +448,11 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                         T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
                         T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
                     }
-                    if (!narrow) StatusDot(statusText, connected)
+                    if (!narrow) StatusBadge(statusText, statusTone, textSize = Ownify.FsFootnote)
                     JIcon(OwnifyIcons.chevronDown, Modifier.graphicsLayer { rotationZ = turn }, size = 16.dp, color = Ownify.TextFaint)
                 }
                 // Below 360 dp the status takes a line of its own, under the name.
-                if (narrow) Row(Modifier.padding(start = 32.dp + Ownify.Space3)) { StatusDot(statusText, connected) }
+                if (narrow) Row(Modifier.padding(start = 32.dp + Ownify.Space3)) { StatusBadge(statusText, statusTone, textSize = Ownify.FsFootnote) }
             }
         }
 
@@ -456,11 +461,12 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                 Hairline()
                 Column(Modifier.fillMaxWidth().padding(start = Ownify.Space4, end = Ownify.Space4, bottom = Ownify.Space4)) {
                     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
-                        PhoneRow(labels["status"].orEmpty(), statusText, first = true)
-                        item.account?.let { PhoneRow(item.accountLabel ?: labels["account"].orEmpty(), it) }
+                        // The status is in the head already; the rows are what it does not say.
+                        item.account?.let { PhoneRow(item.accountLabel ?: labels["account"].orEmpty(), it, first = true) }
                         PhoneRow(
                             labels["last_sync"].orEmpty(),
                             if (item.syncing) labels["syncing"].orEmpty() else item.lastSync ?: labels["never"].orEmpty(),
+                            first = item.account == null,
                             empty = item.lastSync == null && !item.syncing
                         )
                         PhoneRow(labels["permissions"].orEmpty(), labels["permissions_note"].orEmpty())
@@ -480,11 +486,21 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                         T(device.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
                                         T(device.lastSync ?: labels["never"].orEmpty(), JStyle.Tiny)
                                     }
-                                    LinkButton(
-                                        labels["revoke"].orEmpty(),
-                                        Modifier.semantics { contentDescription = (labels["revoke_device"] ?: "%s").replace("%s", device.label) },
-                                        enabled = busy == null
-                                    ) { post("revoke:${device.id}", "api/integrations/device-revoke.php", "device", device.id.toString()) }
+                                    // `.device__actions`: two quiet links — its name, and unpairing this one phone —
+                                    // 4 apart; each link already pulls 8 past its box, so the last one's text
+                                    // ends on the card's edge, as one link's did.
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1 + Ownify.Space2)) {
+                                        LinkButton(
+                                            labels["rename"].orEmpty(),
+                                            Modifier.semantics { contentDescription = (labels["rename_device"] ?: "%s").replace("%s", device.label) },
+                                            enabled = busy == null
+                                        ) { shell.open(Overlay.RenameDevice(device.id)) }
+                                        LinkButton(
+                                            labels["revoke"].orEmpty(),
+                                            Modifier.semantics { contentDescription = (labels["revoke_device"] ?: "%s").replace("%s", device.label) },
+                                            enabled = busy == null
+                                        ) { post("revoke:${device.id}", "api/integrations/device-revoke.php", "device", device.id.toString()) }
+                                    }
                                 }
                             }
                         }
@@ -511,27 +527,6 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                     // .integration__actions
                     val actions: @Composable (Modifier) -> Unit = { each ->
                         if (connected) {
-                            if (thisPhone) SyncNowButton(each)
-                            else if (cloud) {
-                                // Fetched by the server now (api/integrations/<provider>/sync.php); the pages are read again after.
-                                val syncing = item.syncing || busy == "sync"
-                                Btn(
-                                    if (syncing) labels["syncing"].orEmpty() else labels["sync_now"].orEmpty(),
-                                    onClick = {
-                                        val provider = item.provider ?: return@Btn
-                                        busy = "sync"
-                                        result = null
-                                        scope.launch {
-                                            val outcome = OwnifyActions.form(context, "api/integrations/" + Uri.encode(provider) + "/sync.php", emptyMap(), tr("Synchroniseren is niet gelukt. Probeer het opnieuw."))
-                                            if (outcome is Outcome.Refused) result = outcome.message
-                                            busy = null
-                                        }
-                                    },
-                                    enabled = busy == null && !item.syncing,
-                                    modifier = each
-                                )
-                            }
-                            else Btn(labels["sync_now"].orEmpty(), onClick = {}, enabled = false, modifier = each)
                             Btn(
                                 labels["disconnect"].orEmpty(),
                                 onClick = { post("disconnect", "api/integrations/disconnect.php", "provider", item.provider.orEmpty()) },
@@ -611,9 +606,10 @@ private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vec
  * A choice: one option ticked. The tick moves; nothing is stored (settings.js)
  * — except the theme's, which is kept on this phone (OwnifyThemeStore) and
  * turns the app Dark or White at once, or the phone's way on Systeem; its tick
- * is the choice kept. The language and the units (`saves`) are kept on the
- * account (api/profile/preferences.php), as on the website: the pages are
- * read again, and arrive in the new language and units.
+ * is the choice kept. The language, the units and the first day of the week
+ * (`saves`) are kept on the account (api/profile/preferences.php), as on the
+ * website: the app follows the answer at once (OwnifyPreferences), and the
+ * pages are read again in it.
  */
 @Composable
 private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice) {
@@ -635,8 +631,9 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
         problem = null
         scope.launch {
             when (val outcome = OwnifyActions.form(context, "api/profile/preferences.php", mapOf(block.name.orEmpty() to key), tr("Dit kon niet worden opgeslagen."))) {
+                is Outcome.Done -> OwnifyPreferences.answer(context, outcome.body)
                 is Outcome.Refused -> { picked = before; problem = outcome.message }
-                else -> Unit
+                Outcome.SignedOut -> Unit
             }
             busy = false
         }
@@ -700,7 +697,13 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
     }
 }
 
-/** Read-only facts: a label and its value on one line, a sentence under them. */
+/**
+ * Read-only facts: a label and its value on one line, a sentence under them —
+ * the value in the secondary ink, as every value in Settings. A status block
+ * (Voorkeuren's Nu actief) shows each as a [StatusBadge] — a dot and a word,
+ * green while the account's own choice holds — and follows its switch
+ * below at once (OwnifyPreferences), as settings.js does.
+ */
 @Composable
 private fun StatesBlock(block: SettingsBlock.States) {
     val narrow = LocalScreen.current.narrow
@@ -708,6 +711,13 @@ private fun StatesBlock(block: SettingsBlock.States) {
         BlockHead(block.title, block.lede)
         SettingsCard {
             block.items.forEachIndexed { i, item ->
+                val chosen = block.status && item.key != null && OwnifyPreferences.on(item.key)
+                val value = if (!block.status || item.key == null) item.value
+                    else if (chosen) item.valueOn ?: item.value
+                    else item.valueOff ?: item.value
+                val note = if (!block.status || item.key == null) item.note
+                    else if (chosen) item.noteOn ?: item.note
+                    else item.noteOff ?: item.note
                 Column(
                     Modifier
                         .fillMaxWidth()
@@ -715,21 +725,31 @@ private fun StatesBlock(block: SettingsBlock.States) {
                         .semantics(mergeDescendants = true) { }
                         .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (i > 0) 1.dp else 0.dp)
                 ) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
-                        T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
-                        T(
-                            item.value ?: "—",
-                            OwnifyType.style(
-                                Ownify.FsSmall,
-                                if (item.value != null) FontWeight.SemiBold else FontWeight.Medium,
-                                if (item.value != null) Ownify.tint(Ownify.Health, 0.34f) else Ownify.TextMuted
-                            ),
-                            Modifier.alignByBaseline(),
-                            align = TextAlign.End
-                        )
+                    if (block.status) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
+                            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f))
+                            // Its switch decides the dot: green while on; off, what the server says the phone's is —
+                            // never its "on", which may be from before the switch.
+                            val tone = when {
+                                chosen -> StatusTone.On
+                                item.key != null -> StatusTone.of(item.tone).takeIf { it != StatusTone.On } ?: StatusTone.Neutral
+                                else -> StatusTone.of(item.tone)
+                            }
+                            StatusBadge(value ?: "—", tone)
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
+                            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
+                            T(
+                                value ?: "—",
+                                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (value != null) Ownify.TextSecondary else Ownify.TextMuted),
+                                Modifier.alignByBaseline(),
+                                align = TextAlign.End
+                            )
+                        }
                     }
-                    if (!item.note.isNullOrEmpty()) {
-                        T(item.note, JStyle.Footnote, Modifier.padding(top = Ownify.Space1).widthIn(max = chWidth(JStyle.Footnote, 44f)))
+                    if (!note.isNullOrEmpty()) {
+                        T(note, JStyle.Footnote, Modifier.padding(top = Ownify.Space1).widthIn(max = chWidth(JStyle.Footnote, 44f)))
                     }
                 }
             }
@@ -777,9 +797,11 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
 
 /**
  * A switch that saves (`.settings-toggle--live`: a toggles item with a
- * [key]). It moves when pressed, waits dimmed while the server answers
- * (api/profile/privacy.php), and moves back — saying why — when it could not
- * be saved; the boards follow once it is.
+ * [key]). It moves when pressed, waits dimmed while the server answers (its
+ * endpoint: api/profile/privacy.php, or api/profile/preferences.php for
+ * Toegankelijkheid), and moves back — saying why — when it could not be
+ * saved. Once it is, a Toegankelijkheid switch acts on the whole app at once
+ * (OwnifyPreferences) and the pages follow.
  */
 @Composable
 private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
@@ -806,7 +828,7 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
                 busy = true
                 scope.launch {
                     val outcome = OwnifyActions.form(
-                        context, "api/profile/privacy.php",
+                        context, item.endpoint ?: "api/profile/privacy.php",
                         mapOf(key to if (before) "0" else "1"),
                         tr("Dit kon niet worden opgeslagen."), reload = false
                     )
@@ -814,6 +836,8 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
                     when (outcome) {
                         is Outcome.Done -> {
                             shown = outcome.body.optBoolean(key, !before)
+                            // Text, contrast, motion: the whole app, now.
+                            if (item.endpoint == "api/profile/preferences.php") OwnifyPreferences.answer(context, outcome.body)
                             // The boards follow. A read already on its way may have left
                             // before the save, so this waits for it and reads once more.
                             OwnifyAppState.reload(context)
@@ -832,7 +856,8 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         Column(Modifier.weight(1f)) {
-            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+            // A switch that works reads like every other row's label.
+            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
             val note = error ?: (if (on) item.noteOn else item.noteOff) ?: item.note
             if (!note.isNullOrEmpty()) {
                 T(note, OwnifyType.style(Ownify.FsTiny, color = if (error != null) Ownify.Attention else Ownify.TextMuted), Modifier.padding(top = 2.dp))
@@ -934,7 +959,7 @@ private fun RowsBlock(block: SettingsBlock.Rows) {
         SettingsEyebrow(block.title)
         // `.card.settings-rows`: the choice lists' inner padding, so the text starts on one line.
         JCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3)) {
-            block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0) }
+            block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0, list = true) }
         }
     }
 }

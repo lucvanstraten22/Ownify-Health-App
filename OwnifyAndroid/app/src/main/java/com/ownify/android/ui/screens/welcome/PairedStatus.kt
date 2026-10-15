@@ -25,7 +25,6 @@ import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.LocalScreen
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.screens.settings.PhoneSection
-import com.ownify.android.ui.screens.settings.SyncNowButton
 import com.ownify.android.ui.screens.settings.SyncResult
 import com.ownify.android.ui.screens.settings.rememberPhoneHealth
 import com.ownify.android.ui.theme.Ownify
@@ -33,7 +32,7 @@ import com.ownify.android.ui.theme.Ownify
 /**
  * A phone paired with a code but not signed in (Android-only, see
  * docs/PARITY.md): under the opening screen's line, what it is paired with
- * and how its Health Connect sync stands, with the same controls as
+ * and how its Health Connect sync stands, as in
  * Instellingen › Apparaten & Gezondheid. Signing in, below, makes it the
  * account's own phone; the sync carries on.
  */
@@ -57,8 +56,8 @@ fun PairedStatus() {
             T(state.message, JStyle.Meta, Modifier.padding(top = Ownify.Space4))
             Btn(tr("Opnieuw proberen"), onClick = { OwnifyConnection.retry(context) }, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4))
         } else {
+            // The sync runs on its own (hourly, and when something changes); this says how it went.
             PhoneSection(rememberPhoneHealth(), Modifier.padding(top = Ownify.Space4))
-            SyncNowButton(Modifier.fillMaxWidth().padding(top = Ownify.Space4))
             SyncResult()
         }
     }

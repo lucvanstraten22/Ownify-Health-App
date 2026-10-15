@@ -1,5 +1,7 @@
 package com.ownify.android
 
+import com.ownify.android.ui.theme.AccountTextSize
+import com.ownify.android.i18n.OwnifyPreferences
 import android.os.Bundle
 import com.ownify.android.i18n.OwnifyLanguage
 import com.ownify.android.i18n.tr
@@ -24,22 +26,25 @@ import com.ownify.android.ui.theme.OwnifyThemeStore
 class PermissionsRationaleActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        OwnifyPreferences.restore(this)
         OwnifyThemeStore.restore(this)
         // Opened on its own by Health Connect: the language kept on this phone, else the phone's.
         OwnifyLanguage.restore(this)
         super.onCreate(savedInstanceState)
 
         setContent {
-            CompositionLocalProvider(LocalContentColor provides Ownify.TextPrimary) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        // One literal: tools/i18n-build.php finds the English by it.
-                        text = tr("Ownify leest je stappen, afstand, actieve calorieën, hartslag, slaap, trainingen en voeding uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.")
-                    )
+            AccountTextSize {
+                CompositionLocalProvider(LocalContentColor provides Ownify.TextPrimary) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            // One literal: tools/i18n-build.php finds the English by it.
+                            text = tr("Ownify leest je stappen, afstand, actieve calorieën, hartslag, slaap, trainingen en voeding uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.")
+                        )
+                    }
                 }
             }
         }

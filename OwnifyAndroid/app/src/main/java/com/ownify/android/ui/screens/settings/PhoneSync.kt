@@ -215,19 +215,6 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
     }
 }
 
-/** tr("Nu synchroniseren"): this phone's sync, now — the same pipeline as the automatic one. */
-@Composable
-fun SyncNowButton(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val syncing = OwnifySync.state == OwnifySyncState.Syncing
-    Btn(
-        if (syncing) tr("Synchroniseren…") else tr("Nu synchroniseren"),
-        onClick = { OwnifySync.sync(context) },
-        enabled = !syncing,
-        modifier = modifier
-    )
-}
-
 /** What the last sync on screen did, in a line or two — or why it did not. */
 @Composable
 fun SyncResult(modifier: Modifier = Modifier) {
@@ -256,9 +243,14 @@ fun Caption(text: String, modifier: Modifier = Modifier) {
     T(text, JStyle.Caption, modifier.fillMaxWidth(), uppercase = true)
 }
 
-/** A `.metric-row` as the integration body shows them: the name, the value, a hairline between. */
+/**
+ * A `.metric-row` as Settings shows them: the name, the value, a hairline
+ * between. The value in the secondary ink at 500, as every value in Settings;
+ * in a plain list of values ([list], `.settings-rows`) the name is a row's
+ * label, as on every other settings row.
+ */
 @Composable
-fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolean = false) {
+fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolean = false, list: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
         if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
         Row(
@@ -269,13 +261,17 @@ fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolea
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            T(label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+            T(
+                label,
+                if (list) OwnifyType.style(Ownify.FsLabel, FontWeight.Medium) else OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
+                Modifier.weight(1f)
+            )
             T(
                 value,
                 OwnifyType.style(
                     Ownify.FsSmall,
-                    if (empty) FontWeight.Medium else FontWeight.SemiBold,
-                    if (empty) Ownify.TextMuted else Ownify.TextPrimary,
+                    FontWeight.Medium,
+                    if (empty) Ownify.TextMuted else Ownify.TextSecondary,
                     tabular = true
                 ),
                 align = TextAlign.End

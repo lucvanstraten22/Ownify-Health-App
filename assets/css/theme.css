@@ -715,6 +715,32 @@ button {
     }
 }
 
+/* Voorkeuren › Toegankelijkheid › Animaties uit: the same, chosen on the
+   account and in force whatever the device says (index.php sets
+   data-motion; the scripts read it through matchMedia, see index.php). Every
+   `prefers-reduced-motion` block in the stylesheets has its twin like this. */
+:root[data-motion="reduce"] { scroll-behavior: auto; }
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color, box-shadow, fill, stroke !important;
+    transition-duration: var(--reduce-fade) !important;
+    transition-timing-function: ease-out !important;
+}
+
+:root[data-motion="reduce"].js .reveal { transform: none; }
+
+:root[data-motion="reduce"] .press:not(.fab):active,
+:root[data-motion="reduce"] .goal-card:active,
+:root[data-motion="reduce"] .pill--devices:active,
+:root[data-motion="reduce"] .pill--account:active {
+    transform: none !important;
+    opacity: 0.72;
+}
+
 /* ==========================================================================
    White Mode — the same design in a light environment.
 
@@ -854,6 +880,32 @@ button {
         --glass-hairline: rgba(36, 28, 32, 0.14);
     }
 }
+
+/* Voorkeuren › Toegankelijkheid › Extra contrast: the same values, chosen on
+   the account and in force whatever the device says (the head sets
+   data-contrast, components/document-head.php). */
+:root[data-contrast="more"] {
+    --text-secondary: rgba(255, 255, 255, 0.86);
+    --text-muted: rgba(255, 255, 255, 0.76);
+    --text-faint: rgba(255, 255, 255, 0.60);
+    --glass-border: rgba(255, 255, 255, 0.24);
+    --glass-border-soft: rgba(255, 255, 255, 0.18);
+    --glass-hairline: rgba(255, 255, 255, 0.14);
+}
+
+:root[data-contrast="more"][data-theme="light"] {
+    --text-secondary: rgba(29, 26, 28, 0.86);
+    --text-muted: rgba(29, 26, 28, 0.78);
+    --text-faint: rgba(29, 26, 28, 0.62);
+    --glass-border: rgba(36, 28, 32, 0.20);
+    --glass-border-soft: rgba(36, 28, 32, 0.16);
+    --glass-hairline: rgba(36, 28, 32, 0.14);
+}
+
+/* Voorkeuren › Toegankelijkheid › Grotere tekst: every type size is in rem,
+   so the root's size carries them all, as the browser's own text size does.
+   Spacing stays in px, so the layout keeps its shape around larger text. */
+:root[data-text="large"] { font-size: 112.5%; }
 
 /* Reduced transparency (macOS, iOS): the floating glass — the tab bar, the
    header's buttons — turns near-solid, and the header's veil solid where it

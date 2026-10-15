@@ -15,7 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-/** Where the sync stands — the button's or an automatic one. The Ownify section shows exactly this. */
+/** Where the sync stands — a run asked for in the app ([OwnifySync.sync]) or an automatic one. The Ownify section shows exactly this. */
 sealed interface OwnifySyncState {
 
     data object Idle : OwnifySyncState
@@ -40,16 +40,18 @@ data class OwnifySyncSummary(
 )
 
 /**
- * The sync as the screen sees it: the "Nu synchroniseren" button, and the state
- * the Ownify section shows — for the button's runs and the automatic ones alike.
+ * The sync as the screen sees it: the state the Ownify section shows, for a
+ * run asked for in the app and the automatic ones alike. Since 19.0 nothing on
+ * screen starts one — the sync runs on its own (OwnifyBackgroundSync) — but
+ * [sync] stays the service's way to run it now, which the tests drive.
  *
- * The work itself is OwnifySyncRunner's, the one pipeline both the button and
+ * The work itself is OwnifySyncRunner's, the one pipeline both [sync] and
  * the background worker (OwnifySyncWorker) run. Nothing here reads, converts
  * or sends a record.
  */
 object OwnifySync {
 
-    /** How far back a sync reads — the same for the button and the automatic sync. */
+    /** How far back a sync reads — the same for [sync] and the automatic sync. */
     val RANGE: Duration get() = OwnifySyncRunner.RANGE
 
     private val NOT_CONNECTED_MESSAGE: String get() = tr("Log eerst in bij Ownify.")
@@ -61,7 +63,7 @@ object OwnifySync {
     var state: OwnifySyncState by mutableStateOf(OwnifySyncState.Idle)
         private set
 
-    /** How the last sync went, by the button or automatically — kept between launches. */
+    /** How the last sync went, asked for or automatically — kept between launches. */
     var record: OwnifySyncRecord by mutableStateOf(OwnifySyncRecord())
         private set
 
@@ -74,7 +76,7 @@ object OwnifySync {
 
     private var job: Job? = null
 
-    /** "Nu synchroniseren": now, in the app, whatever the automatic sync is doing. */
+    /** One sync now, in the app, whatever the automatic sync is doing. */
     fun sync(context: Context) {
         if (job?.isActive == true) {
             return
@@ -124,7 +126,7 @@ object OwnifySync {
         refresh(context)
     }
 
-    /** The button's run, in the words it has always used. */
+    /** A run asked for in the app, in the words it has always used. */
     private fun show(outcome: OwnifySyncOutcome): OwnifySyncState =
         when (outcome) {
             is OwnifySyncOutcome.Synced -> OwnifySyncState.Synced(outcome.summary)

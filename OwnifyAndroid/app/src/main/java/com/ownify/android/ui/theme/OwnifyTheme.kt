@@ -1,5 +1,6 @@
 package com.ownify.android.ui.theme
 
+import com.ownify.android.i18n.OwnifyPreferences
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
@@ -741,6 +742,18 @@ fun ChromeText(content: @Composable () -> Unit) {
     val density = LocalDensity.current
     if (density.fontScale <= ChromeFontScaleMax) content()
     else CompositionLocalProvider(LocalDensity provides Density(density.density, ChromeFontScaleMax), content = content)
+}
+
+/**
+ * Voorkeuren › Grotere tekst (OwnifyPreferences.textLarge): all text 12.5%
+ * larger on top of the phone's own size — the website's `font-size: 112.5%`.
+ * Always provided, on or off, so turning it does not start the screens over.
+ */
+@Composable
+fun AccountTextSize(content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    val scale = if (OwnifyPreferences.textLarge) OwnifyPreferences.LARGE_TEXT else 1f
+    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * scale), content = content)
 }
 
 /** What a `<button>` holds: its text keeps `letter-spacing: normal` unless its own rule says otherwise. */

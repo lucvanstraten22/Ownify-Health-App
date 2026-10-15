@@ -44,8 +44,8 @@ if (!function_exists('settings_prepare')) {
             $integration['last_sync'] = settings_sync_label($state['last_sync_at'] ?? null);
             $integration['error']     = integration_message_shown($state['last_error'] ?? null);   // stored in Dutch
             $integration['transport'] = $state['transport'] ?? 'cloud';
-            /* A sync running now (a cloud source, after connecting or on
-               "Nu synchroniseren"), so the row can say so. */
+            /* A sync running now (a cloud source, after connecting or on its
+               schedule), so the row can say so. */
             $integration['syncing']   = (bool) ($state['syncing'] ?? false);
 
             /* Whether connecting is possible at all, and if not, why. A
@@ -66,18 +66,32 @@ if (!function_exists('settings_prepare')) {
 
                Never a token: user_devices stores only a SHA-256 hash, and
                there is nothing to show even if this wanted to. */
-            $integration['devices'] = ($userId !== null && $provider !== null && db_available())
-                ? array_map(
-                    static fn (array $device): array => [
-                        'id'        => (int) $device['id'],
-                        'label'     => $device['label'] ?: 'Naamloos apparaat',
-                        'platform'  => $device['platform'],
-                        'paired'    => settings_sync_label($device['created_at']),
-                        'last_sync' => settings_sync_label($device['last_sync_at']),
-                    ],
-                    devices_for_user($userId, $provider)
-                )
+            /* Each by the name its owner gave it, else its own
+               (device_display_name()); `own` is the phone's own name, which
+               an empty name gives back, and `custom` whether it has another. */
+            $phones = ($userId !== null && $provider !== null && db_available())
+                ? devices_for_user($userId, $provider)
                 : [];
+            $integration['devices'] = array_map(
+                static fn (array $device): array => [
+                    'id'        => (int) $device['id'],
+                    'label'     => device_display_name($device),
+                    'own'       => device_display_name(['label' => $device['label']]),
+                    'custom'    => trim((string) ($device['custom_label'] ?? '')) !== '',
+                    'platform'  => $device['platform'],
+                    'paired'    => settings_sync_label($device['created_at']),
+                    'last_sync' => settings_sync_label($device['last_sync_at']),
+                ],
+                $phones
+            );
+
+            /* A phone source's account line is the name of the phone that
+               connected it: shown by the name its owner gave that phone. */
+            foreach ($phones as $device) {
+                if ($integration['account'] !== null && $integration['account'] === $device['label']) {
+                    $integration['account'] = device_display_name($device);
+                }
+            }
 
             if ($integration['connected']) {
                 $connected++;
@@ -142,6 +156,7 @@ if (!function_exists('settings_prepare')) {
         require_once __DIR__ . '/theme.php';
         $settings = settings_use_theme($settings, app_theme_preference());
         $settings = settings_use_language_units($settings);
+        $settings = settings_use_accessibility($settings, accessibility_choices());
 
         return $settings;
     }
@@ -199,6 +214,10 @@ if (!function_exists('settings_use_language_units')) {
                     $settings['pages'][$pageId]['blocks'][$b]['selected'] = $units;
                 }
 
+                if (($block['type'] ?? '') === 'choice' && $name === 'week') {
+                    $settings['pages'][$pageId]['blocks'][$b]['selected'] = week_start();
+                }
+
                 if (($block['type'] ?? '') === 'rows' && $name === 'units_now' && $units === 'imperial') {
                     $settings['pages'][$pageId]['blocks'][$b]['items'] = [
                         ['label' => t('Gewicht'),     'value' => t('pond (lb)')],
@@ -231,7 +250,7 @@ if (!function_exists('settings_use_language_units')) {
         foreach ($week as $block) {
             if (($block['name'] ?? '') === 'week') {
                 foreach ($block['options'] as $option) {
-                    if ($option['key'] === ($block['selected'] ?? 'monday')) {
+                    if ($option['key'] === week_start()) {
                         $day = (string) $option['label'];
                     }
                 }
@@ -239,6 +258,51 @@ if (!function_exists('settings_use_language_units')) {
         }
 
         return settings_set_row_value($settings, 'preferences', ($units === 'imperial' ? t('Imperiaal') : t('Metrisch')) . ' · ' . $day);
+    }
+}
+
+if (!function_exists('settings_use_accessibility')) {
+    /**
+     * Toegankelijkheid as the account has it: its three switches, and "Nu
+     * actief" saying what is in force — the account's choice (tone on) or
+     * the device's (neutral).
+     *
+     * @param array{text_large: bool, contrast_more: bool, motion_off: bool} $choices
+     */
+    function settings_use_accessibility(array $settings, array $choices): array
+    {
+        foreach ($choices as $key => $on) {
+            $settings = settings_set_toggle($settings, 'preferences', $key, $on);
+        }
+
+        foreach ($settings['pages']['preferences']['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? null) !== 'states' || empty($block['status'])) {
+                continue;
+            }
+            foreach ($block['items'] as $i => $item) {
+                $key = $item['key'] ?? null;
+                /* What it says while the device decides, for settings.js to
+                   put back when the switch goes off again. */
+                $settings['pages']['preferences']['blocks'][$b]['items'][$i]['value_off'] = $item['value'] ?? null;
+                $settings['pages']['preferences']['blocks'][$b]['items'][$i]['note_off']  = $item['note'] ?? null;
+                /* The app's own words for it, which settings_for_app() puts
+                   in place for the app (`note_app` goes once the choice wins). */
+                foreach (['value', 'note'] as $field) {
+                    if (array_key_exists($field . '_app', $item)) {
+                        $settings['pages']['preferences']['blocks'][$b]['items'][$i][$field . '_off_app'] = $item[$field . '_app'];
+                    }
+                }
+                if ($key !== null && !empty($choices[$key])) {
+                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['value'] = $item['value_on'] ?? $item['value'];
+                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['note']  = $item['note_on'] ?? $item['note'] ?? null;
+                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['tone']  = 'on';
+                    /* The app's own note is about the device; the choice wins. */
+                    unset($settings['pages']['preferences']['blocks'][$b]['items'][$i]['note_app']);
+                }
+            }
+        }
+
+        return $settings;
     }
 }
 
@@ -280,7 +344,7 @@ if (!function_exists('settings_profile')) {
     {
         $empty = [
             'avatar' => null, 'username' => null, 'first_name' => null, 'last_name' => null,
-            'date_of_birth' => null, 'gender' => null, 'age' => null,
+            'date_of_birth' => null, 'gender' => null,
             'height' => null, 'weight' => null, 'activity_level' => null, 'member_since' => null,
 
             'raw' => [
@@ -302,7 +366,6 @@ if (!function_exists('settings_profile')) {
             'last_name'     => $user['last_name'] ?? null,
             'date_of_birth' => settings_date($user['date_of_birth'] ?? null),
             'gender'        => settings_gender($user['gender'] ?? null),
-            'age'           => isset($user['age']) && $user['age'] !== null ? tf('%d jaar', (int) $user['age']) : null,
             'height'        => settings_measurement($user['height'] ?? null),
             'weight'        => settings_measurement($user['weight'] ?? null),
             'activity_level' => settings_activity_level($user['activity_level'] ?? null),
@@ -642,7 +705,8 @@ if (!function_exists('settings_for_app')) {
      * The Ownify app's own words: every item with a `value_app` or `note_app`
      * (config/settings.php) shows that instead of the website's `value` or
      * `note`, which would not be true on a phone — what it uses, what its
-     * text follows. For the app's state only.
+     * text follows; `value_off_app` / `note_off_app` likewise for what a
+     * Nu actief row says once its switch is off again. For the app's state only.
      */
     function settings_for_app(array $settings): array
     {
@@ -652,7 +716,7 @@ if (!function_exists('settings_for_app')) {
                     if (!is_array($item)) {
                         continue;
                     }
-                    foreach (['value', 'note'] as $field) {
+                    foreach (['value', 'note', 'value_off', 'note_off'] as $field) {
                         if (array_key_exists($field . '_app', $item)) {
                             $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_app'];
                             unset($settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field . '_app']);

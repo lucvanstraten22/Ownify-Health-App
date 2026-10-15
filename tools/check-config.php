@@ -264,6 +264,16 @@ if (db_available()) {
                 . '— import database/migrations/022-challenges.sql');
         }
 
+        /* Not fatal: without it the week starts on Monday, Toegankelijkheid's
+           own switches cannot be kept and phones keep their own names. */
+        require_once dirname(__DIR__) . '/includes/devices.php';
+        if (preferences_columns_present() && device_names_present()) {
+            line('ok', 'voorkeuren', 'the week\'s first day, Toegankelijkheid and device names can be kept');
+        } else {
+            line('warn', 'voorkeuren', 'the week\'s first day, Toegankelijkheid and device names cannot be kept '
+                . '— import database/migrations/024-preferences-and-device-names.sql');
+        }
+
         /* Not fatal: VO2max is no longer read, shown or scored (18.6); the
            catalogue row only keeps it as a source the goal wizard offers. */
         if (db_value("SELECT COUNT(*) FROM health_metric_types WHERE code = 'vo2max'") > 0) {

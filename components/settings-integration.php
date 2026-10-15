@@ -41,9 +41,11 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
             <span class="integration__note"><?= e($item['note']) ?></span>
         </span>
 
-        <span class="integration__status">
-            <span class="integration__dot" aria-hidden="true"></span>
-            <?= e($statusText) ?>
+        <?php /* A status, not a control: the one dot-and-word Settings uses for
+                 every state (.status), green only while connected. */ ?>
+        <span class="status integration__status" data-tone="<?= $item['connected'] ? 'on' : (in_array($item['status'] ?? '', ['error', 'revoked'], true) ? 'warn' : 'neutral') ?>">
+            <span class="status__dot" aria-hidden="true"></span>
+            <span class="status__text"><?= e($statusText) ?></span>
         </span>
 
         <?= icon('chevron-down', 'integration__chevron') ?>
@@ -51,11 +53,8 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
 
     <div class="integration__body" id="<?= e($id) ?>" hidden>
 
+        <?php /* The status is the head's; the body says what is behind it. */ ?>
         <div class="metric-rows">
-            <div class="metric-row">
-                <span class="metric-row__label"><?= e($labels['status']) ?></span>
-                <span class="metric-row__value"><?= e($statusText) ?></span>
-            </div>
             <?php if (!empty($item['account'])): ?>
                 <div class="metric-row">
                     <span class="metric-row__label"><?= e($item['account_label'] ?? $labels['account']) ?></span>
@@ -78,32 +77,57 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
                lib/settings.php reads them with the id from the session — and
                never a token, because only a hash of one is stored.
 
-               Each gets its own revoke button: losing a phone should cost you
-               that phone, not every phone. Disconnecting the source entirely
-               is still the button at the bottom. */
+               Each by the name its owner gave it (device_display_name()), with
+               two quiet actions of its own: a new name, and revoking just this
+               phone — losing a phone should cost you that phone, not every
+               phone. Disconnecting the source entirely is still the button at
+               the bottom. */
             ?>
             <p class="integration__caption"><?= e($labels['devices']) ?></p>
 
             <div class="metric-rows">
                 <?php foreach ($item['devices'] as $device): ?>
-                    <div class="metric-row metric-row--device">
-                        <span class="metric-row__label device__id">
-                            <strong><?= e($device['label']) ?></strong>
-                            <span><?= e($device['last_sync'] ?? $labels['never']) ?></span>
-                        </span>
-                        <?php
-                        /* Quiet on purpose. The button at the bottom of this
-                           panel disconnects the whole source; this one drops a
-                           single phone. Two buttons with the same word and the
-                           same weight, a few rows apart, doing different-sized
-                           things, is how somebody unpairs everything by
-                           mistake — so this one reads as a link. */
-                        ?>
-                        <button type="button" class="btn--link press"
-                                data-device-revoke="<?= e((string) $device['id']) ?>"
-                                aria-label="<?= e(sprintf($labels['revoke_device'], $device['label'])) ?>">
-                            <?= e($labels['revoke']) ?>
-                        </button>
+                    <div class="metric-row metric-row--device" data-device="<?= e((string) $device['id']) ?>">
+                        <div class="device__row">
+                            <span class="metric-row__label device__id">
+                                <strong><?= e($device['label']) ?></strong>
+                                <span><?= e($device['last_sync'] ?? $labels['never']) ?></span>
+                            </span>
+                            <?php
+                            /* Quiet on purpose. The button at the bottom of this
+                               panel disconnects the whole source; these act on one
+                               phone. Two buttons with the same word and the same
+                               weight, a few rows apart, doing different-sized
+                               things, is how somebody unpairs everything by
+                               mistake — so these read as links. */
+                            ?>
+                            <span class="device__actions">
+                                <?php /* The name opens the same editor as a profile field
+                                         (settings.js): its own name back when left empty. */
+                                $renameInput = [
+                                    'type'        => 'text',
+                                    'maxlength'   => DEVICE_NAME_MAX,
+                                    'value'       => !empty($device['custom']) ? $device['label'] : '',
+                                    'placeholder' => $device['own'],
+                                    'note'        => $labels['rename_note'] . ' ' . sprintf($labels['rename_own'], $device['own']),
+                                    'endpoint'    => 'api/integrations/device-rename.php',
+                                    'fields'      => ['device' => (string) $device['id']],
+                                    'empty'       => true,
+                                ]; ?>
+                                <button type="button" class="btn--link press" data-field-edit="name"
+                                        data-field-label="<?= e($labels['rename_title']) ?>"
+                                        data-field-input="<?= e(json_encode($renameInput, JSON_UNESCAPED_UNICODE)) ?>"
+                                        aria-label="<?= e(sprintf($labels['rename_device'], $device['label'])) ?>">
+                                    <?= e($labels['rename']) ?>
+                                </button>
+                                <button type="button" class="btn--link press"
+                                        data-device-revoke="<?= e((string) $device['id']) ?>"
+                                        aria-label="<?= e(sprintf($labels['revoke_device'], $device['label'])) ?>">
+                                    <?= e($labels['revoke']) ?>
+                                </button>
+                            </span>
+                        </div>
+
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -124,16 +148,9 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
 
         <div class="integration__actions">
             <?php if ($item['connected']): ?>
-                <?php
-                /* A cloud source is fetched by the server, so the website can
-                   ask for it now; a phone source is sent by its phone. */
-                $cloud = ($item['transport'] ?? 'cloud') === 'cloud';
-                ?>
-                <button type="button" class="btn press"
-                        data-integration-sync="<?= e($item['provider']) ?>"
-                        <?= $cloud && empty($item['syncing']) ? '' : 'disabled' ?>>
-                    <?= e(!empty($item['syncing']) ? $labels['syncing'] : $labels['sync_now']) ?>
-                </button>
+                <?php /* Syncing runs on its own (a cloud source after connecting and
+                         on its schedule, a phone from the phone); there is no button
+                         for it here. */ ?>
                 <button type="button" class="btn press"
                         data-integration-disconnect="<?= e($item['provider'] ?? '') ?>">
                     <?= e($labels['disconnect']) ?>
@@ -142,10 +159,10 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
                 <?php
                 /* A phone source is paired with a code; a cloud source is
                    connected with OAuth. Different verbs, different buttons.
-                   Built only when it will be used: the Smartwatch row is a
-                   category, not a provider, and reaching for a provider it
-                   has never had warned on every single page render — which is
-                   how you bury the log lines that matter. */
+                   Built only when it will be used: a source without a
+                   provider has nothing to connect to, and reaching for one
+                   warned on every single page render — which is how you bury
+                   the log lines that matter. */
                 $hook = '';
 
                 if ($canConnect && ($item['provider'] ?? '') !== '') {

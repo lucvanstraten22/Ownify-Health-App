@@ -114,6 +114,29 @@ and drops the panels' frost (`--panel-frost`, `--panel-frost-closed`), and
 makes the header's veil solid at its top (`--veil-top`, `--veil-mid`; a
 detail's bar with its title in it: `--veil-deep-top`, `--veil-deep-mid`).
 
+**Toegankelijkheid on the account** (19.0, migration 024). Instellingen ›
+Voorkeuren has three switches that hold on every device, on top of what the
+device says — never instead of it:
+
+| Switch | Website | Android |
+| --- | --- | --- |
+| Grotere tekst | `:root[data-text="large"]`: `font-size: 112.5%`, so every rem grows | `AccountTextSize`: the phone's text size × 1.125 |
+| Extra contrast | `:root[data-contrast="more"]`: the more-contrast block above, as if the device asked | `Ownify.useMoreContrast(phone ∨ account)` |
+| Animaties uit | `:root[data-motion="reduce"]`: every `prefers-reduced-motion` rule's twin; and `matchMedia('(prefers-reduced-motion: reduce)')` answers yes, so the scripts hear it too | `LocalReducedMotion` = phone ∨ account |
+
+The attributes are put on `<html>` before anything is painted
+(`components/document-head.php`), and switched in place when a switch moves
+(`window.ownifyAccess.apply`). A stylesheet that adds a
+`prefers-reduced-motion` or `prefers-contrast` block adds its
+`[data-motion]` / `[data-contrast]` twin beside it.
+
+**Status.** What is the case — Voorkeuren's Nu actief, a source's
+connection, the header's quick look — is drawn as `.status` (components.css;
+Android `StatusBadge`): a 6 px dot and a word in the secondary ink, no border
+and no fill, so it is never taken for a button or a choice. The colour is
+only in the dot: `--health` with its halo for on or connected, `--attention`
+when something needs a look, `--text-faint` otherwise.
+
 ## Kept on the device
 
 The theme is a choice of a device, like a phone's own appearance setting, and

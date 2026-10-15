@@ -11,9 +11,12 @@
  *   signin        the ways into this account, and linking Google
  *   integrations  the health sources, expandable in place
  *   choice        pick one of several options
- *   states        read-only facts: label, value, one line of explanation
- *   toggles       switches: one with a `key` saves (api/profile/privacy.php);
- *                 the rest are off and disabled while the feature does not exist
+ *   states        read-only facts: label, value, one line of explanation —
+ *                 with `status`, each value is a status (a dot and its word:
+ *                 what is in force), never a control
+ *   toggles       switches: one with a `key` saves, to its `endpoint`
+ *                 (api/profile/privacy.php unless it says otherwise); the
+ *                 rest are off and disabled while the feature does not exist
  *   actions       a button that does one thing after "are you sure?" in place
  *   rows          plain label/value information
  *   note          one framed line of explanation
@@ -242,18 +245,33 @@ foreach ($page['blocks'] as $block) {
 
                     <?php elseif ($block['type'] === 'states'): ?>
 
+                        <?php /* Facts, not controls: no chevron, no press. A `status` block's
+                                  values are statuses — a dot and its word — kept up to date in
+                                  place by settings.js when a switch below changes them. */ ?>
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
                             <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
 
                             <div class="card settings-card">
                                 <?php foreach ($block['items'] as $item): ?>
-                                    <div class="settings-state<?= $item['value'] === null ? ' is-empty' : '' ?>">
+                                    <div class="settings-state<?= $item['value'] === null ? ' is-empty' : '' ?>"
+                                        <?php if (!empty($block['status']) && !empty($item['key'])): ?>
+                                         data-status="<?= e($item['key']) ?>"
+                                         data-value-on="<?= e($item['value_on'] ?? '') ?>" data-note-on="<?= e($item['note_on'] ?? '') ?>"
+                                         data-value-off="<?= e($item['value_off'] ?? '') ?>" data-note-off="<?= e($item['note_off'] ?? '') ?>"
+                                        <?php endif; ?>>
                                         <span class="settings-state__head">
                                             <span class="settings-state__label"><?= e($item['label']) ?></span>
-                                            <span class="settings-state__value"><?= e($item['value'] ?? '—') ?></span>
+                                            <?php if (!empty($block['status'])): ?>
+                                                <span class="status" data-tone="<?= e($item['tone'] ?? 'neutral') ?>">
+                                                    <span class="status__dot" aria-hidden="true"></span>
+                                                    <span class="status__text" data-status-value><?= e($item['value'] ?? '—') ?></span>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="settings-state__value"><?= e($item['value'] ?? '—') ?></span>
+                                            <?php endif; ?>
                                         </span>
                                         <?php if (!empty($item['note'])): ?>
-                                            <span class="settings-state__note"><?= e($item['note']) ?></span>
+                                            <span class="settings-state__note" data-status-note><?= e($item['note']) ?></span>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
@@ -275,6 +293,7 @@ foreach ($page['blocks'] as $block) {
                                               that goes with it (settings_prepare()); settings.js saves it. */ ?>
                                     <button type="button" class="settings-toggle settings-toggle--live" role="switch"
                                             data-setting-toggle="<?= e($item['key']) ?>"
+                                            data-endpoint="<?= e($item['endpoint'] ?? 'api/profile/privacy.php') ?>"
                                             aria-checked="<?= !empty($item['on']) ? 'true' : 'false' ?>"
                                             data-note-on="<?= e($item['note_on'] ?? '') ?>"
                                             data-note-off="<?= e($item['note_off'] ?? '') ?>">

@@ -49,6 +49,8 @@ import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.ground
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.rememberMoreContrast
+import com.ownify.android.ui.theme.AccountTextSize
+import com.ownify.android.i18n.OwnifyPreferences
 
 /** Which screen the app is: the website decides this from the session; the app from its credential. */
 private enum class Route { Splash, Welcome, Paired, App }
@@ -65,38 +67,44 @@ fun OwnifyApp(screens: ShellScreens, signedOut: SignedOutScreens) {
 
     LaunchedEffect(Unit) { OwnifyConnection.start(context) }
 
-    // More contrast, followed while the app is open (restore() set it before the first frame).
-    val moreContrast = rememberMoreContrast()
+    // More contrast, followed while the app is open (restore() set it before the first frame):
+    // the phone's, or the account's Extra contrast (Voorkeuren, OwnifyPreferences).
+    val moreContrast = rememberMoreContrast() || OwnifyPreferences.contrastMore
     SideEffect { Ownify.useMoreContrast(moreContrast) }
+    // No animations: the phone's "Remove animations", or the account's Animaties uit.
+    val reducedMotion = rememberReducedMotion() || OwnifyPreferences.motionOff
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(Ownify.BgDeep)) {
-        CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight), LocalReducedMotion provides rememberReducedMotion()) {
-            val state = OwnifyConnection.state
-            val last = remember { arrayOf(Route.Splash) }
+    // Grotere tekst: every sp on top of the phone's own text size.
+    AccountTextSize {
+        BoxWithConstraints(Modifier.fillMaxSize().background(Ownify.BgDeep)) {
+            CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight), LocalReducedMotion provides reducedMotion) {
+                val state = OwnifyConnection.state
+                val last = remember { arrayOf(Route.Splash) }
 
-            val route = when (state) {
-                OwnifyState.Checking -> Route.Splash
-                // On its way somewhere: keep what is showing until it gets there.
-                OwnifyState.Loading -> last[0]
-                is OwnifyState.Connected -> if (state.scope == OwnifyScope.ACCOUNT) Route.App else Route.Paired
-                is OwnifyState.Failed -> when (state.scope) {
-                    OwnifyScope.ACCOUNT -> Route.App
-                    OwnifyScope.SYNC -> Route.Paired
-                    null -> Route.Welcome
+                val route = when (state) {
+                    OwnifyState.Checking -> Route.Splash
+                    // On its way somewhere: keep what is showing until it gets there.
+                    OwnifyState.Loading -> last[0]
+                    is OwnifyState.Connected -> if (state.scope == OwnifyScope.ACCOUNT) Route.App else Route.Paired
+                    is OwnifyState.Failed -> when (state.scope) {
+                        OwnifyScope.ACCOUNT -> Route.App
+                        OwnifyScope.SYNC -> Route.Paired
+                        null -> Route.Welcome
+                    }
+                    is OwnifyState.NotConnected, OwnifyState.Pairing -> Route.Welcome
+                }.also { last[0] = it }
+
+                when (route) {
+                    Route.Splash -> Box(Modifier.fillMaxSize().ground(remember { GroundPlacement(Ground.App) }))
+                    Route.Welcome -> signedOut.welcome(false)
+                    Route.Paired -> signedOut.welcome(true)
+                    Route.App -> SignedInApp(screens)
                 }
-                is OwnifyState.NotConnected, OwnifyState.Pairing -> Route.Welcome
-            }.also { last[0] = it }
 
-            when (route) {
-                Route.Splash -> Box(Modifier.fillMaxSize().ground(remember { GroundPlacement(Ground.App) }))
-                Route.Welcome -> signedOut.welcome(false)
-                Route.Paired -> signedOut.welcome(true)
-                Route.App -> SignedInApp(screens)
-            }
-
-            // Leaving the app — signed out, expired — takes its data out of memory.
-            LaunchedEffect(route) {
-                if (route != Route.App) OwnifyAppState.clear()
+                // Leaving the app — signed out, expired — takes its data out of memory.
+                LaunchedEffect(route) {
+                    if (route != Route.App) OwnifyAppState.clear()
+                }
             }
         }
     }

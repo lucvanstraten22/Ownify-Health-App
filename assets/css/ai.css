@@ -799,6 +799,10 @@
     .ai-history { animation: none; }
     .ai-typing span { animation: none; opacity: 0.6; }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .ai-msg,
+:root[data-motion="reduce"] .ai-history { animation: none; }
+:root[data-motion="reduce"] .ai-typing span { animation: none; opacity: 0.6; }
 
 /* --------------------------------------------------------------------------
    Larger screens — the layer stays a phone-sized sheet, centred like the

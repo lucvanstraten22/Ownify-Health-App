@@ -1,18 +1,17 @@
 /**
  * settings.js — Instellingen.
  *
- * Three small things, and nothing that pretends to save:
+ * Nothing here pretends to save:
  *
- *   choices        pick one option; the tick moves, nothing is stored —
- *                  except the theme, which saves on this device at once
- *   switches       Privacy's switches that save, at once (api/profile/privacy.php)
- *   integrations   expand a health source in place
+ *   choices        pick one option, kept at once: the theme on this device,
+ *                  language, units and the week's first day on the account
+ *   switches       switches that save, at once, to their endpoint (Privacy:
+ *                  api/profile/privacy.php; Toegankelijkheid:
+ *                  api/profile/preferences.php, in force at once)
+ *   integrations   expand a health source in place; a phone's name is edited
+ *                  in the field editor
  *   account        sign out, and deleting the account — two confirmations,
  *                  then api/profile/delete.php, which really deletes it
- *
- * Every screen that offers a choice says at its foot that the choice is not
- * kept, so the interaction can be judged without the page claiming otherwise.
- * The theme's screen does not: that choice is kept (see useTheme()).
  */
 
 (function () {
@@ -49,7 +48,7 @@
             useTheme(key === 'light' || key === 'dark' ? key : 'system', option.querySelector('.settings-option__label'));
         }
 
-        if (name === 'language' || name === 'units') {
+        if (name === 'language' || name === 'units' || name === 'week') {
             savePreference(name, option.getAttribute('data-choice-key'), option);
         }
     });
@@ -57,22 +56,29 @@
     /* After a language or units change the page is drawn again: open the
        screen the choice was made on, as it was left. */
     window.addEventListener('load', function () {
-        var reopen = null;
-        try { reopen = sessionStorage.getItem('ownify-reopen'); sessionStorage.removeItem('ownify-reopen'); } catch (e) { /* private mode */ }
+        var reopen = null, source = null;
+        try {
+            reopen = sessionStorage.getItem('ownify-reopen'); sessionStorage.removeItem('ownify-reopen');
+            source = sessionStorage.getItem('ownify-reopen-source'); sessionStorage.removeItem('ownify-reopen-source');
+        } catch (e) { /* private mode */ }
         var nav = window.AppNav;
         if (reopen && nav && nav.pages && nav.details) {
             nav.pages.goToId('settings');
             nav.details.open(reopen);
         }
+        /* A source whose phone was renamed: open as it was left. */
+        var head = source ? document.querySelector('[data-integration-toggle][aria-controls="' + source + '"]') : null;
+        var body = source ? document.getElementById(source) : null;
+        if (head && body) { head.setAttribute('aria-expanded', 'true'); body.hidden = false; }
     });
 
     /* ------------------------------------------- the language and the units */
 
     /**
-     * Taal and Eenheden are kept on the account (api/profile/preferences.php),
-     * so the website and the app agree. Every word and every value on the page
-     * changes with them, so once saved the page is drawn again, opening where
-     * it was (the detail stays open: navigation keeps it in the address).
+     * Taal, Eenheden and the week's first day are kept on the account
+     * (api/profile/preferences.php), so the website and the app agree. Words,
+     * values and the goals' day calendars change with them, so once saved the
+     * page is drawn again, opening where it was.
      */
     function savePreference(name, key, option) {
         var panel = document.querySelector('[data-account]');
@@ -164,7 +170,7 @@
         setSwitch(toggle, !before);
         toggle.disabled = true;
 
-        fetch('api/profile/privacy.php', { method: 'POST', body: body, credentials: 'same-origin' })
+        fetch(toggle.getAttribute('data-endpoint') || 'api/profile/privacy.php', { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
                 return response.json().catch(function () {
                     return { ok: false, error: T.t('Onverwacht antwoord van de server.') };
@@ -182,11 +188,30 @@
                 setSwitch(toggle, !!answer[key]);
                 if (key === 'leaderboard_avatar' && window.AppBoards) { window.AppBoards.refresh(); }
 
+                /* Toegankelijkheid: in force at once (the head's script puts it
+                   on <html>), and "Nu actief" says so. */
+                if ('text_large' in answer && window.ownifyAccess) {
+                    window.ownifyAccess.apply(answer);
+                    showStatus(key, !!answer[key]);
+                }
+
                 /* Told to whoever shows the same setting elsewhere — the
                    Ownify AI sheet shows its consent too (ai-chat.js). */
                 document.dispatchEvent(new CustomEvent('ownify:setting', { detail: { key: key, on: !!answer[key] } }));
             });
     });
+
+    /** "Nu actief": a status that follows a switch — its word, its note and its dot. */
+    function showStatus(key, on) {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-status="' + key + '"]'), function (row) {
+            var value = row.querySelector('[data-status-value]');
+            var note  = row.querySelector('[data-status-note]');
+            var badge = row.querySelector('.status');
+            if (value) { value.textContent = row.getAttribute(on ? 'data-value-on' : 'data-value-off') || value.textContent; }
+            if (note)  { note.textContent = row.getAttribute(on ? 'data-note-on' : 'data-note-off') || note.textContent; }
+            if (badge) { badge.setAttribute('data-tone', on ? 'on' : 'neutral'); }
+        });
+    }
 
     /** The same switch, moved from elsewhere (the Ownify AI sheet): no save, it already was. */
     window.AppSettings = {
@@ -324,15 +349,6 @@
             return;
         }
 
-        /* A cloud source, fetched now by the server. The answer is one
-           sentence; on success the page is read again so the row, the last
-           sync and the pages behind it all show what came in. */
-        var sync = event.target.closest('[data-integration-sync]');
-        if (sync) {
-            syncNow(sync);
-            return;
-        }
-
         var pair = event.target.closest('[data-integration-pair]');
         if (pair) {
             openPairing(pair.getAttribute('data-integration-pair'));
@@ -355,39 +371,6 @@
         postAndReload(disconnect, 'api/integrations/disconnect.php',
             'provider', disconnect.getAttribute('data-integration-disconnect'));
     });
-
-    function syncNow(button) {
-        var panel  = document.querySelector('[data-account]');
-        var row    = button.closest('[data-integration]');
-        var result = row ? row.querySelector('[data-integration-result]') : null;
-        var label  = button.textContent;
-        var body   = new FormData();
-
-        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
-        button.disabled = true;
-        button.textContent = button.getAttribute('data-busy') || T.t('Bezig met synchroniseren…');
-        if (result) { result.hidden = true; }
-
-        fetch('api/integrations/' + encodeURIComponent(button.getAttribute('data-integration-sync')) + '/sync.php',
-            { method: 'POST', body: body, credentials: 'same-origin' })
-            .then(function (response) {
-                return response.json().catch(function () { return { ok: false }; });
-            })
-            .catch(function () { return { ok: false }; })
-            .then(function (answer) {
-                if (answer && answer.ok) {
-                    window.location.reload();
-                    return;
-                }
-                button.disabled = false;
-                button.textContent = label;
-                if (result) {
-                    result.textContent = (answer && answer.error) || T.t('Synchroniseren is niet gelukt. Probeer het opnieuw.');
-                    result.classList.add('integration__hint--warn');
-                    result.hidden = false;
-                }
-            });
-    }
 
     /**
      * Posts one named field with the CSRF token, then reloads on success.
@@ -601,6 +584,9 @@
             input.className = 'field-editor__input';
             input.type = spec.type === 'number' ? 'number' : spec.type;
             input.value = spec.value || '';
+            /* A name that may be left empty shows what empty gives back. */
+            if (spec.placeholder) { input.placeholder = spec.placeholder; }
+            if (spec.type === 'text') { input.autocomplete = 'off'; input.enterKeyHint = 'done'; }
 
             if (spec.maxlength) { input.maxLength = spec.maxlength; }
             if (spec.min !== undefined) { input.min = spec.min; }
@@ -625,6 +611,14 @@
                 control.appendChild(input);
             }
 
+            /* One line under it, when the field says what saving does. */
+            if (spec.note) {
+                var line = document.createElement('p');
+                line.className = 'field-editor__note';
+                line.textContent = spec.note;
+                control.appendChild(line);
+            }
+
             return function () { return input.value.trim(); };
         }
 
@@ -643,6 +637,10 @@
                 once: trigger.getAttribute('data-field-once') === '1',
                 endpoint: spec.endpoint,
                 unit: spec.post_unit || '',
+                /* What goes with it (a phone's id), and whether empty is an
+                   answer (a phone's own name back). */
+                fields: spec.fields || {},
+                empty: !!spec.empty,
                 read: renderControl(spec)
             };
 
@@ -672,7 +670,7 @@
 
             var value = current.read();
 
-            if (value === '') {
+            if (value === '' && !current.empty) {
                 setError(T.t('Vul eerst een waarde in.'));
                 return;
             }
@@ -680,6 +678,7 @@
             var body = new FormData();
             body.append('csrf', csrf());
             body.append(current.key, value);
+            Object.keys(current.fields).forEach(function (name) { body.append(name, current.fields[name]); });
             // The unit it was typed in: the endpoint converts once (cm/in, kg/lb).
             if (current.unit) { body.append(current.key + '_unit', current.unit); }
 
@@ -703,9 +702,17 @@
                         return;
                     }
 
-                    /* The row, the lock and the derived age all follow from
-                       what was stored, so the page is re-read rather than
-                       patched in three places from what was typed. */
+                    /* The row, the lock — or a phone's name, everywhere it is
+                       shown — follow from what was stored, so the page is
+                       re-read rather than patched in places from what was
+                       typed. The screen it was on opens again. */
+                    try {
+                        var screen = lastEdit && lastEdit.closest('[data-detail]');
+                        var source = lastEdit && lastEdit.closest('[data-integration]');
+                        var head   = source && source.querySelector('[data-integration-toggle]');
+                        if (screen) { sessionStorage.setItem('ownify-reopen', screen.getAttribute('data-detail')); }
+                        if (head) { sessionStorage.setItem('ownify-reopen-source', head.getAttribute('aria-controls')); }
+                    } catch (e) { /* private mode */ }
                     window.location.reload();
                 });
         }

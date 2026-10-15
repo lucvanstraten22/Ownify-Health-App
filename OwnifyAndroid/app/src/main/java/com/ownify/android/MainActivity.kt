@@ -1,5 +1,6 @@
 package com.ownify.android
 
+import com.ownify.android.i18n.OwnifyPreferences
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,8 @@ import com.ownify.android.ui.theme.OwnifyThemeStore
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Voorkeuren kept on this phone first: the theme's contrast reads them.
+        OwnifyPreferences.restore(this)
         systemBars(OwnifyThemeStore.restore(this))
         OwnifyLanguage.restore(this)
         super.onCreate(savedInstanceState)

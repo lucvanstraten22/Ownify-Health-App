@@ -967,7 +967,9 @@ if (!function_exists('goal_sources_available')) {
 
     /**
      * The calendar: each day of a day-counting goal, squared off to whole
-     * weeks starting on Monday so a column is always the same weekday.
+     * weeks starting on the account's first day of the week (Monday unless
+     * Voorkeuren says Sunday, week_first_day()), so a column is always the
+     * same weekday.
      *
      * A goal of up to six weeks shows all of it. A longer one shows the six
      * weeks up to the end of this week — not the six before its deadline,
@@ -986,12 +988,12 @@ if (!function_exists('goal_sources_available')) {
         $end   = empty($goal['end_date']) ? $today : new DateTimeImmutable((string) $goal['end_date']);
 
         if ((int) $start->diff($end)->days >= GOAL_CALENDAR_DAYS) {
-            $sunday = $today->modify('sunday this week');
-            $end    = $sunday < $end ? $sunday : $end;
-            $start  = max($start, $end->modify('-' . (GOAL_CALENDAR_DAYS - 1) . ' day'));
+            $weekEnd = week_first_day($today)->modify('+6 day');
+            $end     = $weekEnd < $end ? $weekEnd : $end;
+            $start   = max($start, $end->modify('-' . (GOAL_CALENDAR_DAYS - 1) . ' day'));
         }
 
-        $first = $start->modify('-' . ((int) $start->format('N') - 1) . ' day');
+        $first = week_first_day($start);
         $days  = [];
 
         for ($d = $first; $d <= $end; $d = $d->modify('+1 day')) {

@@ -1118,6 +1118,15 @@
     .ch-shake { animation: none; }
     .ch-toast { transform: translate(-50%, 0); }
 }
+/* The same for Animaties uit (theme.css). */
+:root[data-motion="reduce"] .ch-sheet__panel,
+:root[data-motion="reduce"] .ch-sheet.is-open .ch-sheet__panel { transform: none; opacity: 0; transition: opacity 180ms ease-out; }
+:root[data-motion="reduce"] .ch-sheet.is-open .ch-sheet__panel { opacity: 1; }
+:root[data-motion="reduce"] .ch-sheet__content.is-step { animation: ch-fade 180ms ease-out; }
+:root[data-motion="reduce"] .ch-lead i,
+:root[data-motion="reduce"] .ch-person__bar i { transition: none; }
+:root[data-motion="reduce"] .ch-shake { animation: none; }
+:root[data-motion="reduce"] .ch-toast { transform: translate(-50%, 0); }
 
 @keyframes ch-fade { from { opacity: 0; } to { opacity: 1; } }
 

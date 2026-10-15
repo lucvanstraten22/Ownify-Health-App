@@ -398,7 +398,8 @@ $height = 96.0;
 
                         <div class="day-calendar">
                             <ol class="day-calendar__head" role="list" aria-hidden="true">
-                                <?php foreach (i18n_locale() === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['M', 'D', 'W', 'D', 'V', 'Z', 'Z'] as $initial): ?>
+                                <?php /* From the account's first day of the week, as the days below. */ ?>
+                                <?php foreach (week_initials() as $initial): ?>
                                     <li><?= e($initial) ?></li>
                                 <?php endforeach; ?>
                             </ol>

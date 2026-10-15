@@ -7,7 +7,7 @@ import androidx.work.WorkerParameters
 /**
  * The automatic sync, run by WorkManager (scheduled by OwnifyBackgroundSync).
  *
- * It runs the same pipeline as the "Nu synchroniseren" button — OwnifySyncRunner,
+ * It runs the same pipeline as a sync asked for in the app — OwnifySyncRunner,
  * through OwnifySync.runAutomatic — and only decides what WorkManager should do
  * next:
  *

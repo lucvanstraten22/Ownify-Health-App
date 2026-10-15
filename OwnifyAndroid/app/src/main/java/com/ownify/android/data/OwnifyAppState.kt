@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyResult
 import com.ownify.android.i18n.OwnifyLanguage
+import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.i18n.tr
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -113,7 +114,11 @@ object OwnifyAppState {
                 is OwnifyResult.Success -> {
                     val parsed = withContext(Dispatchers.Default) { runCatching { AppData.parse(result.value) }.getOrNull() }
                     // The account's language and units first, so the pages arrive in them.
-                    if (parsed != null) OwnifyLanguage.adopt(context, parsed.i18n.locale, parsed.i18n.chosen, parsed.i18n.units)
+                    if (parsed != null) {
+                        OwnifyLanguage.adopt(context, parsed.i18n.locale, parsed.i18n.chosen, parsed.i18n.units)
+                        // And the account's Voorkeuren: its week, its text, contrast and motion.
+                        OwnifyPreferences.adopt(context, parsed.i18n)
+                    }
                     load = if (parsed != null) AppLoad.Ready(parsed) else AppLoad.Failed(UNEXPECTED, before)
                     return
                 }

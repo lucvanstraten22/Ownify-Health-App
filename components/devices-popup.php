@@ -72,9 +72,10 @@ foreach ($data['settings']['integrations'] as $source) {
                                 <?php endif; ?>
                             </span>
 
-                            <span class="devices__status">
-                                <span class="devices__dot" aria-hidden="true"></span>
-                                <?= e($line['state']) ?>
+                            <?php /* Settings' status: a dot and its word. */ ?>
+                            <span class="status devices__status" data-tone="<?= $line['status'] === 'connected' ? 'on' : 'warn' ?>">
+                                <span class="status__dot" aria-hidden="true"></span>
+                                <span class="status__text"><?= e($line['state']) ?></span>
                             </span>
                         </li>
                     <?php endforeach; ?>

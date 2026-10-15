@@ -45,6 +45,7 @@ import com.ownify.android.ui.screens.health.HealthPage
 import com.ownify.android.ui.screens.overview.OverviewPage
 import com.ownify.android.ui.screens.overview.ScoreCompassDetail
 import com.ownify.android.ui.screens.settings.DeleteConfirm
+import com.ownify.android.ui.screens.settings.DeviceNameEditor
 import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
 import com.ownify.android.ui.screens.settings.SettingsDetail
@@ -95,6 +96,7 @@ object OwnifyScreens {
                 Overlay.Wizard -> GoalWizard(overlay, data)
                 Overlay.DeleteAccount -> DeleteConfirm(overlay, data)
                 is Overlay.EditField -> FieldEditor(overlay, data)
+                is Overlay.RenameDevice -> DeviceNameEditor(overlay, data)
                 is Overlay.Pairing -> PairingPanel(overlay, data)
                 Overlay.ChallengeCreate -> ChallengeCreateSheet(Overlay.ChallengeCreate, data)
                 Overlay.ChallengeCode -> ChallengeCodeSheet(Overlay.ChallengeCode, data)

@@ -5,11 +5,9 @@
  * ------------------------------------------------------------------
  * WHAT IS REAL AND WHAT IS NOT
  * ------------------------------------------------------------------
- * Nothing here writes anything. No setting is stored, no integration is
- * connected, no notification is sent. The page is the structure those things
- * will hang from.
- *
- * That said, not every value on this page is a placeholder. Three kinds of
+ * A choice or a switch with somewhere to save to says so (`saves`, a `key`
+ * with its `endpoint`) and is kept on the account or the device; one with
+ * nowhere to go yet is shown disabled, never as if it worked. Three kinds of
  * value appear, and the page never mixes them up:
  *
  *   FACT         The app genuinely behaves this way today. The interface is
@@ -20,8 +18,9 @@
  *   NOT SET      Nothing is connected and no profile data has been entered,
  *                so the row says exactly that rather than showing a number.
  *
- *   PREFERENCE   A choice the user will make later. Selectable now so the
- *                design can be judged; each screen says it is not yet saved.
+ *   PREFERENCE   A choice the user makes here, kept and applied: the theme
+ *                on the device; language, units, the week's first day and
+ *                Toegankelijkheid on the account.
  *
  * `demo` is left over from before the devices screen showed real
  * connections; nothing reads it any more.
@@ -41,9 +40,9 @@
  *               a new account starts with, or here)
  *   'derived'   calculated from another field, so it is never typed in
  *
- * Age is 'derived', not editable: the schema stores a date of birth and
- * computes age from it (user_age()), so an age you could type would be a
- * second, contradictory fact about the same person.
+ * There is no age field: the date of birth is the one fact, and wherever an
+ * age is needed (the nutrition targets, the heart rate zones, Ownify AI) it is worked out from it
+ * (user_age()).
  */
 
 declare(strict_types=1);
@@ -100,7 +99,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 18.10'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 19.0'],
             ],
         ],
     ],
@@ -134,8 +133,9 @@ return [
         ],
     ],
 
-    /* Shown once at the foot of every screen that offers a choice. */
-    'not_saved' => 'De eerste dag van de week wordt nog niet bewaard.',
+    /* Shown at the foot of a screen with a choice that is not kept; every
+       choice is kept now, so it is not shown anywhere. */
+    'not_saved' => 'Deze keuze wordt nog niet bewaard.',
 
     /* ========================================================= detail screens
      * Each screen is a list of blocks. The template switches on `type`, so a
@@ -192,8 +192,6 @@ return [
                     'fields' => [
                         ['key' => 'date_of_birth', 'label' => 'Geboortedatum', 'edit' => 'locked'],
                         ['key' => 'gender',        'label' => 'Geslacht',      'edit' => 'locked'],
-                        ['key' => 'age',           'label' => 'Leeftijd',      'edit' => 'derived',
-                         'note' => 'Berekend uit je geboortedatum'],
                     ],
                 ],
 
@@ -220,6 +218,7 @@ return [
             'blocks' => [
                 ['type' => 'integrations', 'title' => 'Koppelingen'],
 
+                /* Facts, not settings: how syncing works now. */
                 [
                     'type'  => 'states',
                     'title' => 'Synchronisatie',
@@ -456,10 +455,14 @@ return [
                 /* Eerste dag van de week: as it was on a screen of its own. */
                 ['type' => 'section', 'title' => 'Eerste dag van de week', 'icon' => 'calendar', 'lede' => 'Bepaalt waar je week begint in overzichten en grafieken.'],
 
+                /* Saved on the account (api/profile/preferences.php): where a
+                   week starts in the goal's day calendar and in Ownify AI's
+                   weekly totals (week_first_day()). */
                 [
                     'type'     => 'choice',
                     'title'    => 'Week begint op',
                     'name'     => 'week',
+                    'saves'    => true,
                     'selected' => 'monday',
                     'options'  => [
                         ['key' => 'monday', 'label' => 'Maandag', 'note' => 'Standaard in Nederland'],
@@ -470,28 +473,47 @@ return [
                 /* Toegankelijkheid: as it was on a screen of its own. */
                 ['type' => 'section', 'title' => 'Toegankelijkheid', 'icon' => 'accessibility', 'lede' => 'De app volgt je systeeminstellingen waar dat kan.'],
 
+                /* What is in force, as a status (`status`): each item's value is
+                   the account's own, written by settings_prepare() from the
+                   switches below; `tone` on is a choice of the account's,
+                   neutral is the device deciding. */
                 [
-                    'type'  => 'states',
-                    'title' => 'Nu actief',
-                    'items' => [
-                        ['label' => 'Minder beweging', 'value' => 'Volgt je systeem',
-                         'note' => 'Staat dit aan op je toestel, dan vervallen alle animaties'],
-                        ['label' => 'Tekstgrootte',    'value' => 'Volgt je systeem',
+                    'type'   => 'states',
+                    'title'  => 'Nu actief',
+                    'status' => true,
+                    'items'  => [
+                        ['key' => 'motion_off', 'label' => 'Minder beweging', 'value' => 'Volgt je systeem', 'tone' => 'neutral',
+                         'note' => 'Staat dit aan op je toestel, dan vervallen alle animaties',
+                         'value_on' => 'Altijd', 'note_on' => 'Animaties uit staat hieronder aan'],
+                        ['key' => 'text_large', 'label' => 'Tekstgrootte',    'value' => 'Volgt je systeem', 'tone' => 'neutral',
                          'note' => 'De app schaalt mee met de tekstgrootte van je browser',
-                         'note_app' => 'De app schaalt mee met de lettergrootte van je telefoon'],
-                        ['label' => 'Contrast',        'value' => 'Verhoogd',
-                         'note' => 'Elke tekstkleur haalt minimaal WCAG AA op zijn eigen ondergrond'],
+                         'note_app' => 'De app schaalt mee met de lettergrootte van je telefoon',
+                         'value_on' => 'Groter', 'note_on' => 'Grotere tekst staat hieronder aan'],
+                        ['key' => 'contrast_more', 'label' => 'Contrast',     'value' => 'Verhoogd', 'tone' => 'neutral',
+                         'note' => 'Elke tekstkleur haalt minimaal WCAG AA op zijn eigen ondergrond',
+                         'value_on' => 'Extra', 'note_on' => 'Extra contrast staat hieronder aan'],
                     ],
                 ],
 
+                /* Kept on the account (api/profile/preferences.php), so they
+                   hold on every device, whatever the device says. */
                 [
                     'type'  => 'toggles',
-                    'title' => 'Later instelbaar',
-                    'lede'  => 'Eigen instellingen, los van je systeem.',
+                    'title' => 'Eigen instellingen',
+                    'lede'  => 'Gelden op al je apparaten, los van je systeem.',
                     'items' => [
-                        ['label' => 'Grotere tekst',   'note' => 'Onafhankelijk van je toestel', 'on' => false],
-                        ['label' => 'Extra contrast',  'note' => 'Sterkere randen en tekst',     'on' => false],
-                        ['label' => 'Animaties uit',   'note' => 'Altijd, ongeacht je systeem',  'on' => false],
+                        ['key' => 'text_large', 'endpoint' => 'api/profile/preferences.php', 'label' => 'Grotere tekst',
+                         'note_on'  => 'Alle tekst is groter, op elk apparaat.',
+                         'note_off' => 'De tekst volgt de grootte van je toestel.',
+                         'on' => false],
+                        ['key' => 'contrast_more', 'endpoint' => 'api/profile/preferences.php', 'label' => 'Extra contrast',
+                         'note_on'  => 'Sterkere randen en tekst, ook als je toestel er niet om vraagt.',
+                         'note_off' => 'Sterkere randen en tekst als je toestel erom vraagt.',
+                         'on' => false],
+                        ['key' => 'motion_off', 'endpoint' => 'api/profile/preferences.php', 'label' => 'Animaties uit',
+                         'note_on'  => 'Geen animaties, op elk apparaat.',
+                         'note_off' => 'Animaties volgen de instelling van je toestel.',
+                         'on' => false],
                     ],
                 ],
             ],
@@ -508,7 +530,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 18.10'],
+                        ['label' => 'Versie',  'value' => 'Beta 19.0'],
                     ],
                 ],
 
@@ -578,20 +600,6 @@ return [
                access, so Ownify forgets its keys and says where the rest is. */
             'disconnect_note' => 'Ontkoppelen verwijdert de Polar-sleutels direct uit Ownify; wat al binnen is blijft staan. Wil je Ownify ook bij Polar weghalen, doe dat in je Polar-account op account.polar.com.',
         ],
-        [
-            'key'   => 'watch',
-            'label' => 'Smartwatch',
-            'icon'  => 'device',
-            'note'  => 'Rechtstreekse koppeling',
-            'categories' => ['Hartslag', 'HRV', 'Training', 'Slaap'],
-        ],
-        [
-            'key'   => 'ring',
-            'label' => 'Slaapring',
-            'icon'  => 'rings',
-            'note'  => 'Rechtstreekse koppeling',
-            'categories' => ['Slaap', 'HRV', 'Huidtemperatuur', 'Zuurstofsaturatie'],
-        ],
     ],
 
     'integration_labels' => [
@@ -605,7 +613,6 @@ return [
         'permissions_note' => 'Per categorie',
         'connect'      => 'Koppelen',
         'disconnect'   => 'Ontkoppelen',
-        'sync_now'     => 'Nu synchroniseren',
         'unavailable'  => 'Koppelen kan nog niet',
         'account'      => 'Account',
         'revoked'      => 'Toegang ingetrokken',
@@ -621,5 +628,12 @@ return [
         'devices'       => 'Gekoppelde apparaten',
         'revoke'        => 'Ontkoppelen',
         'revoke_device' => '%s ontkoppelen',
+
+        /* A phone's name, its owner's to choose (api/integrations/device-rename.php). */
+        'rename'        => 'Naam wijzigen',
+        'rename_device' => 'Naam van %s wijzigen',
+        'rename_title'  => 'Apparaatnaam',
+        'rename_note'   => 'Zo heet dit apparaat in Ownify. Alleen de naam verandert: de koppeling en je gegevens blijven hetzelfde.',
+        'rename_own'    => 'Leeg laten geeft het de eigen naam terug: %s',
     ],
 ];
