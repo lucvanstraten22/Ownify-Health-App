@@ -12,7 +12,7 @@
     "direction": null,
     "composition": {
         "title": "Waar je score uit bestaat",
-        "note": "Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Sport over de afgelopen 7 dagen, zodra er gegevens zijn.",
+        "note": "Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Training over de afgelopen 7 dagen, zodra er gegevens zijn.",
         "categories": [
             {
                 "id": "sleep",
@@ -66,7 +66,7 @@
             },
             {
                 "id": "training",
-                "label": "Sport",
+                "label": "Training",
                 "accent": "training",
                 "icon": "dumbbell",
                 "value": null,
@@ -175,7 +175,7 @@
                 },
                 {
                     "id": "training",
-                    "label": "Sport",
+                    "label": "Training",
                     "accent": "training"
                 }
             ]

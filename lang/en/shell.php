@@ -6,7 +6,7 @@ return [
 
     /* ---- config/dashboard.php — shell, Overzicht, Ownify AI */
     'Gezondheidsoverzicht' => 'Health overview',
-    'Je slaap, voeding en sport in één helder overzicht.' => 'Your sleep, nutrition and exercise in one clear overview.',
+    'Je slaap, voeding en training in één helder overzicht.' => 'Your sleep, nutrition and training in one clear overview.',
     'Inloggen' => 'Log in',
     'Registreren' => 'Sign up',
     'Alles' => 'Everything',
@@ -27,7 +27,6 @@ return [
     'Je score bundelt slaap, voeding en beweging over de afgelopen 7 dagen.' => 'Your score combines sleep, nutrition and activity over the past 7 days.',
     'Verbind een bron om je gezondheidsscore te berekenen.' => 'Connect a source to calculate your health score.',
     'Voeding' => 'Nutrition',
-    'Sport' => 'Exercise',
     'Persoonlijk doel' => 'Personal goal',
     'van je weekdoel' => 'of your weekly goal',
     'Nog geen doel ingesteld' => 'No goal set yet',
@@ -115,7 +114,7 @@ return [
     'Log in om je eigen gegevens te zien.' => 'Log in to see your own data.',
     'Je gegevens verschijnen hier zodra je ze vastlegt of een bron koppelt.' => 'Your data appears here as soon as you log it or connect a source.',
     'Geen databaseverbinding — er kan nu niets worden opgeslagen of geladen.' => 'No database connection — nothing can be saved or loaded right now.',
-    'dagelijks overzicht van slaap, voeding en sport.' => 'a daily overview of sleep, nutrition and exercise.',
+    'dagelijks overzicht van slaap, voeding en training.' => 'a daily overview of sleep, nutrition and training.',
     'Laatste sync' => 'Last sync',
     'Opgeslagen.' => 'Saved.',
     'Automatisch' => 'Automatic',

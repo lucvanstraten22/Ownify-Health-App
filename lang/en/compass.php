@@ -15,7 +15,7 @@ return [
     'Waar je score uit bestaat' => 'What your score is made of',
     'Je Gezondheidsscore is het gemiddelde van %1$s over de afgelopen %2$d dagen. Elk telt even zwaar.' => 'Your Health score is the average of %1$s over the past %2$d days. Each counts equally.',
     'Je Gezondheidsscore is nu je score voor %1$s, over de afgelopen %2$d dagen: de andere categorieën tellen nog niet mee.' => 'Your Health score is now your score for %1$s, over the past %2$d days: the other categories do not count yet.',
-    'Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Sport over de afgelopen %2$d dagen, zodra er gegevens zijn.' => 'Your Health score will be the average of Sleep, Nutrition and Exercise over the past %2$d days, once there is data.',
+    'Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Training over de afgelopen %2$d dagen, zodra er gegevens zijn.' => 'Your Health score will be the average of Sleep, Nutrition and Training over the past %2$d days, once there is data.',
     '%d dag met gegevens' => '%d day with data',
     '%d dagen met gegevens' => '%d days with data',
     'Telt nu niet mee: laatste gegevens van %s' => 'Not counted right now: latest data from %s',

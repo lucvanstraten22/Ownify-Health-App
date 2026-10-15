@@ -645,7 +645,7 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
   a new night, Slaap stops counting; without a new cijfer, Voeding. The
   category is `expired`: left out of the overall score — which is then the
   average of the categories still current — never counted as zero, until new
-  data comes in. Sport does not expire: rest days are part of what it scores,
+  data comes in. Training does not expire: rest days are part of what it scores,
   and workouts older than 168 hours drop out of the window by themselves.
 - **Missing parts.** A component the person's device does not measure is left
   out and the other components' weights are scaled up (`health_weighted()`),

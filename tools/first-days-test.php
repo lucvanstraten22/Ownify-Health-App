@@ -59,7 +59,7 @@ $suggest   = $copy['setup']['steps']['goal']['suggestion'];
 $areas     = [
     'sleep'     => ['label' => 'Slaap',   'accent' => 'sleep',     'icon' => 'moon',     'empty' => '', 'collecting' => ''],
     'nutrition' => ['label' => 'Voeding', 'accent' => 'nutrition', 'icon' => 'utensils', 'empty' => '', 'collecting' => ''],
-    'training'  => ['label' => 'Sport',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => '', 'collecting' => ''],
+    'training'  => ['label' => 'Training',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => '', 'collecting' => ''],
 ];
 
 /* The setup was finished on 1 October 2026, day 1. */
@@ -225,7 +225,7 @@ check('day 4: the score is the engine\'s own, unchanged', $s4['first']['value'] 
 check('day 4: with its real components and weights', count($s4['first']['parts']) === 3
     && array_column($s4['first']['parts'], 'id') === ['duration', 'regularity', 'quality']
     && $s4['first']['parts'][0]['value'] !== null);
-check('day 4: the overall score rests on sleep alone — and says so', $s4['note'] === 'Je gezondheidsscore rust voorlopig alleen op slaap. Voeding en sport tellen mee zodra er 3 dagen van zijn.', (string) $s4['note']);
+check('day 4: the overall score rests on sleep alone — and says so', $s4['note'] === 'Je gezondheidsscore rust voorlopig alleen op slaap. Voeding en training tellen mee zodra er 3 dagen van zijn.', (string) $s4['note']);
 check('day 4: the way to the Scorekompas', $s4['open'] === $cal['first']['open']);
 check('day 4: "Je basislijn", no longer "Dag 4 van 3"', $s4['eyebrow'] === $cal['eyebrow']);
 
@@ -252,7 +252,7 @@ check('day 3: only the category with enough data', count($h3['baseline']) === 1 
     && $h3['baseline'][0]['value'] === health_score_at(['nights' => $synced, 'ratings' => [], 'workouts' => [], 'vo2' => [], 'goals' => []],
         (new DateTimeImmutable(SETUP_DAY))->modify('+2 days')->setTime(21, 0))['sleep']['score']);
 check('day 3: its fact, from the engine\'s own facts', $h3['baseline'][0]['fact'] === 'Gemiddeld 6:56 per nacht', (string) $h3['baseline'][0]['fact']);
-check('day 3: what is still missing', $h3['note'] === 'Voeding en sport komen erbij zodra er 3 dagen van zijn.', (string) $h3['note']);
+check('day 3: what is still missing', $h3['note'] === 'Voeding en training komen erbij zodra er 3 dagen van zijn.', (string) $h3['note']);
 check('day 5: still the starting point', card(5, ['nights' => $synced])['phase'] === 'baseline');
 check('day 6: no card', card(6, ['nights' => $synced]) === null);
 
@@ -366,8 +366,8 @@ check('decimals', setup_decimal(7) === '7' && setup_decimal(7.46) === '7,5' && s
 $o = $cal['observation'];
 check('days', setup_day_ref('2026-10-03', '2026-10-03', $o) === 'vandaag' && setup_day_ref('2026-10-02', '2026-10-03', $o) === 'gisteren'
     && setup_day_ref('2026-09-28', '2026-10-03', $o) === 'op 28 september');
-check('names', calibration_names(['sleep'], $cal) === 'slaap' && calibration_names(['nutrition', 'training'], $cal) === 'voeding en sport'
-    && calibration_names(['sleep', 'nutrition', 'training'], $cal) === 'slaap, voeding en sport');
+check('names', calibration_names(['sleep'], $cal) === 'slaap' && calibration_names(['nutrition', 'training'], $cal) === 'voeding en training'
+    && calibration_names(['sleep', 'nutrition', 'training'], $cal) === 'slaap, voeding en training');
 
 echo "\n" . str_repeat('-', 72) . "\n";
 printf("  %d passed, %d failed\n", $pass, $fail);

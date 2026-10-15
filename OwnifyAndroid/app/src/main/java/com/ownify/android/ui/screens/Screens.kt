@@ -149,7 +149,7 @@ private fun WelcomeRoute(paired: Boolean) {
 object SignedOutCopy {
     const val APP_NAME = "Ownify"
     /* In the app's language (OwnifyLanguage): the phone's, or the one chosen last. */
-    val SUBTITLE: String get() = tr("Je slaap, voeding en sport in één helder overzicht.")
+    val SUBTITLE: String get() = tr("Je slaap, voeding en training in één helder overzicht.")
     val LOGIN: String get() = tr("Inloggen")
     val REGISTER: String get() = tr("Registreren")
 }

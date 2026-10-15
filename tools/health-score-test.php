@@ -449,7 +449,7 @@ check('…and nothing of it is kept: no components, never a 0',
     array_filter($d4['sleep']['components'], static fn ($v) => $v !== null) === [] && $d4['sleep']['days'] === 3);
 check('Voeding the same: counting on day 3, left out on day 4',
     $d3['nutrition']['score'] === $d1['nutrition']['score'] && $d4['nutrition']['score'] === null && $d4['nutrition']['expired'] === true);
-check('Sport has no expiry: rest days are rest, it still counts on day 4',
+check('Training has no expiry: rest days are rest, it still counts on day 4',
     is_int($d4['training']['score']) && $d4['training']['expired'] === false);
 check('the overall score is recalculated from what still counts, by the same rule',
     $d1['overall']['score'] === score_combine(['sleep' => $d1['sleep']['score'], 'nutrition' => $d1['nutrition']['score'], 'training' => $d1['training']['score']])
@@ -458,7 +458,7 @@ check('the overall score is recalculated from what still counts, by the same rul
 $fresh = $expiryData;
 $fresh['nights'][] = night($at('2026-09-23', '07:00'), 8.0);
 check('one new night and Slaap counts again', is_int(health_score_at($fresh, $day1->modify('+3 days'))['sleep']['score']));
-check('expiry is configured per category: Slaap 3, Voeding 3, Sport none',
+check('expiry is configured per category: Slaap 3, Voeding 3, Training none',
     $cfg['expiry_days'] === ['sleep' => 3, 'nutrition' => 3, 'training' => null]);
 
 /* ====================================================================== */
@@ -467,7 +467,7 @@ section('until when a score holds without new input');
 check('Slaap: its last night (20 Sep) plus two days — expiry comes before the window',
     $d1['sleep']['valid_until'] === '2026-09-22', (string) $d1['sleep']['valid_until']);
 check('Voeding the same', $d1['nutrition']['valid_until'] === '2026-09-22');
-check('Sport: until the window leaves fewer than 3 training days — the 3rd newest (16 Sep) plus six',
+check('Training: until the window leaves fewer than 3 training days — the 3rd newest (16 Sep) plus six',
     $d1['training']['valid_until'] === '2026-09-22', (string) $d1['training']['valid_until']);
 $spreadNights = [night($at('2026-09-14', '07:00'), 8), night($at('2026-09-17', '07:00'), 8), night($at('2026-09-20', '07:00'), 8)];
 $spreadAt = health_score_at(['nights' => $spreadNights, 'ratings' => [], 'workouts' => []] + $rest, $day1);

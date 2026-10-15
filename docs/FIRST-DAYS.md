@@ -198,7 +198,7 @@ In `building`, each category row shows:
 The `first_score` card shows that category's score with its band's dot and
 each component with the weight it has now. Under it, what the Health Score
 rests on for now (*Je gezondheidsscore rust voorlopig alleen op slaap.
-Voeding en sport tellen mee zodra er 3 dagen van zijn.*). It links to the
+Voeding en training tellen mee zodra er 3 dagen van zijn.*). It links to the
 Scorekompas.
 
 The `baseline` card shows each category with a score: its score, its band's

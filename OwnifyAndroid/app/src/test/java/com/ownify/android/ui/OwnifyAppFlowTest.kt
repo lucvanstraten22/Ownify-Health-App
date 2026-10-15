@@ -511,7 +511,7 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
         compose.onNodeWithText("Je startpunt").assertExists()
-        compose.onNodeWithText("Voeding en sport komen erbij zodra er 3 dagen van zijn.").assertExists()
+        compose.onNodeWithText("Voeding en training komen erbij zodra er 3 dagen van zijn.").assertExists()
     }
 
     @Test

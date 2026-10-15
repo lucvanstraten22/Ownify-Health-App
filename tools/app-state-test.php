@@ -691,7 +691,7 @@ try {
             array_column($start, 'id') === ['sleep'] && $sleep !== null && ($start[0]['value'] ?? null) === $sleep);
         check('and what it was worked out from', str_starts_with((string) ($start[0]['fact'] ?? ''), 'Gemiddeld 7:10 per nacht'),
             json_encode($start[0]['fact'] ?? null));
-        check('the rest is named as still to come, in the focus\'s order (Fitheid)', ($s['calibration']['note'] ?? null) === 'Sport en voeding komen erbij zodra er 3 dagen van zijn.',
+        check('the rest is named as still to come, in the focus\'s order (Fitheid)', ($s['calibration']['note'] ?? null) === 'Training en voeding komen erbij zodra er 3 dagen van zijn.',
             json_encode($s['calibration']['note'] ?? null));
 
         db_run('UPDATE user_profiles SET setup_done_at = ? WHERE user_id = ?', [(new DateTimeImmutable('today'))->modify('-5 days')->format('Y-m-d 09:00:00'), $new['id']]);

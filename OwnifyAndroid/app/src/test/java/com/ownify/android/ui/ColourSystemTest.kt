@@ -68,7 +68,7 @@ class ColourSystemTest {
     private fun pillars(sleep: Int?, nutrition: Int?, training: Int?) = listOf(
         Contributor("sleep", "Slaap", "sleep", sleep, band(sleep)),
         Contributor("nutrition", "Voeding", "nutrition", nutrition, band(nutrition)),
-        Contributor("training", "Sport", "training", training, band(training)),
+        Contributor("training", "Training", "training", training, band(training)),
     )
 
     @Test

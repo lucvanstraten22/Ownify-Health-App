@@ -59,7 +59,7 @@ return [
     /* Days in a row without new input after which a category stops counting:
        its last night (the morning it ended), its last cijfer. Day 1 a night,
        days 2, 3 and 4 none: on day 4 Slaap is left out. Null: it does not
-       expire. Sport does not, on purpose — days without a workout are rest,
+       expire. Training does not, on purpose — days without a workout are rest,
        which its balance scores, and three of them in a row is an ordinary
        week; the window still drops workouts older than 168 hours. */
     'expiry_days' => [

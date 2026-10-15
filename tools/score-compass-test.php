@@ -54,7 +54,7 @@ $cfg   = health_scoring_config();
 $areas = [
     'sleep'     => ['label' => 'Slaap',   'accent' => 'sleep',     'icon' => 'moon',     'empty' => 'Koppel een bron om je slaapscore te berekenen.',              'collecting' => 'Nog %s met slaapgegevens nodig voor je slaapscore.'],
     'nutrition' => ['label' => 'Voeding', 'accent' => 'nutrition', 'icon' => 'utensils', 'empty' => 'Geef je voeding een dagcijfer om je voedingsscore te berekenen.', 'collecting' => 'Nog %s met een dagcijfer nodig voor je voedingsscore.'],
-    'training'  => ['label' => 'Sport',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => 'Koppel een bron om je trainingsscore te berekenen.',          'collecting' => 'Nog %s met een training nodig voor je trainingsscore.'],
+    'training'  => ['label' => 'Training',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => 'Koppel een bron om je trainingsscore te berekenen.',          'collecting' => 'Nog %s met een training nodig voor je trainingsscore.'],
 ];
 
 /** A category result, as health_score_result() builds it. */
@@ -227,8 +227,8 @@ check('counting again after a gap says "weer"', (bool) array_filter($c['trend'][
 $leaves = history(30, static fn ($i) => [result(80), result(80), $i < 18 ? result(60) : result(null, 2)]);
 $c = $compass($leaves);
 $collect($c);
-check('Sport stopping to count is told with its date',
-    in_array('Sinds 21 september telt Sport niet meer mee in je score.', $c['trend']['text'], true),
+check('Training stopping to count is told with its date',
+    in_array('Sinds 21 september telt Training niet meer mee in je score.', $c['trend']['text'], true),
     json_encode($c['trend']['text']));
 
 section('What moved with it');
@@ -287,8 +287,8 @@ check('…and 3 days in the last 7 is too few for an average',
    ====================================================================== */
 section('The biggest opportunity');
 
-/* Sport is the lowest category (65), but Slaap's duration has the most room:
-   0.45 of Slaap x 60 points / 3 categories = 9 against Sport's best, balance:
+/* Training is the lowest category (65), but Slaap's duration has the most room:
+   0.45 of Slaap x 60 points / 3 categories = 9 against Training's best, balance:
    0.35 x 35 / 3 = 4.1. */
 $c = $compass(history(1, static fn () => [
     result(73, 40, ['duration' => 40.0, 'regularity' => 100.0, 'quality' => 100.0],
@@ -298,7 +298,7 @@ $c = $compass(history(1, static fn () => [
     result(65, 30, ['volume' => 65.0, 'intensity' => 65.0, 'progression' => 65.0, 'balance' => 65.0]),
 ]));
 $collect($c);
-check('not simply the lowest category: Slaapduur, not Sport', $c['opportunity']['category'] === 'sleep' && $c['opportunity']['part'] === 'duration',
+check('not simply the lowest category: Slaapduur, not Training', $c['opportunity']['category'] === 'sleep' && $c['opportunity']['part'] === 'duration',
     json_encode([$c['opportunity']['category'], $c['opportunity']['part']]));
 check('…its room on the Health Score: 9 points', $c['opportunity']['gain'] === 9 && $c['opportunity']['gain_text'] === 'Op 100 zou dit onderdeel je Gezondheidsscore met zo\'n 9 punten verhogen.');
 check('…what was measured, in the person\'s own nights', $c['opportunity']['fact'] === '40 van je 40 nachten duurden korter dan 7:30.', $c['opportunity']['fact']);
@@ -313,7 +313,7 @@ $c = $compass(history(1, static fn () => [
 ]));
 check('a category with fewer than 3 days is not pointed at, however much room', $c['opportunity']['category'] === 'training',
     json_encode($c['opportunity']['category']));
-check('…Sport\'s balance instead, with 4 of its 7 days: the most weight', $c['opportunity']['part'] === 'balance');
+check('…Training\'s balance instead, with 4 of its 7 days: the most weight', $c['opportunity']['part'] === 'balance');
 check('the minimum is the score\'s own: 3 days of its 7', (int) $copy['rules']['opportunity_min_days'] === 3);
 
 $c = $compass(history(1, static fn () => [
@@ -336,7 +336,7 @@ check('one category counting: all of the score is its, a component without data 
     json_encode([$c['opportunity']['part'], $c['opportunity']['gain']]));
 check('…minutes a week, and "more" below the curve\'s top', $c['opportunity']['fact'] === 'Je traint gemiddeld 60 minuten per week.'
     && $c['opportunity']['relation'] === 'Meer trainingsminuten per week zouden samengaan met een hogere volumescore.');
-check('…and the note says only Sport counts', str_starts_with($c['composition']['note'], 'Je Gezondheidsscore is nu je score voor Sport'),
+check('…and the note says only Training counts', str_starts_with($c['composition']['note'], 'Je Gezondheidsscore is nu je score voor Training'),
     $c['composition']['note']);
 
 section('Each explanation, from the facts');
@@ -407,7 +407,7 @@ $c = $compass(history(1, static fn () => [
 $collect($c);
 [$sleep, $food, $sport] = $c['composition']['categories'];
 check('three categories, each counting equally, over the configured window',
-    $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen 7 dagen. Elk telt even zwaar.',
+    $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Training over de afgelopen 7 dagen. Elk telt even zwaar.',
     $c['composition']['note']);
 check('Slaap: its three components with the weights config/scoring.php gives them',
     array_column($sleep['parts'], 'weight', 'id') === ['duration' => 45, 'regularity' => 30, 'quality' => 25]);
@@ -416,7 +416,7 @@ check('…their values as whole numbers, and their score bands', array_column($s
 check('…each with what it was worked out from', $sleep['parts'][0]['note'] === 'Gemiddeld 6:39 per nacht'
     && $sleep['parts'][1]['note'] === 'Bedtijd wisselt ±15 min, opstaan ±31 min' && $sleep['parts'][2]['note'] === 'Gemeten in 36 nachten');
 check('Voeding: one part, so a sentence instead of a list', $food['parts'] === [] && $food['summary'] === 'Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.');
-check('Sport: missing components do not count, the others share their weight (20:35 of 55)',
+check('Training: missing components do not count, the others share their weight (20:35 of 55)',
     array_column($sport['parts'], 'weight', 'id') === ['volume' => 36, 'intensity' => null, 'progression' => null, 'balance' => 64],
     json_encode(array_column($sport['parts'], 'weight', 'id')));
 check('…and say why they do not count', str_starts_with((string) $sport['parts'][1]['note'], 'Telt nu niet mee'));
@@ -537,7 +537,7 @@ check('the reading names each category once, in the legend\'s order and colours'
     $c['trend']['readout']['categories'] === [
         ['id' => 'sleep', 'label' => 'Slaap', 'accent' => 'sleep'],
         ['id' => 'nutrition', 'label' => 'Voeding', 'accent' => 'nutrition'],
-        ['id' => 'training', 'label' => 'Sport', 'accent' => 'training'],
+        ['id' => 'training', 'label' => 'Training', 'accent' => 'training'],
     ] && array_column($c['trend']['days'][0]['categories'], 'id') === ['sleep', 'nutrition', 'training']);
 check('the spoken label says the period in words', $periods['365']['aria'] === 'Je Gezondheidsscore per dag, het afgelopen jaar: stijgend',
     $periods['365']['aria']);
@@ -568,7 +568,7 @@ $closer['2026-10-02']['state'] = 'today';
 $c    = $compass($closer);
 $days = $c['trend']['days'];
 check('a day: its date, its Health Score and its band', $days[0]['label'] === '30 september' && $days[0]['value'] === 73 && $days[0]['band'] === 'mid');
-check('…each category with its score and band, Sport without one', array_column($days[0]['categories'], 'value', 'id') === ['sleep' => 68, 'nutrition' => 77, 'training' => null]
+check('…each category with its score and band, Training without one', array_column($days[0]['categories'], 'value', 'id') === ['sleep' => 68, 'nutrition' => 77, 'training' => null]
     && $days[0]['categories'][0]['band'] === 'mid');
 check('…and its parts, as the score weighed them that day',
     $days[0]['categories'][0]['parts'] === 'Slaapduur 72 · Regelmaat 60 · Kwaliteit 70' && $days[0]['categories'][1]['parts'] === 'Dagcijfer 7,7'

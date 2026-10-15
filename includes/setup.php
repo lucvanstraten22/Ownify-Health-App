@@ -600,10 +600,10 @@ if (!function_exists('setup_stored')) {
         };
     }
 
-    /** "slaap", "slaap en voeding", "slaap, voeding en sport". */
+    /** "slaap", "slaap en voeding", "slaap, voeding en training". */
     function calibration_names(array $ids, array $c): string
     {
-        $names = array_map(static fn (string $id): string => (string) ($c['names'][$id] ?? $id), array_values($ids));
+        $names = array_map(static fn (string $id): string => mb_strtolower((string) ($c['names'][$id] ?? $id)), array_values($ids));
 
         if (count($names) <= 1) {
             return $names[0] ?? '';

@@ -15,7 +15,7 @@
  },
  "composition": {
   "title": "Waar je score uit bestaat",
-  "note": "Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Sport over de afgelopen 90 dagen. Elk telt even zwaar.",
+  "note": "Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Training over de afgelopen 90 dagen. Elk telt even zwaar.",
   "categories": [
    {
     "id": "sleep",
@@ -69,7 +69,7 @@
    },
    {
     "id": "training",
-    "label": "Sport",
+    "label": "Training",
     "accent": "training",
     "icon": "dumbbell",
     "value": 86,

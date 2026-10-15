@@ -37,7 +37,7 @@ return [
     /* What everyone who is not signed in sees (pages/welcome.php). The title
        is the app name above; the rest is here and only here. */
     'welcome' => [
-        'subtitle' => 'Je slaap, voeding en sport in één helder overzicht.',
+        'subtitle' => 'Je slaap, voeding en training in één helder overzicht.',
         'login'    => 'Inloggen',
         'register' => 'Registreren',
     ],
@@ -222,7 +222,7 @@ return [
      * `destination` is the page that renders it. All five are built now, so
      * every entry names one.
      *
-     *   Gezondheid  — slaap, voeding en sport, samen in één sectie
+     *   Gezondheid  — slaap, voeding en training, samen in één sectie
      *   Doelen      — persoonlijke doelen en voortgang
      *   Overzicht   — het dagelijkse dashboard (hier)
      *   Community   — ranglijst en toekomstige sociale functies

@@ -258,7 +258,7 @@ Five primary destinations, defined once in the `navigation` array of
 live there, and `components/bottom-navigation.php` only renders it.
 
 ```
-Gezondheid  ──  slaap · voeding · sport, grouped into one section
+Gezondheid  ──  slaap · voeding · training, grouped into one section
 Doelen      ──  persoonlijke doelen en voortgang
 Overzicht   ──  het dagelijkse dashboard
 Community   ──  ranglijst + toekomstige sociale functies

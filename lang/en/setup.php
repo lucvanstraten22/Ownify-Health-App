@@ -15,7 +15,7 @@ return [
     'Hoe slaap, voeding en beweging samen je dag vormen' => 'How sleep, nutrition and activity shape your day together',
     'Je trainingen, je belasting en je vooruitgang' => 'Your workouts, your load and your progress',
     'Je gewicht, en wat je eet en beweegt' => 'Your weight, and how you eat and move',
-    'Een breed beeld van slaap, voeding en sport' => 'A broad picture of sleep, nutrition and exercise',
+    'Een breed beeld van slaap, voeding en training' => 'A broad picture of sleep, nutrition and training',
     'Gebruik wat je al meet' => 'Use what you already measure',
     'Ownify kan je bestaande gezondheidsgegevens gebruiken voor een persoonlijker beeld, zonder dat je alles zelf hoeft bij te houden.' => 'Ownify can use your existing health data for a more personal picture, without you having to track everything yourself.',
     'Log in de Ownify-app op je Android-telefoon in met dit account en geef toegang tot Health Connect. Je slaap, stappen en trainingen komen dan vanzelf binnen.' => 'Log in to the Ownify app on your Android phone with this account and give it access to Health Connect. Your sleep, steps and workouts will then come in automatically.',
@@ -97,7 +97,4 @@ return [
     'Nog geen startpunt' => 'No starting point yet',
     'Daarvoor zijn 3 dagen met gegevens nodig. Zodra ze er zijn, verschijnt je eerste score hier.' => 'That takes 3 days with data. Once they are there, your first score appears here.',
     'Bekijk je score in het Scorekompas' => 'See your score in the Score Compass',
-    'slaap' => 'sleep',
-    'voeding' => 'nutrition',
-    'sport' => 'exercise',
 ];

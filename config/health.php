@@ -284,7 +284,7 @@ return [
             'summary' => 'Wat je hebt bewogen, hoe zwaar het was en hoe je herstelt.',
             'empty'   => 'Koppel een bron om je trainingsscore te berekenen.',
             'collecting' => 'Nog %s met een training nodig voor je trainingsscore.',
-            /* Only if Sport is ever given an expiry (config/scoring.php). */
+            /* Only if Training is ever given an expiry (config/scoring.php). */
             'expired'    => 'Je laatste training is van %s: je trainingsscore telt nu niet mee.',
 
             'highlights' => [

@@ -144,7 +144,7 @@ $compassCopy = require dirname(__DIR__) . '/config/compass.php';
 $areas = [
     'sleep'     => ['label' => 'Slaap',   'accent' => 'sleep',     'icon' => 'moon',     'empty' => '', 'collecting' => ''],
     'nutrition' => ['label' => 'Voeding', 'accent' => 'nutrition', 'icon' => 'utensils', 'empty' => '', 'collecting' => ''],
-    'training'  => ['label' => 'Sport',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => '', 'collecting' => ''],
+    'training'  => ['label' => 'Training',   'accent' => 'training',  'icon' => 'dumbbell', 'empty' => '', 'collecting' => ''],
 ];
 
 /* ======================================================================
@@ -162,7 +162,7 @@ $first = health_score_refresh($u);
 $rows  = stored($u, 0);
 check('today is recorded: one row per category and the overall score', array_keys($rows) === ['nutrition', 'overall', 'sleep', 'training'],
     json_encode($rows));
-check('  Voeding from three cijfers; Slaap and Sport without data are null, not 0',
+check('  Voeding from three cijfers; Slaap and Training without data are null, not 0',
     $rows['nutrition'] === $first['nutrition']['score'] && $rows['nutrition'] !== null
     && $rows['sleep'] === null && $rows['training'] === null);
 check('  the overall score is Voeding alone', $rows['overall'] === $rows['nutrition']);
@@ -230,7 +230,7 @@ check('  the days before any record have none, never a 0',
 section('Days without a snapshot: carried only while it holds');
 
 $u = account();
-/* Ten days ago: Slaap until 8 days ago, Voeding until 9, Sport until 6. */
+/* Ten days ago: Slaap until 8 days ago, Voeding until 9, Training until 6. */
 snapshot($u, 10, [
     'overall'   => [70, 6],
     'sleep'     => [70, 8],
@@ -244,9 +244,9 @@ $at      = static fn (int $ago): array => $history[day($ago)];
 check('the recorded day', $at(10)['state'] === 'stored' && $at(10)['overall']['score'] === 70);
 check('the day after: all three still hold, the same score',
     $at(9)['state'] === 'carried' && $at(9)['from'] === day(10) && $at(9)['overall']['score'] === 70);
-check('Voeding stops after its day: the overall is Slaap and Sport again (75), not a 0 for Voeding',
+check('Voeding stops after its day: the overall is Slaap and Training again (75), not a 0 for Voeding',
     $at(8)['nutrition']['score'] === null && $at(8)['sleep']['score'] === 70 && $at(8)['overall']['score'] === 75);
-check('then Sport alone (80)', $at(7)['overall']['score'] === 80 && $at(7)['sleep']['score'] === null
+check('then Training alone (80)', $at(7)['overall']['score'] === 80 && $at(7)['sleep']['score'] === null
     && $at(6)['overall']['score'] === 80);
 check('after the last one stops: no score at all', $at(5)['state'] === 'none' && $at(5)['overall']['score'] === null
     && $at(1)['overall']['score'] === null);

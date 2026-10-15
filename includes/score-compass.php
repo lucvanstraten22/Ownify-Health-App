@@ -1193,7 +1193,7 @@ if (!function_exists('score_compass')) {
        WORDS AND NUMBERS
        ================================================================== */
 
-    /** "Slaap, Voeding en Sport". */
+    /** "Slaap, Voeding en Training". */
     function score_compass_list(array $items): string
     {
         $items = array_values($items);

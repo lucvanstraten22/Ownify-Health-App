@@ -230,7 +230,7 @@ class AppDataParseTest {
         assertEquals(CompassDirection("down", "Dalend"), c.direction)
 
         // 1 — each category with its colour (which); the score is the last 168 hours.
-        assertEquals(listOf("Slaap", "Voeding", "Sport"), c.composition.categories.map { it.label })
+        assertEquals(listOf("Slaap", "Voeding", "Training"), c.composition.categories.map { it.label })
         assertEquals(listOf("sleep", "nutrition", "training"), c.composition.categories.map { it.accent })
         assertTrue(c.composition.note.contains("over de afgelopen 7 dagen"))
 
@@ -302,7 +302,7 @@ class AppDataParseTest {
         assertEquals("mid", day.categories[2].band)
         assertEquals("Gezondheidsscore", t.readout.score)
         assertEquals("Tik of schuif over de lijn om je score te bekijken.", t.readout.hint)
-        assertEquals(listOf(CompassName("sleep", "Slaap", "sleep"), CompassName("nutrition", "Voeding", "nutrition"), CompassName("training", "Sport", "training")), t.readout.categories)
+        assertEquals(listOf(CompassName("sleep", "Slaap", "sleep"), CompassName("nutrition", "Voeding", "nutrition"), CompassName("training", "Training", "training")), t.readout.categories)
 
         // 3 — compared with yourself: now is the last 168 hours.
         assertEquals(listOf(73, 69, 69, 70), c.comparison.rows.map { it.value })

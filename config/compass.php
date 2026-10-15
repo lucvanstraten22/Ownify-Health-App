@@ -93,7 +93,7 @@ return [
         /* %1$s the categories, %2$d the window in days (config/scoring.php). */
         'note'        => 'Je Gezondheidsscore is het gemiddelde van %1$s over de afgelopen %2$d dagen. Elk telt even zwaar.',
         'note_one'    => 'Je Gezondheidsscore is nu je score voor %1$s, over de afgelopen %2$d dagen: de andere categorieën tellen nog niet mee.',
-        'none'        => 'Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Sport over de afgelopen %2$d dagen, zodra er gegevens zijn.',
+        'none'        => 'Je Gezondheidsscore wordt het gemiddelde van Slaap, Voeding en Training over de afgelopen %2$d dagen, zodra er gegevens zijn.',
         'days'        => ['%d dag met gegevens', '%d dagen met gegevens'],
         /* A category with data, but none new for three days. %s its last day. */
         'expired'     => 'Telt nu niet mee: laatste gegevens van %s',

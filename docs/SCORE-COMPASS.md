@@ -49,7 +49,7 @@ a category keeps its score while its data is still in the window — for at
 most `expiry_days` (3) days for Slaap and Voeding. On the third day without
 a new night (or cijfer) the category stops counting: it is left out of the
 overall score, which is recalculated from the categories that still count,
-never counted as a zero. Sport has no expiry: a rest day is part of what it
+never counted as a zero. Training has no expiry: a rest day is part of what it
 scores, and the window drops old workouts by itself.
 
 ## The history
@@ -78,14 +78,14 @@ sync, every page render and every app read. No scheduler.
 
 ## 1 — What the score is made of
 
-The categories as Overzicht names them (Slaap, Voeding, Sport), each with its
+The categories as Overzicht names them (Slaap, Voeding, Training), each with its
 score and its band's dot (`score_colour_band()`: 80+ high, 60+ mid, below
 low), its tile in its own category colour, and its days with data — or, with
 no score yet, what Gezondheid says is still needed.
 
 Each component shows the weight it has **now**: a component without data is
 left out and the others share its weight, exactly as `health_weighted()` does
-(Sport with no intensity and no progression: volume 20:35 of 55 → 36%,
+(Training with no intensity and no progression: volume 20:35 of 55 → 36%,
 balance 64%). Before a category has a score, the weights it will have.
 Voeding has one component, its daily cijfer, so it is a sentence instead of a
 list.
@@ -115,7 +115,7 @@ days as before; the 30 days an older app draws (`trend.chart`) stay 0–100.
 **Reading a day.** A finger on the line (press and slide; a vertical drag
 still scrolls), a cursor or the arrow keys pick the nearest day: its date
 and score appear above the line as on a goal's Verloop, and the panel under
-the chart shows the whole day — its Health Score, Slaap, Voeding and Sport
+the chart shows the whole day — its Health Score, Slaap, Voeding and Training
 with their bands and their parts ("Slaapduur 72 · Regelmaat 60 · Kwaliteit
 70", "Dagcijfer 7,7") — and, for a carried day, that the score of an
 earlier day still held; for a day without one, that it had none. A week or
@@ -189,7 +189,7 @@ room = (100 − component) × its weight among its category's counted components
 the overall score is the equal average of the categories and each category the
 weighted average of its components. The largest room wins, if it is at least
 **2 points**; otherwise "Geen onderdeel springt eruit". So it is not simply
-the lowest category: Sport at 65 loses to Slaap at 73 when Slaap's duration
+the lowest category: Training at 65 loses to Slaap at 73 when Slaap's duration
 is at 40, because duration weighs 45% of Slaap.
 
 What it says comes from the facts — what was measured — and what a higher

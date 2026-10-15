@@ -43,7 +43,7 @@ return [
                     'energy'  => ['label' => 'Energie', 'line' => 'Hoe slaap, voeding en beweging samen je dag vormen', 'icon' => 'bolt', 'accent' => 'health'],
                     'fitness' => ['label' => 'Fitheid', 'line' => 'Je trainingen, je belasting en je vooruitgang', 'icon' => 'dumbbell', 'accent' => 'training'],
                     'weight'  => ['label' => 'Gewicht', 'line' => 'Je gewicht, en wat je eet en beweegt', 'icon' => 'chart',    'accent' => 'nutrition'],
-                    'general' => ['label' => 'Alles',   'line' => 'Een breed beeld van slaap, voeding en sport', 'icon' => 'rings',    'accent' => 'health'],
+                    'general' => ['label' => 'Alles',   'line' => 'Een breed beeld van slaap, voeding en training', 'icon' => 'rings',    'accent' => 'health'],
                 ],
                 'error' => 'Je keuze kon niet worden bewaard. Probeer het opnieuw.',
             ],
@@ -225,7 +225,8 @@ return [
             'open'    => 'Bekijk je score in het Scorekompas',
         ],
 
-        /* Names in a sentence: "slaap", "voeding en sport". */
-        'names' => ['sleep' => 'slaap', 'nutrition' => 'voeding', 'training' => 'sport'],
+        /* Names in a sentence — "slaap", "voeding en training": the categories'
+           own names (as on Overzicht), lower-cased where they are used. */
+        'names' => ['sleep' => 'Slaap', 'nutrition' => 'Voeding', 'training' => 'Training'],
     ],
 ];

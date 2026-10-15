@@ -69,7 +69,7 @@
             },
             {
                 "id": "training",
-                "label": "Sport",
+                "label": "Training",
                 "accent": "training",
                 "icon": "dumbbell",
                 "value": null,
@@ -186,7 +186,7 @@
                 },
                 {
                     "id": "training",
-                    "label": "Sport",
+                    "label": "Training",
                     "accent": "training"
                 }
             ]
