@@ -62,7 +62,7 @@ plainly instead of working as if it had been used.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 18.4**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 18.5**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher.
@@ -76,4 +76,4 @@ by 10.0):
 
 Every commit title starts with the new version number, then the
 description: `10.1 Show the version in commit titles`.
-The next version is 18.5 for a small update, or 19.0 for a big one.
+The next version is 18.6 for a small update, or 19.0 for a big one.

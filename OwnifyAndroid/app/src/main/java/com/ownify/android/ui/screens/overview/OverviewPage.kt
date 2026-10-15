@@ -120,7 +120,7 @@ fun OverviewPage(data: AppData, scroll: ScrollState) {
             // The first days of a new account (docs/FIRST-DAYS.md); nothing outside them.
             CalibrationCard(data)
             HealthScoreCard(data)
-            GoalProgressCard(overview.goal)
+            GoalProgressCard(overview.goal, data.goals.primary?.id)
             InsightsCard(overview.insights)
             RecommendationCard(overview.recommendation)
             if (data.disclaimer.isNotEmpty()) Disclaimer(data.disclaimer, Modifier.reveal())
@@ -225,17 +225,20 @@ private fun HealthScoreCard(data: AppData) {
 
 /** `components/goal-progress.php`: whichever goal is primary, or how to set one. */
 @Composable
-private fun GoalProgressCard(goal: GoalCard) {
+private fun GoalProgressCard(goal: GoalCard, primaryId: String?) {
     val shell = LocalShell.current
     val (play, sight) = rememberPlayOnSight()
     val set = goal.state != "unset" && goal.progress != null
     val interaction = remember { MutableInteractionSource() }
 
-    // `.card--opens`: a tap anywhere on the card goes to Doelen, as on the website.
+    // `.card--opens`: a tap anywhere on the card opens the primary goal's page
+    // (Doelen while there is none), as on the website.
     JCard(
         Modifier.fillMaxWidth().reveal().then(sight)
             .press(interaction)
-            .clickable(interaction, indication = null, role = Role.Button, onClickLabel = tr("naar Doelen")) { shell.tab("goals") }
+            .clickable(interaction, indication = null, role = Role.Button, onClickLabel = if (primaryId != null) tr("doel openen") else tr("naar Doelen")) {
+                if (primaryId != null) shell.openDetail(Detail.GoalPage(primaryId)) else shell.tab("goals")
+            }
     ) {
         CompactHead(OwnifyIcons.solidChart, goal.title)
 

@@ -29,6 +29,7 @@ return [
     'Voeding' => 'Nutrition',
     'Primair doel' => 'Primary goal',
     'naar Doelen' => 'to Goals',
+    'doel openen' => 'open the goal',
     'van je weekdoel' => 'of your weekly goal',
     'Nog geen doel ingesteld' => 'No goal set yet',
     'Je voortgang van deze week verschijnt hier zodra je een doel instelt.' => 'Your progress this week appears here as soon as you set a goal.',

@@ -9,15 +9,21 @@ $ratio   = score_ratio($goal['progress'], 100);
 /* What the bar says when you point at it, focus it or hold it: the goal's own
    numbers ("85 kg van 100 kg"), or its percentage when it has none. */
 $reading = $isSet ? (string) ($goal['reading'] ?? tf('%d%% van je doel', (int) $goal['progress'])) : null;
+/* The card opens the primary goal's own page; with none yet, Doelen. */
+$primaryId = $data['goals']['primary']['id'] ?? null;
 $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 ?>
 <section class="card card--goal card--opens reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
 
     <div class="card__head card__head--compact">
         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
-        <?php /* The whole card goes to Doelen (the button's ::after covers it). */ ?>
+        <?php /* The whole card opens the goal (the button's ::after covers it). */ ?>
         <h2 class="card__eyebrow" id="goal-title">
-            <button type="button" class="card__open" data-nav="goals" aria-label="<?= e($goal['title'] . ': ' . t('naar Doelen')) ?>"><?= e($goal['title']) ?><?= icon('chevron-right', 'card__open-chevron') ?></button>
+            <?php if ($primaryId !== null): ?>
+            <button type="button" class="card__open" data-detail-open="goal-<?= e((string) $primaryId) ?>" aria-label="<?= e($goal['title'] . ': ' . t('doel openen')) ?>">
+            <?php else: ?>
+            <button type="button" class="card__open" data-nav="goals" aria-label="<?= e($goal['title'] . ': ' . t('naar Doelen')) ?>">
+            <?php endif; ?><?= e($goal['title']) ?><?= icon('chevron-right', 'card__open-chevron') ?></button>
         </h2>
     </div>
 
