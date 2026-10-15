@@ -155,8 +155,9 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                 Modifier
                     .matchParentSize()
                     .layout { measurable, constraints ->
-                        // A bar with a title in it reaches further (`.detail__top.is-titled::before`).
-                        val extra = (if (deep) Ownify.EdgeFade * 2.5f else Ownify.EdgeFade).roundToPx()
+                        // A bar with a title in it reaches further (`.detail__top.is-titled::before`);
+                        // the main header ends below its buttons by as much as there is above them.
+                        val extra = (if (deep) Ownify.EdgeFade * 2.5f else top).roundToPx()
                         val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + extra))
                         layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
                     }
@@ -168,17 +169,26 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                     .drawWithContent {
                         drawContent()
                         drawRect(
-                            Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent),
+                            if (deep) Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent)
+                            // One long eased fade (`.app-header::before` mask), the tint even under it.
+                            else Brush.verticalGradient(
+                                0f to Color.Black, 0.4f to Color.Black, 0.54f to Color.Black.copy(alpha = 0.86f),
+                                0.66f to Color.Black.copy(alpha = 0.64f), 0.78f to Color.Black.copy(alpha = 0.38f),
+                                0.89f to Color.Black.copy(alpha = 0.16f), 0.96f to Color.Black.copy(alpha = 0.04f), 1f to Color.Transparent
+                            ),
                             blendMode = BlendMode.DstIn
                         )
                     }
                     .glassBackdrop(backdrop, RectangleShape, ScrolledFilter, blurLayer, ground)
                     .drawBehind {
                         drawRect(
-                            Brush.verticalGradient(
-                                0f to Ownify.BgMain.copy(alpha = if (deep) Ownify.VeilDeepTop else 0.95f),
-                                (if (deep) 0.62f else 0.5f) to Ownify.BgMain.copy(alpha = if (deep) Ownify.VeilDeepMid else 0.88f),
+                            if (deep) Brush.verticalGradient(
+                                0f to Ownify.BgMain.copy(alpha = Ownify.VeilDeepTop),
+                                0.62f to Ownify.BgMain.copy(alpha = Ownify.VeilDeepMid),
                                 1f to Ownify.BgMain.copy(alpha = 0f)
+                            ) else Brush.verticalGradient(
+                                0f to Ownify.BgMain.copy(alpha = 0.95f),
+                                1f to Ownify.BgMain.copy(alpha = 0.88f)
                             )
                         )
                     }
