@@ -634,14 +634,6 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-/* A legend of scores (the pillars on Overzicht): how high the score is — the
-   colour of its band (data-score), never the pillar's category colour. No
-   score, no colour. */
-.legend__item[data-score] .legend__dot {
-    background: var(--score-color, var(--text-faint));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--score-color, var(--text-faint)) 18%, transparent);
-}
-
 .legend__label {
     font-size: var(--fs-tiny);
     letter-spacing: var(--tracking-small);
@@ -649,61 +641,80 @@
     white-space: nowrap;
 }
 
-/* The pillar's own score, in the legend's own size — a number beside the
-   name, not a second label. */
-.legend__value {
-    font-size: var(--fs-tiny);
-    letter-spacing: var(--tracking-small);
-    font-weight: 600;
+
+/* Under the hero the three pillars are small rings, drawn like the big one:
+   the number inside, the name under it, the arc in the colour of the score's
+   band (data-score) — no score, no arc. A little closer together than the
+   card is wide, and a little further from the sentence above. The app draws
+   the same (Components.kt PillarRings). */
+.pillar-rings {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: min(100%, 300px);
+    margin: var(--space-5) auto 0;
+}
+
+.pillar-ring {
+    display: grid;
+    grid-template-areas: "dial" "label";
+    justify-items: center;
+    row-gap: 5px;
+    min-width: 0;
+}
+
+.pillar-ring__dial {
+    grid-area: dial;
+    width: 40px;
+    height: 40px;
+}
+
+.pillar-ring__dial svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+}
+
+.pillar-ring__track {
+    fill: none;
+    stroke: rgba(var(--ink), 0.08);
+    stroke-width: 4;
+}
+
+.pillar-ring__arc {
+    fill: none;
+    stroke: var(--score-color, transparent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    /* 2 * PI * r (r = 16): undrawn until hero-ring.js draws it. */
+    stroke-dasharray: 100.53;
+    stroke-dashoffset: 100.53;
+    transition: stroke-dashoffset 900ms var(--ease-out-strong);
+}
+
+.pillar-ring.is-empty .pillar-ring__arc { stroke: transparent; }
+
+.pillar-ring__value {
+    grid-area: dial;
+    align-self: center;
+    font-size: var(--fs-label);
+    font-weight: 650;
+    line-height: 1;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
-    white-space: nowrap;
 }
 
-.legend__item.is-empty .legend__value { font-weight: 500; color: var(--text-muted); }
+.pillar-ring.is-empty .pillar-ring__value { font-weight: 400; color: var(--text-muted); }
 
-/* Under the hero the three pillars are capsules of the card glass: the number
-   leads, the name and its score-coloured dot follow. Three across on every
-   phone — a number and a short name fit a third of 320 px. */
-.card--hero .legend {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-2);
-    margin-top: var(--space-5);
-    padding: 0;
-    background: none;
-}
-
-.card--hero .legend__item {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "value value" "dot label";
-    justify-items: start;
-    align-items: center;
-    column-gap: 6px;
-    row-gap: var(--space-1);
-    padding: var(--space-3);
-    border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-inner);
-    background: var(--surface-gradient);
-    box-shadow: var(--shadow-inset);
-}
-
-.card--hero .legend__value {
-    grid-area: value;
-    font-size: var(--fs-title-2);
-    font-weight: 700;
-    letter-spacing: var(--tracking-title);
-}
-
-.card--hero .legend__item.is-empty .legend__value { font-weight: 400; }
-.card--hero .legend__dot { grid-area: dot; }
-
-.card--hero .legend__label {
+.pillar-ring__label {
     grid-area: label;
-    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: var(--fs-footnote);
+    line-height: 1;
+    color: var(--text-secondary);
 }
 
 /* --------------------------------------------------------------------------

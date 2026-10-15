@@ -78,15 +78,22 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
     <?php endif; ?>
     <p class="card__lede"><?= e($overall['description']) ?></p>
 
-    <?php /* The three pillars the score averages, each with its own score. The
-             dot is the score's colour (data-score, decided on the server), not
-             the pillar's category colour. */ ?>
-    <ul class="legend" role="list">
+    <?php /* The three pillars the score averages, each with its own score as a
+             small ring drawn like the big one: the arc in the score's colour
+             (data-score, decided on the server), not the pillar's category
+             colour; no score, no arc. hero-ring.js draws them a moment after
+             the big one starts. */ ?>
+    <ul class="pillar-rings" role="list">
         <?php foreach ($contributors as $item): ?>
-            <li class="legend__item <?= state_class($item['value']) ?>" data-score="<?= e((string) ($item['score_band'] ?? '')) ?>">
-                <span class="legend__dot" aria-hidden="true"></span>
-                <span class="legend__label"><?= e($item['label']) ?></span>
-                <span class="legend__value"><?= e(score_text($item['value'])) ?></span>
+            <li class="pillar-ring <?= state_class($item['value']) ?>" data-score="<?= e((string) ($item['score_band'] ?? '')) ?>">
+                <span class="pillar-ring__dial" aria-hidden="true">
+                    <svg viewBox="0 0 40 40">
+                        <circle class="pillar-ring__track" cx="20" cy="20" r="16"/>
+                        <circle class="pillar-ring__arc" cx="20" cy="20" r="16" data-pillar data-progress="<?= e((string) round(score_ratio($item['value']), 4)) ?>"/>
+                    </svg>
+                </span>
+                <span class="pillar-ring__value"><?= e(score_text($item['value'])) ?></span>
+                <span class="pillar-ring__label"><?= e($item['label']) ?></span>
             </li>
         <?php endforeach; ?>
     </ul>

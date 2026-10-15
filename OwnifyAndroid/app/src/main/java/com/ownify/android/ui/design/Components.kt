@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -718,47 +719,61 @@ fun ScoreRing(
 }
 
 /**
- * The three pillars under the Overzicht's hero (`.card--hero .legend`):
- * capsules of the card glass — `--surface-gradient`, `--glass-border-soft`,
- * the inset top light — where the number leads and the name, with its
- * score-coloured dot, follows. Three across on every phone.
+ * The three pillars under the Overzicht's hero (`.pillar-rings`): small rings
+ * drawn like the big one — 40 across, a 4-wide track at `.08` and the arc in
+ * the colour of the score's band ([LegendItem.dot]; no score, no arc), the
+ * number inside and the name under it — in a row of at most 300 wide. When
+ * [play], each draws over 900 ms, 450 ms after the big ring starts and 90 ms
+ * after the one before (hero-ring.js `pillars`); still, they are simply there.
  */
 @Composable
-fun PillarCapsules(items: List<LegendItem>, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(Ownify.RadiusInner)
-    val style = CardStyle(
-        from = Ownify.SurfaceFrom,
-        to = Ownify.SurfaceTo,
-        border = Ownify.GlassBorderSoft,
-        shadows = listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true))
-    )
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        items.forEach { item ->
-            JCard(Modifier.weight(1f), style = style, shape = shape, padding = PaddingValues(Ownify.Space3)) {
-                T(
-                    item.value?.toString() ?: "—",
-                    OwnifyType.style(
-                        Ownify.FsTitle2,
-                        if (item.value == null) FontWeight.Normal else FontWeight.Bold,
-                        if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
-                        tracking = Ownify.TrackingTitle, lineHeight = 1.25.em, tabular = true
+fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Modifier) {
+    val still = LocalStillMotion.current || LocalReducedMotion.current
+    Row(modifier.widthIn(max = 300.dp).fillMaxWidth()) {
+        items.forEachIndexed { i, item ->
+            val target = if (item.value == null) 0f else (item.value / 100f).coerceIn(0f, 1f)
+            val drawn = remember { androidx.compose.animation.core.Animatable(if (still) target else 0f) }
+            androidx.compose.runtime.LaunchedEffect(play, target, still) {
+                if (still) drawn.snapTo(target)
+                else if (play) drawn.animateTo(target, tween(900, delayMillis = 450 + i * 90, easing = Ownify.EaseOutStrong))
+            }
+            Column(
+                Modifier.weight(1f).clearAndSetSemantics { contentDescription = item.label + ": " + (item.value?.toString() ?: "—") },
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                    Canvas(Modifier.fillMaxSize()) {
+                        val stroke = 4.dp.toPx()
+                        val r = size.width * 16f / 40f
+                        drawCircle(Ownify.ink(0.08f), radius = r, style = Stroke(stroke))
+                        if (item.value != null && drawn.value > 0f) {
+                            drawArc(
+                                color = item.dot,
+                                startAngle = -90f,
+                                sweepAngle = 360f * drawn.value,
+                                useCenter = false,
+                                topLeft = Offset(center.x - r, center.y - r),
+                                size = Size(r * 2, r * 2),
+                                style = Stroke(stroke, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
+                    T(
+                        item.value?.toString() ?: "—",
+                        OwnifyType.style(
+                            Ownify.FsLabel,
+                            if (item.value == null) FontWeight.Normal else FontWeight.SemiBold,
+                            if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
+                            lineHeight = 1.em, tabular = true
+                        )
                     )
-                )
-                Row(
-                    Modifier.padding(top = Ownify.Space1),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        Modifier
-                            .size(7.dp)
-                            .drawBehind {
-                                drawCircle(Ownify.mix(item.dot, 0.18f, Color.Transparent), radius = size.width / 2f + 3.dp.toPx())
-                                drawCircle(item.dot)
-                            }
-                    )
-                    T(item.label, JStyle.Footnote.copy(color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
                 }
+                T(
+                    item.label,
+                    OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary, lineHeight = 1.em),
+                    Modifier.padding(top = 5.dp),
+                    maxLines = 1, ellipsis = true
+                )
             }
         }
     }

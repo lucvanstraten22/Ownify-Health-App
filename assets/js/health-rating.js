@@ -125,6 +125,8 @@
             });
         });
 
+        if (window.OwnifyHeroRing) { window.OwnifyHeroRing.pillars(node, false); }
+
         each(node, '[data-bar]', function (bar, index) {
             var target = clamp01(parseFloat(bar.getAttribute('data-progress')));
 

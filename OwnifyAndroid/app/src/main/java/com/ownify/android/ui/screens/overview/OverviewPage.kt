@@ -105,7 +105,7 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.ScoreBand
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
-import com.ownify.android.ui.design.PillarCapsules
+import com.ownify.android.ui.design.PillarRings
 
 /**
  * Overzicht (pages/overview.php): in a new account's first days the card of
@@ -217,7 +217,7 @@ private fun HealthScoreCard(data: AppData) {
             align = TextAlign.Center
         )
 
-        PillarCapsules(overviewLegend(data.overview.contributors), Modifier.padding(top = Ownify.Space5))
+        PillarRings(overviewLegend(data.overview.contributors), play, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space5))
 
         if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
     }

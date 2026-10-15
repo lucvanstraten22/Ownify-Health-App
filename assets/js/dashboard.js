@@ -110,6 +110,7 @@
         root.dataset.animated = 'true';
 
         Array.prototype.forEach.call(root.querySelectorAll('[data-ring]'), drawRing);
+        if (window.OwnifyHeroRing) { window.OwnifyHeroRing.pillars(root, true); }
         Array.prototype.forEach.call(root.querySelectorAll('[data-bar]'), fillBar);
         Array.prototype.forEach.call(root.querySelectorAll('[data-count-to]'), countUp);
     }

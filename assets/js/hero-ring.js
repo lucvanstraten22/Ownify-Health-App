@@ -293,6 +293,32 @@
 
     function shown(ring) { return ring && ring.__heroRing ? ring.__heroRing.shown : null; }
 
+    /**
+     * The three pillar rings under the score (components/health-score.php):
+     * each arc drawn to its data-progress. Played (animate), they follow the
+     * big ring — a moment after it starts, one after another; otherwise, and
+     * with reduced motion, they are simply there.
+     */
+    function pillars(root, animate) {
+        var still = !animate || reduceQuery.matches;
+        Array.prototype.forEach.call(root.querySelectorAll('[data-pillar]'), function (arc, i) {
+            var length = 2 * Math.PI * (arc.r && arc.r.baseVal ? arc.r.baseVal.value : 16);
+            var target = clamp01(parseFloat(arc.getAttribute('data-progress')) || 0);
+            arc.style.strokeDasharray = length;
+            if (still) {
+                arc.style.transition = 'none';
+                arc.style.strokeDashoffset = length * (1 - target);
+                return;
+            }
+            arc.style.transition = 'none';
+            arc.style.strokeDashoffset = length;
+            void arc.getBoundingClientRect();
+            arc.style.transition = '';
+            arc.style.transitionDelay = (450 + i * 90) + 'ms';
+            arc.style.strokeDashoffset = length * (1 - target);
+        });
+    }
+
     /* A theme change repaints the rings already drawn. */
     new MutationObserver(function () {
         if (!pal) { return; }
@@ -303,5 +329,5 @@
         });
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    window.OwnifyHeroRing = { play: play, shown: shown };
+    window.OwnifyHeroRing = { play: play, shown: shown, pillars: pillars };
 }());
