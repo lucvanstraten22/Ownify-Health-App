@@ -926,16 +926,16 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Persoonlijk doel - stops at 0, 50, 85 and 100, no line under the bar, and the reading shows while a finger rests on it`() {
+    fun `Primair doel - stops at 0, 50, 85 and 100, no line under the bar, and the reading shows while a finger rests on it`() {
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
 
-        val bar = compose.onNode(hasContentDescription("0% — 0 dagen van 14 dagen op rij"))
+        val bar = compose.onNode(hasContentDescription("0% — 0 dagen van 14 dagen op rij"), useUnmergedTree = true)
         bar.performScrollTo()
         compose.waitForIdle()
         val track = bar.fetchSemanticsNode().boundsInRoot
-        fun label(text: String) = compose.onAllNodesWithText(text).fetchSemanticsNodes().single().boundsInRoot
+        fun label(text: String) = compose.onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().single().boundsInRoot
         val tolerance = 1.5f * compose.density.density
         assertEquals("Start from the left edge", track.left, label("Start").left, tolerance)
         assertEquals("Halverwege centred at 50%", track.left + track.width * 0.50f, label("Halverwege").center.x, tolerance)

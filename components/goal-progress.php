@@ -11,11 +11,14 @@ $ratio   = score_ratio($goal['progress'], 100);
 $reading = $isSet ? (string) ($goal['reading'] ?? tf('%d%% van je doel', (int) $goal['progress'])) : null;
 $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 ?>
-<section class="card card--goal reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
+<section class="card card--goal card--opens reveal <?= $isSet ? 'is-filled' : 'is-empty' ?>" aria-labelledby="goal-title">
 
     <div class="card__head card__head--compact">
         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
-        <h2 class="card__eyebrow" id="goal-title"><?= e($goal['title']) ?></h2>
+        <?php /* The whole card goes to Doelen (the button's ::after covers it). */ ?>
+        <h2 class="card__eyebrow" id="goal-title">
+            <button type="button" class="card__open" data-nav="goals" aria-label="<?= e($goal['title'] . ': ' . t('naar Doelen')) ?>"><?= e($goal['title']) ?><?= icon('chevron-right', 'card__open-chevron') ?></button>
+        </h2>
     </div>
 
     <div class="goal__headline">

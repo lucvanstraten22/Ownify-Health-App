@@ -229,8 +229,14 @@ private fun GoalProgressCard(goal: GoalCard) {
     val shell = LocalShell.current
     val (play, sight) = rememberPlayOnSight()
     val set = goal.state != "unset" && goal.progress != null
+    val interaction = remember { MutableInteractionSource() }
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
+    // `.card--opens`: a tap anywhere on the card goes to Doelen, as on the website.
+    JCard(
+        Modifier.fillMaxWidth().reveal().then(sight)
+            .press(interaction)
+            .clickable(interaction, indication = null, role = Role.Button, onClickLabel = tr("naar Doelen")) { shell.tab("goals") }
+    ) {
         CompactHead(OwnifyIcons.solidChart, goal.title)
 
         // .goal__headline

@@ -273,3 +273,8 @@
 
     .fab.press:hover { transform: translate(var(--fab-x), -2px); }
 }
+
+/* Primair doel opens Doelen as a whole card; the bar (held to read it) and
+   the button stay above the card's own target. */
+.card--goal .goal__track,
+.card--goal .goal__action { position: relative; z-index: 2; }

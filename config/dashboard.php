@@ -121,7 +121,7 @@ return [
 
     /* -------------------------------------------------- goal progress */
     'goal' => [
-        'title'       => 'Persoonlijk doel',
+        'title'       => 'Primair doel',
         'state'       => 'unset',           // unset | active | reached
         'name'        => null,              // e.g. "Rustiger slaapritme"
         'progress'    => null,              // 0–100, null while unset
