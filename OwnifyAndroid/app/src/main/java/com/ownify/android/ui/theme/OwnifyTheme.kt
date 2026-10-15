@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -349,6 +350,16 @@ object Ownify {
     // --- the app's own colours, not categories ----------------------------
     /** `--health`: the positive state (connected, done, reached) and the accent of what has no category. */
     val Health = Color(0xFF3C9E72)
+
+    /* `--ring-from` … `--ring-tail`: the Overzicht's score ring (HeroRing.kt,
+       hero-ring.js) — faint where it starts, the green, light at 100 (on
+       white: pale, the green deepened, deepest at 100); the head and tail of
+       its arrival and the light at its tip. color-mix in oklab = lerp. */
+    val RingFrom: Color get() = if (light) lerp(Health, Color.White, 0.58f) else lerp(Health, palette.ground, 0.50f)
+    val RingMid: Color get() = if (light) lerp(Health, Color.Black, 0.10f) else lerp(Health, Color.White, 0.08f)
+    val RingPeak: Color get() = if (light) lerp(Health, Color.Black, 0.28f) else lerp(Health, Color.White, 0.62f)
+    val RingHead: Color get() = if (light) lerp(Health, Color.White, 0.45f) else lerp(Health, Color.White, 0.82f)
+    val RingTail: Color get() = if (light) Health else lerp(Health, Color.White, 0.45f)
 
     /** `--attention`: warnings, a confirmation that cannot be undone. Deeper in White Mode, for its text. */
     val Attention: Color get() = palette.attention

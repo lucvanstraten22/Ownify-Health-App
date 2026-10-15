@@ -49,6 +49,9 @@
     /* --------------------------------------------------------- score rings */
 
     function drawRing(ring) {
+        // Overzicht's Gezondheidsscore draws itself (hero-ring.js), number and all.
+        if (ring.hasAttribute('data-ring-paint') && window.OwnifyHeroRing && window.OwnifyHeroRing.play(ring)) { return; }
+
         var circle = ring.querySelector('[data-ring-value]');
         if (!circle) { return; }
 
@@ -83,6 +86,8 @@
     function countUp(el) {
         var raw = el.getAttribute('data-count-to');
         if (raw === null || raw === '') { return; }      // placeholder state
+        var painted = el.closest('[data-ring-paint]');
+        if (painted && painted.classList.contains('has-canvas')) { return; }
 
         var target = parseFloat(raw);
         if (isNaN(target)) { return; }

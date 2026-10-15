@@ -105,6 +105,9 @@
         each(node, '.card', function (item) { item.dataset.animated = 'true'; });
 
         each(node, '[data-ring]', function (ring, index) {
+            if (ring.hasAttribute('data-ring-paint') && window.OwnifyHeroRing
+                && window.OwnifyHeroRing.play(ring, typeof rings[index] === 'number' ? rings[index] : 0)) { return; }
+
             var circle = ring.querySelector('[data-ring-value]');
             if (!circle) { return; }
 
@@ -140,7 +143,11 @@
 
         var rings = [];
         var bars  = [];
-        each(current, '[data-ring-value]', function (circle) { rings.push(circle.style.strokeDashoffset); });
+        each(current, '[data-ring]', function (ring) {
+            var painted = window.OwnifyHeroRing ? window.OwnifyHeroRing.shown(ring) : null;
+            var circle = ring.querySelector('[data-ring-value]');
+            rings.push(painted !== null ? painted : circle ? circle.style.strokeDashoffset : '');
+        });
         each(current, '[data-bar]', function (bar) { bars.push(bar.style.getPropertyValue('--meter-fill')); });
 
         var node = document.importNode(next, true);

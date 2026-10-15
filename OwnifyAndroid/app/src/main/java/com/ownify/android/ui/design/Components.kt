@@ -583,12 +583,19 @@ fun ScoreRing(
     modifier: Modifier = Modifier,
     size: Dp = LocalScreen.current.heroRingSize,
     accent: Accent = Accent.HEALTH,
-    description: String? = null
+    description: String? = null,
+    /** Overzicht's Gezondheidsscore: faint to light, glowing, arriving as a light (HeroRing.kt). */
+    glow: Boolean = false
 ) {
     val empty = value == null
     val target = if (value == null || max <= 0) 0f else (value.toFloat() / max).coerceIn(0f, 1f)
-    val shown = animatedShare(target, play, durationMs = 1100)
-    val number = countUpText(value?.toString() ?: "—", play && !empty)
+    val glowing = glow && !empty
+    val arrival = if (glowing) heroArrival(target, play) else null
+    val light = arrival?.let { heroLight(it) }
+    val shown = arrival?.shown ?: animatedShare(target, play, durationMs = 1100)
+    val counted = countUpText(value?.toString() ?: "—", play && !empty && !glowing)
+    // The glowing ring's number counts with the ring.
+    val number = if (arrival != null && value != null) OwnifyFormat.number(Math.round(value * arrival.reached).toDouble(), 0, grouping = false) else counted
     val fsScore = LocalScreen.current.fsScore
 
     Box(
@@ -616,11 +623,13 @@ fun ScoreRing(
                 )
             } else {
                 // ::before — inset -26%: the page's colour at 30%, 10% at 36% and gone at 66% of the corner distance.
-                val reach = this.size.width * 1.52f * 0.70710677f
+                // The glowing ring's light grows with the score (HeroRing.kt heroLight).
+                val reach = this.size.width * 1.52f * 0.70710677f * (light?.scale ?: 1f)
+                val k = light?.k ?: 1f
                 drawCircle(
                     brush = Brush.radialGradient(
-                        0f to accent.color.copy(alpha = 0.30f),
-                        0.36f to accent.color.copy(alpha = 0.10f),
+                        0f to accent.color.copy(alpha = (0.30f * k).coerceIn(0f, 1f)),
+                        0.36f to accent.color.copy(alpha = (0.10f * k).coerceIn(0f, 1f)),
                         0.66f to accent.color.copy(alpha = 0f),
                         center = center,
                         radius = reach
@@ -641,6 +650,11 @@ fun ScoreRing(
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(0.5f * unit, 9f * unit))
                     )
                 )
+                return@Canvas
+            }
+
+            if (arrival != null) {
+                drawHeroRing(arrival, r, 8f * unit)
                 return@Canvas
             }
 
@@ -686,7 +700,11 @@ fun ScoreRing(
                     if (empty) FontWeight.Normal else FontWeight.Bold,
                     if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                     tracking = if (empty) (-0.045).em else (-0.05).em, lineHeight = 1.em, tabular = true
-                )
+                ).let { style ->
+                    // Dark: the number carries the ring's light, more the higher the score.
+                    if (light == null || Ownify.light || light.glow <= 0f) style
+                    else style.copy(shadow = androidx.compose.ui.graphics.Shadow(Ownify.Health.copy(alpha = 0.7f * light.glow), blurRadius = 22f * light.glow * LocalDensity.current.density))
+                }
             )
             if (empty) {
                 Spacer(Modifier.height(Ownify.Space2))

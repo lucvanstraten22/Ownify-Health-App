@@ -37,7 +37,7 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
         </span>
     </div>
 
-    <div class="score-ring" data-ring data-progress="<?= e((string) round($ratio, 4)) ?>"
+    <div class="score-ring score-ring--glow" data-ring data-ring-paint="glow" data-progress="<?= e((string) round($ratio, 4)) ?>"
          role="img"
          aria-label="<?= e($overall['label']) ?>: <?= has_value($overall['value'])
              ? e(tf('%1$s van %2$s', (string) $overall['value'], (string) $overall['max']))

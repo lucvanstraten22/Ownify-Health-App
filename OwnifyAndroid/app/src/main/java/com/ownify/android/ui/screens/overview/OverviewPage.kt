@@ -184,6 +184,7 @@ private fun HealthScoreCard(data: AppData) {
             scale = if (empty) overall.caption else trf("van %s", overall.max),
             label = overall.label,
             play = play,
+            glow = true,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = Ownify.Space6, bottom = Ownify.Space5)

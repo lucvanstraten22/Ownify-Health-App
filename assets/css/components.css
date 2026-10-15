@@ -579,6 +579,31 @@
     letter-spacing: var(--tracking-title);
 }
 
+/* Overzicht's Gezondheidsscore (hero-ring.js): a canvas over the SVG, larger
+   than the ring so its light is never cut off. The light behind it and on the
+   number grow with the score (--ring-halo-k, --ring-glow, set as it draws). */
+.score-ring__canvas {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    pointer-events: none;
+}
+.score-ring.has-canvas .score-ring__svg { visibility: hidden; }
+.score-ring__canvas.is-fading { animation: score-ring-fade 200ms ease-out both; }
+@keyframes score-ring-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.card--hero:not(.is-empty) .score-ring--glow::before {
+    background: radial-gradient(circle,
+        color-mix(in srgb, var(--accent) calc(30% * var(--ring-halo-k, 1)), transparent) 0%,
+        color-mix(in srgb, var(--accent) calc(10% * var(--ring-halo-k, 1)), transparent) 36%,
+        transparent 66%);
+    transform: scale(var(--ring-halo-scale, 1));
+}
+:root:not([data-theme="light"]) .card--hero:not(.is-empty) .score-ring--glow .score-ring__number {
+    text-shadow: 0 0 calc(22px * var(--ring-glow, 0)) color-mix(in srgb, var(--health) calc(70% * var(--ring-glow, 0)), transparent);
+}
+
 /* Ring legend — explains what the score is made of. */
 .legend {
     display: grid;

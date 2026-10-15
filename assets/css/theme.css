@@ -58,6 +58,16 @@
     --accent: var(--health);
     --accent-light: color-mix(in srgb, var(--health) 65%, #ffffff);
 
+    /* The Gezondheidsscore ring on Overzicht (hero-ring.js): faint where it
+       starts, the app's green, then light at 100 — the gradient belongs to
+       the circle. The head and tail of its arrival, the light at its tip.
+       Mirrored in OwnifyTheme.kt (Ownify.RingFrom …). */
+    --ring-from: color-mix(in oklab, var(--health) 50%, rgb(var(--ground)));
+    --ring-mid: color-mix(in oklab, var(--health) 92%, #ffffff);
+    --ring-peak: color-mix(in oklab, var(--health) 38%, #ffffff);
+    --ring-head: color-mix(in oklab, var(--health) 18%, #ffffff);
+    --ring-tail: color-mix(in oklab, var(--health) 55%, #ffffff);
+
     /* A day that did not make it. The palette had no such colour, because
        until now nothing in the app had to say "this went wrong" — scores go
        quiet rather than red. Desaturated to the same degree as the three
@@ -755,6 +765,13 @@ button {
        green, the grey tile, the missed day — keeps its exact value. */
     --score-mid: #7D910B;
     --score-low: #AC8032;
+
+    /* The score ring on white: pale where it starts, deepest at 100. */
+    --ring-from: color-mix(in oklab, var(--health) 42%, #ffffff);
+    --ring-mid: color-mix(in oklab, var(--health) 90%, #000000);
+    --ring-peak: color-mix(in oklab, var(--health) 72%, #000000);
+    --ring-head: color-mix(in oklab, var(--health) 55%, #ffffff);
+    --ring-tail: var(--health);
     --attention: #7D6A33;
 
     /* The zones on white: the grey and the top orange deeper, to 3:1. */
