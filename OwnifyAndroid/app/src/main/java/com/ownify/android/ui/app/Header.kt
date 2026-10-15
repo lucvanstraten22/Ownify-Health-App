@@ -141,6 +141,9 @@ fun SharedHeader(
  * [Ownify.EdgeFade] past the frame — a scroll edge, not a line — and the
  * veil fades in and out over `--transition-fast`, as on the website.
  */
+/** `--header-fade`: how far below the main header its veil fades out. */
+private val HeaderFade = 32.dp
+
 @Composable
 fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean = false, content: @Composable BoxScope.() -> Unit) {
     val top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()
@@ -156,8 +159,8 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                     .matchParentSize()
                     .layout { measurable, constraints ->
                         // A bar with a title in it reaches further (`.detail__top.is-titled::before`);
-                        // the main header ends below its buttons by as much as there is above them.
-                        val extra = (if (deep) Ownify.EdgeFade * 2.5f else top).roundToPx()
+                        // the main header's veil is solid to its own bottom and fades over 32 below it.
+                        val extra = (if (deep) Ownify.EdgeFade * 2.5f else HeaderFade).roundToPx()
                         val placeable = measurable.measure(Constraints.fixed(constraints.maxWidth, constraints.maxHeight + extra))
                         layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
                     }
@@ -170,12 +173,16 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                         drawContent()
                         drawRect(
                             if (deep) Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent)
-                            // One long eased fade (`.app-header::before` mask), the tint even under it.
-                            else Brush.verticalGradient(
-                                0f to Color.Black, 0.4f to Color.Black, 0.54f to Color.Black.copy(alpha = 0.86f),
-                                0.66f to Color.Black.copy(alpha = 0.64f), 0.78f to Color.Black.copy(alpha = 0.38f),
-                                0.89f to Color.Black.copy(alpha = 0.16f), 0.96f to Color.Black.copy(alpha = 0.04f), 1f to Color.Transparent
-                            ),
+                            // Solid to the header's bottom, then one eased fade (`.app-header::before` mask).
+                            else {
+                                val f = HeaderFade.toPx() / size.height
+                                Brush.verticalGradient(
+                                    0f to Color.Black, (1f - f) to Color.Black,
+                                    (1f - f * 0.8f) to Color.Black.copy(alpha = 0.82f), (1f - f * 0.6f) to Color.Black.copy(alpha = 0.55f),
+                                    (1f - f * 0.4f) to Color.Black.copy(alpha = 0.28f), (1f - f * 0.2f) to Color.Black.copy(alpha = 0.09f),
+                                    1f to Color.Transparent
+                                )
+                            },
                             blendMode = BlendMode.DstIn
                         )
                     }

@@ -213,24 +213,24 @@
 /* Scrolled: a tint over the page blurred behind it, and the two fade out
    together towards the bottom edge — a scroll edge, not a line. The blur
    used to stop at the header's box while its tint faded, which left a hard
-   seam across the cards. The layer ends below the buttons by as much as
-   there is above them (the safe area and --space-3), and the fade is one
-   long eased curve: the tint is even and the mask alone fades it, so tint
-   and blur leave together instead of the tint going twice as fast. It
-   sits behind the header's own content. Mirrored in Header.kt
-   (HeaderFrame). */
+   seam across the cards. The veil is solid down to the header's own bottom
+   — --space-3 under the buttons — and fades out below it over
+   --header-fade, in one eased curve: the tint is even and the mask alone
+   fades it, so tint and blur leave together. It sits behind the header's
+   own content. Mirrored in Header.kt (HeaderFrame). */
 .app-header::before {
     content: "";
     position: absolute;
-    inset: 0 0 calc(-1 * var(--safe-top)) 0;
+    --header-fade: 32px;
+    inset: 0 0 calc(-1 * var(--header-fade)) 0;
     z-index: -1;
     background: linear-gradient(180deg,
         rgba(var(--ground), var(--veil-top)) 0%,
         rgba(var(--ground), var(--veil-mid)) 100%);
     -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(140%);
     backdrop-filter: blur(var(--blur-bar)) saturate(140%);
-    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0, 0, 0, 0.86) 54%, rgba(0, 0, 0, 0.64) 66%, rgba(0, 0, 0, 0.38) 78%, rgba(0, 0, 0, 0.16) 89%, rgba(0, 0, 0, 0.04) 96%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0, 0, 0, 0.86) 54%, rgba(0, 0, 0, 0.64) 66%, rgba(0, 0, 0, 0.38) 78%, rgba(0, 0, 0, 0.16) 89%, rgba(0, 0, 0, 0.04) 96%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.82) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.55) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.28) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.09) calc(100% - var(--header-fade) * 0.2), transparent 100%);
+    mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.82) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.55) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.28) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.09) calc(100% - var(--header-fade) * 0.2), transparent 100%);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition-fast);
