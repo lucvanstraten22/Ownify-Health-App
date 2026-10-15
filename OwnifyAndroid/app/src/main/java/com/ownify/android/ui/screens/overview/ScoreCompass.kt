@@ -152,6 +152,7 @@ private fun HeroCard(data: AppData) {
             scale = if (empty) overall.caption else trf("van %s", compass.max),
             label = overall.label,
             play = play,
+            glow = true,
             description = overall.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", compass.score, compass.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)

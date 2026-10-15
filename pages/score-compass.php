@@ -46,7 +46,7 @@ $opportunity = $compass['opportunity'];
 
                 <?php /* The score itself, as Overzicht shows it. */ ?>
                 <section class="card card--hero reveal <?= state_class($score['value']) ?>" aria-labelledby="compass-title">
-                    <div class="score-ring" data-ring data-progress="<?= e((string) round($ratio, 4)) ?>"
+                    <div class="score-ring score-ring--glow" data-ring data-ring-paint="glow" data-progress="<?= e((string) round($ratio, 4)) ?>"
                          role="img"
                          aria-label="<?= e($overall['label']) ?>: <?= has_value($score['value'])
                              ? e(tf('%1$s van %2$s', (string) $score['value'], (string) $score['max']))

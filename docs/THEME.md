@@ -77,7 +77,7 @@ on white, so each is the same hue, deeper — the smallest change that reads:
 | `--attention` | `#BFA863` | `#7D6A33` | 2.3:1 on white → 5.3:1; it is also small text (a warning, an error note), so 4.5:1 on every light ground. Its washes and borders keep the original gold |
 | `--error` | `#FF8B8B` | `#C2453E` | the wizard's, the editor's and the rating's red: 2.3:1 on white → 5.0:1 (4.95:1 on a card) |
 
-**The Gezondheidsscore ring on Overzicht** (since 18.1, `assets/js/hero-ring.js`
+**The Gezondheidsscore ring on Overzicht and the Scorekompas** (since 18.1, `assets/js/hero-ring.js`
 and `HeroRing.kt`) is painted from `--ring-from`, `--ring-mid`, `--ring-peak`
 (faint → the green → light at 100), `--ring-head` and `--ring-tail` (its
 arrival and the light at its tip), all mixes of `--health`. On Dark it runs
