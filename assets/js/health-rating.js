@@ -16,6 +16,12 @@
 
     var T = window.OwnifyI18n;     // language and units (assets/js/i18n.js)
 
+    /* Swapping in parts of a page fetched again, brought to the state the
+       page-load scripts leave them in: Gezondheid's pull to sync uses it too
+       (pull-sync.js). Declared below; hoisted, so there with or without this
+       page's rating card. */
+    window.OwnifyRefresh = { replace: replace, settle: settle };
+
     var card = document.querySelector('[data-nutrition-rating]');
     if (!card) { return; }
 

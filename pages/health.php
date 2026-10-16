@@ -4,7 +4,7 @@
  *
  * Deliberately compact: three scores and how they went (the Verloop:
  * components/health-history.php). Everything else lives in the detail page
- * behind each card.
+ * behind each card. Pulled down from the top it syncs (pull-sync.js).
  */
 declare(strict_types=1);
 
@@ -13,8 +13,13 @@ $health = $data['health'];
 <section class="screen page" data-page="health" aria-label="<?= e(t('Gezondheid')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
+    <?php /* Pull to sync (components/pull-sync.php): its button for
+             keyboards and screen readers, then the indicator under the header. */ ?>
+    <button type="button" class="pull-sync__start" data-pull-start><?= e(t('Synchroniseren')) ?></button>
+    <?php component('pull-sync', $data); ?>
+
     <div class="screen__scroll" data-scroller>
-        <main class="app__main">
+        <main class="app__main" data-pull-content>
             <div class="shell stack">
 
                 <header class="page-intro reveal">

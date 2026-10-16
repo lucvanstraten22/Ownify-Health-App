@@ -165,6 +165,11 @@ class ShellState(
     var underScroll by mutableStateOf(ScrollState(0))
         private set
 
+    // ------------------------------------------------- pull to sync
+
+    /** Gezondheid's pull to sync (PullSync.kt): its state, which [pullController] moves. */
+    val pull = PullSyncState(scope).also { it.still = { reduceMotion } }
+
     // ---------------------------------------------------------- the sheet
 
     var aiOpen by mutableStateOf(false)
@@ -493,9 +498,34 @@ class ShellState(
         override fun cancel() = settleAi(aiDrag?.base ?: if (aiOpen) 1f else 0f)
     }
 
+    /**
+     * Vertical, downward only: Gezondheid pulled down from its top, to sync
+     * (pull-sync.js). Only on Gezondheid, resting on it, scrolled to the very
+     * top, with nothing in front of it, and not from the dock — the
+     * assistant's is a pull UP from there, the rail's is sideways, so none
+     * of them meet. Anything else is the page's own scroll.
+     */
+    val pullController = object : AxisController {
+        override fun canStart(ctx: GestureContext): Boolean {
+            if (ctx.dy <= 0f || !pull.canPull) return false
+            if (aiOpen || overlayOpen || (detail != null && detailShown)) return false
+            if (currentPage != "health" || railJob?.isActive == true || railDrag != null) return false
+            if (scrolls["health"]?.value != 0) return false
+            return dockZones.none { it.contains(Offset(ctx.startX, ctx.startY)) }
+        }
+
+        override fun begin(ctx: GestureContext) = pull.begin()
+
+        override fun move(ctx: GestureContext) = pull.move(ctx.dy)
+
+        override fun end(ctx: GestureContext) = pull.end()
+
+        override fun cancel() = pull.cancel()
+    }
+
     /** The detail layer claims a rightward drag before the rail may (their zones never overlap). */
     val controllers: Map<Axis, List<AxisController>>
-        get() = mapOf(Axis.X to listOf(detailController, railController), Axis.Y to listOf(aiController))
+        get() = mapOf(Axis.X to listOf(detailController, railController), Axis.Y to listOf(pullController, aiController))
 
     /** Predictive back on a detail page: the page follows the back gesture. */
     fun backProgress(progress: Float) {

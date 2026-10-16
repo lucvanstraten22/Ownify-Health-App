@@ -344,6 +344,17 @@ try {
     proc_terminate($server);
 }
 
+/* Pull to sync (20.0): only a source the server can ask on request says it can be synced. */
+echo "\nPull to sync: which sources can be asked\n";
+require_once $root . '/includes/integrations.php';
+$providers = integration_providers();
+check('Polar can be asked for new data (its sync endpoint)', !empty($providers['polar']['sync'])
+    && is_file($root . '/api/integrations/polar/sync.php'));
+check('Google Health cannot (no sync implementation)', empty($providers['google_health']['sync']));
+check('Health Connect cannot: only its phone can send', empty($providers['google_health_connect']['sync']));
+check('integration_public() says so', integration_public(0, 'polar')['can_sync'] === true
+    && integration_public(0, 'google_health_connect')['can_sync'] === false);
+
 echo "\n" . str_repeat('-', 72) . "\n";
 printf("  %d passed, %d failed\n", $pass, $fail);
 

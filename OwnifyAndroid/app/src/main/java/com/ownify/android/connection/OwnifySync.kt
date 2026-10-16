@@ -92,6 +92,23 @@ object OwnifySync {
     }
 
     /**
+     * One sync now, waited for — Gezondheid's pull to sync (PullSync.kt): the
+     * same run as [sync], on the caller's coroutine, so the pull's capsule
+     * stays exactly as long as it takes. The screen's state follows it as it
+     * follows [sync]; the outcome says what really happened, so a pull never
+     * says "synced" for a phone that has nothing to send.
+     */
+    internal suspend fun pull(context: Context): OwnifySyncOutcome {
+        job?.join()
+        val env = OwnifySyncRunner.environment(context.applicationContext)
+        state = OwnifySyncState.Syncing
+        val outcome = OwnifySyncRunner.run(env, automatic = false)
+        state = show(outcome)
+        record = env.status.read()
+        return outcome
+    }
+
+    /**
      * One automatic run (OwnifySyncWorker). The screen shows it while it runs
      * and shows its result when it synced; anything else it leaves to the
      * status line, rather than showing an error nobody asked about.

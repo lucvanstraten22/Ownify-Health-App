@@ -11,7 +11,6 @@
     'use strict';
 
     var charts = document.querySelectorAll('[data-chart]');
-    if (!charts.length) { return; }
 
     var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');   // read live: it can change while open
 
@@ -93,7 +92,10 @@
         draw(activeRange(chart));
     }
 
-    Array.prototype.forEach.call(charts, function (chart) {
+    /* One chart's switch and draw-on: every chart on the page, and one that
+       arrives later — Gezondheid's Verloop, swapped in fresh after a pull to
+       sync (pull-sync.js). */
+    function wire(chart) {
         var card = chart.closest('.card');
         if (card) {
             card.addEventListener('click', function (event) {
@@ -115,5 +117,9 @@
         }, { threshold: 0.25 });
 
         observer.observe(chart);
-    });
+    }
+
+    Array.prototype.forEach.call(charts, wire);
+
+    window.OwnifyTrend = { wire: wire };
 }());

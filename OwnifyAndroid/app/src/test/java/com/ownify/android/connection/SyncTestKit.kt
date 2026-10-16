@@ -307,6 +307,23 @@ class FakeOwnifyServer {
     /** Plain files the server serves, by path ("/uploads/avatars/…"): profile pictures. */
     val files: MutableMap<String, ByteArray> = java.util.concurrent.ConcurrentHashMap()
 
+    /** Whether api/integrations/polar/sync.php fails (502), as when Polar cannot be reached. */
+    @Volatile
+    var polarFails = false
+
+    /** Polar connected in the pages, as a source the server can ask for new data (`can_sync`). */
+    fun connectPolar() {
+        val state = JSONObject(stateBody)
+        val integrations = state.getJSONObject("data").getJSONObject("settings").getJSONArray("integrations")
+        integrations.put(
+            JSONObject().put("key", "polar").put("provider", "polar").put("label", "Polar").put("icon", "watch")
+                .put("note", "Polar-horloges").put("categories", org.json.JSONArray()).put("status", "connected")
+                .put("connected", true).put("transport", "cloud").put("available", true).put("can_sync", true)
+                .put("devices", org.json.JSONArray())
+        )
+        stateBody = state.toString()
+    }
+
     /** Whether api/profile/privacy.php saves — as after migration 014 — or refuses, as before it (503). */
     @Volatile
     var privacySaves = true
@@ -501,6 +518,15 @@ class FakeOwnifyServer {
                         savePrivacy(on)
                         reply(exchange, 200, """{"ok":true,"leaderboard_avatar":$on,"message":"Opgeslagen."}""")
                     }
+                }
+            }
+            // A cloud source asked for new data (api/integrations/polar/sync.php): Gezondheid's pull to sync.
+            path.endsWith("/integrations/polar/sync.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    polarFails -> reply(exchange, 502, """{"ok":false,"error":"Polar is nu niet bereikbaar."}""")
+                    else -> reply(exchange, 200, """{"ok":true,"message":"Gesynchroniseerd","status":"ok","written":3}""")
                 }
             }
             // Instellingen › Voorkeuren (api/profile/preferences.php): kept on the account, read back in the pages.

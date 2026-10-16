@@ -2026,7 +2026,9 @@ data class Integration(
     /** What disconnecting means for this source, in place of the general line (Polar's). */
     val disconnectNote: String? = null,
     /** What the `account` row is called for this source (Polar: its watches), in place of "Account". */
-    val accountLabel: String? = null
+    val accountLabel: String? = null,
+    /** The server can ask it for new data now (`can_sync`: a cloud source with a sync endpoint, Polar) — Gezondheid's pull to sync. */
+    val canSync: Boolean = false
 ) {
     companion object {
         fun parse(o: JSONObject) = Integration(
@@ -2036,7 +2038,7 @@ data class Integration(
             o.arr("devices").map {
                 PairedDevice(it.int("id") ?: 0, it.str("label").orEmpty(), it.str("last_sync"), it.str("paired"), it.str("own"), it.bool("custom"))
             },
-            o.bool("syncing"), o.str("disconnect_note"), o.str("account_label")
+            o.bool("syncing"), o.str("disconnect_note"), o.str("account_label"), o.bool("can_sync")
         )
     }
 }

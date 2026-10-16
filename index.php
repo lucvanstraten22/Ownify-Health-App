@@ -253,5 +253,6 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/friends.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/devices.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/pull-sync.js')) ?>" defer></script>
 </body>
 </html>

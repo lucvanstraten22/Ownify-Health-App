@@ -47,6 +47,10 @@ if (!function_exists('settings_prepare')) {
             /* A sync running now (a cloud source, after connecting or on its
                schedule), so the row can say so. */
             $integration['syncing']   = (bool) ($state['syncing'] ?? false);
+            /* Whether Ownify can ask it for new data now (pull-to-sync on
+               Gezondheid): a cloud source with a sync endpoint. A phone's
+               source cannot be reached from here; its phone sends on its own. */
+            $integration['can_sync']  = (bool) ($state['can_sync'] ?? false);
 
             /* Whether connecting is possible at all, and if not, why. A
                source whose data lives on a phone cannot be reached from a

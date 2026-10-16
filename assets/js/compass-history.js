@@ -33,6 +33,9 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-compass-history]'), compass);
     Array.prototype.forEach.call(document.querySelectorAll('[data-health-history]'), health);
 
+    /* Gezondheid's Verloop, swapped in fresh after a pull to sync (pull-sync.js). */
+    window.OwnifyHistory = { health: function (card) { health(card); } };
+
     function text(value) {
         return value === null || value === undefined ? '—' : String(value);
     }

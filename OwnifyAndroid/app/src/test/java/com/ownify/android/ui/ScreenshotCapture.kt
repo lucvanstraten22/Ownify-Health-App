@@ -29,6 +29,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -444,6 +445,40 @@ class ScreenshotCapture {
     @Test fun goal300() = detail("goals", Detail.GoalPage("300"), "goal-300", 760)
     @Test fun settingsAccount() = detail("settings", Detail.SettingsPage("account"), "settings-account", 760, 1520)
     @Test fun settingsDevices() = detail("settings", Detail.SettingsPage("devices"), "settings-devices", 600)
+    /** Gezondheid's pull to sync, each stage: pulled, past the point (a finger still on it), syncing, done, failed. */
+    @Test fun pullSync() {
+        app { tab("health") }
+        fun save(name: String) {
+            compose.waitForIdle()
+            FileOutputStream(File(out, "app-$name.png")).use { capture().compress(Bitmap.CompressFormat.PNG, 100, it) }
+        }
+        for ((name, dy) in listOf("pull-1-pulling" to 60f, "pull-2-armed" to 300f)) {
+            compose.onRoot().performTouchInput {
+                down(Offset(width / 2f, height * 0.45f))
+                repeat(20) { moveBy(Offset(0f, dy * density / 20)) }
+            }
+            compose.mainClock.advanceTimeBy(120)
+            save(name)
+            // Taken away, not let go: nothing syncs here.
+            compose.onRoot().performTouchInput { cancel() }
+            settle()
+        }
+        val stages = listOf(
+            "pull-3-syncing" to (suspend { kotlinx.coroutines.delay(600_000); com.ownify.android.ui.app.PullResult(0, null) }),
+            "pull-4-done" to (suspend { com.ownify.android.ui.app.PullResult(1, null) }),
+            "pull-5-failed" to (suspend { com.ownify.android.ui.app.PullResult(0, "Polar: Polar is nu niet bereikbaar.") })
+        )
+        for ((name, work) in stages) {
+            compose.runOnUiThread {
+                shell.pull.dismiss()
+                shell.pull.work = work
+                shell.pull.start()
+            }
+            compose.mainClock.advanceTimeBy(900)
+            save(name)
+        }
+    }
+
     /** Apparaten & Gezondheid with this phone's source open: its phones, each with its two links. */
     @Test fun settingsDevicesOpen() {
         app { tab("settings") }

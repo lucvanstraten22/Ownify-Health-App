@@ -146,4 +146,11 @@ return [
     'Zo' => 'Sun',
     '%d dag' => '%d day',
     '%d dagen' => '%d days',
+
+    // Pull to sync on Gezondheid (20.0)
+    'Synchroniseren' => 'Sync',
+    'Aan het synchroniseren…' => 'Syncing…',
+    'Bijgewerkt' => 'Up to date',
+    'Loslaten om te synchroniseren' => 'Release to sync',
+    'Opnieuw' => 'Try again',
 ];

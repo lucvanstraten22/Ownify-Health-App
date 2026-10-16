@@ -52,6 +52,10 @@ if (!function_exists('integration_providers')) {
                 'label'     => 'Polar',
                 'transport' => 'cloud',
                 'note'      => t('Polar-horloges en -sensoren, via Polar Flow'),
+                /* The server can fetch it on request (api/integrations/polar/sync.php):
+                   what Gezondheid's pull-to-sync asks for. A source without
+                   one is only ever refreshed, never "synced". */
+                'sync'      => true,
                 /* What Polar needs beyond every cloud source: its own
                    credentials and migration 020 (includes/polar.php). */
                 'check'     => 'polar_problem',
@@ -201,6 +205,9 @@ if (!function_exists('integration_providers')) {
             'label'         => $meta['label'],
             'transport'     => $meta['transport'],
             'note'          => $meta['note'],
+            /* Whether the server can fetch it now, on request: a cloud source
+               with its own sync endpoint (api/integrations/<provider>/sync.php). */
+            'can_sync'      => !empty($meta['sync']),
             'status'        => $row['status'] ?? 'disconnected',
             'connected'     => ($row['status'] ?? null) === 'connected',
             'account'       => $row['external_account_label'] ?? null,

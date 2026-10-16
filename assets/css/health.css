@@ -559,3 +559,252 @@
     .metric-tiles { gap: var(--space-2); }
     .stage-legend { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* --------------------------------------------------------------------------
+   Pull-to-sync (components/pull-sync.php, assets/js/pull-sync.js)
+
+   Pulled from the top, the page follows the finger with growing resistance
+   and a glass circle comes out from under the header, its ring filling
+   towards the point where letting go syncs; there the arrow turns to say
+   so. Let go there, the circle opens into a capsule that stays under the
+   header — "Aan het synchroniseren…" with a turning arc — for as long as the
+   sync really takes, then says how it went and slides away. The page is
+   held down by just the capsule's room meanwhile.
+
+   --pull     how far the page is pulled down, px (set while pulled or held)
+   --pull-in  0 → 1: how far the circle has come out (its size and opacity)
+   --pull-p   0 → 1: how close to the point where letting go syncs (the ring)
+   The same in the app: PullSync.kt.
+   -------------------------------------------------------------------------- */
+.pull-sync {
+    --pull: 0px;
+    --pull-in: 0;
+    --pull-p: 0;
+    --pill-h: 36px;
+    position: absolute;
+    inset-inline: 0;
+    top: var(--app-header-space);
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    height: 0;
+    pointer-events: none;
+}
+
+/* The circle, and the capsule it opens into: the header buttons' glass. */
+.pull-sync__pill {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    width: 36px;
+    height: var(--pill-h);
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    box-shadow:
+        0 8px 20px rgba(var(--shade), calc(0.26 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    color: var(--text-primary);
+    /* Centred in the room the pull opens, out from under the header. */
+    transform: translate3d(0, calc(var(--pull) / 2 - var(--pill-h) / 2), 0) scale(calc(0.6 + 0.4 * var(--pull-in)));
+    opacity: var(--pull-in);
+}
+
+.pull-sync__pill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+.pull-sync__icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+}
+
+.pull-sync__ring {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    transform: rotate(calc(-90deg + 200deg * var(--pull-p)));
+}
+
+.pull-sync__track,
+.pull-sync__arc {
+    fill: none;
+    stroke-width: 2.2;
+}
+
+.pull-sync__track { stroke: rgba(var(--ink), 0.12); }
+
+.pull-sync__arc {
+    stroke: var(--text-secondary);
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: calc(100 - 100 * var(--pull-p));
+    transition: stroke var(--transition-fast);
+}
+
+.pull-sync__glyph {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    stroke-width: 2.4;
+    opacity: 0;
+    transition: opacity 160ms ease, transform 220ms var(--ease-out-strong);
+}
+
+/* Pulling: the arrow points down; past the point it turns to point up — let go. */
+.pull-sync__arrow { opacity: calc(0.4 + 0.6 * var(--pull-p)); color: var(--text-secondary); }
+.pull-sync[data-state="armed"] .pull-sync__arrow { transform: rotate(180deg); color: var(--health); }
+.pull-sync[data-state="armed"] .pull-sync__arc { stroke: var(--health); }
+
+.pull-sync__label {
+    flex: none;
+    padding-right: var(--space-4);
+    font-size: var(--fs-small);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--tracking-small);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 180ms ease 60ms;
+}
+
+/* Syncing: an arc turning on its track, no arrow. */
+.pull-sync[data-state="syncing"] .pull-sync__arrow,
+.pull-sync[data-state="done"] .pull-sync__arrow,
+.pull-sync[data-state="failed"] .pull-sync__arrow { opacity: 0; }
+
+.pull-sync[data-state="syncing"] .pull-sync__ring {
+    transform: none;
+    animation: pull-sync-turn 900ms linear infinite;
+}
+
+.pull-sync[data-state="syncing"] .pull-sync__arc {
+    stroke: var(--health);
+    stroke-dashoffset: 70;
+    transition: none;
+}
+
+@keyframes pull-sync-turn {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Done: the ring goes, a check comes. Failed: the caution colour, and Opnieuw. */
+.pull-sync[data-state="done"] .pull-sync__ring,
+.pull-sync[data-state="failed"] .pull-sync__ring { opacity: 0; transition: opacity 160ms ease; }
+.pull-sync[data-state="done"] .pull-sync__check { opacity: 1; color: var(--health); }
+.pull-sync[data-state="failed"] .pull-sync__alert { width: 16px; height: 16px; stroke-width: 2; opacity: 1; color: var(--attention); }
+
+.pull-sync[data-state="syncing"] .pull-sync__label,
+.pull-sync[data-state="done"] .pull-sync__label,
+.pull-sync[data-state="failed"] .pull-sync__label { opacity: 1; }
+
+.pull-sync[data-state="failed"] .pull-sync__label { padding-right: var(--space-2); }
+
+.pull-sync__retry {
+    flex: none;
+    align-self: stretch;
+    margin-right: 3px;
+    padding-inline: var(--space-3);
+    border: 0;
+    border-left: 1px solid var(--glass-hairline);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* The capsule takes taps only while there is something on it to tap — and
+   then all of it retries, 44 tall, a whole target rather than a sliver. */
+.pull-sync[data-state="failed"] { --pill-h: 44px; }
+.pull-sync[data-state="failed"] .pull-sync__pill { pointer-events: auto; cursor: pointer; }
+
+/* Letting go, settling, opening, closing: the page and the capsule move
+   together, on the screen's own curve. While a finger holds it, nothing
+   eases: it is where the finger is. */
+.pull-sync.is-settling .pull-sync__pill {
+    transition:
+        transform 420ms var(--ease-out-strong),
+        opacity 240ms ease,
+        width 320ms var(--ease-out-strong),
+        height 320ms var(--ease-out-strong);
+}
+
+[data-pull-content] { will-change: auto; }
+[data-pull-content].is-pulled { will-change: transform; }
+[data-pull-content].is-settling { transition: transform 420ms var(--ease-out-strong); }
+
+/* For keyboards and screen readers, which cannot pull: the same sync as a
+   button, out of sight until it has focus. */
+.pull-sync__start {
+    position: absolute;
+    top: calc(var(--app-header-space) + var(--space-2));
+    left: 50%;
+    z-index: 3;
+    min-height: 36px;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-pill);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-small);
+    transform: translateX(-50%);
+}
+
+.pull-sync__start:not(:focus-visible) {
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    border: 0;
+    white-space: nowrap;
+}
+
+/* Reduced motion: nothing turns or slides on its own — the arc stands
+   still and the capsule appears and goes in place. A finger still moves
+   the page: that motion is the finger's. */
+@media (prefers-reduced-motion: reduce) {
+    .pull-sync[data-state="syncing"] .pull-sync__ring { animation: none; transform: rotate(-90deg); }
+    .pull-sync.is-settling .pull-sync__pill { transition: opacity 180ms ease; }
+    [data-pull-content].is-settling { transition: none; }
+}
+
+:root[data-motion="reduce"] .pull-sync[data-state="syncing"] .pull-sync__ring { animation: none; transform: rotate(-90deg); }
+:root[data-motion="reduce"] .pull-sync.is-settling .pull-sync__pill { transition: opacity 180ms ease; }
+:root[data-motion="reduce"] [data-pull-content].is-settling { transition: none; }
+
+/* Scrolled to the very top, Gezondheid does not bounce on a pull down: the
+   pull is pull-sync.js's from its first pixel, so the phone's browser can
+   neither scroll it nor start its own pull-to-refresh. Below the top it
+   scrolls and bounces as every page does. */
+[data-page="health"] .screen__scroll.is-at-top { overscroll-behavior-y: none; }
