@@ -1,4 +1,4 @@
-package com.ownify.android.ui.screens.health
+package com.ownify.android.ui.app
 
 import android.content.Context
 import android.os.Build
@@ -52,9 +52,6 @@ import com.ownify.android.data.OwnifyActions
 import com.ownify.android.data.OwnifyAppState
 import com.ownify.android.data.Outcome
 import com.ownify.android.i18n.tr
-import com.ownify.android.ui.app.PullPhase
-import com.ownify.android.ui.app.PullResult
-import com.ownify.android.ui.app.PullSyncState
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.Pane
@@ -65,7 +62,8 @@ import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
 
 /**
- * What a pull on Gezondheid syncs, and nothing it cannot (pull-sync.js):
+ * What a pull syncs, on any of the five pages, and nothing it cannot
+ * (pull-sync.js):
  *
  *   this phone   its Health Connect, read and sent through the one sync
  *                pipeline (OwnifySync.pull) — when this phone is set up to

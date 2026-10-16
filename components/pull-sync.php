@@ -1,9 +1,9 @@
 <?php
 /**
- * Gezondheid's pull-to-sync (assets/js/pull-sync.js): the indicator that
- * comes out from under the header as the page is pulled down, and stays as a
- * small capsule — "Aan het synchroniseren…" — for as long as the sync really
- * takes, then says how it went.
+ * Pull-to-sync on the five pages (assets/js/pull-sync.js): the one indicator,
+ * under the shared header, that comes out as the page in front is pulled
+ * down, and stays as a small capsule — "Aan het synchroniseren…" — for as
+ * long as the sync really takes, then says how it went.
  *
  * What a pull can do is said here, from the sources themselves
  * (integration_public()'s can_sync): a connected cloud source with a sync
@@ -12,7 +12,8 @@
  * The Android app does the same and also syncs its own phone.
  *
  * For screen readers and keyboards, which cannot pull, the same sync is a
- * button (data-pull-start) that is visible once it has focus.
+ * button (data-pull-start) that is visible once it has focus. Rendered once,
+ * in the deck, over the rail (index.php).
  */
 declare(strict_types=1);
 
@@ -39,6 +40,7 @@ $config = [
 ];
 ?>
 <div class="pull-sync" data-pull-sync="<?= e(json_encode($config, JSON_UNESCAPED_UNICODE)) ?>" data-state="idle">
+    <button type="button" class="pull-sync__start" data-pull-start><?= e(t('Synchroniseren')) ?></button>
     <div class="pull-sync__pill" data-pull-pill>
         <span class="pull-sync__icon" aria-hidden="true">
             <svg class="pull-sync__ring" viewBox="0 0 24 24" focusable="false">

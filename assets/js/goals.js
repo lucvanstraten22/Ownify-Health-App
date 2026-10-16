@@ -557,6 +557,20 @@
      * in. Resolves true when the page shows what is stored, false when the
      * page could not be fetched (the save itself has already happened).
      */
+    /** The goal parts of a page already fetched: swapped in, wired, in step. */
+    function apply(fresh) {
+        swapBoard(fresh);
+        swapDetails(fresh);
+        swapOverview(fresh);
+
+        bind();
+        sync();
+    }
+
+    /* A pull to sync fetches the page once and hands it to every part that
+       shows what changed (pull-sync.js). */
+    window.OwnifyGoals = { apply: apply };
+
     function refresh() {
         return fetch(window.location.href.split('#')[0], {
             credentials: 'same-origin',
@@ -571,12 +585,7 @@
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 if (!fresh.querySelector('[data-goals]')) { throw new Error('no board'); }
 
-                swapBoard(fresh);
-                swapDetails(fresh);
-                swapOverview(fresh);
-
-                bind();
-                sync();
+                apply(fresh);
                 return true;
             })
             .catch(function () { return false; });

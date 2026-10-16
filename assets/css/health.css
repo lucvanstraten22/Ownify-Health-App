@@ -561,7 +561,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   Pull-to-sync (components/pull-sync.php, assets/js/pull-sync.js)
+   Pull-to-sync, on all five pages (components/pull-sync.php,
+   assets/js/pull-sync.js) — one indicator over the rail, under the header
 
    Pulled from the top, the page follows the finger with growing resistance
    and a glass circle comes out from under the header, its ring filling
@@ -584,7 +585,8 @@
     position: absolute;
     inset-inline: 0;
     top: var(--app-header-space);
-    z-index: 2;
+    /* Over the rail (1), under the shared header (10), the detail layer and the sheet. */
+    z-index: 5;
     display: flex;
     justify-content: center;
     height: 0;
@@ -764,7 +766,8 @@
    button, out of sight until it has focus. */
 .pull-sync__start {
     position: absolute;
-    top: calc(var(--app-header-space) + var(--space-2));
+    top: var(--space-2);
+    pointer-events: auto;
     left: 50%;
     z-index: 3;
     min-height: 36px;
@@ -803,8 +806,8 @@
 :root[data-motion="reduce"] .pull-sync.is-settling .pull-sync__pill { transition: opacity 180ms ease; }
 :root[data-motion="reduce"] [data-pull-content].is-settling { transition: none; }
 
-/* Scrolled to the very top, Gezondheid does not bounce on a pull down: the
+/* Scrolled to the very top, a page does not bounce on a pull down: the
    pull is pull-sync.js's from its first pixel, so the phone's browser can
    neither scroll it nor start its own pull-to-refresh. Below the top it
    scrolls and bounces as every page does. */
-[data-page="health"] .screen__scroll.is-at-top { overscroll-behavior-y: none; }
+.page > .screen__scroll.is-at-top { overscroll-behavior-y: none; }

@@ -57,13 +57,13 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Gezondheid's pull to sync (PullSync.kt), against a server on localhost
+ * Pull to sync on the five pages (PullSync.kt), against a server on localhost
  * with this phone's Health Connect stood in for: a pull past the point
  * syncs this phone and every source the server can ask, ticks once, says
  * so for as long as it takes and goes; a short one does nothing; a failure
  * says so and Opnieuw retries; a phone with nothing to send only refreshes
- * and says "Bijgewerkt"; and the gesture never takes a scroll, another
- * page, a sideways swipe or the assistant's.
+ * and says "Bijgewerkt"; every page does it; and the gesture never takes a
+ * scroll or a sideways swipe.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
@@ -229,10 +229,27 @@ class PullSyncFlowTest {
         waitForSaid("Gesynchroniseerd")
     }
 
+    @Test
+    fun `every one of the five pages syncs when pulled from its top`() {
+        server.connectPolar()
+        onHealth()
+        listOf("Gezondheid", "Doelen", "Overzicht", "Community", "Instellingen").forEachIndexed { n, tab ->
+            button(tab).performClick()
+            compose.mainClock.advanceTimeBy(800)
+            compose.waitForIdle()
+            val ingests = server.ingests.size
+            pull(300f)
+            waitForSaid("Gesynchroniseerd")
+            assertEquals("$tab: Polar asked", n + 1, server.requestsTo("sync.php").size)
+            assertEquals("$tab: this phone sent", ingests + 1, server.ingests.size)
+            compose.waitUntil(10_000) { !said("Gesynchroniseerd") }
+        }
+    }
+
     /** A shorter phone, so Gezondheid can scroll at all. */
     @Test
     @Config(qualifiers = "w412dp-h560dp-port")
-    fun `the gesture takes nothing else - a scroll, another page, a sideways swipe`() {
+    fun `the gesture takes nothing else - a sideways swipe, a scroll`() {
         server.connectPolar()
         onHealth()
 
@@ -245,11 +262,6 @@ class PullSyncFlowTest {
         compose.mainClock.advanceTimeBy(800)
         compose.waitForIdle()
         compose.onNode(hasText("Doelen") and isSelected()).assertExists()
-
-        // On another page a pull is that page's scroll.
-        pull(300f)
-        compose.mainClock.advanceTimeBy(1_500)
-        assertEquals(0, server.requestsTo("sync.php").size)
 
         // Back on Gezondheid, scrolled down: a pull down scrolls back, it does not sync.
         button("Gezondheid").performClick()

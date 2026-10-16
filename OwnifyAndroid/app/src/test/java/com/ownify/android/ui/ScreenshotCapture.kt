@@ -479,6 +479,18 @@ class ScreenshotCapture {
         }
     }
 
+    /** Pull to sync on another of the five pages: Community, syncing. */
+    @Test fun pullSyncCommunity() {
+        app { tab("community") }
+        compose.runOnUiThread {
+            shell.pull.work = { kotlinx.coroutines.delay(600_000); com.ownify.android.ui.app.PullResult(0, null) }
+            shell.pull.start()
+        }
+        compose.mainClock.advanceTimeBy(900)
+        compose.waitForIdle()
+        FileOutputStream(File(out, "app-pull-community.png")).use { capture().compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
     /** Apparaten & Gezondheid with this phone's source open: its phones, each with its two links. */
     @Test fun settingsDevicesOpen() {
         app { tab("settings") }

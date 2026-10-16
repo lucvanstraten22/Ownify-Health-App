@@ -109,9 +109,9 @@ Polar v4 sends no notifications, so Ownify asks:
 1. **Right after connecting**: the callback answers first and then fetches
    the last **28 days** (`fastcgi_finish_request()` on the live server). The
    row reads "Bezig met synchroniseren…" while it runs.
-2. **On request** (`api/integrations/polar/sync.php`): Gezondheid pulled
-   down from the top, on the website and in the app (20.0, pull-to-sync —
-   docs/HEALTH-CONNECT.md). Polar is marked `'sync' => true` in
+2. **On request** (`api/integrations/polar/sync.php`): any of the five
+   pages pulled down from its top, on the website and in the app (20.0,
+   pull-to-sync — docs/HEALTH-CONNECT.md). Polar is marked `'sync' => true` in
    `integration_providers()`, which is what makes a pull ask it. A sync
    already running answers 409 with Polar's own sentence, and the pull shows
    that as its failure, with Opnieuw.

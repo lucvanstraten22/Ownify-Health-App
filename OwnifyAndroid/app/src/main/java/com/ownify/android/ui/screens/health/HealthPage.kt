@@ -2,14 +2,6 @@ package com.ownify.android.ui.screens.health
 
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.customActions
-import com.ownify.android.ui.app.headerSpace
 import androidx.compose.animation.core.Animatable
 import com.ownify.android.ui.design.PlotLine
 import com.ownify.android.ui.design.HistoryPlot
@@ -114,26 +106,7 @@ import com.ownify.android.ui.theme.LocalAccent
 fun HealthPage(data: AppData, scroll: ScrollState) {
     val health = data.health
     val screen = LocalScreen.current
-    val pull = LocalShell.current.pull
-    val context = LocalContext.current
-    val view = LocalView.current
-    val latest by rememberUpdatedState(data)
-
-    // Pull to sync (PullSync.kt): what it syncs, with this page's data, and its one tick.
-    SideEffect {
-        pull.work = { pullSync(context, latest) }
-        pull.onCommit = { pullTick(view) }
-    }
-
-    Box(Modifier.fillMaxSize()) {
-    PageColumn(
-        scroll,
-        Modifier
-            // Pulled down, the page comes with the finger; held down under the capsule while it syncs.
-            .graphicsLayer { translationY = pull.offset.dp.toPx() }
-            // For TalkBack and Switch Access, which cannot pull: the same sync as an action.
-            .semantics { customActions = listOf(CustomAccessibilityAction(tr("Synchroniseren")) { pull.start(); true }) }
-    ) {
+    PageColumn(scroll) {
         PageIntro(health.title, health.lede, Modifier.reveal())
 
         // .grid.grid--three: three equal columns, the cards as tall as the tallest.
@@ -149,10 +122,6 @@ fun HealthPage(data: AppData, scroll: ScrollState) {
         if (history != null) HistoryCard(history, data.compass.trend.days) else TrendCard(data, only = null)
 
         if (data.disclaimer.isNotEmpty()) Disclaimer(data.disclaimer, Modifier.reveal())
-    }
-
-    // Under the header, out of the room the pull opens.
-    PullSyncIndicator(pull, Modifier.align(Alignment.TopCenter).padding(top = headerSpace()))
     }
 }
 

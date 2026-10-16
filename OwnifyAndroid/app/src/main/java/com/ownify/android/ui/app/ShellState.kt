@@ -499,9 +499,9 @@ class ShellState(
     }
 
     /**
-     * Vertical, downward only: Gezondheid pulled down from its top, to sync
-     * (pull-sync.js). Only on Gezondheid, resting on it, scrolled to the very
-     * top, with nothing in front of it, and not from the dock — the
+     * Vertical, downward only: the page in front — any of the five — pulled
+     * down from its top, to sync (pull-sync.js). Only resting on it, scrolled
+     * to its very top, with nothing in front of it, and not from the dock — the
      * assistant's is a pull UP from there, the rail's is sideways, so none
      * of them meet. Anything else is the page's own scroll.
      */
@@ -509,8 +509,8 @@ class ShellState(
         override fun canStart(ctx: GestureContext): Boolean {
             if (ctx.dy <= 0f || !pull.canPull) return false
             if (aiOpen || overlayOpen || (detail != null && detailShown)) return false
-            if (currentPage != "health" || railJob?.isActive == true || railDrag != null) return false
-            if (scrolls["health"]?.value != 0) return false
+            if (railJob?.isActive == true || railDrag != null) return false
+            if (scrolls[currentPage]?.value != 0) return false
             return dockZones.none { it.contains(Offset(ctx.startX, ctx.startY)) }
         }
 

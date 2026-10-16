@@ -1,5 +1,6 @@
 /**
- * pull-sync.js — Gezondheid, pulled down from the top, syncs.
+ * pull-sync.js — any of the five pages (Gezondheid, Doelen, Overzicht,
+ * Community, Instellingen), pulled down from its top, syncs.
  *
  *   pull      the page follows the finger with growing resistance, and a
  *             glass circle comes out from under the header; its ring fills
@@ -16,18 +17,22 @@
  *
  * What a sync is, honestly: every connected source the server can ask for
  * new data on request — a cloud source with its own sync endpoint (Polar,
- * api/integrations/polar/sync.php) — is asked, one after the other; then the
- * page's scores, cards and Verloop are fetched again and swapped in place,
- * as health-rating.js and goals.js do (no reload, which would land on
- * Overzicht). A phone's Health Connect cannot be reached from a browser: its
+ * api/integrations/polar/sync.php) — is asked, one after the other; then
+ * the page is fetched once and every part that shows what a sync can change
+ * is swapped in place — Gezondheid's cards and Verloop, Overzicht's score
+ * and goal, Doelen's goals, Community's boards, the sources in Instellingen
+ * and in the header — as health-rating.js and goals.js do (no reload, which
+ * would land on Overzicht). A phone's Health Connect cannot be reached from a browser: its
  * phone sends on its own, so for it this is a refresh, and the capsule says
  * "Bijgewerkt", not "Gesynchroniseerd". There is no progress to report — one
  * request per source, then one page — so the arc turns; it never fills to
  * pretend.
  *
  * The gesture is the deck's (navigation-core.js), on its vertical axis: a
- * pull down that starts on Gezondheid while it is scrolled to the top, with
- * nothing in front of it. The assistant's is a pull UP from the dock, the
+ * pull down that starts on the page in front while it is scrolled to its
+ * top, with nothing in front of it. The capsule is the deck's, one for all
+ * five, under the header: the page in front makes room for it — and if the
+ * rail moves on while it syncs, the page arriving makes the room instead. The assistant's is a pull UP from the dock, the
  * rail's is sideways, so the three never meet; anything else — a scroll —
  * stays the browser's.
  *
@@ -40,11 +45,27 @@
     var nav = window.AppNav;
     if (!nav || !nav.deck) { return; }
 
-    var page = nav.deck.querySelector('[data-page="health"]');
-    var root = page && page.querySelector('[data-pull-sync]');
-    var scroller = page && page.querySelector('[data-scroller]');
-    var content = scroller && scroller.querySelector('[data-pull-content]');
-    if (!root || !scroller || !content) { return; }
+    var root = nav.deck.querySelector('[data-pull-sync]');
+    if (!root) { return; }
+
+    var pages = Array.prototype.slice.call(nav.deck.querySelectorAll('[data-page]')).filter(function (page) {
+        return page.querySelector('[data-scroller] [data-pull-content]');
+    });
+    if (!pages.length) { return; }
+
+    function scrollerOf(page) { return page.querySelector('[data-scroller]'); }
+    function contentOf(page) { return page.querySelector('[data-scroller] [data-pull-content]'); }
+
+    /** The page in front, when it is one of the five. */
+    function front() {
+        var id = nav.pages ? nav.pages.currentId() : document.documentElement.dataset.activePage;
+        for (var i = 0; i < pages.length; i++) {
+            if (pages[i].dataset.page === id) { return pages[i]; }
+        }
+        return null;
+    }
+
+    var content = null;     // the column that is pulled, or held, now
 
     var pill  = root.querySelector('[data-pull-pill]');
     var label = root.querySelector('[data-pull-label]');
@@ -98,8 +119,10 @@
     function paint(px) {
         offset = px;
         var held = state === 'syncing' || state === 'done' || state === 'failed';
-        content.style.transform = px > 0.5 ? 'translate3d(0, ' + px.toFixed(1) + 'px, 0)' : '';
-        content.classList.toggle('is-pulled', px > 0.5);
+        if (content) {
+            content.style.transform = px > 0.5 ? 'translate3d(0, ' + px.toFixed(1) + 'px, 0)' : '';
+            content.classList.toggle('is-pulled', px > 0.5);
+        }
         root.style.setProperty('--pull', px.toFixed(1) + 'px');
         root.style.setProperty('--pull-in', held ? '1' : clamp((px - 8) / 40, 0, 1).toFixed(3));
         root.style.setProperty('--pull-p', held ? '1' : clamp(px / THRESHOLD, 0, 1).toFixed(3));
@@ -109,12 +132,13 @@
     function settle(px) {
         window.clearTimeout(settleTimer);
         var still = reduced();
+        var moving = content;
         root.classList.add('is-settling');
-        if (!still) { content.classList.add('is-settling'); }
+        if (!still && moving) { moving.classList.add('is-settling'); }
         paint(px);
         settleTimer = window.setTimeout(function () {
             root.classList.remove('is-settling');
-            content.classList.remove('is-settling');
+            if (moving) { moving.classList.remove('is-settling'); }
         }, still ? 200 : SETTLE_MS);
     }
 
@@ -171,15 +195,23 @@
         Array.prototype.forEach.call(rootNode.querySelectorAll(selector), fn);
     }
 
+    /** A part replaced by its fresh copy. */
+    function swap(current, next) {
+        if (!current || !next || !current.parentNode) { return null; }
+        var node = document.importNode(next, true);
+        current.parentNode.replaceChild(node, current);
+        return node;
+    }
+
     /**
-     * The page as the server renders it now, its health parts swapped in:
-     * Gezondheid's intro, its three cards and its Verloop, Overzicht's
-     * score, and the header's list of sources with their status. Resolves
-     * true when they show what is stored.
+     * The page as the server renders it now, fetched once, and every part
+     * that shows what a sync can change swapped in, wired as on page load:
+     * Gezondheid's intro, cards and Verloop, Overzicht's score, the Voeding
+     * page and the boards (health-rating.js); every goal (goals.js); the
+     * sources in Instellingen — open or closed as they were — and in the
+     * header. Resolves true when they show what is stored.
      */
     function refresh() {
-        var parts = window.OwnifyRefresh;
-
         return fetch(window.location.href.split('#')[0], {
             credentials: 'same-origin', cache: 'no-store', headers: { 'Accept': 'text/html' }
         })
@@ -189,41 +221,42 @@
             })
             .then(function (html) {
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
-                var nextPage = fresh.querySelector('[data-page="health"]');
-                if (!nextPage) { throw new Error('no page'); }
+                if (!fresh.querySelector('[data-deck]')) { throw new Error('no page'); }
 
-                var lede = page.querySelector('.page-intro__lede');
-                var nextLede = nextPage.querySelector('.page-intro__lede');
-                if (lede && nextLede) { lede.textContent = nextLede.textContent; }
-
-                if (parts) {
-                    each(page, '.health-card[data-detail-open]', function (card) {
-                        var id = card.getAttribute('data-detail-open');
-                        parts.replace(card, nextPage.querySelector('.health-card[data-detail-open="' + id + '"]'));
-                    });
-
-                    parts.replace(document.querySelector('[data-page="overview"] .card--hero'),
-                        fresh.querySelector('[data-page="overview"] .card--hero'));
-                }
+                if (window.OwnifyRefresh && window.OwnifyRefresh.scores) { window.OwnifyRefresh.scores(fresh); }
+                if (window.OwnifyGoals) { window.OwnifyGoals.apply(fresh); }
 
                 /* The Verloop: a new card, wired as on page load. */
-                var history = page.querySelector('[data-health-history]');
-                var nextHistory = nextPage.querySelector('[data-health-history]');
-                if (history && nextHistory) {
-                    var node = document.importNode(nextHistory, true);
-                    history.parentNode.replaceChild(node, history);
-                    node.classList.add('is-visible');
-                    each(node, '.reveal', function (item) { item.classList.add('is-visible'); });
-                    each(node, '[data-chart]', function (chart) { if (window.OwnifyTrend) { window.OwnifyTrend.wire(chart); } });
-                    if (window.OwnifyHistory) { window.OwnifyHistory.health(node); }
+                var history = swap(document.querySelector('[data-page="health"] [data-health-history]'),
+                    fresh.querySelector('[data-page="health"] [data-health-history]'));
+                if (history) {
+                    history.classList.add('is-visible');
+                    each(history, '.reveal', function (item) { item.classList.add('is-visible'); });
+                    each(history, '[data-chart]', function (chart) { if (window.OwnifyTrend) { window.OwnifyTrend.wire(chart); } });
+                    if (window.OwnifyHistory) { window.OwnifyHistory.health(history); }
                 }
 
+                /* Instellingen: each source with its last sync, open or closed as it was. */
+                var nextSources = fresh.querySelectorAll('[data-integration]');
+                each(document, '[data-integration]', function (card, n) {
+                    var head = card.querySelector('[data-integration-toggle]');
+                    var open = head && head.getAttribute('aria-expanded') === 'true';
+                    var node = swap(card, nextSources[n]);
+                    var nextHead = node && node.querySelector('[data-integration-toggle]');
+                    if (nextHead && open) {
+                        nextHead.setAttribute('aria-expanded', 'true');
+                        var body = document.getElementById(nextHead.getAttribute('aria-controls'));
+                        if (body) { body.hidden = false; }
+                    }
+                });
+                var values = fresh.querySelectorAll('[data-page="settings"] .settings-row__value');
+                each(document, '[data-page="settings"] .settings-row__value', function (value, n) {
+                    if (values[n]) { value.textContent = values[n].textContent; }
+                });
+
                 /* The header's quick look: which sources, and how they are. */
-                var list = document.querySelector('[data-devices] .devices__panel > :first-child');
-                var nextList = fresh.querySelector('[data-devices] .devices__panel > :first-child');
-                if (list && nextList && list.parentNode) {
-                    list.parentNode.replaceChild(document.importNode(nextList, true), list);
-                }
+                swap(document.querySelector('[data-devices] .devices__panel > :first-child'),
+                    fresh.querySelector('[data-devices] .devices__panel > :first-child'));
 
                 return true;
             })
@@ -258,6 +291,7 @@
 
     function start() {
         window.clearTimeout(timer);
+        if (!content && front()) { content = contentOf(front()); }
         var mine = ++run;
         var began = Date.now();
 
@@ -303,26 +337,49 @@
         settle(0);
     }
 
+    /**
+     * The rail moved on while the capsule is there: the page that leaves
+     * gives its room back, the one that arrives makes it, so the capsule
+     * never sits on a title.
+     */
+    function follow() {
+        var page = front();
+        var next = page ? contentOf(page) : null;
+        var held = state === 'syncing' || state === 'done' || state === 'failed';
+        if (!held || !next || next === content) { return; }
+        if (content) {
+            content.classList.remove('is-settling', 'is-pulled');
+            content.style.transform = '';
+        }
+        content = next;
+        paint(offset);
+    }
+
+    new MutationObserver(follow).observe(document.documentElement, { attributes: true, attributeFilter: ['data-active-page'] });
+
     /* ----------------------------------------------------- the gesture */
 
-    function atTop() { return scroller.scrollTop <= 0; }
+    function atTop(page) {
+        var scroller = page && scrollerOf(page);
+        return !!scroller && scroller.scrollTop <= 0;
+    }
 
     nav.register('y', {
         canStart: function (ctx) {
             return ctx.dy > 0
                 && (state === 'idle' || state === 'failed')
                 && !nav.state.aiOpen && !nav.state.detailOpen && !nav.overlayOpen()
-                && !!nav.pages && nav.pages.currentId() === 'health'
                 && nav.deck.dataset.pageState !== 'moving'
-                && !!ctx.target && page.contains(ctx.target)
-                && atTop();
+                && !!front() && !!ctx.target && front().contains(ctx.target)
+                && atTop(front());
         },
 
         begin: function () {
             window.clearTimeout(timer);
             window.clearTimeout(settleTimer);
             root.classList.remove('is-settling');
-            content.classList.remove('is-settling');
+            if (content) { content.classList.remove('is-settling'); }
+            content = contentOf(front());
             // Pulled again while it says it failed: from where the page is held.
             var base = state === 'failed' ? offset : 0;
             if (state === 'failed') {
@@ -367,9 +424,19 @@
        the pull is ours from its first pixel, so a phone's browser cannot
        take it for its own scroll or its own pull-to-refresh. Elsewhere the
        page scrolls and bounces as before. */
-    function edge() { scroller.classList.toggle('is-at-top', atTop()); }
-    scroller.addEventListener('scroll', edge, { passive: true });
-    edge();
+    pages.forEach(function (page) {
+        var scroller = scrollerOf(page);
+        function edge() { scroller.classList.toggle('is-at-top', scroller.scrollTop <= 0); }
+        scroller.addEventListener('scroll', edge, { passive: true });
+        edge();
+    });
+
+    /* Under the sheet or a detail page the capsule, and its button, are out of reach too. */
+    nav.onRefresh(function () {
+        var covered = nav.state.aiOpen || nav.state.detailOpen;
+        root.inert = covered;
+        if (covered) { root.setAttribute('aria-hidden', 'true'); } else { root.removeAttribute('aria-hidden'); }
+    });
 
     /* Opnieuw, and the same sync for keyboards and screen readers. */
     if (pill) {
@@ -378,7 +445,7 @@
         });
     }
 
-    var button = page.querySelector('[data-pull-start]');
+    var button = root.querySelector('[data-pull-start]');
     if (button) {
         button.addEventListener('click', function () {
             if (state === 'idle' || state === 'failed') { start(); }

@@ -13,7 +13,7 @@ declare(strict_types=1);
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
 
     <div class="screen__scroll" data-scroller>
-        <main class="app__main" id="main" tabindex="-1">
+        <main class="app__main" id="main" tabindex="-1" data-pull-content>
             <div class="shell stack">
                 <?php
                 /* The first days of a new account: the baseline being built,

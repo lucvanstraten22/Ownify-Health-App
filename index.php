@@ -127,6 +127,10 @@ foreach ($data['navigation'] as $position => $item) {
              First in the markup, so it is still first to tab to. -->
         <?php component('header', $data); ?>
 
+        <?php /* Pull to sync, on all five pages: one indicator under the
+                 header (components/pull-sync.php, assets/js/pull-sync.js). */ ?>
+        <?php component('pull-sync', $data); ?>
+
         <!-- Parked on the starting page server-side, so the rail never has to
              animate into place on load — and lands right without JavaScript. -->
         <div class="rail" data-rail

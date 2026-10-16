@@ -33,6 +33,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import com.ownify.android.i18n.tr
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ownify.android.data.AppData
@@ -97,6 +105,16 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
 
     // For tests and screenshots: the shell, to move it as a finger would.
     LaunchedEffect(shell) { onShell?.invoke(shell) }
+
+    // Pull to sync, on all five pages (PullSync.kt): what it syncs, with the
+    // pages as they are now, and its one tick.
+    val context = LocalContext.current
+    val view = LocalView.current
+    val latest by rememberUpdatedState(data)
+    SideEffect {
+        shell.pull.work = { pullSync(context, latest) }
+        shell.pull.onCommit = { pullTick(view) }
+    }
     val owned = remember { OwnedAreas() }
     val density = LocalDensity.current
     val screen = LocalScreen.current
@@ -151,6 +169,16 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
                     CompositionLocalProvider(LocalGround provides appGround) {
                         Rail(shell, data, screens, Modifier.recordBackdrop(railBackdrop, railLayer))
                     }
+
+                    // Pull to sync's one indicator: over the rail, under the header, out of the room the pull opens.
+                    val pullCovered = shell.aiOpen || (shell.detail != null && shell.detailShown)
+                    PullSyncIndicator(
+                        shell.pull,
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = headerSpace())
+                            .then(if (pullCovered) Modifier.clearAndSetSemantics { } else Modifier)
+                    )
 
                     CompositionLocalProvider(LocalBackdrop provides railBackdrop, LocalGround provides appGround) {
                         val scroll = shell.scrolls[shell.currentPage]
@@ -244,8 +272,23 @@ private fun Rail(shell: ShellState, data: AppData, screens: ShellScreens, modifi
                     }
                     .then(if (hidden) Modifier.clearAndSetSemantics { } else Modifier)
             ) {
-                CompositionLocalProvider(LocalVisibility provides visibility.getValue(id)) {
-                    screens.page(id, data, shell.scrolls.getValue(id))
+                // Pulled down, the page in front comes with the finger, and is held down under the
+                // capsule while it syncs — the page arriving, if the rail moves on meanwhile.
+                val pulled = i == shell.index
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { translationY = if (pulled) shell.pull.offset.dp.toPx() else 0f }
+                        // For TalkBack and Switch Access, which cannot pull: the same sync as an action.
+                        .then(
+                            if (!hidden) Modifier.semantics {
+                                customActions = listOf(CustomAccessibilityAction(tr("Synchroniseren")) { shell.pull.start(); true })
+                            } else Modifier
+                        )
+                ) {
+                    CompositionLocalProvider(LocalVisibility provides visibility.getValue(id)) {
+                        screens.page(id, data, shell.scrolls.getValue(id))
+                    }
                 }
             }
         }

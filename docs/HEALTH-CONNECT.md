@@ -442,10 +442,11 @@ be connected, and no pairing code is offered or issued for it.
 - **Serve over HTTPS.** A bearer token over plain HTTP is a token anyone on the
   network has.
 
-## Pull to sync (20.0)
+## Pull to sync (20.0; all five pages since 20.1)
 
-Gezondheid, pulled down from its top, syncs — on the website and in the app,
-with the same indicator: a glass circle out from under the header whose
+Any of the five pages — Gezondheid, Doelen, Overzicht, Community,
+Instellingen — pulled down from its top, syncs, on the website and in the
+app, with the same indicator, one for all five, under the shared header: a glass circle out from under the header whose
 ring fills to the point where letting go syncs, then a capsule
 "Aan het synchroniseren…" for as long as it really takes, then
 "Gesynchroniseerd" or "Bijgewerkt", or "Synchroniseren mislukt" with
@@ -460,7 +461,7 @@ What a pull does, and what it never pretends:
 | --- | --- | --- |
 | This phone's Health Connect | cannot be reached from a browser | read and sent now (`OwnifySync.pull`, the one pipeline) — when this phone can; no Health Connect or no access is not a failure, and not a sync |
 | A cloud source the server can ask (`can_sync`: Polar) | asked (`api/integrations/polar/sync.php`) | asked, the same |
-| Then | the page's scores, cards and Verloop fetched again and swapped in place | the pages read again |
+| Then | the page fetched once, and every part a sync can change swapped in place: Gezondheid's cards and Verloop, Overzicht's score and goal, Doelen's goals, Community's boards, the sources in Instellingen and the header | the pages read again |
 | Says | "Gesynchroniseerd" only when a source gave new data; otherwise "Bijgewerkt" | the same |
 
 No app can make a watch sync into Health Connect or into Polar Flow: a
@@ -468,9 +469,11 @@ watch reaches them through its own app. A pull sends what Health Connect has
 now, and asks Polar for what Polar Flow has now. There is no progress to
 report — one request per source — so the arc turns; it never fills to pretend.
 
-The gesture only starts on Gezondheid, resting on it, scrolled to its very
-top, pulling down, with nothing in front of it — so it never takes a page
-swipe (sideways), the assistant (up from the dock) or a scroll. At the top
+The gesture only starts on the page in front, resting on it, scrolled to its
+very top, pulling down, with nothing in front of it — so it never takes a
+page swipe (sideways), the assistant (up from the dock) or a scroll. The
+page in front makes room for the capsule; if the rail moves on while it
+syncs, the page arriving makes the room instead. At the top
 the page does not bounce (`overscroll-behavior-y: none`), so a phone's
 browser cannot start its own pull-to-refresh. For keyboards and screen
 readers the same sync is a button (website, visible on focus) and a

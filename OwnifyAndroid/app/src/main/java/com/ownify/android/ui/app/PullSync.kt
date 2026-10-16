@@ -19,7 +19,8 @@ enum class PullPhase { Idle, Pulling, Armed, Syncing, Done, Failed }
 data class PullResult(val synced: Int, val problem: String?)
 
 /**
- * pull-sync.js, for Compose: Gezondheid pulled down from the top syncs.
+ * pull-sync.js, for Compose: any of the five pages, pulled down from its
+ * top, syncs.
  *
  *   pull    the page follows the finger with growing resistance and a glass
  *           circle comes out from under the header, its ring filling towards
@@ -33,9 +34,10 @@ data class PullResult(val synced: Int, val problem: String?)
  *
  * Every distance is in dp — the website's px — and every number is the
  * website's. The gesture is the deck's vertical axis (ShellState's
- * pullController); the work is the Gezondheid page's (PullSyncIndicator.kt),
- * handed in as [work] so it runs here, in the shell's scope, and is never cut
- * short by the page leaving the screen.
+ * pullController); the indicator is the shell's, one for all five pages, and
+ * the page in front makes room for it (AppShell's Rail); the work
+ * (PullSyncIndicator.kt's pullSync) is handed in by the shell as [work] and
+ * runs here, in the shell's scope, never cut short by a page leaving.
  */
 @Stable
 class PullSyncState(private val scope: CoroutineScope) {

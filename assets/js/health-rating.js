@@ -20,7 +20,7 @@
        page-load scripts leave them in: Gezondheid's pull to sync uses it too
        (pull-sync.js). Declared below; hoisted, so there with or without this
        page's rating card. */
-    window.OwnifyRefresh = { replace: replace, settle: settle };
+    window.OwnifyRefresh = { replace: replace, settle: settle, scores: scores };
 
     var card = document.querySelector('[data-nutrition-rating]');
     if (!card) { return; }
@@ -182,49 +182,57 @@
             .then(function (html) {
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 if (!fresh.querySelector('[data-deck]')) { return; }
-
-                /* Gezondheid's intro: "nog N dagen" until the first score,
-                   the three pillars once there is one. */
-                var lede = document.querySelector('[data-page="health"] .page-intro__lede');
-                var nextLede = fresh.querySelector('[data-page="health"] .page-intro__lede');
-                if (lede && nextLede) { lede.textContent = nextLede.textContent; }
-
-                each(document, '[data-page="health"] .health-card[data-detail-open]', function (area) {
-                    var id = area.getAttribute('data-detail-open');
-                    replace(area, fresh.querySelector('[data-page="health"] .health-card[data-detail-open="' + id + '"]'));
-                });
-
-                replace(document.querySelector('[data-page="overview"] .card--hero'),
-                        fresh.querySelector('[data-page="overview"] .card--hero'));
-
-                var detail = document.querySelector('[data-detail="nutrition"]');
-                var next   = fresh.querySelector('[data-detail="nutrition"]');
-
-                if (detail && next) {
-                    replace(detail.querySelector('.card--hero'), next.querySelector('.card--hero'));
-                    replace(detail.querySelector('.card--tiles'), next.querySelector('.card--tiles'));
-
-                    var groups = detail.querySelectorAll('.card--group');
-                    var nextGroups = next.querySelectorAll('.card--group');
-
-                    for (var i = 0; i < groups.length && i < nextGroups.length; i++) {
-                        replace(groups[i], nextGroups[i]);
-                    }
-                }
-
-                /* The boards keep their own elements — community.js holds on
-                   to them to switch scope and period — so only their rows
-                   change. */
-                each(document, '[data-board]', function (board) {
-                    var nextBoard = fresh.querySelector('[data-board][data-scope="' + board.dataset.scope
-                        + '"][data-period="' + board.dataset.period + '"]');
-
-                    if (nextBoard) {
-                        board.innerHTML = nextBoard.innerHTML;
-                        settle(board, [], []);
-                    }
-                });
+                scores(fresh);
             })
             .catch(function () { /* the save itself has happened; the next load shows it */ });
+    }
+
+    /**
+     * Swaps in, from a page already fetched, every part that shows a score
+     * or points: Gezondheid's intro and cards, Overzicht's ring, the Voeding
+     * page's numbers and each leaderboard's rows. A pull to sync uses it too.
+     */
+    function scores(fresh) {
+        /* Gezondheid's intro: "nog N dagen" until the first score,
+           the three pillars once there is one. */
+        var lede = document.querySelector('[data-page="health"] .page-intro__lede');
+        var nextLede = fresh.querySelector('[data-page="health"] .page-intro__lede');
+        if (lede && nextLede) { lede.textContent = nextLede.textContent; }
+
+        each(document, '[data-page="health"] .health-card[data-detail-open]', function (area) {
+            var id = area.getAttribute('data-detail-open');
+            replace(area, fresh.querySelector('[data-page="health"] .health-card[data-detail-open="' + id + '"]'));
+        });
+
+        replace(document.querySelector('[data-page="overview"] .card--hero'),
+                fresh.querySelector('[data-page="overview"] .card--hero'));
+
+        var detail = document.querySelector('[data-detail="nutrition"]');
+        var next   = fresh.querySelector('[data-detail="nutrition"]');
+
+        if (detail && next) {
+            replace(detail.querySelector('.card--hero'), next.querySelector('.card--hero'));
+            replace(detail.querySelector('.card--tiles'), next.querySelector('.card--tiles'));
+
+            var groups = detail.querySelectorAll('.card--group');
+            var nextGroups = next.querySelectorAll('.card--group');
+
+            for (var i = 0; i < groups.length && i < nextGroups.length; i++) {
+                replace(groups[i], nextGroups[i]);
+            }
+        }
+
+        /* The boards keep their own elements — community.js holds on
+           to them to switch scope and period — so only their rows
+           change. */
+        each(document, '[data-board]', function (board) {
+            var nextBoard = fresh.querySelector('[data-board][data-scope="' + board.dataset.scope
+                + '"][data-period="' + board.dataset.period + '"]');
+
+            if (nextBoard) {
+                board.innerHTML = nextBoard.innerHTML;
+                settle(board, [], []);
+            }
+        });
     }
 }());
