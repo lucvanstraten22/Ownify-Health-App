@@ -212,15 +212,8 @@ return [
             /* Only what no chart above shows: Tijd in bed, Regelmaat, SpO₂,
                Huidtemperatuur and HRV are charts now, and the awakenings and
                time awake are the timeline's Wakker row. */
-            'groups' => [
-                [
-                    'title'   => 'Nachtelijke waarden',
-                    'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
-                    'metrics' => [
-                        ['key' => 'resting_hr',       'value' => null],
-                    ],
-                ],
-            ],
+            /* Every nightly value is a chart now: no list of values under them. */
+            'groups' => [],
         ],
 
         'nutrition' => [
