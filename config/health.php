@@ -417,17 +417,8 @@ return [
                 ],
             ],
 
-            /* Only what no chart and no session shows. */
-            'groups' => [
-                [
-                    'title'   => 'Conditie en herstel',
-                    'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
-                    'metrics' => [
-                        ['key' => 'resting_hr', 'value' => null],
-                        ['key' => 'readiness',  'value' => null],
-                    ],
-                ],
-            ],
+            /* No list of values under the charts and sessions. */
+            'groups' => [],
         ],
     ],
 
