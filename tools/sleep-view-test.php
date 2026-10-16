@@ -192,7 +192,7 @@ $charts = array_column(hydrate_sleep_charts($sleep['charts'], $sleep['chart_copy
 $bed    = $charts['bed']['periods'][0];
 $spo2   = $charts['spo2']['periods'][0];
 
-check('four charts, in their order', array_keys($charts) === ['bed', 'spo2', 'skin_temp', 'hrv']);
+check('six charts, in their order', array_keys($charts) === ['bed', 'spo2', 'skin_temp', 'hrv', 'respiratory_rate', 'sleeping_hr']);
 check('7 dagen of a young history: from its first day at the left, the rest ahead',
     $bed['axis'][0]['label'] === score_compass_date($day(2), true) && count($bed['axis']) === 7
     && count($bed['points']) === 3 && $bed['x'][0] === $bed['axis'][0]['x'],

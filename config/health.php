@@ -158,7 +158,7 @@ return [
                 'days'   => 7,
             ],
 
-            /* The four charts, in their order on the page — Ownify's area
+            /* The charts, in their order on the page — Ownify's area
                charts (lib/area-charts.php, which says what each key means).
                `bed` draws Tijd in bed as bars and Regelmaat — the sleep
                score's own regularity part, as the Scorekompas shows it per
@@ -176,6 +176,15 @@ return [
                                 'series' => [['key' => 'skin_temp', 'label' => 'Huidtemperatuur', 'unit' => '°C', 'kind' => 'line', 'decimals' => 1]]],
                 'hrv'       => ['title' => 'Hartslag­variabiliteit',   /* a soft hyphen: where it breaks on a small card */
                                 'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
+                /* Breathing and heart rate while asleep, each night's own value:
+                   respiratory_rate as the source measured it (Polar once a
+                   night, Health Connect per reading, averaged per night), and
+                   sleeping_hr — heart rate inside the sleep session, never the
+                   day's resting heart rate. A night without one stays empty. */
+                'respiratory_rate' => ['title' => 'Ademfrequentie',
+                                'series' => [['key' => 'respiratory_rate', 'label' => 'Ademfrequentie', 'unit' => '/min', 'kind' => 'line', 'decimals' => 1]]],
+                'sleeping_hr' => ['title' => 'Rusthartslag',
+                                'series' => [['key' => 'sleeping_hr', 'label' => 'Hartslag in slaap', 'unit' => 'bpm', 'kind' => 'line', 'decimals' => 0]]],
             ],
             'chart_copy' => [
                 'empty'   => 'Nog geen metingen.',
@@ -208,9 +217,7 @@ return [
                     'title'   => 'Nachtelijke waarden',
                     'hint'    => 'Komt beschikbaar zodra je een horloge of ring koppelt.',
                     'metrics' => [
-                        ['key' => 'sleeping_hr',      'value' => null],
                         ['key' => 'resting_hr',       'value' => null],
-                        ['key' => 'respiratory_rate', 'value' => null],
                     ],
                 ],
             ],

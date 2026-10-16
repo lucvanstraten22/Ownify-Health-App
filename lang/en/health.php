@@ -153,4 +153,7 @@ return [
     'Bijgewerkt' => 'Up to date',
     'Loslaten om te synchroniseren' => 'Release to sync',
     'Opnieuw' => 'Try again',
+
+    // Sleep: breathing while asleep (21.0)
+    'Ademfrequentie' => 'Respiratory rate',
 ];
