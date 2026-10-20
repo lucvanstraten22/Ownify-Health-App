@@ -341,19 +341,20 @@ $recent = ['nights' => [night('2026-09-28', '23:40', 395), night('2026-09-29', '
 $plan = setup_suggestion_plan('sleep', $recent, $suggest);
 check('sleep: suggested from 3 nights', $plan !== null && $plan['source'] === 'sleep');
 check('sleep: the basis is the average (6:41)', $plan['basis'] === 'Je sliep de afgelopen 3 nachten gemiddeld 6:41.', (string) ($plan['basis'] ?? ''));
-check('sleep: the next half hour above it — 7 uur', $plan['input']['daily_target'] === '7' && $plan['name'] === '5 nachten van minstens 7 uur', json_encode($plan['input'] ?? null));
-check('sleep: the normal goal model — Optellen, days, from slaapduur, a week',
-    $plan['input']['type'] === 'accumulate' && $plan['input']['measure'] === 'days'
-    && $plan['input']['source_kind'] === 'metric' && $plan['input']['source_key'] === 'sleep_duration'
-    && $plan['input']['duration'] === 'week' && $plan['input']['target_value'] === '5' && $plan['input']['direction'] === 'increase');
-check('sleep 7:10 on average: 7,5 uur', setup_suggestion_plan('sleep', ['nights' => [night('2026-09-28', '23:00', 430), night('2026-09-29', '23:00', 430), night('2026-09-30', '23:00', 430)]], $suggest)['input']['daily_target'] === '7.5');
+check('sleep: the next half hour above it — 7 uur', $plan['input']['target_value'] === '7' && $plan['name'] === 'Elke nacht minstens 7 uur', json_encode($plan['input'] ?? null));
+check('sleep: the goal model the wizard makes — a daily Streak on slaapduur, in hours, for a week',
+    $plan['input']['measurement'] === 'sleep_duration' && $plan['input']['type'] === 'streak' && $plan['input']['variant'] === 'daily'
+    && $plan['input']['unit'] === 'h' && $plan['input']['duration'] === 'week' && $plan['input']['direction'] === 'increase',
+    json_encode($plan['input'] ?? null));
+check('sleep 7:10 on average: 7,5 uur', setup_suggestion_plan('sleep', ['nights' => [night('2026-09-28', '23:00', 430), night('2026-09-29', '23:00', 430), night('2026-09-30', '23:00', 430)]], $suggest)['input']['target_value'] === '7.5');
 check('sleep 8:10 on average: nothing (the curve tops out at 8)', setup_suggestion_plan('sleep', ['nights' => [night('2026-09-28', '22:00', 490), night('2026-09-29', '22:00', 490), night('2026-09-30', '22:00', 490)]], $suggest) === null);
 check('two nights: nothing — too little to work out', setup_suggestion_plan('sleep', ['nights' => array_slice($recent['nights'], 0, 2)], $suggest) === null);
 check('no data at all: nothing', setup_suggestion_plan('general', [], $suggest) === null);
 check('weight: never — the target is the person\'s own call', setup_suggestion_plan('weight', $recent + ['workouts' => $workouts], $suggest) === null);
 $train = setup_suggestion_plan('fitness', ['workouts' => $workouts, 'nights' => $recent['nights']], $suggest);
 check('fitness: training first — 4 in two weeks is 2 a week, so 3', $train !== null && $train['source'] === 'training'
-    && $train['input']['target_value'] === '3' && $train['input']['source_key'] === 'sessions' && $train['name'] === '3 trainingen deze week', json_encode($train));
+    && $train['input']['target_value'] === '3' && $train['input']['measurement'] === 'workouts' && $train['input']['type'] === 'accumulate'
+    && $train['input']['unit'] === 'sessions' && $train['name'] === '3 trainingen deze week', json_encode($train));
 check('fitness without workouts: sleep instead', setup_suggestion_plan('fitness', $recent, $suggest)['source'] === 'sleep');
 check('the suggestion never says realistic', preg_match($banned, implode(' ', [$plan['basis'], $plan['name'], $train['basis'], $train['name']])) === 0);
 

@@ -336,9 +336,10 @@ if (!function_exists('health_score_now')) {
     }
 
     /**
-     * Results on the person's own strength and performance goals — the one
-     * place Ownify holds lifted weights, repetitions or times. Only milestone
-     * goals that go up or down, oldest entry first.
+     * Results on the person's own training goals — the one place Ownify
+     * holds lifted weights, repetitions or times: a Mijlpaal in Training
+     * (an Eigen gewoonte such as "bench press 100 kg"), each day's figure as
+     * goal_progress keeps it, oldest first.
      *
      * @return array<int,array{direction: string, entries: array<int,array{at:int,value:float}>}>
      */
@@ -357,7 +358,7 @@ if (!function_exists('health_score_now')) {
                FROM goals g
                JOIN goal_progress p ON p.goal_id = g.id
               WHERE g.user_id = ? AND g.goal_type = ? AND g.direction IN (?, ?)
-                AND g.category IN (' . $marks . ')
+                AND g.category_code IN (' . $marks . ')
                 AND p.current_value IS NOT NULL AND p.current_value > 0
                 AND p.recorded_on > ? AND p.recorded_on <= ?
            ORDER BY g.id, p.recorded_on',

@@ -1,7 +1,7 @@
 /**
  * goals.js — the Doelen page: switching views, and managing a goal.
  *
- * Both views are already in the document, so Actief/Behaald is a class toggle
+ * Both views are already in the document, so Actief/Afgerond is a class toggle
  * and each keeps its own scroll position — the same approach the community
  * boards use.
  *
@@ -428,7 +428,7 @@
        page, and the Overzicht goal card. Every figure is still rendered by
        the server — nothing is recalculated here — but the rail stays on
        Doelen, an open goal stays open at its scroll position, and the view
-       (Actief or Behaald) stays as it was.
+       (Actief or Afgerond) stays as it was.
        ---------------------------------------------------------------------- */
 
     function each(root, selector, fn) {
@@ -618,7 +618,7 @@
      *
      * On success the goal's parts are fetched again and swapped in (see
      * refresh()), rather than patching the bar here. The percentage, the bar,
-     * the deadline line and whether the goal has just moved to Behaald are
+     * the deadline line and whether the goal has just moved to Afgerond are
      * all rendered server-side from one calculation; re-deriving any of that
      * here is how the two start disagreeing.
      */
@@ -653,9 +653,12 @@
         body.append('goal_id', goalId);
 
         if (save && input) {
+            // Typed in the goal's own unit; the server stores it in the unit it keeps.
             body.append('value', input.value.trim());
-            // Typed in the units on screen (lb for a kg goal in imperial): stored once, in metric.
-            body.append('input_units', window.OwnifyI18n ? window.OwnifyI18n.units.system : 'metric');
+        }
+
+        if (tick) {
+            body.append('done', tick.getAttribute('data-done') === '0' ? '0' : '1');
         }
 
         button.disabled = true;
@@ -695,7 +698,7 @@
                     /* The button that was pressed has been replaced; focus
                        goes to its successor so the keyboard stays in the goal. */
                     var next = null;
-                    ['[data-goal-value]', '[data-goal-tick]:not([disabled])', '[data-detail-close]'].some(function (selector) {
+                    ['[data-goal-value]', '[data-goal-tick]', '[data-detail-close]'].some(function (selector) {
                         next = detail ? detail.querySelector(selector) : null;
                         return !!next;
                     });

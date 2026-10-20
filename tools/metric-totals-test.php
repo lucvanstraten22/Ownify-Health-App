@@ -209,15 +209,16 @@ function import(array $records): array
 /* The goals that read steps: Optellen adds every day up, and a Streak with a
    daily target of 4.500 marks each day met or missed. */
 $goalFrom = day(20);
+$goalTo = (new DateTimeImmutable('today'))->modify('+30 days')->format('Y-m-d');
 $sumGoal = goal_create($userId, [
-    'name' => 'Stappen optellen', 'category' => 'activity', 'kind' => 'accumulate',
-    'source_kind' => 'metric', 'source_key' => 'steps', 'target_value' => 1000000,
-    'start_date' => $goalFrom,
+    'name' => 'Stappen optellen', 'category_code' => 'activity', 'measurement_code' => 'steps',
+    'goal_type' => 'accumulate', 'tracking' => 'auto', 'unit_code' => 'steps', 'target_value' => 1000000,
+    'start_date' => $goalFrom, 'end_date' => $goalTo,
 ]);
 $dayGoal = goal_create($userId, [
-    'name' => 'Elke dag 4.500 stappen', 'category' => 'activity', 'kind' => 'streak',
-    'source_kind' => 'metric', 'source_key' => 'steps', 'daily_target' => 4500, 'target_value' => 30,
-    'start_date' => $goalFrom,
+    'name' => 'Elke dag 4.500 stappen', 'category_code' => 'activity', 'measurement_code' => 'steps',
+    'goal_type' => 'streak', 'streak_variant' => 'daily', 'tracking' => 'auto', 'unit_code' => 'steps',
+    'target_value' => 4500, 'start_date' => $goalFrom, 'end_date' => $goalTo,
 ]);
 check('two step goals made (Optellen, and a Streak of 4.500 a day)', $sumGoal !== null && $dayGoal !== null);
 
@@ -232,7 +233,7 @@ function readers(string $date): array
     $note   = db_value('SELECT note FROM point_events WHERE user_id = ? AND award_key = ?', [$userId, 'steps:' . $date]);
     $state  = null;
 
-    foreach (goal_progress_compute($userId, goal_get($userId, (int) $dayGoal))['days'] as $d) {
+    foreach (goal_compute($userId, goal_get($userId, (int) $dayGoal))['days'] as $d) {
         if ($d['date'] === $date) {
             $state = $d['state'];
         }
@@ -448,7 +449,7 @@ echo "The goals, over every day\n";
 
 $expected = [$d1 => 5000, $d2 => 6600, $d3 => 4000, $d4 => 5000, $d5 => 4500, $d6 => 5000,
              $d8a => 4600, $d8b => 5000, $d8c => 4700, $d9 => 7500, $d10 => 6500];
-$sumProgress = goal_progress_compute($userId, goal_get($userId, (int) $sumGoal));
+$sumProgress = goal_compute($userId, goal_get($userId, (int) $sumGoal));
 check('Optellen adds up the day totals: ' . number_format(array_sum($expected), 0, ',', '.'),
     (int) round((float) $sumProgress['total']) === array_sum($expected), json_encode($sumProgress['total']));
 check('  not the ' . number_format((int) db_value('SELECT SUM(value) FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id
@@ -456,8 +457,8 @@ check('  not the ' . number_format((int) db_value('SELECT SUM(value) FROM health
     (int) round((float) $sumProgress['total']) < (int) db_value('SELECT SUM(value) FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id
                                    WHERE m.user_id = ? AND t.code = ?', [$userId, 'steps']));
 check('  the stored progress matches (goal_refresh_all)',
-    (int) round((float) db_value('SELECT total_value FROM goals WHERE id = ?', [$sumGoal])) === array_sum($expected),
-    (string) db_value('SELECT total_value FROM goals WHERE id = ?', [$sumGoal]));
+    (int) round((float) db_value('SELECT current_value FROM goals WHERE id = ?', [$sumGoal])) === array_sum($expected),
+    (string) db_value('SELECT current_value FROM goals WHERE id = ?', [$sumGoal]));
 
 /* ===================================== rows from before migration 012 */
 echo "Rows imported before migration 012\n";

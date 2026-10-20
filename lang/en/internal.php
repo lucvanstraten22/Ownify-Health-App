@@ -12,7 +12,8 @@ return [
     'limit must be a whole number from 1 to 100.' => 'limit must be a whole number from 1 to 100.',
     'Only one change can be proposed per answer. Ask the user about the first one.' => 'Only one change can be proposed per answer. Ask the user about the first one.',
     'goal_id must be the id of one of the user\'s goals.' => 'goal_id must be the id of one of the user\'s goals.',
-    'action must be one of pause, resume, complete, primary, secondary.' => 'action must be one of pause, resume, complete, primary, secondary.',
+    'action must be one of pause, resume, primary, secondary.' => 'action must be one of pause, resume, primary, secondary.',
+    'This goal is finished; its final result is kept and it cannot be changed.' => 'This goal is finished; its final result is kept and it cannot be changed.',
     'The user has no goal with this goal_id.' => 'The user has no goal with this goal_id.',
     'unreachable' => 'unreachable',
 ];

@@ -591,18 +591,19 @@ if (!function_exists('ai_topics')) {
         $config = config_copy('goals');
         $goals  = hydrate_goals($config, $userId)['goals'] ?? [];
         $out    = [];
+        $today  = new DateTimeImmutable('today');
 
         foreach ($goals as $goal) {
-            $completed = $goal['status'] === 'completed';
+            $finished = in_array($goal['status'], ['completed', 'ended'], true);
 
-            if ($completed && (!$detail || count(array_filter($out, static fn ($g) => ($g['status'] ?? '') === 'completed')) >= 5)) {
+            if ($finished && (!$detail || count(array_filter($out, static fn ($g) => in_array($g['status'] ?? '', ['completed', 'ended'], true))) >= 5)) {
                 continue;
             }
 
             $line = [
                 'goal_id'  => (int) $goal['id'],
                 'name'     => $goal['name'],
-                'type'     => $goal['type'],
+                'type'     => $goal['type'] . ($goal['variant'] !== null ? ' (' . $goal['variant'] . ')' : ''),
                 'status'   => $goal['status'],
                 'priority' => $goal['priority'],
                 'percent'  => $goal['percent'],
@@ -611,17 +612,19 @@ if (!function_exists('ai_topics')) {
             ];
 
             if ($detail) {
+                $end = new DateTimeImmutable($goal['end_date']);
                 $line += array_filter([
                     'category'     => $config['categories'][$goal['category']]['label'] ?? null,
-                    'tracked_from' => $goal['tracking'] === 'auto' ? ($goal['source_label'] ?? null) : 'kept by hand',
+                    'measurement'  => $goal['measurement_label'],
+                    'tracked_from' => $goal['tracking'] === 'auto' ? 'the user\'s own health data' : 'kept by hand on the goal\'s page',
                     'direction'    => $goal['type'] === 'milestone' ? ($goal['direction'] === 'decrease' ? 'lower is better' : 'higher is better') : null,
-                    'a_day_counts_when' => $goal['daily_label'] ?? null,
                     'days_met'     => $goal['counts_days'] ? $goal['days_met'] : null,
                     'days_total'   => $goal['counts_days'] ? $goal['days_total'] : null,
-                    'started_days_ago' => $goal['started_days_ago'],
-                    'ends_in_days' => $goal['ends_in_days'],
-                    'duration'     => $goal['duration'],
-                    'completed_days_ago' => $goal['completed_days_ago'],
+                    'start_date'   => $goal['start_date'],
+                    'end_date'     => $goal['end_date'],
+                    'ends_in_days' => $finished ? null : (int) $today->diff($end)->format('%r%a'),
+                    'final_percent'=> $goal['final_percent'],
+                    'finished_on'  => $goal['completed_at'] === null ? null : substr((string) $goal['completed_at'], 0, 10),
                     'facts'        => $goal['extra_facts'] ?: null,
                 ], static fn ($v) => $v !== null);
             }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -96,23 +97,23 @@ class MotionCraftTest {
         compose.waitForIdle()
         compose.runOnUiThread { shell.open(Overlay.Wizard) }
         compose.waitForIdle()
-        tap("Activiteit")
+        tap("Stappen")
         compose.waitForIdle()
 
         // Forward, back and forward again, each before the step before it has arrived.
         compose.mainClock.autoAdvance = false
         tap("Volgende")
         compose.mainClock.advanceTimeBy(80)
-        tap("Terug")
+        compose.onAllNodes(hasContentDescription("Terug") and hasClickAction()).onLast().performClick()
         compose.mainClock.advanceTimeBy(60)
-        shows("Waar gaat je doel over?", "Wat wil je bereiken?")
+        shows("Wat wil je bijhouden?", "Wat is je doel?")
         tap("Volgende")
         compose.mainClock.advanceTimeByFrame()
-        shows("Wat wil je bereiken?", "Waar gaat je doel over?")
+        shows("Wat is je doel?", "Wat wil je bijhouden?")
 
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
-        shows("Wat wil je bereiken?", "Waar gaat je doel over?")
+        shows("Wat is je doel?", "Wat wil je bijhouden?")
     }
 
     /**

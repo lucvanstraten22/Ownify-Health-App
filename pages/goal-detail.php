@@ -28,7 +28,7 @@ $chart  = $goal['chart'];
 /* The hero keeps its line short: the dates live in the rows underneath, so
    repeating "t/m 4 okt" here would say the same thing twice. */
 $heroActive = $goal['is_completed']
-    ? ($goal['end_label'] !== null ? sprintf($labels['completed_on'], $goal['end_label']) : t('Behaald'))
+    ? $goal['line_active']
     : (string) $goal['remaining'];
 $heroPaused = $labels['paused_line'];
 $heroLine   = $goal['is_paused'] ? $heroPaused : $heroActive;
@@ -68,7 +68,7 @@ $height = 96.0;
                     <div class="goal-hero__head">
                         <span class="icon-tile" aria-hidden="true"><?= icon($goal['icon']) ?></span>
                         <div class="goal-hero__heads">
-                            <p class="goal-hero__category"><?= e($goal['category_label']) ?> · <?= e($goal['type_label']) ?></p>
+                            <p class="goal-hero__category"><?= e($goal['measurement_label']) ?> · <?= e($goal['kind_label']) ?></p>
                             <?php /* A long name (over 40 characters, the wizard allows 120) steps down
                                      to Title 3 with balanced lines — all of it, nothing cut
                                      (goals.css .is-long; GoalDetail.kt GOAL_NAME_LONG). */ ?>
@@ -82,8 +82,9 @@ $height = 96.0;
                         <span class="chip chip--quiet" data-goal-chip="paused"
                               <?= $goal['is_paused'] ? '' : 'hidden' ?>><?= e($labels['paused_chip']) ?></span>
                         <?php if ($goal['is_completed']): ?>
-                            <span class="chip chip--accent"><?= e($goals['views']['completed']['label']) ?></span>
+                            <span class="chip chip--accent"><?= e($goal['is_reached'] ? t('Behaald') : t('Afgelopen')) ?></span>
                         <?php endif; ?>
+                        <span class="chip chip--muted"><?= e($goal['category_label']) ?></span>
                         <?php if ($goal['duration_label'] !== null): ?>
                             <span class="chip chip--muted"><?= e($goal['duration_label']) ?></span>
                         <?php endif; ?>
@@ -116,16 +117,13 @@ $height = 96.0;
                                 <span class="metric-row__value"><?= e($fact['value']) ?></span>
                             </div>
                         <?php endforeach; ?>
-                        <?php /* Gestart and Eindigt (Looptijd, once behaald) together,
-                                 under one name: the goal's period. */ ?>
+                        <?php /* The period: its first and its last day. */ ?>
                         <div class="metric-row metric-row--period" data-goal-period>
                             <span class="metric-row__label"><?= e($copy['period'] ?? t('Periode')) ?></span>
                             <span class="metric-row__value goal-period">
-                                <span class="goal-period__part"><?= e(t('Gestart')) ?>: <?= e((string) ($goal['start_label'] ?? '—')) ?></span>
+                                <span class="goal-period__part"><?= e(t('Gestart')) ?>: <?= e((string) $goal['start_label']) ?></span>
                                 <span class="goal-period__dot" aria-hidden="true">·</span>
-                                <span class="goal-period__part"><?= e($goal['is_completed'] ? t('Looptijd') : t('Eindigt')) ?>: <?= e((string) ($goal['is_completed']
-                                    ? ($goal['took_label'] ?? '—')
-                                    : ($goal['end_label'] ?? $labels['no_deadline']))) ?></span>
+                                <span class="goal-period__part"><?= e(t('Eindigt')) ?>: <?= e((string) $goal['end_label']) ?></span>
                             </span>
                         </div>
                     </div>
@@ -156,20 +154,26 @@ $height = 96.0;
                         </div>
 
                         <?php if ($entry['kind'] === 'tick'): ?>
-                            <button type="button" class="btn goal-check__button press" data-goal-tick="<?= e($id) ?>"
-                                    <?= !empty($entry['done']) ? 'disabled' : '' ?>>
-                                <?= icon('check', 'goal-check__icon') ?>
-                                <?= e(!empty($entry['done']) ? t('Vandaag afgevinkt') : $entry['label']) ?>
-                            </button>
+                            <?php /* Today ticked off, or not: one tap either way. */ ?>
+                            <?php if (empty($entry['done'])): ?>
+                                <button type="button" class="glass glass--cta goal-check__button press" data-goal-tick="<?= e($id) ?>" data-done="1">
+                                    <?= icon('check', 'goal-check__icon') ?>
+                                    <?= e($entry['label']) ?>
+                                </button>
+                            <?php else: ?>
+                                <div class="goal-check__done">
+                                    <span class="goal-check__state"><?= icon('check', 'goal-check__icon') ?><?= e(t('Vandaag afgevinkt')) ?></span>
+                                    <button type="button" class="glass glass--chip press" data-goal-tick="<?= e($id) ?>" data-done="0"><?= e($entry['undo']) ?></button>
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <div class="goal-entry">
                                 <label class="sr-only" for="goal-value-<?= e($id) ?>"><?= e($entry['label']) ?></label>
-                                <input class="wizard__input goal-entry__input" type="number" step="any" min="0"
-                                       inputmode="decimal" id="goal-value-<?= e($id) ?>"
+                                <input class="wizard__input goal-entry__input" type="text" inputmode="decimal"
+                                       id="goal-value-<?= e($id) ?>" autocomplete="off" enterkeyhint="done"
                                        data-goal-value="<?= e($id) ?>"
-                                       placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>"
-                                       data-goal-unit="<?= e((string) ($entry['unit'] ?? '')) ?>">
-                                <button type="button" class="btn press" data-goal-save="<?= e($id) ?>">
+                                       placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>">
+                                <button type="button" class="glass glass--cta goal-entry__save press" data-goal-save="<?= e($id) ?>">
                                     <?= e($entry['button'] ?? $copy['manual_save'] ?? t('Opslaan')) ?>
                                 </button>
                             </div>
@@ -339,7 +343,7 @@ $height = 96.0;
                                 <?php else: ?>
                                     <ul class="chart__axis" role="list">
                                         <li class="chart__tick" style="left: 0;"><?= e((string) ($goal['start_label'] ?? t('Start'))) ?></li>
-                                        <li class="chart__tick" style="left: 100%;"><?= e($goal['is_completed'] ? t('Behaald') : t('Nu')) ?></li>
+                                        <li class="chart__tick" style="left: 100%;"><?= e($goal['is_reached'] ? t('Behaald') : ($goal['is_completed'] ? t('Afgelopen') : t('Nu'))) ?></li>
                                     </ul>
                                 <?php endif; ?>
                             </div>
@@ -431,6 +435,46 @@ $height = 96.0;
                                 <?= e($copy['days_window']) ?>
                             <?php endif; ?>
                         </p>
+                    </section>
+                <?php endif; ?>
+
+                <!-- --------------------------------------- per period -->
+                <?php if (($goal['periods'] ?? []) !== []): ?>
+                    <?php
+                    /* A per-period streak's weeks (months…), each on its own,
+                       counted from the goal's start: met as soon as the count
+                       is reached, missed once it is over without. */
+                    ?>
+                    <section class="card reveal" aria-labelledby="goal-periods-<?= e($id) ?>">
+                        <div class="card__head">
+                            <div class="card__head-group">
+                                <span class="icon-tile" aria-hidden="true"><?= icon('calendar') ?></span>
+                                <h2 class="card__eyebrow" id="goal-periods-<?= e($id) ?>"><?= e($copy['periods'] ?? t('Per periode')) ?></h2>
+                            </div>
+                            <span class="chip chip--muted"><?= e((string) $goal['periods_chip']) ?></span>
+                        </div>
+
+                        <ol class="goal-periods" role="list">
+                            <?php foreach ($goal['periods'] as $period): ?>
+                                <li class="goal-period is-<?= e($period['state']) ?><?= !empty($period['current']) ? ' is-current' : '' ?>">
+                                    <span class="goal-period__mark" aria-hidden="true">
+                                        <?php if ($period['state'] === 'met'): ?><?= icon('check') ?><?php endif; ?>
+                                    </span>
+                                    <span class="goal-period__text">
+                                        <span class="goal-period__name"><?= e($period['label']) ?></span>
+                                        <span class="goal-period__dates"><?= e($period['dates']) ?></span>
+                                    </span>
+                                    <span class="goal-period__value"><?= e($period['value']) ?>
+                                        <span class="sr-only"> · <?= e(match ($period['state']) {
+                                            'met'     => t('gehaald'),
+                                            'missed'  => t('niet gehaald'),
+                                            'skipped' => t('telt niet mee'),
+                                            default   => t('nog bezig'),
+                                        }) ?></span>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
                     </section>
                 <?php endif; ?>
 

@@ -216,24 +216,24 @@ try {
     $state = &i18n_state();
     $state['week_start'] = 'monday';
     check('Monday: a Thursday\'s week starts on Monday the 12th', week_first_day($thursday)->format('Y-m-d') === '2026-10-12');
-    $days = goal_days(0, $goal, $thursday, []);
+    $days = goal_calendar($goal, ['days' => []], $thursday);
     check('Monday: the calendar starts on Monday 12 October', $days[0]['date'] === '2026-10-12' && $days[0]['state'] === 'before', json_encode($days[0]));
     check('Monday: M D W D V Z Z', week_initials() === ['M', 'D', 'W', 'D', 'V', 'Z', 'Z']);
 
     $state['week_start'] = 'sunday';
     check('Sunday: a Thursday\'s week starts on Sunday the 11th', week_first_day($thursday)->format('Y-m-d') === '2026-10-11');
     check('Sunday: a Sunday is its own week\'s first day', week_first_day(new DateTimeImmutable('2026-10-18'))->format('Y-m-d') === '2026-10-18');
-    $days = goal_days(0, $goal, $thursday, []);
+    $days = goal_calendar($goal, ['days' => []], $thursday);
     check('Sunday: the calendar starts on Sunday 11 October', $days[0]['date'] === '2026-10-11', json_encode($days[0]));
     check('Sunday: Z M D W D V Z', week_initials() === ['Z', 'M', 'D', 'W', 'D', 'V', 'Z']);
     check('every row still seven days: the goal\'s days fill whole weeks', (count($days) - (int) (new DateTimeImmutable('2026-10-11'))->diff(new DateTimeImmutable('2026-10-31'))->days - 1) === 0);
 
     /* A long goal shows the weeks up to the end of this week — Saturday
        when the week starts on Sunday. */
-    $long = goal_days(0, ['start_date' => '2026-01-01', 'end_date' => '2026-12-31'], $thursday, []);
+    $long = goal_calendar(['start_date' => '2026-01-01', 'end_date' => '2026-12-31'], ['days' => []], $thursday);
     check('Sunday: a long goal\'s calendar ends on Saturday the 17th', end($long)['date'] === '2026-10-17', json_encode(end($long)));
     $state['week_start'] = 'monday';
-    $long = goal_days(0, ['start_date' => '2026-01-01', 'end_date' => '2026-12-31'], $thursday, []);
+    $long = goal_calendar(['start_date' => '2026-01-01', 'end_date' => '2026-12-31'], ['days' => []], $thursday);
     check('Monday: on Sunday the 18th', end($long)['date'] === '2026-10-18', json_encode(end($long)));
 
     /* Ownify AI's weekly totals, by each week's first day. */

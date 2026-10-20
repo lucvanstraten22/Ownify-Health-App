@@ -1,6 +1,8 @@
 <?php
 /**
- * Pause, resume, complete or re-prioritise one of the signed-in user's goals.
+ * Pause, resume or re-prioritise one of the signed-in user's goals. A goal
+ * is never finished from here: it finishes by its own rules
+ * (includes/goal-progress.php).
  * Answers with the goal that is primary afterwards.
  *
  * The goal id arrives from the browser, which is why every statement behind

@@ -32,7 +32,7 @@ data class Board(
 
 /**
  * The Doelen board's own state, as goals.js keeps it: which view is shown
- * (Actief or Behaald), and the changes a tap makes at once — a goal made
+ * (Actief or Afgerond), and the changes a tap makes at once — a goal made
  * primary, paused or resumed, deleted — while they are on their way to the
  * server ("waiting on a round trip for a pause would feel broken").
  *

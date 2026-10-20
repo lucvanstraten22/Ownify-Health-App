@@ -40,11 +40,11 @@ $reading = has_value($goal['percent'])
         <span class="icon-tile" aria-hidden="true"><?= icon($goal['icon']) ?></span>
 
         <span class="goal-card__heads">
-            <span class="goal-card__category"><?= e($goal['category_label']) ?></span>
+            <span class="goal-card__category"><?= e($goal['category_label']) ?> · <?= e($goal['type_label']) ?></span>
             <span class="goal-card__name"><?= e($goal['name']) ?></span>
         </span>
 
-        <?php if ($goal['is_completed']): ?>
+        <?php if ($goal['is_reached']): ?>
             <span class="goal-card__done" aria-hidden="true"><?= icon('award') ?></span>
         <?php endif; ?>
     </span>

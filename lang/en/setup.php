@@ -41,7 +41,7 @@ return [
     'Naar Ownify' => 'Go to Ownify',
     'Een mogelijk eerste doel' => 'A possible first goal',
     'Je sliep de afgelopen %1$d nachten gemiddeld %2$s.' => 'Over the past %1$d nights you slept %2$s on average.',
-    '%1$d nachten van minstens %2$s uur' => '%1$d nights of at least %2$s hours',
+    'Elke nacht minstens %s uur' => 'At least %s hours every night',
     'Je trainde de afgelopen twee weken %1$d keer.' => 'You trained %1$d times in the past two weeks.',
     'Dag %1$d van %2$d' => 'Day %1$d of %2$d',
     'Je basislijn' => 'Your baseline',

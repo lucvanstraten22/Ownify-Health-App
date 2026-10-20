@@ -15,28 +15,23 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/includes/i18n.php';   // language and units (docs/I18N.md)
+require_once dirname(__DIR__) . '/includes/goal-catalogue.php';
 
 if (!function_exists('goals_prepare')) {
     /**
-     * Builds the page model: expanded goals, split by view, in priority order,
-     * plus everything the header needs to know about the goal limit (`limits`
+     * Builds the page model: expanded goals, split into Actief and Afgerond,
+     * in their order, plus what the header says about the goal limit (`limits`
      * → `active` in config/goals.php).
+     *
+     *   Actief     running and paused goals: the primary one first, then the
+     *              secondary ones furthest along (goals_secondary_order())
+     *   Afgerond   reached and ended goals: the highest final percentage
+     *              first, and between equals the newest first
      */
     function goals_prepare(array $config, ?DateTimeImmutable $today = null): array
     {
         $today  = $today ?? new DateTimeImmutable('today');
         $source = $config['goals'];
-
-        /* The wizard's unit suggestions as the reader sees them — "lb" for
-           "kg" in imperial, "steps" for "stappen" in English — keyed by the
-           unit a goal keeps (goal_unit_shown()). */
-        require_once dirname(__DIR__) . '/includes/goal-progress.php';
-        $config['unit_labels'] = [];
-        foreach ($config['categories'] ?? [] as $category) {
-            foreach ($category['units'] ?? [] as $unit) {
-                $config['unit_labels'][$unit] = goal_unit_shown(goal_manual_unit($unit))['word'];
-            }
-        }
 
         $active    = [];
         $completed = [];
@@ -44,7 +39,7 @@ if (!function_exists('goals_prepare')) {
         foreach ($source as $goal) {
             $expanded = goals_expand($goal, $config, $today);
 
-            if ($expanded['status'] === 'completed') {
+            if ($expanded['is_completed']) {
                 $completed[] = $expanded;
             } else {
                 $active[] = $expanded;
@@ -53,25 +48,16 @@ if (!function_exists('goals_prepare')) {
 
         usort($active, static fn (array $a, array $b): int => goals_rank($a) <=> goals_rank($b));
 
-        /* Most recently finished first — the last thing you achieved is the
-           thing you want to see. */
-        usort($completed, static fn (array $a, array $b): int
-            => ($a['completed_days_ago'] ?? 0) <=> ($b['completed_days_ago'] ?? 0));
+        $completed = goals_sort_stable($completed, 'goals_completed_compare');
 
-        /* Exactly one primary, always. A board that lost its primary — the
-           only goal that carried the flag was completed, say — would leave the
-           page with a headline slot and nothing in it, so the goal a delete
-           would hand it to takes the flag: the first of Secundaire doelen
-           (goals_successor()). goal_ensure_primary_after_completion() stores
-           this same goal. */
+        /* Exactly one primary, always: a board that lost it takes the goal a
+           delete would hand it to (goals_successor()). */
         if ($active !== [] && !$active[0]['is_primary']) {
             $active = goals_secondary_order($active);
             $active[0]['priority']   = 'primary';
             $active[0]['is_primary'] = true;
         }
 
-        /* Secundaire doelen in their order. The primary goal has its slot
-           already and is not part of this. */
         $active = array_merge(array_slice($active, 0, 1), goals_secondary_order(array_slice($active, 1)));
 
         $limit = (int) $config['limits']['active'];
@@ -87,6 +73,23 @@ if (!function_exists('goals_prepare')) {
         $config['all']        = array_merge($active, $completed);
 
         return $config;
+    }
+}
+
+if (!function_exists('goals_completed_compare')) {
+    /**
+     * Afgerond's order: the highest final percentage first; between equal
+     * percentages the goal made most recently first.
+     */
+    function goals_completed_compare(array $a, array $b): int
+    {
+        $order = ($b['final_percent'] ?? 0) <=> ($a['final_percent'] ?? 0);
+
+        if ($order !== 0) {
+            return $order;
+        }
+
+        return [(string) ($b['created_at'] ?? ''), (int) $b['id']] <=> [(string) ($a['created_at'] ?? ''), (int) $a['id']];
     }
 }
 
@@ -219,126 +222,80 @@ if (!function_exists('goals_sort_stable')) {
 }
 
 if (!function_exists('goals_expand')) {
-    /** Turns one configured goal into everything the templates need. */
+    /** Turns one hydrated goal into everything the templates and the app need. */
     function goals_expand(array $goal, array $config, DateTimeImmutable $today): array
     {
         $goal += [
-            'type'          => 'milestone',
-            'priority'      => 'secondary',
-            'status'        => 'active',
-            'percent'       => null,
-            'current_label' => null,
-            'target_label'  => null,
-            'sources'       => [],
-            'history'       => [],
-            'history_step'  => 'week',
-            'activity'      => [],
-            'note'          => null,
-            'duration'      => null,
+            'type' => 'milestone', 'variant' => null, 'priority' => 'secondary', 'status' => 'active',
+            'percent' => 0, 'current_label' => null, 'target_label' => null, 'note' => null,
+            'tracking' => 'manual', 'final_percent' => null, 'outcome' => null,
         ];
 
         /* --- category, type ------------------------------------------- */
-        $category = $config['categories'][$goal['category']] ?? $config['categories']['other'];
+        $category = $config['categories'][$goal['category']] ?? reset($config['categories']);
         $goal['category_key']   = $goal['category'];
         $goal['category_label'] = $category['label'];
         $goal['icon']           = $category['icon'];
         $goal['accent']         = $category['accent'];
         $goal['type_label']     = $config['types'][$goal['type']]['label'] ?? '';
+        $goal['variant_label']  = $goal['variant'] !== null ? ($config['streak_variants'][$goal['variant']]['label'] ?? null) : null;
+        $goal['kind_label']     = $goal['variant_label'] === null ? $goal['type_label'] : $goal['type_label'] . ' · ' . $goal['variant_label'];
 
         /* --- state ----------------------------------------------------- */
         $goal['is_primary']   = $goal['priority'] === 'primary';
         $goal['is_paused']    = $goal['status'] === 'paused';
-        $goal['is_completed'] = $goal['status'] === 'completed';
+        $goal['is_completed'] = in_array($goal['status'], ['completed', 'ended'], true);
+        $goal['is_reached']   = $goal['status'] === 'completed';
 
-        /* --- progress -------------------------------------------------- */
         $goal['ratio'] = score_ratio($goal['percent'], 100);
 
         /* --- dates ------------------------------------------------------ */
-        $start = isset($goal['started_days_ago'])
-            ? $today->modify('-' . (int) $goal['started_days_ago'] . ' days')
-            : null;
+        $start = new DateTimeImmutable((string) $goal['start_date']);
+        $end   = new DateTimeImmutable((string) $goal['end_date']);
+        $done  = $goal['completed_at'] !== null ? new DateTimeImmutable(substr((string) $goal['completed_at'], 0, 10)) : null;
 
-        $end = null;
-        if ($goal['is_completed'] && isset($goal['completed_days_ago'])) {
-            $end = $today->modify('-' . (int) $goal['completed_days_ago'] . ' days');
-        } elseif (isset($goal['ends_in_days'])) {
-            $end = $today->modify('+' . (int) $goal['ends_in_days'] . ' days');
-        }
+        $goal['start_label'] = goals_date_short($start);
+        $goal['end_label']   = goals_date_short($end);
+        $goal['done_label']  = $done === null ? null : goals_date_short($done);
 
-        $goal['start_date']  = $start;
-        $goal['end_date']    = $end;
-        $goal['start_label'] = $start ? goals_date_short($start) : null;
-        $goal['end_label']   = $end ? goals_date_short($end) : null;
+        $goal['days_left'] = $goal['is_completed'] ? null : (int) $today->diff($end)->format('%r%a');
 
-        $goal['days_left'] = ($end && !$goal['is_completed'])
-            ? (int) $today->diff($end)->format('%r%a')
-            : null;
-
-        $goal['took_label'] = isset($goal['took_days'])
-            ? goals_span_text((int) $goal['took_days'])
-            : null;
+        $goal['took_label'] = $done === null ? null : goals_span_text(max(1, (int) $start->diff($done)->days + 1));
 
         $goal['remaining'] = goals_remaining_text($goal, $config);
 
-        /* Both readings of the line under the bar. Pausing and resuming is a
-           client-side state change on this page, and it must not have to
-           reconstruct Dutch copy to swap between them. */
-        $goal['line_active'] = goals_deadline_line($goal, $config, false);
-        $goal['line_paused'] = goals_deadline_line($goal, $config, true);
+        /* Both readings of the line under the bar, so pausing and resuming
+           on the page needs no copy of its own. */
+        $goal['line_active']   = goals_deadline_line($goal, $config, false);
+        $goal['line_paused']   = goals_deadline_line($goal, $config, true);
         $goal['deadline_line'] = $goal['is_paused'] ? $goal['line_paused'] : $goal['line_active'];
 
-        $goal['duration_label'] = $goal['duration'] !== null
-            ? ($config['durations'][$goal['duration']]['label'] ?? null)
-            : null;
+        $duration = goal_duration_of($start, $end);
+        $goal['duration_label'] = $duration === null ? null : ($config['durations'][$duration]['label'] ?? null);
 
-        /* --- sources ---------------------------------------------------- */
-        /* What the person chose when they made the goal, not what its category
-           suggests. The old code inferred a source from the category, which
-           meant every weight goal claimed to be fed by manual entry and every
-           sleep goal claimed to read sleep — whether or not either was true,
-           and with nothing behind the claim.
+        /* --- where its figures come from -------------------------------- */
+        $shape = $config['sources'][$goal['tracking'] === 'auto' ? 'auto' : 'manual'];
+        $goal['source_list'] = [[
+            'key'   => $goal['tracking'],
+            'label' => $goal['tracking'] === 'auto' ? (string) $goal['measurement_label'] : $shape['label'],
+            'note'  => $goal['tracking'] === 'auto' ? $shape['note'] : $shape['note'],
+        ] + $shape];
 
-           A goal reading real data names the metric it reads. One the person
-           keeps by hand says so. */
-        $resolved = [];
+        /* Only a goal kept by hand, and still running, asks for anything. */
+        $goal['needs_input'] = !empty($goal['is_manual']) && !$goal['is_completed'];
 
-        if (($goal['tracking'] ?? 'manual') === 'auto' && !empty($goal['source_label'])) {
-            $domain = goals_source_domain($goal['source_kind'] ?? '', $goal['source_key'] ?? '');
-            $shape  = $config['sources'][$domain] ?? $config['sources']['manual'];
+        /* The Overzicht card and the bar's reading: the goal's own numbers. */
+        $goal['reading'] = match (true) {
+            $goal['current_label'] === null           => $goal['target_label'],
+            $goal['type'] === 'milestone'             => tf('%1$s, doel %2$s', $goal['current_label'], (string) $goal['target_label']),
+            $goal['type'] === 'accumulate'            => tf('%1$s van %2$s', $goal['current_label'], (string) $goal['target_label']),
+            default                                   => $goal['current_label'],
+        };
 
-            /* The chosen source's own name and rule win over the domain's
-               generic ones — "Stappen, elke dag minstens 10.000 stappen",
-               not "Beweging, stappen en dagelijkse beweging". The domain
-               only lends its icon and accent. */
-            $resolved[] = [
-                'key'   => $domain,
-                'label' => $goal['source_label'],
-                'note'  => $goal['daily_label'] !== null
-                    ? tf('Elke dag %s', $goal['daily_label'])
-                    : tf('%s · uit je eigen gegevens', (string) ($shape['label'] ?? '')),
-            ] + $shape;
-        } elseif (!empty($goal['is_manual'])) {
-            $resolved[] = $config['sources']['manual'] + ['key' => 'manual'];
-        }
-
-        $goal['source_list'] = $resolved;
-
-        /* Only a goal the person keeps themselves asks them for anything. An
-           automatic one updating itself must never show an entry box, or the
-           two numbers would start disagreeing. */
-        $goal['needs_input'] = !empty($goal['is_manual']);
-
-        /* --- history ---------------------------------------------------- */
-        /* The Verloop chart plots the goal's real values against real dates —
-           see lib/goal-chart.php for why it no longer draws the percentage.
-           One real point is enough to draw: a single weigh-in is a dot on a
-           timeline, not "no history". */
+        /* --- the Verloop ------------------------------------------------ */
         require_once __DIR__ . '/goal-chart.php';
 
-        $goal['chart'] = goal_chart_build(
-            $goal,
-            $goal['series'] ?? ['points' => [], 'mode' => 'best', 'target' => null, 'breaks' => false, 'best' => null]
-        );
+        $goal['chart'] = goal_chart_build($goal, $goal['series'] ?? ['points' => [], 'mode' => 'value', 'target' => null]);
         $goal['has_history'] = $goal['chart']['has_data'];
 
         return $goal;
@@ -357,10 +314,6 @@ if (!function_exists('goals_remaining_text')) {
         }
 
         $days = $goal['days_left'];
-
-        if ($days === null) {
-            return $config['labels']['no_deadline'];
-        }
 
         if ($days < 0) {
             return t('Periode voorbij');
@@ -389,7 +342,7 @@ if (!function_exists('goals_span_text')) {
         }
 
         /* Days stay days for a good six weeks: "nog 18 dagen" is what a
-           person counting down actually says, and "3 weken" loses the day. */
+           person counting down actually says. */
         if ($days >= 45) {
             $weeks = (int) round($days / 7);
             return tf('%d weken', $weeks);
@@ -401,68 +354,36 @@ if (!function_exists('goals_span_text')) {
 
 if (!function_exists('goals_deadline_line')) {
     /**
-     * The line under the bar: time left, and the date it runs to.
-     * `$paused` overrides the goal's own status so both readings can be
-     * produced up front.
+     * The line under the bar: time left and the date it runs to; finished,
+     * when and how it ended. `$paused` overrides the goal's own status so
+     * both readings can be produced up front.
      */
     function goals_deadline_line(array $goal, array $config, ?bool $paused = null): string
     {
         $paused = $paused ?? $goal['is_paused'];
 
         if ($goal['is_completed']) {
-            $line = $goal['end_label'] !== null
-                ? sprintf($config['labels']['completed_on'], $goal['end_label'])
-                : t('Behaald');
-
-            if ($goal['took_label'] !== null) {
-                $line .= ' · ' . sprintf($config['labels']['took'], $goal['took_label']);
+            if ($goal['is_reached']) {
+                $line = sprintf($config['labels']['completed_on'], (string) $goal['done_label']);
+                if ($goal['took_label'] !== null) {
+                    $line .= ' · ' . sprintf($config['labels']['took'], $goal['took_label']);
+                }
+                return $line;
             }
 
-            return $line;
+            return sprintf($config['labels']['ended_on'], (string) $goal['done_label']);
         }
 
-        /* The card carries a "Gepauzeerd" chip beside this line, so the line
-           itself says what pausing means rather than repeating the word. */
         if ($paused) {
             return $config['labels']['paused_line'];
         }
 
-        $line = (string) $goal['remaining'];
-
-        if ($goal['end_label'] !== null) {
-            $line .= ' · ' . tf('t/m %s', $goal['end_label']);
-        }
-
-        return $line;
+        return (string) $goal['remaining'] . ' · ' . tf('t/m %s', $goal['end_label']);
     }
 }
 
 if (!function_exists('goals_date_short')) {
     /** "4 okt" — short enough to sit on one line beside the time remaining. */
-    /**
-     * Which of the page's five source shapes a chosen source looks like.
-     *
-     * Only for the icon and the accent — the label is the real metric's own.
-     */
-    function goals_source_domain(string $kind, string $key): string
-    {
-        if ($kind === 'measurement') {
-            return 'body';
-        }
-
-        if ($kind === 'workout') {
-            return 'training';
-        }
-
-        return match (true) {
-            str_starts_with($key, 'sleep'), $key === 'sleeping_hr'     => 'sleep',
-            in_array($key, ['steps', 'distance', 'floors', 'active_minutes', 'active_energy'], true) => 'activity',
-            in_array($key, ['water', 'energy', 'protein', 'carbs', 'fat', 'fibre', 'sugar',
-                            'sodium', 'saturated_fat', 'nutrition_rating'], true) => 'nutrition',
-            default => 'training',
-        };
-    }
-
     function goals_date_short(DateTimeInterface $date): string
     {
         return i18n_date($date, 'day_mon');
@@ -494,31 +415,30 @@ if (!function_exists('goals_slot_note')) {
 
 if (!function_exists('goals_script_copy')) {
     /**
-     * The words goals.js and goal-wizard.js build their sentences from, as
+     * The words and the catalogue goals.js and goal-wizard.js work from, as
      * the page embeds them (`[data-goals-copy]`): the Doelen page's, and the
-     * setup's, which opens the same wizard (pages/setup.php).
+     * setup's, which opens the same wizard (pages/setup.php). The app reads
+     * the same through api/app/state.php (`goals`).
      */
     function goals_script_copy(array $goals): array
     {
         return [
-            'labels'    => $goals['labels'],
-            'detail'    => $goals['detail'],
-            'limits'    => $goals['limits'],
-            'views'     => array_map(static fn (array $v): string => $v['label'], $goals['views']),
-            'categories'=> array_map(
-                static fn (array $c): array => ['label' => $c['label'], 'accent' => $c['accent'], 'units' => $c['units']],
-                $goals['categories']
-            ),
-            'types'     => array_map(
-                static fn (array $t): array => ['label' => $t['label'], 'hint' => $t['hint']],
-                $goals['types']
-            ),
-            'durations' => array_map(
-                static fn (array $d): array => ['label' => $d['label'], 'days' => $d['days']],
-                $goals['durations']
-            ),
-            'wizard'    => $goals['wizard'],
-            'unit_labels' => $goals['unit_labels'] ?? [],
+            'labels'       => $goals['labels'],
+            'detail'       => $goals['detail'],
+            'limits'       => $goals['limits'],
+            'views'        => array_map(static fn (array $v): string => $v['label'], $goals['views']),
+            'categories'   => $goals['categories'],
+            'measurements' => $goals['measurements'],
+            'custom'       => $goals['custom'],
+            'goal_units'   => $goals['goal_units'],
+            'types'        => $goals['types'],
+            'streak_variants' => $goals['streak_variants'],
+            'periods'      => $goals['periods'],
+            'durations'    => $goals['durations'],
+            'wizard'       => $goals['wizard'],
+            'user_auto'    => $goals['user_auto'] ?? [],
+            'units_system' => units_system(),
+            'week_start'   => week_start(),
         ];
     }
 }

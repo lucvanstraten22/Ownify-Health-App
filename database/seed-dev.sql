@@ -102,12 +102,11 @@ VALUES
 
 -- --- one goal ---------------------------------------------------------------
 INSERT INTO `goals`
-    (`id`, `user_id`, `name`, `category`, `goal_type`, `metric_type_id`,
-     `target_value`, `target_unit`, `direction`, `start_date`, `end_date`)
+    (`id`, `user_id`, `name`, `category_code`, `measurement_code`, `goal_type`, `tracking`,
+     `unit_code`, `direction`, `target_value`, `start_date`, `end_date`, `priority`)
 VALUES
-    (1, 1, 'DEV — 300.000 stappen in april', 'training', 'accumulate',
-     (SELECT id FROM health_metric_types WHERE code = 'steps'),
-     300000, 'stappen', 'increase', '2026-04-01', '2026-04-30');
+    (1, 1, 'DEV — 300.000 stappen in april', 'activity', 'steps', 'accumulate', 'auto',
+     'steps', 'increase', 300000, '2026-04-01', '2026-04-30', 'primary');
 
 -- --- friendships: 1 is friends with 2 and 3, asked 4, blocked 5 -------------
 INSERT INTO `friendships` (`user_low_id`, `user_high_id`, `requested_by`, `status`, `responded_at`) VALUES

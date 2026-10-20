@@ -96,7 +96,7 @@ import com.ownify.android.ui.theme.LocalAccent
 
 /**
  * Doelen (pages/goals.php): what you are working toward, which one matters
- * most, how far you are and when it ends — Actief and Behaald, switched in
+ * most, how far you are and when it ends — Actief and Afgerond, switched in
  * place — and the + that starts the wizard. Everything deeper is behind the
  * card, on the goal's own page.
  */
@@ -128,7 +128,7 @@ fun GoalsPage(data: AppData, scroll: ScrollState) {
                 selected = view,
                 onSelect = { GoalBoard.view = it },
                 wide = true,
-                label = tr("Actieve of behaalde doelen")
+                label = tr("Actieve of afgeronde doelen")
             )
         }
 
@@ -184,7 +184,7 @@ private fun CompletedView(data: AppData, board: Board) {
             Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 board.completed.forEach { goal -> key(goal.id) { BoardCard(data, goal, "completed", false) } }
             }
-            SlotNote(trf("Behaalde doelen tellen niet mee voor je %d actieve plekken.", data.goals.limits))
+            SlotNote(trf("Afgeronde doelen tellen niet mee voor je %d actieve plekken.", data.goals.limits))
         }
     }
 }
@@ -299,12 +299,14 @@ data class GoalCardModel(
     val paused: Boolean,
     val completed: Boolean,
     val deadline: String,
-    val pausedChip: String?
+    val pausedChip: String?,
+    /** Reached 100% — it wears the award; an ended goal does not. */
+    val reached: Boolean = false
 ) {
     companion object {
         fun of(goal: Goal, pausedChip: String?) = GoalCardModel(
             name = goal.name,
-            categoryLabel = goal.categoryLabel,
+            categoryLabel = goal.categoryLabel + " · " + goal.typeLabel,
             icon = goal.icon,
             accent = goal.accent,
             percent = goal.percent,
@@ -313,7 +315,8 @@ data class GoalCardModel(
             paused = goal.isPaused,
             completed = goal.isCompleted,
             deadline = goal.deadlineLine,
-            pausedChip = pausedChip
+            pausedChip = pausedChip,
+            reached = goal.isReached
         )
     }
 }
@@ -435,7 +438,7 @@ fun GoalCard(
                                 ellipsis = true
                             )
                         }
-                        if (model.completed) {
+                        if (model.reached) {
                             Box(
                                 Modifier.size(30.dp).clip(CircleShape).background(Ownify.mix(accent.color, 0.18f, Color.Transparent)),
                                 contentAlignment = Alignment.Center

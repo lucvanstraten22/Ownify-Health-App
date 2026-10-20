@@ -267,18 +267,11 @@ if (!function_exists('nutrition_targets_config')) {
      * What the person's active primary goal says about body weight:
      * 'weight_loss', 'weight_gain' or 'maintenance'.
      *
-     * A goal counts only when it clearly is one:
-     *   - it is about body weight in kg — read from the scale (measurement
-     *     'weight'), or a Gewicht goal kept by hand in kg. A Gewicht goal in
-     *     % may be body fat, which is not the same thing;
-     *   - it is a Mijlpaal, the one type whose direction the person chose
-     *     ("lager is beter" / "hoger is beter"). On Optellen and Streak the
-     *     direction means something else — "3 kg afvallen" adds up as an
-     *     increase — so they are not read as a direction for body weight.
-     *
-     * A goal already reached — below its target when losing, above it when
-     * gaining — asks for maintenance, not more of the same. Anything else:
-     * maintenance.
+     * A goal counts only when it clearly is one: a Mijlpaal on Gewicht
+     * (docs/GOALS.md), the one type whose direction the person chose. Its
+     * target is kept in kg whatever unit it is shown in. A goal already
+     * reached — below its target when losing, above it when gaining — asks
+     * for maintenance, not more of the same.
      */
     function nutrition_targets_goal(int $userId, ?float $currentKg): string
     {
@@ -287,10 +280,7 @@ if (!function_exists('nutrition_targets_config')) {
                 continue;
             }
 
-            $scale  = ($goal['source_kind'] ?? null) === 'measurement' && ($goal['source_key'] ?? null) === 'weight';
-            $byHand = ($goal['category'] ?? null) === 'weight' && mb_strtolower((string) ($goal['target_unit'] ?? '')) === 'kg';
-
-            if ((!$scale && !$byHand) || ($goal['goal_type'] ?? 'milestone') !== 'milestone') {
+            if (($goal['measurement_code'] ?? null) !== 'weight' || ($goal['goal_type'] ?? '') !== 'milestone') {
                 return 'maintenance';
             }
 

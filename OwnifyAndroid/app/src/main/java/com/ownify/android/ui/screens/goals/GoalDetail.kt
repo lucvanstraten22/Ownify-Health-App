@@ -1,6 +1,5 @@
 package com.ownify.android.ui.screens.goals
 
-import com.ownify.android.i18n.OwnifyLanguage
 import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.i18n.tr
 import com.ownify.android.i18n.trf
@@ -19,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -63,6 +64,8 @@ import com.ownify.android.ui.design.Btn
 import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.CardHint
 import com.ownify.android.ui.design.Chip
+import com.ownify.android.ui.design.GlassChip
+import com.ownify.android.ui.design.GlassCta
 import com.ownify.android.ui.design.IconTile
 import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JIcon
@@ -115,6 +118,7 @@ fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
             if (goal.needsInput && !goal.isCompleted && entry != null) ManualEntry(goal, entry, copy)
             GoalHistory(goal, copy) { SourceFooter(goal) }
             if (goal.days.isNotEmpty()) Days(goal, copy)
+            if (goal.periods.isNotEmpty()) Periods(goal, copy)
             if (!goal.isCompleted) Manage(data, goal, copy)
         }
     }
@@ -136,11 +140,7 @@ private fun Hero(data: AppData, goal: Goal) {
     val (play, sight) = rememberPlayOnSight()
 
     // The hero keeps its line short; the dates are in the rows underneath.
-    val heroActive = if (goal.isCompleted) {
-        goal.endLabel?.let { (labels["completed_on"] ?: "%s").replace("%s", it) } ?: tr("Behaald")
-    } else {
-        goal.remaining.orEmpty()
-    }
+    val heroActive = if (goal.isCompleted) goal.lineActive else goal.remaining.orEmpty()
     val heroLine = if (goal.isPaused) labels["paused_line"].orEmpty() else heroActive
 
     JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
@@ -148,7 +148,7 @@ private fun Hero(data: AppData, goal: Goal) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             OwnifyIcons.named(goal.icon)?.let { IconTile(it, color = accent) }
             Column(Modifier.weight(1f)) {
-                T("${goal.categoryLabel} · ${goal.typeLabel}", JStyle.Caption, uppercase = true)
+                T("${goal.measurementLabel} · ${goal.kindLabel}", JStyle.Caption, uppercase = true)
                 // A long name steps down to Title 3 with balanced lines (`.goal-hero__name.is-long`).
                 val long = goal.name.codePointCount(0, goal.name.length) > GOAL_NAME_LONG
                 T(
@@ -172,7 +172,8 @@ private fun Hero(data: AppData, goal: Goal) {
         ) {
             if (goal.isPrimary) AccentChip(labels["primary_chip"].orEmpty(), accent)
             if (goal.isPaused) Chip(labels["paused_chip"].orEmpty(), quiet = true)
-            if (goal.isCompleted) AccentChip(goals.views.firstOrNull { it.first == "completed" }?.second.orEmpty(), accent)
+            if (goal.isCompleted) AccentChip(if (goal.isReached) tr("Behaald") else tr("Afgelopen"), accent)
+            Chip(goal.categoryLabel, muted = true)
             goal.durationLabel?.let { Chip(it, muted = true) }
         }
 
@@ -223,8 +224,7 @@ private fun Hero(data: AppData, goal: Goal) {
                 PeriodRow(
                     copy["period"] ?: tr("Periode"),
                     tr("Gestart") + ": " + goal.startLabel.ifEmpty { "—" },
-                    (if (goal.isCompleted) tr("Looptijd") else tr("Eindigt")) + ": " +
-                        (if (goal.isCompleted) goal.tookLabel ?: "—" else goal.endLabel ?: labels["no_deadline"].orEmpty())
+                    tr("Eindigt") + ": " + (goal.endLabel ?: "—")
                 )
             }
         }
@@ -388,9 +388,10 @@ private fun DayBlock(day: GoalDay, modifier: Modifier) {
 }
 
 /**
- * The entry for a goal kept by hand: a result or an amount and its button,
- * or today's tick — saved to api/goals/progress.php, and the goal's page
- * then shows the server's new figures.
+ * Logging a goal kept by hand — only ever here, on its own page
+ * (api/goals/progress.php): a new measurement (Mijlpaal, the latest
+ * counts), an amount (Optellen), or today ticked off (Streak) — and the tick
+ * taken back. The page then shows the server's new figures.
  */
 @Composable
 private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>) {
@@ -402,11 +403,10 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
     var error by remember { mutableStateOf<String?>(null) }
     val field = remember { FocusRequester() }
 
-    fun save(tick: Boolean) {
+    fun save(done: Boolean?) {
         error = null
-        if (!tick && value.trim().isEmpty()) {
+        if (done == null && value.trim().isEmpty()) {
             error = tr("Vul een waarde in.")
-            // goals.js: back into the field.
             field.focusSafely()
             return
         }
@@ -414,11 +414,8 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
         saving = true
         val fields = buildMap {
             put("goal_id", goal.id)
-            if (!tick) {
-                put("value", value.trim())
-                // Typed in the goal's shown unit (Instellingen → Eenheden); the server keeps kg, km, cm, °C.
-                put("input_units", OwnifyLanguage.units)
-            }
+            // Typed in the goal's own unit; the server keeps it in the unit it stores.
+            if (done == null) put("value", value.trim()) else put("done", if (done) "1" else "0")
         }
         scope.launch {
             when (val outcome = OwnifyActions.form(context, "api/goals/progress.php", fields, tr("Dit kon niet worden opgeslagen."))) {
@@ -434,14 +431,17 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
         CompactHead(OwnifyIcons.check, copy["manual"].orEmpty())
 
         if (entry.kind == "tick") {
-            Btn(
-                if (entry.done) tr("Vandaag afgevinkt") else entry.label,
-                onClick = { save(tick = true) },
-                enabled = !entry.done && !saving,
-                icon = OwnifyIcons.check,
-                iconSize = 17.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (!entry.done) {
+                GlassCta(entry.label, onClick = { save(done = true) }, modifier = Modifier.fillMaxWidth(), enabled = !saving, loading = saving)
+            } else {
+                Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        JIcon(OwnifyIcons.check, size = 17.dp, color = Ownify.Health)
+                        T(tr("Vandaag afgevinkt"), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.Health))
+                    }
+                    GlassChip(entry.undo ?: tr("Vandaag ongedaan maken"), chosen = false, enabled = !saving, onClick = { save(done = false) })
+                }
+            }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                 JInput(
@@ -450,14 +450,70 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
                     placeholder = entry.placeholder ?: entry.label,
                     label = entry.label,
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                    actions = KeyboardActions(onDone = { if (!saving) save(tick = false) })
+                    actions = KeyboardActions(onDone = { if (!saving) save(null) })
                 )
-                Btn(entry.button ?: copy["manual_save"] ?: tr("Opslaan"), onClick = { save(tick = false) }, enabled = !saving)
+                GlassCta(entry.button ?: copy["manual_save"] ?: tr("Opslaan"), onClick = { save(null) }, enabled = !saving, loading = saving)
             }
         }
 
         error?.let { EditorError(it) }
         CardHint(entry.note.orEmpty(), icon = null, plain = true)
+    }
+}
+
+/**
+ * Per periode: a per-period streak's weeks (months…), each on its own,
+ * counted from the goal's start — met as soon as its count is reached,
+ * missed once it is over without; a last one too short to ask anything
+ * counts neither way.
+ */
+@Composable
+private fun Periods(goal: Goal, copy: Map<String, String>) {
+    JCard(Modifier.fillMaxWidth().reveal()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                IconTile(OwnifyIcons.calendar)
+                T(copy["periods"] ?: tr("Per periode"), JStyle.Eyebrow, Modifier.semantics { heading() })
+            }
+            goal.periodsChip?.let { Chip(it, muted = true) }
+        }
+        Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
+            goal.periods.forEachIndexed { i, p ->
+                if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
+                val state = when (p.state) {
+                    "met" -> tr("gehaald")
+                    "missed" -> tr("niet gehaald")
+                    "skipped" -> tr("telt niet mee")
+                    else -> tr("nog bezig")
+                }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = Ownify.Space2)
+                        .alpha(if (p.state == "skipped") 0.55f else 1f)
+                        .semantics(mergeDescendants = true) { contentDescription = "${p.label}, ${p.dates}, ${p.value}, $state" },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+                ) {
+                    val met = p.state == "met"
+                    Box(
+                        Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(if (met) Ownify.HealthFill else Color.Transparent)
+                            .border(1.5.dp, if (met) Ownify.HealthStrong else if (p.current) Ownify.Health else Ownify.GlassBorder, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (met) JIcon(OwnifyIcons.check, size = 13.dp, color = Ownify.Health)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        T(p.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+                        T(p.dates, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted))
+                    }
+                    T(p.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, if (met) Ownify.TextPrimary else Ownify.TextSecondary, tabular = true))
+                }
+            }
+        }
     }
 }
 

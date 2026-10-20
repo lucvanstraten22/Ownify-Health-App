@@ -65,6 +65,9 @@ tools/
                               the suggested first goal, the tone — no database
     goal-order-test.php       the order of Secundaire doelen on the goals board — no
                               database
+    goal-engine-test.php      goals on a real database: the three calculations, dates,
+                              units, finishing, Afgerond's order, what cannot be made
+    goals-test.sh             goals end to end over HTTP (goal-verify.php writes the data)
     brand-icons.py            the Ownify logo for every place it is shown, made from the
                               supplied artwork in docs/brand (Python: Pillow, numpy, scipy)
 pages/
@@ -135,7 +138,7 @@ components/
     leaderboard-row.php       position · avatar · name · points
     community-badges.php      reserved space for badges and milestones
     goal-card.php             one goal: name · percentage · bar · target · deadline
-    goal-wizard.php           the six-step create-a-goal flow
+    goal-wizard.php           Nieuw doel: three steps and a review (docs/GOALS.md)
     settings-group.php        one label, one card, hairline-separated rows
     settings-row.php          icon · label · current value · chevron
     settings-field.php        a profile field: editable, locked or derived
@@ -175,7 +178,7 @@ assets/js/
     training.js               the heart rate's day: back over seven days, by arrow or swipe
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
-    goal-wizard.js            the six-step create-a-goal flow
+    goal-wizard.js            Nieuw doel: search, categories, type, setup, calendar, review
     setup.js                  the setup's four steps, each saved where it always is
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
@@ -452,11 +455,11 @@ below — their progress, and when each one ends. Everything deeper is one tap
 away.
 
 ```
-[ Actief ] [ Behaald ]
+[ Actief ] [ Afgerond ]
 
 PRIMAIR DOEL
 ┌──────────────────────────────────┐
-│ KRACHT                           │
+│ TRAINING · MIJLPAAL              │
 │ Bench press 100 kg               │
 │ 72%                       100 kg │
 │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
@@ -480,7 +483,7 @@ for the website and the app alike (`tools/goal-order-test.php`).
 `includes/goals.php`, read from that number), and the pages, the app and the
 assistant all read the same number: the `+` disables itself and the line under
 the board says why, with the limit in it. A paused
-goal keeps its slot; only completing or deleting one frees it. There is always
+goal keeps its slot; only finishing or deleting one frees it. There is always
 exactly one primary goal — promoting a secondary demotes the current primary in
 the same move, and deleting or completing the primary hands the flag to the
 first goal under Secundaire doelen, so the headline slot can never end up empty
@@ -495,26 +498,27 @@ the primary, the secondaries and the completed ones; `--primary` is more room,
 a stronger surface and a three-pixel accent edge, and nothing else. That is
 what lets a promotion be a class change rather than a different card.
 
-**Three types, three calculations.** A goal is a **Mijlpaal** (`milestone`: the
-best result counts), a **Streak** (`streak`: successful days in a row) or
-**Optellen** (`accumulate`: everything added up, an amount or a number of
-days). The type decides the arithmetic in `includes/goal-progress.php`; its
-current and target readings are text, so "86 kg van 100 kg" and "19 van 30
-dagen" render through the same component.
+**Three types, three calculations.** A goal is a **Mijlpaal** (`milestone`:
+from its baseline to its target by the latest value), a **Streak** (`streak`:
+the share of its days — or weeks, months… — that made it) or **Optellen**
+(`accumulate`: everything since the start date added up). The type decides
+the arithmetic in `includes/goal-progress.php`; the formulas, the units and
+the dates are [docs/GOALS.md](docs/GOALS.md).
 
-**Creating a goal is six steps, not one form:** category → name and type →
-where progress comes from → what counts as done → period (week / maand / half
-jaar / jaar) → a last look, with the priority. It lives outside the deck, next
-to the account panel, so the deck's pointer pipeline never sees it and nothing
-in it can be mistaken for a swipe. Every step is in the document from the start
-and switched with a class, so stepping back still has your answers. The button
-to continue stays disabled until the step has an answer; the server checks the
-same rules again (`includes/goal-create.php`).
+**Creating a goal is three steps and a review:** the measurement (search, six
+categories, a short list) → the name and the type → the target, its unit,
+which way is better and the period → a last look, then *Doel aanmaken*. It
+lives outside the deck, next to the account panel, so the deck's pointer
+pipeline never sees it and nothing in it can be mistaken for a swipe. Back
+keeps every answer. The button to continue stays disabled until the step has
+an answer; the server checks the same rules again (`includes/goal-create.php`)
+and a double tap makes one goal.
 
 **Progress comes from the data, or from you.** A goal read from health data
 (sleep, steps, workouts, measurements and the rest of the metric catalogue)
-works itself out from the person's own records; a goal kept by hand gets an
-entry on its detail page — a tick for the day, or an amount to add. Either way
+works itself out from the person's own records — when they have some; a goal
+kept by hand gets an entry on its detail page — a new measurement, a tick for
+the day, or an amount to add. Either way
 `includes/goal-progress.php` recalculates it from the rows underneath and
 stores where it stands on the goal. The detail page goes: the goal (with its
 *Periode*, Gestart and Eindigt in one row), *Zelf bijhouden* for a goal kept by
@@ -524,7 +528,7 @@ day for a goal that counts days, and *Aanpassen*.
 
 **Primair | Secundair.** *Aanpassen* has one selector. Primair makes the goal
 primary and the old primary secondary. Secundair on the primary goal hands the
-slot to the goal a delete or a completion would (`goals_successor()`, the first
+slot to the goal a delete or finishing would (`goals_successor()`, the first
 of Secundaire doelen — so the next highest when the goal is the furthest along
 itself), via `goal_set_secondary()`; a goal on its own stays primary. Either way
 the board, every goal page and Overzicht's card are read again from the server.

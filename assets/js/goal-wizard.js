@@ -1,20 +1,21 @@
 /**
- * goal-wizard.js — the six-step create-a-goal flow.
+ * goal-wizard.js — Nieuw doel: three steps and a review (docs/GOALS.md).
  *
- * One question per step, and the next step is unreachable until the current
- * one has an answer. That is the whole of the validation: no error messages,
- * no red fields, just a button that stays quiet until there is something to
- * move on to.
+ *   1 Meting     search + six category bubbles + a short list; choosing a
+ *                measurement highlights it, nothing more. Eigen gewoonte asks
+ *                for its category here too.
+ *   2 Doel       a name (ideas from the measurement) and Mijlpaal, Streak or
+ *                Optellen — each card with an example for this measurement
+ *   3 Instellen  number + unit, which way is better (two round buttons, the
+ *                explanation on a long press), the baseline for a Mijlpaal,
+ *                and the period: start, end, or one of five looptijden
+ *   Controleren  everything, read-only, and "Doel aanmaken"
  *
- * The three types are three different questions, not three labels:
- *
- *   Mijlpaal   one result to reach, and which way is better   -> best result
- *   Streak     days in a row, and what makes a day count      -> consecutive days
- *   Optellen   a total or a number of days                    -> everything added
- *
- * So the source is asked before the target (step 3, then 4): the target is
- * typed in the source's own unit, and whether a day needs a threshold depends
- * on where the day's figure comes from.
+ * Nothing here decides what is stored: api/goals/create.php checks every
+ * field again with includes/goal-create.php. What this file does work out —
+ * an end date from a looptijd, a figure in another unit — is the same
+ * arithmetic as includes/goal-catalogue.php and GoalWizard.kt, so what the
+ * review says is what the goal will be.
  */
 
 (function () {
@@ -25,223 +26,1021 @@
     var root = document.querySelector('[data-goal-wizard]');
     if (!root) { return; }
 
-    var copy = (window.GoalCopy && window.GoalCopy.wizard) ? window.GoalCopy : null;
+    var copy = (window.GoalCopy && window.GoalCopy.measurements) ? window.GoalCopy : null;
     if (!copy) {
         var source = document.querySelector('[data-goals-copy]');
         try { copy = JSON.parse(source.textContent); } catch (e) { return; }
     }
 
-    var words     = copy.wizard;
-    var TOTAL     = 6;
+    var words   = copy.wizard;
+    var STEPS   = 3;
 
-    var body      = root.querySelector('.wizard__body');
+    var body      = root.querySelector('[data-wizard-body]');
     var count     = root.querySelector('[data-wizard-count]');
     var backBtn   = root.querySelector('[data-wizard-back]');
     var nextBtn   = root.querySelector('[data-wizard-next]');
-    var doneBtn   = root.querySelector('[data-wizard-done]');
-    var nameInput = root.querySelector('[data-wizard-name]');
-    var suggests  = root.querySelector('[data-wizard-suggestions]');
-    var unitList  = root.querySelector('[data-wizard-units]');
-    var datesNote = root.querySelector('[data-wizard-dates]');
-    var swapNote  = root.querySelector('[data-wizard-swap]');
-    var preview   = root.querySelector('[data-wizard-preview]');
+    var nextLabel = root.querySelector('[data-wizard-next-label]');
+    var foot      = root.querySelector('[data-wizard-foot]');
+    var errorSlot = root.querySelector('[data-wizard-error]');
 
-    var step = 1;
+    var search    = root.querySelector('[data-wizard-search]');
+    var clearBtn  = root.querySelector('[data-wizard-search-clear]');
+    var list      = root.querySelector('[data-wizard-list]');
+    var listLabel = root.querySelector('[data-wizard-list-label]');
+    var empty     = root.querySelector('[data-wizard-empty]');
+    var customHint= root.querySelector('[data-wizard-custom-hint]');
+    var nameInput = root.querySelector('[data-wizard-name]');
+    var ideas     = root.querySelector('[data-wizard-ideas]');
+    var setup     = root.querySelector('[data-wizard-setup]');
+    var review    = root.querySelector('[data-wizard-review]');
+    var calendar  = root.querySelector('[data-wizard-calendar]');
+
+    var step = 1;               // 1, 2, 3 or 'review'
     var lastFocus = null;
-    var saved = false;
-    var createdId = null;
+    var saving = false;
     var draft = blank();
 
     function blank() {
         return {
-            category: null,
+            token: token(),
+            measurement: null,      // a code, or 'custom'
+            category: null,         // the bubble chosen — and an Eigen gewoonte's category
+            query: '',
             name: '',
-            type: null,          // 'milestone' | 'streak' | 'accumulate'
-
-            /* Where progress comes from. null means nobody has said yet, which
-               is different from 'manual' — that is an answer. */
-            sourceKind: null,
-            sourceKey: '',
-            sourceLabel: '',
-            sourceUnit: '',
-
-            measure: null,       // Optellen: 'amount' | 'days'
-            value: '',           // the result or the total
-            unit: '',            // typed, for a goal kept by hand
-            days: '',            // days in a row, or days in total
-            better: null,        // Mijlpaal: 'increase' | 'decrease' — asked, never assumed
-            floor: 'increase',   // a day's threshold: at least ('increase') or at most
-            daily: '',           // that threshold
-
+            type: null,             // milestone | streak | accumulate
+            variant: null,          // a streak's: daily | period
+            unit: null,             // a unit code, or 'custom'
+            customUnit: '',
+            target: '',             // as typed
+            direction: null,        // increase | decrease
+            frequency: '',
+            period: 'week',
+            baseline: { state: 'idle', value: null, on: null, measurement: null, start: null },
+            baselineTyped: '',
+            start: today(),
+            end: null,
             duration: null,
-            priority: 'secondary'
+            calendar: null          // 'start' | 'end' while the calendar is open
         };
     }
 
-    /* ------------------------------------------------------------ helpers */
-
-    function each(selector, fn) {
-        Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
+    /** A one-time key for this goal: the server makes it once, however often it is sent. */
+    function token() {
+        if (window.crypto && window.crypto.randomUUID) { return window.crypto.randomUUID(); }
+        return 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
     }
 
-    function press(selector, attribute, value) {
-        each(selector, function (option) {
-            var on = option.getAttribute(attribute) === value;
-            option.setAttribute('aria-pressed', on ? 'true' : 'false');
-            option.classList.toggle('is-active', on);
-        });
+    /* ============================================================ helpers */
+
+    /* Copy from the catalogue is in the reader's language already: only its %s is filled. */
+    function fill(text, value) {
+        return String(text).replace('%s', value);
     }
 
-    /* Dates, spans and numbers in the reader's language (assets/js/i18n.js),
-       as lib/goals.php writes them on the board. */
-    function dutchDate(date) {
-        return T.date(date, 'day_mon');
+    function each(selector, fn, scope) {
+        Array.prototype.forEach.call((scope || root).querySelectorAll(selector), fn);
     }
 
-    function spanText(days) {
-        if (days >= 330) { return Math.round(days / 365) === 1 ? T.t('1 jaar') : T.tf('%d jaar', Math.round(days / 365)); }
-        if (days >= 60) { return T.tf('%d maanden', Math.round(days / 30)); }
-        if (days >= 45) { return T.tf('%d weken', Math.round(days / 7)); }
-        return T.tn(days, '%d dag', '%d dagen');
+    function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) { node.className = className; }
+        if (text !== undefined && text !== null) { node.textContent = text; }
+        return node;
     }
 
-    function daysText(n) {
-        return T.tn(Number(n), '%d dag', '%d dagen');
+    function iconMarkup(name) {
+        var template = root.querySelector('template[data-wizard-icon="' + name + '"]');
+        return template ? template.innerHTML : '';
     }
 
-    function endDate(days) {
-        var date = new Date();
-        date.setHours(0, 0, 0, 0);
-        date.setDate(date.getDate() + days);
-        return date;
+    function has(list, value) { return (list || []).indexOf(value) !== -1; }
+
+    /** Lower case, no accents: "Slaapefficiëntie" is found by "efficientie". */
+    function fold(text) {
+        return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     }
 
-    /** "10.000" or "10,000": the way the rest of the app writes a number. */
-    function dutchNumber(text) {
-        var n = T.parseNumber(text);
-        if (n === null) { return String(text); }
-        return T.numberTrim(n, 2);
+    /* ---------------------------------------------------------- catalogue */
+
+    function measurementOf(code) {
+        if (code === 'custom') {
+            var custom = Object.assign({ code: 'custom', custom: true, source_kind: 'manual' }, copy.custom);
+            custom.category = draft.category;
+            return custom;
+        }
+        var m = copy.measurements[code];
+        return m ? Object.assign({ code: code, custom: false }, m) : null;
+    }
+
+    function current() { return draft.measurement ? measurementOf(draft.measurement) : null; }
+
+    /** Read from this person's data (it has some) — or kept by hand on the goal's page. */
+    function isAuto(m) {
+        return !!m && !m.custom && m.source_kind !== 'manual' && has(copy.user_auto, m.code);
+    }
+
+    function unitOf(code) {
+        if (code === 'custom') {
+            return { code: null, label: draft.customUnit.trim(), one: draft.customUnit.trim(), factor: 1, decimals: 2, attached: false };
+        }
+        var u = copy.goal_units[code];
+        if (!u) { return { code: code, label: '', one: '', factor: 1, decimals: 2, attached: false }; }
+        return { code: code, label: u.label, one: u.one || u.label, factor: Number(u.factor), decimals: Number(u.decimals), attached: !!u.attached };
+    }
+
+    /** The unit a measurement starts in: Imperiaal's own where it has one. */
+    function defaultUnit(m) {
+        var codes = m.unit_codes || [];
+        if (copy.units_system === 'imperial' && m.imperial_unit && has(codes, m.imperial_unit)) { return m.imperial_unit; }
+        return codes[0] || m.unit_code;
+    }
+
+    /** A per-period streak counts times — trainingen, or keer. */
+    function countUnit(m) { return m.unit_code === 'sessions' ? 'sessions' : 'times'; }
+
+    function typeAllowed(m, type) { return !!m && has(m.types, type); }
+
+    /* ------------------------------------------------------------ numbers */
+
+    /* As goal_parse_number(): "10.000" in Dutch (or "10,000" in English) is
+       ten thousand, a whole number grouped the reader's way; else as typed. */
+    function parsed(text) {
+        var clean = String(text).replace(/[\s\u00A0]/g, '');
+        if (clean === '') { return null; }
+        var grouped = T.locale === 'en' ? /^-?[1-9][0-9]{0,2}(,[0-9]{3})+$/ : /^-?[1-9][0-9]{0,2}(\.[0-9]{3})+$/;
+        if (grouped.test(clean)) { return Number(clean.replace(T.locale === 'en' ? /,/g : /\./g, '')); }
+        return T.parseNumber(clean);
     }
 
     function positive(text) {
-        var n = T.parseNumber(text);
-        return String(text).trim() !== '' && n !== null && n > 0;
+        var n = parsed(text);
+        return n !== null && isFinite(n) && n > 0 && n <= 1e9;
     }
 
-    /** A unit as the reader sees it ("lb", "steps"), from the one kept ("kg", "stappen"). */
-    function unitLabel(unit) {
-        var labels = copy.unit_labels || {};
-        return Object.prototype.hasOwnProperty.call(labels, unit) ? labels[unit] : unit;
+    function round(n, decimals) {
+        var f = Math.pow(10, decimals);
+        return Math.round(n * f) / f;
     }
 
-    /** …and back: what was typed or tapped, as the unit kept. */
-    function unitKey(text) {
-        var labels = copy.unit_labels || {};
-        var found = String(text || '').trim();
-        Object.keys(labels).forEach(function (key) {
-            if (labels[key] === found) { found = key; }
+    /** "10.000 stappen", "7,5 uur", "85%": a stored figure in a unit. */
+    function valueText(stored, unit) {
+        var shown = stored / unit.factor;
+        var text = T.numberTrim(shown, unit.decimals);
+        if (!unit.label) { return text; }
+        var word = Math.abs(round(shown, unit.decimals) - 1) < 1e-9 ? unit.one : unit.label;
+        return unit.attached ? text + word : text + ' ' + word;
+    }
+
+    function typedText(typed, unit) {
+        var n = parsed(typed);
+        return n === null ? '—' : valueText(n * unit.factor, unit);
+    }
+
+    /* -------------------------------------------------------------- dates */
+
+    function today() {
+        var d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    function dayAfter(d, n) {
+        var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+        x.setHours(0, 0, 0, 0);
+        return x;
+    }
+
+    /** Calendar months on, the day clamped to the month's last (goal_add_months()). */
+    function addMonths(d, months) {
+        var index = d.getFullYear() * 12 + d.getMonth() + months;
+        var year = Math.floor(index / 12);
+        var month = index - year * 12;
+        var last = new Date(year, month + 1, 0).getDate();
+        return new Date(year, month, Math.min(d.getDate(), last));
+    }
+
+    function spanAdd(d, span, times) {
+        if (span.months) { return addMonths(d, span.months * times); }
+        return dayAfter(d, (span.days || 0) * times);
+    }
+
+    /** A looptijd's last day: the day before the same date a week, month… on (goal_duration_end()). */
+    function durationEnd(start, key) {
+        var span = copy.durations[key];
+        return span ? dayAfter(spanAdd(start, span, 1), -1) : null;
+    }
+
+    function sameDay(a, b) {
+        return !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function iso(d) {
+        var m = d.getMonth() + 1, day = d.getDate();
+        return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+
+    function daysBetween(a, b) {
+        return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000) + 1;
+    }
+
+    function dateText(d) {
+        return d.getFullYear() === today().getFullYear() ? T.date(d, 'day_mon') : T.date(d, 'day_mon_year');
+    }
+
+    /** What a per-period streak asks in all: a short last period its share, a half up (goal_periods()). */
+    function periodAsks(start, end, unit, frequency) {
+        var span = copy.periods[unit];
+        var total = 0;
+        if (!span || frequency < 1 || !end) { return 0; }
+        for (var k = 0; k < 1000; k++) {
+            var from = spanAdd(start, span, k);
+            if (from > end) { break; }
+            var fullEnd = dayAfter(spanAdd(start, span, k + 1), -1);
+            var to = fullEnd > end ? end : fullEnd;
+            var full = daysBetween(from, fullEnd);
+            var days = daysBetween(from, to);
+            total += days === full ? frequency : Math.floor(frequency * days / full + 0.5 + 1e-9);
+        }
+        return total;
+    }
+
+    /* ============================================================ step 1 */
+
+    function chooseCategory(key) {
+        draft.category = draft.category === key ? null : key;
+        each('[data-wizard-category]', function (bubble) {
+            bubble.setAttribute('aria-pressed', bubble.getAttribute('data-wizard-category') === draft.category ? 'true' : 'false');
         });
-        return found;
+        renderList();
+        refresh();
     }
 
-    function wholeDays(text) {
-        var n = Number(text);
-        return String(text).trim() !== '' && isFinite(n) && n >= 1 && Math.floor(n) === n && n <= 365;
+    function matches(m, query) {
+        if (!query) { return true; }
+        var haystack = fold([m.label, (copy.categories[m.category] || {}).label].concat(m.keywords || []).join(' '));
+        return fold(query).split(/\s+/).every(function (word) { return haystack.indexOf(word) !== -1; });
     }
 
-    function isAuto() {
-        return draft.sourceKind !== null && draft.sourceKind !== 'manual';
+    function renderList() {
+        var query = draft.query.trim();
+        var codes = Object.keys(copy.measurements);
+        var shown;
+
+        if (!query && !draft.category) {
+            shown = codes.filter(function (c) { return copy.measurements[c].popular; })
+                .sort(function (a, b) { return copy.measurements[a].popular - copy.measurements[b].popular; });
+            listLabel.textContent = words.popular;
+        } else {
+            shown = codes.filter(function (c) {
+                var m = copy.measurements[c];
+                return (!draft.category || m.category === draft.category) && matches(m, query);
+            });
+            listLabel.textContent = draft.category && !query ? copy.categories[draft.category].label : words.results;
+        }
+
+        list.innerHTML = '';
+        shown.forEach(function (code) { list.appendChild(option(code, measurementOf(code))); });
+
+        var customFits = !query || matches(Object.assign({ label: copy.custom.label, keywords: copy.custom.keywords }, {}), query) || shown.length === 0;
+        if (customFits || draft.measurement === 'custom') {
+            list.appendChild(option('custom', measurementOf('custom')));
+        }
+
+        empty.hidden = shown.length > 0 || !query;
+        customHint.hidden = !(draft.measurement === 'custom' && !draft.category);
+
+        clearBtn.hidden = draft.query === '';
     }
 
-    /** Whether this goal counts days rather than an amount. */
-    function countsDays() {
-        return draft.type === 'streak' || (draft.type === 'accumulate' && draft.measure === 'days');
+    function option(code, m) {
+        var chosen = draft.measurement === code;
+        var category = m.custom ? (draft.category ? copy.categories[draft.category] : null) : copy.categories[m.category];
+        var button = el('button', 'goal-option press');
+        button.type = 'button';
+        button.setAttribute('role', 'radio');
+        button.setAttribute('aria-checked', chosen ? 'true' : 'false');
+        button.setAttribute('data-wizard-measure', code);
+        if (category) { button.setAttribute('data-accent', category.accent); }
+
+        var mark = el('span', 'goal-option__icon');
+        mark.setAttribute('aria-hidden', 'true');
+        mark.innerHTML = iconMarkup(m.custom ? 'custom' : category.icon);
+
+        var text = el('span', 'goal-option__text');
+        text.appendChild(el('span', 'goal-option__label', m.label));
+        var meta = m.custom
+            ? (m.hint || '')
+            : category.label + ' · ' + (isAuto(m) ? words.auto : words.manual);
+        text.appendChild(el('span', 'goal-option__meta', meta));
+
+        button.appendChild(mark);
+        button.appendChild(text);
+        return button;
     }
 
-    /** A day read from health data needs a threshold before it can count. */
-    function needsDaily() {
-        return countsDays() && isAuto();
+    function chooseMeasurement(code) {
+        if (draft.measurement !== code) {
+            draft.measurement = code;
+            resetSetup();
+            var m = current();
+            if (draft.type && !typeAllowed(m, draft.type)) { draft.type = null; }
+            if (m.types.length === 1) { draft.type = m.types[0]; }
+        }
+        each('[data-wizard-measure]', function (row) {
+            row.setAttribute('aria-checked', row.getAttribute('data-wizard-measure') === code ? 'true' : 'false');
+        }, list);
+        customHint.hidden = !(code === 'custom' && !draft.category);
+        refresh();
     }
 
-    /** The unit the target is typed in: the source's, or the person's own. */
-    function amountUnit() {
-        return isAuto() ? draft.sourceUnit : draft.unit;
+    /** What step three asked for, when the measurement changes: back to its defaults. */
+    function resetSetup() {
+        draft.variant = null;
+        draft.unit = null;
+        draft.customUnit = '';
+        draft.target = '';
+        draft.direction = null;
+        draft.frequency = '';
+        draft.period = 'week';
+        draft.baseline = { state: 'idle', value: null, on: null, measurement: null, start: null };
+        draft.baselineTyped = '';
     }
 
-    function withUnit(number, unit) {
-        return unit ? dutchNumber(number) + (unit === '%' ? '' : ' ') + unit : dutchNumber(number);
+    /* ============================================================ step 2 */
+
+    function renderDefinition() {
+        var m = current();
+        if (!m) { return; }
+
+        var names = m.names || [];
+        nameInput.placeholder = names[0] || '';
+        ideas.innerHTML = '';
+        names.forEach(function (text) {
+            var chip = el('button', 'glass glass--chip goal-idea press', text);
+            chip.type = 'button';
+            chip.setAttribute('data-wizard-idea', text);
+            ideas.appendChild(chip);
+        });
+
+        each('[data-wizard-type]', function (card) {
+            var type = card.getAttribute('data-wizard-type');
+            var allowed = typeAllowed(m, type);
+            var example = card.querySelector('[data-wizard-type-example]');
+            card.disabled = !allowed;
+            card.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+            card.setAttribute('aria-checked', draft.type === type ? 'true' : 'false');
+            example.textContent = allowed
+                ? fill(words.example, (m.examples && m.examples[type]) || copy.types[type].example)
+                : fill(words.type_unavailable, m.custom ? m.label : m.label.toLowerCase());
+        });
     }
 
-    /** The target as one readable phrase, whatever kind of goal this is. */
-    function targetText() {
+    function chooseType(type) {
+        var m = current();
+        if (!typeAllowed(m, type)) { return; }
+        if (draft.type !== type) {
+            draft.type = type;
+            draft.variant = null;
+            draft.direction = null;
+        }
+        each('[data-wizard-type]', function (card) {
+            card.setAttribute('aria-checked', card.getAttribute('data-wizard-type') === type ? 'true' : 'false');
+        });
+        refresh();
+    }
+
+    /* ============================================================ step 3 */
+
+    /** The defaults step three starts from, once a measurement and type are known. */
+    function settle() {
+        var m = current();
+        if (draft.type === 'streak' && !draft.variant) { draft.variant = m.variants[0]; }
+        if (draft.type !== 'streak') { draft.variant = null; }
+        if (!draft.unit || (draft.unit !== 'custom' && !has(m.unit_codes, draft.unit))) { draft.unit = defaultUnit(m); }
+        if (!draft.direction) { draft.direction = m.direction === 'both' ? m.default_direction : m.direction; }
+        if (draft.type === 'accumulate' || draft.variant === 'period') { draft.direction = 'increase'; }
+        if (draft.end === null && draft.duration === null) {
+            draft.duration = 'month';
+            draft.end = durationEnd(draft.start, 'month');
+        }
+    }
+
+    function needsDirection() {
+        var m = current();
+        return !!m && m.direction === 'both' && (draft.type === 'milestone' || draft.variant === 'daily');
+    }
+
+    function renderSetup() {
+        var m = current();
+        settle();
+        setup.innerHTML = '';
+
+        /* A streak's two forms, where both are open to this measurement. */
+        if (draft.type === 'streak' && m.variants.length > 1) {
+            setup.appendChild(el('p', 'wizard__label', words.variant_label));
+            var variants = el('div', 'goal-bubbles goal-bubbles--tight');
+            variants.setAttribute('role', 'radiogroup');
+            variants.setAttribute('aria-label', words.variant_label);
+            m.variants.forEach(function (key) {
+                var b = el('button', 'glass glass--chip goal-bubble press', copy.streak_variants[key].label);
+                b.type = 'button';
+                b.setAttribute('role', 'radio');
+                b.setAttribute('aria-checked', draft.variant === key ? 'true' : 'false');
+                b.setAttribute('data-wizard-variant', key);
+                variants.appendChild(b);
+            });
+            setup.appendChild(variants);
+            setup.appendChild(el('p', 'wizard__hint goal-setup__hint', copy.streak_variants[draft.variant].hint));
+        }
+
+        if (draft.variant === 'period') {
+            setup.appendChild(periodRow(m));
+        } else {
+            var which = draft.type === 'milestone' ? 'milestone' : (draft.type === 'accumulate' ? 'accumulate' : 'daily');
+            setup.appendChild(numberRow('goal-target', words.target[which], draft.target, 'target', m, true));
+        }
+
+        if (needsDirection()) { setup.appendChild(directionRow()); }
+
         if (draft.type === 'milestone') {
-            if (!positive(draft.value)) { return null; }
-            return withUnit(draft.value, amountUnit())
-                + (draft.better === 'decrease' ? ' · ' + words.better_down.toLowerCase()
-                    : draft.better === 'increase' ? ' · ' + words.better_up.toLowerCase() : '');
+            var box = el('div', 'goal-baseline');
+            box.setAttribute('data-wizard-baseline', '');
+            setup.appendChild(box);
+            loadBaseline();
+            renderBaseline();
         }
 
-        if (countsDays()) {
-            if (!wholeDays(draft.days)) { return null; }
-            var text = draft.type === 'streak' ? T.tf('%s op rij', daysText(draft.days)) : daysText(draft.days);
+        var problem = el('p', 'wizard__error goal-setup__error');
+        problem.setAttribute('data-wizard-setup-error', '');
+        problem.setAttribute('role', 'alert');
+        problem.hidden = true;
+        setup.appendChild(problem);
 
-            if (needsDaily() && positive(draft.daily)) {
-                var daily = withUnit(draft.daily, draft.sourceUnit);
-                text += ' · ' + T.tf('%s per dag', draft.floor === 'decrease' ? T.tf('hoogstens %s', daily) : T.tf('minstens %s', daily));
+        setup.appendChild(datesBlock());
+        validateSetup();
+    }
+
+    /** A number on the left, its unit on the right — Doelwaarde, Per dag, Totaal. */
+    function numberRow(id, label, value, field, m, withUnit) {
+        var wrap = el('div', 'goal-field');
+        var l = el('label', 'wizard__label', label);
+        l.setAttribute('for', id);
+        wrap.appendChild(l);
+
+        var row = el('div', 'goal-row');
+        var input = el('input', 'wizard__input goal-row__number');
+        input.id = id;
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.autocomplete = 'off';
+        input.setAttribute('enterkeyhint', 'done');
+        input.setAttribute('data-wizard-field', field);
+        input.value = value;
+        input.placeholder = placeholder(m);
+        row.appendChild(input);
+
+        if (withUnit) { row.appendChild(unitSelect(m)); }
+        wrap.appendChild(row);
+
+        if (withUnit && draft.unit === 'custom') {
+            var custom = el('input', 'wizard__input goal-row__custom');
+            custom.type = 'text';
+            custom.maxLength = 20;
+            custom.autocomplete = 'off';
+            custom.placeholder = words.unit_custom_placeholder;
+            custom.setAttribute('aria-label', words.unit_custom_label);
+            custom.setAttribute('data-wizard-field', 'custom-unit');
+            custom.value = draft.customUnit;
+            wrap.appendChild(custom);
+        }
+        return wrap;
+    }
+
+    /** The placeholder in the unit on screen: 75 kg is 165 lb. */
+    function placeholder(m) {
+        var key = draft.variant === 'period' ? 'period' : draft.type;
+        var base = m.placeholder && m.placeholder[key];
+        if (base === undefined || base === null) { return ''; }
+        if (draft.variant === 'period' || draft.unit === 'custom') { return T.numberTrim(base, 2); }
+        var first = unitOf((m.unit_codes || [])[0] || draft.unit);
+        var unit = unitOf(draft.unit);
+        return T.numberTrim(round(base * first.factor / unit.factor, unit.decimals), unit.decimals);
+    }
+
+    /** A select in the glass (`.glass--select`), its chevron drawn over it. */
+    function glassSelect(label, attribute, options, value) {
+        var wrap = el('label', 'glass glass--select goal-row__unit');
+        var select = el('select');
+        select.setAttribute('aria-label', label);
+        select.setAttribute(attribute, '');
+        options.forEach(function (pair) {
+            var o = el('option', null, pair[1]);
+            o.value = pair[0];
+            select.appendChild(o);
+        });
+        select.value = value;
+        wrap.appendChild(select);
+        wrap.insertAdjacentHTML('beforeend', iconMarkup('chevron-down'));
+        return wrap;
+    }
+
+    function unitSelect(m) {
+        var options = (m.unit_codes || []).map(function (code) { return [code, unitOf(code).label]; });
+        if (m.custom) { options.push(['custom', words.unit_custom]); }
+        return glassSelect(words.unit_label, 'data-wizard-unit', options, draft.unit);
+    }
+
+    /** Per periode: "[3] trainingen per [week ▾]". */
+    function periodRow(m) {
+        var wrap = el('div', 'goal-field');
+        var l = el('label', 'wizard__label', words.target.period);
+        l.setAttribute('for', 'goal-frequency');
+        wrap.appendChild(l);
+
+        var row = el('div', 'goal-row goal-row--period');
+        var input = el('input', 'wizard__input goal-row__number goal-row__number--short');
+        input.id = 'goal-frequency';
+        input.type = 'text';
+        input.inputMode = 'numeric';
+        input.autocomplete = 'off';
+        input.setAttribute('data-wizard-field', 'frequency');
+        input.value = draft.frequency;
+        input.placeholder = placeholder(m);
+        row.appendChild(input);
+        row.appendChild(el('span', 'goal-row__word', m.count || T.t('keer')));
+        row.appendChild(el('span', 'goal-row__word goal-row__word--quiet', words.per));
+
+        row.appendChild(glassSelect(words.period_label, 'data-wizard-period',
+            Object.keys(copy.periods).map(function (key) { return [key, copy.periods[key].label]; }), draft.period));
+        wrap.appendChild(row);
+        return wrap;
+    }
+
+    /* --------------------------------------------- which way is better */
+
+    function directionWords() {
+        return draft.type === 'milestone' ? words.direction : words.direction_daily;
+    }
+
+    function directionRow() {
+        var wrap = el('div', 'goal-direction');
+        var label = el('p', 'wizard__label goal-direction__label', words.direction_label);
+        label.id = 'goal-direction-label';
+        wrap.appendChild(label);
+
+        var group = el('div', 'goal-direction__buttons');
+        group.setAttribute('role', 'radiogroup');
+        group.setAttribute('aria-labelledby', 'goal-direction-label');
+
+        var w = directionWords();
+        ['increase', 'decrease'].forEach(function (key) {
+            var b = el('button', 'glass glass--round goal-direction__button press');
+            b.type = 'button';
+            b.setAttribute('role', 'radio');
+            b.setAttribute('aria-checked', draft.direction === key ? 'true' : 'false');
+            b.setAttribute('aria-label', w[key].label);
+            b.setAttribute('aria-describedby', 'goal-direction-hint-' + key);
+            b.setAttribute('data-wizard-direction', key);
+            b.innerHTML = iconMarkup(key === 'increase' ? 'arrow-up' : 'arrow-down');
+            group.appendChild(b);
+
+            var hint = el('span', 'sr-only', w[key].hint);
+            hint.id = 'goal-direction-hint-' + key;
+            wrap.appendChild(hint);
+        });
+
+        wrap.appendChild(group);
+
+        var tip = el('span', 'goal-direction__tip');
+        tip.setAttribute('aria-hidden', 'true');
+        tip.setAttribute('data-wizard-tip', '');
+        tip.hidden = true;
+        wrap.appendChild(tip);
+        return wrap;
+    }
+
+    function chooseDirection(key) {
+        draft.direction = key;
+        each('[data-wizard-direction]', function (b) {
+            b.setAttribute('aria-checked', b.getAttribute('data-wizard-direction') === key ? 'true' : 'false');
+        }, setup);
+        validateSetup();
+    }
+
+    /* Press and hold: the explanation, above the buttons, for as long as it is held. */
+    var hold = { timer: 0, shown: false, button: null };
+
+    function showTip(button) {
+        var tip = setup.querySelector('[data-wizard-tip]');
+        if (!tip) { return; }
+        tip.textContent = directionWords()[button.getAttribute('data-wizard-direction')].hint;
+        tip.hidden = false;
+        tip.classList.add('is-shown');
+        hold.shown = true;
+        if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
+    }
+
+    function hideTip() {
+        window.clearTimeout(hold.timer);
+        var tip = setup.querySelector('[data-wizard-tip]');
+        if (tip) { tip.classList.remove('is-shown'); tip.hidden = true; }
+    }
+
+    /* ------------------------------------------------------------ baseline */
+
+    function loadBaseline() {
+        var m = current();
+        var start = iso(draft.start);
+
+        if (!isAuto(m)) {
+            draft.baseline = { state: 'none', value: null, on: null, measurement: m.code, start: start };
+            return;
+        }
+
+        if (draft.baseline.measurement === m.code && draft.baseline.start === start
+            && (draft.baseline.state === 'measured' || draft.baseline.state === 'none' || draft.baseline.state === 'loading')) {
+            return;
+        }
+
+        draft.baseline = { state: 'loading', value: null, on: null, measurement: m.code, start: start };
+
+        var form = new FormData();
+        form.append('csrf', csrf());
+        form.append('measurement', m.code);
+        form.append('start_date', start);
+
+        fetch('api/goals/baseline.php', { method: 'POST', body: form, credentials: 'same-origin' })
+            .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+            .catch(function () { return { ok: false }; })
+            .then(function (result) {
+                if (draft.baseline.measurement !== m.code || draft.baseline.start !== start) { return; }
+                if (result && result.ok && result.baseline) {
+                    draft.baseline = { state: 'measured', value: Number(result.baseline.value), on: result.baseline.label, measurement: m.code, start: start };
+                } else {
+                    draft.baseline = { state: 'none', value: null, on: null, measurement: m.code, start: start };
+                }
+                renderBaseline();
+                validateSetup();
+            });
+    }
+
+    function renderBaseline() {
+        var box = setup.querySelector('[data-wizard-baseline]');
+        if (!box) { return; }
+        box.innerHTML = '';
+        var unit = unitOf(draft.unit);
+
+        if (draft.baseline.state === 'measured') {
+            var row = el('div', 'goal-baseline__measured');
+            row.appendChild(el('span', 'goal-baseline__label', words.baseline_label));
+            var value = el('span', 'goal-baseline__value', valueText(draft.baseline.value, unit));
+            row.appendChild(value);
+            box.appendChild(row);
+            box.appendChild(el('p', 'wizard__hint', fill(words.baseline_measured, draft.baseline.on)));
+            return;
+        }
+
+        if (draft.baseline.state === 'loading') {
+            box.appendChild(el('p', 'wizard__hint goal-baseline__loading', words.baseline_loading));
+            return;
+        }
+
+        var wrap = el('div', 'goal-field');
+        var l = el('label', 'wizard__label', words.baseline_label);
+        l.setAttribute('for', 'goal-baseline');
+        wrap.appendChild(l);
+        var line = el('div', 'goal-row');
+        var input = el('input', 'wizard__input goal-row__number');
+        input.id = 'goal-baseline';
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.autocomplete = 'off';
+        input.setAttribute('data-wizard-field', 'baseline');
+        input.value = draft.baselineTyped;
+        line.appendChild(input);
+        line.appendChild(el('span', 'goal-row__word', unit.label));
+        wrap.appendChild(line);
+        wrap.appendChild(el('p', 'wizard__hint', words.baseline_manual));
+        box.appendChild(wrap);
+    }
+
+    /* --------------------------------------------------------------- dates */
+
+    function datesBlock() {
+        var wrap = el('div', 'goal-field goal-dates-field');
+        wrap.appendChild(el('p', 'wizard__label', words.dates_label));
+
+        var row = el('div', 'goal-dates');
+        row.appendChild(dateButton('start', words.start, dateText(draft.start)));
+        var arrow = el('span', 'goal-dates__to');
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.innerHTML = iconMarkup('chevron-right');
+        row.appendChild(arrow);
+        row.appendChild(dateButton('end', words.end, draft.end ? dateText(draft.end) : words.end_choose));
+        wrap.appendChild(row);
+
+        var bubbles = el('div', 'goal-bubbles goal-durations');
+        bubbles.setAttribute('role', 'group');
+        bubbles.setAttribute('aria-label', words.durations_label);
+        Object.keys(copy.durations).forEach(function (key) {
+            var b = el('button', 'glass glass--chip goal-bubble press', copy.durations[key].label);
+            b.type = 'button';
+            b.setAttribute('aria-pressed', draft.duration === key ? 'true' : 'false');
+            b.setAttribute('data-wizard-duration', key);
+            bubbles.appendChild(b);
+        });
+        wrap.appendChild(bubbles);
+        return wrap;
+    }
+
+    function dateButton(which, label, value) {
+        var b = el('button', 'glass goal-date press');
+        b.type = 'button';
+        b.setAttribute('data-wizard-date', which);
+        b.setAttribute('aria-label', label + ': ' + value);
+        b.appendChild(el('span', 'goal-date__label', label));
+        b.appendChild(el('span', 'goal-date__value' + (which === 'end' && !draft.end ? ' is-empty' : ''), value));
+        return b;
+    }
+
+    function chooseDuration(key) {
+        draft.duration = key;
+        draft.end = durationEnd(draft.start, key);
+        refreshDates();
+    }
+
+    /** After the start or the end moved: the buttons, the bubbles, the baseline. */
+    function refreshDates() {
+        var start = setup.querySelector('[data-wizard-date="start"]');
+        var end = setup.querySelector('[data-wizard-date="end"]');
+        if (start) {
+            start.querySelector('.goal-date__value').textContent = dateText(draft.start);
+            start.setAttribute('aria-label', words.start + ': ' + dateText(draft.start));
+        }
+        if (end) {
+            var v = end.querySelector('.goal-date__value');
+            v.textContent = draft.end ? dateText(draft.end) : words.end_choose;
+            v.classList.toggle('is-empty', !draft.end);
+            end.setAttribute('aria-label', words.end + ': ' + v.textContent);
+        }
+        each('[data-wizard-duration]', function (b) {
+            b.setAttribute('aria-pressed', b.getAttribute('data-wizard-duration') === draft.duration ? 'true' : 'false');
+        }, setup);
+        if (draft.type === 'milestone') {
+            loadBaseline();
+            renderBaseline();
+        }
+        validateSetup();
+    }
+
+    /* ------------------------------------------------------------ calendar */
+
+    var view = null;    // the month on screen
+
+    function openCalendar(which) {
+        draft.calendar = which;
+        var selected = which === 'start' ? draft.start : (draft.end || dayAfter(draft.start, 1));
+        view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+        paintCalendar();
+
+        var section = root.querySelector('.wizard__step.is-active');
+        if (section) { section.hidden = true; }
+        calendar.hidden = false;
+        foot.hidden = true;
+        body.scrollTop = 0;
+        enter(calendar, 1, carry());
+        var chosen = calendar.querySelector('[aria-selected="true"]') || calendar.querySelector('[data-calendar-day]:not([disabled])');
+        if (chosen) { chosen.focus({ preventScroll: true }); }
+    }
+
+    function closeCalendar() {
+        draft.calendar = null;
+        calendar.hidden = true;
+        foot.hidden = false;
+        var section = root.querySelector('[data-wizard-step="3"]');
+        section.hidden = false;
+        enter(section, -1, carry());
+        refreshDates();
+        var back = setup.querySelector('[data-wizard-date="end"]');
+        if (back) { back.focus({ preventScroll: true }); }
+    }
+
+    function bounds() {
+        var now = today();
+        if (draft.calendar === 'start') { return { min: dayAfter(now, -365), max: now }; }
+        var min = dayAfter(draft.start, 1);
+        if (min < now) { min = now; }
+        return { min: min, max: addMonths(draft.start, 36) };
+    }
+
+    function weekStartsSunday() { return copy.week_start === 'sunday'; }
+
+    function paintCalendar() {
+        var range = bounds();
+        calendar.querySelector('[data-calendar-title]').textContent = draft.calendar === 'start' ? words.pick_start : words.pick_end;
+        calendar.querySelector('[data-calendar-month]').textContent = T.date(view, 'month_year');
+
+        var prev = calendar.querySelector('[data-calendar-prev]');
+        var next = calendar.querySelector('[data-calendar-next]');
+        prev.disabled = new Date(view.getFullYear(), view.getMonth(), 0) < range.min;
+        next.disabled = new Date(view.getFullYear(), view.getMonth() + 1, 1) > range.max;
+
+        var weekdays = calendar.querySelector('[data-calendar-weekdays]');
+        weekdays.innerHTML = '';
+        var first = weekStartsSunday() ? 0 : 1;
+        for (var i = 0; i < 7; i++) { weekdays.appendChild(el('li', null, T.weekday((first + i) % 7, true))); }
+
+        var grid = calendar.querySelector('[data-calendar-grid]');
+        grid.innerHTML = '';
+        var lead = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() - first + 7) % 7;
+        var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+        var rowEl = null;
+
+        for (var cell = 0; cell < lead + days; cell++) {
+            if (cell % 7 === 0) {
+                rowEl = el('div', 'goal-calendar__row');
+                rowEl.setAttribute('role', 'row');
+                grid.appendChild(rowEl);
             }
-            return text;
+            if (cell < lead) {
+                var gap = el('span', 'goal-calendar__gap');
+                gap.setAttribute('role', 'gridcell');
+                rowEl.appendChild(gap);
+                continue;
+            }
+            var d = new Date(view.getFullYear(), view.getMonth(), cell - lead + 1);
+            var b = el('button', 'goal-calendar__day press', String(d.getDate()));
+            b.type = 'button';
+            b.setAttribute('role', 'gridcell');
+            b.setAttribute('data-calendar-day', iso(d));
+            b.setAttribute('aria-label', T.date(d, 'weekday_day_month') + ' ' + d.getFullYear());
+            var isStart = sameDay(d, draft.start);
+            var isEnd = sameDay(d, draft.end);
+            var selected = draft.calendar === 'start' ? isStart : isEnd;
+            b.setAttribute('aria-selected', selected ? 'true' : 'false');
+            if (isStart) { b.classList.add('is-start'); }
+            if (isEnd) { b.classList.add('is-end'); }
+            if (draft.end && d > draft.start && d < draft.end) { b.classList.add('is-between'); }
+            if (sameDay(d, today())) { b.classList.add('is-today'); }
+            b.disabled = d < range.min || d > range.max;
+            rowEl.appendChild(b);
+        }
+    }
+
+    function pickDay(text) {
+        var parts = text.split('-');
+        var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        if (draft.calendar === 'start') {
+            draft.start = d;
+            if (draft.duration) {
+                draft.end = durationEnd(d, draft.duration);
+            } else if (draft.end && draft.end <= d) {
+                draft.end = null;
+            }
+        } else {
+            draft.end = d;
+            draft.duration = null;
+            Object.keys(copy.durations).some(function (key) {
+                if (sameDay(durationEnd(draft.start, key), d)) { draft.duration = key; return true; }
+                return false;
+            });
+        }
+        paintCalendar();
+        var again = calendar.querySelector('[data-calendar-day="' + text + '"]');
+        if (again) { again.focus({ preventScroll: true }); }
+    }
+
+    function calendarDone() {
+        if (draft.calendar === 'start') {
+            /* On to the end date, from the start just chosen. */
+            draft.calendar = 'end';
+            var selected = draft.end || dayAfter(draft.start, 1);
+            view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+            paintCalendar();
+            enter(calendar, 1, carry());
+            return;
+        }
+        closeCalendar();
+    }
+
+    /* ---------------------------------------------------------- checking */
+
+    function setupProblem() {
+        var m = current();
+        if (!m) { return null; }
+
+        if (draft.unit === 'custom' && draft.variant !== 'period') {
+            var word = draft.customUnit.trim();
+            if (word === '' || word.length > 20) { return ''; }
         }
 
-        if (draft.type === 'accumulate' && draft.measure === 'amount') {
-            return positive(draft.value) ? withUnit(draft.value, amountUnit()) : null;
+        if (draft.variant === 'period') {
+            var n = Number(String(draft.frequency).trim());
+            var most = m.source_kind === 'manual' || m.custom ? { week: 7, month: 28, quarter: 89, year: 365 }[draft.period] : 999;
+            if (String(draft.frequency).trim() === '' || !isFinite(n) || n < 1 || Math.floor(n) !== n) { return ''; }
+            if (n > most) { return T.tf('Vul een heel aantal keer in, van 1 tot %d.', most); }
+            if (draft.end && periodAsks(draft.start, draft.end, draft.period, n) < 1) {
+                return T.t('Deze periode is te kort voor dit doel. Kies een latere einddatum of een kortere periode.');
+            }
+        } else {
+            if (!positive(draft.target)) { return ''; }
+            if (draft.unit === 'pct' && parsed(draft.target) > 100) { return T.t('Een percentage kan niet hoger zijn dan 100.'); }
         }
 
+        if (draft.type === 'milestone') {
+            var unit = unitOf(draft.unit);
+            var base = null;
+            if (draft.baseline.state === 'measured') { base = draft.baseline.value; }
+            else if (draft.baseline.state === 'none') {
+                var typed = parsed(draft.baselineTyped);
+                if (typed === null || typed < 0) { return ''; }
+                base = typed * unit.factor;
+            } else { return ''; }
+            var target = parsed(draft.target) * unit.factor;
+            var ahead = draft.direction === 'decrease' ? target < base - 1e-9 : target > base + 1e-9;
+            if (!ahead) {
+                return draft.direction === 'decrease'
+                    ? T.tf('Je doelwaarde moet lager zijn dan je startwaarde (%s).', valueText(base, unit))
+                    : T.tf('Je doelwaarde moet hoger zijn dan je startwaarde (%s).', valueText(base, unit));
+            }
+        }
+
+        if (!draft.end || draft.end <= draft.start) { return ''; }
         return null;
     }
 
-    /* ------------------------------------------------------- step control */
+    function validateSetup() {
+        var slot = setup.querySelector('[data-wizard-setup-error]');
+        var problem = setupProblem();
+        if (slot) {
+            slot.textContent = problem || '';
+            slot.hidden = !problem;
+        }
+        refresh();
+    }
 
     function isComplete(which) {
-        if (which === 1) { return draft.category !== null; }
-        if (which === 2) { return draft.name.trim().length > 1 && draft.type !== null; }
-
-        /* A source has to be chosen, and "Geen data mogelijk" counts as
-           choosing one. What is not allowed is arriving at a finished goal
-           without anybody having said where its progress comes from. */
-        if (which === 3) { return draft.sourceKind !== null; }
-
-        if (which === 4) {
-            if (draft.type === 'milestone') {
-                return positive(draft.value) && draft.better !== null;
-            }
-
-            if (draft.type === 'accumulate' && draft.measure === null) { return false; }
-
-            if (countsDays()) {
-                return wholeDays(draft.days) && (!needsDaily() || positive(draft.daily));
-            }
-
-            return positive(draft.value);
+        if (which === 1) {
+            return draft.measurement !== null && (draft.measurement !== 'custom' || draft.category !== null);
         }
-
-        if (which === 5) { return draft.duration !== null && fits(draft.duration); }
+        if (which === 2) { return draft.name.trim().length >= 2 && draft.type !== null && typeAllowed(current(), draft.type); }
+        if (which === 3) { return setupProblem() === null; }
         return true;
     }
 
     function refresh() {
-        nextBtn.disabled = !isComplete(step);
+        nextBtn.disabled = saving || !isComplete(step);
+        nextBtn.setAttribute('aria-disabled', nextBtn.disabled ? 'true' : 'false');
     }
 
-    /* ------------------------------------------------- a step arriving */
+    /* ============================================================ review */
 
-    /*
-     * The step arriving slides in 14 px from the side it came from and fades
-     * in (--screen-duration, --screen-ease). It can be interrupted: a tap while
-     * a step is still on its way carries on from where that one is on screen —
-     * its opacity, its offset — instead of starting again from nothing. With
-     * reduced motion it only fades (180 ms), as everything that arrives does.
-     */
-    var entering = null;        // { el, anim }: the step on its way in
+    function targetSummary() {
+        var m = current();
+        if (draft.variant === 'period') {
+            return draft.frequency + ' ' + (m.count || T.t('keer')) + ' ' + words.per + ' ' + copy.periods[draft.period].label;
+        }
+        var text = typedText(draft.target, unitOf(draft.unit));
+        if (draft.variant === 'daily') {
+            text = isAuto(m)
+                ? (draft.direction === 'decrease' ? T.tf('Elke dag hoogstens %s', text) : T.tf('Elke dag minstens %s', text))
+                : T.tf('Elke dag %s', text);
+        }
+        return text;
+    }
+
+    function renderReview() {
+        var m = current();
+        var category = copy.categories[m.custom ? draft.category : m.category];
+        var s = words.summary;
+        var rows = [
+            [s.name, draft.name.trim()],
+            [s.measure, m.label + ' · ' + category.label],
+            [s.type, copy.types[draft.type].label + (draft.variant ? ' · ' + copy.streak_variants[draft.variant].label : '')],
+            [s.target, targetSummary()]
+        ];
+        if (needsDirection()) { rows.push([s.direction, directionWords()[draft.direction].label]); }
+        if (draft.type === 'milestone') {
+            var unit = unitOf(draft.unit);
+            rows.push([s.baseline, draft.baseline.state === 'measured'
+                ? valueText(draft.baseline.value, unit) + ' · ' + draft.baseline.on
+                : typedText(draft.baselineTyped, unit)]);
+        }
+        rows.push([s.dates, dateText(draft.start) + ' – ' + dateText(draft.end)]);
+        rows.push([s.tracking, isAuto(m) ? words.tracking_auto : words.tracking_manual]);
+
+        review.innerHTML = '';
+        rows.forEach(function (row) {
+            var line = el('div', 'goal-review__row');
+            line.appendChild(el('dt', null, row[0]));
+            line.appendChild(el('dd', null, row[1]));
+            review.appendChild(line);
+        });
+    }
+
+    /* ============================================================ moving */
+
+    var entering = null;
     var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     /** Where the step on its way in is now, and stop it there; null when none is moving. */
@@ -258,11 +1057,13 @@
         return now;
     }
 
+    /* The step arriving slides in 14 px from the side it came from and fades
+       in — interruptible: a tap while one is on its way carries on from where
+       it is on screen. Reduced motion: a 180 ms fade. */
     function enter(section, direction, from) {
         if (!section || typeof section.animate !== 'function' || root.hidden) { return; }
         var opacity = from ? from.opacity : 0;
-        var frames;
-        var timing;
+        var frames, timing;
         if (reduceQuery.matches) {
             frames = [{ opacity: opacity }, { opacity: 1 }];
             timing = { duration: 180, easing: 'ease-out' };
@@ -279,8 +1080,6 @@
     }
 
     function paint(direction) {
-        body.setAttribute('data-dir', direction === -1 ? 'back' : 'forward');
-
         var from = carry();
         var arriving = null;
         each('[data-wizard-step]', function (section) {
@@ -289,465 +1088,114 @@
             section.classList.toggle('is-active', isActive);
             if (isActive) { arriving = section; }
         });
+        calendar.hidden = true;
+        foot.hidden = false;
         enter(arriving, direction, from);
 
+        var reached = step === 'review' ? STEPS : step;
         each('[data-wizard-bar]', function (bar) {
-            bar.classList.toggle('is-done', Number(bar.getAttribute('data-wizard-bar')) <= step);
+            bar.classList.toggle('is-done', Number(bar.getAttribute('data-wizard-bar')) <= reached);
         });
 
-        if (count) {
-            count.textContent = T.tf('Stap %1$d van %2$d', step, TOTAL) + ' · ' + words.steps[step].label;
-        }
+        count.textContent = step === 'review'
+            ? words.review.label
+            : T.tf('Stap %1$d van %2$d', step, STEPS) + ' · ' + words.steps[step].label;
 
-        if (step === 4) { showTarget(); }
-        if (step === 5) { fillDurationMeta(); }
-
-        backBtn.hidden = step === 1;
-        nextBtn.hidden = false;
-        doneBtn.hidden = true;
-        nextBtn.textContent = step === TOTAL ? words.create : words.next;
+        nextLabel.textContent = step === 'review' ? words.create : words.next;
+        nextBtn.classList.toggle('is-final', step === 'review');
+        showError('');
         refresh();
     }
 
     function go(to, direction) {
         step = to;
+        if (to === 1) { renderList(); }
+        if (to === 2) { renderDefinition(); }
+        if (to === 3) { renderSetup(); }
+        if (to === 'review') { renderReview(); }
         paint(direction);
-        if (body) { body.scrollTop = 0; }
-    }
+        body.scrollTop = 0;
 
-    /* ------------------------------------------------------ 1 · category */
-
-    function chooseCategory(key) {
-        draft.category = key;
-        press('[data-wizard-category]', 'data-wizard-category', key);
-        fillSuggestions(key);
-        fillUnits(key);
-        refresh();
-    }
-
-    /** Suggestions fill the name field. They never choose anything by themselves. */
-    function fillSuggestions(key) {
-        if (!suggests) { return; }
-
-        suggests.innerHTML = '';
-        var list = (words.suggestions && words.suggestions[key]) || [];
-
-        list.forEach(function (text) {
-            var item = document.createElement('li');
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'wizard-suggestion press';
-            button.textContent = text;
-            button.addEventListener('click', function () {
-                nameInput.value = text;
-                draft.name = text;
-                refresh();
-                nameInput.focus({ preventScroll: true });
-            });
-            item.appendChild(button);
-            suggests.appendChild(item);
-        });
-    }
-
-    /**
-     * Unit suggestions for a goal kept by hand. "dagen" is left out: a count
-     * of days is its own choice (Streak, or Optellen in days), not a unit.
-     */
-    function fillUnits(key) {
-        if (!unitList) { return; }
-
-        unitList.innerHTML = '';
-        var category = copy.categories[key];
-        var units = (category ? category.units : []).filter(function (unit) { return unit !== 'dagen'; });
-
-        units.forEach(function (unit) {
-            var item = document.createElement('li');
-            var button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'wizard-suggestion press';
-            button.textContent = unitLabel(unit);
-            button.addEventListener('click', function () {
-                var field = root.querySelector('[data-wizard-unit]');
-                field.value = unitLabel(unit);
-                draft.unit = unitLabel(unit);
-                refresh();
-            });
-            item.appendChild(button);
-            unitList.appendChild(item);
-        });
-    }
-
-    /* ---------------------------------------------------------- 2 · type */
-
-    function chooseType(key) {
-        draft.type = key;
-        press('[data-wizard-type]', 'data-wizard-type', key);
-        filterSources();
-        refresh();
-    }
-
-    /* ----------------------------------------------------- 3 · bijhouden */
-
-    /**
-     * Shows only the sources this type can be measured from. A weight can be
-     * a Mijlpaal but not a Streak; only what builds up over a day can be
-     * added up. A choice that no longer fits — the type was changed after
-     * stepping back — is cleared rather than kept and quietly misread.
-     */
-    function filterSources() {
-        var shown = {};
-
-        each('button[data-wizard-source]', function (button) {
-            var types = (button.getAttribute('data-source-types') || '').split(' ');
-            var fits  = draft.type === null || types.indexOf(draft.type) !== -1;
-
-            button.hidden = !fits;
-            if (fits) { shown[button.getAttribute('data-source-group') || ''] = true; }
-
-            if (!fits && button.getAttribute('aria-pressed') === 'true') {
-                button.setAttribute('aria-pressed', 'false');
-                button.classList.remove('is-chosen');
-                draft.sourceKind = null;
-                draft.sourceKey = '';
-                draft.sourceLabel = '';
-                draft.sourceUnit = '';
-            }
-        });
-
-        each('p[data-source-group]', function (label) {
-            label.hidden = !shown[label.getAttribute('data-source-group')];
-        });
-    }
-
-    function chooseSource(button) {
-        draft.sourceKind = button.getAttribute('data-source-kind');
-        draft.sourceKey  = button.getAttribute('data-source-key') || '';
-        draft.sourceUnit = button.getAttribute('data-source-unit') || '';
-
-        var label = button.querySelector('.wizard-type__label');
-        draft.sourceLabel = label ? label.textContent.trim() : '';
-
-        each('[data-wizard-source]', function (other) {
-            other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
-            other.classList.toggle('is-chosen', other === button);
-        });
-
-        refresh();
-    }
-
-    /* ------------------------------------------------------- 4 · streven */
-
-    function block(name, show) {
-        var node = root.querySelector('[data-wizard-block="' + name + '"]');
-        if (node) { node.hidden = !show; }
-    }
-
-    function text(selector, value) {
-        var node = root.querySelector(selector);
-        if (node) { node.textContent = value; }
-    }
-
-    /**
-     * Step four asks whatever the chosen type and source actually imply, in
-     * the source's own unit. Nothing typed is thrown away when a block hides;
-     * it is simply not sent unless it applies.
-     */
-    function showTarget() {
-        var type = draft.type;
-        var auto = isAuto();
-        var days = countsDays();
-
-        text('[data-wizard-target-lede]', (words.target_lede && words.target_lede[type]) || '');
-
-        block('measure', type === 'accumulate');
-        block('amount', type === 'milestone' || (type === 'accumulate' && draft.measure === 'amount'));
-        block('days', days);
-        block('direction', type === 'milestone');
-        block('daily', days && auto);
-        block('tick', days && !auto);
-
-        text('[data-wizard-amount-label]', type === 'milestone' ? words.target_best : words.target_total);
-        text('[data-wizard-days-label]', type === 'streak' ? words.target_streak : words.target_days);
-        text('[data-wizard-days-suffix]', type === 'streak' ? T.t('dagen op rij') : T.t('dagen'));
-        text('[data-wizard-tick-note]', type === 'streak' ? words.tick_streak : words.tick_days);
-
-        /* Read from health data, the unit is the source's and is shown, not
-           typed: 8 next to "uur" is hours of sleep and nothing else. */
-        var unitInput = root.querySelector('[data-wizard-unit]');
-        var unitFixed = root.querySelector('[data-wizard-unit-fixed]');
-        if (unitInput) { unitInput.hidden = auto; }
-        if (unitFixed) {
-            unitFixed.hidden = !auto || draft.sourceUnit === '';
-            unitFixed.textContent = draft.sourceUnit;
-        }
-        if (unitList) { unitList.hidden = auto; }
-
-        text('[data-wizard-daily-unit]', draft.sourceUnit);
-    }
-
-    function chooseMeasure(key) {
-        draft.measure = key;
-        press('[data-wizard-measure]', 'data-wizard-measure', key);
-        showTarget();
-        refresh();
-    }
-
-    function chooseBetter(key) {
-        draft.better = key;
-        press('[data-wizard-better]', 'data-wizard-better', key);
-        refresh();
-    }
-
-    function chooseFloor(key) {
-        draft.floor = key;
-        press('[data-wizard-floor]', 'data-wizard-floor', key);
-        refresh();
-    }
-
-    /* ------------------------------------------------------ 5 · duration */
-
-    /**
-     * Whether a period can hold the days asked for. Thirty days in a row do
-     * not fit in a week, and a period that cannot be finished is not offered.
-     * A period runs from today to its end date, both days included.
-     */
-    function fits(key) {
-        if (!countsDays() || !wholeDays(draft.days)) { return true; }
-        var period = copy.durations[key] ? copy.durations[key].days + 1 : 0;
-        return Number(draft.days) <= period;
-    }
-
-    function chooseDuration(key) {
-        if (!fits(key)) { return; }
-
-        draft.duration = key;
-        press('[data-wizard-duration]', 'data-wizard-duration', key);
-
-        var days = copy.durations[key] ? copy.durations[key].days : 0;
-        var start = new Date();
-
-        if (datesNote) {
-            datesNote.hidden = false;
-            datesNote.textContent = T.tf('Van %1$s t/m %2$s · nog %3$s', dutchDate(start), dutchDate(endDate(days)), spanText(days));
-        }
-
-        refresh();
-    }
-
-    /** Each duration tile carries the date it would run to, or why it cannot. */
-    function fillDurationMeta() {
-        each('[data-wizard-duration]', function (option) {
-            var key  = option.getAttribute('data-wizard-duration');
-            var meta = option.querySelector('[data-duration-meta]');
-            var ok   = fits(key);
-
-            option.disabled = !ok;
-
-            if (meta) {
-                meta.textContent = ok
-                    ? T.tf('t/m %s', dutchDate(endDate(Number(option.getAttribute('data-days')))))
-                    : (words.too_short || T.t('Te kort voor %s')).replace('%s', draft.type === 'streak' ? T.tf('%s op rij', daysText(draft.days)) : daysText(draft.days));
-            }
-
-            if (!ok && draft.duration === key) {
-                draft.duration = null;
-                option.setAttribute('aria-pressed', 'false');
-                option.classList.remove('is-active');
-                if (datesNote) { datesNote.hidden = true; }
-            }
-        });
-    }
-
-    /* ------------------------------------------------------- 6 · summary */
-
-    function fillSummary() {
-        var category = draft.category ? copy.categories[draft.category] : null;
-        var duration = draft.duration ? copy.durations[draft.duration] : null;
-
-        set('name', draft.name.trim() || '—');
-        set('category', category
-            ? category.label + ' · ' + (copy.types[draft.type] ? copy.types[draft.type].label : '')
-            : '—');
-        set('target', targetText() || '—');
-        set('source', draft.sourceKind === 'manual'
-            ? (words.source_manual || T.t('Geen data mogelijk'))
-            : (draft.sourceLabel || '—'));
-        set('duration', duration
-            ? duration.label + ' · ' + T.tf('t/m %s', dutchDate(endDate(duration.days)))
-            : '—');
-
-        function set(key, value) {
-            var cell = root.querySelector('[data-summary="' + key + '"]');
-            if (cell) { cell.textContent = value; }
+        /* The new screen's title, for whoever reads it out. */
+        var title = root.querySelector('[data-wizard-step="' + to + '"] .wizard__title');
+        if (title && direction !== 0) {
+            title.setAttribute('tabindex', '-1');
+            title.focus({ preventScroll: true });
         }
     }
 
-    function choosePriority(key) {
-        draft.priority = key;
-        press('[data-wizard-priority]', 'data-wizard-priority', key);
-
-        /* Only worth saying when there is in fact a primary goal to displace. */
-        var current = document.querySelector('[data-goal-slot="primary"] [data-goal-card]');
-        if (swapNote) { swapNote.hidden = !(key === 'primary' && current); }
+    function forward() {
+        if (!isComplete(step)) { return; }
+        if (step === 'review') { finish(); return; }
+        go(step === STEPS ? 'review' : step + 1, 1);
     }
 
-    /* --------------------------------------------------------- 6 · close */
-
-    /**
-     * Builds the goal as a card, using the page's own component markup, so the
-     * last thing the flow shows is exactly what the board would show.
-     */
-    function buildPreview() {
-        if (!preview) { return; }
-
-        var category = draft.category ? copy.categories[draft.category] : null;
-        var duration = draft.duration ? copy.durations[draft.duration] : null;
-        var isPrimary = draft.priority === 'primary';
-
-        var card = document.createElement('div');
-        card.className = 'card goal-card goal-card--' + (isPrimary ? 'primary' : 'secondary');
-        card.setAttribute('data-accent', category ? category.accent : 'health');
-
-        var top = document.createElement('span');
-        top.className = 'goal-card__top';
-
-        /* The icon comes from the tile the user tapped, so the preview cannot
-           drift away from the icon set. */
-        var tile = root.querySelector('[data-wizard-category="' + draft.category + '"] .icon-tile');
-        var mark = document.createElement('span');
-        mark.className = 'icon-tile';
-        mark.setAttribute('aria-hidden', 'true');
-        if (tile) { mark.innerHTML = tile.innerHTML; }
-
-        var heads = document.createElement('span');
-        heads.className = 'goal-card__heads';
-
-        var kind = document.createElement('span');
-        kind.className = 'goal-card__category';
-        kind.textContent = category ? category.label : '';
-
-        var name = document.createElement('span');
-        name.className = 'goal-card__name';
-        name.textContent = draft.name.trim();
-
-        heads.appendChild(kind);
-        heads.appendChild(name);
-        top.appendChild(mark);
-        top.appendChild(heads);
-
-        var figures = document.createElement('span');
-        figures.className = 'goal-card__figures';
-
-        /* No percentage until something is recorded — the board shows the
-           same dash, and the preview must not promise a 0 it does not have. */
-        var percent = document.createElement('span');
-        percent.className = 'goal-card__percent';
-        var value = document.createElement('span');
-        value.className = 'goal-card__percent-value';
-        value.textContent = '—';
-        percent.appendChild(value);
-
-        var target = document.createElement('span');
-        target.className = 'goal-card__target';
-        target.textContent = targetText() || '—';
-
-        figures.appendChild(percent);
-        figures.appendChild(target);
-
-        var meter = document.createElement('span');
-        meter.className = 'meter meter--goal';
-        meter.setAttribute('aria-hidden', 'true');
-        var fill = document.createElement('span');
-        fill.className = 'meter__fill';
-        meter.appendChild(fill);
-
-        var foot = document.createElement('span');
-        foot.className = 'goal-card__foot';
-        var deadline = document.createElement('span');
-        deadline.className = 'goal-card__deadline';
-        deadline.textContent = duration
-            ? T.tf('Nog %s', spanText(duration.days)) + ' · ' + T.tf('t/m %s', dutchDate(endDate(duration.days)))
-            : '';
-        foot.appendChild(deadline);
-
-        card.appendChild(top);
-        card.appendChild(figures);
-        card.appendChild(meter);
-        card.appendChild(foot);
-
-        preview.innerHTML = '';
-        preview.appendChild(card);
+    function backward() {
+        if (saving) { return; }
+        if (draft.calendar) { closeCalendar(); return; }
+        if (step === 1) { close(); return; }
+        go(step === 'review' ? STEPS : step - 1, -1);
     }
 
-    /* The token is minted server-side and rendered on the account panel; the
-       endpoints reject anything without it. */
+    /* ============================================================ saving */
+
     function csrf() {
-        /* The account panel's, or — on the setup, which has no account
-           panel — the page's own (pages/setup.php). */
+        /* The account panel's, or — on the setup, which has none — the page's (pages/setup.php). */
         var panel = document.querySelector('[data-account]') || document.querySelector('[data-csrf]');
         return panel ? (panel.getAttribute('data-csrf') || '') : '';
     }
 
-    /**
-     * What the wizard collected, in the fields api/goals/create.php expects.
-     * Only what applies to the chosen type is sent; the server checks every
-     * one of them again and refuses a goal it could not measure.
-     */
+    /** What the wizard collected, in the fields api/goals/create.php takes. */
     function payload() {
+        var m = current();
         var form = new FormData();
-
         form.append('csrf', csrf());
-        form.append('name', draft.name);
-        form.append('category', draft.category || 'other');
-        form.append('type', draft.type || '');
-        form.append('duration', draft.duration || '');
-        form.append('priority', draft.priority || 'secondary');
+        form.append('create_token', draft.token);
+        form.append('name', draft.name.trim());
+        form.append('measurement', draft.measurement);
+        if (m.custom) { form.append('category', draft.category); }
+        form.append('type', draft.type);
+        if (draft.variant) { form.append('variant', draft.variant); }
+        form.append('start_date', iso(draft.start));
+        form.append('end_date', iso(draft.end));
 
-        /* The chosen source, verbatim. The server checks it against the same
-           catalogue this list was built from and refuses anything else. */
-        form.append('source_kind', draft.sourceKind || '');
-        form.append('source_key', draft.sourceKey || '');
-
-        /* The units the figures were typed in (Instellingen › Eenheden): the
-           server stores lb as kg and mi as km, once. */
-        form.append('input_units', T.units.system);
-
-        if (draft.type === 'accumulate') {
-            form.append('measure', draft.measure || 'amount');
-        }
-
-        if (countsDays()) {
-            form.append('target_value', draft.days);
-
-            if (needsDaily()) {
-                form.append('daily_target', draft.daily);
-                form.append('direction', draft.floor);
-            }
+        if (draft.variant === 'period') {
+            form.append('frequency', String(draft.frequency).trim());
+            form.append('period', draft.period);
         } else {
-            form.append('target_value', draft.value);
-            if (!isAuto()) { form.append('target_unit', unitKey(draft.unit)); }
-            if (draft.type === 'milestone') { form.append('direction', draft.better || ''); }
+            form.append('target_value', String(draft.target).trim());
+            form.append('unit', draft.unit);
+            if (draft.unit === 'custom') { form.append('custom_unit', draft.customUnit.trim()); }
+            form.append('direction', draft.direction);
         }
 
+        if (draft.type === 'milestone' && draft.baseline.state !== 'measured') {
+            form.append('baseline_value', String(draft.baselineTyped).trim());
+        }
         return form;
     }
 
     function showError(message) {
-        var slot = root.querySelector('[data-wizard-error]');
-        if (!slot) { return; }
-        slot.textContent = message || '';
-        slot.hidden = !message;
+        errorSlot.textContent = message || '';
+        errorSlot.hidden = !message;
+    }
+
+    function setSaving(on) {
+        saving = on;
+        root.classList.toggle('is-saving', on);
+        nextLabel.textContent = on ? words.creating : (step === 'review' ? words.create : words.next);
+        backBtn.disabled = on;
+        refresh();
     }
 
     /**
-     * Saves the goal, then shows the confirmation.
-     *
-     * The order matters: the last screen says the goal is on the board, so it
-     * must not appear until the row exists. A failure keeps the user on the
-     * last step with their answers intact rather than claiming a goal was made.
+     * Makes the goal. Once: the button is out of reach while it is on its
+     * way, and the one-time key makes a second request the same goal. A
+     * failure keeps every answer and says why.
      */
     function finish() {
-        nextBtn.disabled = true;
+        if (saving) { return; }
+        setSaving(true);
         showError('');
 
         fetch('api/goals/create.php', { method: 'POST', body: payload(), credentials: 'same-origin' })
@@ -760,182 +1208,201 @@
                 return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') };
             })
             .then(function (result) {
-                nextBtn.disabled = false;
-
                 if (!result || !result.ok) {
+                    setSaving(false);
                     showError((result && result.error) || T.t('Dit doel kon niet worden opgeslagen.'));
                     return;
                 }
-
-                saved = true;
-                createdId = result.goal_id ? String(result.goal_id) : null;
-                showDone();
+                var id = result.goal_id ? String(result.goal_id) : null;
+                var name = draft.name.trim();
+                setSaving(false);
+                close(true);
+                document.dispatchEvent(new CustomEvent('goalwizard:saved', { detail: { id: id, name: name } }));
+                showNewGoal(id);
             });
     }
 
-    function showDone() {
-        buildPreview();
-
-        var from = carry();
-        var arriving = null;
-        each('[data-wizard-step]', function (section) {
-            var isDone = section.getAttribute('data-wizard-step') === 'done';
-            section.hidden = !isDone;
-            section.classList.toggle('is-active', isDone);
-            if (isDone) { arriving = section; }
-        });
-        enter(arriving, 1, from);
-
-        each('[data-wizard-bar]', function (bar) { bar.classList.add('is-done'); });
-
-        if (count) { count.textContent = words.steps[TOTAL].label; }
-
-        backBtn.hidden = true;
-        nextBtn.hidden = true;
-        doneBtn.hidden = false;
-        doneBtn.focus({ preventScroll: true });
-    }
-
-    /* ---------------------------------------------------------- open/close */
-
-    /** Everything back to unanswered, including what the buttons show. */
-    function reset() {
-        draft = blank();
-        showError('');
-
-        each('input', function (field) { field.value = ''; field.hidden = false; });
-
-        each('[data-wizard-category], [data-wizard-type], [data-wizard-source], [data-wizard-duration], '
-            + '[data-wizard-measure], [data-wizard-better]', function (option) {
-            option.setAttribute('aria-pressed', 'false');
-            option.classList.remove('is-active', 'is-chosen');
-            option.hidden = false;
-            option.disabled = false;
-        });
-
-        each('p[data-source-group]', function (label) { label.hidden = false; });
-        each('[data-wizard-block]', function (node) { node.hidden = true; });
-
-        chooseFloor('increase');
-
-        if (suggests) { suggests.innerHTML = ''; }
-        if (unitList) { unitList.innerHTML = ''; unitList.hidden = false; }
-        if (datesNote) { datesNote.hidden = true; }
-        if (swapNote) { swapNote.hidden = true; }
-
-        choosePriority('secondary');
-        fillDurationMeta();
-
-        step = 1;
-        paint(1);
-    }
-
-    function open(trigger) {
-        lastFocus = trigger || document.activeElement;
-        saved = false;
-        createdId = null;
-        reset();
-
-        root.hidden = false;
-        window.requestAnimationFrame(function () { root.classList.add('is-open'); });
-        carry();    // a step still arriving from just before (reopened while closing) stops
-        enter(root.querySelector('.wizard__step.is-active'), 1, null);
-
-        var first = root.querySelector('[data-wizard-category]');
-        if (first) { first.focus({ preventScroll: true }); }
-    }
-
-    function close() {
-        root.classList.remove('is-open');
-        window.setTimeout(function () { root.hidden = true; }, 200);
-
-        if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
-
-        /* The board is rendered server-side, so the new goal appears by asking
-           the server again — in the background, with the goal parts swapped
-           in (goals.js), not with a reload: the shell starts on Overzicht, so
-           a reload used to land there instead of on Doelen. Only after a
-           save; closing a wizard the user abandoned should cost them nothing. */
-        if (saved) {
-            saved = false;
-
-            /* For whoever opened it outside Doelen — the setup's goal step —
-               which goal was made. */
-            document.dispatchEvent(new CustomEvent('goalwizard:saved', {
-                detail: { id: createdId, name: draft.name }
-            }));
-
-            showNewGoal(createdId);
-        }
-    }
-
-    /** Puts the board on Actief and brings the new goal's card into view. */
+    /** The board on Actief, with the new goal's card in view (goals.js). */
     function showNewGoal(id) {
         if (!window.GoalBoard) { return; }
-
         window.GoalBoard.refresh().then(function (shown) {
             if (!shown) { return; }
-
             window.GoalBoard.show('active');
-
             var card = id ? document.querySelector('[data-goals] [data-goal-card="' + id + '"]') : null;
-            if (card && card.scrollIntoView) {
-                card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            if (card) {
+                card.classList.add('is-new');
+                if (card.scrollIntoView) { card.scrollIntoView({ block: 'nearest', behavior: reduceQuery.matches ? 'auto' : 'smooth' }); }
+                window.setTimeout(function () { card.classList.remove('is-new'); }, 1600);
             }
         });
     }
 
-    /* ------------------------------------------------------------- events */
+    /* ======================================================= open/close */
+
+    function reset() {
+        draft = blank();
+        saving = false;
+        root.classList.remove('is-saving');
+        backBtn.disabled = false;
+        search.value = '';
+        nameInput.value = '';
+        each('[data-wizard-category]', function (b) { b.setAttribute('aria-pressed', 'false'); });
+        each('[data-wizard-type]', function (b) { b.setAttribute('aria-checked', 'false'); });
+        step = 1;
+        renderList();
+        paint(0);
+    }
+
+    function open(trigger) {
+        lastFocus = trigger || document.activeElement;
+        reset();
+        root.hidden = false;
+        window.requestAnimationFrame(function () { root.classList.add('is-open'); });
+        carry();
+        enter(root.querySelector('.wizard__step.is-active'), 1, null);
+        var first = root.querySelector('[data-wizard-category]');
+        if (first) { first.focus({ preventScroll: true }); }
+    }
+
+    function close(saved) {
+        if (saving) { return; }
+        hideTip();
+        root.classList.remove('is-open');
+        window.setTimeout(function () { root.hidden = true; }, 200);
+        if (!saved && lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
+    }
+
+    /* ============================================================ events */
 
     root.addEventListener('click', function (event) {
-        if (event.target.closest('[data-wizard-close]') || event.target.closest('[data-wizard-done]')) {
-            close();
-            return;
-        }
-
+        var t = event.target;
         var hit;
 
-        if ((hit = event.target.closest('[data-wizard-category]'))) { chooseCategory(hit.getAttribute('data-wizard-category')); return; }
-        if ((hit = event.target.closest('[data-wizard-type]'))) { chooseType(hit.getAttribute('data-wizard-type')); return; }
-        if ((hit = event.target.closest('[data-wizard-source]'))) { chooseSource(hit); return; }
-        if ((hit = event.target.closest('[data-wizard-measure]'))) { chooseMeasure(hit.getAttribute('data-wizard-measure')); return; }
-        if ((hit = event.target.closest('[data-wizard-better]'))) { chooseBetter(hit.getAttribute('data-wizard-better')); return; }
-        if ((hit = event.target.closest('[data-wizard-floor]'))) { chooseFloor(hit.getAttribute('data-wizard-floor')); return; }
-        if ((hit = event.target.closest('[data-wizard-duration]'))) { chooseDuration(hit.getAttribute('data-wizard-duration')); return; }
-        if ((hit = event.target.closest('[data-wizard-priority]'))) { choosePriority(hit.getAttribute('data-wizard-priority')); return; }
+        if (t.closest('[data-wizard-close]')) { close(); return; }
+        if (t.closest('[data-wizard-back]')) { backward(); return; }
+        if (t.closest('[data-wizard-next]')) { forward(); return; }
 
-        if (event.target.closest('[data-wizard-back]')) { go(Math.max(1, step - 1), -1); return; }
-
-        if (event.target.closest('[data-wizard-next]')) {
-            if (!isComplete(step)) { return; }
-
-            if (step === TOTAL) { finish(); return; }
-
-            go(step + 1, 1);
-            if (step === TOTAL) { fillSummary(); }
+        if ((hit = t.closest('[data-wizard-category]'))) { chooseCategory(hit.getAttribute('data-wizard-category')); return; }
+        if ((hit = t.closest('[data-wizard-measure]'))) { chooseMeasurement(hit.getAttribute('data-wizard-measure')); return; }
+        if (t.closest('[data-wizard-search-clear]')) {
+            search.value = '';
+            draft.query = '';
+            renderList();
+            search.focus();
+            return;
         }
+        if ((hit = t.closest('[data-wizard-idea]'))) {
+            nameInput.value = hit.getAttribute('data-wizard-idea');
+            draft.name = nameInput.value;
+            nameInput.focus({ preventScroll: true });
+            refresh();
+            return;
+        }
+        if ((hit = t.closest('[data-wizard-type]'))) { chooseType(hit.getAttribute('data-wizard-type')); return; }
+        if ((hit = t.closest('[data-wizard-variant]'))) {
+            draft.variant = hit.getAttribute('data-wizard-variant');
+            draft.direction = null;
+            renderSetup();
+            var again = setup.querySelector('[data-wizard-variant="' + draft.variant + '"]');
+            if (again) { again.focus({ preventScroll: true }); }
+            return;
+        }
+        if ((hit = t.closest('[data-wizard-direction]'))) {
+            if (hold.shown) { hold.shown = false; return; }   // a long press explains, it does not choose
+            chooseDirection(hit.getAttribute('data-wizard-direction'));
+            return;
+        }
+        if ((hit = t.closest('[data-wizard-duration]'))) { chooseDuration(hit.getAttribute('data-wizard-duration')); return; }
+        if ((hit = t.closest('[data-wizard-date]'))) { openCalendar(hit.getAttribute('data-wizard-date')); return; }
+
+        if ((hit = t.closest('[data-calendar-day]'))) { pickDay(hit.getAttribute('data-calendar-day')); return; }
+        if (t.closest('[data-calendar-prev]')) { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); paintCalendar(); return; }
+        if (t.closest('[data-calendar-next]')) { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); paintCalendar(); return; }
+        if (t.closest('[data-calendar-done]')) { calendarDone(); return; }
     });
 
     root.addEventListener('input', function (event) {
         var field = event.target;
 
-        if (field.hasAttribute('data-wizard-name')) { draft.name = field.value; }
-        else if (field.hasAttribute('data-wizard-value')) { draft.value = field.value.trim(); }
-        else if (field.hasAttribute('data-wizard-unit')) { draft.unit = field.value.trim(); }
-        else if (field.hasAttribute('data-wizard-days')) { draft.days = field.value.trim(); }
-        else if (field.hasAttribute('data-wizard-daily-input')) { draft.daily = field.value.trim(); }
-        else { return; }
+        if (field === search) {
+            draft.query = search.value;
+            renderList();
+            return;
+        }
+        if (field === nameInput) { draft.name = nameInput.value; refresh(); return; }
 
-        refresh();
+        switch (field.getAttribute('data-wizard-field')) {
+            case 'target': draft.target = field.value; break;
+            case 'frequency': draft.frequency = field.value; break;
+            case 'baseline': draft.baselineTyped = field.value; break;
+            case 'custom-unit':
+                draft.customUnit = field.value;
+                renderBaseline();
+                break;
+            default: return;
+        }
+        validateSetup();
+    });
+
+    root.addEventListener('change', function (event) {
+        var field = event.target;
+
+        if (field.hasAttribute('data-wizard-unit')) {
+            /* Another unit: what was typed keeps its meaning — 80 kg is 176,4 lb. */
+            var before = unitOf(draft.unit);
+            draft.unit = field.value;
+            var after = unitOf(draft.unit);
+            if (draft.unit !== 'custom' && before.code) {
+                ['target', 'baselineTyped'].forEach(function (key) {
+                    var n = parsed(draft[key]);
+                    if (n !== null) { draft[key] = T.numberTrim(round(n * before.factor / after.factor, after.decimals), after.decimals); }
+                });
+            }
+            renderSetup();
+            var select = setup.querySelector('[data-wizard-unit]');
+            if (select) { select.focus({ preventScroll: true }); }
+            return;
+        }
+
+        if (field.hasAttribute('data-wizard-period')) {
+            draft.period = field.value;
+            validateSetup();
+        }
+    });
+
+    /* Press and hold on a direction button: its explanation. */
+    root.addEventListener('pointerdown', function (event) {
+        var button = event.target.closest('[data-wizard-direction]');
+        if (!button) { return; }
+        hold.shown = false;
+        window.clearTimeout(hold.timer);
+        hold.timer = window.setTimeout(function () { showTip(button); }, 450);
+    });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
+        root.addEventListener(type, function (event) {
+            if (!event.target.closest || !event.target.closest('[data-wizard-direction]')) { return; }
+            window.clearTimeout(hold.timer);
+            if (hold.shown) { window.setTimeout(hideTip, 900); }
+        }, true);
+    });
+
+    root.addEventListener('contextmenu', function (event) {
+        if (event.target.closest('[data-wizard-direction]')) { event.preventDefault(); }
+    });
+
+    root.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && event.target.matches && event.target.matches('input')) {
+            event.preventDefault();
+            if (!nextBtn.disabled && !draft.calendar) { forward(); }
+        }
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && !root.hidden) { close(); }
+        if (event.key !== 'Escape' || root.hidden) { return; }
+        if (draft.calendar) { closeCalendar(); return; }
+        close();
     });
-
-    /* --------------------------------------------------------------- init */
-
-    fillDurationMeta();
 
     window.GoalWizard = { open: open, close: close };
 }());

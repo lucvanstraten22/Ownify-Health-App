@@ -215,7 +215,7 @@ return [
         'progression' => [
             'min_samples'     => 4,
             'min_km'          => 1.0,
-            'goal_categories' => ['strength', 'performance', 'training'],
+            'goal_categories' => ['training'],
             /* Goal results must span at least this many days before they
                say anything about a trend. */
             'goal_min_days'   => 7,

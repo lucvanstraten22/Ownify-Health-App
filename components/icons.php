@@ -105,6 +105,15 @@ if (!function_exists('icon')) {
                 // sending a message — an arrow up, the stroke the rest share
                 'arrow-up' => '<path d="M12 19.2V5.2M6.4 10.8 12 5.2l5.6 5.6"/>',
 
+                // lower is better / at most — the goal wizard's direction
+                'arrow-down' => '<path d="M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"/>',
+
+                // search — a lens and its handle (the goal wizard's search field)
+                'search'   => '<circle cx="10.6" cy="10.6" r="5.6"/><path d="m14.8 14.8 4.6 4.6"/>',
+
+                // clear a field — a small cross
+                'close'    => '<path d="M7 7l10 10M17 7 7 17"/>',
+
                 // conversations — one speech bubble, its tail on the left
                 'chat'     => '<path d="M7.6 4.6h8.8a2.8 2.8 0 0 1 2.8 2.8v6.2a2.8 2.8 0 0 1-2.8 2.8h-5.2l-4 3.2v-3.2h-.2A2.6 2.6 0 0 1 4.8 13.6V7.4a2.8 2.8 0 0 1 2.8-2.8Z"/>',
 

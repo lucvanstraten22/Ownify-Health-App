@@ -166,7 +166,7 @@ if (!function_exists('hydrate_setup')) {
      */
     function hydrate_setup_suggestion(array $copy, int $userId, string $focus): ?array
     {
-        if (!db_available() || !function_exists('goal_sources_available') || !goal_sources_available()) {
+        if (!db_available() || !function_exists('goal_model_available') || !goal_model_available()) {
             return null;
         }
 

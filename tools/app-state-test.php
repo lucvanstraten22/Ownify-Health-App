@@ -248,9 +248,9 @@ try {
     check('a new account: the "no data yet" line, and an empty score',
         ($data['disclaimer'] ?? null) === ($data['disclaimers']['no_data'] ?? '-')
         && array_key_exists('value', $data['scores']['overall'] ?? []) && $data['scores']['overall']['value'] === null);
-    check('what the templates work out is worked out here too: charts, wizard sources, fields',
+    check('what the templates work out is worked out here too: charts, the goal catalogue, fields',
         isset($data['health']['trend']['charts']['sleep']['week']['has_data'])
-        && ($data['goals']['wizard_sources'][0]['sources'][0]['types'] ?? null) === ['milestone']
+        && ($data['goals']['measurements']['weight']['types'] ?? null) === ['milestone'] && isset($data['goals']['goal_units']['lb'])
         && array_key_exists('state', $data['settings']['pages']['account']['blocks'][1]['fields'][0] ?? []));
     $sleepView = $data['health']['areas']['sleep']['view'] ?? null;
     check('Slaap, drawn, for a new account: five empty rows, six charts with no value, nothing made up (docs/SLEEP.md)',
@@ -407,8 +407,8 @@ try {
         check("$path: no token, no CSRF 419", http($path, ['form' => $form])['status'] === 419);
     };
 
-    $goalForm = ['name' => 'Bench press 100 kg', 'category' => 'strength', 'type' => 'milestone', 'duration' => 'month',
-        'priority' => 'primary', 'source_kind' => 'manual', 'target_value' => '100', 'target_unit' => 'kg', 'direction' => 'increase'];
+    $goalForm = ['name' => 'Bench press 100 kg', 'measurement' => 'custom', 'category' => 'training', 'type' => 'milestone',
+        'duration' => 'month', 'unit' => 'kg', 'target_value' => '100', 'baseline_value' => '0', 'direction' => 'increase'];
     $created = http('/api/goals/create.php', ['bearer' => $sanne['token'], 'form' => $goalForm]);
     check('goals/create: 200 with the account token', $created['status'] === 200 && ($created['body']['goal_id'] ?? 0) > 0, summary($created));
     $refused('/api/goals/create.php', $goalForm);

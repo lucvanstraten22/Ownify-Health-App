@@ -162,7 +162,7 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
             // The week from today, its dates (docs/CHARTS.md); a server from before that: from the start to now.
             val chart = goal.chart
             if (chart != null && chart.xTicks.isNotEmpty()) XTicks(chart, Modifier.padding(top = Ownify.Space2))
-            else Axis(listOf(goal.startLabel.ifEmpty { tr("Start") }, if (goal.isCompleted) tr("Behaald") else tr("Nu")), Modifier.padding(top = Ownify.Space2))
+            else Axis(listOf(goal.startLabel.ifEmpty { tr("Start") }, if (goal.isReached) tr("Behaald") else if (goal.isCompleted) tr("Afgelopen") else tr("Nu")), Modifier.padding(top = Ownify.Space2))
         }
         T(empty, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = 46.dp), align = TextAlign.Center)
     }

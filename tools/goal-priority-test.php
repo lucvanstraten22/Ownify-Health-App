@@ -143,14 +143,22 @@ function account(string $who): array
     return ['id' => (int) db_value('SELECT id FROM users WHERE username = ?', [$username]), 'token' => $token];
 }
 
-/** A goal kept by hand, 0 → 100, at $percent through the real progress endpoint. */
+/**
+ * A Mijlpaal kept by hand, 0 → 100 punten, at $percent through the real
+ * progress endpoint (null: nothing logged yet, so 0%). Every goal has an end
+ * date now; a far one stands in for "whenever".
+ */
 function goal(array $who, string $name, ?int $percent, ?string $end, bool $primary = false): string
 {
     $id = goal_create($who['id'], [
-        'name' => $name, 'category' => 'other', 'kind' => 'milestone', 'source_kind' => 'manual',
-        'target_value' => 100, 'start_value' => 0, 'target_unit' => 'punten', 'direction' => 'increase',
-        'start_date' => date('Y-m-d', strtotime('-10 days')), 'end_date' => $end, 'priority' => $primary ? 'primary' : 'secondary',
+        'name' => $name, 'category_code' => 'recovery', 'goal_type' => 'milestone', 'tracking' => 'manual',
+        'custom_unit' => 'punten', 'direction' => 'increase', 'target_value' => 100,
+        'baseline_value' => 0, 'baseline_source' => 'manual',
+        'start_date' => date('Y-m-d', strtotime('-10 days')), 'end_date' => $end ?? date('Y-m-d', strtotime('+400 days')),
     ]);
+    if ($primary) {
+        goal_set_primary($who['id'], (int) $id);
+    }
     if ($percent !== null) {
         http('/api/goals/progress.php', ['bearer' => $who['token'], 'form' => ['goal_id' => $id, 'value' => $percent]]);
     }
@@ -278,7 +286,7 @@ try {
     $D3 = goal($three, 'D', null, $in(1));
     $names = [$A3 => 'A', $B3 => 'B', $C3 => 'C', $D3 => 'D'];
     change($three, $A3, 'secondary');
-    agree($three, 'all at 60%: C (ends first) takes it; A (ends in 5) before B; D, no data, last', 'C', 'A, B, D');
+    agree($three, 'all at 60%: C (ends first) takes it; A (ends in 5) before B; D, nothing logged, last', 'C', 'A, B, D');
 
     $four = account('four');
     $A4 = goal($four, 'A', 40, null, true);
@@ -287,7 +295,7 @@ try {
     $D4 = goal($four, 'D', null, $in(10));
     $names = [$A4 => 'A', $B4 => 'B', $C4 => 'C', $D4 => 'D'];
     change($four, $A4, 'secondary');
-    agree($four, 'only goals without data left: D (ends soonest) takes it; A (40%), B, C (no end date)', 'D', 'A, B, C');
+    agree($four, 'only goals at 0% left: D (ends soonest) takes it; A (40%), B, C (ends last)', 'D', 'A, B, C');
 
     /* ==================================================== nothing to hand */
     section('One goal on its own');

@@ -265,16 +265,23 @@ function row_of(string $token): ?array
 /** A goal to act on, made the way the wizard's endpoint makes one. */
 function goal_for(int $userId, string $name, string $priority): int
 {
-    return (int) goal_create($userId, [
-        'name'         => $name,
-        'category'     => 'habit',
-        'kind'         => 'accumulate',
-        'target_value' => 10,
-        'target_unit'  => 'keer',
-        'start_date'   => date('Y-m-d'),
-        'end_date'     => date('Y-m-d', strtotime('+30 days')),
-        'priority'     => $priority,
+    $goalId = (int) goal_create($userId, [
+        'name'          => $name,
+        'category_code' => 'recovery',
+        'goal_type'     => 'accumulate',
+        'tracking'      => 'manual',
+        'unit_code'     => 'times',
+        'target_value'  => 10,
+        'start_date'    => date('Y-m-d'),
+        'end_date'      => date('Y-m-d', strtotime('+30 days')),
     ]);
+
+    /* The first goal is primary on its own; another is made so on request. */
+    if ($priority === 'primary') {
+        goal_set_primary($userId, $goalId);
+    }
+
+    return $goalId;
 }
 
 function goal_state(int $goalId): string

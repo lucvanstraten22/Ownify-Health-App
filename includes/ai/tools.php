@@ -43,12 +43,13 @@ if (!function_exists('ai_tool_declarations')) {
 
         $goalConfig = config_copy('goals');
 
-        $sources = [];
-        foreach (goal_source_catalogue() as $source) {
-            if ($source['kind'] === 'metric') {
-                $unit      = goal_source_unit($source['kind'], $source['key'])['word'];
-                $sources[] = $source['key'] . ($unit === '' ? '' : ' (' . $unit . ')');
-            }
+        /* The measurements, each with its unit codes, so the model can only
+           name something the wizard offers. */
+        $measures = [];
+        foreach (goal_measurements() as $code => $m) {
+            $measures[] = $code . ' (' . $m['category'] . '; types ' . implode('/', $m['types'])
+                . ($m['variants'] !== [] ? '; streak ' . implode('/', $m['variants']) : '')
+                . '; units ' . implode('/', $m['unit_codes']) . ')';
         }
 
         return [
@@ -95,36 +96,40 @@ if (!function_exists('ai_tool_declarations')) {
             [
                 'name'        => 'create_goal',
                 'description' => 'Prepares a NEW goal as a proposal. Nothing is created: the user confirms it with a button. '
-                    . 'Use only when the user asked for the goal or agreed to it. '
-                    . 'Examples: "run 5 km in under 25 minutes" = milestone, category performance, source_kind manual, target_value 25, target_unit "min", direction decrease. '
-                    . '"10,000 steps a day for 30 days" = streak, category activity, source_kind metric, source_key steps, target_value 30, daily_target 10000, direction increase, duration month. '
-                    . '"Train 12 times this month" = accumulate, category activity, source_kind workout, source_key sessions, target_value 12, duration month. '
-                    . '"Weigh 75 kg" = milestone, category weight, source_kind measurement, source_key weight, target_value 75, direction decrease or increase.',
+                    . 'Use only when the user asked for the goal or agreed to it. It starts today. '
+                    . 'Examples: "10,000 steps a day for a month" = measurement steps, type streak, variant daily, target_value 10000, unit steps, duration month. '
+                    . '"Train 3 times a week for 3 months" = measurement workouts, type streak, variant period, frequency 3, period week, duration quarter. '
+                    . '"Walk 100 km this month" = measurement distance, type accumulate, target_value 100, unit km, duration month. '
+                    . '"Weigh 75 kg within half a year" = measurement weight, type milestone, target_value 75, unit kg, direction decrease, duration halfyear. '
+                    . '"Bench press 100 kg" = measurement custom, category training, type milestone, target_value 100, unit kg, direction increase, baseline_value (ask the user for their current best).',
                 'parameters'  => ['type' => 'OBJECT', 'properties' => [
-                    'name'         => ['type' => 'STRING', 'description' => 'Short name in the user\'s words, max 120 characters, in their language.'],
-                    'type'         => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['milestone', 'streak', 'accumulate']],
-                    'category'     => ['type' => 'STRING', 'format' => 'enum', 'enum' => array_keys($goalConfig['categories'])],
-                    'source_kind'  => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['manual', 'metric', 'workout', 'measurement'],
-                        'description' => 'Where progress comes from: manual = the user keeps it themselves; metric = a health metric; workout = recorded workouts; measurement = a body measurement.'],
-                    'source_key'   => ['type' => 'STRING', 'description' => 'For metric: one of ' . implode(', ', $sources)
-                        . '. For workout: minutes or sessions. For measurement: weight, body_fat_pct, waist_cm or lean_mass. Empty for manual.'],
-                    'target_value' => ['type' => 'NUMBER', 'description' => 'The target, in the unit shown for the source (sleep_duration in hours), always metric: kg, km, cm, °C — convert from pounds, miles, inches or °F first. For a streak, or an accumulate goal that counts days: the number of days.'],
-                    'target_unit'  => ['type' => 'STRING', 'description' => 'Only for manual goals: the unit, e.g. kg, min, km, keer — metric for a measurement. Max 20 characters.'],
-                    'measure'      => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['amount', 'days'], 'description' => 'Only for accumulate: add up an amount, or count days.'],
-                    'daily_target' => ['type' => 'NUMBER', 'description' => 'For a streak or day-counting goal from health data: what makes one day count, in the source\'s unit.'],
-                    'direction'    => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['increase', 'decrease'],
-                        'description' => 'Milestone: whether higher (increase) or lower (decrease) is better. Day-counting goal from health data: whether a day must reach at least (increase) or at most (decrease) daily_target.'],
-                    'duration'     => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['week', 'month', 'halfyear', 'year', 'none'], 'description' => 'How long the goal runs. none = no end date.'],
-                    'priority'     => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['primary', 'secondary'], 'description' => 'primary makes it the main goal. Default secondary.'],
-                ], 'required' => ['name', 'type', 'category', 'source_kind', 'target_value']],
+                    'name'           => ['type' => 'STRING', 'description' => 'Short name in the user\'s words, 2-120 characters, in their language.'],
+                    'measurement'    => ['type' => 'STRING', 'format' => 'enum', 'enum' => array_merge(array_keys($goalConfig['measurements']), ['custom']),
+                        'description' => 'What it is about. custom = an own habit, kept by hand. One of: ' . implode(', ', $measures) . '.'],
+                    'category'       => ['type' => 'STRING', 'format' => 'enum', 'enum' => array_keys($goalConfig['categories']),
+                        'description' => 'Only for measurement custom: which category the habit belongs to.'],
+                    'type'           => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['milestone', 'streak', 'accumulate'],
+                        'description' => 'milestone = reach one result; streak = keep a routine up; accumulate = build a total over the period.'],
+                    'variant'        => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['daily', 'period'],
+                        'description' => 'Only for streak: daily = a target every day; period = a number of times per week/month/quarter/year.'],
+                    'target_value'   => ['type' => 'NUMBER', 'description' => 'Not for a period streak. Milestone: the result to reach; daily streak: what each day must reach; accumulate: the total — all in `unit`.'],
+                    'unit'           => ['type' => 'STRING', 'description' => 'One of the measurement\'s unit codes (see measurement). For custom: times, min, h, pages, glasses, reps, km, kg, or custom with custom_unit.'],
+                    'custom_unit'    => ['type' => 'STRING', 'description' => 'Only with unit custom: the habit\'s own unit word, max 20 characters.'],
+                    'direction'      => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['increase', 'decrease'],
+                        'description' => 'Where both make sense: milestone — is higher or lower better; daily streak — at least or at most target_value.'],
+                    'frequency'      => ['type' => 'INTEGER', 'description' => 'Only for a period streak: how many times per period.'],
+                    'period'         => ['type' => 'STRING', 'format' => 'enum', 'enum' => array_keys($goalConfig['periods']), 'description' => 'Only for a period streak.'],
+                    'duration'       => ['type' => 'STRING', 'format' => 'enum', 'enum' => array_keys($goalConfig['durations']), 'description' => 'How long the goal runs from today.'],
+                    'baseline_value' => ['type' => 'NUMBER', 'description' => 'Only for a milestone without data to start from (custom, or no measurements yet): the user\'s current value, in `unit`.'],
+                ], 'required' => ['name', 'measurement', 'type', 'duration']],
             ],
             [
                 'name'        => 'update_goal',
                 'description' => 'Prepares a change to one of the user\'s existing goals as a proposal. Nothing changes until the user confirms it with a button. Take goal_id from the goals data.',
                 'parameters'  => ['type' => 'OBJECT', 'properties' => [
                     'goal_id' => ['type' => 'INTEGER'],
-                    'action'  => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['pause', 'resume', 'complete', 'primary', 'secondary'],
-                        'description' => 'pause, resume a paused goal, mark as completed, make it the primary goal, or make it a secondary goal.'],
+                    'action'  => ['type' => 'STRING', 'format' => 'enum', 'enum' => ['pause', 'resume', 'primary', 'secondary'],
+                        'description' => 'pause, resume a paused goal, make it the primary goal, or make it a secondary goal. A goal finishes by itself: at 100%, or when its end date has passed.'],
                 ], 'required' => ['goal_id', 'action']],
             ],
         ];
@@ -248,7 +253,7 @@ if (!function_exists('ai_tool_declarations')) {
             return ['error' => 'Only one change can be proposed per answer. Ask the user about the first one.'];
         }
 
-        $strings = ['name', 'type', 'category', 'source_kind', 'source_key', 'target_unit', 'measure', 'direction', 'duration', 'priority'];
+        $strings = ['name', 'measurement', 'category', 'type', 'variant', 'unit', 'custom_unit', 'direction', 'period', 'duration'];
         $input   = [];
 
         foreach ($strings as $key) {
@@ -261,7 +266,7 @@ if (!function_exists('ai_tool_declarations')) {
             $input[$key] = trim($args[$key]);
         }
 
-        foreach (['target_value', 'daily_target'] as $key) {
+        foreach (['target_value', 'frequency', 'baseline_value'] as $key) {
             if (!array_key_exists($key, $args) || $args[$key] === null) {
                 continue;
             }
@@ -271,13 +276,15 @@ if (!function_exists('ai_tool_declarations')) {
             $input[$key] = (string) $args[$key];
         }
 
-        if (($input['duration'] ?? '') === 'none') {
-            $input['duration'] = '';
+        /* It starts today and runs for the looptijd asked for. */
+        $today = goal_today();
+        $end   = goal_duration_end($today, (string) ($input['duration'] ?? ''));
+        if ($end === null) {
+            return ['error' => 'duration must be one of ' . implode(', ', array_keys(config_copy('goals')['durations'])) . '.'];
         }
-
-        if (($input['source_kind'] ?? '') === 'manual') {
-            unset($input['source_key']);
-        }
+        $input['start_date'] = $today->format('Y-m-d');
+        $input['end_date']   = $end->format('Y-m-d');
+        unset($input['duration']);
 
         $check = goal_create_from_input($userId, $input, true);
 
@@ -321,19 +328,22 @@ if (!function_exists('ai_tool_declarations')) {
         $labels = ai_goal_action_labels();
 
         if (!is_string($action) || !isset($labels[$action])) {
-            return ['error' => 'action must be one of pause, resume, complete, primary, secondary.'];
+            return ['error' => 'action must be one of pause, resume, primary, secondary.'];
         }
 
         $goal = goal_get($userId, $goalId);
 
-        if ($goal === null || $goal['status'] === 'abandoned') {
+        if ($goal === null) {
             return ['error' => 'The user has no goal with this goal_id.'];
+        }
+
+        if (in_array($goal['status'], ['completed', 'ended'], true)) {
+            return ['error' => 'This goal is finished; its final result is kept and it cannot be changed.'];
         }
 
         $refusal = match (true) {
             $action === 'pause' && $goal['status'] !== 'active'        => 'Only an active goal can be paused.',
             $action === 'resume' && $goal['status'] !== 'paused'       => 'Only a paused goal can be resumed.',
-            $action === 'complete' && $goal['status'] === 'completed'  => 'This goal is already completed.',
             $action === 'primary' && $goal['status'] !== 'active'      => 'Only an active goal can be the primary goal.',
             $action === 'primary' && $goal['priority'] === 'primary'   => 'This goal already is the primary goal.',
             $action === 'secondary' && $goal['priority'] !== 'primary' => 'This goal already is a secondary goal.',
@@ -368,7 +378,6 @@ if (!function_exists('ai_tool_declarations')) {
         return [
             'pause'     => ['title' => 'Doel pauzeren',     'summary' => 'Het doel telt tijdelijk niet mee; je kunt het later hervatten.', 'confirm' => 'Pauzeren',        'done' => 'Doel ‘%s’ gepauzeerd.'],
             'resume'    => ['title' => 'Doel hervatten',    'summary' => 'Het doel telt weer mee.',                                        'confirm' => 'Hervatten',        'done' => 'Doel ‘%s’ hervat.'],
-            'complete'  => ['title' => 'Doel afronden',     'summary' => 'Het doel gaat naar Behaald.',                                    'confirm' => 'Afronden',         'done' => 'Doel ‘%s’ afgerond.'],
             'primary'   => ['title' => 'Primair doel maken', 'summary' => 'Je huidige primaire doel wordt dan secundair.',                 'confirm' => 'Primair maken',    'done' => '‘%s’ is nu je primaire doel.'],
             'secondary' => ['title' => 'Secundair maken',   'summary' => 'Een ander actief doel wordt dan primair.',                       'confirm' => 'Secundair maken',  'done' => '‘%s’ is nu een secundair doel.'],
         ];
@@ -381,36 +390,28 @@ if (!function_exists('ai_tool_declarations')) {
      */
     function ai_goal_summary(array $goal, array $input): string
     {
-        $config = config_copy('goals');
-        $parts  = [$config['types'][$goal['kind']]['label'] ?? $goal['kind']];
-        $target = (float) ($goal['target_value'] ?? 0);
+        $config      = config_copy('goals');
+        $measurement = goal_measurement($goal['measurement_code']) ?? goal_measurement(null);
+        $unit        = $goal['unit_code'] !== null ? goal_unit($goal['unit_code']) : goal_unit_custom((string) $goal['custom_unit']);
+        $parts       = [$config['types'][$goal['goal_type']]['label'] ?? $goal['goal_type']];
 
-        if ($goal['target_unit'] === 'dagen') {
-            $parts[] = goal_days_text($target);
-        } elseif ($goal['source_kind'] !== 'manual') {
-            $parts[] = goal_unit_text($target, goal_source_unit($goal['source_kind'], $goal['source_key']));
+        if ($goal['streak_variant'] === 'period') {
+            $parts[] = tf('%1$d keer per %2$s', (int) $goal['frequency'], (string) $config['periods'][$goal['period_unit']]['label']);
+        } elseif ($goal['streak_variant'] === 'daily') {
+            $daily   = goal_value_text((float) $goal['target_value'], $unit);
+            $parts[] = $goal['direction'] === 'decrease' ? tf('per dag hoogstens %s', $daily) : tf('per dag minstens %s', $daily);
         } else {
-            $parts[] = goal_unit_text($target, goal_manual_unit((string) $goal['target_unit']));
+            $parts[] = goal_value_text((float) $goal['target_value'], $unit);
+            if ($goal['goal_type'] === 'milestone') {
+                $parts[] = tf('vanaf %s', goal_value_text((float) $goal['baseline_value'], $unit));
+            }
         }
 
-        if ($goal['daily_target'] !== null) {
-            $daily   = goal_unit_text((float) $goal['daily_target'], goal_source_unit($goal['source_kind'], $goal['source_key']));
-            $parts[] = tf($goal['direction'] === 'decrease' ? 'per dag hoogstens %s' : 'per dag minstens %s', $daily);
-        } elseif ($goal['kind'] === 'milestone') {
-            $parts[] = $goal['direction'] === 'decrease' ? t('lager is beter') : t('hoger is beter');
-        }
+        $parts[] = $goal['tracking'] === 'auto'
+            ? tf('uit je gegevens: %s', mb_strtolower((string) $measurement['label']))
+            : t('zelf bijhouden');
 
-        $source  = goal_source_find($goal['source_kind'], $goal['source_key']);
-        $parts[] = $source === null ? t('zelf bijhouden') : tf('uit je gegevens: %s', mb_strtolower($source['label']));
-
-        $duration = $input['duration'] ?? '';
-        $parts[]  = isset($config['durations'][$duration])
-            ? tf('looptijd: %s', mb_strtolower($config['durations'][$duration]['label']))
-            : t('geen einddatum');
-
-        if ($goal['priority'] === 'primary') {
-            $parts[] = t('primair doel');
-        }
+        $parts[] = tf('%1$s t/m %2$s', i18n_date($goal['start_date'], 'day_mon'), i18n_date($goal['end_date'], 'day_mon'));
 
         return implode(' · ', $parts);
     }
@@ -438,7 +439,7 @@ if (!function_exists('ai_tool_declarations')) {
             $labels = ai_goal_action_labels();
             $goal   = goal_get($userId, $goalId);
 
-            if ($goal === null || $goal['status'] === 'abandoned' || !isset($labels[$verb])) {
+            if ($goal === null || in_array($goal['status'], ['completed', 'ended'], true) || !isset($labels[$verb])) {
                 return ['ok' => false, 'message' => t('Dit doel bestaat niet meer.')];
             }
 

@@ -107,7 +107,7 @@ offers a goal of its own only when one can be worked out (below).
 The setup suggests a goal only when all of these hold:
 
 - the account has no active goal and may add one;
-- goal sources are available;
+- the goal model is in (migration 025);
 - the last 14 days of the person's own records carry it (`setup_suggestion_plan()`).
 
 | Focus | Tried, in order |
@@ -117,11 +117,11 @@ The setup suggests a goal only when all of these hold:
 | Gewicht | nothing: how much, and which way, is the person's own call |
 
 - **Sleep** needs at least 3 nights. The target is the next half hour above
-  their average (6:41 → *minstens 7 uur*) on 5 nights of a week: an
-  Optellen goal counting days, read from `sleep_duration`. There is none
-  above 8 hours, where the sleep score's duration curve tops out.
+  their average (6:41 → *Elke nacht minstens 7 uur*), every night for a week:
+  a daily Streak on Slaapduur, in hours. There is none above 8 hours, where
+  the sleep score's duration curve tops out.
 - **Training** needs at least 3 workouts. It takes their number per week
-  plus one, between 2 and 7: an Optellen goal counting sessions over a week.
+  plus one, between 2 and 7: an Optellen goal on Trainingen over a week.
 
 The goal is checked with the wizard's own rules exactly as it would be made
 (`goal_create_from_input(…, dryRun: true)`), so a suggestion that would be

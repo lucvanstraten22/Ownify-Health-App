@@ -225,6 +225,9 @@ class FakeOwnifyServer {
     @Volatile
     var ingestArrived = CountDownLatch(1)
 
+    /** What api/goals/baseline.php finds — `{value, on, source, label}` — or null: nothing measured. */
+    var baseline: JSONObject? = null
+
     /** What api/app/state.php answers a working account token with: the demo account's pages. */
     @Volatile
     var stateBody: String = FakeOwnifyServer::class.java.classLoader!!.getResource("state-demo.json").readText()
@@ -465,6 +468,18 @@ class FakeOwnifyServer {
                     form(body)["name"]?.let { setupGoals += it }
                     reply(exchange, 200, """{"ok":true,"goal_id":900}""")
                 }
+            }
+            // A Mijlpaal's starting point (api/goals/baseline.php): [baseline] when one was measured, else none.
+            path.endsWith("/goals/baseline.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else reply(exchange, 200, JSONObject().put("ok", true).put("auto", baseline != null).put("baseline", baseline ?: JSONObject.NULL).toString())
+            }
+            // Logging a goal kept by hand (api/goals/progress.php).
+            path.endsWith("/goals/progress.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else reply(exchange, 200, """{"ok":true,"percent":50,"status":"active","finished":false}""")
             }
             // Deleting a goal (api/goals/delete.php): gone from the pages, and the answer says which goal is primary now.
             path.endsWith("/goals/delete.php") -> {

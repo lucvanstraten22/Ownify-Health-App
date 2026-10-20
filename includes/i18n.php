@@ -316,7 +316,10 @@ if (!function_exists('i18n_locale')) {
      */
     define('I18N_IDENTIFIERS', ['id', 'key', 'area', 'icon', 'type', 'kind', 'format', 'state', 'scale', 'tone',
         'availability', 'dots', 'per_day', 'locale', 'theme_color', 'theme_color_light', 'opens', 'provider',
-        'selected', 'domain', 'grid', 'lower', 'layout', 'units', 'accent']);
+        'selected', 'domain', 'grid', 'lower', 'layout', 'units', 'accent',
+        /* config/goals.php's catalogue (docs/GOALS.md): codes, never words. */
+        'category', 'default_direction', 'keywords', 'unit_code', 'unit_codes', 'imperial_unit', 'source_kind',
+        'source_key', 'canonical']);
 
     /**
      * Every built-in string in a config tree, translated: the copy files

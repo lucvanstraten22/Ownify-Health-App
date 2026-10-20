@@ -638,11 +638,11 @@ if (!function_exists('setup_stored')) {
      * normal rules (goal_create_from_input) once the person says yes.
      *
      *   sleep     at least 3 nights: the average, and the next half hour
-     *             above it as what makes a night count — 6:41 -> 7 uur — on
-     *             5 nights of a week. Nothing above 8 uur, where the sleep
+     *             above it as what each night of a week aims for — 6:41 ->
+     *             7 uur, a daily Streak. Nothing above 8 uur, where the sleep
      *             score's duration curve tops out.
      *   training  at least 3 workouts: their number per week, and one more,
-     *             counted over a week.
+     *             added up over a week (Optellen).
      *   weight    never: how much and which way is the person's own call.
      *
      * @param array $records nights and workouts of the last 14 days, as health_score_data() reads them
@@ -674,24 +674,23 @@ if (!function_exists('setup_stored')) {
 
                 $hours  = $target / 60;
                 $words  = setup_decimal_trim($hours);
-                $nightsInWeek = 5;
+                $name   = sprintf($s['sleep']['name'], $words);
 
+                /* A Streak, every night of one week: each night that makes
+                   it counts, and the week ends with the share that did. */
                 return [
                     'source' => 'sleep',
                     'basis'  => sprintf($s['sleep']['basis'][0], count($nights), setup_hours($average)),
-                    'name'   => sprintf($s['sleep']['name'], $nightsInWeek, $words),
+                    'name'   => $name,
                     'input'  => [
-                        'name'         => sprintf($s['sleep']['name'], $nightsInWeek, $words),
-                        'category'     => 'habit',
-                        'type'         => 'accumulate',
-                        'measure'      => 'days',
-                        'duration'     => 'week',
-                        'source_kind'  => 'metric',
-                        'source_key'   => 'sleep_duration',
-                        'daily_target' => rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.'),
-                        'target_value' => (string) $nightsInWeek,
+                        'name'         => $name,
+                        'measurement'  => 'sleep_duration',
+                        'type'         => 'streak',
+                        'variant'      => 'daily',
+                        'unit'         => 'h',
+                        'target_value' => rtrim(rtrim(number_format($hours, 2, '.', ''), '0'), '.'),
                         'direction'    => 'increase',
-                        'priority'     => 'primary',
+                        'duration'     => 'week',
                     ],
                 ];
             }
@@ -711,15 +710,11 @@ if (!function_exists('setup_stored')) {
                     'name'   => sprintf($s['training']['name'], $target),
                     'input'  => [
                         'name'         => sprintf($s['training']['name'], $target),
-                        'category'     => 'activity',
+                        'measurement'  => 'workouts',
                         'type'         => 'accumulate',
-                        'measure'      => 'amount',
-                        'duration'     => 'week',
-                        'source_kind'  => 'workout',
-                        'source_key'   => 'sessions',
+                        'unit'         => 'sessions',
                         'target_value' => (string) $target,
-                        'direction'    => 'increase',
-                        'priority'     => 'primary',
+                        'duration'     => 'week',
                     ],
                 ];
             }

@@ -61,24 +61,38 @@ if (!function_exists('goal_chart_build')) {
      */
     function goal_chart_unit(array $goal, ?string $mode = null): array
     {
-        require_once dirname(__DIR__) . '/includes/goal-progress.php';
+        require_once dirname(__DIR__) . '/includes/goal-catalogue.php';
 
-        if ($mode === 'streak' || $mode === 'count') {
+        if ($mode === 'count') {
             return ['word' => t('dagen'), 'one' => t('dag'), 'axis' => t('dagen'), 'scale' => 1.0, 'offset' => 0.0,
-                    'decimals' => 0, 'attached' => false, 'stored' => 'dagen'];
+                    'decimals' => 0, 'attached' => false];
         }
 
-        /* In the reader's language and units (goal_unit_shown()): a kg goal
-           in imperial is drawn in lb, from the same stored kilos. */
-        if (($goal['tracking'] ?? 'manual') !== 'auto') {
-            $unit = goal_unit_shown(['decimals' => 1] + goal_manual_unit($goal['target_unit'] ?? null));
-
-            return $unit + ['axis' => $unit['word']];
+        if ($mode === 'periods') {
+            [$one, $many] = match ((string) ($goal['period_unit'] ?? 'week')) {
+                'month'   => [t('maand'), t('maanden')],
+                'quarter' => [t('kwartaal'), t('kwartalen')],
+                'year'    => [t('jaar'), t('jaar')],
+                default   => [t('week'), t('weken')],
+            };
+            return ['word' => $many, 'one' => $one, 'axis' => $many, 'scale' => 1.0, 'offset' => 0.0,
+                    'decimals' => 0, 'attached' => false];
         }
 
-        $unit = goal_unit_shown(goal_source_unit($goal['source_kind'] ?? null, $goal['source_key'] ?? null));
+        /* The goal's own unit — the one it was made in, whatever the
+           account's units are: a goal in miles is drawn in miles. */
+        $code = $goal['unit']['code'] ?? null;
+        $unit = ($code !== null ? goal_unit((string) $code) : null) ?? goal_unit_custom((string) ($goal['unit']['label'] ?? ''));
 
-        return $unit + ['axis' => $unit['word']];
+        return [
+            'word'     => $unit['label'],
+            'one'      => $unit['one'],
+            'axis'     => $unit['label'],
+            'scale'    => 1 / (float) $unit['factor'],
+            'offset'   => 0.0,
+            'decimals' => (int) $unit['decimals'],
+            'attached' => (bool) $unit['attached'],
+        ];
     }
 
     /** Digits as the reader writes them (1.234,5 or 1,234.5), no trailing zeroes. */
@@ -246,7 +260,7 @@ if (!function_exists('goal_chart_build')) {
     function goal_chart_build(array $goal, array $series, ?DateTimeImmutable $today = null): array
     {
         $today  = $today ?? new DateTimeImmutable('today');
-        $mode   = (string) ($series['mode'] ?? 'best');
+        $mode   = (string) ($series['mode'] ?? 'value');
         $unit   = goal_chart_unit($goal, $mode);
         $points = $series['points'] ?? [];
 
@@ -308,7 +322,7 @@ if (!function_exists('goal_chart_build')) {
            a running total, a streak and a count of days, and for anything whose
            values already reach down near it — never for 74-82 kg, where it
            would flatten the only movement that matters. */
-        $counts = in_array($mode, ['total', 'streak', 'count'], true);
+        $counts = in_array($mode, ['total', 'periods', 'count'], true);
         if ($low >= 0 && ($counts || ($high > 0 && $low / $high < 0.5))) {
             $low = 0.0;
         }
@@ -363,7 +377,7 @@ if (!function_exists('goal_chart_build')) {
 
             if ($mode === 'total') {
                 $note[] = '+ ' . goal_chart_value($value - $prev, $unit, true);
-            } elseif ($mode === 'count' && $value > $prev) {
+            } elseif (($mode === 'count' || $mode === 'periods') && $value > $prev) {
                 $note[] = t('Gehaald');
             }
 
@@ -429,18 +443,9 @@ if (!function_exists('goal_chart_build')) {
             $offset += count($segment);
         }
 
-        /* A Mijlpaal is measured by its best result, so that is the point
-           the label names — not the latest, which may well be worse and
-           changes nothing. */
+        /* The latest point is the one the goal stands on now: a Mijlpaal
+           follows its latest measurement, a total and a count end there. */
         $bestIndex = null;
-        if ($mode === 'best' && !empty($series['best'])) {
-            foreach ($out as $i => $p) {
-                if ($p['date'] === $series['best']) {
-                    $bestIndex = $i;
-                    break;
-                }
-            }
-        }
 
         foreach ($out as $i => &$p) {
             $p['dot'] = $allDots || in_array($i, $lone, true) || $i === count($out) - 1 || $i === $bestIndex;
@@ -453,7 +458,7 @@ if (!function_exists('goal_chart_build')) {
         $endLabel  = [
             'x'     => $named['x'],
             'y'     => $named['y'],
-            'label' => $bestIndex === null ? $named['v'] : tf('Beste %s', $named['v']),
+            'label' => $named['v'],
             'below' => $named['y'] < 22,   // no room above a point at the top
             /* Ends at its point near the right edge, starts at it near the
                left, and sits over it in between — never off the plot. */
@@ -476,11 +481,11 @@ if (!function_exists('goal_chart_build')) {
 
         $span = $out[0]['d'] === $lastPoint['d'] ? $out[0]['d'] : tf('%1$s tot %2$s', $out[0]['d'], $lastPoint['d']);
         $summary = match ($mode) {
-            'streak' => tf('Streak per dag, %s: nu %s.', $span, $lastPoint['v']),
-            'count'  => tf('Gehaalde dagen, %s: %s.', $span, $lastPoint['v']),
-            'total'  => tf('Totaal, %s: %s.', $span, $lastPoint['v']),
-            default  => tn(count($out), '%d resultaat', '%d resultaten') . ', '
-                . tf('%1$s. Beste resultaat %2$s op %3$s.', $span, $named['v'], $named['d']),
+            'count'   => tf('Gehaalde dagen, %s: %s.', $span, $lastPoint['v']),
+            'periods' => tf('Gehaalde perioden, %s: %s.', $span, $lastPoint['v']),
+            'total'   => tf('Totaal, %s: %s.', $span, $lastPoint['v']),
+            default   => tn(count($out), '%d meting', '%d metingen') . ', '
+                . tf('%1$s. Laatste meting %2$s op %3$s.', $span, $named['v'], $named['d']),
         };
         if ($targetOut !== null) {
             $summary .= ' ' . $targetOut['label'] . '.';

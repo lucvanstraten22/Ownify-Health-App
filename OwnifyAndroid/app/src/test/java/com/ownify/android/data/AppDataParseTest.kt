@@ -108,7 +108,7 @@ class AppDataParseTest {
         assertEquals(listOf("sleep", "nutrition", "training"), data.overview.contributors.map { it.accent })
         assertEquals(listOf("high", "mid", "high"), data.overview.contributors.map { it.scoreBand })
         assertEquals("active", data.overview.goal.state)
-        assertEquals("0 dagen van 14 dagen op rij", data.overview.goal.unit)
+        assertEquals("3 van 31 dagen", data.overview.goal.unit)
         assertEquals(4, data.overview.goal.milestones.size)
 
         // Gezondheid: metrics printed as the template prints them.
@@ -123,24 +123,48 @@ class AppDataParseTest {
         assertTrue(data.health.trend.charts["sleep"]!!["week"]!!.hasData)
         assertEquals(300f, data.health.trend.width)
 
-        // Doelen
-        assertEquals(3, data.goals.used)
-        assertFalse(data.goals.canAdd)
+        // Doelen (config/goals.php, lib/goals.php): the six categories, the
+        // catalogue, Actief and Afgerond.
+        assertEquals(listOf("Slaap", "Voeding", "Training", "Activiteit", "Lichaam", "Herstel & balans"), data.goals.categories.map { it.label })
+        assertEquals(listOf("active" to "Actief", "completed" to "Afgerond"), data.goals.views)
+        val steps = data.goals.measurement("steps")!!
+        assertEquals(listOf("milestone", "streak", "accumulate"), steps.types)
+        assertEquals("activity", steps.category)
+        assertEquals(1, steps.popular)
+        assertEquals(listOf("kg", "lb"), data.goals.measurement("weight")!!.unitCodes)
+        assertEquals(0.45359237, data.goals.units.getValue("lb").factor, 1e-9)
+        assertTrue(data.goals.custom.custom)
+        assertEquals(listOf("1 week", "1 maand", "3 maanden", "6 maanden", "1 jaar"), data.goals.durations.map { it.label })
+        assertEquals(3, data.goals.durations.single { it.key == "quarter" }.months)
+        assertEquals(3, data.goals.wizard.steps.size)
+        assertEquals("Controleren", data.goals.wizard.review.label)
+        assertEquals("Hoger is beter" to "Hoger is beter: je voortgang groeit als je waarde stijgt.", data.goals.wizard.direction("increase", daily = false))
+        assertTrue("steps" in data.goals.userAuto)
+
+        assertEquals(4, data.goals.used)
+        assertTrue(data.goals.canAdd)
+        assertEquals(5, data.goals.limits)
         assertEquals("Elke dag 8.000 stappen", data.goals.primary!!.name)
         val bench = data.goals.all.single { it.name == "Bench press 100 kg" }
         assertEquals(85, bench.percent)
-        assertEquals("result", bench.entry!!.kind)
-        assertEquals("Beste 85 kg", bench.chart!!.end!!.label)
+        assertEquals("value", bench.entry!!.kind)
+        assertEquals("Eigen gewoonte", bench.measurementLabel)
         assertTrue(data.goals.all.single { it.name == "15 uur trainen" }.isPaused)
-        assertTrue(data.goals.completed.single().isCompleted)
+        val weekly = data.goals.all.single { it.name == "3 keer per week trainen" }
+        assertEquals("period", weekly.variant)
+        // A quarter of weeks from its start: 13 whole weeks, and one day left over that asks nothing.
+        assertEquals(14, weekly.periods.size)
+        assertEquals("Week 1", weekly.periods.first().label)
+        assertEquals("skipped", weekly.periods.last().state)
+        // Afgerond: the highest final percentage first; reached wears the award, ended does not.
+        assertEquals(listOf("Plank van 2 minuten", "Elke dag lezen"), data.goals.completed.map { it.name })
+        assertTrue(data.goals.completed.first().isReached)
+        assertEquals(40.0, data.goals.completed.last().finalPercent!!, 0.001)
+        assertTrue(data.goals.completed.all { it.isCompleted })
         val streak = data.goals.primary!!
-        assertEquals(31, streak.days.size)
-        assertEquals("8 sep · gehaald", streak.days[1].title)
-        assertTrue(data.goals.wizardSources.isNotEmpty())
-        assertEquals(6, data.goals.wizard.steps.size)
-        // The limit is the server's own (config/goals.php), never one of the app's:
-        // this recorded answer was made with a limit of 3, so 3 is what the app shows.
-        assertEquals(3, data.goals.limits)
+        assertTrue(streak.days.isNotEmpty())
+        assertEquals("daily", streak.variant)
+        // The limit is the server's own (config/goals.php), never one of the app's.
         assertEquals(7, Goals.parse(JSONObject("""{"limits":{"active":7},"used":2,"slots_left":5}""")).limits)
         assertEquals(5, Goals.parse(JSONObject("""{"used":2,"slots_left":3}""")).limits)
 
@@ -559,9 +583,9 @@ class AppDataParseTest {
         assertEquals("kg", setup.profile.fields[2].input!!.unit)
         // A first goal from the person's own data: the normal goal model's fields.
         val suggestion = setup.goal.suggestion!!
-        assertEquals("5 nachten van minstens 7 uur", suggestion.name)
-        assertEquals("accumulate", suggestion.input["type"])
-        assertEquals("sleep_duration", suggestion.input["source_key"])
+        assertEquals("Elke nacht minstens 7 uur", suggestion.name)
+        assertEquals("streak", suggestion.input["type"])
+        assertEquals("sleep_duration", suggestion.input["measurement"])
         assertEquals("Doel toegevoegd: X. Je vindt het bij Doelen.", setup.goal.addedText("X"))
     }
 

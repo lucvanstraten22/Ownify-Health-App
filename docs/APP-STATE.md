@@ -76,8 +76,11 @@ before 1.9.2, which draw it), `recommendation`, `leaderboard`,
     `has_data`; `health.trend.width` / `height`;
   - `goals.all.*.days.*.day` / `title` — the day calendar's numbers and
     titles ("12 sep · gehaald");
-  - `goals.wizard_sources` — the goal wizard's source list
-    (`goal_wizard_sources`);
+  - `goals.categories`, `measurements`, `custom`, `goal_units`, `types`,
+    `streak_variants`, `periods`, `durations`, `wizard` — the goal
+    catalogue the wizard is built from (`config/goals.php`, docs/GOALS.md),
+    with `user_auto` (what this account's data can already read) and
+    `units_system`;
   - `settings.pages.*.blocks.*.fields.*.state` / `value` / `blank` /
     `input` — each profile field as the settings page shows it
     (`settings_field_*`).

@@ -450,17 +450,18 @@ class OwnifyAppFlowTest {
         waitFor("Een paar gegevens over jou")
         button("Overslaan").performClick()
 
-        waitFor("5 nachten van minstens 7 uur")
+        waitFor("Elke nacht minstens 7 uur")
         compose.onNodeWithText("Een mogelijk eerste doel", ignoreCase = true).assertExists()
         compose.onNodeWithText("Je sliep de afgelopen 4 nachten gemiddeld 6:41.").assertExists()
         button("Toevoegen").performClick()
 
-        waitFor("Doel toegevoegd: 5 nachten van minstens 7 uur. Je vindt het bij Doelen.")
+        waitFor("Doel toegevoegd: Elke nacht minstens 7 uur. Je vindt het bij Doelen.")
         val goal = form(server.requestsTo("create.php").single())
-        assertEquals("accumulate", goal["type"])
-        assertEquals("sleep_duration", goal["source_key"])
-        assertEquals("7", goal["daily_target"])
-        assertEquals("5", goal["target_value"])
+        assertEquals("streak", goal["type"])
+        assertEquals("daily", goal["variant"])
+        assertEquals("sleep_duration", goal["measurement"])
+        assertEquals("h", goal["unit"])
+        assertEquals("7", goal["target_value"])
         // A suggestion is a possibility, never a claim.
         assertTrue(compose.onAllNodesWithText("realistisch", substring = true, ignoreCase = true).fetchSemanticsNodes().isEmpty())
         assertTrue(compose.onAllNodesWithText("Een mogelijk eerste doel", ignoreCase = true).fetchSemanticsNodes().isEmpty())
@@ -476,9 +477,9 @@ class OwnifyAppFlowTest {
         button("Doorgaan zonder koppelen").performClick()
         waitFor("Een paar gegevens over jou")
         button("Overslaan").performClick()
-        waitFor("5 nachten van minstens 7 uur")
+        waitFor("Elke nacht minstens 7 uur")
         button("Niet nu").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithText("5 nachten van minstens 7 uur").fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Elke nacht minstens 7 uur").fetchSemanticsNodes().isEmpty() }
 
         button("Zelf een doel instellen").performClick()
         waitFor("Waar gaat je doel over?")

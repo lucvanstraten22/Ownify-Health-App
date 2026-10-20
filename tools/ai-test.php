@@ -54,6 +54,7 @@ date_default_timezone_set('Europe/Amsterdam');
 require_once $root . '/includes/db.php';
 require_once $root . '/includes/devices.php';
 require_once $root . '/includes/ai/config.php';
+require_once $root . '/includes/goal-catalogue.php';
 
 if (!db_available() || !ai_installed()) {
     fwrite(STDERR, 'The database ' . getenv('DB_NAME') . " is unreachable or has no migration 015.\n");
@@ -548,14 +549,14 @@ try {
     $goalsBefore = (int) db_value('SELECT COUNT(*) FROM goals WHERE user_id = ?', [$sanne['id']]);
     forget_sent();
     gemini(calls('create_goal', [
-        'name' => '5 km onder 25 minuten', 'type' => 'milestone', 'category' => 'performance',
-        'source_kind' => 'manual', 'target_value' => 25, 'target_unit' => 'min', 'direction' => 'decrease', 'duration' => 'halfyear',
+        'name' => '5 km onder 25 minuten', 'measurement' => 'custom', 'category' => 'training', 'type' => 'milestone',
+        'unit' => 'min', 'target_value' => 25, 'baseline_value' => 28, 'direction' => 'decrease', 'duration' => 'halfyear',
     ]), says('Ik kan een doel toevoegen: 5 km in minder dan 25 minuten, binnen een half jaar. Zal ik het toevoegen?'));
     $r = chat($sanne, 'Maak een doel om 5 km onder de 25 minuten te lopen', $conversation);
     $proposal = $r['body']['messages'][1] ?? [];
     check('the answer carries the proposal, waiting', ($proposal['action']['state'] ?? null) === 'pending'
         && ($proposal['action']['title'] ?? null) === 'Nieuw doel: 5 km onder 25 minuten'
-        && str_contains((string) ($proposal['action']['summary'] ?? ''), 'Mijlpaal · 25 min · lager is beter · zelf bijhouden · looptijd: half jaar')
+        && str_contains((string) ($proposal['action']['summary'] ?? ''), 'Mijlpaal · 25 min · vanaf 28 min · zelf bijhouden · ')
         && ($proposal['action']['confirm'] ?? null) === 'Doel toevoegen', json_encode($proposal['action'] ?? null));
     check('Gemini was told nothing was created', str_contains(json_encode(sent()[1]['body']['contents'] ?? []), 'Nothing has been created'));
     check('and nothing was: no new goal', (int) db_value('SELECT COUNT(*) FROM goals WHERE user_id = ?', [$sanne['id']]) === $goalsBefore);
@@ -565,10 +566,13 @@ try {
     check('nor decline it', http('/api/ai/action.php', ['bearer' => $bram['token'], 'form' => ['message_id' => (string) $proposal['id'], 'decision' => 'decline']])['status'] === 404);
 
     $r = http('/api/ai/action.php', ['bearer' => $sanne['token'], 'form' => ['message_id' => (string) $proposal['id'], 'decision' => 'confirm']]);
-    $goal = db_one("SELECT id, name, goal_type, target_value, target_unit, direction, source_kind FROM goals WHERE user_id = ? AND name = '5 km onder 25 minuten'", [$sanne['id']]);
+    $goal = db_one("SELECT id, name, goal_type, target_value, unit_code, direction, tracking, baseline_value, category_code, end_date
+                      FROM goals WHERE user_id = ? AND name = '5 km onder 25 minuten'", [$sanne['id']]);
     check('Sanne confirms: the goal is there, as the wizard would have made it', $r['status'] === 200 && $goal !== null
-        && $goal['goal_type'] === 'milestone' && (float) $goal['target_value'] === 25.0 && $goal['target_unit'] === 'min'
-        && $goal['direction'] === 'decrease' && $goal['source_kind'] === 'manual', summary($r));
+        && $goal['goal_type'] === 'milestone' && (float) $goal['target_value'] === 25.0 && $goal['unit_code'] === 'min'
+        && (float) $goal['baseline_value'] === 28.0 && $goal['category_code'] === 'training'
+        && $goal['direction'] === 'decrease' && $goal['tracking'] === 'manual'
+        && $goal['end_date'] === goal_duration_end(new DateTimeImmutable('today'), 'halfyear')->format('Y-m-d'), summary($r) . ' ' . json_encode($goal));
     check('the proposal says done, and Ownify says so in a note', ($r['body']['messages'][0]['action']['state'] ?? null) === 'done'
         && ($r['body']['messages'][1]['role'] ?? null) === 'system'
         && str_contains((string) ($r['body']['messages'][1]['text'] ?? ''), 'toegevoegd'), json_encode($r['body']['messages'] ?? null));
@@ -577,11 +581,11 @@ try {
     check('the goals page shows it', str_contains(json_encode(http('/api/app/state.php', ['bearer' => $sanne['token']])['body']['data']['goals'] ?? []), '5 km onder 25 minuten'));
 
     forget_sent();
-    gemini(calls('create_goal', ['name' => 'Afvallen', 'type' => 'milestone', 'category' => 'weight', 'source_kind' => 'measurement', 'source_key' => 'weight', 'target_value' => 70]),
-        says('Wil je dat een lager gewicht beter is?'));
+    gemini(calls('create_goal', ['name' => 'Afvallen', 'measurement' => 'weight', 'type' => 'accumulate', 'unit' => 'kg', 'target_value' => 70, 'duration' => 'month']),
+        says('Een gewicht kun je niet optellen. Zal ik er een mijlpaal van maken?'));
     $r = chat($sanne, 'Maak een doel: 70 kilo', $conversation);
     check('a proposal the wizard would refuse is not prepared; Gemini hears why',
-        no_proposal($r) && str_contains(sent_raw(1), 'Kies of een hoger of een lager resultaat beter is'), summary($r));
+        no_proposal($r) && str_contains(sent_raw(1), 'kun je niet zo meten'), summary($r));
 
     $bramGoal = (int) db_value('SELECT id FROM goals WHERE user_id = ? LIMIT 1', [$sanne['id']]);
     forget_sent();

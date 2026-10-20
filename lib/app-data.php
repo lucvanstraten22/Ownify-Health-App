@@ -311,8 +311,7 @@ if (!function_exists('app_page_data')) {
      *                      `has_data` (health_series_has_data)
      *   goals.all.*.days.* `day` (the date's day of the month) and `title`
      *                      ("12 sep · gehaald"), as the calendar prints them
-     *   goals.wizard_sources
-     *                      the wizard's source list (goal_wizard_sources)
+     *   goals.units_system the account's units, which the wizard starts in
      *   settings.pages.*.blocks.*.fields.*
      *                      `state`, `value`, `blank` and — for a field that
      *                      opens the editor — `input` (settings_field_*)
@@ -360,7 +359,7 @@ if (!function_exists('app_page_data')) {
             }
         }
 
-        /* Goals: the calendar's day numbers and titles, and the wizard's sources. */
+        /* Goals: the calendar's day numbers and titles. */
         foreach ($data['goals']['all'] ?? [] as $g => $goal) {
             foreach ($goal['days'] ?? [] as $d => $day) {
                 if (($day['state'] ?? null) === 'before' || empty($day['date'])) {
@@ -382,8 +381,9 @@ if (!function_exists('app_page_data')) {
             }
         }
 
+        /* The account's units, for the wizard's first unit (Imperiaal: lb, mi…). */
         if (isset($data['goals'])) {
-            $data['goals']['wizard_sources'] = goal_wizard_sources();
+            $data['goals']['units_system'] = units_system();
         }
 
         /* Settings: each profile field as components/settings-field.php shows it. */

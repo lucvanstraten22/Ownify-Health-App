@@ -8,7 +8,7 @@
  * stops. Everything deeper lives behind the card, in the detail layer.
  *
  * Both views are rendered server-side and switched with a class, exactly like
- * the community boards, so Actief/Behaald costs nothing and works before the
+ * the community boards, so Actief/Afgerond costs nothing and works before the
  * JavaScript has run. The empty state ships alongside the list rather than
  * instead of it, so deleting the last goal has something to fall back to.
  */
@@ -53,7 +53,7 @@ $copy = goals_script_copy($goals);
                         'segment_options'  => $goals['views'],
                         'segment_selected' => $view,
                         'segment_attr'     => 'data-goal-view',
-                        'segment_label'    => t('Actieve of behaalde doelen'),
+                        'segment_label'    => t('Actieve of afgeronde doelen'),
                     ]);
                     ?>
 
@@ -95,7 +95,7 @@ $copy = goals_script_copy($goals);
 
                 </div>
 
-                <!-- ----------------------------------------------- behaald -->
+                <!-- ---------------------------------------------- afgerond -->
                 <div class="goals-view" data-goal-panel="completed" aria-hidden="true" inert>
 
                     <?php if ($goals['completed'] === []): ?>
@@ -114,7 +114,7 @@ $copy = goals_script_copy($goals);
                             <?php endforeach; ?>
                         </div>
 
-                        <p class="goals-slots"><?= e(tf('Behaalde doelen tellen niet mee voor je %d actieve plekken.', (int) $goals['limits']['active'])) ?></p>
+                        <p class="goals-slots"><?= e(tf('Afgeronde doelen tellen niet mee voor je %d actieve plekken.', (int) $goals['limits']['active'])) ?></p>
 
                     <?php endif; ?>
 

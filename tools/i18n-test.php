@@ -161,19 +161,21 @@ check('Dutch and imperial together: "176,4 lb"', units_format(80.0, 'kg') === '1
 section('4. A goal\'s unit, shown and typed');
 
 i18n_force('en', 'imperial');
-$kg   = goal_source_unit('measurement', 'weight');
-$seen = goal_unit_shown($kg);
-check('a weight goal reads in lb', $seen['word'] === 'lb' && goal_unit_text(80.0, $kg) === '176.4 lb');
-check('176.4 lb typed is 80 kg stored', near(goal_unit_typed(176.369809748, $seen), 80.0, 1e-6));
-$km = goal_source_unit('metric', 'distance');
-check('a distance goal reads in mi', goal_unit_text(42.195, $km) === '26.2 mi');
-check('sleep stays hours, steps stay steps (in English)', goal_unit_text(480.0, goal_source_unit('metric', 'sleep_duration')) === '8 h'
-    && goal_unit_text(10425.0, goal_source_unit('metric', 'steps')) === '10,425 steps');
-check('a difference takes no offset (°C → °F)', goal_unit_text(1.0, goal_source_unit('metric', 'skin_temp'), true) === '1.8 °F');
+$lb = goal_unit('lb');
+check('an imperial reader\'s weight goal starts in lb', goal_default_unit(goal_measurement('weight')) === 'lb' && goal_value_text(80.0, $lb) === '176.4 lb');
+check('176.4 lb typed is 80 kg stored', near(goal_to_stored(176.369809748, $lb), 80.0, 1e-6));
+check('a distance goal starts in mi: 42.195 km reads 26.2 mi', goal_default_unit(goal_measurement('distance')) === 'mi'
+    && goal_value_text(42.195, goal_unit('mi')) === '26.2 mi');
+check('sleep stays hours, steps stay steps (in English)', goal_value_text(480.0, goal_unit('h')) === '8 h'
+    && goal_value_text(10425.0, goal_unit('steps')) === '10,425 steps');
+check('a goal kept in kg stays kg for an imperial reader: the unit is the goal\'s', goal_value_text(80.0, goal_unit('kg')) === '80 kg');
+check('an own habit can be kept in mi or lb too', in_array('lb', goal_measurement('custom')['unit_codes'], true)
+    && in_array('mi', goal_measurement('custom')['unit_codes'], true));
 i18n_force('nl', 'metric');
-check('Dutch metric is as it always was: "80 kg", "10.425 stappen", "8 uur"', goal_unit_text(80.0, $kg) === '80 kg'
-    && goal_unit_text(10425.0, goal_source_unit('metric', 'steps')) === '10.425 stappen'
-    && goal_unit_text(480.0, goal_source_unit('metric', 'sleep_duration')) === '8 uur');
+check('Dutch metric is as it always was: "80 kg", "10.425 stappen", "8 uur"', goal_value_text(80.0, goal_unit('kg')) === '80 kg'
+    && goal_default_unit(goal_measurement('weight')) === 'kg'
+    && goal_value_text(10425.0, goal_unit('steps')) === '10.425 stappen'
+    && goal_value_text(480.0, goal_unit('h')) === '8 uur');
 
 section('5. The catalogue');
 
@@ -348,7 +350,10 @@ function state_texts(mixed $node, string $key = ''): array
                     'locale', 'chosen', 'units', 'focus', 'selected', 'field', 'opens', 'dots', 'per_day', 'domain',
                     'line', 'area_path', 'path', 'd', 'x', 'y', 'theme_color', 'theme_color_light', 'tagline_app', 'unit_key',
                     'target_unit', 'post_unit', 'value_key', 'goal', 'user', 'identities', 'question_id', 'grid', 'lower',
-                    'layout', 'edit', 'step', 'min', 'max'];
+                    'layout', 'edit', 'step', 'min', 'max',
+                    /* A measurement's search words hold both languages on purpose: "slapen" finds Slaapduur in either. */
+                    'keywords', 'unit_codes', 'unit_code', 'imperial_unit', 'canonical', 'default_direction', 'user_auto',
+                    'units_system', 'week_start', 'measurement', 'variant', 'period_unit', 'outcome', 'tracking'];
     if (is_array($node)) {
         $out = [];
         foreach ($node as $k => $v) {
@@ -676,34 +681,34 @@ try {
     $r = http('/api/profile/update.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => ['weight' => '1000', 'weight_unit' => 'lb']]);
     check('the limits are the stored ones: 1000 lb (454 kg) refused, in English', $r['status'] === 422 && ($r['body']['error'] ?? '') === 'Enter a valid value for weight.', summary($r));
 
+    /* No unit named: an imperial reader's default — lb, mi. */
     $goal = http('/api/goals/create.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => [
-        'name' => 'Reach my weight', 'category' => 'weight', 'type' => 'milestone', 'duration' => 'quarter',
-        'source_kind' => 'measurement', 'source_key' => 'weight', 'target_value' => '165', 'direction' => 'decrease',
-        'input_units' => 'imperial', 'priority' => 'primary',
+        'name' => 'Reach my weight', 'measurement' => 'weight', 'type' => 'milestone', 'duration' => 'quarter',
+        'target_value' => '165', 'direction' => 'decrease',
     ]]);
-    $row = db_one('SELECT target_value, target_unit FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Reach my weight']);
-    check('a weight goal of 165 lb is stored as 74.843 kg, kg', ($goal['body']['ok'] ?? false) === true && $row !== null
-        && near((float) $row['target_value'], 74.843, 0.001) && $row['target_unit'] === 'kg', summary($goal) . json_encode($row));
+    $row = db_one('SELECT target_value, unit_code FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Reach my weight']);
+    check('a weight goal of 165 lb is stored as 74.843 kg, kept in lb', ($goal['body']['ok'] ?? false) === true && $row !== null
+        && near((float) $row['target_value'], 74.843, 0.001) && $row['unit_code'] === 'lb', summary($goal) . json_encode($row));
 
     $goal = http('/api/goals/create.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => [
-        'name' => 'Run a lot', 'category' => 'activity', 'type' => 'accumulate', 'measure' => 'amount', 'duration' => 'month',
-        'source_kind' => 'metric', 'source_key' => 'distance', 'target_value' => '50', 'direction' => 'increase',
-        'input_units' => 'imperial',
+        'name' => 'Run a lot', 'measurement' => 'distance', 'type' => 'accumulate', 'duration' => 'month', 'target_value' => '50',
     ]]);
-    $row = db_one('SELECT target_value, target_unit FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Run a lot']);
-    check('a distance goal of 50 mi is stored as 80.467 km', ($goal['body']['ok'] ?? false) === true && $row !== null
-        && near((float) $row['target_value'], 80.467, 0.001) && $row['target_unit'] === 'km', summary($goal) . json_encode($row));
+    $row = db_one('SELECT target_value, unit_code FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Run a lot']);
+    check('a distance goal of 50 mi is stored as 80.467 km, kept in mi', ($goal['body']['ok'] ?? false) === true && $row !== null
+        && near((float) $row['target_value'], 80.467, 0.001) && $row['unit_code'] === 'mi', summary($goal) . json_encode($row));
 
     $goal = http('/api/goals/create.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => [
-        'name' => 'Bench press', 'category' => 'strength', 'type' => 'milestone', 'duration' => 'quarter',
-        'source_kind' => 'manual', 'target_value' => '225', 'target_unit' => 'kg', 'direction' => 'increase', 'input_units' => 'imperial',
+        'name' => 'Bench press', 'measurement' => 'custom', 'category' => 'training', 'type' => 'milestone', 'duration' => 'quarter',
+        'unit' => 'lb', 'target_value' => '225', 'baseline_value' => '135', 'direction' => 'increase',
     ]]);
-    $bench = db_one('SELECT id, target_value, target_unit FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Bench press']);
-    check('a goal kept by hand, 225 lb, is stored as 102.058 kg', ($goal['body']['ok'] ?? false) === true && $bench !== null
-        && near((float) $bench['target_value'], 102.058, 0.001) && $bench['target_unit'] === 'kg', summary($goal) . json_encode($bench));
-    $r = http('/api/goals/progress.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => ['goal_id' => $bench['id'], 'value' => '200', 'input_units' => 'imperial']]);
-    $entry = (float) db_value('SELECT current_value FROM goal_progress WHERE goal_id = ? ORDER BY id DESC LIMIT 1', [$bench['id']]);
-    check('a result of 200 lb is stored as 90.718 kg', ($r['body']['ok'] ?? false) === true && near($entry, 90.718, 0.001), summary($r) . ' ' . $entry);
+    $bench = db_one('SELECT id, target_value, baseline_value, unit_code FROM goals WHERE user_id = ? AND name = ?', [$ana['id'], 'Bench press']);
+    check('a goal kept by hand, 135 → 225 lb, is stored as 61.235 → 102.058 kg', ($goal['body']['ok'] ?? false) === true && $bench !== null
+        && near((float) $bench['target_value'], 102.058, 0.001) && near((float) $bench['baseline_value'], 61.235, 0.001) && $bench['unit_code'] === 'lb',
+        summary($goal) . json_encode($bench));
+    $r = http('/api/goals/progress.php', ['bearer' => $ana['token'], 'lang' => 'en-US', 'form' => ['goal_id' => $bench['id'], 'value' => '200']]);
+    $entry = (float) db_value('SELECT current_value FROM goal_progress WHERE goal_id = ? ORDER BY recorded_on DESC LIMIT 1', [$bench['id']]);
+    check('a result of 200 lb is stored as 90.718 kg, and 135 → 225 at 200 is 72%', ($r['body']['ok'] ?? false) === true && near($entry, 90.718, 0.001)
+        && ($r['body']['percent'] ?? null) === 72, summary($r) . ' ' . $entry);
 
     $imp   = state($ana, 'en-US');
     $goals = [];
@@ -712,8 +717,8 @@ try {
     }
     check('the weight goal reads its target in lb', ($goals['Reach my weight']['target_label'] ?? null) === '165 lb', json_encode($goals['Reach my weight']['target_label'] ?? null));
     check('the distance goal reads 50 mi', ($goals['Run a lot']['target_label'] ?? null) === '50 mi', json_encode($goals['Run a lot']['target_label'] ?? null));
-    check('the hand-kept goal: best 200 lb of 225 lb, and 88% from the stored kilos', ($goals['Bench press']['current_label'] ?? null) === '200 lb'
-        && ($goals['Bench press']['target_label'] ?? null) === '225 lb' && ($goals['Bench press']['percent'] ?? null) === 88,
+    check('the hand-kept goal: latest 200 lb of 225 lb, and 72% from the stored kilos', ($goals['Bench press']['current_label'] ?? null) === '200 lb'
+        && ($goals['Bench press']['target_label'] ?? null) === '225 lb' && ($goals['Bench press']['percent'] ?? null) === 72,
         json_encode([$goals['Bench press']['current_label'] ?? null, $goals['Bench press']['target_label'] ?? null, $goals['Bench press']['percent'] ?? null]));
     check('its entry box asks in lb', ($goals['Bench press']['entry']['unit'] ?? null) === 'lb');
     check('its chart is drawn in lb', str_contains(json_encode($goals['Bench press']['chart'] ?? []), ' lb'));
@@ -727,9 +732,9 @@ try {
     foreach ($back['goals']['all'] ?? [] as $g) {
         $goals[$g['name']] = $g;
     }
-    check('the hand-kept goal reads its stored kilos again: 90.72 kg of 102.06 kg, still 88%',
-        ($goals['Bench press']['current_label'] ?? null) === '90.72 kg' && ($goals['Bench press']['target_label'] ?? null) === '102.06 kg'
-        && ($goals['Bench press']['percent'] ?? null) === 88,
+    check('a goal keeps the unit it was made in: still 200 lb of 225 lb, still 72%',
+        ($goals['Bench press']['current_label'] ?? null) === '200 lb' && ($goals['Bench press']['target_label'] ?? null) === '225 lb'
+        && ($goals['Bench press']['percent'] ?? null) === 72,
         json_encode([$goals['Bench press']['current_label'] ?? null, $goals['Bench press']['target_label'] ?? null]));
     check('switching units changed no row', rows_of($ana['id']) === $snapshot);
     $strip = static fn (array $s): string => json_encode([$s['health']['areas']['training']['view']['details'] ?? null, $s['health']['metrics'] ?? null]);

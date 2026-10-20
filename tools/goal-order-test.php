@@ -42,16 +42,23 @@ function goal(string $name, ?int $percent, ?int $endsInDays, string $priority = 
 {
     static $id = 0;
 
+    /* The board's today is 1 October 2026 (board()). Every goal has an end
+       date now; "none" stands for one far beyond the others. */
+    $today = new DateTimeImmutable('2026-10-01');
+
     return [
-        'id'               => (string) ++$id,
-        'name'             => $name,
-        'category'         => 'activity',
-        'type'             => 'milestone',
-        'priority'         => $priority,
-        'status'           => $status,
-        'percent'          => $percent,
-        'ends_in_days'     => $endsInDays,
-        'started_days_ago' => 10,
+        'id'           => (string) ++$id,
+        'name'         => $name,
+        'category'     => 'activity',
+        'type'         => 'milestone',
+        'priority'     => $priority,
+        'status'       => $status,
+        'percent'      => $percent,
+        'start_date'   => $today->modify('-10 days')->format('Y-m-d'),
+        'end_date'     => $today->modify('+' . ($endsInDays ?? 900) . ' days')->format('Y-m-d'),
+        'created_at'   => '2026-09-21 09:00:00',
+        'completed_at' => $status === 'completed' ? '2026-10-01 09:00:00' : null,
+        'final_percent' => $status === 'completed' ? 100.0 : null,
     ];
 }
 
@@ -94,9 +101,9 @@ echo "\nRule 3 — equal percentages: the one that ends soonest first\n";
 expect('60% to 10 November, 12 October, 25 October',
     [$main(), goal('10 nov', 60, 40), goal('12 okt', 60, 11), goal('25 okt', 60, 24)],
     'Hoofddoel', '12 okt, 25 okt, 10 nov');
-expect('an equal percentage without an end date comes after those with one',
-    [$main(), goal('geen einddatum', 60, null), goal('12 okt', 60, 11)],
-    'Hoofddoel', '12 okt, geen einddatum');
+expect('an equal percentage that ends much later comes after those ending sooner',
+    [$main(), goal('veel later', 60, null), goal('12 okt', 60, 11)],
+    'Hoofddoel', '12 okt, veel later');
 
 echo "\nRule 2 — no percentage goes below every percentage, and 0% is a percentage\n";
 expect('a real 0% comes before a goal with no percentage',
@@ -263,7 +270,7 @@ foreach ([
     [$deleted, $completed, $history] = both_ways($secondary);
     check("$label: $expected, deleted or completed", $deleted === $expected && $completed === $expected,
         "deleted → $deleted, completed → $completed");
-    check('  and the completed goal is under Behaald', $history === 'Hoofddoel', $history);
+    check('  and the completed goal is under Afgerond', $history === 'Hoofddoel', $history);
 }
 
 echo "\nAanpassen — Primair | Secundair\n";
@@ -325,13 +332,13 @@ expect('equal 60%: C (ends sooner) primary; A (70%) first, then B', made_seconda
 $g = [$A(50, 20, 'primary'), goal('B', null, 5), goal('C', 10, 40)];
 expect('no-data B ends sooner, but C has 10%: C primary; A, then B', made_secondary($g, 'A'), 'C', 'A, B');
 $g = [$A(40, 20, 'primary'), goal('B', null, 30), goal('C', null, null), goal('D', null, 10)];
-expect('only no-data goals left: D (ends soonest) primary; A (40%), B, then C (no end date)', made_secondary($g, 'A'), 'D', 'A, B, C');
+expect('only no-data goals left: D (ends soonest) primary; A (40%), B, then C (ends last)', made_secondary($g, 'A'), 'D', 'A, B, C');
 
 /* The old primary goal placed by the end-date rules among equals. */
 $g = [$A(60, 5, 'primary'), goal('B', 60, 20), goal('C', 60, 3)];
 expect('all 60%: C (ends in 3) primary; A (ends in 5) before B (20)', made_secondary($g, 'A'), 'C', 'A, B');
 $g = [$A(60, null, 'primary'), goal('B', 60, 20), goal('C', 60, 3)];
-expect('all 60%, A without an end date: C primary; B, then A last', made_secondary($g, 'A'), 'C', 'B, A');
+expect('all 60%, A ending last: C primary; B, then A last', made_secondary($g, 'A'), 'C', 'B, A');
 
 /* A real 0% is a percentage. */
 $g = [$A(30, 20, 'primary'), goal('nul', 0, 90), goal('leeg', null, 1)];

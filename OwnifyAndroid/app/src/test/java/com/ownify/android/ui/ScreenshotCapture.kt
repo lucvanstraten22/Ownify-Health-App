@@ -546,10 +546,9 @@ class ScreenshotCapture {
     @Test fun account() = panel(Overlay.Account(), "account")
     @Test fun devices() = panel(Overlay.Devices, "devices")
     /**
-     * The six steps, walked the way web-shots.mjs walks them: Activiteit, a
-     * suggested name, Mijlpaal, kept by hand, 100 km and higher is better, a
-     * month. On an account with a free goal slot (the demo account's three
-     * are taken, and then the website's + is disabled).
+     * The three steps and the review: Activiteit, Stappen; a suggested name
+     * and Streak; 8.000 a day for three months. On an account with a free
+     * goal slot.
      */
     @Test
     fun wizard() {
@@ -559,26 +558,18 @@ class ScreenshotCapture {
         settle()
         shoot("wizard-1")
         tap("Activiteit")
+        tap("Stappen")
         shoot("wizard-1b")
         tap("Volgende")
-        shoot("wizard-2")
         tap("10.000 stappen per dag")
-        tap("Mijlpaal")
-        shoot("wizard-2b")
+        tap("Streak")
+        shoot("wizard-2")
         tap("Volgende")
+        type("Per dag", "8000")
+        tap("3 maanden")
         shoot("wizard-3")
-        tap("Geen data mogelijk")
         tap("Volgende")
-        shoot("wizard-4")
-        type("Welk resultaat wil je halen?", "100")
-        type("Eenheid", "km")
-        tap("Hoger is beter")
-        shoot("wizard-4b")
-        tap("Volgende")
-        shoot("wizard-5")
-        tap("Maand")
-        tap("Volgende")
-        shoot("wizard-6")
+        shoot("wizard-review")
     }
 
     private fun tap(text: String) {

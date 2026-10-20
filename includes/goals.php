@@ -29,11 +29,11 @@ if (!function_exists('goals_for_user')) {
     function goals_for_user(int $userId, ?string $status = 'active'): array
     {
         if ($status === null) {
-            return db_all('SELECT * FROM goals WHERE user_id = ? ORDER BY start_date DESC, id DESC', [$userId]);
+            return db_all('SELECT * FROM goals WHERE user_id = ? ORDER BY created_at DESC, id DESC', [$userId]);
         }
 
         return db_all(
-            'SELECT * FROM goals WHERE user_id = ? AND status = ? ORDER BY start_date DESC, id DESC',
+            'SELECT * FROM goals WHERE user_id = ? AND status = ? ORDER BY created_at DESC, id DESC',
             [$userId, $status]
         );
     }
@@ -44,8 +44,13 @@ if (!function_exists('goals_for_user')) {
     }
 
     /**
-     * Creates a goal, subject to the board's limits.
-     * Returns the new id, or null when the board is full.
+     * Stores a goal that includes/goal-create.php has checked, subject to
+     * the board's limits. Returns the new id, or null when the board is full
+     * or it could not be stored.
+     *
+     * The first goal on the board is the primary goal, every later one
+     * secondary — nobody is asked. Which is which can be changed on the
+     * goal's own page (goal_set_primary(), goal_set_secondary()).
      */
     function goal_create(int $userId, array $goal): ?int
     {
@@ -53,88 +58,38 @@ if (!function_exists('goals_for_user')) {
             return null;
         }
 
-        $wantsPrimary = ($goal['priority'] ?? 'secondary') === 'primary';
+        $statement = db_run(
+            'INSERT INTO goals
+                (user_id, name, category_code, measurement_code, goal_type, streak_variant, tracking,
+                 unit_code, custom_unit, direction, target_value, frequency, period_unit,
+                 baseline_value, baseline_on, baseline_source, start_date, end_date,
+                 status, priority, create_token)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'active\', \'secondary\', ?)',
+            [
+                $userId,
+                $goal['name'],
+                $goal['category_code'],
+                $goal['measurement_code'] ?? null,
+                $goal['goal_type'],
+                $goal['streak_variant'] ?? null,
+                $goal['tracking'] ?? 'manual',
+                $goal['unit_code'] ?? null,
+                $goal['custom_unit'] ?? null,
+                $goal['direction'] ?? 'increase',
+                $goal['target_value'] ?? null,
+                $goal['frequency'] ?? null,
+                $goal['period_unit'] ?? null,
+                $goal['baseline_value'] ?? null,
+                $goal['baseline_on'] ?? null,
+                $goal['baseline_source'] ?? null,
+                $goal['start_date'],
+                $goal['end_date'],
+                $goal['create_token'] ?? null,
+            ]
+        );
 
-        require_once __DIR__ . '/goal-progress.php';
-
-        $sourceKind = $goal['source_kind'] ?? 'manual';
-        $sourceKey  = $goal['source_key'] ?? null;
-        $isAuto     = $sourceKind !== 'manual' && goal_source_find($sourceKind, $sourceKey) !== null;
-
-        /* Mijlpaal, Streak or Optellen, written in whichever vocabulary the
-           column has — before migration 007 it only knows the old four. */
-        $kind     = $goal['kind'] ?? 'milestone';
-        $goalType = goal_kind_to_db($kind);
-
-        /* A metric source also fills metric_type_id, so everything written
-           before source_kind existed keeps reading the column it expects. */
-        $metricTypeId = $isAuto && $sourceKind === 'metric'
-            ? health_metric_type_id((string) $sourceKey)
-            : (isset($goal['metric_code']) ? health_metric_type_id($goal['metric_code']) : null);
-
-        /* The baseline, read now rather than later — for a Mijlpaal, the one
-           type measured from somewhere. A goal to get down to 80 kg cannot be
-           measured against where you started unless somebody wrote down where
-           you started, and the only moment that is knowable is this one.
-           Null when there is no reading yet, and null stays null: a baseline
-           we invent is a percentage we invent. A Streak and an Optellen goal
-           start from nothing by definition, so they have none. */
-        $startValue = $kind === 'milestone' ? ($goal['start_value'] ?? null) : null;
-
-        if ($isAuto && $kind === 'milestone' && $startValue === null) {
-            $startValue = goal_source_latest($userId, (string) $sourceKind, (string) $sourceKey);
-        }
-
-        if (!goal_sources_available()) {
-            /* Migration 006 is not in yet. Write what the old schema holds, so
-               creating a goal keeps working exactly as it did. */
-            db_run(
-                'INSERT INTO goals
-                    (user_id, name, category, goal_type, metric_type_id, target_value,
-                     target_unit, direction, start_date, end_date, status, priority)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    $userId,
-                    $goal['name'],
-                    $goal['category'] ?? 'general',
-                    $goalType,
-                    $metricTypeId,
-                    $goal['target_value'] ?? null,
-                    $goal['target_unit'] ?? null,
-                    $goal['direction'] ?? 'increase',
-                    $goal['start_date'] ?? date('Y-m-d'),
-                    $goal['end_date'] ?? null,
-                    $goal['status'] ?? 'active',
-                    'secondary',
-                ]
-            );
-        } else {
-            db_run(
-                'INSERT INTO goals
-                    (user_id, name, category, goal_type, tracking_mode, source_kind, source_key,
-                     metric_type_id, target_value, start_value, daily_target,
-                     target_unit, direction, start_date, end_date, status, priority)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    $userId,
-                    $goal['name'],
-                    $goal['category'] ?? 'general',
-                    $goalType,
-                    $isAuto ? 'auto' : 'manual',
-                    $isAuto ? $sourceKind : 'manual',
-                    $isAuto ? $sourceKey : null,
-                    $metricTypeId,
-                    $goal['target_value'] ?? null,
-                    $startValue,
-                    $goal['daily_target'] ?? null,
-                    $goal['target_unit'] ?? null,
-                    $goal['direction'] ?? 'increase',
-                    $goal['start_date'] ?? date('Y-m-d'),
-                    $goal['end_date'] ?? null,
-                    $goal['status'] ?? 'active',
-                    'secondary',
-                ]
-            );
+        if ($statement === null) {
+            return null;
         }
 
         $goalId = db_insert_id();
@@ -143,47 +98,19 @@ if (!function_exists('goals_for_user')) {
             return null;
         }
 
-        /* Promotion is a swap, so it runs through the one function that knows
-           how to do it. A first goal becomes primary either way. */
-        if ($wantsPrimary) {
-            goal_set_primary($userId, $goalId);
-        } else {
-            goal_ensure_primary($userId);
-        }
+        /* A board without a primary goal gets this one: the first goal made
+           is primary, the next ones are secondary. */
+        goal_ensure_primary($userId, $goalId);
 
         return $goalId;
     }
 
-    /** History for the progress chart, and the value for goals without a metric. */
-    function goal_record_progress(int $userId, int $goalId, ?float $currentValue, ?float $percent = null): bool
+    /** The goal a wizard already made with this one-time key, if it did. */
+    function goal_by_token(int $userId, string $token): ?int
     {
-        if (goal_get($userId, $goalId) === null) {
-            return false;   // not this user's goal
-        }
+        $id = db_value('SELECT id FROM goals WHERE user_id = ? AND create_token = ?', [$userId, $token]);
 
-        db_run(
-            'INSERT INTO goal_progress (goal_id, recorded_on, current_value, percent_complete)
-                  VALUES (?, CURDATE(), ?, ?)
-             ON DUPLICATE KEY UPDATE current_value = VALUES(current_value),
-                                     percent_complete = VALUES(percent_complete),
-                                     computed_at = NOW()',
-            [$goalId, $currentValue, $percent]
-        );
-
-        return true;
-    }
-
-    function goal_latest_progress(int $userId, int $goalId): ?array
-    {
-        return db_one(
-            'SELECT p.recorded_on, p.current_value, p.percent_complete
-               FROM goal_progress p
-               JOIN goals g ON g.id = p.goal_id
-              WHERE p.goal_id = ? AND g.user_id = ?
-           ORDER BY p.recorded_on DESC
-              LIMIT 1',
-            [$goalId, $userId]
-        );
+        return $id === null ? null : (int) $id;
     }
 
     /* ====================================================================
@@ -277,7 +204,7 @@ if (!function_exists('goals_for_user')) {
 
         $next = db_value(
             "SELECT id FROM goals WHERE user_id = ? AND status IN ('active','paused')
-              ORDER BY start_date, id LIMIT 1",
+              ORDER BY created_at, id LIMIT 1",
             [$userId]
         );
 
@@ -287,31 +214,34 @@ if (!function_exists('goals_for_user')) {
     }
 
     /**
-     * Moves a goal between statuses.
+     * Pauses or resumes a goal that is still running. Finishing is the
+     * engine's (goal_finish() in includes/goal-progress.php): a finished goal
+     * keeps its final percentage and is never moved back.
      *
      * The user id is part of the WHERE clause, not a check before it: a goal
      * id that belongs to someone else simply matches no row.
      */
     function goal_set_status(int $userId, int $goalId, string $status): bool
     {
-        if (!in_array($status, ['active', 'paused', 'completed', 'abandoned'], true)) {
+        if (!in_array($status, ['active', 'paused'], true)) {
             return false;
         }
 
         $statement = db_run(
-            'UPDATE goals SET status = ? WHERE id = ? AND user_id = ?',
+            "UPDATE goals SET status = ? WHERE id = ? AND user_id = ? AND status IN ('active','paused')",
             [$status, $goalId, $userId]
         );
 
-        if ($statement === null || $statement->rowCount() === 0) {
+        if ($statement === null) {
             return false;
         }
 
-        if ($status === 'completed') {
-            goal_ensure_primary_after_completion($userId);
-        } else {
-            goal_ensure_primary($userId);
+        if ($statement->rowCount() === 0) {
+            /* Already so — or not a running goal of this user's. */
+            return db_value("SELECT status FROM goals WHERE id = ? AND user_id = ?", [$goalId, $userId]) === $status;
         }
+
+        goal_ensure_primary($userId);
 
         return true;
     }

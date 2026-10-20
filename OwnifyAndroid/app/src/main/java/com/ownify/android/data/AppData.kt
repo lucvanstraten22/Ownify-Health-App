@@ -1361,17 +1361,27 @@ data class Goals(
     val limits: Int,
     val views: List<Pair<String, String>>,
     val defaultView: String,
+    /** The six categories (config/goals.php `categories`), in their order. */
     val categories: List<GoalCategory>,
+    /** What a goal can be about (`measurements`), in the wizard's order. */
+    val measurements: List<GoalMeasurement>,
+    /** An Eigen gewoonte's rules (`custom`), as a measurement with the code "custom". */
+    val custom: GoalMeasurement,
+    /** Every unit a goal is shown and typed in, by code. */
+    val units: Map<String, GoalUnit>,
     val types: List<GoalType>,
-    val durations: List<GoalDuration>,
+    val variants: Map<String, GoalVariant>,
+    val periods: List<GoalSpan>,
+    val durations: List<GoalSpan>,
     val labels: Map<String, String>,
     val emptyActive: GoalsEmpty,
     val emptyCompleted: GoalsEmpty,
     val detail: Map<String, String>,
     val wizard: WizardCopy,
-    val wizardSources: List<SourceGroup>,
-    /** The wizard's unit suggestions as the reader sees them ("lb", "steps"), by the unit kept ("kg", "stappen"). */
-    val unitLabels: Map<String, String>,
+    /** The measurements this account's data already reads: a goal on one of them is automatic. */
+    val userAuto: Set<String>,
+    /** The account's units ("metric", "imperial"): the wizard starts in them. */
+    val unitsSystem: String,
     val active: List<Goal>,
     val completed: List<Goal>,
     val primary: Goal?,
@@ -1382,6 +1392,11 @@ data class Goals(
     val all: List<Goal>
 ) {
     fun goal(id: String): Goal? = all.firstOrNull { it.id == id }
+
+    fun measurement(code: String?): GoalMeasurement? =
+        if (code == "custom") custom else measurements.firstOrNull { it.code == code }
+
+    fun category(key: String?): GoalCategory? = categories.firstOrNull { it.key == key }
 
     companion object {
         fun parse(o: JSONObject?): Goals {
@@ -1400,17 +1415,22 @@ data class Goals(
                 views = o.obj("views").entries { key, v -> key to v.str("label").orEmpty() },
                 defaultView = o.str("default_view") ?: "active",
                 categories = o.obj("categories").entries { key, c ->
-                    GoalCategory(key, c.str("label").orEmpty(), c.str("icon").orEmpty(), c.str("accent").orEmpty(), c.arr("units").strings())
+                    GoalCategory(key, c.str("label").orEmpty(), c.str("icon").orEmpty(), c.str("accent").orEmpty())
                 },
-                types = o.obj("types").entries { key, t -> GoalType(key, t.str("label").orEmpty(), t.str("hint").orEmpty()) },
-                durations = o.obj("durations").entries { key, d -> GoalDuration(key, d.str("label").orEmpty(), d.int("days") ?: 0) },
+                measurements = o.obj("measurements").entries { key, m -> GoalMeasurement.parse(key, m) },
+                custom = GoalMeasurement.parse("custom", o.obj("custom") ?: JSONObject()),
+                units = o.obj("goal_units").entries { key, u -> GoalUnit.parse(key, u) }.associateBy { it.code.orEmpty() },
+                types = o.obj("types").entries { key, t -> GoalType(key, t.str("label").orEmpty(), t.str("hint").orEmpty(), t.str("example").orEmpty()) },
+                variants = o.obj("streak_variants").entries { key, v -> GoalVariant(key, v.str("label").orEmpty(), v.str("hint").orEmpty()) }.associateBy { it.key },
+                periods = o.obj("periods").entries { key, p -> GoalSpan(key, p.str("label").orEmpty(), p.int("days") ?: 0, p.int("months") ?: 0) },
+                durations = o.obj("durations").entries { key, d -> GoalSpan(key, d.str("label").orEmpty(), d.int("days") ?: 0, d.int("months") ?: 0) },
                 labels = o.obj("labels").stringMap(),
                 emptyActive = GoalsEmpty.parse(empty.obj("active")),
                 emptyCompleted = GoalsEmpty.parse(empty.obj("completed")),
                 detail = o.obj("detail").stringMap(),
-                wizard = WizardCopy.parse(o.obj("wizard")),
-                wizardSources = o.arr("wizard_sources").map(SourceGroup::parse),
-                unitLabels = o.obj("unit_labels").stringMap(),
+                wizard = WizardCopy(o.obj("wizard") ?: JSONObject()),
+                userAuto = o.arr("user_auto").strings().toSet(),
+                unitsSystem = o.str("units_system") ?: "metric",
                 active = o.arr("active").map { same(Goal.parse(it)) },
                 completed = o.arr("completed").map { same(Goal.parse(it)) },
                 primary = same(o.obj("primary")?.let(Goal::parse)),
@@ -1424,9 +1444,84 @@ data class Goals(
     }
 }
 
-data class GoalCategory(val key: String, val label: String, val icon: String, val accent: String, val units: List<String>)
-data class GoalType(val key: String, val label: String, val hint: String)
-data class GoalDuration(val key: String, val label: String, val days: Int)
+data class GoalCategory(val key: String, val label: String, val icon: String, val accent: String)
+data class GoalType(val key: String, val label: String, val hint: String, val example: String)
+data class GoalVariant(val key: String, val label: String, val hint: String)
+
+/** A looptijd or a per-period streak's period: a number of days, or of calendar months. */
+data class GoalSpan(val key: String, val label: String, val days: Int, val months: Int)
+
+/** A unit as the server's catalogue writes it: stored = typed × [factor]. */
+data class GoalUnit(
+    val code: String?,
+    val label: String,
+    val one: String,
+    val canonical: String?,
+    val factor: Double,
+    val decimals: Int,
+    val attached: Boolean
+) {
+    companion object {
+        fun parse(code: String, o: JSONObject) = GoalUnit(
+            code, o.str("label").orEmpty(), o.str("one") ?: o.str("label").orEmpty(), o.str("canonical"),
+            o.num("factor") ?: 1.0, o.int("decimals") ?: 0, o.bool("attached")
+        )
+
+        /** An Eigen gewoonte's own word, counted as typed. */
+        fun custom(word: String) = GoalUnit(null, word.trim(), word.trim(), null, 1.0, 2, false)
+    }
+}
+
+/** One measurement of config/goals.php — or, with [custom], what an Eigen gewoonte may be. */
+data class GoalMeasurement(
+    val code: String,
+    val label: String,
+    val hint: String,
+    val category: String?,
+    val sourceKind: String,
+    val unitCode: String?,
+    val unitCodes: List<String>,
+    val imperialUnit: String?,
+    val types: List<String>,
+    val variants: List<String>,
+    val direction: String,
+    val defaultDirection: String,
+    val count: String?,
+    val popular: Int?,
+    val keywords: List<String>,
+    val names: List<String>,
+    val examples: Map<String, String>,
+    val placeholder: Map<String, Double>,
+    val custom: Boolean
+) {
+    companion object {
+        fun parse(code: String, o: JSONObject): GoalMeasurement {
+            val placeholders = LinkedHashMap<String, Double>()
+            o.obj("placeholder")?.let { p -> p.keys().forEach { key -> p.num(key)?.let { placeholders[key] = it } } }
+            return GoalMeasurement(
+                code = code,
+                label = o.str("label").orEmpty(),
+                hint = o.str("hint").orEmpty(),
+                category = o.str("category"),
+                sourceKind = o.str("source_kind") ?: "manual",
+                unitCode = o.str("unit_code"),
+                unitCodes = o.arr("unit_codes").strings(),
+                imperialUnit = o.str("imperial_unit"),
+                types = o.arr("types").strings(),
+                variants = o.arr("variants").strings(),
+                direction = o.str("direction") ?: "increase",
+                defaultDirection = o.str("default_direction") ?: "increase",
+                count = o.str("count"),
+                popular = o.int("popular"),
+                keywords = o.arr("keywords").strings(),
+                names = o.arr("names").strings(),
+                examples = o.obj("examples").stringMap(),
+                placeholder = placeholders,
+                custom = code == "custom"
+            )
+        }
+    }
+}
 
 data class GoalsEmpty(val title: String, val body: String, val cta: String?) {
     companion object {
@@ -1434,49 +1529,28 @@ data class GoalsEmpty(val title: String, val body: String, val cta: String?) {
     }
 }
 
-/** The wizard's copy: its steps and every label (config/goals.php `wizard`). */
-data class WizardCopy(val steps: List<WizardStep>, val copy: Map<String, String>, val suggestions: Map<String, List<String>>, val targetLede: Map<String, String>) {
-    operator fun get(key: String): String = copy[key].orEmpty()
+/** The wizard's copy (config/goals.php `wizard`): `words["next"]`, and its nested parts. */
+class WizardCopy(private val o: JSONObject) {
+    operator fun get(key: String): String = o.str(key).orEmpty()
 
-    companion object {
-        fun parse(o: JSONObject?): WizardCopy {
-            val suggestions = LinkedHashMap<String, List<String>>()
-            o.obj("suggestions")?.let { s ->
-                val keys = s.keys()
-                while (keys.hasNext()) {
-                    val key = keys.next()
-                    suggestions[key] = s.optJSONArray(key).strings()
-                }
-            }
-            return WizardCopy(
-                steps = o.obj("steps").entries { key, s ->
-                    WizardStep(key, s.str("label").orEmpty(), s.str("title").orEmpty(), s.str("lede").orEmpty())
-                },
-                copy = o.stringMap(),
-                suggestions = suggestions,
-                targetLede = o.obj("target_lede").stringMap()
-            )
-        }
+    /** "Meting", "Doel", "Instellen": the three steps the indicator counts. */
+    val steps: List<WizardStep> = o.obj("steps").entries { key, s ->
+        WizardStep(key, s.str("label").orEmpty(), s.str("title").orEmpty(), s.str("lede").orEmpty())
     }
+
+    val review: WizardStep = o.obj("review").let { WizardStep("review", it.str("label").orEmpty(), it.str("title").orEmpty(), it.str("lede").orEmpty()) }
+
+    /** Step three's labels: milestone, daily, period, accumulate. */
+    fun target(key: String): String = o.obj("target").str(key).orEmpty()
+
+    fun summary(key: String): String = o.obj("summary").str(key).orEmpty()
+
+    /** Which way is better, as a Mijlpaal says it — or a daily streak ([daily]): label and its explanation. */
+    fun direction(key: String, daily: Boolean): Pair<String, String> =
+        o.obj(if (daily) "direction_daily" else "direction").obj(key).let { it.str("label").orEmpty() to it.str("hint").orEmpty() }
 }
 
 data class WizardStep(val key: String, val label: String, val title: String, val lede: String)
-
-data class SourceGroup(val domain: String, val label: String, val sources: List<GoalSource>) {
-    companion object {
-        fun parse(o: JSONObject) = SourceGroup(
-            o.str("domain").orEmpty(), o.str("label").orEmpty(),
-            o.arr("sources").map {
-                GoalSource(
-                    it.str("kind").orEmpty(), it.str("key").orEmpty(), it.str("label").orEmpty(),
-                    it.str("unit").orEmpty(), it.str("hint").orEmpty(), it.arr("types").strings()
-                )
-            }
-        )
-    }
-}
-
-data class GoalSource(val kind: String, val key: String, val label: String, val unit: String, val hint: String, val types: List<String>)
 
 /** One goal, as lib/goals.php expands it for the card and the detail page. */
 data class Goal(
@@ -1486,23 +1560,35 @@ data class Goal(
     val categoryLabel: String,
     val icon: String,
     val accent: String,
+    val measurement: String?,
+    val measurementLabel: String,
     val type: String,
     val typeLabel: String,
+    val variant: String?,
+    /** "Streak · Elke dag": the type, and a streak's form. */
+    val kindLabel: String,
     val priority: String,
     val status: String,
     val percent: Int?,
+    /** Frozen when it finished; null while it runs. */
+    val finalPercent: Double?,
     val ratio: Double,
     val currentTitle: String,
     val currentLabel: String,
     val targetLabel: String,
+    val reading: String?,
     val extraFacts: List<Pair<String, String>>,
     val isPrimary: Boolean,
     val isPaused: Boolean,
+    /** Finished: reached, or its period over (Afgerond). */
     val isCompleted: Boolean,
+    /** Reached 100%. */
+    val isReached: Boolean,
     val isManual: Boolean,
     val needsInput: Boolean,
     val startLabel: String,
     val endLabel: String?,
+    val doneLabel: String?,
     val tookLabel: String?,
     val remaining: String?,
     val lineActive: String,
@@ -1515,9 +1601,10 @@ data class Goal(
     val daysChip: String?,
     val daysNote: String?,
     val days: List<GoalDay>,
+    val periods: List<GoalPeriod>,
+    val periodsChip: String?,
     val entry: GoalEntry?,
     val sourceList: List<GoalSourceLine>,
-    val activity: List<GoalActivity>,
     val chart: GoalChart?,
     val hasHistory: Boolean,
     val countsDays: Boolean
@@ -1532,23 +1619,31 @@ data class Goal(
                 categoryLabel = o.str("category_label").orEmpty(),
                 icon = o.str("icon").orEmpty(),
                 accent = o.str("accent").orEmpty(),
+                measurement = o.str("measurement"),
+                measurementLabel = o.str("measurement_label").orEmpty(),
                 type = o.str("type").orEmpty(),
                 typeLabel = o.str("type_label").orEmpty(),
+                variant = o.str("variant"),
+                kindLabel = o.str("kind_label") ?: o.str("type_label").orEmpty(),
                 priority = o.str("priority").orEmpty(),
                 status = o.str("status").orEmpty(),
                 percent = o.int("percent"),
+                finalPercent = o.num("final_percent"),
                 ratio = o.num("ratio") ?: 0.0,
                 currentTitle = o.str("current_title").orEmpty(),
                 currentLabel = o.str("current_label").orEmpty(),
                 targetLabel = o.str("target_label").orEmpty(),
+                reading = o.str("reading"),
                 extraFacts = o.arr("extra_facts").map { (it.str("label").orEmpty()) to (it.text("value").orEmpty()) },
                 isPrimary = o.bool("is_primary"),
                 isPaused = o.bool("is_paused"),
                 isCompleted = o.bool("is_completed"),
+                isReached = o.bool("is_reached"),
                 isManual = o.bool("is_manual"),
                 needsInput = o.bool("needs_input"),
                 startLabel = o.str("start_label").orEmpty(),
                 endLabel = o.str("end_label"),
+                doneLabel = o.str("done_label"),
                 tookLabel = o.str("took_label"),
                 remaining = o.str("remaining"),
                 lineActive = o.str("line_active").orEmpty(),
@@ -1563,16 +1658,22 @@ data class Goal(
                 days = o.arr("days").map {
                     GoalDay(it.str("date"), it.str("state").orEmpty(), it.int("day"), it.str("title"))
                 },
+                periods = o.arr("periods").map {
+                    GoalPeriod(
+                        it.str("label").orEmpty(), it.str("dates").orEmpty(), it.str("state").orEmpty(),
+                        it.int("achieved") ?: 0, it.int("required") ?: 0, it.str("value").orEmpty(), it.bool("current")
+                    )
+                },
+                periodsChip = o.str("periods_chip"),
                 entry = o.obj("entry")?.let {
                     GoalEntry(
                         it.str("kind").orEmpty(), it.str("label").orEmpty(), it.str("note"),
-                        it.str("button"), it.str("placeholder"), it.bool("done"), it.text("value"), it.str("meta")
+                        it.str("button"), it.str("placeholder"), it.bool("done"), it.str("undo"), it.str("unit")
                     )
                 },
                 sourceList = o.arr("source_list").map {
                     GoalSourceLine(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("note").orEmpty(), it.str("icon").orEmpty(), it.str("accent").orEmpty())
                 },
-                activity = o.arr("activity").map { GoalActivity(it.str("label").orEmpty(), it.str("meta").orEmpty(), it.text("value").orEmpty()) },
                 chart = o.obj("chart")?.let(GoalChart::parse),
                 hasHistory = o.bool("has_history"),
                 countsDays = o.bool("counts_days")
@@ -1583,6 +1684,21 @@ data class Goal(
 
 data class GoalDay(val date: String?, val state: String, val day: Int?, val title: String?)
 
+/** A per-period streak's week (month…): "Week 3", "13 – 19 okt", "2 van 3", met / missed / pending / skipped. */
+data class GoalPeriod(
+    val label: String,
+    val dates: String,
+    val state: String,
+    val achieved: Int,
+    val required: Int,
+    val value: String,
+    val current: Boolean
+)
+
+/**
+ * How a goal kept by hand is logged on its page: `value` (a new measurement),
+ * `add` (an amount) or `tick` (today done — [done]; [undo] takes it back).
+ */
 data class GoalEntry(
     val kind: String,
     val label: String,
@@ -1590,12 +1706,11 @@ data class GoalEntry(
     val button: String?,
     val placeholder: String?,
     val done: Boolean,
-    val value: String?,
-    val meta: String?
+    val undo: String?,
+    val unit: String?
 )
 
 data class GoalSourceLine(val key: String, val label: String, val note: String, val icon: String, val accent: String)
-data class GoalActivity(val label: String, val meta: String, val value: String)
 
 /** lib/goal-chart.php: geometry in a [width] × [height] view box, positions in percent. */
 data class GoalChart(

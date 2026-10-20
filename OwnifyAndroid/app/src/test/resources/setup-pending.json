@@ -154,20 +154,17 @@
    "suggestion": {
     "eyebrow": "Een mogelijk eerste doel",
     "basis": "Je sliep de afgelopen 4 nachten gemiddeld 6:41.",
-    "name": "5 nachten van minstens 7 uur",
-    "summary": "Optellen · 5 dagen · per dag minstens 7 uur · uit je gegevens: slaapduur · looptijd: week · primair doel",
+    "name": "Elke nacht minstens 7 uur",
+    "summary": "Streak · per dag minstens 7 uur · uit je gegevens: slaapduur · 20 okt t/m 26 okt",
     "input": {
-     "name": "5 nachten van minstens 7 uur",
-     "category": "habit",
-     "type": "accumulate",
-     "measure": "days",
-     "duration": "week",
-     "source_kind": "metric",
-     "source_key": "sleep_duration",
-     "daily_target": "7",
-     "target_value": "5",
+     "name": "Elke nacht minstens 7 uur",
+     "measurement": "sleep_duration",
+     "type": "streak",
+     "variant": "daily",
+     "unit": "h",
+     "target_value": "7",
      "direction": "increase",
-     "priority": "primary"
+     "duration": "week"
     },
     "add": "Toevoegen",
     "decline": "Niet nu"

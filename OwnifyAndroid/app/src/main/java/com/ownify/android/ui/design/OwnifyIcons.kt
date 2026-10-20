@@ -236,6 +236,28 @@ object OwnifyIcons {
         )
     }
 
+    /** `arrow-down` — lower is better, at most (the goal wizard's direction) */
+    val arrowDown: ImageVector by lazy {
+        icon("arrow-down", null,
+            "M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"
+        )
+    }
+
+    /** `search` — a lens and its handle (the goal wizard's search field) */
+    val search: ImageVector by lazy {
+        icon("search", null,
+            "M10.6 5A5.6 5.6 0 1 1 10.6 16.2A5.6 5.6 0 1 1 10.6 5Z",
+            "m14.8 14.8 4.6 4.6"
+        )
+    }
+
+    /** `close` — clear a field */
+    val close: ImageVector by lazy {
+        icon("close", null,
+            "M7 7l10 10M17 7 7 17"
+        )
+    }
+
     /** `chat` */
     val chat: ImageVector by lazy {
         icon("chat", null,
@@ -379,6 +401,9 @@ object OwnifyIcons {
         "copy" to copy,
         "share" to share,
         "arrow-up" to arrowUp,
+        "arrow-down" to arrowDown,
+        "search" to search,
+        "close" to close,
         "chat" to chat,
         "check" to check,
         "pause" to pause,

@@ -115,7 +115,7 @@ return [
                     'sleep' => [
                         'basis' => ['Je sliep de afgelopen %1$d nachten gemiddeld %2$s.'],
                         /* %1$d nights, %2$s hours ("7" or "7,5") */
-                        'name'  => '%1$d nachten van minstens %2$s uur',
+                        'name'  => 'Elke nacht minstens %s uur',
                     ],
                     'training' => [
                         'basis' => ['Je trainde de afgelopen twee weken %1$d keer.'],

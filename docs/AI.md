@@ -253,7 +253,7 @@ with the id from the session — never an id Gemini names.
 | `get_goals` | the goals as they stand now, optionally the last completed ones |
 | `get_measurement_history` | one body measurement over time |
 | `create_goal` | **prepares** a new goal — creates nothing |
-| `update_goal` | **prepares** a change to one of their goals (pause, resume, complete, make primary or secondary) — changes nothing |
+| `update_goal` | **prepares** a change to one of their goals (pause, resume, make primary or secondary) — changes nothing; a finished goal cannot be changed |
 
 **How a question runs** (`ai_chat()` in `includes/ai/assistant.php`): Ownify
 asks Gemini with the functions available; when Gemini asks for one, Ownify
@@ -262,8 +262,12 @@ carries it out and sends the result back, and Gemini goes on — at most
 all within 55 seconds. An unknown function or wrong arguments go back to Gemini
 as an error, never to the person.
 
-**A change is only ever a proposal.** `create_goal` checks the goal exactly as
-the Doelen wizard would (`goal_create_from_input()` in `includes/goal-create.php`,
+**A change is only ever a proposal.** `create_goal` takes the wizard's own
+fields — a measurement from the catalogue or `custom`, the type (and a
+streak's variant), the unit, the target or how often per period, the
+direction, a looptijd from today, and a typed starting value only when nothing
+was measured (docs/GOALS.md) — and checks the goal exactly as the Doelen
+wizard would (`goal_create_from_input()` in `includes/goal-create.php`,
 without saving — the same rules, including the limit on active goals from
 `config/goals.php` and the one primary); `update_goal` checks that the goal is theirs and that the change
 makes sense. At most one proposal per answer. It is stored with the answer

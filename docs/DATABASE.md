@@ -26,15 +26,16 @@ steps, three workouts in a week — and each of those pays once. Nothing that
 awards points reads a Health Score.
 
 **Goals.** Where a goal stands comes out of `includes/goal-progress.php`, and
-its type decides the arithmetic: a **Mijlpaal** is its best result (60, 75,
-85, 70 kg against 100 kg is 85%), a **Streak** is its run of consecutive
-successful days (a missed day, or a day with no data, starts it again), and
-**Optellen** adds everything up (8.000 + 11.000 + 9.000 steps against 100.000
-is 28%). Missing data is never a zero. The result is stored on the goal row —
-`best_value`, `total_value`, `streak_current`, `streak_best`, `progress_pct`,
-`completed_at` — and always recalculated from the rows underneath it. An
-existing database gets the three types and those columns from
-`database/migrations/007-goal-types.sql`; `schema.sql` already has them.
+its type decides the arithmetic: a **Mijlpaal** follows its latest value from
+the baseline to the target (80 → 100 kg at 90 is 50%, back at 85 it is 25%), a
+**Streak** is the share of the period's days — or weeks, months… — that made
+it, and **Optellen** adds up everything since the start date (8.000 + 11.000 +
+9.000 steps against 100.000 is 28%). Missing data is never a zero. Where a goal
+stands is stored on the goal row (`current_value`, `progress_pct`), and once
+it finishes its final percentage is frozen in `final_pct` with `completed_at`.
+The model, the formulas and the tables are [GOALS.md](GOALS.md); an existing
+database gets them from `database/migrations/025-goals-rebuild.sql`, and
+`schema.sql` already has them.
 
 ## Setting it up (WampServer)
 
@@ -273,8 +274,11 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 
 | Table | Holds |
 | --- | --- |
-| `goals` | name, category, type (Mijlpaal, Streak, Optellen), source, target, direction, dates, status, and where it stands |
-| `goal_progress` | one row per goal per day: a Mijlpaal's best result that day, an Optellen amount, a Streak day ticked off — or, for a goal read from health data, that day's snapshot |
+| `goal_categories`, `goal_units`, `goal_measurements` | the vocabulary a goal is made from — not personal; the same rows as `config/goals.php` |
+| `goals` | name, category, measurement, type (Mijlpaal, Streak elke dag or per periode, Optellen), unit, target, direction, baseline, dates, status, where it stands, and once finished its frozen final percentage |
+| `goal_entries` | what was logged by hand on the goal's page |
+| `goal_day_results`, `goal_period_results` | a streak's days and periods: met, missed, open |
+| `goal_progress` | one snapshot per goal per day, for the goal's Verloop |
 
 **Community**
 
@@ -461,7 +465,8 @@ a challenge it made goes on for the others (`creator_id` becomes NULL). See
 `database/migrations/023-remove-vo2max.sql` deletes its readings and its
 `health_metric_types` row, and turns a goal tracked from it into one kept by
 hand (its name, target and recorded days stay). Until it is imported nothing
-reads or shows VO2max any more; only the goal wizard still offers it.
+reads or shows VO2max any more; the goal wizard of 22.0 does not offer it
+either.
 
 **Voorkeuren and phone names** (19.0):
 `database/migrations/024-preferences-and-device-names.sql` adds
@@ -478,6 +483,17 @@ phone its own name back). Renaming changes nothing else: not the token, the
 pairing, the sync or the data. Every new column starts empty or 0, which is
 how the app behaved before; until it is imported the switches and the week
 cannot be kept (the endpoints answer 503) and a phone cannot be renamed.
+
+**Goals, rebuilt** (22.0): `database/migrations/025-goals-rebuild.sql`
+replaces the goal tables and touches nothing else. The old goals and their
+progress are copied to `goals_backup_024` and `goal_progress_backup_024`
+first; then the old `goal_progress` and `goals` are dropped and the new
+vocabulary (`goal_categories`, `goal_units`, `goal_measurements`) and goal
+tables (`goals`, `goal_entries`, `goal_day_results`, `goal_period_results`,
+`goal_progress`) are created — see [GOALS.md](GOALS.md). The old goals cannot
+be carried over (their types and sources mean other things now), so goals
+start afresh. Re-running it is safe. Until it is imported, Doelen shows no
+goals and a new one cannot be made.
 
 There is no `age` column: Leeftijd is no longer a field in Instellingen
 (19.0). Whatever needs an age — the nutrition targets, the estimated maximum
@@ -501,7 +517,7 @@ Two classes of data, and the boundary is deliberate.
 | --- | --- |
 | `users.username` | every health table |
 | `user_profiles.avatar_path` | `user_measurements` |
-| `user_period_points.points`, `.position` | `goals`, `goal_progress` |
+| `user_period_points.points`, `.position` | `goals` and every table under it (`goal_entries`, `goal_day_results`, `goal_period_results`, `goal_progress`) |
 | your total for a challenge you joined yourself — to its participants only | `ai_conversations`, `ai_messages`, `ai_usage` |
 
 The rules:
@@ -834,10 +850,11 @@ private data is returned.
 | `api/health/nutrition.php` | `nutrition_entries` + the rating and nutrients as `health_metrics`; a rating earns that day's points |
 | `api/health/rating.php` | the day's 1-10 nutrition rating, one `health_metrics` row per day (today or up to 6 days back, saving again replaces it); then that day's points and the Health Score |
 | `api/health/training.php` | `workouts`; then its points, the week's bonus and the Health Score |
-| `api/goals/create.php` | `goals`, subject to the limit on active goals (`limits` in `config/goals.php`, five) and one primary |
-| `api/goals/update.php` | pause, resume, complete, re-prioritise |
-| `api/goals/delete.php` | deletes the goal and its history |
-| `api/goals/progress.php` | `goal_progress` the way the goal's type needs it, and completes a goal that reaches its target |
+| `api/goals/create.php` | `goals`, subject to the limit on active goals (`limits` in `config/goals.php`, five) and one primary; a repeated one-time key gets the goal already made |
+| `api/goals/baseline.php` | reads only: a Mijlpaal's measured start for the wizard |
+| `api/goals/update.php` | pause, resume, re-prioritise — a goal finishes by its own rules |
+| `api/goals/delete.php` | deletes the goal and everything under it |
+| `api/goals/progress.php` | `goal_entries` the way the goal's type needs it (a measurement, an amount, a day ticked off), then where it stands; finishes a goal that reaches 100% |
 | `api/integrations/ingest.php` | health rows, and then re-derives every automatic goal, awards the points for what arrived and recalculates the Health Score |
 | `api/friends/search.php` | reads only: the one account with exactly that username (case does not matter), its username and picture, and where the two of you stand |
 | `api/friends/request.php` | `friendships`: send a request, accept or decline one sent to you, withdraw your own, or remove a friend (deletes the row) — each checked against the pair's own row |
@@ -869,32 +886,34 @@ value is simply the newest row.
 
 ## How a goal knows where it stands
 
-Every goal says where its progress comes from, and the person picks it when
-they make the goal — `tracking_mode`, `source_kind` and `source_key` on
-`goals`. A source is not always a metric: weight is a row in
-`user_measurements`, training is rows in `workouts`, steps are readings in
-`health_metrics`, so the column that names one has to say which kind it is.
-"Geen data mogelijk" is a real answer, stored as `manual`, and those goals are
-the only ones with an entry box.
+A goal is read from the person's own data only when there is some: a reading
+of its measurement in the last 90 days when the goal is made. Then
+`goals.tracking` is `auto` and the measurement's source (`goal_measurements`:
+a metric in `health_metrics`, a weigh-in in `user_measurements`, `workouts`)
+feeds it. Otherwise it is `manual`, and the goal's page is where the person
+logs it (`goal_entries`). A source is not always a metric, so the vocabulary
+says which kind it is.
 
 `includes/goal-progress.php` is the only thing that calculates a percentage.
-The bar, the figure, the day blocks and the completion check all read it, so
-they cannot disagree. It runs on every render of the Doelen page and again
-after every import, which is what makes an automatic goal move on its own.
+The bar, the figure, the calendar, the chart and the finish all read what it
+stored, so they cannot disagree. It runs on every render of the Doelen page
+and again after every import, which is what makes an automatic goal move on
+its own.
 
 Three things it will not do:
 
-- **Invent a number.** No data means no percentage and the empty state the
-  cards already draw, not a zero.
-- **Treat a missing day as a failure.** A day with no step count is drawn as an
-  outline and counted as neither met nor missed.
-- **Rewrite a finished goal.** A completed goal keeps the figure it finished
-  on; losing more weight afterwards does not change the goal you achieved.
+- **Invent a number.** No data means no progress, never a made-up line.
+- **Treat a missing day as zero.** A day without a step count is "no data";
+  in a daily streak it is not met, and the goal simply carries on.
+- **Rewrite a finished goal.** The final percentage is stored with the moment
+  it finished, in one statement that only matches a goal still running;
+  losing more weight afterwards does not change the goal you achieved.
 
-`start_value` is the baseline, captured when the goal is made or on the first
-reading after it. Without it a decreasing goal cannot be measured at all —
+A Mijlpaal's baseline is fixed when it is made — the start date's measurement,
+else the latest before it, else what the person typed — and the target must
+lie ahead of it. Without one a decreasing goal cannot be measured at all:
 75 / 82 is 91%, which would read as nearly finished to somebody who has lost
-nothing.
+nothing. The formulas are in [GOALS.md](GOALS.md).
 
 ## What is not connected yet
 

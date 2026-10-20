@@ -1537,3 +1537,215 @@
     color: var(--text-muted);
     text-align: center;
 }
+
+/* ==========================================================================
+   Floating glass, small — the sync capsule's material (health.css
+   .pull-sync__pill) for controls: the goal wizard's bubbles, its round
+   buttons, its cards and its list (docs/GOALS.md). The same tint, 177° face,
+   backdrop blur, top glint and 152° rim, in both themes through the pane
+   tokens; frostier on its own with reduced transparency (--pane-solid).
+
+     .glass               the material
+     .glass--chip         Health Connect's data chips' size (.chip): 4 × 12, 11px
+     .glass--round        a 44px circle for one icon; --small 34px
+     .glass--cta          the one way forward: the app's green in the glass
+     .glass--select       a select inside the glass, its chevron drawn
+
+   Chosen ([aria-pressed|aria-checked="true"]): the green in the glass and in
+   its rim — restrained, no tick.
+   ========================================================================== */
+.glass {
+    position: relative;
+    isolation: isolate;
+    border: 0;
+    color: var(--text-primary);
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    box-shadow:
+        0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    -webkit-tap-highlight-color: transparent;
+}
+
+.glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+.glass[aria-pressed="true"],
+.glass[aria-checked="true"] {
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        linear-gradient(var(--health-fill), var(--health-fill)),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+}
+
+.glass[aria-pressed="true"]::after,
+.glass[aria-checked="true"]::after {
+    background: linear-gradient(152deg, var(--health-strong), var(--health-edge) 60%, var(--health-wash));
+}
+
+.glass:disabled,
+.glass[aria-disabled="true"] {
+    color: var(--text-muted);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.08 * var(--glint-k)));
+}
+
+.glass:focus-visible {
+    outline: none;
+    box-shadow:
+        0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k))),
+        var(--focus-halo);
+}
+
+/* The size of a Health Connect data chip (.chip): its padding and its 1px
+   edge (the glass draws its rim inside, so the edge is padding here), its type. */
+.glass--chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--space-1) + 1px) calc(var(--space-3) + 1px);
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-size: var(--fs-tiny);
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* The chip stays chip-sized; what a finger can hit is taller. */
+.glass--chip::before {
+    content: "";
+    position: absolute;
+    inset: -7px -3px;
+}
+
+/* Small glass reads thinner: a shorter, lighter shadow. */
+.glass--chip {
+    box-shadow:
+        0 2px 7px rgba(var(--shade), calc(0.16 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+}
+
+.glass--chip[aria-pressed="true"],
+.glass--chip[aria-checked="true"] { color: var(--text-primary); font-weight: 600; }
+
+.glass--round {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.glass--round .icon { width: 18px; height: 18px; }
+.glass--round[aria-checked="true"] { color: var(--health); }
+
+.glass--small { width: 34px; height: 34px; }
+.glass--small .icon { width: 16px; height: 16px; }
+
+.glass--cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-size: var(--fs-label);
+    font-weight: 600;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        linear-gradient(180deg, var(--health-edge), var(--health-fill)),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    cursor: pointer;
+}
+
+.glass--cta::after {
+    background: linear-gradient(152deg, var(--health-strong), var(--health-edge) 60%, var(--health-wash));
+}
+
+.glass--cta:disabled,
+.glass--cta[aria-disabled="true"] {
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.08 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.03 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.04 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    cursor: default;
+}
+
+.glass--cta:disabled::after { background: var(--pane-rim); opacity: 0.6; }
+.glass--cta:disabled.press:active { transform: none; }
+
+/* A select in the glass: the native list on a phone, the glass around it. */
+.glass--select {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    min-height: 44px;
+    border-radius: var(--radius-pill);
+}
+
+.glass--select select {
+    appearance: none;
+    -webkit-appearance: none;
+    min-height: 44px;
+    padding: 0 calc(var(--space-3) + 20px) 0 var(--space-4);
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-input);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.glass--select select:focus-visible { outline: none; }
+.glass--select:focus-within { box-shadow: 0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))), var(--focus-halo); }
+
+.glass--select .icon {
+    position: absolute;
+    right: var(--space-3);
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.glass--select option { color: initial; background: initial; }
+
+@media (prefers-reduced-transparency: reduce) {
+    .glass { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

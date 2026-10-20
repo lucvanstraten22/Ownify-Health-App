@@ -16,6 +16,7 @@ import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performTouchInput
 import com.ownify.android.data.AppData
 import com.ownify.android.ui.app.AppShell
@@ -42,8 +43,8 @@ import org.robolectric.annotation.Config
  * A goal's page (pages/goal-detail.php) in the app: the goal, Zelf bijhouden,
  * the Verloop — which now says what feeds it, and on each point how far the
  * goal was that day — and Aanpassen with Primair | Secundair. The demo
- * account's goals: 301 primary (0%), 303 Bench press (85%, kept by hand) and
- * 302 (76%).
+ * account's goals: 301 primary (a daily streak), 303 Bench press (85%, kept by
+ * hand), 304 a per-period streak and 302 (paused, 40%).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
@@ -137,20 +138,23 @@ class GoalDetailLayoutTest {
                 val goals = state.getJSONObject("goals").getJSONArray(list)
                 for (i in 0 until goals.length()) {
                     val goal = goals.getJSONObject(i)
-                    if (goal.getString("id") != "302") continue
+                    if (goal.getString("id") != "303") continue
                     val points = goal.getJSONObject("chart").getJSONArray("points")
-                    points.getJSONObject(points.length() - 1).put("n", "76% van je doel")
+                    points.getJSONObject(points.length() - 1).put("n", "85% van je doel")
                 }
             }
         }
-        val point = data.goals.secondary.first { it.id == "302" }.chart!!.points.last()
-        show(data, "302")
+        val point = data.goals.secondary.first { it.id == "303" }.chart!!.points.last()
+        show(data, "303")
 
-        val plot = compose.onNode(hasContentDescription("Verloop van 15 uur trainen", substring = true), useUnmergedTree = true)
+        val plot = compose.onNode(hasContentDescription("Verloop van Bench press 100 kg", substring = true), useUnmergedTree = true)
         plot.performScrollTo()
+        // The card under it into view too: the plot then stands clear of the floating tab bar,
+        // where a finger at the bottom edge of the page would land instead.
+        compose.onAllNodes(hasText("Aanpassen", ignoreCase = true)).onFirst().performScrollTo()
         plot.performTouchInput { down(Offset(width * point.x / 100f, height / 2f)) }
         compose.waitForIdle()
         val reading = plot.fetchSemanticsNode().config.getOrNull(SemanticsProperties.StateDescription).orEmpty()
-        assertEquals("${point.date}, ${point.value}, 76% van je doel", reading)
+        assertEquals("${point.date}, ${point.value}, 85% van je doel", reading)
     }
 }
