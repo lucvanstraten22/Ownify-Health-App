@@ -82,7 +82,7 @@ Apparaten & Gezondheid).
 | Field | Used for |
 | --- | --- |
 | Geboortedatum | the estimated maximum heart rate (Tanaka, `health_hr_max()`), so how hard a training was; and the energy needs |
-| Lengte | the energy needs (`includes/nutrition-targets.php`), which Ownify AI uses |
+| Lengte | the energy needs (`includes/nutrition-targets.php`), which OwnifyAI uses |
 | Gewicht | the energy needs, and the start of a weight goal |
 
 Without any one of the three there are no energy needs at all. The setup

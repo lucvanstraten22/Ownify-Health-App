@@ -198,7 +198,7 @@ class AppDataParseTest {
         val gemini = switches.single { it.key == "ai_consent" }
         assertEquals("Gegevens verwerken met Google Gemini", gemini.label)
         assertFalse(gemini.on)
-        assertEquals("De assistent werkt niet, en er gaat niets naar Gemini.", gemini.note)
+        assertEquals("OwnifyAI werkt niet, en er gaat niets naar Gemini.", gemini.note)
         assertEquals(2, switches.count { it.key == null })
         // …the conversations can be wiped, asked first, through the server's own endpoint.
         val wipe = privacy.blocks.filterIsInstance<SettingsBlock.Actions>().single().items.single()
@@ -206,14 +206,14 @@ class AppDataParseTest {
         assertEquals("api/ai/delete.php", wipe.endpoint)
         assertEquals(mapOf("all" to "1"), wipe.fields)
         assertTrue(wipe.danger)
-        assertEquals("Al je AI-gesprekken wissen? Dit kun je niet ongedaan maken.", wipe.question)
+        assertEquals("Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.", wipe.question)
         // …and the facts at the top say where the assistant stands.
         val facts = privacy.blocks.filterIsInstance<SettingsBlock.States>().single().items
-        assertEquals("Uit", facts.single { it.label == "Ownify AI" }.value)
+        assertEquals("Uit", facts.single { it.label == "OwnifyAI" }.value)
 
         // Ownify AI's words and the account's answer, before anything is fetched.
-        assertEquals("Ownify AI", data.ai.title)
-        assertEquals("Ownify AI gebruiken?", data.ai.consent.title)
+        assertEquals("OwnifyAI", data.ai.title)
+        assertEquals("OwnifyAI gebruiken?", data.ai.consent.title)
         assertEquals(5, data.ai.consent.points.size)
         assertTrue(data.ai.consent.points.any { "verbeteren" in it })
         assertEquals(3, data.ai.empty.suggestions.size)
@@ -222,7 +222,7 @@ class AppDataParseTest {
         assertEquals(10, data.ai.session.usage.limit)
         assertTrue(data.ai.session.hasData)
         assertEquals("Nog 10 van 10 berichten vandaag", data.ai.remainingText(data.ai.session.usage))
-        assertTrue(data.ai.error("limit").startsWith("Je hebt de gratis AI-berichten van vandaag gebruikt"))
+        assertTrue(data.ai.error("limit").startsWith("Je hebt je gratis berichten aan OwnifyAI van vandaag gebruikt"))
 
         // A board row carries the picture only when its owner shows it; otherwise none.
         val rows = data.community.boards.values.flatMap { it.values }.flatMap { it.entries }

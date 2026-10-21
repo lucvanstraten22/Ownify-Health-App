@@ -135,7 +135,7 @@ if (!function_exists('settings_prepare')) {
         $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
 
         if ($aiOn) {
-            $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'Ownify AI']);
+            $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'OwnifyAI']);
 
             /* The Privacy row on the main page says the same. */
             foreach ($settings['groups'] as $group) {

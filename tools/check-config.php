@@ -51,11 +51,14 @@ if (in_array('--generate-key', $argvFlags, true)) {
     exit(0);
 }
 
-/* One request to Gemini, with nothing personal in it: does the key work, is
-   the model there, and is this project on the free tier's quota? Uses one
-   request of the free quota. */
+/* One request to Gemini, shaped as a question in the chat is — the system
+   instruction, the nine tool declarations, the same output ceiling and
+   thinking level — but with nothing personal in it: does the key work, is
+   the model there, does it take what a question sends, and is this project
+   on the free tier's quota? Uses one request (two if the model refuses the
+   thinking level) of the free quota. */
 if (in_array('--ai-ping', $argvFlags, true)) {
-    require_once dirname(__DIR__) . '/includes/ai/gemini.php';
+    require_once dirname(__DIR__) . '/includes/ai/assistant.php';
 
     if (ai_api_key() === null) {
         echo "No Gemini API key: set GEMINI_API_KEY or put it in config/ai.local.php (docs/AI.md).\n";
@@ -64,10 +67,23 @@ if (in_array('--ai-ping', $argvFlags, true)) {
 
     echo 'Asking ' . ai_model() . ' with the key from ' . ai_key_source() . " …\n";
 
-    $answer = ai_gemini_generate([
-        'contents'         => [['role' => 'user', 'parts' => [['text' => 'Reply with exactly: OK']]]],
-        'generationConfig' => ['maxOutputTokens' => 256],
-    ]);
+    $body = [
+        'systemInstruction' => ['parts' => [['text' => ai_system_instruction(
+            ['now' => date('Y-m-d H:i'), 'note' => 'A connection check by the people who run Ownify: there is no user and no data.']
+        )]]],
+        'tools'             => [['functionDeclarations' => ai_tool_declarations()]],
+        'toolConfig'        => ['functionCallingConfig' => ['mode' => 'NONE']],
+        'generationConfig'  => ai_generation_config(),
+        'contents'          => [['role' => 'user', 'parts' => [['text' => 'This is a connection check. Reply with exactly: OK']]]],
+    ];
+
+    $answer = ai_gemini_generate($body);
+
+    if (!$answer['ok'] && $answer['outcome'] === 'thinking') {
+        echo "The model does not take thinking_level '" . ai_config()['thinking_level'] . "'; asking again without it, as a question would.\n";
+        unset($body['generationConfig']['thinkingConfig']);
+        $answer = ai_gemini_generate($body);
+    }
 
     echo match ($answer['outcome']) {
         'ok'      => 'It works: Gemini answered "' . mb_substr((string) $answer['text'], 0, 40) . '" using '
@@ -75,6 +91,7 @@ if (in_array('--ai-ping', $argvFlags, true)) {
         'quota'   => "The key works, but the free quota is used up right now (HTTP 429). Try again later.\n",
         'config'  => "Gemini refused the key or the model — the reason is in the PHP error log. Check GEMINI_API_KEY and GEMINI_MODEL.\n",
         'timeout' => "No answer in time. Check the server's internet connection.\n",
+        'invalid' => "Gemini answered, but with nothing to show — the line above says why (an answer cut off at max_output_tokens says so).\n",
         default   => "Gemini could not be reached (" . $answer['outcome'] . "). The PHP error log says more.\n",
     };
 

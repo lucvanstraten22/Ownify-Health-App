@@ -30,6 +30,7 @@ require_once dirname(__DIR__) . '/i18n.php';   // language and units (docs/I18N.
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/gemini.php';
+require_once __DIR__ . '/pace.php';
 require_once __DIR__ . '/context.php';
 require_once __DIR__ . '/tools.php';
 require_once __DIR__ . '/prompt.php';
@@ -49,7 +50,24 @@ if (!function_exists('ai_chat')) {
     {
         $errors = ai_copy()['errors'] ?? [];
 
-        return (string) ($errors[$code] ?? $errors['unavailable'] ?? 'De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw.');
+        return (string) ($errors[$code] ?? $errors['unavailable'] ?? 'OwnifyAI is tijdelijk niet beschikbaar. Probeer het later opnieuw.');
+    }
+
+    /**
+     * How Gemini is asked to answer — the same for a question and for
+     * tools/check-config.php --ai-ping, so the check tests what a question
+     * sends: the output ceiling (thinking included) and the thinking level.
+     */
+    function ai_generation_config(): array
+    {
+        $config = ['maxOutputTokens' => max(256, (int) ai_config()['max_output_tokens'])];
+
+        $thinking = strtolower(trim((string) (ai_config()['thinking_level'] ?? '')));
+        if ($thinking !== '' && $thinking !== 'none') {
+            $config['thinkingConfig'] = ['thinkingLevel' => $thinking];
+        }
+
+        return $config;
     }
 
     /** A failed question: HTTP status, a code the apps switch on, and the sentence to show. */
@@ -146,6 +164,40 @@ if (!function_exists('ai_chat')) {
             return ai_fail(503, 'quota', ['usage' => ai_usage_summary($userId)]);
         }
 
+        /* Room in this minute, for everybody together (includes/ai/pace.php):
+           the requests this question may need are reserved before anything
+           is sent, and what it does not use is given back when it is done. */
+        $pace = ai_pace_take((int) ai_config()['max_rounds']);
+
+        if (!$pace['ok']) {
+            error_log('[ownify] ai: the minute is full (minute_limit ' . ai_pace_limit() . '); room again in ' . $pace['wait'] . ' s');
+
+            return ai_busy($userId, $pace['wait']);
+        }
+
+        try {
+            return ai_chat_ask($userId, $conversation, $message, $pace['tag']);
+        } finally {
+            ai_pace_release($pace['tag']);
+        }
+    }
+
+    /** "Over 23 s kun je weer iets vragen": the minute is full, for everybody. */
+    function ai_busy(int $userId, int $wait): array
+    {
+        $wait = max(1, $wait);
+
+        return ['ok' => false, 'status' => 429, 'code' => 'busy',
+            'error' => sprintf(ai_error_text('busy'), $wait), 'retry_after' => $wait,
+            'usage' => ai_usage_summary($userId)];
+    }
+
+    /**
+     * The question itself, once there is room for it this minute ($paceTag):
+     * today's share, the data, Gemini, and the answer stored.
+     */
+    function ai_chat_ask(int $userId, ?array $conversation, string $message, ?string $paceTag): array
+    {
         if (!ai_usage_reserve($userId)) {
             ai_usage_add($userId, ['limit_hits' => 1]);
 
@@ -164,13 +216,8 @@ if (!function_exists('ai_chat')) {
         $body = [
             'systemInstruction' => ['parts' => [['text' => ai_system_instruction($context, $history['digest'])]]],
             'tools'             => [['functionDeclarations' => ai_tool_declarations()]],
-            'generationConfig'  => ['maxOutputTokens' => max(256, (int) ai_config()['max_output_tokens'])],
+            'generationConfig'  => ai_generation_config(),
         ];
-
-        $thinking = strtolower(trim((string) (ai_config()['thinking_level'] ?? '')));
-        if ($thinking !== '' && $thinking !== 'none') {
-            $body['generationConfig']['thinkingConfig'] = ['thinkingLevel' => $thinking];
-        }
 
         /* ---------------------------------------------------------- Gemini */
 
@@ -194,11 +241,22 @@ if (!function_exists('ai_chat')) {
                 break;
             }
 
+            if (!ai_pace_use($paceTag)) {
+                $answer = ['ok' => false, 'outcome' => 'busy'];
+                break;
+            }
+
             $answer = ai_gemini_generate($body);
             $calls++;
 
             if (!$answer['ok'] && $answer['outcome'] === 'thinking' && isset($body['generationConfig']['thinkingConfig'])) {
                 unset($body['generationConfig']['thinkingConfig']);
+
+                if (!ai_pace_use($paceTag)) {
+                    $answer = ['ok' => false, 'outcome' => 'busy'];
+                    break;
+                }
+
                 $answer = ai_gemini_generate($body);
                 $calls++;
             }
@@ -240,6 +298,12 @@ if (!function_exists('ai_chat')) {
 
             if ($outcome === 'quota') {
                 ai_quota_block(ai_quota_until($answer ?? []), ($answer['daily'] ?? false) ? 'per day' : 'per minute');
+            }
+
+            if ($outcome === 'busy') {
+                ai_diagnostic_write('question stopped after ' . $calls . ' Gemini request(s): the minute is full; the person is told: busy');
+
+                return ai_busy($userId, ai_pace_wait());
             }
 
             $code = match ($outcome) {
@@ -625,6 +689,9 @@ if (!function_exists('ai_chat')) {
             'available'   => $unavailable === null,
             'unavailable' => $unavailable,
             'notice'      => $unavailable === null ? null : ai_error_text($unavailable),
+            /* Seconds until the minute has room again, for everybody together
+               (includes/ai/pace.php): the sheet counts down from it. */
+            'wait'        => $unavailable === null ? ai_pace_wait() : 0,
             'consent'     => ai_consent_state($userId),
             'usage'       => ai_usage_summary($userId),
             'has_data'    => ai_has_data($userId),

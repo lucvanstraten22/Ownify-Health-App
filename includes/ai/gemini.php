@@ -174,7 +174,11 @@ if (!function_exists('ai_gemini_generate')) {
 
         if ($text === '' && $calls === []) {
             $blocked = in_array($finish, ['SAFETY', 'RECITATION', 'PROHIBITED_CONTENT', 'BLOCKLIST', 'SPII', 'LANGUAGE'], true);
-            error_log('[ownify] ai: Gemini answered with nothing to show (finishReason ' . ($finish === '' ? 'none' : $finish) . ')');
+            error_log('[ownify] ai: Gemini answered with nothing to show (finishReason ' . ($finish === '' ? 'none' : $finish) . ')'
+                . ($finish === 'MAX_TOKENS'
+                    ? ': it used the whole output ceiling (' . (int) ($json['usageMetadata']['thoughtsTokenCount'] ?? 0)
+                        . ' tokens of thinking) before it wrote an answer — raise max_output_tokens in config/ai.php'
+                    : ''));
 
             return ['ok' => false, 'outcome' => $blocked ? 'blocked' : 'invalid', 'usage' => $usage];
         }

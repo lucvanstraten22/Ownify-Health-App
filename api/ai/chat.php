@@ -9,6 +9,7 @@
  *
  *   code  consent      403  not allowed yet (Instellingen → Privacy, or the sheet)
  *         limit        429  today's messages are used up
+ *         busy         429  the minute is full, for everybody together; retry_after seconds
  *         quota        503  Gemini's free quota is used up, for everybody
  *         unavailable  503  not set up, or Gemini could not be reached
  *         timeout      503  no answer in time

@@ -53,7 +53,9 @@
         usage: session.usage || { used: 0, limit: 0, remaining: 0 },
         available: session.available !== false,
         unavailableNotice: session.notice || null,
-        lastFailed: null
+        lastFailed: null,
+        waitUntil: 0,
+        waitTimer: null
     };
 
     /* ------------------------------------------------------------ helpers */
@@ -149,6 +151,46 @@
         notice.hidden = false;
     }
 
+    /* ------------------------------------------------------- the minute */
+
+    /**
+     * OwnifyAI asks Gemini a few times a minute, for everybody together
+     * (includes/ai/pace.php). When the minute is full the server says how
+     * many seconds until there is room: the notice counts them down and
+     * Versturen waits; the question stays in the field. Read out once, not
+     * every second.
+     */
+    function startWait(seconds) {
+        seconds = Math.max(1, Math.ceil(Number(seconds) || 0));
+        state.waitUntil = Date.now() + seconds * 1000;
+        if (state.waitTimer) { window.clearInterval(state.waitTimer); }
+        state.waitTimer = window.setInterval(tickWait, 1000);
+        notice.setAttribute('aria-live', 'polite');
+        tickWait();
+        notice.setAttribute('aria-live', 'off');
+    }
+
+    function waitLeft() {
+        return state.waitUntil ? Math.max(0, Math.ceil((state.waitUntil - Date.now()) / 1000)) : 0;
+    }
+
+    function tickWait() {
+        var left = waitLeft();
+
+        if (left <= 0) {
+            window.clearInterval(state.waitTimer);
+            state.waitTimer = null;
+            state.waitUntil = 0;
+            notice.setAttribute('aria-live', 'polite');
+            setNotice(state.available ? null : state.unavailableNotice);
+            refreshComposer();
+            return;
+        }
+
+        setNotice((errors.busy || T.t('Het is even druk bij OwnifyAI. Over %d s kun je weer iets vragen.')).replace('%d', left));
+        refreshComposer();
+    }
+
     function setUsage(usage) {
         if (!usage) { return; }
         state.usage = usage;
@@ -167,7 +209,7 @@
         /* Never disabled while an answer is on its way: on a phone that
            would take the keyboard away. */
         input.disabled = out;
-        send.disabled = out || state.busy || input.value.trim() === '';
+        send.disabled = out || state.busy || waitLeft() > 0 || input.value.trim() === '';
 
         if (out && !state.busy) {
             setNotice(errors.limit || null);
@@ -323,7 +365,7 @@
         var dots = document.createElement('span');
         dots.className = 'ai-typing';
         dots.setAttribute('role', 'status');
-        dots.setAttribute('aria-label', copy.thinking || T.t('Ownify AI denkt na…'));
+        dots.setAttribute('aria-label', copy.thinking || T.t('OwnifyAI denkt na…'));
         dots.innerHTML = '<span></span><span></span><span></span>';
 
         bubble.appendChild(dots);
@@ -345,6 +387,12 @@
             setNotice(state.unavailableNotice);
         } else if (!(state.usage && state.usage.limit > 0 && state.usage.remaining <= 0)) {
             setNotice(null);
+        }
+
+        if (state.available && next.wait > 0) {
+            startWait(next.wait);
+        } else if (waitLeft() > 0) {
+            tickWait();
         }
     }
 
@@ -409,6 +457,11 @@
         if (code === 'limit') {
             setNotice(body.error || errors.limit || null);
             refreshComposer();
+            return;
+        }
+
+        if (code === 'busy') {
+            startWait(body.retry_after || 30);
             return;
         }
 
@@ -530,6 +583,7 @@
             state.conversation = null;
             showThread([]);
             setNotice(state.available ? null : state.unavailableNotice);
+            if (waitLeft() > 0) { tickWait(); }
             refreshComposer();
             input.focus();
             return;

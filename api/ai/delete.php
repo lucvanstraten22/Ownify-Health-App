@@ -4,7 +4,7 @@
  *
  *   POST conversation_id=…   one conversation, with its messages
  *   POST all=1               every conversation of this account (Instellingen
- *                            → Privacy → "AI-gesprekken wissen")
+ *                            → Privacy → "OwnifyAI-gesprekken wissen")
  *   → 200 { ok, deleted, message }
  *   → 404 a conversation that is not this account's
  *
@@ -30,7 +30,7 @@ if (($_POST['all'] ?? '') === '1') {
 
     api_ok([
         'deleted' => $deleted,
-        'message' => $deleted === 0 ? t('Er waren geen gesprekken om te wissen.') : t('Je AI-gesprekken zijn gewist.'),
+        'message' => $deleted === 0 ? t('Er waren geen gesprekken om te wissen.') : t('Je OwnifyAI-gesprekken zijn gewist.'),
     ]);
 }
 

@@ -9,7 +9,7 @@
  *                        picture, to everybody, the account itself included.
  *                        The picture itself is not touched.
  *
- *   ai_consent           "Ownify AI", 1 or 0: whether the assistant may send
+ *   ai_consent           "OwnifyAI", 1 or 0: whether the assistant may send
  *                        the account's data to Google Gemini. The same answer
  *                        as the one given in the assistant (api/ai/consent.php).
  *
@@ -44,8 +44,8 @@ if (array_key_exists('ai_consent', $_POST)) {
     api_ok([
         'ai_consent' => $allowed,
         'message'    => $allowed
-            ? t('Ownify AI staat aan.')
-            : t('Ownify AI staat uit. Er gaat niets naar Gemini.'),
+            ? t('OwnifyAI staat aan.')
+            : t('OwnifyAI staat uit. Er gaat niets naar Gemini.'),
     ]);
 }
 

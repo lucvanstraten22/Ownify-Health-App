@@ -868,7 +868,7 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
 }
 
 /**
- * Buttons that do one thing (`.settings-action`): "AI-gesprekken wissen".
+ * Buttons that do one thing (`.settings-action`): "OwnifyAI-gesprekken wissen".
  * The button asks first, in place; yes posts to the item's endpoint as the
  * website does, and the note under the label says what happened.
  */

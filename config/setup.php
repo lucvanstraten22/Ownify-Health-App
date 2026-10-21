@@ -83,7 +83,7 @@ return [
                     ],
                     'height' => [
                         'label'  => 'Lengte',
-                        'reason' => 'Met je gewicht en leeftijd berekent Ownify AI je energiebehoefte.',
+                        'reason' => 'Met je gewicht en leeftijd berekent OwnifyAI je energiebehoefte.',
                     ],
                     'weight' => [
                         'label'  => 'Gewicht',

@@ -81,7 +81,7 @@ return [
                 ['id' => 'privacy', 'icon' => 'shield', 'label' => 'Privacy',
                  'value' => 'Gezondheidsdata privé',
                  /* While Ownify AI is on (settings_prepare()). */
-                 'value_ai' => 'Privé, behalve wat Ownify AI naar Gemini stuurt'],
+                 'value_ai' => 'Privé, behalve wat OwnifyAI naar Gemini stuurt'],
             ],
         ],
 
@@ -99,7 +99,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 23.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 23.1'],
             ],
         ],
     ],
@@ -249,12 +249,12 @@ return [
                            leave the account — for Gemini, per question. */
                         ['label' => 'Gezondheidsgegevens', 'value' => 'Privé',
                          'note' => 'Slaap, voeding, training en metingen verlaten je account niet',
-                         'note_ai' => 'Als je Ownify AI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini'],
+                         'note_ai' => 'Als je OwnifyAI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini'],
                         ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
                          'note' => 'Verder niets — geen scores, geen metingen'],
                         ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
                          'note' => 'En je profielfoto, tenzij je die hieronder uitzet — nooit onderliggende gegevens'],
-                        ['label' => 'Ownify AI',           'value' => 'Uit',
+                        ['label' => 'OwnifyAI',           'value' => 'Uit',
                          'note' => 'Er gaat niets naar Google Gemini',
                          'value_ai' => 'Aan',
                          'note_ai' => 'Leest je gegevens om je vragen te beantwoorden, via Google Gemini'],
@@ -280,12 +280,12 @@ return [
                    off; the conversations stay until they are wiped below. */
                 [
                     'type'  => 'toggles',
-                    'title' => 'Ownify AI',
-                    'lede'  => 'De assistent die je omhoog veegt, gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
+                    'title' => 'OwnifyAI',
+                    'lede'  => 'OwnifyAI open je door omhoog te vegen; het is gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
                     'items' => [
                         ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
                          'note_on'  => 'Bij elke vraag gaan je profiel, scores, doelen en een samenvatting van twee weken naar Gemini, en per onderwerp meer, zoals slaap, voeding of training.',
-                         'note_off' => 'De assistent werkt niet, en er gaat niets naar Gemini.',
+                         'note_off' => 'OwnifyAI werkt niet, en er gaat niets naar Gemini.',
                          'on' => false],
                     ],
                 ],
@@ -297,11 +297,11 @@ return [
                    pages/settings-detail.php (`actions`) and settings.js. */
                 [
                     'type'  => 'actions',
-                    'title' => 'AI-gesprekken',
+                    'title' => 'OwnifyAI-gesprekken',
                     'items' => [
-                        ['key' => 'ai_clear_history', 'label' => 'AI-gesprekken wissen',
-                         'note'     => 'Verwijdert al je gesprekken met Ownify AI, op al je apparaten. Andere gegevens blijven staan.',
-                         'question' => 'Al je AI-gesprekken wissen? Dit kun je niet ongedaan maken.',
+                        ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
+                         'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
+                         'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
                          'confirm'  => 'Alles wissen',
                          'cancel'   => 'Annuleren',
                          'endpoint' => 'api/ai/delete.php',
@@ -530,7 +530,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 23.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 23.1'],
                     ],
                 ],
 

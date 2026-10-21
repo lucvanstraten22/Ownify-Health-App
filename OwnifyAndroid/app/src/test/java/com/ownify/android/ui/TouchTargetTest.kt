@@ -119,7 +119,7 @@ class TouchTargetTest {
         val owners = clickables.associateBy { layoutNodeOf.invoke(it) }
         val headerBottom = 110f * px
         // The dock — the assistant's grip and the tab bar under it — floats over the page's foot.
-        val dockTop = clickables.filter { it.label.startsWith("Ownify AI openen") }.minOfOrNull { it.boundsInRoot.top } ?: screen.bottom
+        val dockTop = clickables.filter { it.label.startsWith("OwnifyAI openen") }.minOfOrNull { it.boundsInRoot.top } ?: screen.bottom
 
         for (node in clickables) {
             val b: Rect = node.boundsInRoot

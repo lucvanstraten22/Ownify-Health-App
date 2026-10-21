@@ -225,7 +225,7 @@
     /* ------------------------------------------- buttons that do one thing */
 
     /**
-     * A row with `data-setting-action` ("AI-gesprekken wissen"): the button
+     * A row with `data-setting-action` ("OwnifyAI-gesprekken wissen"): the button
      * asks first, in place; yes posts to the row's endpoint and says what
      * happened. Nothing happens on the first press.
      */

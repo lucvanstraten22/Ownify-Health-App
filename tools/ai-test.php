@@ -284,8 +284,16 @@ function paired_phone(string $accountToken): string
     return (string) ($pair['body']['token'] ?? '');
 }
 
+/** Each question starts from an empty minute unless a test fills it (the pace has its own section). */
+$keepMinute = false;
+
 function chat(array $who, string $message, ?int $conversation = null): array
 {
+    global $keepMinute;
+    if (!$keepMinute) {
+        db_run("DELETE FROM ai_service_state WHERE name = 'minute_window'");
+    }
+
     $form = ['message' => $message];
     if ($conversation !== null) {
         $form['conversation_id'] = (string) $conversation;
@@ -430,7 +438,7 @@ try {
     check('sent to the model named in the config, with the key in a header, not the URL',
         str_contains((string) ($request['path'] ?? ''), '/v1beta/models/gemini-3.8-flash:generateContent')
         && ($request['key'] ?? null) === 'test-key-not-real' && !str_contains((string) ($request['path'] ?? ''), 'key='), json_encode($request['path'] ?? null));
-    check('the instruction: who the assistant is, and its rules', str_contains($system, "You are Ownify's personal health assistant.")
+    check('the instruction: who the assistant is, and its rules', str_contains($system, "You are OwnifyAI, Ownify's personal health assistant.")
         && str_contains($system, 'You must distinguish observed data from interpretations.')
         && str_contains($system, 'You must not fabricate missing data.'));
     $goalLimit = (int) ((require $root . '/config/goals.php')['limits']['active']);
@@ -539,11 +547,11 @@ try {
         && str_contains(sent_raw(1), '"args":{}'), sent_raw(1));
 
     forget_sent();
-    gemini(calls('get_goals', ['include_completed' => false]), calls('get_recent_activity', ['days' => 7], 'call-2'), says('Nog een ronde.'));
+    gemini(calls('get_goals', ['include_completed' => false]), says('Nog een ronde.'));
     chat($sanne, 'Hoe gaat het met mijn doelen en stappen?', $conversation);
-    $third = sent()[2]['body'] ?? [];
-    check('three rounds at most: the last one must answer in words', count(sent()) === 3
-        && ($third['toolConfig']['functionCallingConfig']['mode'] ?? null) === 'NONE');
+    $round2 = sent()[1]['body'] ?? [];
+    check('two rounds at most: one look-up, then the answer in words', count(sent()) === 2
+        && ($round2['toolConfig']['functionCallingConfig']['mode'] ?? null) === 'NONE');
 
     section('a change is proposed, not made');
     $goalsBefore = (int) db_value('SELECT COUNT(*) FROM goals WHERE user_id = ?', [$sanne['id']]);
@@ -647,6 +655,70 @@ try {
     check('the next day: fresh again', $r['status'] === 200 && ($r['body']['usage'] ?? null) === ['used' => 1, 'limit' => 20, 'remaining' => 19], summary($r));
 
     /* ==================================================================
+       THE MINUTE, FOR EVERYBODY TOGETHER
+       ================================================================== */
+
+    section('five requests a minute, for all accounts together');
+    $keepMinute = true;
+    $messages   = (int) db_value('SELECT COUNT(*) FROM ai_messages WHERE user_id = ?', [$sanne['id']]);
+    $usedBefore = used_today($sanne['id']);
+    $fill = static function (int $n, int $seconds, int $used = 1): void {
+        $slots = [];
+        for ($i = 0; $i < $n; $i++) {
+            $slots[] = ['other' . $i, time() + $seconds, $used];
+        }
+        db_run("INSERT INTO ai_service_state (name, value) VALUES ('minute_window', ?) ON DUPLICATE KEY UPDATE value = VALUES(value)",
+            [json_encode($slots)]);
+    };
+
+    $fill(5, 40);
+    forget_sent();
+    $r = chat($bram, 'Hoe sliep ik?');
+    check('the minute is full (other people\'s questions): 429 busy, nothing sent to Gemini', $r['status'] === 429
+        && ($r['body']['code'] ?? null) === 'busy' && sent() === [], summary($r));
+    check('it says when there is room again, in seconds, and in words', ($r['body']['retry_after'] ?? 0) >= 38 && ($r['body']['retry_after'] ?? 0) <= 41
+        && str_contains((string) ($r['body']['error'] ?? ''), 'Over ' . $r['body']['retry_after'] . ' s'), summary($r));
+    check('the sheet knows too, before anyone asks: available, and the seconds to count down',
+        (($s = http('/api/ai/state.php', ['bearer' => $sanne['token']])['body'])['available'] ?? null) === true
+        && ($s['wait'] ?? 0) >= 38 && ($s['wait'] ?? 0) <= 41, json_encode(['wait' => $s['wait'] ?? null]));
+    $r = chat($sanne, 'Hoe sliep ik?', $conversation);
+    check('and Sanne waits the same: it is one count for everybody', ($r['body']['code'] ?? null) === 'busy');
+    check('nothing of hers is counted or stored', used_today($sanne['id']) === $usedBefore
+        && (int) db_value('SELECT COUNT(*) FROM ai_messages WHERE user_id = ?', [$sanne['id']]) === $messages);
+
+    $fill(4, 40);
+    $r = chat($sanne, 'Hoe sliep ik?', $conversation);
+    check('room for one request, while a question may need two (a look-up and the answer): it waits', ($r['body']['code'] ?? null) === 'busy', summary($r));
+
+    $fill(5, -1);
+    gemini(says('Er is weer ruimte.'));
+    $r = chat($sanne, 'Hoe sliep ik?', $conversation);
+    check('the minute has passed for those: answered', $r['status'] === 200, summary($r));
+    $window = json_decode((string) db_value("SELECT value FROM ai_service_state WHERE name = 'minute_window'"), true);
+    check('the one request it made holds its place for a minute; the second it reserved is given back',
+        is_array($window) && count($window) === 1 && (int) $window[0][2] === 1
+        && (int) $window[0][1] >= time() + 55 && (int) $window[0][1] <= time() + 63, json_encode($window));
+
+    $fill(3, 40);
+    forget_sent();
+    gemini(calls('get_sleep_summary', ['days' => 7]), says('Met een look-up.'));
+    $r = chat($sanne, 'Hoe sliep ik deze week?', $conversation);
+    $window = json_decode((string) db_value("SELECT value FROM ai_service_state WHERE name = 'minute_window'"), true);
+    check('a question with a look-up takes the last two places, and both are counted', $r['status'] === 200 && count(sent()) === 2
+        && is_array($window) && count($window) === 5, summary($r));
+    $r = chat($bram, 'En ik?');
+    check('so the next person waits', ($r['body']['code'] ?? null) === 'busy', summary($r));
+
+    $fill(3, 40);
+    forget_sent();
+    gemini(['status' => 400, 'body' => ['error' => ['code' => 400, 'status' => 'INVALID_ARGUMENT', 'message' => 'Thinking level is not supported for this model.']]], says('Zonder nadenken.'));
+    $r = chat($sanne, 'Hoe was mijn week?', $conversation);
+    check('asking again without the thinking setting is a request too, and only made when there is room', $r['status'] === 200 && count(sent()) === 2, summary($r));
+
+    $keepMinute = false;
+    db_run("DELETE FROM ai_service_state WHERE name = 'minute_window'");
+
+    /* ==================================================================
        WHEN GEMINI FAILS
        ================================================================== */
 
@@ -684,6 +756,10 @@ try {
         'refused for safety'          => [['status' => 200, 'body' => ['promptFeedback' => ['blockReason' => 'SAFETY']]], 422, 'blocked'],
         'a key Gemini does not take'  => [['status' => 400, 'body' => ['error' => ['code' => 400, 'status' => 'INVALID_ARGUMENT', 'message' => 'API key not valid.']]], 503, 'unavailable'],
         'too slow'                    => [['sleep' => 4, 'status' => 200, 'body' => says('Te laat.')['body']], 503, 'timeout'],
+        /* What Gemini 3 sends when its thinking used up maxOutputTokens: a
+           candidate without an answer (the 2048 ceiling up to 23.0). */
+        'cut off while thinking'      => [['status' => 200, 'body' => ['candidates' => [['content' => ['role' => 'model'], 'finishReason' => 'MAX_TOKENS']],
+            'usageMetadata' => ['promptTokenCount' => 6100, 'candidatesTokenCount' => 0, 'thoughtsTokenCount' => 2047]]], 503, 'unavailable'],
     ] as $label => [$answer, $status, $code]) {
         gemini($answer);
         $r = chat($sanne, 'Hoe was mijn week?', $conversation);
@@ -691,7 +767,15 @@ try {
             && is_string($r['body']['error'] ?? null) && used_today($sanne['id']) === $used
             && (int) db_value('SELECT COUNT(*) FROM ai_messages WHERE user_id = ?', [$sanne['id']]) === $messages, summary($r));
     }
-    check('the failures are counted, without their content', (int) db_value('SELECT errors FROM ai_usage WHERE user_id = ? AND usage_date = CURDATE()', [$sanne['id']]) >= 8);
+    check('the failures are counted, without their content', (int) db_value('SELECT errors FROM ai_usage WHERE user_id = ? AND usage_date = CURDATE()', [$sanne['id']]) >= 9);
+
+    forget_sent();
+    gemini(says('Genoeg ruimte.'));
+    chat($sanne, 'Hoe was mijn week?', $conversation);
+    check('a question leaves the model room to think and still answer: at least 8192 output tokens, thinking low',
+        (int) (sent()[0]['body']['generationConfig']['maxOutputTokens'] ?? 0) >= 8192
+        && (sent()[0]['body']['generationConfig']['thinkingConfig']['thinkingLevel'] ?? null) === 'low',
+        json_encode(sent()[0]['body']['generationConfig'] ?? null));
 
     forget_sent();
     gemini(['status' => 400, 'body' => ['error' => ['code' => 400, 'status' => 'INVALID_ARGUMENT', 'message' => 'Thinking level is not supported for this model.']]], says('Zonder nadenken.'));
@@ -722,7 +806,7 @@ try {
     forget_sent();
     check('and from then on nothing is sent', chat($sanne, 'Hallo', $conversation)['status'] === 403 && sent() === []);
     $page = json_encode(http('/api/app/state.php', ['bearer' => $sanne['token']])['body']['data']['settings']['pages']['privacy'] ?? []);
-    check('Privacy shows it off, and "Ownify AI: Uit"', str_contains($page, '"key":"ai_consent"') && str_contains($page, '"label":"Ownify AI","value":"Uit"'));
+    check('Privacy shows it off, and "OwnifyAI: Uit"', str_contains($page, '"key":"ai_consent"') && str_contains($page, '"label":"OwnifyAI","value":"Uit"'));
     check('the switch back on: the same yes as in the sheet', http('/api/profile/privacy.php', ['bearer' => $sanne['token'], 'form' => ['ai_consent' => '1']])['status'] === 200
         && ai_consent_state_for($sanne['id']) === 'accepted');
     check('the website\'s switch needs its CSRF token', http('/api/profile/privacy.php', ['jar' => $jar, 'form' => ['ai_consent' => '1']])['status'] === 419);

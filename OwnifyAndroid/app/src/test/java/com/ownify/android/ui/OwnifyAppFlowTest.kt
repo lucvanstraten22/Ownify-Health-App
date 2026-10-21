@@ -356,8 +356,8 @@ class OwnifyAppFlowTest {
         compose.onNode(hasContentDescription("Sluiten") and hasClickAction()).performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Lid sinds", substring = true).fetchSemanticsNodes().isEmpty() }
 
-        compose.onNode(hasContentDescription("Ownify AI openen", substring = true)).performClick()
-        waitFor("Ownify AI gebruiken?")
+        compose.onNode(hasContentDescription("OwnifyAI openen", substring = true)).performClick()
+        waitFor("OwnifyAI gebruiken?")
     }
 
     // ------------------------------------------------------------ the first days
@@ -643,10 +643,10 @@ class OwnifyAppFlowTest {
     // --------------------------------------------------------- Ownify AI
 
     private fun openAssistant() =
-        compose.onNode(hasContentDescription("Ownify AI openen", substring = true)).performClick()
+        compose.onNode(hasContentDescription("OwnifyAI openen", substring = true)).performClick()
 
     private fun send(question: String) {
-        field("Je vraag aan Ownify AI").performTextInput(question)
+        field("Je vraag aan OwnifyAI").performTextInput(question)
         compose.onNode(hasContentDescription("Versturen") and hasClickAction()).performClick()
     }
 
@@ -657,13 +657,13 @@ class OwnifyAppFlowTest {
         }
 
     @Test
-    fun `Ownify AI - nothing goes to Gemini before the yes, then a question is answered and the conversation stays`() {
+    fun `OwnifyAI - nothing goes to Gemini before the yes, then a question is answered and the conversation stays`() {
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
 
         openAssistant()
-        waitFor("Ownify AI gebruiken?")
+        waitFor("OwnifyAI gebruiken?")
         // What happens with the data, said before anything happens — the free tier's terms included.
         waitFor("Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren")
         assertTrue(server.requestsTo("chat.php").isEmpty())
@@ -686,7 +686,7 @@ class OwnifyAppFlowTest {
         assertEquals(mapOf("message" to "Hoe was mijn gezondheid deze week?"), form(asked))
 
         // Pulled down and up again: the conversation is still there, nothing asked twice.
-        compose.onNode(hasContentDescription("Ownify AI sluiten", substring = true) and hasClickAction()).performClick()
+        compose.onNode(hasContentDescription("OwnifyAI sluiten", substring = true) and hasClickAction()).performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("7 u 35 min", substring = true).fetchSemanticsNodes().isEmpty() }
         openAssistant()
         waitFor("7 u 35 min")
@@ -699,7 +699,7 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Ownify AI - a goal it prepares is added only on a yes, and Doelen is read again`() {
+    fun `OwnifyAI - a goal it prepares is added only on a yes, and Doelen is read again`() {
         server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
@@ -728,7 +728,7 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Ownify AI - the free quota used up, or today's limit reached, in the server's words, the question kept`() {
+    fun `OwnifyAI - the free quota used up, or today's limit reached, in the server's words, the question kept`() {
         server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
@@ -738,7 +738,7 @@ class OwnifyAppFlowTest {
 
         server.aiMode = FakeOwnifyServer.AiMode.QUOTA
         send("Hoe sliep ik?")
-        waitFor("de gratis gebruikslimiet is bereikt")
+        waitFor("gratis gebruikslimiet van OwnifyAI is bereikt")
         // Not answered, not lost: the question is back in the field, and it can be sent again.
         compose.onNode(hasText("Hoe sliep ik?") and hasSetTextAction()).assertExists()
         server.aiMode = FakeOwnifyServer.AiMode.OK
@@ -752,24 +752,46 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Ownify AI - said no, nothing is sent, and the question can be looked at again`() {
+    fun `OwnifyAI - the minute is full for everybody, it counts down and the question waits in the field`() {
+        server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
         openAssistant()
-        waitFor("Ownify AI gebruiken?")
+        waitFor("Je persoonlijke gezondheidsassistent")
+
+        server.aiMode = FakeOwnifyServer.AiMode.BUSY
+        send("Hoe sliep ik?")
+        waitFor("Het is even druk bij OwnifyAI. Over 2 s kun je weer iets vragen.")
+        compose.onNode(hasText("Hoe sliep ik?") and hasSetTextAction()).assertExists()
+        compose.onNode(hasContentDescription("Versturen") and hasClickAction()).assertIsNotEnabled()
+
+        // At 0 the countdown goes and Versturen works again.
+        server.aiMode = FakeOwnifyServer.AiMode.OK
+        compose.waitUntil(8_000) { compose.onAllNodesWithText("Het is even druk", substring = true).fetchSemanticsNodes().isEmpty() }
+        compose.onNode(hasContentDescription("Versturen") and hasClickAction()).assertIsEnabled().performClick()
+        waitFor("Standaardantwoord.")
+    }
+
+    @Test
+    fun `OwnifyAI - said no, nothing is sent, and the question can be looked at again`() {
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openAssistant()
+        waitFor("OwnifyAI gebruiken?")
 
         button("Niet nu").performClick()
-        waitFor("Ownify AI staat uit")
+        waitFor("OwnifyAI staat uit")
         assertEquals("declined", server.aiConsent)
         assertTrue(server.requestsTo("chat.php").isEmpty())
 
         button("Toestemming bekijken").performClick()
-        waitFor("Ownify AI gebruiken?")
+        waitFor("OwnifyAI gebruiken?")
     }
 
     @Test
-    fun `Privacy - Ownify AI's switch is the same answer as in the sheet, and the conversations can be wiped`() {
+    fun `Privacy - OwnifyAI's switch is the same answer as in the sheet, and the conversations can be wiped`() {
         server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
@@ -780,18 +802,18 @@ class OwnifyAppFlowTest {
         waitFor("Gegevens verwerken met Google Gemini")
 
         // Wiping asks first.
-        compose.onNode(hasText("AI-gesprekken wissen", substring = true)).assertExists()
+        compose.onNode(hasText("OwnifyAI-gesprekken wissen", substring = true)).assertExists()
         compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
-        waitFor("Al je AI-gesprekken wissen?")
+        waitFor("Al je OwnifyAI-gesprekken wissen?")
         assertTrue(server.requestsTo("delete.php").isEmpty())
         compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
-        waitFor("Je AI-gesprekken zijn gewist.")
+        waitFor("Je OwnifyAI-gesprekken zijn gewist.")
         assertEquals(mapOf("all" to "1"), form(server.requestsTo("delete.php").single()))
 
         val toggle = compose.onNode(hasText("Gegevens verwerken met Google Gemini", substring = true) and hasClickAction())
         toggle.assertIsOn()
         toggle.performSemanticsAction(SemanticsActions.OnClick)
-        waitFor("De assistent werkt niet, en er gaat niets naar Gemini.")
+        waitFor("OwnifyAI werkt niet, en er gaat niets naar Gemini.")
         toggle.assertIsOff()
         // The switch moves at once; the save is on its way.
         compose.waitUntil(10_000) { server.requestsTo("privacy.php").isNotEmpty() && server.aiConsent == "declined" }

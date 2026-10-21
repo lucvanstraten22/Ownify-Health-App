@@ -2,6 +2,7 @@ package com.ownify.android.data
 
 import android.content.Context
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -153,6 +154,27 @@ object OwnifyAssistant {
     var notice by mutableStateOf<AiNotice?>(null)
         private set
 
+    /**
+     * When OwnifyAI has room again this minute, for everybody together
+     * (includes/ai/pace.php), in System.currentTimeMillis(); 0 when it has
+     * room now. The composer counts down to it and Versturen waits.
+     */
+    var waitUntil by mutableLongStateOf(0L)
+        private set
+
+    /** Whole seconds until [waitUntil]; 0 when there is room. */
+    fun waitLeft(now: Long = System.currentTimeMillis()): Int =
+        if (waitUntil == 0L) 0 else kotlin.math.ceil((waitUntil - now) / 1000.0).toInt().coerceAtLeast(0)
+
+    private fun startWait(seconds: Int) {
+        waitUntil = System.currentTimeMillis() + seconds.coerceAtLeast(1) * 1000L
+    }
+
+    /** The countdown reached 0: there is room again. */
+    fun waitOver() {
+        waitUntil = 0L
+    }
+
     /** What is typed, kept while the sheet is closed. */
     var draft by mutableStateOf("")
 
@@ -248,6 +270,9 @@ object OwnifyAssistant {
             usage?.out == true -> AiNotice(copy.error("limit"))
             else -> null
         }
+
+        val wait = body.int("wait") ?: 0
+        if (available != false && wait > 0) startWait(wait)
     }
 
     /* --------------------------------------------------------------- asking */
@@ -458,6 +483,12 @@ object OwnifyAssistant {
 
             "limit" -> notice = AiNotice(outcome.message)
 
+            // The minute is full for everybody: the composer counts down, the question stays.
+            "busy" -> {
+                notice = null
+                startWait(outcome.body.int("retry_after") ?: 30)
+            }
+
             else -> {
                 val again = outcome.status == null || code in setOf("timeout", "unavailable", "quota") || code == null
                 notice = AiNotice(
@@ -487,6 +518,7 @@ object OwnifyAssistant {
         loading = false
         sending = null
         notice = null
+        waitUntil = 0L
         draft = ""
         consentBusy = false
         consentError = null

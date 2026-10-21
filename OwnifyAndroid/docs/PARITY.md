@@ -27,7 +27,7 @@ and the website works exactly as before (without a bearer token it is the
 same CSRF + session check). After every write the app reads the state again,
 as the website reloads or re-fetches the page after one.
 
-Ownify AI, the assistant in the sheet, has endpoints of its own —
+OwnifyAI, the assistant in the sheet, has endpoints of its own —
 `api/ai/state.php`, `chat.php`, `consent.php`, `action.php` and `delete.php`
 (`docs/AI.md`) — and the app uses exactly those, with its account token, as
 the website does with its session: the same conversations, the same daily
@@ -70,7 +70,7 @@ with bold only.
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |
 | `components/account-modal.php` (signed in) + `account-friends.php` | `AccountPanel` account + Vrienden views | identity, username, avatar, friends nav + badge, search, requests, sent, toggle, friends with in-place confirm |
-| `pages/ai.php` + `components/ai-consent.php`, `ai-empty-state.php`, `ai-composer.php` | `AssistantSheet` | handle, close pill, new-conversation and history buttons; consent (five points, Toestaan en beginnen / Niet nu, error), declined (Toestemming bekijken); empty (orb, name, no-data line, three suggestions); conversation (your bubble, the answer's paragraphs, headings and lists with bold, Ownify's own notes, a proposal card with its two buttons and then its outcome); thinking dots; notices (unavailable, free quota, today's limit, too slow, no connection — with Opnieuw proberen where it helps, the question kept in the field); composer (grows to five lines, send, "Nog 7 van 10 berichten vandaag"); history (list with Vandaag / Gisteren / date, open, delete with in-place confirm, empty) |
+| `pages/ai.php` + `components/ai-consent.php`, `ai-empty-state.php`, `ai-composer.php` | `AssistantSheet` | handle, close pill, new-conversation and history buttons; consent (five points, Toestaan en beginnen / Niet nu, error), declined (Toestemming bekijken); empty (orb, name, no-data line, three suggestions); conversation (your bubble, the answer's paragraphs, headings and lists with bold, Ownify's own notes, a proposal card with its two buttons and then its outcome); thinking dots; notices (unavailable, free quota, today's limit, too slow, no connection — with Opnieuw proberen where it helps, the question kept in the field); composer (grows to five lines, send, "Nog 7 van 10 berichten vandaag"); history (list with Vandaag / Gisteren / date, open, delete with in-place confirm, empty); the shared minute's countdown (*Het is even druk bij OwnifyAI. Over 23 s …*, from `busy` / `wait`) above the field, Versturen waiting until it reaches 0 |
 
 ## Chrome and motion
 

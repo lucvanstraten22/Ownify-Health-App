@@ -93,7 +93,7 @@ environment variable that wins over the file.
 | App key | `config/app.local.php` | `OWNIFY_APP_KEY` | storing OAuth tokens |
 | Google sign-in | `config/auth.local.php` | `GOOGLE_SIGNIN_CLIENT_ID` `_CLIENT_SECRET` `_REDIRECT_URI` `_ANDROID_CLIENT_IDS` | signing in with Google (the last: in the Ownify app) |
 | Google client | `config/integrations.local.php` | `GOOGLE_HEALTH_CLIENT_*` | the Google Health cloud source |
-| Gemini API key | `config/ai.local.php` | `GEMINI_API_KEY` | Ownify AI, the assistant — [AI.md](AI.md) |
+| Gemini API key | `config/ai.local.php` | `GEMINI_API_KEY` | OwnifyAI, the assistant — [AI.md](AI.md) |
 
 Check what a machine actually has, without printing any of it:
 
@@ -293,7 +293,7 @@ signed with: [APP-AUTH.md](APP-AUTH.md#setting-up-google-for-the-app).
 | `challenges` | a challenge (Uitdagingen): Samen or Wedstrijd, what it counts, its target (Samen, stored units), its name, first and last day, and its five-digit code — which works until the last day and is `NULL` once a later challenge was given it ([CHALLENGES.md](CHALLENGES.md)) |
 | `challenge_members` | who is in a challenge and how: `invited` (by whom), `joined` (since when — what they do counts from that day), `declined` or `left`. Nobody's health is copied in here: totals are worked out when shown |
 
-**Ownify AI — private** ([AI.md](AI.md))
+**OwnifyAI — private** ([AI.md](AI.md))
 
 | Table | Holds |
 | --- | --- |
@@ -387,7 +387,7 @@ cannot be read, the original is shown as before (`tools/check-config.php`
 says which). Replacing a picture removes the old one and its copy; deleting
 the account removes both.
 
-**Whether Ownify AI may send someone's data to Gemini** is
+**Whether OwnifyAI may send someone's data to Gemini** is
 `user_profiles.ai_consent` — NULL never asked, 1 yes, 0 no or withdrawn — with
 `ai_consent_version` (the wording they answered, `consent_version` in
 `config/ai.php`) and `ai_consent_at`. The sheet's first question and the
@@ -471,7 +471,7 @@ either.
 **Voorkeuren and phone names** (19.0):
 `database/migrations/024-preferences-and-device-names.sql` adds
 `user_profiles.week_start` (`sunday`, or NULL for Monday — where a week
-begins in a goal's day calendar and Ownify AI's weekly totals),
+begins in a goal's day calendar and OwnifyAI's weekly totals),
 `text_large`, `contrast_more` and `motion_off` (Voorkeuren ›
 Toegankelijkheid, each 0 or 1, on whatever the device says; see
 [THEME.md](THEME.md)), and `user_devices.custom_label`: the name the owner gave
@@ -497,7 +497,7 @@ goals and a new one cannot be made.
 
 There is no `age` column: Leeftijd is no longer a field in Instellingen
 (19.0). Whatever needs an age — the nutrition targets, the estimated maximum
-heart rate, Ownify AI's context — works it out from `date_of_birth` when it
+heart rate, OwnifyAI's context — works it out from `date_of_birth` when it
 needs it (`user_age()`), as it already did.
 
 **Blocking is separate from friendship** because it is one-directional: A can
@@ -540,7 +540,7 @@ ways of signing in (the password and the Google link), every browser it stays
 signed in on, health data, goals and
 their history, measurements, paired phones and their tokens, pairing codes,
 integrations, friendships in both directions, blocks, points and leaderboard
-positions, and every conversation with Ownify AI and its usage all go in the
+positions, and every conversation with OwnifyAI and its usage all go in the
 same statement — rows removed, not marked. The profile
 picture is a file and is removed from `uploads/avatars/` separately. The
 browser is signed out; a session still open on another device is turned away on
@@ -662,7 +662,7 @@ rating keeps working beside it.
 `week_starts_on` in `config/points.php` (Monday). Once Instellingen stores a
 person's own choice, `points_week_start()` is the one place that reads it.
 
-**The assistant.** Built: Ownify AI ([AI.md](AI.md)) reads a user's own data
+**The assistant.** Built: OwnifyAI ([AI.md](AI.md)) reads a user's own data
 through the same functions the pages use, with the id from the session, and is
 never handed another user's records. New areas of data reach it as a block in
 `includes/ai/context.php` and, for a longer stretch, a tool in
@@ -724,7 +724,7 @@ components as JSON in `inputs` and `valid_until`, the last day it holds
 without new input — one row per category and one for the overall score per
 day, rewritten only when something changed, and **only for today**: a day
 that has passed keeps what it recorded. That is the history the Gezondheid
-trend, the Scorekompas (7 days to a year) and Ownify AI read
+trend, the Scorekompas (7 days to a year) and OwnifyAI read
 (`health_score_history()`): a day without a row of its own carries the last
 recorded categories while they hold, and has no score after that — never a
 recalculation from today's records, never a backfill. An existing database

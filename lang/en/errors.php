@@ -160,10 +160,10 @@ return [
     'De server kan tokens nog niet veilig opslaan.' => 'The server cannot store tokens securely yet.',
 
     /* ---- Errors and confirmations from the server (api_fail, 'error' =>) */
-    'Ownify AI staat aan.' => 'Ownify AI is on.',
-    'Ownify AI staat uit. Er gaat niets naar Gemini.' => 'Ownify AI is off. Nothing goes to Gemini.',
+    'OwnifyAI staat aan.' => 'OwnifyAI is on.',
+    'OwnifyAI staat uit. Er gaat niets naar Gemini.' => 'OwnifyAI is off. Nothing goes to Gemini.',
     'Er waren geen gesprekken om te wissen.' => 'There were no conversations to delete.',
-    'Je AI-gesprekken zijn gewist.' => 'Your AI conversations have been deleted.',
+    'Je OwnifyAI-gesprekken zijn gewist.' => 'Your OwnifyAI conversations have been deleted.',
     'Jullie zijn nu vrienden.' => 'You are now friends.',
     'Verzoek geweigerd.' => 'Request declined.',
     '%s is verwijderd uit je vrienden.' => '%s has been removed from your friends.',

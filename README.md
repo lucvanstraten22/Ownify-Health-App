@@ -12,7 +12,7 @@ document:
 ```
 
 Horizontal moves between the five pages. Vertical pulls the assistant up over
-whichever page you are on: **Ownify AI**, a health assistant that answers from
+whichever page you are on: **OwnifyAI**, a health assistant that answers from
 the person's own data with Google Gemini on its free tier — see
 [docs/AI.md](docs/AI.md).
 
@@ -47,7 +47,7 @@ database/
     schema.sql                the MySQL schema — repeatable, import and go
     seed-dev.sql              fake development data, never production
 includes/                     the data layer: db, session, auth, repositories
-    ai/                       Ownify AI: config and consent, the Gemini client, what goes
+    ai/                       OwnifyAI: config and consent, the Gemini client, what goes
                               along with a question, tools, prompt, the conversation store
 api/                          JSON endpoints for sign-in and profile edits
     ai/                       the assistant: state, chat, consent, action, delete
@@ -55,7 +55,7 @@ tools/
     check-config.php          what this machine is configured with; prints no secrets
     health-connect-test.sh    the whole phone-sync flow over curl, no phone needed
     hc-verify.php             that test's batch, and what each record must become
-    ai-test.php               Ownify AI end to end, against a stand-in for Gemini
+    ai-test.php               OwnifyAI end to end, against a stand-in for Gemini
     ai-fake-gemini.php        that stand-in (PHP's built-in server only)
     theme-test.php            Dark and White Mode: the cookie, the settings, the
                               tokens, contrast, the page served in each
@@ -90,7 +90,7 @@ config/goals.php              goal vocabulary, copy and the example goals
 config/settings.php           the settings tree, its screens and their copy
 config/compass.php            the Scorekompas: its words, and when it may say something
 config/setup.php              the first days: the setup's and the baseline card's words
-config/ai.php                 Ownify AI: model, limits, consent version — no key
+config/ai.php                 OwnifyAI: model, limits, consent version — no key
 config/ai-prompt.php          what the assistant is told about itself
 lib/render.php                escaping, page/component include, score formatting
 lib/health.php                the overall score and its legend, shared metrics, chart geometry
@@ -169,7 +169,7 @@ assets/js/
     navigation-core.js        one gesture pipeline, routed by axis
     page-navigation.js        horizontal: the five-page rail
     ai-sheet.js               vertical: the assistant sheet
-    ai-chat.js                Ownify AI inside it: consent, conversation, history
+    ai-chat.js                OwnifyAI inside it: consent, conversation, history
     detail-layer.js           drilling into an item, and swiping back
     health-trend.js           a chart's period switch and the line draw-on
     compass-history.js        reading a score history: finger, cursor or keys
@@ -693,7 +693,7 @@ tables, the privacy model and where the future integrations plug in.
 
 Email/password sign-in, Google sign-in once it is configured, the profile,
 health data from the Android app, scores, goals, points, friends and the
-leaderboards all read and write the database; Ownify AI works once its Gemini
+leaderboards all read and write the database; OwnifyAI works once its Gemini
 key is set ([docs/AI.md](docs/AI.md)). Failed sign-ins are limited to 5 per 15
 minutes per name and network address.
 
@@ -759,7 +759,7 @@ an existing database needs (`016-setup-and-focus.sql`), is in
 
 ## The assistant layer
 
-**Ownify AI** lives in the sheet, on the website and in the Android app alike:
+**OwnifyAI** lives in the sheet, on the website and in the Android app alike:
 a personal health assistant that answers from the person's own sleep,
 nutrition, training, activity, measurements, scores and goals, with Google
 Gemini on the free tier of its API. The whole setup — the migration, where to
@@ -773,7 +773,7 @@ conversations, in Instellingen → Privacy. Everybody gets 10 questions a day,
 counted on the server. The assistant explains; it does not diagnose, and it
 can prepare a goal that is only added when the person confirms it.
 
-Screens: the consent question, *Ownify AI staat uit*, the empty state (the
+Screens: the consent question, *OwnifyAI staat uit*, the empty state (the
 orb, the name, three suggestions), the conversation, the history, and a notice
 for every way it can fail — never Gemini's own text. `ai.css` only arranges
 tokens from `theme.css`, as before.

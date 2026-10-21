@@ -341,7 +341,7 @@ class FakeOwnifyServer {
     /* ------------------------------------------------------ Ownify AI */
 
     /** How the assistant's chat.php answers: as normal, past today's limit (429), or with Gemini's free quota used up (503). */
-    enum class AiMode { OK, LIMIT, QUOTA }
+    enum class AiMode { OK, LIMIT, QUOTA, BUSY }
 
     @Volatile
     var aiMode = AiMode.OK
@@ -638,7 +638,7 @@ class FakeOwnifyServer {
                 val question = fields["message"].orEmpty().trim()
                 val pending = aiMessages.lastOrNull { it.optJSONObject("action")?.optString("state") == "pending" }
                 when {
-                    aiConsent != "accepted" -> aiFail(exchange, 403, "consent", "Om Ownify AI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Gemini worden verwerkt.")
+                    aiConsent != "accepted" -> aiFail(exchange, 403, "consent", "Om OwnifyAI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Gemini worden verwerkt.")
                     question.isEmpty() -> aiFail(exchange, 422, "empty", "Typ eerst een vraag.")
                     pending != null && question.lowercase().trimEnd('!', '.') in setOf("ja", "ja graag", "nee") -> {
                         val yes = !question.lowercase().startsWith("nee")
@@ -648,8 +648,12 @@ class FakeOwnifyServer {
                         reply(exchange, 200, JSONObject().put("ok", true).put("conversation", conversation())
                             .put("messages", org.json.JSONArray().put(mine).put(pending).put(note)).put("usage", aiUsage()).toString())
                     }
-                    aiMode == AiMode.LIMIT || aiUsed >= 10 -> aiFail(exchange, 429, "limit", "Je hebt de gratis AI-berichten van vandaag gebruikt. Morgen kun je weer verder.")
-                    aiMode == AiMode.QUOTA -> aiFail(exchange, 503, "quota", "De AI-assistent is tijdelijk niet beschikbaar: de gratis gebruikslimiet is bereikt. Probeer het later opnieuw.")
+                    aiMode == AiMode.LIMIT || aiUsed >= 10 -> aiFail(exchange, 429, "limit", "Je hebt je gratis berichten aan OwnifyAI van vandaag gebruikt. Morgen kun je weer verder.")
+                    aiMode == AiMode.QUOTA -> aiFail(exchange, 503, "quota", "De gratis gebruikslimiet van OwnifyAI is bereikt. Probeer het later opnieuw.")
+                    // The minute is full for everybody together (includes/ai/pace.php): room again in two seconds.
+                    aiMode == AiMode.BUSY -> reply(exchange, 429, JSONObject().put("ok", false).put("code", "busy")
+                        .put("error", "Het is even druk bij OwnifyAI. Over 2 s kun je weer iets vragen.").put("retry_after", 2)
+                        .put("usage", aiUsage()).toString())
                     else -> {
                         if (aiConversation == null) {
                             aiConversation = JSONObject().put("id", 7).put("title", question.take(60)).put("label", "Vandaag 12:00")
@@ -686,7 +690,7 @@ class FakeOwnifyServer {
             "delete.php" -> {
                 aiConversation = null
                 aiMessages.clear()
-                reply(exchange, 200, JSONObject().put("ok", true).put("deleted", 1).put("message", "Je AI-gesprekken zijn gewist.").toString())
+                reply(exchange, 200, JSONObject().put("ok", true).put("deleted", 1).put("message", "Je OwnifyAI-gesprekken zijn gewist.").toString())
             }
 
             else -> reply(exchange, 404, """{"ok":false}""")

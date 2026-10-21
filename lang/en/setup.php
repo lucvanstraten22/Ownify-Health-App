@@ -30,7 +30,7 @@ return [
     'Alleen wat Ownify echt gebruikt. Alles is optioneel.' => 'Only what Ownify actually uses. Everything is optional.',
     'Met je leeftijd schat Ownify je maximale hartslag, en daarmee hoe zwaar een training was.' => 'With your age Ownify estimates your maximum heart rate, and with it how hard a workout was.',
     'Je geboortedatum staat daarna vast.' => 'Your date of birth is fixed after that.',
-    'Met je gewicht en leeftijd berekent Ownify AI je energiebehoefte.' => 'With your weight and age, Ownify AI calculates your energy needs.',
+    'Met je gewicht en leeftijd berekent OwnifyAI je energiebehoefte.' => 'With your weight and age, OwnifyAI calculates your energy needs.',
     'Het beginpunt van een gewichtsdoel, en nodig voor je energiebehoefte.' => 'The starting point of a weight goal, and needed for your energy needs.',
     'Overslaan' => 'Skip',
     'Opslaan en verder' => 'Save and continue',

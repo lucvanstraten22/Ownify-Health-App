@@ -1,4 +1,4 @@
-# Ownify AI
+# OwnifyAI
 
 The assistant in the sheet you swipe up — on the website and in the Android
 app. It answers questions about the person's own sleep, nutrition, training,
@@ -28,7 +28,7 @@ Three things, once:
    billing**;
 3. put the key on the server.
 
-Until all three are done the assistant says *De AI-assistent is tijdelijk niet
+Until all three are done the assistant says *OwnifyAI is tijdelijk niet
 beschikbaar* and nothing else in the app changes.
 
 ### 1. The migration
@@ -80,7 +80,7 @@ cp config/ai.local.php.example config/ai.local.php
 nano config/ai.local.php                 # replace PUT-YOUR-GEMINI-API-KEY-HERE
 chmod 600 config/ai.local.php
 php tools/check-config.php               # [ ok ] ownify ai  key from config/ai.local.php, …
-php tools/check-config.php --ai-ping     # one tiny request: "It works: …"
+php tools/check-config.php --ai-ping     # one request shaped as a chat question: "It works: …"
 ```
 
 Without SSH, Hestia's File Manager does the same: copy
@@ -105,8 +105,10 @@ The app looks for the key in this order, first one wins:
 3. `config/ai.local.php`, returning `['api_key' => '...']`
 
 `php tools/check-config.php` says which one it found — never the key, not even
-a prefix — and `--ai-ping` asks Gemini one question of a few tokens to prove
-the key and the model work.
+a prefix — and `--ai-ping` sends one request shaped exactly as a question in the chat —
+the system instruction, the nine tool declarations, the same output ceiling
+and thinking level — with nothing personal in it, to prove the key, the
+model and the request work.
 
 ## Settings
 
@@ -118,51 +120,67 @@ environment — so the model or a limit changes without a code change:
 | `model` | `gemini-3.8-flash` | `GEMINI_MODEL` | the Gemini model; must be one on the free tier |
 | `daily_limit` | 10 | `AI_DAILY_MESSAGE_LIMIT` | questions per person per day |
 | `global_daily_limit` | 250 | `AI_GLOBAL_DAILY_LIMIT` | Gemini requests per day, everybody together |
-| `max_rounds` | 3 | — | Gemini requests one question may take (look-ups included) |
+| `max_rounds` | 2 | — | Gemini requests one question may take: an answer, or one look-up and the answer |
+| `minute_limit` | 5 | `AI_MINUTE_LIMIT` | Gemini requests per minute, everybody together (at most 8); Google's free tier allows `gemini-3.8-flash` 5 |
 | `max_message_chars` | 2000 | — | the longest question |
 | `history_messages` | 12 | — | recent messages sent along with a question; each earlier answer goes back exactly as Gemini sent it, thought signature included (Gemini 3 refuses a model turn without one) |
 | `history_digest` | 8 | — | earlier questions of the conversation, listed as a reminder |
 | `max_conversations` | 50 | — | conversations kept per person; the oldest go |
 | `timeout` | 45 | `GEMINI_TIMEOUT` | seconds to wait for Gemini |
-| `max_output_tokens` | 2048 | — | the ceiling on an answer, thinking included |
+| `max_output_tokens` | 8192 | — | the ceiling on an answer, thinking included. Gemini 3 counts its thinking against it; a model that thinks up to the ceiling sends back no answer at all (`finishReason` `MAX_TOKENS`), which the person sees as *tijdelijk niet beschikbaar* — 2048 was too low for `gemini-3.8-flash` |
 | `thinking_level` | `low` | `AI_THINKING_LEVEL` | how hard the model thinks; `low` is fastest and cheapest on quota |
 | `consent_version` | `2026-10-gemini-free` | — | the consent wording people said yes to (see *Consent*) |
 
 ## Free, and staying free
 
-Nothing Ownify AI does costs money, by construction: a project without
+Nothing OwnifyAI does costs money, by construction: a project without
 billing, a free-tier model, no Google Search grounding, and no second provider
 or paid model to fall back on. When the free quota is gone, the assistant says
 so and waits.
 
-Three limits, checked on the server in this order before Gemini is asked:
+Four limits, checked on the server in this order before Gemini is asked:
 
 1. **Google's own quota.** When Gemini answers HTTP 429 (`RESOURCE_EXHAUSTED`),
    Ownify writes down until when in `ai_service_state` and asks nobody's
    question until then: a daily quota until the next midnight Pacific time,
    when Google resets it; a per-minute one for the delay Google gives (30
-   seconds to an hour). Meanwhile everyone gets *de gratis gebruikslimiet is
-   bereikt*, and their question stays in the field.
+   seconds to an hour). Meanwhile everyone gets *De gratis gebruikslimiet van
+   OwnifyAI is bereikt*, and their question stays in the field.
 2. **Ownify's own total**, `global_daily_limit`: the Gemini requests made today
    by everybody together (the sum of `ai_usage.gemini_calls`). One question
-   takes one request, or two or three when the assistant looks something up.
+   takes one request, or two when the assistant looks something up.
    It keeps Ownify under Google's limit, so one busy day cannot use up the
    project's quota; past it, the same *gratis gebruikslimiet* answer.
-3. **Each person's share**, `daily_limit`: questions per person per calendar
+3. **The minute, for everybody together**, `minute_limit` (5):
+   Google's free tier gives `gemini-3.8-flash` 5 requests per minute for the
+   whole project (AI Studio → *Rate limit*), and past it refuses and makes
+   everyone wait. So Ownify keeps one rolling minute for all accounts
+   together (`includes/ai/pace.php`, the row `minute_window` in
+   `ai_service_state`, read and written under a row lock so two people at the
+   same moment cannot both take the last place). A question reserves the
+   requests it may need (`max_rounds`, 2) before anything is sent, marks each
+   one as it is made — it then holds its place for a minute — and gives back
+   what it did not use. Without room: HTTP 429 `busy` with `retry_after`
+   seconds and *Het is even druk bij OwnifyAI. Over 23 s kun je weer iets
+   vragen.*; the sheet counts the seconds down on both apps, Versturen waits
+   and the question stays in the field. `api/ai/state.php` says the same
+   (`wait`), so a sheet opened while the minute is full counts down before
+   anyone asks. Nothing is sent and nothing of the person's is counted.
+4. **Each person's share**, `daily_limit`: questions per person per calendar
    day (Europe/Amsterdam), in `ai_usage.messages`. A question is reserved with
    one atomic `UPDATE … WHERE messages < limit` before Gemini is asked — two at
    the same moment cannot both take the last one — and given back if Gemini
    does not answer, so a failure never costs a question. Answering a proposal
    (the button, or "ja" / "nee") is not a question and is not counted. Past it:
-   HTTP 429 and *Je hebt de gratis AI-berichten van vandaag gebruikt. Morgen kun
+   HTTP 429 and *Je hebt je gratis berichten aan OwnifyAI van vandaag gebruikt. Morgen kun
    je weer verder.* The sheet shows *Nog 7 van 10 berichten vandaag*.
 
-The frontends only display these numbers; the server enforces all three.
+The frontends only display these numbers; the server enforces all four.
 
 ## Consent and privacy
 
 **Nothing goes to Gemini before the person says yes.** The first time the sheet
-opens it asks *Ownify AI gebruiken?* and says, in five points: which of their
+opens it asks *OwnifyAI gebruiken?* and says, in five points: which of their
 data is sent to Google Gemini; that it goes automatically — with every question
 the profile, the scores, the goals, a summary of the last two weeks and the
 conversation so far, and more about the topic the question is about (the list
@@ -180,12 +198,12 @@ person to every device. The server checks it on every question (HTTP 403
 provider, other terms — and change `consent_version` with it, and everybody is
 asked again.
 
-**Changing one's mind:** Instellingen → Privacy → *Ownify AI* → *Gegevens
+**Changing one's mind:** Instellingen → Privacy → *OwnifyAI* → *Gegevens
 verwerken met Google Gemini* is the same answer as in the sheet, on both apps.
-Off, nothing is sent; the sheet says *Ownify AI staat uit* and offers
-*Toestemming bekijken*. **Wiping:** Instellingen → Privacy → *AI-gesprekken* →
+Off, nothing is sent; the sheet says *OwnifyAI staat uit* and offers
+*Toestemming bekijken*. **Wiping:** Instellingen → Privacy → *OwnifyAI-gesprekken* →
 *Alles wissen* (asks first), or one conversation from the history list in the
-sheet. Deleting the account deletes everything of Ownify AI with it (`ON DELETE
+sheet. Deleting the account deletes everything of OwnifyAI with it (`ON DELETE
 CASCADE`).
 
 **What goes to Gemini with a question** — worked out afresh for each question
@@ -258,7 +276,7 @@ with the id from the session — never an id Gemini names.
 **How a question runs** (`ai_chat()` in `includes/ai/assistant.php`): Ownify
 asks Gemini with the functions available; when Gemini asks for one, Ownify
 carries it out and sends the result back, and Gemini goes on — at most
-`max_rounds` (3) rounds per question, the last one forced to answer in words,
+`max_rounds` (2) rounds per question, the last one forced to answer in words,
 all within 55 seconds. An unknown function or wrong arguments go back to Gemini
 as an error, never to the person.
 
@@ -289,7 +307,7 @@ None accepts a user id; every query filters on the id from the sign-in.
 
 | Endpoint | Takes | Does |
 | --- | --- | --- |
-| `api/ai/state.php` | `conversation_id`, or `new=1` | consent, availability, today's usage, the conversation list and one conversation |
+| `api/ai/state.php` | `conversation_id`, or `new=1` | consent, availability, seconds until the minute has room (`wait`), today's usage, the conversation list and one conversation |
 | `api/ai/chat.php` | `message`, `conversation_id` | asks; returns the question and the answer as stored, and the usage |
 | `api/ai/consent.php` | `decision` = `accept` / `decline` | stores the answer |
 | `api/ai/action.php` | `message_id`, `decision` = `confirm` / `decline` | answers a proposal |
@@ -298,13 +316,13 @@ None accepts a user id; every query filters on the id from the sign-in.
 
 A refusal carries a `code` and a sentence in the reader's language (`config/dashboard.php`, `ai` →
 `errors`) — never Gemini's own text: `consent` 403, `empty` / `too_long` 422,
-`not_found` 404, `limit` 429, `quota` / `unavailable` / `timeout` 503,
+`not_found` 404, `limit` 429, `busy` 429 (the minute is full for everybody, with `retry_after`), `quota` / `unavailable` / `timeout` 503,
 `blocked` 422 (Gemini would not answer this question), `action_gone` 409 (the
 proposal was already answered).
 
 ## When it does not answer: the log, and the diagnostic
 
-Every failure behind "De AI-assistent is tijdelijk niet beschikbaar" is
+Every failure behind "OwnifyAI is tijdelijk niet beschikbaar" is
 written down as a line starting `[ownify] ai:`, with PHP's `error_log()`
 and nothing else. Where that line ends up is the server's choice, not
 Ownify's: PHP's `error_log` setting, which Hestia leaves unset. PHP-FPM then

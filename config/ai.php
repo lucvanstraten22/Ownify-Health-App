@@ -25,6 +25,8 @@
  *   AI_DAILY_MESSAGE_LIMIT    daily_limit      questions per person per day
  *   AI_GLOBAL_DAILY_LIMIT     global_daily_limit   Gemini requests per day,
  *                                                  everybody together
+ *   AI_MINUTE_LIMIT           minute_limit     Gemini requests per minute,
+ *                                              everybody together
  *
  * ---------------------------------------------------------------------------
  * FREE OF CHARGE, ON PURPOSE
@@ -60,9 +62,13 @@ $settings = [
 
     /**
      * How much Gemini may write, thinking included. Answers are asked to be
-     * short; this is the ceiling, not the aim.
+     * short; this is the ceiling, not the aim. Gemini 3 counts its thinking
+     * against it, and a model that thinks up to the ceiling sends back no
+     * answer at all (finishReason MAX_TOKENS) — so it stays well above what
+     * thinking takes. The model allows 64k; a higher ceiling costs nothing
+     * by itself, only the tokens actually written count.
      */
-    'max_output_tokens' => 2048,
+    'max_output_tokens' => 8192,
 
     /**
      * How hard the model thinks before it answers: 'low' is fastest and uses
@@ -85,8 +91,22 @@ $settings = [
      */
     'global_daily_limit' => 250,
 
-    /** How many Gemini requests one question may take at most (look-ups included). */
-    'max_rounds' => 3,
+    /**
+     * Requests Ownify makes to Gemini per minute, everybody together — one
+     * shared count for all accounts (includes/ai/pace.php). Google's free
+     * tier allows gemini-3.8-flash 5 requests per minute for the whole
+     * project; past it Google refuses (HTTP 429) and everyone has to wait.
+     * Ownify keeps under it itself: a question that would go over waits,
+     * and the sheet counts down to when there is room again. At most 8.
+     */
+    'minute_limit' => 5,
+
+    /**
+     * How many Gemini requests one question may take at most: an answer
+     * straight away, or one look-up and then the answer. Every one of them
+     * counts against minute_limit, so fewer rounds leave room for more people.
+     */
+    'max_rounds' => 2,
 
     /** The longest question someone can send, in characters. */
     'max_message_chars' => 2000,
@@ -142,6 +162,7 @@ foreach ([
     'GEMINI_TIMEOUT'         => ['timeout', 'int'],
     'AI_DAILY_MESSAGE_LIMIT' => ['daily_limit', 'int'],
     'AI_GLOBAL_DAILY_LIMIT'  => ['global_daily_limit', 'int'],
+    'AI_MINUTE_LIMIT'        => ['minute_limit', 'int'],
     'AI_THINKING_LEVEL'      => ['thinking_level', 'string'],
     'AI_DIAGNOSTIC_LOG'      => ['diagnostic_log', 'string'],
 ] as $variable => [$key, $type]) {

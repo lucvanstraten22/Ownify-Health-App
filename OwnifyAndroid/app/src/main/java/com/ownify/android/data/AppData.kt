@@ -164,7 +164,11 @@ data class AiCopy(
     val session: AiSession
 ) {
     /** One of the server's sentences for [code], or its general one. */
-    fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: tr("De AI-assistent is tijdelijk niet beschikbaar. Probeer het later opnieuw.")
+    fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: tr("OwnifyAI is tijdelijk niet beschikbaar. Probeer het later opnieuw.")
+
+    /** "Over 23 s kun je weer iets vragen": the minute is full for everybody, [seconds] left. */
+    fun busyText(seconds: Int): String =
+        (errors["busy"] ?: tr("Het is even druk bij OwnifyAI. Over %d s kun je weer iets vragen.")).replace("%d", seconds.toString())
 
     /** "Nog 7 van 10 berichten vandaag", or nothing without a limit. */
     fun remainingText(usage: AiUsage): String =
@@ -184,7 +188,7 @@ data class AiCopy(
             history = o.str("history") ?: tr("Gesprekken"),
             historyEmpty = o.str("history_empty") ?: tr("Nog geen gesprekken."),
             deleteChat = o.str("delete_chat") ?: tr("Gesprek verwijderen"),
-            thinking = o.str("thinking") ?: tr("Ownify AI denkt na…"),
+            thinking = o.str("thinking") ?: tr("OwnifyAI denkt na…"),
             remaining = o.str("remaining") ?: tr("Nog %d van %d berichten vandaag"),
             retry = o.str("retry") ?: tr("Opnieuw proberen"),
             empty = AiEmptyCopy(

@@ -51,6 +51,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -590,7 +591,9 @@ private fun Composer(ai: AiCopy) {
     val sending = a.sending != null
     val unavailable = (a.available ?: ai.session.available) == false
 
-    val notice = a.notice
+    val waitLeft = rememberWaitLeft(a.waitUntil)
+    val notice = (if (waitLeft > 0) AiNotice(ai.busyText(waitLeft)) else null)
+        ?: a.notice
         ?: if (unavailable) AiNotice(ai.session.notice ?: ai.error("unavailable")) else null
         ?: if (out) AiNotice(ai.error("limit")) else null
 
@@ -644,7 +647,7 @@ private fun Composer(ai: AiCopy) {
                     }
                 }
             )
-            SendButton(ai.send, enabled = !out && !sending && a.draft.isNotBlank()) {
+            SendButton(ai.send, enabled = !out && !sending && waitLeft == 0 && a.draft.isNotBlank()) {
                 a.ask(context, ai, a.draft)
             }
         }
@@ -654,6 +657,25 @@ private fun Composer(ai: AiCopy) {
             T(left, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
         }
     }
+}
+
+/**
+ * The seconds left until OwnifyAI has room again this minute ([until],
+ * [OwnifyAssistant.waitUntil]), ticking once a second; 0 when there is room.
+ */
+@Composable
+private fun rememberWaitLeft(until: Long): Int {
+    var left by remember(until) { mutableIntStateOf(OwnifyAssistant.waitLeft()) }
+    LaunchedEffect(until) {
+        if (until == 0L) return@LaunchedEffect
+        while (true) {
+            left = OwnifyAssistant.waitLeft()
+            if (left <= 0) break
+            kotlinx.coroutines.delay(1000L)
+        }
+        OwnifyAssistant.waitOver()
+    }
+    return left
 }
 
 @Composable
