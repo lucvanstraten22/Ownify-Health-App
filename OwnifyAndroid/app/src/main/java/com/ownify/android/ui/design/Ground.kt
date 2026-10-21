@@ -28,7 +28,7 @@ data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val co
  * A page's ground: a few soft washes of colour over the vertical gradient
  * of the theme's ground ([Ownify.BgMain] to [Ownify.BgDeep]). Three exist on
  * the website — the app's (`.app__backdrop`), a detail page's (in its area's
- * accent) and the assistant sheet's. The washes are the same in both themes.
+ * accent) and the assistant sheet's (which paints its own light over it). The washes are the same in both themes.
  */
 @Immutable
 data class Ground(val washes: List<Wash>) {
@@ -51,14 +51,11 @@ data class Ground(val washes: List<Wash>) {
             )
         )
 
-        /** `.sheet--ai`: the app's ground, mirrored. */
-        val Assistant = Ground(
-            listOf(
-                Wash(0.86f, 0.48f, 0.80f, 0.02f, Ownify.Health.copy(alpha = 0.16f), 0.62f),
-                Wash(0.72f, 0.44f, 0.10f, 0.24f, Ownify.AttentionGold.copy(alpha = 0.08f), 0.60f),
-                Wash(1.20f, 0.64f, 0.50f, 1.04f, Ownify.AmbientOlive.copy(alpha = 0.08f), 0.62f)
-            )
-        )
+        /**
+         * `.sheet--ai`: the theme's ground alone — the sheet draws its own light
+         * over it, green from above and a dawn at the foot (AssistantSheet's AiSky).
+         */
+        val Assistant = Ground(emptyList())
     }
 }
 

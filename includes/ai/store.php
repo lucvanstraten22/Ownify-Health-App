@@ -17,6 +17,12 @@ if (!function_exists('ai_conversation_get')) {
 
     /* ====================================================== conversations */
 
+    /* How many questions a conversation holds (Gesprekken: "3 vragen"), for
+       the conversation as `c`. */
+    if (!defined('AI_QUESTIONS_SQL')) {
+        define('AI_QUESTIONS_SQL', "(SELECT COUNT(*) FROM ai_messages m WHERE m.conversation_id = c.id AND m.user_id = c.user_id AND m.role = 'user')");
+    }
+
     /** One of the person's own conversations, or null. */
     function ai_conversation_get(int $userId, int $conversationId): ?array
     {
@@ -25,7 +31,8 @@ if (!function_exists('ai_conversation_get')) {
         }
 
         return db_one(
-            'SELECT id, title, created_at, updated_at FROM ai_conversations WHERE id = ? AND user_id = ?',
+            'SELECT c.id, c.title, c.created_at, c.updated_at, ' . AI_QUESTIONS_SQL . ' AS questions
+               FROM ai_conversations c WHERE c.id = ? AND c.user_id = ?',
             [$conversationId, $userId]
         );
     }
@@ -44,8 +51,9 @@ if (!function_exists('ai_conversation_get')) {
     function ai_conversations(int $userId, int $limit = 30): array
     {
         return db_all(
-            'SELECT id, title, created_at, updated_at FROM ai_conversations
-              WHERE user_id = ? ORDER BY updated_at DESC, id DESC LIMIT ' . max(1, min($limit, 100)),
+            'SELECT c.id, c.title, c.created_at, c.updated_at, ' . AI_QUESTIONS_SQL . ' AS questions
+               FROM ai_conversations c
+              WHERE c.user_id = ? ORDER BY c.updated_at DESC, c.id DESC LIMIT ' . max(1, min($limit, 100)),
             [$userId]
         );
     }

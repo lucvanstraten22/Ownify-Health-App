@@ -7,15 +7,122 @@
    consent, the conversation and the composer.
    ========================================================================== */
 
-/* Same ground as the dashboard backdrop, mirrored, so the sheet reads as
-   another corner of the same room rather than another document. */
+/* --------------------------------------------------------------------------
+   The light of the sheet (pages/ai.php .ai-sky)
+
+   Green light from above, and a dawn at the foot: green in the middle,
+   blue to the left, violet to the right. Both are wide ellipses reaching
+   past the edges, falling off along an eased curve (many stops, ease-out),
+   so neither reads as a spot or ends in a line. The dawn brightens and
+   breathes a little faster while OwnifyAI thinks. White Mode keeps the same
+   light, softer. The colours are the sheet's own; everything else is the
+   theme's.
+   -------------------------------------------------------------------------- */
 .sheet--ai {
-    background:
-        radial-gradient(86% 48% at 80% 2%, rgba(60, 158, 114, 0.16), transparent 62%),
-        radial-gradient(72% 44% at 10% 24%, rgba(191, 168, 99, 0.08), transparent 60%),
-        radial-gradient(120% 64% at 50% 104%, rgba(120, 165, 96, 0.08), transparent 62%),
-        linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+    --ai-green: 60, 158, 114;
+    --ai-mint: 110, 196, 156;
+    --ai-blue: 79, 120, 214;
+    --ai-violet: 138, 98, 210;
+    --ai-glow-k: 1;
+    --ai-dawn-k: 1;
+    /* OwnifyAI's own words: grey glass. Yours: the green, deep enough for
+       white text to read (4.6 : 1), in both themes. */
+    --ai-bubble: rgba(255, 255, 255, calc(0.085 * var(--glint-k)));
+    --ai-user: #2F8460;
+    --ai-on-user: #FFFFFF;
+    background: linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
 }
+
+:root[data-theme="light"] .sheet--ai {
+    --ai-glow-k: 0.62;
+    --ai-dawn-k: 0.7;
+    --ai-bubble: rgba(255, 255, 255, calc(0.26 * var(--glint-k)));
+}
+
+.ai-sky {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.ai-sky > i {
+    position: absolute;
+    display: block;
+    will-change: transform, opacity;
+}
+
+.ai-sky__top {
+    inset: -10% -30% auto;
+    height: 78%;
+    background: radial-gradient(ellipse 62% 78% at 50% 0%,
+        rgba(var(--ai-green), calc(0.40 * var(--ai-glow-k))) 0%,
+        rgba(var(--ai-green), calc(0.368 * var(--ai-glow-k))) 10%,
+        rgba(var(--ai-green), calc(0.32 * var(--ai-glow-k))) 20%,
+        rgba(var(--ai-green), calc(0.26 * var(--ai-glow-k))) 30%,
+        rgba(var(--ai-green), calc(0.20 * var(--ai-glow-k))) 40%,
+        rgba(var(--ai-green), calc(0.144 * var(--ai-glow-k))) 50%,
+        rgba(var(--ai-green), calc(0.096 * var(--ai-glow-k))) 60%,
+        rgba(var(--ai-green), calc(0.056 * var(--ai-glow-k))) 70%,
+        rgba(var(--ai-green), calc(0.028 * var(--ai-glow-k))) 80%,
+        rgba(var(--ai-green), calc(0.01 * var(--ai-glow-k))) 90%,
+        rgba(var(--ai-green), 0) 100%);
+    animation: ai-sky 18s ease-in-out infinite alternate;
+}
+
+/* A second, lighter green drifting across the first: the light moves. */
+.ai-sky__glint {
+    inset: -6% -40% auto 10%;
+    height: 50%;
+    background: radial-gradient(ellipse 50% 70% at 60% 0%,
+        rgba(var(--ai-mint), calc(0.14 * var(--ai-glow-k))) 0%,
+        rgba(var(--ai-mint), calc(0.08 * var(--ai-glow-k))) 35%,
+        rgba(var(--ai-mint), calc(0.03 * var(--ai-glow-k))) 65%,
+        rgba(var(--ai-mint), 0) 100%);
+    animation: ai-sky-drift 26s ease-in-out infinite alternate;
+}
+
+.ai-sky__dawn {
+    inset: auto -35% -2%;
+    height: 50%;
+    background:
+        radial-gradient(ellipse 34% 62% at 24% 100%,
+            rgba(var(--ai-blue), calc(0.36 * var(--ai-dawn-k))) 0%,
+            rgba(var(--ai-blue), calc(0.22 * var(--ai-dawn-k))) 30%,
+            rgba(var(--ai-blue), calc(0.08 * var(--ai-dawn-k))) 60%,
+            rgba(var(--ai-blue), 0) 100%),
+        radial-gradient(ellipse 34% 62% at 78% 100%,
+            rgba(var(--ai-violet), calc(0.32 * var(--ai-dawn-k))) 0%,
+            rgba(var(--ai-violet), calc(0.19 * var(--ai-dawn-k))) 30%,
+            rgba(var(--ai-violet), calc(0.06 * var(--ai-dawn-k))) 60%,
+            rgba(var(--ai-violet), 0) 100%),
+        radial-gradient(ellipse 60% 88% at 50% 100%,
+            rgba(var(--ai-green), calc(0.552 * var(--ai-dawn-k))) 0%,
+            rgba(var(--ai-green), calc(0.504 * var(--ai-dawn-k))) 10%,
+            rgba(var(--ai-green), calc(0.444 * var(--ai-dawn-k))) 20%,
+            rgba(var(--ai-green), calc(0.36 * var(--ai-dawn-k))) 30%,
+            rgba(var(--ai-green), calc(0.276 * var(--ai-dawn-k))) 40%,
+            rgba(var(--ai-green), calc(0.198 * var(--ai-dawn-k))) 50%,
+            rgba(var(--ai-green), calc(0.132 * var(--ai-dawn-k))) 60%,
+            rgba(var(--ai-green), calc(0.077 * var(--ai-dawn-k))) 70%,
+            rgba(var(--ai-green), calc(0.038 * var(--ai-dawn-k))) 80%,
+            rgba(var(--ai-green), calc(0.014 * var(--ai-dawn-k))) 90%,
+            rgba(var(--ai-green), 0) 100%);
+    opacity: 0.9;
+    transform-origin: 50% 100%;
+    animation: ai-dawn 20s ease-in-out infinite alternate;
+    transition: opacity 700ms var(--ease-out);
+}
+
+.sheet--ai.is-thinking .ai-sky__dawn {
+    opacity: 1;
+    animation: ai-dawn-think 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes ai-sky       { from { opacity: 0.82; transform: translateY(-2%) scale(1); } to { opacity: 1; transform: translateY(0) scale(1.04); } }
+@keyframes ai-sky-drift { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+@keyframes ai-dawn      { from { transform: scale(1); } to { transform: scale(1.05, 1.08); } }
+@keyframes ai-dawn-think { from { transform: scale(1.03, 1.06); } to { transform: scale(1.08, 1.16); } }
 
 .screen__scroll--ai {
     display: flex;
@@ -34,28 +141,32 @@
     top: 0;
     z-index: 3;
     flex: none;
-    padding-top: max(var(--space-3), var(--safe-top));
+    padding-top: max(var(--space-2), var(--safe-top));
     padding-bottom: var(--space-3);
     touch-action: none;
 }
 
-/* Pinned while the conversation scrolls under it: frosted, fading into the
-   sheet rather than ending in an edge, so it reads as the sheet's own top. */
+/* Only once the conversation scrolls under it: the light stays clear at
+   rest, and words passing under the top blur away rather than being cut. */
 .ai-top::before {
     content: "";
     position: absolute;
     inset: 0 0 -20px;
     z-index: -1;
     background: linear-gradient(180deg,
-        color-mix(in srgb, var(--bg-main) 88%, transparent) 0%,
-        color-mix(in srgb, var(--bg-main) 72%, transparent) 70%,
-        transparent 100%);
+        rgba(var(--ground), 0.80) 0%,
+        rgba(var(--ground), 0.58) 70%,
+        rgba(var(--ground), 0) 100%);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
     -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
     mask-image: linear-gradient(180deg, #000 72%, transparent);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
     pointer-events: none;
 }
+
+.sheet--ai.is-under-top .ai-top::before { opacity: 1; }
 
 /* The grabber: says "pull me down" in the same language as the dock handle. */
 .sheet-handle {
@@ -68,32 +179,169 @@
 }
 
 .ai-top__row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding-top: var(--space-3);
-}
-
-.ai-top__actions {
-    display: flex;
     gap: var(--space-2);
+    padding-top: var(--space-2);
 }
 
-.ai-top__actions[hidden] { display: none; }
+.ai-top__balance { width: 42px; }
 
-/* Round, icon-only pills: the same glass as the close pill, sized to it. */
-.pill--icon {
-    width: 42px;
-    justify-content: center;
-    padding-inline: 0;
+/* The floating glass of the header's buttons (.pill--devices): the island
+   and the round buttons are cut from the same pane. */
+.ai-glass {
+    position: relative;
+    isolation: isolate;
+    border: 0;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.04 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    box-shadow:
+        0 10px 26px rgba(var(--shade), calc(0.30 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
+    color: var(--text-primary);
     cursor: pointer;
 }
 
-.pill--icon[aria-expanded="true"] {
-    border-color: var(--health-strong);
-    color: var(--text-primary);
+.ai-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
 }
+
+.ai-round {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.ai-round--small { width: 38px; height: 38px; }
+.ai-round__icon { width: 20px; height: 20px; }
+
+/* The island: the Ownify logo, OwnifyAI, how many conversations there are,
+   and a chevron that says it opens. While OwnifyAI thinks, the count and
+   the chevron make way for "denkt na…" and the logo glows. */
+.ai-island {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 100%;
+    height: 44px;
+    padding: 0 16px 0 6px;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    transition:
+        transform var(--press-out) var(--ease-out-strong),
+        padding 420ms var(--ease-out-strong),
+        gap 420ms var(--ease-out-strong);
+}
+
+.ai-island:disabled { cursor: default; }
+.ai-island:disabled .ai-island__count,
+.ai-island:disabled .ai-island__chev { display: none; }
+.ai-island:disabled { padding-right: 18px; }
+
+.ai-island__name {
+    font-size: var(--fs-label);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.ai-island__think {
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    font-size: var(--fs-footnote);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    opacity: 0;
+    transition: max-width 420ms var(--ease-out-strong), opacity 300ms var(--ease-out);
+}
+
+.ai-island__count {
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.ai-island__count:empty { display: none; }
+
+.ai-island__chev {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    color: var(--text-muted);
+    stroke-width: 2;
+    transition: transform 420ms var(--ease-out-strong);
+}
+
+.ai-island[aria-expanded="true"] .ai-island__chev { transform: rotate(180deg); }
+
+.sheet--ai.is-thinking .ai-island { gap: 10px; padding-right: 18px; }
+.sheet--ai.is-thinking .ai-island__think { max-width: 120px; opacity: 1; }
+.sheet--ai.is-thinking .ai-island__count,
+.sheet--ai.is-thinking .ai-island__chev { display: none; }
+
+/* The official logo, never redrawn (docs/BRANDING.md), with a soft green
+   halo behind it that breathes while OwnifyAI thinks. */
+.ai-logo {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+}
+
+.ai-logo img {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+}
+
+.ai-logo::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(var(--ai-green), 0.45), rgba(var(--ai-green), 0));
+    opacity: 0;
+    transition: opacity 400ms var(--ease-out);
+}
+
+.sheet--ai.is-thinking .ai-island .ai-logo::before { animation: ai-halo 1.6s ease-in-out infinite; }
+
+@keyframes ai-halo {
+    0%, 100% { opacity: 0.25; transform: scale(0.9); }
+    50%      { opacity: 0.9;  transform: scale(1.12); }
+}
+
+.ai-logo--large { width: 64px; height: 64px; margin-bottom: var(--space-2); }
+.ai-logo--large img { width: 64px; height: 64px; }
+
+.ai-logo--consent { width: 56px; height: 56px; }
+.ai-logo--consent img { width: 56px; height: 56px; }
+.ai-logo--off img { opacity: 0.5; filter: grayscale(1); }
 
 /* --------------------------------------------------------------------------
    Middle — consent, or the conversation
@@ -113,8 +361,8 @@
     flex: 1 1 auto;
 }
 
-/* Before the first message: the orb and what the assistant is for, centred
-   in whatever room the sheet has. */
+/* Before the first message: the logo, "Wat wil je weten?" and what the
+   assistant is for, centred in whatever room the sheet has. */
 .ai-empty {
     display: flex;
     flex: 1 1 auto;
@@ -128,7 +376,7 @@
 .ai-empty[hidden] { display: none; }
 
 .ai-empty__title {
-    margin-top: var(--space-6);
+    margin-top: var(--space-3);
     font-size: var(--fs-brand);
     font-weight: 600;
     letter-spacing: -0.03em;
@@ -196,93 +444,12 @@
 }
 
 /* --------------------------------------------------------------------------
-   The assistant, as an abstract glass orb.
-   The dotted ring is the dashboard's "no data yet" idiom, reused here.
-   -------------------------------------------------------------------------- */
-.orb {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: clamp(120px, 36vw, 152px);
-    aspect-ratio: 1;
-}
-
-.orb__ring {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    animation: orb-rotate 72s linear infinite;
-}
-
-.orb__ring circle {
-    fill: none;
-    stroke: rgba(var(--ink), 0.26);
-    stroke-width: 3.5;
-    stroke-linecap: round;
-    stroke-dasharray: 0.5 9;
-}
-
-/* A light source behind the glass, not a coloured disc. Kept low-contrast
-   with a long falloff so it never bands on the dark ground. */
-.orb__glow {
-    position: absolute;
-    inset: -34%;
-    border-radius: 50%;
-    background: radial-gradient(circle,
-        rgba(60, 158, 114, 0.16) 0%,
-        rgba(60, 158, 114, 0.08) 26%,
-        rgba(60, 158, 114, 0.02) 48%,
-        transparent 72%);
-}
-
-.orb__core {
-    position: absolute;
-    inset: 16%;
-    border-radius: 50%;
-    background: radial-gradient(120% 120% at 30% 22%,
-        rgba(255, 255, 255, calc(0.24 * var(--glint-k))) 0%,
-        rgba(255, 255, 255, calc(0.09 * var(--glint-k))) 34%,
-        rgba(255, 255, 255, calc(0.02 * var(--glint-k))) 62%,
-        rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%);
-    border: 1px solid rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
-    -webkit-backdrop-filter: blur(14px) saturate(125%);
-    backdrop-filter: blur(14px) saturate(125%);
-    /* Rim light on top, depth underneath: reads as a sphere of glass. */
-    box-shadow:
-        inset 0 2px 1px rgba(255, 255, 255, calc(0.24 * var(--glint-k))),
-        inset 0 -20px 30px rgba(var(--shade), calc(0.20 * var(--shade-k))),
-        0 20px 42px rgba(var(--shade), calc(0.28 * var(--shade-k)));
-    animation: orb-breathe 7s ease-in-out infinite;
-}
-
-/* Specular sheen. */
-.orb__core::after {
-    content: "";
-    position: absolute;
-    inset: 9% 20% 54% 17%;
-    border-radius: 50%;
-    background: radial-gradient(ellipse at 42% 24%, rgba(255, 255, 255, calc(0.30 * var(--glint-k))), transparent 72%);
-    filter: blur(3px);
-}
-
-@keyframes orb-rotate {
-    to { transform: rotate(360deg); }
-}
-
-@keyframes orb-breathe {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.035); }
-}
-
-/* --------------------------------------------------------------------------
    The conversation
    -------------------------------------------------------------------------- */
 .ai-thread {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-3);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -294,36 +461,45 @@
     display: flex;
     flex-direction: column;
     max-width: 100%;
-    animation: ai-msg-in 320ms var(--ease-out) both;
+    animation: ai-msg-in 280ms var(--ease-out) both;
 }
 
-/* The person: a tinted pane on the right, their words as typed. */
+/* The person: the green, on the right, their words as typed. */
 .ai-msg--user { align-items: flex-end; }
 
 .ai-msg--user .ai-msg__bubble {
-    max-width: 85%;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--health-edge);
+    max-width: 82%;
+    padding: 9px 14px 10px;
     border-radius: 20px 20px 6px 20px;
-    background: linear-gradient(180deg, rgba(60, 158, 114, 0.22), rgba(60, 158, 114, 0.14));
-    color: var(--text-primary);
+    background: var(--ai-user);
+    color: var(--ai-on-user);
     font-size: var(--fs-body);
-    line-height: 1.45;
+    line-height: 1.42;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
-/* The assistant: glass across the column, read like a note rather than a
-   speech balloon. */
+/* OwnifyAI: grey glass on the left. */
+.ai-msg--assistant { align-items: flex-start; }
+
 .ai-msg--assistant .ai-msg__bubble {
-    padding: var(--space-4);
-    border: 1px solid var(--glass-border-soft);
-    border-radius: 6px 20px 20px 20px;
-    background: var(--surface-gradient-quiet, var(--glass-soft));
-    box-shadow: var(--shadow-inset);
+    max-width: 88%;
+    padding: 10px 14px 11px;
+    border-radius: 20px 20px 20px 6px;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, calc(0.05 * var(--glint-k))),
+            rgba(255, 255, 255, calc(0.015 * var(--glint-k)))),
+        var(--ai-bubble);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow:
+        inset 0 0 0 1px var(--glass-hairline),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.08 * var(--glint-k))),
+        0 1px 2px rgba(var(--shade), calc(0.10 * var(--shade-k)));
     color: var(--text-primary);
     font-size: var(--fs-body);
-    line-height: 1.55;
+    line-height: 1.5;
     overflow-wrap: anywhere;
 }
 
@@ -431,19 +607,21 @@
     .ai-btn--primary:hover { background: color-mix(in srgb, var(--health-edge), var(--health-strong)); }
 }
 
-/* Thinking: three dots in the assistant's pane. */
+/* Thinking: three dots in OwnifyAI's glass. */
+.ai-msg--assistant .ai-msg__bubble:has(> .ai-typing) { padding: 13px 15px; }
+
 .ai-typing {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 20px;
+    height: 10px;
 }
 
 .ai-typing span {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--text-muted);
+    background: rgba(var(--ink), 0.45);
     animation: ai-typing 1.2s ease-in-out infinite;
 }
 
@@ -451,8 +629,8 @@
 .ai-typing span:nth-child(3) { animation-delay: 0.3s; }
 
 @keyframes ai-typing {
-    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-    30%           { opacity: 1;   transform: translateY(-3px); }
+    0%, 70%, 100% { opacity: 0.45; transform: translateY(0); }
+    35%           { opacity: 1;    transform: translateY(-3px); }
 }
 
 @keyframes ai-msg-in {
@@ -471,10 +649,6 @@
     text-align: center;
     padding-block: var(--space-2) var(--space-4);
 }
-
-.orb--small { width: clamp(84px, 24vw, 104px); }
-.orb--still .orb__ring { animation: none; opacity: 0.5; }
-.orb--still .orb__core { animation: none; }
 
 .ai-consent__title {
     margin-top: var(--space-4);
@@ -553,16 +727,24 @@
     padding-bottom: max(var(--space-3), calc(var(--safe-bottom) + var(--space-2)));
 }
 
-/* A soft floor under the composer, so the text scrolling past fades out
-   rather than being cut. */
+/* Only while words are under it: they blur away into the glass, rather than
+   being cut — and the dawn behind the field stays clear at rest. */
 .ai-composer::before {
     content: "";
     position: absolute;
     inset: -28px calc(-1 * var(--space-4)) 0;
     z-index: -1;
-    background: linear-gradient(180deg, transparent, var(--bg-deep) 34px);
+    background: linear-gradient(180deg, rgba(var(--ground-deep), 0), rgba(var(--ground-deep), 0.45) 34px);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 34px);
+    mask-image: linear-gradient(180deg, transparent, #000 34px);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
     pointer-events: none;
 }
+
+.sheet--ai.is-under-composer .ai-composer::before { opacity: 1; }
 
 .ai-composer[hidden] { display: none; }
 
@@ -572,8 +754,12 @@
     gap: var(--space-2);
     padding: 6px 6px 6px var(--space-4);
     border: 1px solid var(--glass-border);
-    border-radius: 26px;
-    background: var(--glass);
+    border-radius: 28px;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
+            rgba(255, 255, 255, calc(0.04 * var(--glint-k)))),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
     -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
     backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
     box-shadow: 0 10px 28px rgba(var(--shade), calc(0.28 * var(--shade-k))), inset 0 1px 0 rgba(255, 255, 255, calc(0.09 * var(--glint-k)));
@@ -665,57 +851,175 @@
 }
 
 /* --------------------------------------------------------------------------
-   Conversations — a pane over the sheet
+   Gesprekken — a pane that grows out of the island
+
+   Tapping the island opens it from where the island is: scaled from the top
+   centre, so it reads as the island unfolding, and it folds back the same
+   way. The page behind dims; a tap there, the chevron or Escape closes it.
    -------------------------------------------------------------------------- */
 .ai-history {
     position: absolute;
-    inset: calc(max(var(--space-3), var(--safe-top)) + 72px) 0 0;
+    inset: 0;
     z-index: 5;
     display: flex;
-    align-items: flex-start;
     justify-content: center;
-    padding: var(--space-2) var(--space-4) 0;
-    background: rgba(var(--scrim), calc(0.42 * var(--scrim-k)));
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    animation: ai-msg-in 220ms var(--ease-out) both;
+    padding: calc(max(var(--space-2), var(--safe-top)) + 10px) 12px 0;
 }
 
 .ai-history[hidden] { display: none; }
 
+.ai-history::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(var(--scrim), calc(0.48 * var(--scrim-k)));
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 360ms var(--ease-out);
+}
+
+.ai-history.is-open::before { opacity: 1; }
+
 .ai-history__card {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: min(100%, var(--page-max));
-    max-height: min(70%, 520px);
-    padding: var(--space-4);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-card);
-    /* The app's glass over the ground colour, not over the conversation:
-       a list you read, not one you read through. */
-    background: var(--surface-gradient), color-mix(in srgb, var(--bg-secondary) 94%, transparent);
-    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(130%);
-    backdrop-filter: blur(var(--blur-card)) saturate(130%);
-    box-shadow: var(--shadow-inset), var(--shadow-float);
+    max-height: min(78%, 640px);
+    align-self: flex-start;
+    padding: var(--space-4) var(--space-4) var(--space-2);
+    border-radius: 28px;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
+            rgba(255, 255, 255, calc(0.03 * var(--glint-k)))),
+        rgba(var(--ground), max(0.94, var(--pane-solid)));
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    box-shadow:
+        0 22px 50px rgba(var(--shade), calc(0.40 * var(--shade-k))),
+        inset 0 0 0 1px var(--glass-border),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.10 * var(--glint-k)));
+    transform-origin: 50% 0;
+    transform: translateY(-6px) scale(0.42, 0.08);
+    opacity: 0;
+    transition: transform 480ms var(--ease-out-strong), opacity 260ms var(--ease-out);
 }
+
+.ai-history.is-open .ai-history__card {
+    transform: none;
+    opacity: 1;
+}
+
+/* Folding back: a little quicker than it opened. */
+.ai-history.is-closing .ai-history__card { transition-duration: 320ms, 200ms; }
 
 .ai-history__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    margin-bottom: var(--space-3);
+    padding: 2px 2px var(--space-3);
 }
 
-.ai-history__title { font-size: var(--fs-body); font-weight: 600; }
+.ai-history__title {
+    font-size: var(--fs-section);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+}
 
-.ai-history__new { gap: var(--space-2); min-height: 36px; cursor: pointer; }
-.ai-history__new .btn__icon { width: 16px; height: 16px; }
+.ai-history__search {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    height: 40px;
+    margin-bottom: var(--space-2);
+    padding-inline: var(--space-3);
+    border-radius: 12px;
+    background: var(--glass);
+    box-shadow: inset 0 0 0 1px var(--glass-hairline);
+    color: var(--text-muted);
+    cursor: text;
+}
+
+.ai-history__search[hidden] { display: none; }
+
+.ai-history__search:focus-within { box-shadow: inset 0 0 0 1px var(--health-strong), var(--focus-halo); }
+
+.ai-history__search-icon { width: 16px; height: 16px; flex: none; }
+
+.ai-history__search input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    /* 16px: iOS zooms into any field with smaller text. */
+    font-size: max(var(--fs-input), 16px);
+}
+
+.ai-history__search input::placeholder { color: var(--text-muted); }
+.ai-history__search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+
+/* Nieuw gesprek in grey glass: the action, without the green. */
+.ai-history__new {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    border-radius: 16px;
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
+            rgba(255, 255, 255, calc(0.04 * var(--glint-k)))),
+        rgba(var(--fill), calc(0.08 * var(--fill-k)));
+    box-shadow:
+        inset 0 0 0 1px var(--glass-border),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.10 * var(--glint-k)));
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-body);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ai-history__new:active { background: rgba(var(--fill), calc(0.14 * var(--fill-k))); }
+.ai-history__new-icon { width: 18px; height: 18px; }
 
 .ai-history__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: var(--space-2) -6px 0;
+    padding: 0 6px var(--space-2);
     overflow-y: auto;
     overscroll-behavior: contain;
-    margin: 0 calc(-1 * var(--space-2));
+    scrollbar-width: none;
+}
+
+.ai-history__list::-webkit-scrollbar { display: none; }
+
+.ai-history__group {
+    margin: var(--space-3) 4px 6px;
+    font-size: var(--fs-tiny);
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.ai-history__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
     padding: 0;
     list-style: none;
 }
@@ -723,19 +1027,26 @@
 .ai-history__item {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    border-radius: var(--radius-sm);
+    gap: var(--space-1);
+    min-height: 56px;
+    border-radius: 14px;
+    transition: background-color var(--transition-fast);
 }
 
-.ai-history__item.is-current { background: var(--health-fill); }
+.ai-history__item:active { background: var(--glass); }
+
+.ai-history__item.is-current {
+    background: var(--glass);
+    box-shadow: inset 0 0 0 1px var(--glass-hairline);
+}
 
 .ai-history__open {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    align-items: flex-start;
+    gap: 2px;
     min-width: 0;
-    padding: var(--space-3) var(--space-2);
+    padding: 9px var(--space-1) 9px 12px;
     border: 0;
     background: none;
     color: var(--text-primary);
@@ -747,24 +1058,42 @@
 .ai-history__name {
     max-width: 100%;
     overflow: hidden;
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.ai-history__when { font-size: var(--fs-tiny); letter-spacing: var(--tracking-small); color: var(--text-muted); }
+.ai-history__when {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--fs-footnote);
+    letter-spacing: var(--tracking-small);
+    color: var(--text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The one you are in. */
+.ai-history__dot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--health);
+}
 
 .ai-history__delete {
     display: grid;
     flex: none;
     place-items: center;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    margin-right: 4px;
     border: 0;
     border-radius: 50%;
     background: none;
-    color: var(--text-muted);
+    color: var(--text-faint);
     cursor: pointer;
 }
 
@@ -776,6 +1105,8 @@
 /* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
 @media (hover: hover) and (pointer: fine) {
     .ai-history__delete:hover { color: var(--text-primary); }
+    .ai-history__item:hover { background: var(--glass-soft); }
+    .ai-history__item.is-current:hover { background: var(--glass); }
 }
 
 .ai-history__delete.is-armed {
@@ -789,20 +1120,34 @@
 }
 
 .ai-history__empty {
-    padding: var(--space-4) var(--space-2);
+    padding: 18px 8px;
     font-size: var(--fs-small);
+    text-align: center;
     color: var(--text-muted);
 }
 
+/* Reduced motion — the device's setting or Animaties uit: no drifting light,
+   no breathing halo; the pane fades instead of unfolding. */
 @media (prefers-reduced-motion: reduce) {
-    .ai-msg,
-    .ai-history { animation: none; }
+    .ai-msg { animation: none; }
     .ai-typing span { animation: none; opacity: 0.6; }
+    .ai-sky > i,
+    .sheet--ai.is-thinking .ai-sky__dawn,
+    .sheet--ai.is-thinking .ai-island .ai-logo::before { animation: none; }
+    .sheet--ai.is-thinking .ai-island .ai-logo::before { opacity: 0.6; }
+    .ai-history__card { transform: none; transition: opacity 220ms ease; }
+    .ai-island, .ai-island__think, .ai-island__chev { transition: none; }
 }
-/* The same for Animaties uit (theme.css). */
-:root[data-motion="reduce"] .ai-msg,
-:root[data-motion="reduce"] .ai-history { animation: none; }
+:root[data-motion="reduce"] .ai-msg { animation: none; }
 :root[data-motion="reduce"] .ai-typing span { animation: none; opacity: 0.6; }
+:root[data-motion="reduce"] .ai-sky > i,
+:root[data-motion="reduce"] .sheet--ai.is-thinking .ai-sky__dawn,
+:root[data-motion="reduce"] .sheet--ai.is-thinking .ai-island .ai-logo::before { animation: none; }
+:root[data-motion="reduce"] .sheet--ai.is-thinking .ai-island .ai-logo::before { opacity: 0.6; }
+:root[data-motion="reduce"] .ai-history__card { transform: none; transition: opacity 220ms ease; }
+:root[data-motion="reduce"] .ai-island,
+:root[data-motion="reduce"] .ai-island__think,
+:root[data-motion="reduce"] .ai-island__chev { transition: none; }
 
 /* --------------------------------------------------------------------------
    Larger screens — the layer stays a phone-sized sheet, centred like the

@@ -1,9 +1,9 @@
 <?php
 /**
- * Ownify AI: the conversation, and what shows before there is one — the orb,
- * what the assistant is for, and three questions to start with. The dotted
- * ring is the same idiom the dashboard uses for "no data yet", which is what
- * ties this screen to the rest of the app.
+ * OwnifyAI: the conversation, and what shows before there is one — the
+ * Ownify logo, "Wat wil je weten?", what the assistant is for, and three
+ * questions to start with. The logo is the official one (docs/BRANDING.md),
+ * never redrawn.
  *
  * The messages themselves are drawn by ai-chat.js from api/ai/state.php and
  * api/ai/chat.php: text and bold only, never HTML from the model.
@@ -18,13 +18,9 @@ $empty   = $ai['empty'];
 <section class="ai-chat" data-ai-view="chat" aria-label="<?= e($ai['title']) ?>" <?= $view === 'chat' ? '' : 'hidden' ?>>
 
     <div class="ai-empty" data-ai-empty>
-        <div class="orb" data-orb aria-hidden="true">
-            <svg class="orb__ring" viewBox="0 0 160 160">
-                <circle cx="80" cy="80" r="74"/>
-            </svg>
-            <span class="orb__glow"></span>
-            <span class="orb__core"></span>
-        </div>
+        <span class="ai-logo ai-logo--large" aria-hidden="true">
+            <img src="<?= e(asset('assets/brand/ownify-icon-192.png')) ?>" alt="" width="64" height="64" decoding="async">
+        </span>
 
         <h1 class="ai-empty__title"><?= e($empty['title']) ?></h1>
         <p class="ai-empty__status"><?= e($empty['body']) ?></p>

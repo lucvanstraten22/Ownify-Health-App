@@ -126,4 +126,13 @@ return [
     'Automatisch' => 'Automatic',
     'Imperiaal' => 'Imperial',
     'Metrisch' => 'Metric',
+    /* OwnifyAI's sheet (24.0): the island, Gesprekken and the empty state. */
+    'Wat wil je weten?' => 'What would you like to know?',
+    '%s — je gesprekken' => '%s — your conversations',
+    'denkt na…' => 'is thinking…',
+    'Zoek in je gesprekken' => 'Search your conversations',
+    'Geen gesprekken gevonden.' => 'No conversations found.',
+    'Eerder' => 'Earlier',
+    '%d vraag' => '%d question',
+    '%d vragen' => '%d questions',
 ];

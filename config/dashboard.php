@@ -269,7 +269,7 @@ return [
         'retry'         => 'Opnieuw proberen',
 
         'empty' => [
-            'title'       => 'Je persoonlijke gezondheidsassistent',
+            'title'       => 'Wat wil je weten?',
             'body'        => 'Stel een vraag over je slaap, voeding, training of voortgang — met je eigen Ownify-gegevens.',
             'no_data'     => 'Je hebt nog geen gezondheidsgegevens. Koppel een bron of vul iets in, dan kan OwnifyAI je er meer over vertellen. Algemene vragen kun je altijd stellen.',
             'suggestions' => [

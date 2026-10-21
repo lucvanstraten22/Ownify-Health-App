@@ -12,11 +12,9 @@ $consent  = $ai['consent'];
 $declined = $ai['declined'];
 ?>
 <section class="ai-consent" data-ai-view="consent" aria-labelledby="ai-consent-title" <?= $view === 'consent' ? '' : 'hidden' ?>>
-    <div class="orb orb--small" aria-hidden="true">
-        <svg class="orb__ring" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74"/></svg>
-        <span class="orb__glow"></span>
-        <span class="orb__core"></span>
-    </div>
+    <span class="ai-logo ai-logo--consent" aria-hidden="true">
+        <img src="<?= e(asset('assets/brand/ownify-icon-192.png')) ?>" alt="" width="56" height="56" decoding="async">
+    </span>
 
     <h1 class="ai-consent__title" id="ai-consent-title"><?= e($consent['title']) ?></h1>
     <p class="ai-consent__intro"><?= e($consent['intro']) ?></p>
@@ -37,10 +35,9 @@ $declined = $ai['declined'];
 </section>
 
 <section class="ai-declined" data-ai-view="declined" aria-labelledby="ai-declined-title" <?= $view === 'declined' ? '' : 'hidden' ?>>
-    <div class="orb orb--small orb--still" aria-hidden="true">
-        <svg class="orb__ring" viewBox="0 0 160 160"><circle cx="80" cy="80" r="74"/></svg>
-        <span class="orb__core"></span>
-    </div>
+    <span class="ai-logo ai-logo--consent ai-logo--off" aria-hidden="true">
+        <img src="<?= e(asset('assets/brand/ownify-icon-192.png')) ?>" alt="" width="56" height="56" decoding="async">
+    </span>
     <h1 class="ai-consent__title" id="ai-declined-title"><?= e($declined['title']) ?></h1>
     <p class="ai-consent__intro"><?= e($declined['body']) ?></p>
     <div class="ai-consent__actions">

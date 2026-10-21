@@ -656,11 +656,28 @@ if (!function_exists('ai_chat')) {
             default                    => i18n_date($when, 'day_mon_year'),
         };
 
-        return [
-            'id'    => (int) $row['id'],
-            'title' => (string) $row['title'] !== '' ? (string) $row['title'] : t('Gesprek'),
-            'label' => $label,
+        /* The list's groups (Gesprekken): today, the last seven days, earlier. */
+        $group = match (true) {
+            $at >= $today              => 'today',
+            $at >= $today - 6 * 86400  => 'week',
+            default                    => 'earlier',
+        };
+
+        $view = [
+            'id'          => (int) $row['id'],
+            'title'       => (string) $row['title'] !== '' ? (string) $row['title'] : t('Gesprek'),
+            'label'       => $label,
+            'group'       => $group,
+            'group_label' => match ($group) { 'today' => t('Vandaag'), 'week' => t('Deze week'), default => t('Eerder') },
         ];
+
+        if (isset($row['questions'])) {
+            $n = (int) $row['questions'];
+            $view['questions'] = $n;
+            $view['meta']      = $label . ' · ' . tn($n, '%d vraag', '%d vragen');
+        }
+
+        return $view;
     }
 
     /**

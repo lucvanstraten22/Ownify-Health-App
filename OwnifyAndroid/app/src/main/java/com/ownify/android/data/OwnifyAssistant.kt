@@ -92,12 +92,34 @@ data class AiMessage(
     }
 }
 
-data class AiConversation(val id: Long, val title: String, val label: String) {
+/**
+ * One of the person's conversations, as api/ai/state.php gives it: its
+ * title, when it was last used ([label]), its group in Gesprekken ([group]:
+ * today, week or earlier, with the server's [groupLabel]) and — in the list —
+ * how many questions it holds, said as [meta] ("Vandaag 08:23 · 3 vragen").
+ */
+data class AiConversation(
+    val id: Long,
+    val title: String,
+    val label: String,
+    val group: String = "earlier",
+    val groupLabel: String = "",
+    val questions: Int? = null,
+    val meta: String? = null
+) {
     companion object {
         fun parse(o: JSONObject?): AiConversation? {
             val id = o?.optLong("id", 0L) ?: 0L
             if (id <= 0L) return null
-            return AiConversation(id, o.str("title").orEmpty(), o.str("label").orEmpty())
+            return AiConversation(
+                id,
+                o.str("title").orEmpty(),
+                o.str("label").orEmpty(),
+                o.str("group") ?: "earlier",
+                o.str("group_label").orEmpty(),
+                o.int("questions"),
+                o.str("meta")
+            )
         }
     }
 }
@@ -346,12 +368,13 @@ object OwnifyAssistant {
 
             when (outcome) {
                 is Outcome.Done -> {
-                    val wasNew = conversation == null
                     val incoming = outcome.body.arr("messages").map(AiMessage::parse)
-                    conversation = AiConversation.parse(outcome.body.obj("conversation")) ?: conversation
+                    val talked = AiConversation.parse(outcome.body.obj("conversation"))
+                    conversation = talked ?: conversation
                     merge(incoming)
                     outcome.body.obj("usage")?.let { usage = AiUsage.parse(it) }
-                    if (wasNew) historyStale = true
+                    // Gesprekken: this one on top, with its new count — no need to ask.
+                    if (talked != null) conversations = listOf(talked) + conversations.filter { it.id != talked.id }
                     notice = if (usage?.out == true) AiNotice(copy.error("limit")) else null
                     // A plain "ja" carries a proposal out here too.
                     reloadIfChanged(context, incoming)

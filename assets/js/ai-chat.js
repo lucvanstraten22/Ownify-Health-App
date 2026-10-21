@@ -28,7 +28,6 @@
     var errors   = copy.errors || {};
 
     var scroller = sheet.querySelector('[data-ai-scroller]');
-    var tools    = sheet.querySelector('[data-ai-tools]');
     var composer = sheet.querySelector('[data-ai-composer]');
     var form     = sheet.querySelector('[data-ai-form]');
     var input    = sheet.querySelector('[data-ai-input]');
@@ -40,7 +39,10 @@
     var noData   = sheet.querySelector('[data-ai-no-data]');
     var history  = sheet.querySelector('[data-ai-history-panel]');
     var list     = sheet.querySelector('[data-ai-history-list]');
+    var historyCard   = sheet.querySelector('[data-ai-history-card]');
+    var historySearch = sheet.querySelector('[data-ai-history-search]');
     var historyButton = sheet.querySelector('[data-ai-history]');
+    var count         = sheet.querySelector('[data-ai-count]');
     var consentError  = sheet.querySelector('[data-ai-consent-error]');
 
     var state = {
@@ -100,8 +102,14 @@
 
     function toBottom(smooth) {
         window.requestAnimationFrame(function () {
-            scroller.scrollTo({ top: scroller.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+            scroller.scrollTo({ top: scroller.scrollHeight, behavior: smooth && !reduced() ? 'smooth' : 'auto' });
+            edges();
         });
+    }
+
+    /** The device's Reduce motion, or Animaties uit (document-head.php answers both). */
+    function reduced() {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
     /* -------------------------------------------------------------- views */
@@ -115,11 +123,38 @@
         });
 
         var chat = view === 'chat';
-        tools.hidden = !chat;
+        historyButton.disabled = !chat;
         composer.hidden = !chat;
         if (!chat) { closeHistory(); }
 
         scroller.scrollTop = 0;
+        edges();
+    }
+
+    /* ------------------------------------------------- what is under what */
+
+    /**
+     * The top and the composer only frost what passes under them: at rest the
+     * light of the sheet stays clear (ai.css .is-under-top, .is-under-composer).
+     */
+    var edgeFrame = 0;
+
+    function edges() {
+        if (edgeFrame) { return; }
+        edgeFrame = window.requestAnimationFrame(function () {
+            edgeFrame = 0;
+            var below = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+            sheet.classList.toggle('is-under-top', scroller.scrollTop > 2);
+            sheet.classList.toggle('is-under-composer', below > 2);
+        });
+    }
+
+    scroller.addEventListener('scroll', edges, { passive: true });
+    window.addEventListener('resize', edges);
+
+    /** OwnifyAI is answering: the island says so, the logo glows, the dawn brightens. */
+    function setThinking(on) {
+        sheet.classList.toggle('is-thinking', !!on);
     }
 
     /* ------------------------------------------------------------- notice */
@@ -588,6 +623,7 @@
         }
 
         state.busy = true;
+        setThinking(true);
         setNotice(null);
 
         var mine = messageNode({ role: 'user', text: text });
@@ -607,18 +643,23 @@
 
         post('api/ai/chat.php', fields).then(function (answer) {
             state.busy = false;
+            setThinking(false);
             if (dots.parentNode) { dots.parentNode.removeChild(dots); }
 
             if (answer.body && answer.body.ok) {
                 if (mine.parentNode) { mine.parentNode.removeChild(mine); }
 
-                var wasNew = !state.conversation;
                 state.conversation = answer.body.conversation || state.conversation;
                 (answer.body.messages || []).forEach(putMessage);
                 setUsage(answer.body.usage);
                 toBottom(true);
 
-                if (wasNew || !state.conversations.length) { state.historyStale = true; }
+                /* Gesprekken: this one on top, with its new count — no need to ask. */
+                if (answer.body.conversation) {
+                    var talked = answer.body.conversation;
+                    state.conversations = [talked].concat(state.conversations.filter(function (c) { return c.id !== talked.id; }));
+                    drawHistory();
+                }
                 afterActions(answer.body.messages);
                 refreshComposer();
                 return;
@@ -692,9 +733,10 @@
         }
 
         if (event.target.closest('[data-ai-new]')) {
-            closeHistory();
+            closeHistory(true);
             state.conversation = null;
             showThread([]);
+            drawHistory();
             cancelQueued();
             setNotice(state.available ? null : state.unavailableNotice);
             refreshComposer();
@@ -703,7 +745,12 @@
         }
 
         if (event.target.closest('[data-ai-history]')) {
-            if (history.hidden) { openHistory(); } else { closeHistory(); }
+            if (history.hidden || !history.classList.contains('is-open')) { openHistory(); } else { closeHistory(); }
+            return;
+        }
+
+        if (event.target.closest('[data-ai-history-close]')) {
+            closeHistory();
             return;
         }
 
@@ -800,53 +847,135 @@
 
     /* ------------------------------------------------------ conversations */
 
+    /** Lower case, without accents: "Eiwit" finds "eiwit", "café" finds "cafe". */
+    function plain(text) {
+        var t = String(text || '').toLowerCase();
+        return t.normalize ? t.normalize('NFD').replace(/[̀-ͯ]/g, '') : t;
+    }
+
+    /**
+     * Gesprekken: searched, grouped by when each was last used (Vandaag, Deze
+     * week, Eerder — the server says which, api/ai/state.php), each with its
+     * title, when and how many questions, the one you are in marked.
+     */
     function drawHistory() {
         list.textContent = '';
+        if (count) { count.textContent = state.conversations.length ? String(state.conversations.length) : ''; }
+
+        var label = sheet.querySelector('[data-ai-history]');
+        if (label) {
+            label.setAttribute('aria-label', T.t('%s — je gesprekken').replace('%s', copy.title || 'OwnifyAI')
+                + (state.conversations.length ? ', ' + state.conversations.length : ''));
+        }
+
+        if (historySearch) { historySearch.parentNode.hidden = !state.conversations.length; }
 
         if (!state.conversations.length) {
-            var none = document.createElement('li');
-            none.className = 'ai-history__empty';
-            none.textContent = copy.empty || T.t('Nog geen gesprekken.');
-            list.appendChild(none);
+            list.appendChild(emptyLine(copy.empty || T.t('Nog geen gesprekken.')));
             return;
         }
 
-        state.conversations.forEach(function (conversation) {
-            var item = document.createElement('li');
-            item.className = 'ai-history__item' + (state.conversation && state.conversation.id === conversation.id ? ' is-current' : '');
+        var query = plain(historySearch ? historySearch.value.trim() : '');
+        var shown = state.conversations.filter(function (c) { return !query || plain(c.title).indexOf(query) >= 0; });
 
-            var open = document.createElement('button');
-            open.type = 'button';
-            open.className = 'ai-history__open';
-            open.setAttribute('data-ai-open-conversation', String(conversation.id));
+        if (!shown.length) {
+            list.appendChild(emptyLine(T.t('Geen gesprekken gevonden.')));
+            return;
+        }
 
-            var name = document.createElement('span');
-            name.className = 'ai-history__name';
-            name.textContent = conversation.title;
-            var when = document.createElement('span');
-            when.className = 'ai-history__when';
-            when.textContent = conversation.label;
-            open.appendChild(name);
-            open.appendChild(when);
+        var groups = [];
+        shown.forEach(function (conversation) {
+            var key = conversation.group || 'earlier';
+            var group = groups.filter(function (g) { return g.key === key; })[0];
+            if (!group) {
+                group = { key: key, label: conversation.group_label || '', rows: [] };
+                groups.push(group);
+            }
+            group.rows.push(conversation);
+        });
 
-            var remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'ai-history__delete';
-            remove.setAttribute('data-ai-delete-conversation', String(conversation.id));
-            remove.setAttribute('aria-label', (copy['delete'] || T.t('Gesprek verwijderen')) + ': ' + conversation.title);
-            remove.appendChild(icon('trash'));
+        var order = { today: 0, week: 1, earlier: 2 };
+        groups.sort(function (x, y) { return (order[x.key] || 0) - (order[y.key] || 0); });
 
-            item.appendChild(open);
-            item.appendChild(remove);
-            list.appendChild(item);
+        groups.forEach(function (group) {
+            var section = document.createElement('section');
+            var heading = document.createElement('h3');
+            heading.className = 'ai-history__group';
+            heading.id = 'ai-history-group-' + group.key;
+            heading.textContent = group.label;
+            section.setAttribute('aria-labelledby', heading.id);
+            section.appendChild(heading);
+
+            var rows = document.createElement('ul');
+            rows.className = 'ai-history__rows';
+            group.rows.forEach(function (conversation) { rows.appendChild(historyRow(conversation)); });
+            section.appendChild(rows);
+            list.appendChild(section);
         });
     }
 
+    function emptyLine(text) {
+        var none = document.createElement('p');
+        none.className = 'ai-history__empty';
+        none.textContent = text;
+        return none;
+    }
+
+    function historyRow(conversation) {
+        var current = !!(state.conversation && state.conversation.id === conversation.id);
+        var item = document.createElement('li');
+        item.className = 'ai-history__item' + (current ? ' is-current' : '');
+
+        var open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'ai-history__open';
+        open.setAttribute('data-ai-open-conversation', String(conversation.id));
+        if (current) { open.setAttribute('aria-current', 'true'); }
+
+        var name = document.createElement('span');
+        name.className = 'ai-history__name';
+        name.textContent = conversation.title;
+        var when = document.createElement('span');
+        when.className = 'ai-history__when';
+        when.textContent = conversation.meta || conversation.label;
+        open.appendChild(name);
+        open.appendChild(when);
+        item.appendChild(open);
+
+        if (current) {
+            var dot = document.createElement('span');
+            dot.className = 'ai-history__dot';
+            dot.setAttribute('aria-hidden', 'true');
+            item.appendChild(dot);
+        }
+
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'ai-history__delete';
+        remove.setAttribute('data-ai-delete-conversation', String(conversation.id));
+        remove.setAttribute('aria-label', (copy['delete'] || T.t('Gesprek verwijderen')) + ': ' + conversation.title);
+        remove.appendChild(icon('trash'));
+        item.appendChild(remove);
+
+        return item;
+    }
+
+    var historyTimer = null;
+
+    /** Out of the island: the pane unfolds from the top centre. */
     function openHistory() {
+        if (!history.hidden && history.classList.contains('is-open')) { return; }
+        window.clearTimeout(historyTimer);
+        if (historySearch) { historySearch.value = ''; }
+        drawHistory();
+
         history.hidden = false;
+        history.classList.remove('is-closing');
+        historyCard.getBoundingClientRect();     // start from the folded state
+        history.classList.add('is-open');
         historyButton.setAttribute('aria-expanded', 'true');
 
-        /* Asked again when a conversation was started since: its title is new. */
+        /* Asked again when a conversation was started elsewhere since. */
         if (state.historyStale) {
             state.historyStale = false;
             post('api/ai/state.php', state.conversation ? { conversation_id: String(state.conversation.id) } : { 'new': '1' })
@@ -858,13 +987,30 @@
                 });
         }
 
-        drawHistory();
+        var first = list.querySelector('.is-current .ai-history__open') || historyCard.querySelector('[data-ai-new]');
+        if (first) { first.focus({ preventScroll: true }); }
     }
 
-    function closeHistory() {
+    /** Back into the island, the way it came. */
+    function closeHistory(keepFocus) {
         if (history.hidden) { return; }
-        history.hidden = true;
+        var hadFocus = history.contains(document.activeElement);
+
+        history.classList.remove('is-open');
+        history.classList.add('is-closing');
         historyButton.setAttribute('aria-expanded', 'false');
+
+        window.clearTimeout(historyTimer);
+        historyTimer = window.setTimeout(function () {
+            history.hidden = true;
+            history.classList.remove('is-closing');
+        }, reduced() ? 220 : 340);
+
+        if (hadFocus && !keepFocus && !historyButton.disabled) { historyButton.focus({ preventScroll: true }); }
+    }
+
+    if (historySearch) {
+        historySearch.addEventListener('input', drawHistory);
     }
 
     /** First press arms the button ("Verwijderen?"), the second deletes. */

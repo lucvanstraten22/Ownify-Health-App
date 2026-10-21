@@ -14,6 +14,38 @@ Android  (data/OwnifyAssistant.kt)     ─┘         │                       
                                    ai_conversations · ai_messages · ai_usage · ai_service_state
 ```
 
+## The sheet (24.0)
+
+The same on both apps (`pages/ai.php`, `assets/css/ai.css`, `ai-chat.js`;
+`AssistantSheet.kt`):
+
+- **Light.** Green light from above and a dawn at the foot — green in the
+  middle, blue to the left, violet to the right. Wide ellipses reaching past
+  the edges with an eased fall-off (many stops), so neither reads as a spot
+  or ends in a line. The dawn brightens and breathes faster while OwnifyAI
+  thinks. White Mode keeps the same light, softer (× 0.62 and × 0.7).
+- **Top.** A round close button on the left and, in the middle, the
+  *island*: the official Ownify logo, *OwnifyAI*, how many conversations
+  there are and a chevron. While OwnifyAI thinks, the count and chevron make
+  way for *denkt na…* and the logo gets a breathing green halo. Before the
+  yes (consent, declined) the island is only a name.
+- **Gesprekken** opens by tapping the island and grows out of it (scaled
+  from the top centre, 480 ms; back the same way, 320 ms; a fade with
+  reduced motion). *Zoek in je gesprekken* filters by title (case and
+  accents aside), *Nieuw gesprek* is grey glass, and the conversations are
+  grouped *Vandaag* / *Deze week* / *Eerder* by when they were last used,
+  each with its title, when and how many questions (*Vandaag 08:23 · 3
+  vragen*), the open one marked with a green dot; the bin still deletes in
+  two presses. The server gives the group and the count
+  (`ai_conversation_view`: `group`, `group_label`, `questions`, `meta`), on
+  `state.php` and with every answer, so the list is put right without
+  asking again.
+- **Messages.** Your words in solid green with white text (`#2F8460`, deep
+  enough for 4.6 : 1); OwnifyAI's in grey glass on the left; three dots in
+  that glass while it thinks.
+- **Empty.** The logo, *Wat wil je weten?*, what OwnifyAI is for and three
+  questions to start with.
+
 Both apps talk to the same five endpoints, with the same answers, the same
 limits and the same stored conversations — a conversation started on the phone
 is there on the website. Neither app ever talks to Google: the Gemini API key
@@ -206,7 +238,7 @@ asked again.
 verwerken met Google Gemini* is the same answer as in the sheet, on both apps.
 Off, nothing is sent; the sheet says *OwnifyAI staat uit* and offers
 *Toestemming bekijken*. **Wiping:** Instellingen → Privacy → *OwnifyAI-gesprekken* →
-*Alles wissen* (asks first), or one conversation from the history list in the
+*Alles wissen* (asks first), or one conversation from Gesprekken in the
 sheet. Deleting the account deletes everything of OwnifyAI with it (`ON DELETE
 CASCADE`).
 

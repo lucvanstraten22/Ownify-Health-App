@@ -669,7 +669,7 @@ class OwnifyAppFlowTest {
         assertTrue(server.requestsTo("chat.php").isEmpty())
 
         button("Toestaan en beginnen").performClick()
-        waitFor("Je persoonlijke gezondheidsassistent")
+        waitFor("Wat wil je weten?")
         assertEquals(mapOf("decision" to "accept"), form(server.requestsTo("consent.php").single()))
         assertEquals("accepted", server.aiConsent)
 
@@ -706,7 +706,7 @@ class OwnifyAppFlowTest {
         waitForPages()
 
         openAssistant()
-        waitFor("Je persoonlijke gezondheidsassistent")
+        waitFor("Wat wil je weten?")
         server.aiAnswers += JSONObject()
             .put("text", "Ik kan hiervoor een mijlpaal toevoegen. Zal ik het toevoegen?")
             .put("action", JSONObject().put("title", "Nieuw doel: 5 km onder 25 minuten").put("summary", "Mijlpaal · 25 min · lager is beter")
@@ -734,7 +734,7 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
         openAssistant()
-        waitFor("Je persoonlijke gezondheidsassistent")
+        waitFor("Wat wil je weten?")
 
         server.aiMode = FakeOwnifyServer.AiMode.QUOTA
         send("Hoe sliep ik?")
@@ -752,13 +752,50 @@ class OwnifyAppFlowTest {
     }
 
     @Test
+    fun `OwnifyAI - Gesprekken grows out of the island - grouped, counted, searched, and a new one from there`() {
+        server.saveConsent("accepted")
+        server.aiOlder += org.json.JSONObject().put("id", 3).put("title", "Eiwit na krachttraining").put("label", "18 okt")
+            .put("group", "earlier").put("group_label", "Eerder").put("questions", 2).put("meta", "18 okt · 2 vragen")
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openAssistant()
+        waitFor("Wat wil je weten?")
+
+        send("Waarom sliep ik slechter?")
+        waitFor("Standaardantwoord.")
+
+        // The island: the logo, OwnifyAI and how many conversations there are.
+        val island = compose.onNode(hasContentDescription("OwnifyAI — je gesprekken, 2") and hasClickAction())
+        island.performClick()
+        waitFor("Zoek in je gesprekken")
+        compose.onNode(hasText("Gesprekken") and isHeading()).assertExists()
+        waitFor("VANDAAG")
+        waitFor("EERDER")
+        waitFor("Vandaag 12:00 · 1 vraag")
+        waitFor("18 okt · 2 vragen")
+
+        // Searched by title, accents and case aside.
+        field("Zoek in je gesprekken").performTextInput("EIWIT")
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Waarom sliep ik slechter?").fetchSemanticsNodes().size == 1 }
+        waitFor("Eiwit na krachttraining")
+        field("Zoek in je gesprekken").performTextInput("zzz")
+        waitFor("Geen gesprekken gevonden.")
+
+        // Nieuw gesprek: the pane folds away and the empty conversation is there.
+        compose.onNode(hasContentDescription("Nieuw gesprek") and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Zoek in je gesprekken").fetchSemanticsNodes().isEmpty() }
+        waitFor("Wat wil je weten?")
+    }
+
+    @Test
     fun `OwnifyAI - the minute is full for everybody - the question waits in the capsule and goes by itself`() {
         server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
         openAssistant()
-        waitFor("Je persoonlijke gezondheidsassistent")
+        waitFor("Wat wil je weten?")
 
         server.aiMode = FakeOwnifyServer.AiMode.BUSY
         send("Hoe sliep ik?")
@@ -782,7 +819,7 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
         openAssistant()
-        waitFor("Je persoonlijke gezondheidsassistent")
+        waitFor("Wat wil je weten?")
 
         server.aiMode = FakeOwnifyServer.AiMode.BUSY
         send("Hoe sliep ik?")

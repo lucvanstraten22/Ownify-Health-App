@@ -356,6 +356,9 @@ class FakeOwnifyServer {
     /** The one conversation this account has, oldest message first. */
     val aiMessages = CopyOnWriteArrayList<JSONObject>()
 
+    /** Conversations from before, listed in Gesprekken after the current one. */
+    val aiOlder = CopyOnWriteArrayList<JSONObject>()
+
     @Volatile
     var aiConversation: JSONObject? = null
 
@@ -628,7 +631,7 @@ class FakeOwnifyServer {
                 reply(exchange, 200, JSONObject()
                     .put("ok", true).put("available", true).put("unavailable", JSONObject.NULL).put("notice", JSONObject.NULL)
                     .put("consent", aiConsent).put("usage", aiUsage()).put("has_data", true)
-                    .put("conversations", org.json.JSONArray().apply { if (accepted) aiConversation?.let { put(it) } })
+                    .put("conversations", org.json.JSONArray().apply { if (accepted) { aiConversation?.let { put(it) }; aiOlder.forEach { put(it) } } })
                     .put("conversation", if (open) conversation() else JSONObject.NULL)
                     .put("messages", org.json.JSONArray().apply { if (open) aiMessages.forEach { put(it) } })
                     .toString())
@@ -663,6 +666,10 @@ class FakeOwnifyServer {
                         }
                         aiUsed++
                         val mine = aiMessage("user", question)
+                        // Gesprekken: its group and how many questions it holds (includes/ai/assistant.php).
+                        val asked = aiMessages.count { it.optString("role") == "user" }
+                        aiConversation?.put("group", "today")?.put("group_label", "Vandaag")?.put("questions", asked)
+                            ?.put("meta", "Vandaag 12:00 · " + if (asked == 1) "1 vraag" else "$asked vragen")
                         val next = aiAnswers.poll() ?: JSONObject().put("text", "Standaardantwoord.")
                         val answer = aiMessage("assistant", next.optString("text"), next)
                         reply(exchange, 200, JSONObject().put("ok", true).put("conversation", conversation())

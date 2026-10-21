@@ -486,6 +486,22 @@ try {
     check('state with new=1: no conversation open, both listed', ($s = http('/api/ai/state.php', ['bearer' => $sanne['token'], 'form' => ['new' => '1']])['body'])['conversation'] === null
         && count($s['conversations'] ?? []) === 2);
 
+    section('Gesprekken: grouped by when, with how many questions');
+    $list = $s['conversations'] ?? [];
+    $first = $list[0] ?? [];
+    $other = $list[1] ?? [];
+    check('the newest first, today, with its count and when', ($first['group'] ?? null) === 'today' && ($first['group_label'] ?? null) === 'Vandaag'
+        && ($first['questions'] ?? null) === 1 && ($first['meta'] ?? '') === ($first['label'] ?? '') . ' · 1 vraag', json_encode($first));
+    check('the earlier one: two questions, counted as the person asked them', ($other['questions'] ?? null) === 2
+        && str_ends_with((string) ($other['meta'] ?? ''), '· 2 vragen'), json_encode($other));
+    check('a chat answer carries the same, so the list need not be asked again', ($r['body']['conversation']['questions'] ?? null) === 1
+        && ($r['body']['conversation']['group'] ?? null) === 'today', json_encode($r['body']['conversation'] ?? null));
+    db_run('UPDATE ai_conversations SET updated_at = NOW() - INTERVAL 3 DAY WHERE id = ?', [$conversation]);
+    db_run('UPDATE ai_conversations SET updated_at = NOW() - INTERVAL 12 DAY WHERE id = ?', [$second]);
+    $groups = array_column(http('/api/ai/state.php', ['bearer' => $sanne['token'], 'form' => ['new' => '1']])['body']['conversations'] ?? [], 'group', 'id');
+    check('three days ago: Deze week; twelve: Eerder', ($groups[$conversation] ?? null) === 'week' && ($groups[$second] ?? null) === 'earlier', json_encode($groups));
+    db_run('UPDATE ai_conversations SET updated_at = NOW() WHERE id IN (?, ?)', [$conversation, $second]);
+
     section('what is not a question');
     check('empty: 422', chat($sanne, "  \n ")['status'] === 422);
     check('too long: 422', chat($sanne, str_repeat('a', 2001))['status'] === 422);
