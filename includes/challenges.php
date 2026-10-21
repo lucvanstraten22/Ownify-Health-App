@@ -1003,10 +1003,15 @@ if (!function_exists('challenges_available')) {
         /* On: soonest to end first. Invitations: newest first (as read). */
         usort($running, static fn (array $a, array $b): int => [$a['end'], $a['id']] <=> [$b['end'], $b['id']]);
 
-        $summary = tn(count($running), '%d bezig', '%d bezig');
-        if ($invites !== []) {
-            $summary .= ' · ' . tn(count($invites), '%d uitnodiging', '%d uitnodigingen');
+        /* "2 bezig · 1 uitnodiging"; with nothing on, no "0 bezig". */
+        $parts = [];
+        if ($running !== []) {
+            $parts[] = tn(count($running), '%d bezig', '%d bezig');
         }
+        if ($invites !== []) {
+            $parts[] = tn(count($invites), '%d uitnodiging', '%d uitnodigingen');
+        }
+        $summary = $parts !== [] ? implode(' · ', $parts) : t('Nog niets bezig');
 
         $me = db_one(
             'SELECT u.id AS user_id, u.username, ' . leaderboard_avatar_select() . '

@@ -438,11 +438,12 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     val scope = rememberCoroutineScope()
     val ch = data.challenges
     val copy = ch.copy["create"]
-    var kind by remember { mutableStateOf("together") }
-    var metricKey by remember { mutableStateOf<String?>(null) }
-    var target by remember { mutableStateOf(0.0) }
+    // An idea on Uitdagingen comes with its kind and metric chosen (challenges.js create(preset)).
+    var kind by remember { mutableStateOf(overlay.kind?.takeIf { it == "together" || it == "versus" } ?: "together") }
+    var metricKey by remember { mutableStateOf(overlay.metric?.takeIf { ch.metric(it) != null }) }
     var touched by remember { mutableStateOf(false) }
     var length by remember { mutableStateOf("1w") }
+    var target by remember { mutableStateOf(ch.metric(metricKey)?.let { it.targets[length] ?: it.step } ?: 0.0) }
     var from by remember { mutableStateOf("today") }
     var name by remember { mutableStateOf("") }
     val invite = remember { mutableStateListOf<Int>() }

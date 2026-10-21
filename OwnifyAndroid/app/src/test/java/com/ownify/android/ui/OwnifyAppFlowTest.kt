@@ -151,8 +151,8 @@ class OwnifyAppFlowTest {
 
     /** Since 18.0 the leaderboard is a page of its own, behind Community's Ranglijst card. */
     private fun openLeaderboard() {
-        waitFor("Toon alles")
-        compose.onAllNodes(hasText("Toon alles", substring = true) and hasClickAction()).onFirst().performClick()
+        waitFor("Ranglijst")
+        compose.onAllNodes(hasText("Ranglijst") and hasClickAction()).onFirst().performClick()
         waitFor("All-time")
     }
 

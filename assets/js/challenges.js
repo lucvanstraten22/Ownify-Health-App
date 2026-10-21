@@ -554,9 +554,16 @@
             }).join('') + '</div>';
     }
 
-    function create() {
+    function create(preset) {
         var draft = { kind: 'together', metric: null, target: 0, touched: false, length: '1w', from: 'today', name: '', invite: [] };
         var cc = C.create;
+
+        /* A way to begin on an empty Uitdagingen comes with its kind and metric. */
+        if (preset && (preset.kind === 'together' || preset.kind === 'versus')) { draft.kind = preset.kind; }
+        if (preset && preset.metric && metricOf(preset.metric)) {
+            draft.metric = preset.metric;
+            draft.target = metricOf(draft.metric).targets[draft.length];
+        }
 
         function preview() {
             var metric = metricOf(draft.metric);
@@ -570,7 +577,7 @@
             var people = D.friends.filter(function (f) { return draft.invite.indexOf(f.id) !== -1; });
 
             return '<div class="ch-preview" data-accent="' + esc(metric ? metric.accent : 'health') + '">'
-                + '<span class="ch-kind">' + icon(metric ? metric.icon : 'flag') + '<span>' + esc(kind.label + (metric ? ' · ' + metric.label : '')) + '</span></span>'
+                + '<span class="ch-kind">' + icon(metric ? metric.icon : 'target') + '<span>' + esc(kind.label + (metric ? ' · ' + metric.label : '')) + '</span></span>'
                 + '<span class="ch-preview__name">' + esc(name) + '</span>'
                 + '<span class="ch-preview__line">' + esc(line + ' · ' + period) + '</span>'
                 + '<span class="ch-foot"><span class="ch-faces" aria-hidden="true">'
@@ -887,7 +894,10 @@
         D = read();
         C = D.copy;
 
-        if (t.hasAttribute('data-challenge-create')) { create(); return; }
+        if (t.hasAttribute('data-challenge-create')) {
+            create({ kind: t.getAttribute('data-kind'), metric: t.getAttribute('data-metric') });
+            return;
+        }
         if (t.hasAttribute('data-challenge-join')) { codeSheet(); return; }
         if (t.hasAttribute('data-challenge-review')) {
             var r = D.reviews && D.reviews[t.getAttribute('data-challenge-review')];

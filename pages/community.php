@@ -2,16 +2,17 @@
 /**
  * Community — what is happening with the people you know, content first.
  *
- * Two cards, each a way in and a preview of what is behind it:
+ * Two cards ("Twee vensters"), each a way in and a picture of what is
+ * behind it:
  *
- *   Ranglijst     the top of your friends' board this month, you on it, and
- *                 how far the one directly ahead of you is. The card opens
- *                 the full board (pages/leaderboard.php): scopes, periods,
- *                 everything as it always was.
- *   Uitdagingen   invitations waiting for you, and the challenges you are in
- *                 on a carousel, each opening its own page; the last tile
- *                 makes a new one. The card opens Uitdagingen
- *                 (pages/challenges.php), where a code is entered.
+ *   Ranglijst     your friends' top three this month on a podium, and how
+ *                 far the one directly ahead of you is; with nobody to
+ *                 compare to, the open places add a friend. The card opens
+ *                 the full board (pages/leaderboard.php) as it always was.
+ *   Uitdagingen   invitations waiting for you, the challenge ending soonest
+ *                 on top of a stack of the others, and Nieuwe uitdaging and
+ *                 Code invoeren side by side. The card opens Uitdagingen
+ *                 (pages/challenges.php).
  *
  * Challenges have nothing to do with points; the line under the cards says
  * so. docs/CHALLENGES.md.
@@ -22,6 +23,17 @@ $community  = $data['community'];
 $preview    = $community['preview'];
 $challenges = $data['challenges'] ?? ['available' => false];
 $copy       = $challenges['copy'] ?? [];
+
+/* The podium: first, second and third, wherever you are. A place nobody
+   holds yet is an open spot that adds a friend. */
+$podium = [];
+foreach ($preview['rows'] as $entry) {
+    $place = (int) ($entry['rank'] ?? 0);
+    if ($place >= 1 && $place <= 3 && !isset($podium[$place])) {
+        $podium[$place] = $entry;
+    }
+}
+$alone = count($preview['rows']) <= 1;
 ?>
 <section class="screen page" data-page="community" aria-label="<?= e(t('Community')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
@@ -34,57 +46,83 @@ $copy       = $challenges['copy'] ?? [];
                     <h1 class="page-intro__title"><?= e($community['title']) ?></h1>
                 </header>
 
-                <!-- Ranglijst -->
-                <section class="card ch-card reveal" data-accent="health" aria-labelledby="home-board-title">
-                    <button type="button" class="ch-head press" data-detail-open="leaderboard">
-                        <span class="icon-tile" aria-hidden="true"><?= icon('ranking') ?></span>
-                        <span class="ch-head__text">
-                            <span class="ch-head__title" id="home-board-title"><?= e($preview['title']) ?></span>
-                            <span class="ch-head__sub"><?= e($preview['sub']) ?></span>
+                <!-- Ranglijst: the top three on a podium, you among them -->
+                <section class="card cm-dest reveal" aria-labelledby="home-board-title">
+                    <button type="button" class="cm-head press" data-detail-open="leaderboard">
+                        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('ranking') ?></span>
+                        <span class="cm-head__text">
+                            <span class="cm-head__title" id="home-board-title"><?= e($preview['title']) ?></span>
+                            <span class="cm-head__sub"><?= e($preview['sub']) ?></span>
                         </span>
-                        <span class="ch-link"><?= e(t('Toon alles')) ?><?= icon('chevron-right') ?></span>
+                        <?= icon('chevron-right', 'cm-head__chev') ?>
                     </button>
 
-                    <?php if ($preview['rows'] !== []): ?>
-                        <ol class="ch-rows" role="list">
-                            <?php foreach ($preview['rows'] as $entry): ?>
-                                <?php component('leaderboard-row', $data + ['entry' => $entry, 'entry_sticky' => false]); ?>
-                            <?php endforeach; ?>
-                        </ol>
-                    <?php endif; ?>
+                    <ol class="cm-podium" role="list" aria-label="<?= e(t('De top drie van je vrienden deze maand')) ?>">
+                        <?php foreach ([2, 1, 3] as $place): ?>
+                            <?php $entry = $podium[$place] ?? null; ?>
+                            <?php if ($entry !== null): ?>
+                                <li class="cm-podium__col<?= !empty($entry['self']) ? ' is-you' : '' ?>" style="--step: <?= ['1' => 84, '2' => 64, '3' => 50][(string) $place] ?>px">
+                                    <span class="board-row__avatar cm-podium__av" data-accent="<?= e(community_avatar_accent($entry['name'])) ?>" aria-hidden="true">
+                                        <?= e(community_initial($entry['name'])) ?>
+                                        <?php if (has_value($entry['avatar'] ?? null)): ?>
+                                            <img class="board-row__photo" src="<?= e((string) $entry['avatar']) ?>" alt="" loading="lazy" decoding="async">
+                                        <?php endif; ?>
+                                    </span>
+                                    <span class="cm-podium__name"><?= e(!empty($entry['self']) ? t('Jij') : (string) $entry['name']) ?></span>
+                                    <span class="cm-podium__pts"><?= e(community_points($entry['points'])) ?></span>
+                                    <span class="cm-podium__step"><?= (int) $place ?></span>
+                                </li>
+                            <?php else: ?>
+                                <li class="cm-podium__col is-open" style="--step: <?= ['1' => 84, '2' => 64, '3' => 50][(string) $place] ?>px">
+                                    <button type="button" class="cm-podium__add press" data-account-open data-friends-add-open
+                                            aria-label="<?= e(t('Vriend toevoegen')) ?>"><?= icon('plus') ?></button>
+                                    <span class="cm-podium__step"><?= (int) $place ?></span>
+                                </li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </ol>
 
-                    <?php if ($preview['line'] !== ''): ?>
-                        <p class="ch-line"><span class="ch-dot" aria-hidden="true"></span><?= e($preview['line']) ?></p>
+                    <?php if ($alone): ?>
+                        <button type="button" class="btn cm-btn press" data-account-open data-friends-add-open>
+                            <?= icon('user-plus') ?><span><?= e(t('Vriend toevoegen')) ?></span>
+                        </button>
+                    <?php elseif ($preview['line'] !== ''): ?>
+                        <p class="cm-line"><?= e($preview['line']) ?></p>
                     <?php endif; ?>
                 </section>
 
                 <?php if (!empty($challenges['available'])): ?>
-                    <!-- Uitdagingen -->
-                    <section class="card ch-card reveal" data-accent="training" aria-labelledby="home-challenges-title" data-home-challenges>
-                        <button type="button" class="ch-head press" data-detail-open="challenges" data-challenge-from="home">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('flag') ?></span>
-                            <span class="ch-head__text">
-                                <span class="ch-head__title" id="home-challenges-title"><?= e($copy['page']['title']) ?></span>
-                                <span class="ch-head__sub"><?= e($challenges['summary']) ?></span>
+                    <!-- Uitdagingen: what you are in, as a stack of cards, and the two ways to start one -->
+                    <section class="card cm-dest reveal" aria-labelledby="home-challenges-title" data-home-challenges>
+                        <button type="button" class="cm-head press" data-detail-open="challenges" data-challenge-from="home">
+                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('target') ?></span>
+                            <span class="cm-head__text">
+                                <span class="cm-head__title" id="home-challenges-title"><?= e($copy['page']['title']) ?></span>
+                                <span class="cm-head__sub"><?= e($challenges['summary']) ?></span>
                             </span>
-                            <span class="ch-link"><?= e(t('Toon alles')) ?><?= icon('chevron-right') ?></span>
+                            <?= icon('chevron-right', 'cm-head__chev') ?>
                         </button>
 
                         <?php foreach ($challenges['invites'] as $invite): ?>
                             <?= ch_invite($invite, $copy['review']['see']) ?>
                         <?php endforeach; ?>
 
-                        <div class="ch-rail<?= $challenges['running'] === [] ? ' is-alone' : '' ?>" role="list"
-                             aria-label="<?= e(t('Lopende uitdagingen')) ?>" data-gesture-own>
-                            <?php foreach ($challenges['running'] as $view): ?>
-                                <div class="ch-rail__slot" role="listitem"><?= ch_tile($view) ?></div>
-                            <?php endforeach; ?>
-                            <div class="ch-rail__slot" role="listitem">
-                                <button type="button" class="ch-tile ch-tile--new press" data-challenge-create>
-                                    <?= icon('plus') ?><span><?= e($copy['page']['create']) ?></span>
-                                </button>
+                        <?php if ($challenges['running'] !== []): ?>
+                            <?php $front = $challenges['running'][0]; $behind = min(2, count($challenges['running']) - 1); ?>
+                            <div class="cm-fan" style="--behind: <?= $behind ?>">
+                                <?php for ($n = $behind; $n >= 1; $n--): ?>
+                                    <span class="cm-fan__layer" style="--n: <?= $n ?>" aria-hidden="true"></span>
+                                <?php endfor; ?>
+                                <?= ch_front($front) ?>
                             </div>
-                        </div>
+                        <?php else: ?>
+                            <div class="cm-none">
+                                <?= ch_target_art() ?>
+                                <p class="cm-none__title"><?= e($copy['page']['empty_title']) ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <?= ch_actions($copy['page']) ?>
                     </section>
 
                     <p class="ch-note reveal"><?= e($challenges['note']) ?></p>

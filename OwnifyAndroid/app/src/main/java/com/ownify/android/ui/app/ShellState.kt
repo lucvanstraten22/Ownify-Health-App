@@ -87,7 +87,8 @@ sealed interface Overlay {
     data class Pairing(val provider: String) : Overlay
 
     /** Uitdagingen's one bottom sheet, in its five uses (components/challenge-sheet.php). */
-    data object ChallengeCreate : Overlay
+    /** Nieuwe uitdaging; from one of Uitdagingen's ideas with its [kind] and [metric] chosen. */
+    data class ChallengeCreate(val kind: String? = null, val metric: String? = null) : Overlay
     data object ChallengeCode : Overlay
     /** An invitation of yours, to look at before Meedoen. */
     data class ChallengeReview(val id: Int) : Overlay

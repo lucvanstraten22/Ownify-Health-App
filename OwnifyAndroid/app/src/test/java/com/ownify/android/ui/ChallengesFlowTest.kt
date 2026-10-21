@@ -52,7 +52,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Uitdagingen in the app, as a person uses it (docs/CHALLENGES.md): the two
- * cards on Community, the list with Nieuwe uitdaging and Code invoeren, a
+ * cards on Community (the podium, the stack and the two ways to start one),
+ * Uitdagingen in its groups and, with nothing yet, its ideas, a
  * code looked up and reviewed before joining, a new challenge made, an
  * invitation turned down, a challenge's page and leaving it — each change
  * posted to the endpoint the website posts to. The server is a stand-in
@@ -125,33 +126,67 @@ class ChallengesFlowTest {
     private fun challenges() {
         community()
         compose.onAllNodes(hasText("Uitdagingen") and hasClickAction()).onFirst().performClick()
-        waitFor("Code invoeren")
+        waitFor("Samen of tegen elkaar, met wie jij kiest.")
     }
 
     private fun lookupFixture() = javaClass.classLoader!!.getResource("challenge-lookup.json").readText()
 
     @Test
-    fun `Community - the two cards, and no code field on it - that is behind Uitdagingen`() {
+    fun `Community - the podium, the stack and the two ways to start one, no code field`() {
         community()
         waitFor("Ranglijst")
         waitFor("Vrienden · deze maand")
+        compose.onNode(hasContentDescription("De top drie van je vrienden deze maand")).assertExists()
         waitFor("3 bezig · 1 uitnodiging")
         waitFor("bram_fietst nodigt je uit voor Samen 500 km fietsen")
+        // The stack: one challenge on top, the one that ends first.
+        assertEquals(1, compose.onAllNodes(hasTestTag("challenge-tile")).fetchSemanticsNodes().size)
+        compose.onAllNodes(hasText("Nieuwe uitdaging") and hasClickAction()).onFirst().assertIsEnabled()
+        compose.onAllNodes(hasText("Code invoeren") and hasClickAction()).onFirst().assertIsEnabled()
         waitFor("Uitdagingen staan los van je punten op de ranglijst.")
-        assertTrue("no Code invoeren on Community", gone("Code invoeren"))
         assertTrue("no code field on Community", compose.onAllNodes(hasTestTag("challenge-code")).fetchSemanticsNodes().isEmpty())
 
         compose.onAllNodes(hasText("Uitdagingen") and hasClickAction()).onFirst().performClick()
-        waitFor("Code invoeren")
+        waitFor("Samen of tegen elkaar, met wie jij kiest.")
         button("Nieuwe uitdaging").assertIsEnabled()
         button("Code invoeren").assertIsEnabled()
-        waitFor("Samen of tegen elkaar, met wie jij kiest.")
+    }
+
+    @Test
+    fun `Uitdagingen - the invitations, then Samen and Wedstrijd apart`() {
+        challenges()
+        waitFor("UITNODIGINGEN")
+        waitFor("SAMEN")
+        waitFor("WEDSTRIJD")
+        waitFor("100 trainingen in oktober")
+        waitFor("Wie zet de meeste stappen?")
+    }
+
+    @Test
+    fun `Uitdagingen - with nothing yet, an idea opens Nieuwe uitdaging with its kind and metric chosen`() {
+        server.withChallenges(empty = true)
+        server.challengeReplies["create.php"] = 200 to """{"ok":true,"id":97,"code":"22222","name":"Wie zet de meeste stappen?","invited":0,"share_text":"…"}"""
+        community()
+        waitFor("Nog geen uitdagingen")
+        compose.onAllNodes(hasText("Uitdagingen") and hasClickAction()).onFirst().performClick()
+        waitFor("Begin met een van deze, of maak je eigen.")
+        waitFor("Samen trainen")
+        waitFor("Samen goed slapen")
+
+        compose.onAllNodes(hasText("Wie zet de meeste stappen?") and hasClickAction()).onLast().performScrollTo().performClick()
+        waitFor("Wie de meeste stappen haalt")
+        button("Uitdaging maken").assertIsEnabled().performClick()
+        waitFor("Je uitdaging staat klaar")
+
+        val sent = server.requestsTo("create.php").single().body
+        assertEquals("versus", sent.getString("kind"))
+        assertEquals("steps", sent.getString("metric"))
     }
 
     @Test
     fun `Ranglijst - the card opens the full board, scopes and periods as before`() {
         community()
-        compose.onAllNodes(hasText("Toon alles", substring = true) and hasClickAction()).onFirst().performClick()
+        compose.onAllNodes(hasText("Ranglijst") and hasClickAction()).onFirst().performClick()
         waitFor("All-time")
         button("Nederland").performClick()
         button("Jaar").performClick()
@@ -286,7 +321,7 @@ class ChallengesFlowTest {
     }
 
     @Test
-    fun `a tile on Community - its page goes back to Community`() {
+    fun `the stack on Community - its page goes back to Community`() {
         community()
         compose.onAllNodes(hasTestTag("challenge-tile")).onFirst().performClick()
         compose.waitUntil(10_000) {

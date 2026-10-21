@@ -65,7 +65,15 @@ class ChallengeCopy(private val o: JSONObject?) {
     operator fun get(group: String): Map<String, String> = o.obj(group).stringMap()
 
     fun text(group: String, key: String): String = o.obj(group).str(key).orEmpty()
+
+    /** Uitdagingen's three ways to begin when there is nothing yet (`page.ideas`). */
+    fun ideas(): List<ChallengeIdea> = o.obj("page").arr("ideas").map {
+        ChallengeIdea(it.str("kind") ?: "together", it.str("metric").orEmpty(), it.str("title").orEmpty(), it.str("sub").orEmpty())
+    }
 }
+
+/** A way to begin: Nieuwe uitdaging with [kind] and [metric] already chosen. */
+data class ChallengeIdea(val kind: String, val metric: String, val title: String, val sub: String)
 
 /**
  * Somebody in a challenge, with only what another participant may see: a

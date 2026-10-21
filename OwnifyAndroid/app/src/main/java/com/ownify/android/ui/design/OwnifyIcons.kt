@@ -1,6 +1,7 @@
 package com.ownify.android.ui.design
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -155,6 +156,16 @@ object OwnifyIcons {
         )
     }
 
+    /** `target` */
+    val target: ImageVector by lazy {
+        icon("target", null,
+            "M3.2 13a7.8 7.8 0 1 0 15.6 0a7.8 7.8 0 1 0 -15.6 0Z",
+            "M7.1 13a3.9 3.9 0 1 0 7.8 0a3.9 3.9 0 1 0 -7.8 0Z",
+            "M11 13 19.4 4.6",
+            "M16.9 3.9v3.2h3.2"
+        )
+    }
+
     /** `award` */
     val award: ImageVector by lazy {
         icon("award", null,
@@ -236,22 +247,22 @@ object OwnifyIcons {
         )
     }
 
-    /** `arrow-down` — lower is better, at most (the goal wizard's direction) */
+    /** `arrow-down` */
     val arrowDown: ImageVector by lazy {
         icon("arrow-down", null,
             "M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"
         )
     }
 
-    /** `search` — a lens and its handle (the goal wizard's search field) */
+    /** `search` */
     val search: ImageVector by lazy {
         icon("search", null,
-            "M10.6 5A5.6 5.6 0 1 1 10.6 16.2A5.6 5.6 0 1 1 10.6 5Z",
+            "M5 10.6a5.6 5.6 0 1 0 11.2 0a5.6 5.6 0 1 0 -11.2 0Z",
             "m14.8 14.8 4.6 4.6"
         )
     }
 
-    /** `close` — clear a field */
+    /** `close` */
     val close: ImageVector by lazy {
         icon("close", null,
             "M7 7l10 10M17 7 7 17"
@@ -390,6 +401,7 @@ object OwnifyIcons {
         "flag" to flag,
         "sparkle" to sparkle,
         "ranking" to ranking,
+        "target" to target,
         "award" to award,
         "chevron" to chevron,
         "chevron-down" to chevronDown,
@@ -476,15 +488,34 @@ object OwnifyIcons {
     /** Solid `pulse` (icon_solid()) */
     val solidPulse: ImageVector by lazy {
         solidIcon("pulse",
-            Part("M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21", 2.4f)
+            Part("M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21", line = 2.4f)
         )
     }
 
     /** Solid `chart` (icon_solid()) */
     val solidChart: ImageVector by lazy {
         solidIcon("chart",
-            Part("M4 4.5v15h15.5", 2.4f),
-            Part("M7.6 15.4 11 11.2l2.9 2.4 4.4-6", 2.4f)
+            Part("M4 4.5v15h15.5", line = 2.4f),
+            Part("M7.6 15.4 11 11.2l2.9 2.4 4.4-6", line = 2.4f)
+        )
+    }
+
+    /** Solid `ranking` (icon_solid()) */
+    val solidRanking: ImageVector by lazy {
+        solidIcon("ranking",
+            Part("M5.6 13.2H7.2A1.2 1.2 0 0 1 8.4 14.4V19.2A1.2 1.2 0 0 1 7.2 20.4H5.6A1.2 1.2 0 0 1 4.4 19.2V14.4A1.2 1.2 0 0 1 5.6 13.2Z"),
+            Part("M11.2 6.4H12.8A1.2 1.2 0 0 1 14 7.6V19.2A1.2 1.2 0 0 1 12.8 20.4H11.2A1.2 1.2 0 0 1 10 19.2V7.6A1.2 1.2 0 0 1 11.2 6.4Z"),
+            Part("M16.8 10H18.4A1.2 1.2 0 0 1 19.6 11.2V19.2A1.2 1.2 0 0 1 18.4 20.4H16.8A1.2 1.2 0 0 1 15.6 19.2V11.2A1.2 1.2 0 0 1 16.8 10Z")
+        )
+    }
+
+    /** Solid `target` (icon_solid()) */
+    val solidTarget: ImageVector by lazy {
+        solidIcon("target",
+            Part("M2.4 13a8.6 8.6 0 1 0 17.2 0a8.6 8.6 0 1 0-17.2 0ZM4.5 13a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0ZM6.4 13a4.6 4.6 0 1 0 9.2 0a4.6 4.6 0 1 0-9.2 0ZM8.4 13a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0Z", evenOdd = true, clip = "M0 0H24V24H0Z M12.87 13.67 22.6 3.9 20.1 1.4 10.33 11.13Z"),
+            Part("M9.75 13a1.25 1.25 0 1 0 2.5 0a1.25 1.25 0 1 0 -2.5 0Z"),
+            Part("M11.4 12.6 19.6 4.4", line = 1.7f),
+            Part("M18.2 2.4h3.4v3.4l-1.7-1.7Z")
         )
     }
 
@@ -498,6 +529,8 @@ object OwnifyIcons {
         "sparkle" to solidSparkle,
         "pulse" to solidPulse,
         "chart" to solidChart,
+        "ranking" to solidRanking,
+        "target" to solidTarget,
         )
     }
 
@@ -554,8 +587,11 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
     return builder.build()
 }
 
-/** One shape of a solid icon: filled, or — [line] > 0 — a line of that width. */
-private class Part(val data: String, val line: Float = 0f)
+/**
+ * One shape of a solid icon: filled, or — [line] > 0 — a line of that width;
+ * [evenOdd] for `fill-rule="evenodd"`, and [clip] for a `<g clip-path>` round it.
+ */
+private class Part(val data: String, val line: Float = 0f, val evenOdd: Boolean = false, val clip: String? = null)
 
 private fun solidIcon(name: String, vararg parts: Part): ImageVector {
     val builder = ImageVector.Builder(
@@ -566,6 +602,7 @@ private fun solidIcon(name: String, vararg parts: Part): ImageVector {
         viewportHeight = 24f
     )
     for (part in parts) {
+        if (part.clip != null) builder.addGroup(clipPathData = addPathNodes(part.clip))
         if (part.line > 0f) {
             builder.addPath(
                 pathData = addPathNodes(part.data),
@@ -576,8 +613,13 @@ private fun solidIcon(name: String, vararg parts: Part): ImageVector {
                 strokeLineJoin = StrokeJoin.Round
             )
         } else {
-            builder.addPath(pathData = addPathNodes(part.data), fill = SolidColor(Color.Black))
+            builder.addPath(
+                pathData = addPathNodes(part.data),
+                fill = SolidColor(Color.Black),
+                pathFillType = if (part.evenOdd) PathFillType.EvenOdd else PathFillType.NonZero
+            )
         }
+        if (part.clip != null) builder.clearGroup()
     }
     return builder.build()
 }

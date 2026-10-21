@@ -90,13 +90,32 @@ for name, raw in solid_entries:
     solid_lines.append(f"    /** Solid `{name}` (icon_solid()) */")
     solid_lines.append(f"    val {camel('solid-' + name)}: ImageVector by lazy {{")
     solid_lines.append(f'        solidIcon("{name}",')
-    tags = re.findall(r"<(?:path|circle|rect)[^>]*/>", body)
-    for i, tag in enumerate(tags):
+    # <clipPath id="…"><path d="…"/></clipPath> and <g clip-path="url(#…)">…</g>:
+    # the shapes inside the group are cut by that path (nonzero, as on the web).
+    clips = {m[0]: attrs(m[1])["d"] for m in re.findall(r'<clipPath id="([^"]+)">(<path[^>]*/>)</clipPath>', body)}
+    body = re.sub(r"<clipPath[^>]*>.*?</clipPath>", "", body)
+    clip = None
+    tags = []
+    for token in re.findall(r"<g [^>]*>|</g>|<(?:path|circle|rect)[^>]*/>", body):
+        if token.startswith("<g "):
+            ref = re.search(r'clip-path="url\(#([^)]+)\)"', token)
+            clip = clips[ref.group(1)] if ref else None
+        elif token == "</g>":
+            clip = None
+        else:
+            tags.append((token, clip))
+    for i, (tag, clip) in enumerate(tags):
         a = attrs(tag)
         d = element_paths(tag)[0]
-        line = a.get("stroke-width") if a.get("fill") == "none" else None
+        args = [f'"{d}"']
+        if a.get("fill") == "none":
+            args.append(f'line = {a.get("stroke-width")}f')
+        if a.get("fill-rule") == "evenodd":
+            args.append("evenOdd = true")
+        if clip:
+            args.append(f'clip = "{clip}"')
         sep = "," if i < len(tags) - 1 else ""
-        solid_lines.append(f'            Part("{d}", {line}f){sep}' if line else f'            Part("{d}"){sep}')
+        solid_lines.append(f'            Part({", ".join(args)}){sep}')
     solid_lines.append("        )")
     solid_lines.append("    }")
     solid_lines.append("")
@@ -108,6 +127,7 @@ by_name = "\n".join(f'        "{n}" to {camel(n)},' for n in names)
 kotlin = f'''package com.ownify.android.ui.design
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -204,8 +224,11 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
     return builder.build()
 }}
 
-/** One shape of a solid icon: filled, or — [line] > 0 — a line of that width. */
-private class Part(val data: String, val line: Float = 0f)
+/**
+ * One shape of a solid icon: filled, or — [line] > 0 — a line of that width;
+ * [evenOdd] for `fill-rule="evenodd"`, and [clip] for a `<g clip-path>` round it.
+ */
+private class Part(val data: String, val line: Float = 0f, val evenOdd: Boolean = false, val clip: String? = null)
 
 private fun solidIcon(name: String, vararg parts: Part): ImageVector {{
     val builder = ImageVector.Builder(
@@ -216,6 +239,7 @@ private fun solidIcon(name: String, vararg parts: Part): ImageVector {{
         viewportHeight = 24f
     )
     for (part in parts) {{
+        if (part.clip != null) builder.addGroup(clipPathData = addPathNodes(part.clip))
         if (part.line > 0f) {{
             builder.addPath(
                 pathData = addPathNodes(part.data),
@@ -226,8 +250,13 @@ private fun solidIcon(name: String, vararg parts: Part): ImageVector {{
                 strokeLineJoin = StrokeJoin.Round
             )
         }} else {{
-            builder.addPath(pathData = addPathNodes(part.data), fill = SolidColor(Color.Black))
+            builder.addPath(
+                pathData = addPathNodes(part.data),
+                fill = SolidColor(Color.Black),
+                pathFillType = if (part.evenOdd) PathFillType.EvenOdd else PathFillType.NonZero
+            )
         }}
+        if (part.clip != null) builder.clearGroup()
     }}
     return builder.build()
 }}

@@ -98,7 +98,7 @@ object OwnifyScreens {
                 is Overlay.EditField -> FieldEditor(overlay, data)
                 is Overlay.RenameDevice -> DeviceNameEditor(overlay, data)
                 is Overlay.Pairing -> PairingPanel(overlay, data)
-                Overlay.ChallengeCreate -> ChallengeCreateSheet(Overlay.ChallengeCreate, data)
+                is Overlay.ChallengeCreate -> ChallengeCreateSheet(overlay, data)
                 Overlay.ChallengeCode -> ChallengeCodeSheet(Overlay.ChallengeCode, data)
                 is Overlay.ChallengeReview -> ChallengeReviewSheet(overlay, data)
                 is Overlay.ChallengeInvite -> ChallengeInviteSheet(overlay, data)

@@ -2,6 +2,9 @@ package com.ownify.android.ui.screens.community
 
 import com.ownify.android.i18n.tr
 import androidx.compose.foundation.ScrollState
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ownify.android.ui.design.Btn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,11 +29,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +42,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -70,22 +72,12 @@ import com.ownify.android.data.Community
 import com.ownify.android.ui.app.dockClearance
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.DetailHeader
-import com.ownify.android.ui.app.LocalOwnedAreas
 import com.ownify.android.ui.app.PageColumn
 import com.ownify.android.ui.app.detailHeaderSpace
-import com.ownify.android.ui.app.ownsGestures
 import com.ownify.android.ui.design.PageIntro
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.theme.Accent
-import androidx.compose.foundation.gestures.FlingBehavior
-import androidx.compose.foundation.gestures.ScrollScope
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.layout
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.IconTile
 import com.ownify.android.ui.design.JCard
@@ -107,10 +99,12 @@ import java.util.zip.CRC32
 
 /**
  * Community (pages/community.php): what is happening with the people you
- * know, content first. Two cards, each a way in and a preview of what is
- * behind it — Ranglijst, the top of your friends' board this month, opening
- * the full board ([LeaderboardDetail]); Uitdagingen, your invitations and the
- * challenges you are in on a carousel, opening Uitdagingen
+ * know, content first. Two cards ("Twee vensters"), each a way in and a
+ * picture of what is behind it — Ranglijst, your friends' top three this
+ * month on a podium, opening the full board ([LeaderboardDetail]); with
+ * nobody to compare to, the open places add a friend. Uitdagingen, your
+ * invitations, the challenge ending soonest on top of a stack of the others,
+ * and Nieuwe uitdaging and Code invoeren side by side, opening Uitdagingen
  * ([ChallengesDetail]). Challenges have nothing to do with points: the line
  * under the cards says so.
  */
@@ -120,36 +114,47 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
     val community = data.community
     val preview = community.preview
     val ch = data.challenges
+    val addFriend = { shell.open(Overlay.Account(FRIENDS_ADD)) }
 
     PageColumn(scroll) {
         PageIntro(community.title, null, Modifier.reveal())
 
-        // Ranglijst
+        // Ranglijst: the top three on a podium, you among them.
         JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space4)) {
-            CardHead(OwnifyIcons.ranking, Accent.HEALTH, preview.title, preview.sub) { shell.openDetail(Detail.Leaderboard) }
-            if (preview.rows.isNotEmpty()) {
-                Column(Modifier.padding(top = Ownify.Space3), verticalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
-                    preview.rows.forEachIndexed { i, entry -> BoardRow(community, entry, topThree = i < 3, sticky = null, compact = true) }
-                }
-            }
-            if (preview.line.isNotEmpty()) {
-                Row(Modifier.padding(top = Ownify.Space3), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    Box(Modifier.size(6.dp).background(Ownify.Health, CircleShape))
-                    T(preview.line, JStyle.Lede)
+            Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
+                CardHead(OwnifyIcons.solidRanking, preview.title, preview.sub) { shell.openDetail(Detail.Leaderboard) }
+                Podium(preview.rows, addFriend)
+                if (preview.rows.size <= 1) {
+                    Btn(tr("Vriend toevoegen"), onClick = addFriend, modifier = Modifier.fillMaxWidth(), icon = OwnifyIcons.userPlus)
+                } else if (preview.line.isNotEmpty()) {
+                    T(preview.line, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
                 }
             }
         }
 
         if (ch.available) {
-            // Uitdagingen
+            // Uitdagingen: what you are in, as a stack of cards, and the two ways to start one.
             JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space4)) {
-                CardHead(OwnifyIcons.flag, Accent.TRAINING, ch.copy.text("page", "title"), ch.summary) { shell.openDetail(Detail.Challenges) }
-                ch.invites.forEach { invite ->
-                    Box(Modifier.padding(top = Ownify.Space3)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
+                    CardHead(OwnifyIcons.solidTarget, ch.copy.text("page", "title"), ch.summary) { shell.openDetail(Detail.Challenges) }
+                    ch.invites.forEach { invite ->
                         InviteBanner(invite, ch.copy.text("review", "see")) { shell.open(Overlay.ChallengeReview(invite.id)) }
                     }
+                    if (ch.running.isNotEmpty()) {
+                        ChallengeFan(ch.running) { view -> shell.openDetail(Detail.Challenge(view.id, overList = false)) }
+                    } else {
+                        // `.cm-none`: nothing yet, the empty target.
+                        Column(
+                            Modifier.fillMaxWidth().padding(top = Ownify.Space3, bottom = Ownify.Space1),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
+                        ) {
+                            TargetArt()
+                            T(ch.copy.text("page", "empty_title"), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), align = TextAlign.Center)
+                        }
+                    }
+                    ChallengeActions(ch.copy["page"])
                 }
-                ChallengeRail(data, Modifier.padding(top = Ownify.Space3))
             }
             T(ch.note, JStyle.Footnote, Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).reveal())
         }
@@ -157,11 +162,11 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
 }
 
 /**
- * `.ch-head`: a card's way in — its icon, title and one line, and Toon alles.
- * The whole row is the control.
+ * `.cm-head`: a card's way in — its solid mark, title and one line, and a
+ * chevron. The whole row is the control.
  */
 @Composable
-private fun CardHead(icon: ImageVector, accent: Accent, title: String, sub: String, onClick: () -> Unit) {
+private fun CardHead(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
@@ -173,88 +178,131 @@ private fun CardHead(icon: ImageVector, accent: Accent, title: String, sub: Stri
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon, color = accent.color)
+        NeutralTile(icon)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             T(title, JStyle.Subtitle, Modifier.semantics { heading() })
             if (sub.isNotEmpty()) T(sub, JStyle.Footnote)
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            T(tr("Toon alles"), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
-            JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextSecondary)
-        }
+        JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextFaint)
     }
 }
 
+/** The steps' heights: first 84, second 64, third 50. */
+private val STEPS = mapOf(1 to 84.dp, 2 to 64.dp, 3 to 50.dp)
+
 /**
- * `.ch-rail`: the challenges on now, a carousel that snaps tile by tile and
- * bleeds to the card's edge so the next tile peeks in; Nieuwe uitdaging is
- * its last tile, the whole width when it is alone. Every tile as tall as the
- * tallest. It reads its own horizontal drags (`data-gesture-own`): the page
- * swipe starts outside it.
+ * `.cm-podium`: second, first, third — whoever holds each place this
+ * month, you with a ring; a place nobody holds yet is an open spot that
+ * adds a friend.
  */
 @Composable
-private fun ChallengeRail(data: AppData, modifier: Modifier) {
-    val shell = LocalShell.current
-    val ch = data.challenges
-    val screen = LocalScreen.current
-    val density = LocalDensity.current
-    val owned = LocalOwnedAreas.current
-    val ownKey = remember { Any() }
-    DisposableEffect(ownKey) { onDispose { owned.set(ownKey, null) } }
-    val bleed = Ownify.Space4
-    val gap = Ownify.Space2
-    val alone = ch.running.isEmpty()
-    // The card's inside: the column less the card's padding and border.
-    val inner = screen.shell - Ownify.Space4 * 2 - 2.dp
-    val tileWidth = if (alone) inner else inner * 0.76f
-    val scroll = rememberScrollState()
-    val step = with(density) { (tileWidth + gap).toPx() }
-    val snap = remember(scroll, step) { TileSnap(scroll, step) }
-
+private fun Podium(rows: List<BoardEntry>, onAdd: () -> Unit) {
+    val narrow = LocalScreen.current.narrow
+    val places = mutableMapOf<Int, BoardEntry>()
+    rows.forEach { if (it.rank in 1..3 && it.rank !in places) places[it.rank] = it }
     Row(
-        modifier
-            .layout { measurable, constraints ->
-                val extra = bleed.roundToPx() * 2
-                val placeable = measurable.measure(constraints.copy(minWidth = constraints.maxWidth + extra, maxWidth = constraints.maxWidth + extra))
-                layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
-            }
-            .ownsGestures(owned, ownKey)
-            .horizontalScroll(scroll, flingBehavior = snap)
-            .height(IntrinsicSize.Max)
-            .padding(horizontal = bleed)
-            .semantics { contentDescription = tr("Lopende uitdagingen") },
-        horizontalArrangement = Arrangement.spacedBy(gap)
+        Modifier
+            .fillMaxWidth()
+            .padding(start = if (narrow) 0.dp else Ownify.Space2, end = if (narrow) 0.dp else Ownify.Space2, top = Ownify.Space1)
+            .semantics { contentDescription = tr("De top drie van je vrienden deze maand") },
+        horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3),
+        verticalAlignment = Alignment.Bottom
     ) {
-        ch.running.forEach { view ->
-            ChallengeTile(view, Modifier.width(tileWidth).fillMaxHeight()) {
-                shell.openDetail(Detail.Challenge(view.id, overList = false))
-            }
-        }
-        NewChallengeTile(ch.copy.text("page", "create"), Modifier.width(tileWidth).fillMaxHeight()) {
-            shell.open(Overlay.ChallengeCreate)
+        for (place in listOf(2, 1, 3)) {
+            PodiumColumn(place, places[place], onAdd, Modifier.weight(1f))
         }
     }
 }
 
-/**
- * Where a flick of the carousel comes to rest: projected from its speed as
- * a scroll decelerates (decelerationRate .99), then to the nearest tile's
- * start, the speed carried into the settle (`scroll-snap-type: x mandatory`).
- */
-private class TileSnap(private val scroll: androidx.compose.foundation.ScrollState, private val step: Float) : FlingBehavior {
-    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-        val from = scroll.value.toFloat()
-        val projected = from + initialVelocity / 1000f * 0.99f / (1f - 0.99f)
-        val target = (kotlin.math.round(projected / step) * step).coerceIn(0f, scroll.maxValue.toFloat())
-        var last = from
-        androidx.compose.animation.core.animate(
-            from, target, initialVelocity,
-            androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow)
-        ) { value, _ ->
-            scrollBy(value - last)
-            last = value
+@Composable
+private fun PodiumColumn(place: Int, entry: BoardEntry?, onAdd: () -> Unit, modifier: Modifier) {
+    val you = entry?.self == true
+    val stepShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (entry != null) {
+            val name = entry.name.ifEmpty { "—" }
+            val label = if (you) tr("Jij") else name
+            Column(
+                Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "$place. $label, ${points(entry.points)}" },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                PodiumAvatar(entry, you)
+                T(label, OwnifyType.style(Ownify.FsFootnote, FontWeight.SemiBold), Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+                T(points(entry.points), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true), maxLines = 1)
+            }
+        } else {
+            val interaction = remember { MutableInteractionSource() }
+            val label = tr("Vriend toevoegen")
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .press(interaction)
+                    .clip(CircleShape)
+                    .drawBehind {
+                        val stroke = 1.5.dp.toPx()
+                        drawCircle(
+                            Ownify.fill(0.3f),
+                            radius = size.minDimension / 2 - stroke / 2,
+                            style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx())))
+                        )
+                    }
+                    .clickable(interaction, indication = null, role = Role.Button, onClick = onAdd)
+                    .clearAndSetSemantics {
+                        contentDescription = label
+                        role = Role.Button
+                        onClick { onAdd(); true }
+                    },
+                contentAlignment = Alignment.Center
+            ) { JIcon(OwnifyIcons.plus, size = 18.dp, color = Ownify.TextMuted) }
         }
-        return 0f
+        Box(
+            Modifier
+                .padding(top = 4.dp)
+                .fillMaxWidth()
+                .height(STEPS.getValue(place))
+                .clip(stepShape)
+                .then(
+                    when {
+                        entry == null -> Modifier.dashedBorder(Ownify.fill(0.22f), 12.dp)
+                        else -> Modifier.background(Ownify.fill(if (you) 0.14f else 0.07f)).border(1.dp, Ownify.GlassHairline, stepShape)
+                    }
+                )
+                .clearAndSetSemantics { },
+            contentAlignment = Alignment.Center
+        ) {
+            T(place.toString(), OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, if (you) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
+        }
+    }
+}
+
+/** `.cm-podium__av`: 44, the initial in its colour under the picture; yours ringed in the text colour. */
+@Composable
+private fun PodiumAvatar(entry: BoardEntry, you: Boolean) {
+    val accent = Accent.of(avatarAccent(entry.name)).color
+    val ground = Ownify.ground(1f)
+    val ring = Ownify.TextPrimary
+    Box(
+        Modifier
+            .size(44.dp)
+            .drawBehind {
+                if (you) {
+                    // box-shadow: 0 0 0 2px ground, 0 0 0 3.5px text-primary
+                    drawCircle(ring, radius = size.minDimension / 2 + 3.5.dp.toPx())
+                    drawCircle(ground, radius = size.minDimension / 2 + 2.dp.toPx())
+                }
+            }
+            .clip(CircleShape)
+            .background(Ownify.fill(0.07f))
+            .border(1.dp, Ownify.GlassHairline, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        if (entry.name.isNotEmpty()) {
+            T(initial(entry.name), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
+        } else {
+            JIcon(OwnifyIcons.user, size = 18.dp, color = Ownify.TextMuted)
+        }
+        entry.avatar?.let { AvatarPhoto(it, Modifier.padding(1.dp).clip(CircleShape)) }
     }
 }
 

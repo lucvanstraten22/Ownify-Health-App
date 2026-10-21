@@ -70,6 +70,8 @@ if (!function_exists('icon')) {
 
                 // leaderboard — ascending bars
                 'ranking'  => '<path d="M6 20v-4.6M12 20V7.8M18 20v-8.4"/>',
+                /* Uitdagingen: a target with an arrow in its centre. */
+                'target'   => '<circle cx="11" cy="13" r="7.8"/><circle cx="11" cy="13" r="3.9"/><path d="M11 13 19.4 4.6"/><path d="M16.9 3.9v3.2h3.2"/>',
 
                 // badges and milestones
                 'award'    => '<circle cx="12" cy="9" r="5.2"/><path d="M8.6 13.4 7.4 20.6l4.6-2.5 4.6 2.5-1.2-7.2"/>',
@@ -256,6 +258,15 @@ if (!function_exists('icon_solid')) {
             'sparkle'  => '<path d="M12 3.6 13.7 9 19 10.8 13.7 12.6 12 18l-1.7-5.4L5 10.8 10.3 9 12 3.6Z"/><path d="M18.4 17.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z"/>',
             'pulse'    => '<path fill="none" stroke-width="2.4" d="M3 12.2h4.2l2.3-5.8 3.6 11.4 2.3-5.6H21"/>',
             'chart'    => '<path fill="none" stroke-width="2.4" d="M4 4.5v15h15.5"/><path fill="none" stroke-width="2.4" d="M7.6 15.4 11 11.2l2.9 2.4 4.4-6"/>',
+            'ranking'  => '<rect x="4.4" y="13.2" width="4" height="7.2" rx="1.2"/><rect x="10" y="6.4" width="4" height="14" rx="1.2"/><rect x="15.6" y="10" width="4" height="10.4" rx="1.2"/>',
+            /* The rings, with the arrow's path cut out of them (the square
+               minus a strip along the shaft), then the arrow over it — one
+               colour, so it reads on any tile. Android's twin: OwnifyIcons.solidTarget. */
+            'target'   => '<clipPath id="ow-target-gap"><path d="M0 0H24V24H0Z M12.87 13.67 22.6 3.9 20.1 1.4 10.33 11.13Z"/></clipPath>'
+                . '<g clip-path="url(#ow-target-gap)"><path fill-rule="evenodd" d="M2.4 13a8.6 8.6 0 1 0 17.2 0a8.6 8.6 0 1 0-17.2 0ZM4.5 13a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0ZM6.4 13a4.6 4.6 0 1 0 9.2 0a4.6 4.6 0 1 0-9.2 0ZM8.4 13a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0Z"/></g>'
+                . '<circle cx="11" cy="13" r="1.25"/>'
+                . '<path fill="none" stroke-width="1.7" d="M11.4 12.6 19.6 4.4"/>'
+                . '<path d="M18.2 2.4h3.4v3.4l-1.7-1.7Z"/>',
         ];
 
         if (!isset($solid[$name])) {

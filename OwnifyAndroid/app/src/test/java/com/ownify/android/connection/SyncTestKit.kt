@@ -239,11 +239,14 @@ class FakeOwnifyServer {
     val challengeReplies = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, String>>()
 
     /** The pages with Uitdagingen in them: challenges-state.json's, as a demo account's would be. */
-    fun withChallenges() {
+    fun withChallenges(empty: Boolean = false) {
         val fixture = JSONObject(FakeOwnifyServer::class.java.classLoader!!.getResource("challenges-state.json").readText())
         val state = JSONObject(stateBody)
         val data = state.getJSONObject("data")
-        data.put("challenges", fixture.getJSONObject("challenges"))
+        val challenges = fixture.getJSONObject("challenges")
+        // Nothing yet: no invitations, nothing on, nothing ended (Uitdagingen's empty target and ideas).
+        if (empty) for (key in listOf("invites", "running", "ended")) challenges.put(key, org.json.JSONArray())
+        data.put("challenges", challenges)
         data.getJSONObject("community").put("preview", fixture.getJSONObject("preview"))
         stateBody = state.toString()
     }

@@ -30,7 +30,7 @@ $payload = [
         $challenges['invites']
     ), 'review', 'id'),
     'icons'   => array_combine(
-        $names = ['plus', 'hash', 'check', 'copy', 'share', 'chevron-down', 'shield', 'calendar', 'flag',
+        $names = ['plus', 'hash', 'check', 'copy', 'share', 'chevron-down', 'shield', 'calendar', 'flag', 'target',
                   'dumbbell', 'bolt', 'pulse', 'moon', 'user-plus', 'trash'],
         array_map(static fn (string $name): string => icon($name), $names)
     ),

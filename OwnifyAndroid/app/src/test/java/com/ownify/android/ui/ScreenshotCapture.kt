@@ -346,7 +346,7 @@ class ScreenshotCapture {
         detail("community", Detail.Challenge(view.id, overList = true), "challenge-versus", 700)
     }
 
-    @Test fun challengeCreate() = panel(Overlay.ChallengeCreate, "challenge-create", "community")
+    @Test fun challengeCreate() = panel(Overlay.ChallengeCreate(), "challenge-create", "community")
     @Test fun challengeCode() = panel(Overlay.ChallengeCode, "challenge-code", "community")
 
     @Test

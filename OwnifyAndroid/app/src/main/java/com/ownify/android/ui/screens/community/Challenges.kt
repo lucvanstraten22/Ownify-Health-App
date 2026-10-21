@@ -7,6 +7,16 @@ import android.content.Intent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.ownify.android.data.ChallengeIdea
+import com.ownify.android.ui.design.Chip
+import com.ownify.android.ui.design.GlassLook
+import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.glass
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,7 +26,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,7 +95,6 @@ import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.PageIntro
 import com.ownify.android.ui.design.T
-import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.theme.Accent
@@ -257,52 +265,255 @@ private fun Foot(faces: Faces, text: String) {
     }
 }
 
-// ---------------------------------------------------------- tile and row
+// ------------------------------------------------- marks and actions
 
-/** `.ch-tile`: a challenge on Community's carousel. */
+/**
+ * `.icon-tile--solid.icon-tile--neutral`: the white solid mark on the
+ * neutral grey, as Overzicht's tiles; [small] is `.ch-icon--sm` (28, icon 15).
+ */
 @Composable
-internal fun ChallengeTile(view: ChallengeView, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val accent = Accent.of(view.accent)
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
-    val interaction = remember { MutableInteractionSource() }
-    Column(
-        modifier
-            .press(interaction)
-            .clip(shape)
-            .background(Ownify.fill(0.045f))
-            .border(1.dp, Ownify.GlassBorderSoft, shape)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics { testTag = CHALLENGE_TILE }
-            .cssPadding(PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3), border = 1.dp),
-        verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
-    ) {
-        KindLine(view.icon, view.kindLabel, accent)
-        T(view.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, lineHeight = 1.3.em), maxLines = 2, ellipsis = true)
-        ChallengeBarView(view.bar, accent)
-        TwoWeights(view.tile.strong, view.tile.rest, OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, tabular = true))
-        Spacer(Modifier.weight(1f, fill = true))
-        Foot(view.faces, view.left)
+internal fun NeutralTile(icon: String, small: Boolean = false, modifier: Modifier = Modifier) {
+    val vector = OwnifyIcons.solid(icon) ?: OwnifyIcons.solidTarget
+    NeutralTile(vector, if (small) 28.dp else 36.dp, if (small) 10.dp else Ownify.RadiusSm, if (small) 15.dp else 18.dp, modifier)
+}
+
+@Composable
+internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownify.RadiusSm, iconSize: Dp = 18.dp, modifier: Modifier = Modifier) {
+    IconTile(icon, modifier, size = size, radius = radius, iconSize = iconSize, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+}
+
+/**
+ * `.ch-acts`: Nieuwe uitdaging and Code invoeren side by side — two glass
+ * tiles of one size (the sync capsule's material), told apart by their mark:
+ * a solid tile for making one, an outlined one for joining with a code.
+ */
+@Composable
+internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Modifier) {
+    val shell = LocalShell.current
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        ActionTile(page["create"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCreate()) }) {
+            NeutralTile(OwnifyIcons.plus, size = 32.dp, radius = 11.dp, iconSize = 16.dp)
+        }
+        ActionTile(page["join"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCode) }) {
+            Box(
+                Modifier.size(32.dp).border(1.5.dp, Ownify.ink(0.45f), RoundedCornerShape(11.dp)),
+                contentAlignment = Alignment.Center
+            ) { JIcon(OwnifyIcons.hash, size = 16.dp, color = Ownify.TextPrimary) }
+        }
     }
 }
 
-/** `.ch-tile--new`: the carousel's last tile, Nieuwe uitdaging — dashed, as something not yet made. */
+/** `.ch-act`: one of the two. */
 @Composable
-internal fun NewChallengeTile(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
+private fun ActionTile(label: String, modifier: Modifier, onClick: () -> Unit, mark: @Composable () -> Unit) {
+    val narrow = LocalScreen.current.narrow
     val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .press(interaction)
-            .clip(shape)
-            .dashedBorder(Ownify.GlassBorderSoft, Ownify.RadiusMd)
+            .heightIn(min = 60.dp)
+            .glass(RoundedCornerShape(Ownify.RadiusMd), GlassLook(shadow = 20.dp, lift = 8.dp))
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .heightIn(min = 64.dp)
-            .padding(Ownify.Space3),
+            .semantics(mergeDescendants = true) { }
+            .padding(horizontal = if (narrow) Ownify.Space2 else Ownify.Space3, vertical = Ownify.Space2),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
     ) {
-        JIcon(OwnifyIcons.plus, size = 20.dp, color = Ownify.TextSecondary)
-        T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
+        Box(Modifier.clearAndSetSemantics { }) { mark() }
+        T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.TextPrimary, tracking = (-0.01).em, lineHeight = 1.2.em), Modifier.weight(1f))
+    }
+}
+
+/** `.ch-art`: the empty target — dashed rings round the Uitdagingen mark. */
+@Composable
+internal fun TargetArt(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(112.dp)
+            .clearAndSetSemantics { }
+            .drawBehind {
+                val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx()))
+                val stroke = 1.dp.toPx()
+                drawCircle(Ownify.fill(0.16f), radius = size.minDimension / 2 - stroke / 2, style = Stroke(stroke, pathEffect = dash))
+                drawCircle(Ownify.fill(0.24f), radius = size.minDimension / 2 - 18.dp.toPx() - stroke / 2, style = Stroke(stroke, pathEffect = dash))
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        NeutralTile(OwnifyIcons.solidTarget, size = 48.dp, radius = 16.dp, iconSize = 24.dp)
+    }
+}
+
+// ------------------------------------------------- Community's stack
+
+/**
+ * `.cm-fan`: the challenge that ends first on top, up to two more as the
+ * edges of cards behind it — each 12 dp narrower a side and 9 dp lower.
+ */
+@Composable
+internal fun ChallengeFan(running: List<ChallengeView>, onOpen: (ChallengeView) -> Unit) {
+    val front = running.firstOrNull() ?: return
+    val behind = minOf(2, running.size - 1)
+    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    Box(Modifier.fillMaxWidth().padding(bottom = 9.dp * behind)) {
+        for (n in behind downTo 1) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .padding(horizontal = 12.dp * n)
+                    .offset(y = 9.dp * n)
+                    .clip(shape)
+                    .background(Ownify.fill(0.07f - n * 0.02f))
+                    .border(1.dp, Ownify.GlassHairline, shape)
+            )
+        }
+        FanFront(front) { onOpen(front) }
+    }
+}
+
+/** `.cm-fan__front`: its mark, name and kind, its bar, where it stands and who is in it. */
+@Composable
+private fun FanFront(view: ChallengeView, onClick: () -> Unit) {
+    val accent = Accent.of(view.accent)
+    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    val interaction = remember { MutableInteractionSource() }
+    JCard(
+        Modifier
+            .fillMaxWidth()
+            .press(interaction)
+            .background(Ownify.ground(1f), shape)
+            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { testTag = CHALLENGE_TILE },
+        shape = shape,
+        padding = PaddingValues(Ownify.Space4)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                NeutralTile(view.icon, small = true)
+                T(view.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, lineHeight = 1.25.em), Modifier.weight(1f), maxLines = 2, ellipsis = true)
+                Chip(view.kindLabel)
+            }
+            ChallengeBarView(view.bar, accent)
+            Row(
+                Modifier.fillMaxWidth().padding(top = Ownify.Space1),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
+            ) {
+                TwoWeights(view.tile.strong, view.tile.rest, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, tabular = true), Modifier.weight(1f))
+                FacesRow(view.faces)
+            }
+        }
+    }
+}
+
+// ------------------------------------------------- Uitdagingen's cards
+
+/**
+ * `.ch-card2`: a challenge you are in, on Uitdagingen. Samen: where you
+ * stand together, the bar in everybody's pieces and who brought what.
+ * Wedstrijd: the top three, each with their bar against the leader.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun ChallengeCard(view: ChallengeView, onClick: () -> Unit) {
+    val accent = Accent.of(view.accent)
+    val interaction = remember { MutableInteractionSource() }
+    JCard(
+        Modifier
+            .fillMaxWidth()
+            .press(interaction)
+            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { testTag = CHALLENGE_ITEM },
+        padding = PaddingValues(Ownify.Space4)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                NeutralTile(view.icon)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    T(view.name, OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em, lineHeight = 1.25.em))
+                    T(view.deadline, JStyle.Footnote)
+                }
+            }
+            if (!view.versus) {
+                FigLine {
+                    TwoWeights(view.line.strong, view.line.rest, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, tabular = true))
+                    T(view.line.sub, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), align = TextAlign.End)
+                }
+                ChallengeBarView(view.bar, accent, big = true)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Ownify.Space3), verticalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
+                    view.people.forEach { person ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.5.dp)).background(if (person.you) accent.color else toneColor(person.tone)))
+                            T(person.label, JStyle.Footnote, maxLines = 1)
+                            T(person.valueText, OwnifyType.style(Ownify.FsFootnote, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
+                        }
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                    view.people.take(3).forEach { person ->
+                        Row(
+                            Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = "${person.rank}. ${person.label}, ${person.valueText}" },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
+                        ) {
+                            T(person.rank.toString(), OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, tabular = true), Modifier.width(14.dp), maxLines = 1)
+                            ChallengeAvatar(person, 24.dp)
+                            Box(Modifier.weight(1f)) { PersonBar(person.share, if (person.you) accent.color else Ownify.ink(0.42f), top = 0.dp) }
+                            T(person.valueText, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true), maxLines = 1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * `.ch-item__fig`: the figure on the left and its note on the right, on one
+ * line while both fit; otherwise the note on a line of its own, still at
+ * the right (`flex-wrap: wrap` with `margin-left: auto`).
+ */
+@Composable
+private fun FigLine(content: @Composable () -> Unit) {
+    Layout(content, Modifier.fillMaxWidth()) { measurables, constraints ->
+        val gap = Ownify.Space3.roundToPx()
+        val rowGap = 2.dp.roundToPx()
+        val loose = constraints.copy(minWidth = 0)
+        val figure = measurables[0].measure(loose)
+        val note = measurables.getOrNull(1)?.measure(loose)
+        val width = constraints.maxWidth
+        val inline = note == null || figure.width + gap + note.width <= width
+        val height = if (note == null) figure.height else if (inline) maxOf(figure.height, note.height) else figure.height + rowGap + note.height
+        layout(width, height) {
+            figure.place(0, 0)
+            note?.place(width - note.width, if (inline) 0 else figure.height + rowGap)
+        }
+    }
+}
+
+/** `.ch-idea`: a way to begin — Nieuwe uitdaging with this kind and metric chosen. */
+@Composable
+private fun IdeaRow(idea: ChallengeIdea, icon: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .press(interaction)
+            .heightIn(min = 56.dp)
+            .clip(RoundedCornerShape(Ownify.RadiusMd))
+            .dashedBorder(Ownify.fill(0.22f), Ownify.RadiusMd)
+            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+            .semantics(mergeDescendants = true) { }
+            .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+    ) {
+        NeutralTile(icon, small = true, modifier = Modifier.clearAndSetSemantics { })
+        Column(Modifier.weight(1f)) {
+            T(idea.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
+            T(idea.sub, JStyle.Tiny)
+        }
+        JIcon(OwnifyIcons.plus, size = 16.dp, color = Ownify.TextFaint)
     }
 }
 
@@ -380,7 +591,7 @@ internal fun InviteBanner(invite: ChallengeInvite, see: String, onReview: () -> 
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         val who = invite.inviter
-        if (who != null) ChallengeAvatar(who, 32.dp) else IconTile(OwnifyIcons.flag)
+        if (who != null) ChallengeAvatar(who, 32.dp) else NeutralTile(OwnifyIcons.solidTarget)
         val text = if (who != null) "${who.name} ${invite.inviteText}" else invite.inviteText
         T(text, JStyle.Lede, Modifier.weight(1f))
         Btn(see, onClick = onReview)
@@ -441,13 +652,13 @@ private fun PersonRow(person: ChallengePerson, versus: Boolean, accent: Accent, 
 }
 
 @Composable
-private fun PersonBar(share: Float, color: Color) {
+private fun PersonBar(share: Float, color: Color, top: Dp = 6.dp) {
     val reduced = LocalReducedMotion.current || LocalStillMotion.current
     val grow = remember { Animatable(if (reduced) share else 0f) }
     LaunchedEffect(share, reduced) {
         if (reduced) grow.snapTo(share) else grow.animateTo(share, tween(900, easing = Ownify.EaseOut))
     }
-    Box(Modifier.padding(top = 6.dp).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)).background(Ownify.fill(0.08f))) {
+    Box(Modifier.padding(top = top).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)).background(Ownify.fill(0.08f))) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -470,8 +681,10 @@ private fun GroupEyebrow(text: String) {
 // ---------------------------------------------------------- Uitdagingen
 
 /**
- * Uitdagingen (pages/challenges.php): Nieuwe uitdaging and Code invoeren,
- * then the invitations, the challenges on now and the ones that ended.
+ * Uitdagingen (pages/challenges.php): Nieuwe uitdaging and Code invoeren as
+ * two tiles, then the invitations, Samen, Wedstrijd and the ones that ended.
+ * With nothing at all, the empty target and three ways to begin, each
+ * opening Nieuwe uitdaging with its kind and metric chosen.
  */
 @Composable
 fun ChallengesDetail(data: AppData, scroll: ScrollState) {
@@ -479,43 +692,50 @@ fun ChallengesDetail(data: AppData, scroll: ScrollState) {
     val ch = data.challenges
     val page = ch.copy["page"]
     val title = page["title"].orEmpty()
+    val open = { view: ChallengeView -> shell.openDetail(com.ownify.android.ui.app.Detail.Challenge(view.id, overList = true)) }
 
     DetailColumn(scroll, back = page["back"].orEmpty(), backAria = tr("Terug naar Community"), title = title, titleBeside = true) {
         Column(Modifier.fillMaxWidth().reveal().heroName()) {
             PageIntro(title, page["lede"])
         }
-        Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            Btn(page["create"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCreate) }, modifier = Modifier.fillMaxWidth(), icon = OwnifyIcons.plus, iconSize = 18.dp, look = PrimaryLook)
-            Btn(page["join"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCode) }, modifier = Modifier.fillMaxWidth(), icon = OwnifyIcons.hash, iconSize = 18.dp, look = PrimaryLook)
-        }
+        ChallengeActions(page, Modifier.reveal())
 
         if (ch.invites.isEmpty() && ch.running.isEmpty() && ch.ended.isEmpty()) {
-            JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(horizontal = Ownify.Space5, vertical = Ownify.Space6)) {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    IconTile(OwnifyIcons.flag, color = Ownify.Training)
-                    T(page["empty_title"].orEmpty(), JStyle.Subtitle, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
-                    T(page["empty_body"].orEmpty(), JStyle.Meta, Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
+            JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(start = Ownify.Space4, end = Ownify.Space4, top = Ownify.Space5, bottom = Ownify.Space4)) {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                    TargetArt()
+                    T(page["empty_title"].orEmpty(), JStyle.Subtitle, Modifier.padding(top = Ownify.Space2).semantics { heading() }, align = TextAlign.Center)
+                    T(page["ideas_lede"].orEmpty(), JStyle.Meta, align = TextAlign.Center)
+                    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        ch.copy.ideas().forEach { idea ->
+                            IdeaRow(idea, ch.metric(idea.metric)?.icon ?: "target") {
+                                shell.open(Overlay.ChallengeCreate(idea.kind, idea.metric))
+                            }
+                        }
+                    }
                 }
             }
         }
 
         if (ch.invites.isNotEmpty()) {
-            Column(Modifier.fillMaxWidth().reveal()) {
-                GroupEyebrow(page["invites"].orEmpty())
-                Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    ch.invites.forEach { invite -> InviteItem(invite) { shell.open(Overlay.ChallengeReview(invite.id)) } }
-                }
+            Group(page["invites"].orEmpty()) {
+                ch.invites.forEach { invite -> InviteItem(invite) { shell.open(Overlay.ChallengeReview(invite.id)) } }
             }
         }
-        for ((key, list) in listOf("running" to ch.running, "ended" to ch.ended)) {
-            if (list.isEmpty()) continue
-            Column(Modifier.fillMaxWidth().reveal()) {
-                GroupEyebrow(page[key].orEmpty())
-                Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    list.forEach { view -> ChallengeItem(view) { shell.openDetail(com.ownify.android.ui.app.Detail.Challenge(view.id, overList = true)) } }
-                }
-            }
-        }
+        val together = ch.running.filter { !it.versus }
+        val versus = ch.running.filter { it.versus }
+        if (together.isNotEmpty()) Group(page["together"].orEmpty()) { together.forEach { ChallengeCard(it) { open(it) } } }
+        if (versus.isNotEmpty()) Group(page["versus"].orEmpty()) { versus.forEach { ChallengeCard(it) { open(it) } } }
+        if (ch.ended.isNotEmpty()) Group(page["ended"].orEmpty()) { ch.ended.forEach { ChallengeItem(it) { open(it) } } }
+    }
+}
+
+/** `.ch-group`: a group's name and its cards. */
+@Composable
+private fun Group(title: String, content: @Composable () -> Unit) {
+    Column(Modifier.fillMaxWidth().reveal()) {
+        GroupEyebrow(title)
+        Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) { content() }
     }
 }
 

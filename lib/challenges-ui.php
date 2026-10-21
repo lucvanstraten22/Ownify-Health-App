@@ -85,19 +85,6 @@ if (!function_exists('ch_avatar')) {
         return '<span class="ch-kind">' . icon($icon) . '<span>' . e($text) . '</span></span>';
     }
 
-    /** A challenge on Community's carousel. */
-    function ch_tile(array $view): string
-    {
-        return '<button type="button" class="ch-tile press" data-accent="' . e($view['accent']) . '"'
-            . ' data-detail-open="challenge-' . (int) $view['id'] . '" data-challenge-from="home">'
-            . ch_kind($view['icon'], $view['kind_label'])
-            . '<span class="ch-tile__name">' . e($view['name']) . '</span>'
-            . ch_bar($view)
-            . '<span class="ch-tile__fig"><b>' . e($view['tile']['strong']) . '</b> ' . e($view['tile']['rest']) . '</span>'
-            . '<span class="ch-foot">' . ch_faces($view['faces']) . '<span>' . e($view['left']) . '</span></span>'
-            . '</button>';
-    }
-
     /** A challenge on Uitdagingen: an invitation, or one you are in. */
     function ch_item(array $view): string
     {
@@ -129,10 +116,108 @@ if (!function_exists('ch_avatar')) {
         $who = $invite['inviter'];
 
         return '<div class="ch-invite">'
-            . ($who !== null ? ch_avatar($who, 32) : '<span class="icon-tile" aria-hidden="true">' . icon('flag') . '</span>')
+            . ($who !== null ? ch_avatar($who, 32) : '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon_solid('target') . '</span>')
             . '<p class="ch-invite__text">' . ($who !== null ? '<b>' . e($who['name']) . '</b> ' : '') . e($invite['invite_text']) . '</p>'
             . '<button type="button" class="btn press ch-invite__btn" data-challenge-review="' . (int) $invite['id'] . '">' . e($see) . '</button>'
             . '</div>';
+    }
+
+    /** A challenge's metric on Overview's solid neutral tile. */
+    function ch_tile_icon(string $icon, string $size = ''): string
+    {
+        return '<span class="icon-tile icon-tile--solid icon-tile--neutral' . ($size !== '' ? ' ch-icon--' . $size : '') . '" aria-hidden="true">'
+            . icon_solid($icon) . '</span>';
+    }
+
+    /**
+     * Nieuwe uitdaging and Code invoeren side by side: two glass tiles of
+     * the same size, told apart by their mark — a solid tile for making
+     * one, an outlined one for joining with a code.
+     */
+    function ch_actions(array $page): string
+    {
+        return '<div class="ch-acts">'
+            . '<button type="button" class="ch-act press" data-challenge-create>'
+            . '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon('plus') . '</span>'
+            . '<span class="ch-act__label">' . e($page['create']) . '</span></button>'
+            . '<button type="button" class="ch-act ch-act--code press" data-challenge-join>'
+            . '<span class="ch-act__mark" aria-hidden="true">' . icon('hash') . '</span>'
+            . '<span class="ch-act__label">' . e($page['join']) . '</span></button>'
+            . '</div>';
+    }
+
+    /** The empty target: dashed rings round the Uitdagingen mark. */
+    function ch_target_art(): string
+    {
+        return '<span class="ch-art" aria-hidden="true"><span class="icon-tile icon-tile--solid icon-tile--neutral ch-art__tile">'
+            . icon_solid('target') . '</span></span>';
+    }
+
+    /** The challenge on top of Community's stack: the one that ends first. */
+    function ch_front(array $view): string
+    {
+        return '<button type="button" class="cm-fan__front press" data-accent="' . e($view['accent']) . '"'
+            . ' data-detail-open="challenge-' . (int) $view['id'] . '" data-challenge-from="home">'
+            . '<span class="cm-fan__head">' . ch_tile_icon($view['icon'], 'sm')
+            . '<span class="cm-fan__name">' . e($view['name']) . '</span>'
+            . '<span class="chip">' . e($view['kind_label']) . '</span></span>'
+            . ch_bar($view)
+            . '<span class="ch-foot"><span class="cm-fan__fig"><b>' . e($view['tile']['strong']) . '</b> ' . e($view['tile']['rest']) . '</span>'
+            . ch_faces($view['faces']) . '</span>'
+            . '</button>';
+    }
+
+    /**
+     * A challenge you are in, on Uitdagingen. Samen: where you stand
+     * together, the bar in everybody's pieces and who brought what.
+     * Wedstrijd: the top three, each with their bar against the leader.
+     */
+    function ch_card(array $view): string
+    {
+        $versus = $view['kind'] === 'versus';
+
+        $out = '<button type="button" class="card ch-card2 press" data-accent="' . e($view['accent']) . '"'
+            . ' data-detail-open="challenge-' . (int) $view['id'] . '" data-challenge-from="list">'
+            . '<span class="ch-card2__head">' . ch_tile_icon($view['icon'])
+            . '<span class="ch-card2__text"><span class="ch-card2__name">' . e($view['name']) . '</span>'
+            . '<span class="ch-card2__sub">' . e($view['deadline']) . '</span></span></span>';
+
+        if (!$versus) {
+            $out .= '<span class="ch-item__fig"><span><b>' . e($view['line']['strong']) . '</b>'
+                . ($view['line']['rest'] !== '' ? ' ' . e($view['line']['rest']) : '') . '</span>'
+                . '<span class="ch-item__sub">' . e($view['line']['sub']) . '</span></span>'
+                . ch_bar($view, true)
+                . '<span class="ch-legend">';
+            foreach ($view['people'] as $person) {
+                $out .= '<span class="ch-legend__item"><span class="ch-key ' . (!empty($person['you']) ? 'is-you' : 'is-tone-' . (int) $person['tone']) . '" aria-hidden="true"></span>'
+                    . e((string) $person['label']) . ' <b>' . e((string) $person['value_text']) . '</b></span>';
+            }
+            return $out . '</span></button>';
+        }
+
+        $out .= '<ol class="ch-standing" role="list">';
+        foreach (array_slice($view['people'], 0, 3) as $person) {
+            $out .= '<li class="ch-standing__row' . (!empty($person['you']) ? ' is-you' : '') . '">'
+                . '<span class="ch-standing__rank">' . (int) $person['rank'] . '</span>'
+                . ch_avatar($person, 24)
+                . '<span class="ch-person__bar" aria-hidden="true"><i style="--v: ' . number_format((float) $person['share'], 4, '.', '') . '"></i></span>'
+                . '<span class="ch-standing__value">' . e((string) $person['value_text']) . '</span></li>';
+        }
+
+        return $out . '</ol></button>';
+    }
+
+    /** A way to begin when there is nothing yet: Nieuwe uitdaging with this kind and metric chosen. */
+    function ch_idea(array $idea, array $metrics): string
+    {
+        $icon = $metrics[$idea['metric']]['icon'] ?? 'target';
+
+        return '<button type="button" class="ch-idea press" data-challenge-create'
+            . ' data-kind="' . e($idea['kind']) . '" data-metric="' . e($idea['metric']) . '">'
+            . ch_tile_icon($icon, 'sm')
+            . '<span class="ch-idea__text"><span class="ch-idea__title">' . e($idea['title']) . '</span>'
+            . '<span class="ch-idea__sub">' . e($idea['sub']) . '</span></span>'
+            . icon('plus', 'ch-idea__plus') . '</button>';
     }
 
     /** One person on a challenge's page: Samen with their colour key, Wedstrijd with their place and bar. */

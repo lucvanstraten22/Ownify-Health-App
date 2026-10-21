@@ -95,23 +95,34 @@ Every sentence is written on the server, in the reader's language and units
 
 ## The screens
 
-**Community** — the Ranglijst card: the top four of your friends' board this
-month (or the top three and you), and the line about the one ahead of you; its
-head opens the full board. The Uitdagingen card: how many are on and how many
-invitations wait, the invitations with Bekijken, and the challenges on now on a
-carousel, each opening its own page — its last tile makes a new one. No code
-field here: a code is entered on Uitdagingen.
+**Community** — two cards, each a way in and a picture of what is behind it
+(23.0, "Twee vensters"). Ranglijst: your friends' top three this month on a
+podium — second, first, third, the steps 64, 84 and 50 high, you ringed —
+and the line about the one ahead of you; a place nobody holds yet is an open
+spot that adds a friend, and with nobody to compare to, Vriend toevoegen. Its
+head opens the full board. Uitdagingen: how many are on and how many
+invitations wait (or "Nog niets bezig"), the invitations with Bekijken, the
+challenge that ends first on top of a stack of up to two more (each opening
+its own page), or the empty target; then Nieuwe uitdaging and Code invoeren
+as two glass tiles side by side — a solid mark for making one, an outlined
+one for joining with a code. The cards' marks are solid white on the neutral
+grey, as Overzicht's: the podium bars for Ranglijst, an archery target for
+Uitdagingen.
 
 **Ranglijst** — the leaderboard, unchanged: Vrienden / Nederland, Maand / Jaar
 / All-time, your sticky row.
 
-**Uitdagingen** — Nieuwe uitdaging and Code invoeren, one under the other;
-then Uitnodigingen, Bezig (soonest to end first) and Afgelopen (the last ten).
+**Uitdagingen** — the same two tiles; then Uitnodigingen, Samen (on now, the
+bar in everybody's pieces and who brought what), Wedstrijd (on now, the top
+three with their bars) — each soonest to end first — and Afgelopen (the last
+ten). With nothing at all, the empty target and three ways to begin
+(`page.ideas` in config/challenges.php), each opening Nieuwe uitdaging with
+its kind and what it counts already chosen.
 
 **A challenge** — what it is, where it stands, the people (and who is
 invited), the code to copy or share and Vrienden uitnodigen while it runs, what
 counts and who made it, Uitdaging verlaten. Opened from Uitdagingen it goes
-back there; opened from a tile on Community, back to Community.
+back there; opened from the stack on Community, back to Community.
 
 **The sheet** — one bottom sheet for Nieuwe uitdaging (a live preview at the
 top as it is filled in, then its code), Code invoeren (five boxes; the fifth

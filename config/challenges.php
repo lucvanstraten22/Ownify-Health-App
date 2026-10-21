@@ -104,11 +104,20 @@ return [
         'create'   => 'Nieuwe uitdaging',
         'join'     => 'Code invoeren',
         'invites'  => 'Uitnodigingen',
-        'running'  => 'Bezig',
         'ended'    => 'Afgelopen',
         'empty_title' => 'Nog geen uitdagingen',
-        'empty_body'  => 'Maak er een en nodig vrienden uit, of vul de code in die je van iemand kreeg.',
         'back'     => 'Community',
+        /* Running challenges are grouped by kind; these head the groups. */
+        'together' => 'Samen',
+        'versus'   => 'Wedstrijd',
+        /* With nothing yet: three ways to begin, each opening Nieuwe
+           uitdaging with its kind and what it counts already chosen. */
+        'ideas_lede' => 'Begin met een van deze, of maak je eigen.',
+        'ideas' => [
+            ['kind' => 'together', 'metric' => 'workouts',     'title' => 'Samen trainen',              'sub' => 'Samen naar één doel · 1 week'],
+            ['kind' => 'versus',   'metric' => 'steps',        'title' => 'Wie zet de meeste stappen?', 'sub' => 'Ieder voor zich · 1 week'],
+            ['kind' => 'together', 'metric' => 'sleep_nights', 'title' => 'Samen goed slapen',          'sub' => 'Nachten van 7 uur · 1 week'],
+        ],
     ],
 
     /* One challenge. */
