@@ -155,19 +155,28 @@
 
     /**
      * OwnifyAI asks Gemini a few times a minute, for everybody together
-     * (includes/ai/pace.php). When the minute is full the server says how
-     * many seconds until there is room: the notice counts them down and
-     * Versturen waits; the question stays in the field. Read out once, not
-     * every second.
+     * (includes/ai/pace.php); the server says how many seconds until there
+     * is room (state.php `wait`, chat.php `busy`). A question sent before
+     * then is not refused: it waits, faded, in the conversation, and the
+     * capsule under the top — the sync capsule's glass — counts the seconds
+     * down in a draining ring and sends it by itself at 0. Annuleren puts it
+     * back in the field. Read out once, not every second.
      */
+    var wait       = sheet.querySelector('[data-ai-wait]');
+    var waitArc    = sheet.querySelector('[data-ai-wait-arc]');
+    var waitNum    = sheet.querySelector('[data-ai-wait-num]');
+    var waitLabel  = sheet.querySelector('[data-ai-wait-label]');
+    var waitLive   = sheet.querySelector('[data-ai-wait-live]');
+    var waitLabelText = waitLabel ? waitLabel.textContent : '';
+
     function startWait(seconds) {
         seconds = Math.max(1, Math.ceil(Number(seconds) || 0));
         state.waitUntil = Date.now() + seconds * 1000;
+        state.waitTotal = seconds;
         if (state.waitTimer) { window.clearInterval(state.waitTimer); }
-        state.waitTimer = window.setInterval(tickWait, 1000);
-        notice.setAttribute('aria-live', 'polite');
+        state.waitTimer = window.setInterval(tickWait, 200);
+        if (state.queued) { showWait(); }
         tickWait();
-        notice.setAttribute('aria-live', 'off');
     }
 
     function waitLeft() {
@@ -181,14 +190,106 @@
             window.clearInterval(state.waitTimer);
             state.waitTimer = null;
             state.waitUntil = 0;
-            notice.setAttribute('aria-live', 'polite');
-            setNotice(state.available ? null : state.unavailableNotice);
+            if (state.queued) { sendQueued(); }
             refreshComposer();
             return;
         }
 
-        setNotice((errors.busy || T.t('Het is even druk bij OwnifyAI. Over %d s kun je weer iets vragen.')).replace('%d', left));
+        if (state.queued) { showSeconds(left); }
+    }
+
+    /** The question waits: faded in the conversation, and the capsule counts down. */
+    function queue(text) {
+        state.queued = text;
+        state.queuedNode = messageNode({ role: 'user', text: text });
+        state.queuedNode.classList.add('ai-msg--waiting');
+        empty.hidden = true;
+        thread.hidden = false;
+        thread.appendChild(state.queuedNode);
+        input.value = '';
+        autosize();
+        toBottom(true);
+        showWait();
+        if (waitLive) {
+            waitLive.textContent = T.t('Het is even druk bij OwnifyAI. Je vraag wordt over %d seconden verstuurd.').replace('%d', waitLeft());
+        }
         refreshComposer();
+    }
+
+    function showWait() {
+        if (!wait) { return; }
+        wait.hidden = false;
+        wait.classList.remove('is-leaving');
+        wait.setAttribute('data-state', 'counting');
+        waitLabel.textContent = waitLabelText;
+        state.shownSeconds = null;
+        waitNum.textContent = '';
+        /* The ring starts full of what is left, without easing into it. */
+        waitArc.style.transition = 'none';
+        waitArc.style.strokeDashoffset = String(100 - 100 * waitLeft() / Math.max(1, state.waitTotal));
+        waitArc.getBoundingClientRect();
+        waitArc.style.transition = '';
+        showSeconds(waitLeft());
+    }
+
+    /** One second less: the number rolls, the ring drains towards the next. */
+    function showSeconds(left) {
+        if (!wait || left === state.shownSeconds) { return; }
+        var first = state.shownSeconds === null;
+        state.shownSeconds = left;
+
+        Array.prototype.forEach.call(waitNum.children, function (old) {
+            old.className = 'is-out';
+            window.setTimeout(function () { if (old.parentNode) { old.parentNode.removeChild(old); } }, 300);
+        });
+        var digit = document.createElement('span');
+        digit.textContent = String(left);
+        if (!first) { digit.className = 'is-in'; }
+        waitNum.appendChild(digit);
+
+        waitArc.style.strokeDashoffset = String(100 - 100 * Math.max(0, left - 1) / Math.max(1, state.waitTotal));
+    }
+
+    function hideWait() {
+        if (!wait || wait.hidden) { return; }
+        wait.classList.add('is-leaving');
+        window.setTimeout(function () {
+            if (!state.queued) { wait.hidden = true; wait.classList.remove('is-leaving'); }
+        }, 240);
+    }
+
+    /** At 0: Versturen…, and the question goes as if it had just been sent. */
+    function sendQueued() {
+        var text = state.queued;
+        if (!text) { return; }
+        if (wait) {
+            wait.setAttribute('data-state', 'sending');
+            waitLabel.textContent = T.t('Versturen…');
+            if (waitLive) { waitLive.textContent = T.t('Versturen…'); }
+        }
+        if (state.queuedNode && state.queuedNode.parentNode) { state.queuedNode.parentNode.removeChild(state.queuedNode); }
+        state.queued = null;
+        state.queuedNode = null;
+        ask(text);
+        window.setTimeout(hideWait, 700);
+    }
+
+    /** Annuleren: the question back in the field, not sent. */
+    function cancelQueued() {
+        if (!state.queued) { return; }
+        var text = state.queued;
+        if (state.queuedNode && state.queuedNode.parentNode) { state.queuedNode.parentNode.removeChild(state.queuedNode); }
+        if (!thread.children.length) { thread.hidden = true; empty.hidden = false; }
+        state.queued = null;
+        state.queuedNode = null;
+        if (!input.value) { input.value = text; autosize(); }
+        hideWait();
+        refreshComposer();
+        input.focus();
+    }
+
+    if (wait) {
+        sheet.querySelector('[data-ai-wait-cancel]').addEventListener('click', cancelQueued);
     }
 
     function setUsage(usage) {
@@ -209,7 +310,7 @@
         /* Never disabled while an answer is on its way: on a phone that
            would take the keyboard away. */
         input.disabled = out;
-        send.disabled = out || state.busy || waitLeft() > 0 || input.value.trim() === '';
+        send.disabled = out || state.busy || !!state.queued || input.value.trim() === '';
 
         if (out && !state.busy) {
             setNotice(errors.limit || null);
@@ -389,11 +490,7 @@
             setNotice(null);
         }
 
-        if (state.available && next.wait > 0) {
-            startWait(next.wait);
-        } else if (waitLeft() > 0) {
-            tickWait();
-        }
+        if (state.available && next.wait > 0) { startWait(next.wait); }
     }
 
     function viewFor(consent) {
@@ -462,6 +559,7 @@
 
         if (code === 'busy') {
             startWait(body.retry_after || 30);
+            refreshComposer();
             return;
         }
 
@@ -481,7 +579,13 @@
 
     function ask(text) {
         text = (text || '').trim();
-        if (!text || state.busy) { return; }
+        if (!text || state.busy || state.queued) { return; }
+
+        /* The minute is still full: it waits, and goes by itself. */
+        if (waitLeft() > 0) {
+            queue(text);
+            return;
+        }
 
         state.busy = true;
         setNotice(null);
@@ -520,8 +624,17 @@
                 return;
             }
 
-            /* Not answered, not stored: the question goes back in the field. */
+            /* Not answered, not stored: the question goes back in the field —
+               or, when the minute was full, waits for it in the capsule. */
             if (mine.parentNode) { mine.parentNode.removeChild(mine); }
+
+            if (answer.body && answer.body.code === 'busy') {
+                if (answer.body.usage) { setUsage(answer.body.usage); }
+                startWait(answer.body.retry_after || 30);
+                queue(text);
+                return;
+            }
+
             if (!thread.children.length) { thread.hidden = true; empty.hidden = false; }
             if (!input.value) { input.value = text; autosize(); }
 
@@ -582,8 +695,8 @@
             closeHistory();
             state.conversation = null;
             showThread([]);
+            cancelQueued();
             setNotice(state.available ? null : state.unavailableNotice);
-            if (waitLeft() > 0) { tickWait(); }
             refreshComposer();
             input.focus();
             return;
@@ -597,6 +710,7 @@
         var open = event.target.closest('[data-ai-open-conversation]');
         if (open) {
             closeHistory();
+            cancelQueued();
             load({ conversation_id: open.getAttribute('data-ai-open-conversation') });
             return;
         }

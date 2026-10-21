@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineExceptionHandler
+import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -166,13 +169,54 @@ object OwnifyAssistant {
     fun waitLeft(now: Long = System.currentTimeMillis()): Int =
         if (waitUntil == 0L) 0 else kotlin.math.ceil((waitUntil - now) / 1000.0).toInt().coerceAtLeast(0)
 
+    /** How long the wait was when it began, in seconds: the capsule's ring drains from it. */
+    var waitTotal by mutableIntStateOf(1)
+        private set
+
     private fun startWait(seconds: Int) {
-        waitUntil = System.currentTimeMillis() + seconds.coerceAtLeast(1) * 1000L
+        waitTotal = seconds.coerceAtLeast(1)
+        waitUntil = System.currentTimeMillis() + waitTotal * 1000L
     }
 
-    /** The countdown reached 0: there is room again. */
-    fun waitOver() {
-        waitUntil = 0L
+    /**
+     * A question sent while the minute is full: not refused, it waits —
+     * faded in the conversation, the capsule under the top counting down —
+     * and goes by itself at 0 ([queue]). Annuleren: [cancelQueued].
+     */
+    var queued by mutableStateOf<String?>(null)
+        private set
+
+    /** At 0, for a moment: the capsule says Versturen… as the question goes. */
+    var queuedSending by mutableStateOf(false)
+        private set
+
+    private var queueJob: Job? = null
+
+    private fun queue(context: Context, copy: AiCopy, text: String) {
+        queued = text
+        queuedSending = false
+        if (draft.trim() == text) draft = ""
+        queueJob?.cancel()
+        queueJob = scope.launch {
+            while (waitLeft() > 0) delay(200)
+            waitUntil = 0L
+            val question = queued ?: return@launch
+            queuedSending = true
+            queued = null
+            ask(context, copy, question)
+            delay(700)
+            queuedSending = false
+        }
+    }
+
+    /** Annuleren: the question back in the field, not sent. */
+    fun cancelQueued() {
+        val text = queued ?: return
+        queueJob?.cancel()
+        queueJob = null
+        queued = null
+        queuedSending = false
+        if (draft.isEmpty()) draft = text
     }
 
     /** What is typed, kept while the sheet is closed. */
@@ -279,7 +323,13 @@ object OwnifyAssistant {
 
     fun ask(context: Context, copy: AiCopy, question: String) {
         val text = question.trim()
-        if (text.isEmpty() || sending != null) return
+        if (text.isEmpty() || sending != null || queued != null) return
+
+        // The minute is still full: it waits, and goes by itself.
+        if (waitLeft() > 0) {
+            queue(context, copy, text)
+            return
+        }
 
         sending = text
         notice = null
@@ -308,9 +358,16 @@ object OwnifyAssistant {
                 }
 
                 is Outcome.Refused -> {
-                    // Not answered, not stored: the question goes back in the field.
-                    if (draft.isEmpty()) draft = text
-                    failed(outcome, copy, retry = text)
+                    if (outcome.body.str("code") == "busy") {
+                        // The minute was full: the question waits for it in the capsule.
+                        outcome.body.obj("usage")?.let { usage = AiUsage.parse(it) }
+                        startWait(outcome.body.int("retry_after") ?: 30)
+                        queue(context, copy, text)
+                    } else {
+                        // Not answered, not stored: the question goes back in the field.
+                        if (draft.isEmpty()) draft = text
+                        failed(outcome, copy, retry = text)
+                    }
                 }
 
                 Outcome.SignedOut -> clear()
@@ -402,6 +459,7 @@ object OwnifyAssistant {
 
     /** A new, empty conversation: the next question starts it. */
     fun startNew(copy: AiCopy) {
+        cancelQueued()
         historyOpen = false
         conversation = null
         messages = emptyList()
@@ -427,6 +485,7 @@ object OwnifyAssistant {
     }
 
     fun open(context: Context, copy: AiCopy, id: Long) {
+        cancelQueued()
         historyOpen = false
         load(context, copy, conversationId = id)
     }
@@ -519,6 +578,10 @@ object OwnifyAssistant {
         sending = null
         notice = null
         waitUntil = 0L
+        queueJob?.cancel()
+        queueJob = null
+        queued = null
+        queuedSending = false
         draft = ""
         consentBusy = false
         consentError = null

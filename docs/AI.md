@@ -161,11 +161,15 @@ Four limits, checked on the server in this order before Gemini is asked:
    requests it may need (`max_rounds`, 2) before anything is sent, marks each
    one as it is made — it then holds its place for a minute — and gives back
    what it did not use. Without room: HTTP 429 `busy` with `retry_after`
-   seconds and *Het is even druk bij OwnifyAI. Over 23 s kun je weer iets
-   vragen.*; the sheet counts the seconds down on both apps, Versturen waits
-   and the question stays in the field. `api/ai/state.php` says the same
-   (`wait`), so a sheet opened while the minute is full counts down before
-   anyone asks. Nothing is sent and nothing of the person's is counted.
+   seconds. The apps do not show that as an error: the question waits,
+   faded, in the conversation, and a capsule under the sheet's top — the
+   glass of *Aan het synchroniseren* — says *Even druk — je vraag wacht*,
+   the seconds rolling down inside a ring that drains; at 0 the ring turns,
+   it says *Versturen…* and the question goes by itself (refused again, it
+   waits again). *Annuleren* puts it back in the field. `api/ai/state.php`
+   says the same (`wait`), so a question sent while the minute is known to
+   be full waits without asking at all. Nothing of the person's is counted
+   while it waits.
 4. **Each person's share**, `daily_limit`: questions per person per calendar
    day (Europe/Amsterdam), in `ai_usage.messages`. A question is reserved with
    one atomic `UPDATE … WHERE messages < limit` before Gemini is asked — two at

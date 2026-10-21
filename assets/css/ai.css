@@ -812,3 +812,181 @@
     .ai-top { padding-top: var(--space-5); }
     .ai-composer { padding-bottom: var(--space-5); }
 }
+
+/* --------------------------------------------------------------------------
+   The minute is full — the question waits (ai-chat.js)
+
+   OwnifyAI asks Gemini a few times a minute, for everybody together. A
+   question sent while the minute is full is not refused: it waits in this
+   capsule under the top, in the sync capsule's glass (.pull-sync), the
+   seconds rolling down inside a ring that drains, and goes by itself at 0.
+   Annuleren puts it back in the field.
+   -------------------------------------------------------------------------- */
+.ai-wait {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    z-index: 4;
+    display: flex;
+    justify-content: center;
+    height: 0;
+    pointer-events: none;
+}
+
+.ai-wait[hidden] { display: none; }
+
+.ai-wait__pill {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 40px;
+    margin-top: var(--space-1);
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background:
+        linear-gradient(177deg,
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
+            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
+        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    box-shadow:
+        0 8px 20px rgba(var(--shade), calc(0.26 * var(--shade-k))),
+        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    color: var(--text-primary);
+    pointer-events: auto;
+    transform-origin: 50% 0;
+    animation: ai-wait-in 420ms var(--ease-out-strong) both;
+}
+
+.ai-wait.is-leaving .ai-wait__pill { animation: ai-wait-out 240ms var(--ease-out-strong) both; }
+
+/* It drops out from under the top, as the sync capsule comes out from under the header. */
+@keyframes ai-wait-in {
+    from { opacity: 0; transform: translateY(-10px) scale(0.6); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes ai-wait-out {
+    to { opacity: 0; transform: translateY(-8px) scale(0.85); }
+}
+
+.ai-wait__pill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+.ai-wait__icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+}
+
+.ai-wait__ring {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    transform: rotate(-90deg);
+}
+
+.ai-wait__track,
+.ai-wait__arc {
+    fill: none;
+    stroke-width: 2.2;
+}
+
+.ai-wait__track { stroke: rgba(var(--ink), 0.12); }
+
+/* What is left of the wait: drains once a second, smoothly, never jumps. */
+.ai-wait__arc {
+    stroke: var(--health);
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+}
+
+/* The seconds, rolling: the old one rises out, the new one rises in. */
+.ai-wait__num {
+    position: relative;
+    display: grid;
+    width: 22px;
+    height: 16px;
+    overflow: hidden;
+    font-size: var(--fs-tiny);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    line-height: 16px;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.ai-wait__num > span { grid-area: 1 / 1; }
+.ai-wait__num > .is-in  { animation: ai-wait-roll-in 280ms var(--ease-out-strong) both; }
+.ai-wait__num > .is-out { animation: ai-wait-roll-out 280ms var(--ease-out-strong) both; }
+
+@keyframes ai-wait-roll-in  { from { opacity: 0; transform: translateY(70%); } to { opacity: 1; transform: none; } }
+@keyframes ai-wait-roll-out { to { opacity: 0; transform: translateY(-70%); } }
+
+.ai-wait__label {
+    flex: none;
+    padding-right: var(--space-3);
+    font-size: var(--fs-small);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--tracking-small);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.ai-wait__cancel {
+    flex: none;
+    align-self: stretch;
+    margin-right: 3px;
+    padding-inline: var(--space-3);
+    border: 0;
+    border-left: 1px solid var(--glass-hairline);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+/* At 0: the ring turns as the sync capsule's does, and it says Versturen…. */
+.ai-wait[data-state="sending"] .ai-wait__num,
+.ai-wait[data-state="sending"] .ai-wait__cancel { display: none; }
+.ai-wait[data-state="sending"] .ai-wait__ring { animation: ai-wait-turn 900ms linear infinite; }
+@keyframes ai-wait-turn { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+.ai-wait[data-state="sending"] .ai-wait__arc { stroke-dashoffset: 70; transition: none; }
+.ai-wait[data-state="sending"] .ai-wait__label { padding-right: var(--space-4); }
+
+/* The question while it waits: there, but not sent yet. */
+.ai-msg--waiting .ai-msg__bubble { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-wait__pill, .ai-wait.is-leaving .ai-wait__pill { animation: ai-wait-fade 200ms ease both; }
+    .ai-wait.is-leaving .ai-wait__pill { animation-direction: reverse; }
+    .ai-wait__num > .is-in, .ai-wait__num > .is-out { animation: none; }
+    .ai-wait__num > .is-out { display: none; }
+    .ai-wait__arc { transition: none; }
+    .ai-wait[data-state="sending"] .ai-wait__ring { animation: none; }
+}
+
+@keyframes ai-wait-fade { from { opacity: 0; } to { opacity: 1; } }

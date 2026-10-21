@@ -244,7 +244,7 @@ private fun Ring(p: Float, color: androidx.compose.ui.graphics.Color) {
 
 /** An arc turning on its track: no progress to report, so none pretended. Still with reduced motion. */
 @Composable
-private fun Spinner() {
+internal fun Spinner() {
     val angle = loopValue(0f, 360f, infiniteRepeatable(tween(900, easing = LinearEasing)), still = 0f)
     val track = Ownify.ink(0.12f)
     val color = Ownify.Health

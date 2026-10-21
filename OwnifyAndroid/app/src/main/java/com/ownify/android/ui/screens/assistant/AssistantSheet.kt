@@ -6,10 +6,37 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import com.ownify.android.ui.app.Spinner
+import com.ownify.android.ui.design.Pane
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.LocalReducedMotion
+import com.ownify.android.ui.design.LocalStillMotion
+import com.ownify.android.i18n.trf
+import kotlinx.coroutines.delay
+import com.ownify.android.i18n.tr
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,8 +91,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.boundsInRoot
@@ -75,8 +100,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
@@ -107,7 +130,6 @@ import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.LocalScreen
-import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.Pill
 import com.ownify.android.ui.design.T
@@ -171,6 +193,7 @@ fun AssistantSheet(ai: AiCopy) {
                     Conversation(ai, Modifier.weight(1f))
                     Composer(ai)
                 }
+                WaitCapsule(Modifier.align(Alignment.TopCenter).padding(top = Ownify.Space1))
                 if (OwnifyAssistant.historyOpen) HistoryPane(ai)
             }
         }
@@ -310,8 +333,9 @@ private fun Conversation(ai: AiCopy, modifier: Modifier) {
     val a = OwnifyAssistant
     val messages = a.messages
     val sending = a.sending
+    val queued = a.queued
     val list = rememberLazyListState()
-    val count = messages.size + if (sending != null) 2 else 0
+    val count = messages.size + (if (sending != null) 2 else 0) + (if (queued != null) 1 else 0)
 
     // To the very end, as the website scrolls to it — the newest message's
     // bottom in view, however tall it is (the list stops at its end).
@@ -319,7 +343,7 @@ private fun Conversation(ai: AiCopy, modifier: Modifier) {
         if (count > 0) list.animateScrollToItem(count - 1, scrollOffset = 100_000)
     }
 
-    if (messages.isEmpty() && sending == null) {
+    if (messages.isEmpty() && sending == null && queued == null) {
         if (a.loading && !a.loaded) {
             Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Thinking(ai) }
         } else {
@@ -337,6 +361,10 @@ private fun Conversation(ai: AiCopy, modifier: Modifier) {
     ) {
         items(messages, key = { "m" + it.id }) { message ->
             Box(Modifier.width(screen.shell)) { MessageView(ai, message) }
+        }
+        // `.ai-msg--waiting`: there, but not sent yet — the capsule counts down to it.
+        if (queued != null) {
+            item(key = "queued") { Box(Modifier.width(screen.shell).alpha(0.55f)) { UserBubble(queued) } }
         }
         if (sending != null) {
             item(key = "sending") { Box(Modifier.width(screen.shell)) { UserBubble(sending) } }
@@ -591,9 +619,7 @@ private fun Composer(ai: AiCopy) {
     val sending = a.sending != null
     val unavailable = (a.available ?: ai.session.available) == false
 
-    val waitLeft = rememberWaitLeft(a.waitUntil)
-    val notice = (if (waitLeft > 0) AiNotice(ai.busyText(waitLeft)) else null)
-        ?: a.notice
+    val notice = a.notice
         ?: if (unavailable) AiNotice(ai.session.notice ?: ai.error("unavailable")) else null
         ?: if (out) AiNotice(ai.error("limit")) else null
 
@@ -647,7 +673,7 @@ private fun Composer(ai: AiCopy) {
                     }
                 }
             )
-            SendButton(ai.send, enabled = !out && !sending && waitLeft == 0 && a.draft.isNotBlank()) {
+            SendButton(ai.send, enabled = !out && !sending && a.queued == null && a.draft.isNotBlank()) {
                 a.ask(context, ai, a.draft)
             }
         }
@@ -660,22 +686,101 @@ private fun Composer(ai: AiCopy) {
 }
 
 /**
- * The seconds left until OwnifyAI has room again this minute ([until],
- * [OwnifyAssistant.waitUntil]), ticking once a second; 0 when there is room.
+ * `.ai-wait`: a question sent while the minute is full waits here — the
+ * sync capsule's glass (PullSyncIndicator), under the top. The seconds roll
+ * down inside a ring that drains; Annuleren puts the question back in the
+ * field; at 0 the ring turns, it says Versturen… and the question goes.
+ * Read out once, not every second.
  */
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun rememberWaitLeft(until: Long): Int {
-    var left by remember(until) { mutableIntStateOf(OwnifyAssistant.waitLeft()) }
-    LaunchedEffect(until) {
-        if (until == 0L) return@LaunchedEffect
-        while (true) {
-            left = OwnifyAssistant.waitLeft()
-            if (left <= 0) break
-            kotlinx.coroutines.delay(1000L)
+private fun WaitCapsule(modifier: Modifier) {
+    val a = OwnifyAssistant
+    val showing = a.queued != null || a.queuedSending
+    val sendingNow = a.queuedSending
+    val still = LocalReducedMotion.current || LocalStillMotion.current
+    var left by remember { mutableIntStateOf(a.waitLeft()) }
+    LaunchedEffect(showing, a.waitUntil) {
+        while (showing) {
+            left = a.waitLeft()
+            delay(200)
         }
-        OwnifyAssistant.waitOver()
     }
-    return left
+    val total = a.waitTotal.coerceAtLeast(1)
+    val drained by animateFloatAsState(
+        ((left - 1).coerceAtLeast(0)).toFloat() / total,
+        if (still) snap() else tween(1000, easing = LinearEasing),
+        label = "wait-ring"
+    )
+    val spoken = remember(a.queued) { trf("Het is even druk bij OwnifyAI. Je vraag wordt over %d seconden verstuurd.", a.waitLeft()) }
+
+    AnimatedVisibility(
+        showing,
+        modifier,
+        enter = if (still) fadeIn(tween(200)) else fadeIn(tween(240)) + scaleIn(tween(420, easing = Ownify.EaseOutStrong), initialScale = 0.6f, transformOrigin = TransformOrigin(0.5f, 0f)),
+        exit = if (still) fadeOut(tween(200)) else fadeOut(tween(240)) + scaleOut(tween(240, easing = Ownify.EaseOutStrong), targetScale = 0.85f, transformOrigin = TransformOrigin(0.5f, 0f))
+    ) {
+        Pane(
+            Modifier
+                .height(40.dp)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = if (sendingNow) tr("Versturen…") else spoken
+                    liveRegion = LiveRegionMode.Polite
+                },
+            style = Panes.HeaderButton,
+            shape = RoundedCornerShape(50),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(Modifier.fillMaxHeight().animateContentSize(tween(320, easing = Ownify.EaseOutStrong)), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(38.dp), contentAlignment = Alignment.Center) {
+                    if (sendingNow) {
+                        Spinner()
+                    } else {
+                        val track = Ownify.ink(0.12f)
+                        val arc = Ownify.Health
+                        Canvas(Modifier.size(28.dp)) {
+                            val inset = 1.1.dp.toPx() + 1.dp.toPx()
+                            val box = Size(size.width - 2 * inset, size.height - 2 * inset)
+                            val at = Offset(inset, inset)
+                            drawArc(track, 0f, 360f, false, at, box, style = Stroke(2.2.dp.toPx()))
+                            if (drained > 0f) drawArc(arc, -90f, 360f * drained, false, at, box, style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round))
+                        }
+                        AnimatedContent(
+                            left,
+                            transitionSpec = {
+                                if (still) (fadeIn(snap()) togetherWith fadeOut(snap()))
+                                else (slideInVertically(tween(280, easing = Ownify.EaseOutStrong)) { it * 7 / 10 } + fadeIn(tween(280)))
+                                    .togetherWith(slideOutVertically(tween(280, easing = Ownify.EaseOutStrong)) { -it * 7 / 10 } + fadeOut(tween(280)))
+                            },
+                            label = "wait-seconds"
+                        ) { n ->
+                            T(n.coerceAtLeast(0).toString(), OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true, lineHeight = 1.em), maxLines = 1)
+                        }
+                    }
+                }
+                T(
+                    if (sendingNow) tr("Versturen…") else tr("Even druk — je vraag wacht"),
+                    OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.em),
+                    Modifier.padding(end = if (sendingNow) Ownify.Space4 else Ownify.Space3),
+                    maxLines = 1
+                )
+                if (!sendingNow) {
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(Ownify.GlassHairline))
+                    val interaction = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .fillMaxHeight()
+                            .clickable(interaction, indication = null, role = Role.Button) { a.cancelQueued() }
+                            .semantics { contentDescription = tr("Annuleren") }
+                            .padding(start = Ownify.Space3, end = Ownify.Space3 + 3.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        T(tr("Annuleren"), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, lineHeight = 1.em), maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

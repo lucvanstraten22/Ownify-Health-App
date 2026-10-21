@@ -752,7 +752,7 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `OwnifyAI - the minute is full for everybody, it counts down and the question waits in the field`() {
+    fun `OwnifyAI - the minute is full for everybody - the question waits in the capsule and goes by itself`() {
         server.saveConsent("accepted")
         MemoryTokenStorage.signedIn()
         show()
@@ -762,15 +762,38 @@ class OwnifyAppFlowTest {
 
         server.aiMode = FakeOwnifyServer.AiMode.BUSY
         send("Hoe sliep ik?")
-        waitFor("Het is even druk bij OwnifyAI. Over 2 s kun je weer iets vragen.")
-        compose.onNode(hasText("Hoe sliep ik?") and hasSetTextAction()).assertExists()
-        compose.onNode(hasContentDescription("Versturen") and hasClickAction()).assertIsNotEnabled()
+        // Not an error: the capsule counts down, the question waits in the conversation, the field is free.
+        waitFor("Even druk — je vraag wacht")
+        compose.onNode(hasContentDescription("Annuleren") and hasClickAction()).assertExists()
+        assertTrue(compose.onAllNodes(hasText("Hoe sliep ik?") and hasSetTextAction()).fetchSemanticsNodes().isEmpty())
+        assertTrue("no error notice", compose.onAllNodesWithText("kun je weer iets vragen", substring = true).fetchSemanticsNodes().isEmpty())
 
-        // At 0 the countdown goes and Versturen works again.
+        // At 0 it goes by itself and is answered.
         server.aiMode = FakeOwnifyServer.AiMode.OK
-        compose.waitUntil(8_000) { compose.onAllNodesWithText("Het is even druk", substring = true).fetchSemanticsNodes().isEmpty() }
-        compose.onNode(hasContentDescription("Versturen") and hasClickAction()).assertIsEnabled().performClick()
-        waitFor("Standaardantwoord.")
+        waitFor("Standaardantwoord.", 10_000)
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Even druk — je vraag wacht").fetchSemanticsNodes().isEmpty() }
+        assertEquals(2, server.requestsTo("api/ai/chat.php").size)
+    }
+
+    @Test
+    fun `OwnifyAI - a waiting question can be taken back with Annuleren`() {
+        server.saveConsent("accepted")
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openAssistant()
+        waitFor("Je persoonlijke gezondheidsassistent")
+
+        server.aiMode = FakeOwnifyServer.AiMode.BUSY
+        send("Hoe sliep ik?")
+        waitFor("Even druk — je vraag wacht")
+        compose.onNode(hasContentDescription("Annuleren") and hasClickAction()).performClick()
+        compose.onNode(hasText("Hoe sliep ik?") and hasSetTextAction()).assertExists()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Even druk — je vraag wacht").fetchSemanticsNodes().isEmpty() }
+        server.aiMode = FakeOwnifyServer.AiMode.OK
+        Thread.sleep(2_500)
+        compose.waitForIdle()
+        assertEquals("taken back: not sent again by itself", 1, server.requestsTo("api/ai/chat.php").size)
     }
 
     @Test

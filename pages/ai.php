@@ -67,6 +67,24 @@ $view    = match ($session['consent'] ?? 'unknown') {
                     </button>
                 </div>
             </div>
+
+            <!-- The minute is full for everybody (includes/ai/pace.php): a question
+                 sent now waits here and goes by itself at 0 — the sync capsule's
+                 glass, counting down (ai-chat.js). -->
+            <div class="ai-wait" data-ai-wait data-state="counting" hidden>
+                <div class="ai-wait__pill">
+                    <span class="ai-wait__icon" aria-hidden="true">
+                        <svg class="ai-wait__ring" viewBox="0 0 24 24" focusable="false">
+                            <circle class="ai-wait__track" cx="12" cy="12" r="10"/>
+                            <circle class="ai-wait__arc" data-ai-wait-arc cx="12" cy="12" r="10" pathLength="100"/>
+                        </svg>
+                        <span class="ai-wait__num" data-ai-wait-num></span>
+                    </span>
+                    <span class="ai-wait__label" data-ai-wait-label><?= e(t('Even druk — je vraag wacht')) ?></span>
+                    <button type="button" class="ai-wait__cancel press" data-ai-wait-cancel><?= e(t('Annuleren')) ?></button>
+                </div>
+                <p class="sr-only" role="status" aria-live="polite" data-ai-wait-live></p>
+            </div>
         </header>
 
         <main class="ai-main shell">
