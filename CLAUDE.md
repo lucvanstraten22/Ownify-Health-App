@@ -59,6 +59,18 @@ name an effect). **`apple-design` is the highest authority**: where the
 skills disagree, it wins. If a skill is not available in a session, say so
 plainly instead of working as if it had been used.
 
+## Strict design consistency
+
+Never introduce new styles, components, variants, tokens or one-off
+implementations without the user's explicit approval. Always use the
+approved, consolidated style system (`docs/THEME.md`: the one Liquid Glass,
+the quiet card, Well / Row / Note / Slot, the green and gold glass actions,
+the pill field, the two icon-tile sizes, the radius scale, the Randlicht
+ground) consistently across both the web app and the Android app. Never
+introduce inconsistencies or make design decisions on the user's behalf. If
+a new style seems genuinely necessary, or anything is unclear, ask first and
+wait for approval.
+
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
