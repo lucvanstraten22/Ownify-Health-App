@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.account
+import com.ownify.android.ui.design.insetRow
+import com.ownify.android.ui.design.well
 
 import java.time.LocalDate
 import com.ownify.android.i18n.trn
@@ -324,9 +326,9 @@ fun AvatarCircle(path: String?, size: Dp, iconSize: Dp, modifier: Modifier = Mod
     }
 }
 
-/** The field look the panel's inputs share: at least 44 high, the soft border, `.05`. */
+/** The one field (25.0): a pill at least 44 high, the soft border, `.05`. */
 private fun Modifier.fieldBox(fill: Color = Ownify.fill(0.05f)): Modifier {
-    val shape = RoundedCornerShape(Ownify.RadiusSm)
+    val shape = RoundedCornerShape(50)
     return this
         .heightIn(min = 44.dp)
         .clip(shape)
@@ -350,7 +352,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
                 .fieldBox()
                 .clickable(interaction, indication = null, role = Role.Button, onClickLabel = tr("Bestand kiezen"), onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { contentDescription = tr("Profielfoto") + ": " + (name ?: tr("Geen bestand gekozen")) }
-                .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2),
+                .padding(horizontal = Ownify.Space4, vertical = Ownify.Space2),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
@@ -385,7 +387,7 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
         val interaction = remember { MutableInteractionSource() }
         val pressed by interaction.collectIsPressedAsState()
         val fill by animateColorAsState(
-            if (pressed) Ownify.fill(0.08f) else Ownify.fill(0.05f),
+            if (pressed) Ownify.fill(0.08f) else Ownify.InsetFill,
             tween(Ownify.FastMs, easing = Ownify.Ease),
             label = "nav"
         )
@@ -393,7 +395,10 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
             Modifier
                 .press(interaction)
                 .fillMaxWidth()
-                .fieldBox(fill)
+                .heightIn(min = Ownify.RowMin)
+                // A Row (`.account__nav`): the faint fill, a touch more while pressed.
+                .clip(RoundedCornerShape(Ownify.RadiusSm))
+                .background(fill)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { contentDescription = "$label: $text${badge?.let { ", $it" }.orEmpty()}" }
                 .padding(horizontal = Ownify.Space3),
@@ -587,14 +592,11 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
         searchError?.let { ErrorBox(it, Modifier.padding(top = Ownify.Space3)) }
 
         found?.let { result ->
-            val shape = RoundedCornerShape(Ownify.RadiusSm)
             Box(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = Ownify.Space3)
-                    .clip(shape)
-                    .background(Ownify.fill(0.04f))
-                    .border(1.dp, Ownify.GlassHairline, shape)
+                    .well()
                     .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
@@ -634,10 +636,8 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
             .padding(top = Ownify.Space5)
             .fillMaxWidth()
             .alpha(if (toggleBusy) 0.7f else 1f)
-            .heightIn(min = 56.dp)
-            .clip(shape)
-            .background(Ownify.fill(0.05f))
-            .border(1.dp, Ownify.GlassBorderSoft, shape)
+            .heightIn(min = Ownify.RowMin)
+            .insetRow(shape)
             .clickable(enabled = !toggleBusy, role = Role.Switch) {
                 val before = allowed
                 shownAllowed = !before
@@ -760,13 +760,10 @@ private fun AnswerButtons(busy: Boolean, onAccept: () -> Unit, onDecline: () -> 
 /** `.friend__confirm`: the one step between a tap and a friendship gone; the safe answer first. */
 @Composable
 private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onRemove: () -> Unit) {
-    val shape = RoundedCornerShape(Ownify.RadiusSm)
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(Ownify.fill(0.04f))
-            .border(1.dp, Ownify.GlassHairline, shape)
+            .well()
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {

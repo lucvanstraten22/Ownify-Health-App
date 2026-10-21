@@ -56,9 +56,4 @@ body.connect-page {
 
 .connect__actions .btn { width: 100%; cursor: pointer; font: inherit; font-size: var(--fs-small); font-weight: 600; }
 
-/* The one thing to do on the page: the Health colour, as the app's own
-   primary actions. */
-.connect__actions .btn--primary {
-    border-color: color-mix(in srgb, var(--health) 55%, transparent);
-    background: color-mix(in srgb, var(--health) 26%, transparent);
-}
+

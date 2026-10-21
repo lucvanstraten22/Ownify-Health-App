@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.liquidGlass
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -396,7 +398,6 @@ private fun MeasureStep(draft: Draft, goals: Goals) {
             draft.query, { draft.query = it.take(40) },
             placeholder = words["search_label"],
             label = words["search_label"],
-            radius = 22.dp,
             keyboard = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Search)
         )
         if (draft.query.isNotEmpty()) {
@@ -506,7 +507,7 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
             Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(Ownify.mix(accent, 0.16f, Color.Transparent)),
+                Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(Ownify.mix(accent, 0.16f, Color.Transparent)),
                 contentAlignment = Alignment.Center
             ) {
                 (if (m.custom) OwnifyIcons.sparkle else OwnifyIcons.named(category?.icon))?.let { JIcon(it, size = 15.dp, color = accent) }
@@ -812,8 +813,7 @@ private fun DirectionRow(draft: Draft, goals: Goals) {
                 Modifier
                     .fillMaxWidth()
                     .padding(top = Ownify.Space2)
-                    .clip(RoundedCornerShape(Ownify.RadiusSm))
-                    .background(Ownify.TipSurface)
+                    .liquidGlass(RoundedCornerShape(Ownify.RadiusSm), Panes.Tip)
                     .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2)
                     .semantics { liveRegion = LiveRegionMode.Polite }
             )

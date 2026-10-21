@@ -1,5 +1,5 @@
 package com.ownify.android.ui.screens.health
-
+import com.ownify.android.ui.design.well
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
 import androidx.compose.foundation.ScrollState
@@ -263,12 +263,9 @@ internal fun MetricTiles(tiles: List<Metric>, title: String = tr("Vandaag"), cou
 @Composable
 private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count: Boolean = true) {
     val empty = metric.value == null
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
     Column(
         modifier
-            .clip(shape)
-            .background(Ownify.fill(0.035f))
-            .border(1.dp, Ownify.GlassHairline, shape)
+            .well()
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .clearAndSetSemantics {
                 contentDescription = "${metric.label}: " + (metric.value?.let { v -> if (metric.unit.isNotEmpty()) "$v ${metric.unit}" else v } ?: tr("nog geen gegevens"))

@@ -57,8 +57,8 @@ and the Google logo stay what they are in both themes.
 
 ## What changes, and what does not
 
-**Changes:** the ground (`--bg-*`: warm off-white, still lightest at the top
-and still under the same green, gold and olive washes), the glass tokens
+**Changes:** the ground (`--bg-*`: a blush off-white instead of the deep ink,
+under the same lights at about half strength), the glass tokens
 (`--glass*`, `--surface-gradient*`, `--pane-rim`, `--shadow-*`, the pane's
 saturate and brightness), the text tiers, the roles above, and three accents.
 
@@ -74,8 +74,8 @@ on white, so each is the same hue, deeper — the smallest change that reads:
 | --- | --- | --- | --- |
 | `--score-mid` | `#AECA0F` | `#7D910B` | 1.9:1 on white → 3.5:1 (a graphic: the score dot) |
 | `--score-low` | `#C99A45` | `#AC8032` | 2.6:1 on white → 3.6:1 (a graphic) |
-| `--attention` | `#BFA863` | `#7D6A33` | 2.3:1 on white → 5.3:1; it is also small text (a warning, an error note), so 4.5:1 on every light ground. Its washes and borders keep the original gold |
-| `--error` | `#FF8B8B` | `#C2453E` | the wizard's, the editor's and the rating's red: 2.3:1 on white → 5.0:1 (4.95:1 on a card) |
+| `--attention` | `#BFA863` | `#7A6731` | 2.3:1 on white → 5.5:1; it is also small text (a warning, an error note), so 4.5:1 on every light ground. Its washes and borders keep the original gold |
+| `--error` | `#FF8B8B` | `#B03C35` | the wizard's, the editor's and the rating's red: 2.3:1 on white → 5.8:1 on a card |
 
 **The Gezondheidsscore ring on Overzicht and the Scorekompas** (since 18.1, `assets/js/hero-ring.js`
 and `HeroRing.kt`) is painted from `--ring-from`, `--ring-mid`, `--ring-peak`
@@ -84,6 +84,84 @@ arrival and the light at its tip), all mixes of `--health`. On Dark it runs
 from dim to bright; on White from pale to its deepest green, so its end
 always stands out most from the ground. `OwnifyTheme.kt` mirrors them as
 `Ownify.RingFrom` … (`lerp` is the same OKLab mix).
+
+## The ground: Randlicht (25.0)
+
+Behind every page (`.app__backdrop`, Android's `Ground.App`) is a deep ink —
+`--bg-main` #1C1620 at the top (a plum), `--bg-mid` #131113 in the middle
+where you read, `--bg-deep` #19120F at the foot (an ember) — lit from just
+beyond the screen's edges by the three categories: Slaap's indigo and a plum
+from above, Voeding's green from the right, Training's coral and an ember
+from the foot (`--backdrop-lights`). Each light fades over its whole radius on
+a smootherstep curve in nine stops, so it has no rim and never reads as a dot,
+and its colour is mixed 35 % toward grey so the cards keep the colour. White
+Mode: #F6F1F6 → #FAF8F8 → #F7EFEA with the same lights × .52. A fine grain
+lies over it on the website against banding. Since the darker ground raised
+Dark Mode's contrast, White Mode's `--text-secondary` (.75), `--attention` and
+`--error` went one step deeper to stay at least as legible.
+
+## The surfaces (25.0)
+
+Since 25.0 Ownify has one glass and a small fixed set of shapes. Both apps
+draw them from the same tokens; a new component picks one of these, never a
+recipe of its own.
+
+**One glass — Liquid Glass** (`--lg-*` in `theme.css`, `Panes` and
+`Modifier.liquidGlass(…)` in `Surfaces.kt`). Everything that floats is this
+glass: the tab bar, the header's buttons, capsules and round buttons,
+selectable chips, the segmented control, panels, sheets, toasts and tooltips.
+The same 177° face over the pane's tint, the same rim (`--pane-rim`), the same
+blur, saturate and brightness (`--lg-filter`). Two thicknesses only:
+
+| Thickness | Token | For |
+| --- | --- | --- |
+| control | `--lg-tint` .62 (`Ownify.LgTint`) | the tab bar, buttons, capsules, chips, the segmented track |
+| thick | `--lg-tint-thick` .84 (`Ownify.LgTintThick`) | panels, sheets, toasts, tooltips — where text sits on it |
+
+The chosen piece inside the glass — the tab bar's lozenge, a segment — is
+`--lg-chosen` / `--lg-chosen-edge` (`drawChosenGlass`). White Mode follows
+through `--glint-k`, `--pane-body` and `--shade`; nothing is written twice.
+
+**Actions.** The secondary button in a card stays what it was (`.btn`, `Btn`
+with the default `BtnLook`: `--glass` with the glass border, a pill). What
+floats or leads is the glass, in three looks:
+
+| Look | Website | Android | For |
+| --- | --- | --- | --- |
+| glass | `.glass`, `.pill`, `.ch-act` | `Modifier.glass(…)`, `Pill` | back and close, round buttons, the actions of Uitdagingen |
+| primary | `.btn--primary`, `.glass--cta` (`--lg-green`, `--lg-green-rim`) | `BtnLook.Primary`, `GlassCta` | the one action a step leads to: Volgende, Opslaan, Doel aanmaken, Akkoord |
+| cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`) | `BtnLook.Caution` (`Final`) | deleting, leaving, ending — every destructive step, the last one included |
+
+The send button of OwnifyAI stays solid green: it is the composer's own mark.
+Controls are 44 tall (`--hit-min`); round ones 44, the small round one 34.
+
+**The card** is the quiet one (`.card`, `CardStyle.Default`): a faint
+gradient, an inset light line and a soft shadow, at `--radius-card` 28. There
+is no other card.
+
+**Inside a card, four shapes** — all on `--inset-fill`:
+
+| Shape | Radius | Edge | For |
+| --- | --- | --- | --- |
+| Well | `--radius-md` 20 | a hairline | a block: a legend, a note of settings, a metric tile (`well()`) |
+| Row | `--radius-sm` 14 | none; a chosen one an inset ring | a list row, a choice to tap, at least `--row-min` 52 tall (`insetRow()`) |
+| Note | `--radius-md` 20 | wash and edge of one tone: health, attention or the category | a message (`note(tone)`) |
+| Slot | `--radius-md` 20 | dashed `--slot-edge` | an empty place: an invitation, an idea, a ticket |
+
+**Fields** are all the pill of "Zoek een doel": `--radius-pill`, 44 tall, the
+faint fill and hairline, and on focus the health edge with its halo
+(`JInput`). A date button in the wizard is a glass button, not a field, and
+keeps `--radius-sm`.
+
+**Chips**: a label chip is a 24 high pill (`.chip`, `Chip`); a chip to choose
+is the glass chip (`.glass--chip`).
+
+**Icon tiles**, two sizes: 36 at radius 12 and 30 at radius 10
+(`Ownify.TileRadius`, `TileSmall`, `TileRadiusSmall`). A challenge's 48
+artwork is an illustration, not a tile.
+
+**Radii**: 28 (a card), 20 (a well, a note, a slot, a small card), 14 (a row,
+a date button, a tooltip on a chart), pill. `--radius-inner` is gone.
 
 ## Contrast
 

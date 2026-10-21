@@ -1,5 +1,5 @@
 package com.ownify.android.ui.screens.overview
-
+import com.ownify.android.ui.design.well
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
@@ -222,7 +222,7 @@ private fun CategoryHead(label: String, meta: String, icon: String?, accent: Str
     val tint = Accent.of(accent).color
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
         OwnifyIcons.solid(icon)?.let {
-            IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = Color.White, background = tint, border = tint)
+            IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = Color.White, background = tint, border = tint)
         }
         Column(Modifier.weight(1f)) {
             T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em))
@@ -646,15 +646,12 @@ internal fun ScoreValue(value: Int?, band: String?, textSize: TextUnit = Ownify.
     }
 }
 
-/** The quiet box of `.compass-cat` and `.compass-chance__head`: hairline, radius 20, `.035` fill. */
+/** `.compass-cat` and `.compass-chance__head`: a Well. */
 @Composable
 private fun Modifier.quietBox(): Modifier {
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
     val horizontal = if (LocalScreen.current.narrow) Ownify.Space2 else Ownify.Space3
     return this
-        .clip(shape)
-        .background(Ownify.fill(0.035f))
-        .border(1.dp, Ownify.GlassHairline, shape)
+        .well()
         .cssPadding(PaddingValues(horizontal = horizontal, vertical = Ownify.Space3), border = 1.dp)
 }
 

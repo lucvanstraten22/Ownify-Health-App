@@ -49,9 +49,9 @@
 
 .calibration-row .icon-tile,
 .calibration-start .icon-tile {
-    width: 32px;
-    height: 32px;
-    border-radius: 11px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
 }
 
 .calibration-row .icon-tile .icon,
@@ -215,9 +215,6 @@
         width: var(--shell-w);
         max-width: var(--page-max);
         padding-inline: var(--space-2);
-        border: 1px solid var(--glass-border-soft);
-        border-radius: var(--radius-card);
-        box-shadow: var(--shadow-float);
     }
 
     .fab { bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-4)); }

@@ -41,7 +41,7 @@ with bold only.
 | Web | Android | States |
 | --- | --- | --- |
 | `pages/welcome.php` | `WelcomeScreen` | the Ownify logo (icon-only, decorative — the name follows), rise-in, two buttons; paired-only variant (see deviations) |
-| `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, the Google mark (`.social`: 46 round soft glass, the G at 21, pressed 0.94, disabled at 50 % + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
+| `components/account-modal.php` (signed out) | `AccountPanel` login / register | fields, error box, the Google mark (`.social`: 44 round glass, the G at 21, pressed 0.94, disabled at 50 % + "Google is nog niet gekoppeld." when unavailable), the Google username step ("Kies je gebruikersnaam", Annuleren), working |
 | `pages/setup.php` | `SetupScreen` (instead of the shell while `setup.pending`, crossfading to it) | the app's name and Uitloggen; four bars and "Stap 2 van 4"; each step sliding in from the side it comes from; Focus (five choices as a radio group, the chosen one ringed in its colour, Verder disabled until one is chosen, error); Gegevens (Health Connect, its status and last sync, the manual line, the later line; Doorgaan zonder koppelen, or Verder once connected — see deviations); Over jou (birth date, height, weight, each with its reason; a birth date already given shown locked; Overslaan / Opslaan en verder; error; under 360 dp the three buttons on two rows); Doel (a suggested goal with what it is based on, Toevoegen / Niet nu; the added line; Zelf een doel instellen opening the goal wizard; Naar Ownify; error); working |
 | `components/header.php` | `AppHeader` (shared, over the rail) | clear / scrolled (gradient + blur), devices dot |
 | `components/devices-popup.php` | `DevicesPopup` | list, empty, "Apparaat koppelen" → Instellingen › Apparaten |
@@ -70,7 +70,7 @@ with bold only.
 | `components/settings-confirm.php` | `DeleteConfirm` | two steps, error, working |
 | `components/settings-pairing.php` | `PairingPanel` | code, expiry, new code, error |
 | `components/account-modal.php` (signed in) + `account-friends.php` | `AccountPanel` account + Vrienden views | identity, username, avatar, friends nav + badge, search, requests, sent, toggle, friends with in-place confirm |
-| `pages/ai.php` + `components/ai-consent.php`, `ai-empty-state.php`, `ai-composer.php` | `AssistantSheet` | the sheet's light (green from above, a dawn at the foot that brightens while thinking); handle, round close, the island (logo, OwnifyAI, count, chevron; *denkt na…* and a halo while thinking); consent (logo, five points, Toestaan en beginnen / Niet nu, error), declined (logo greyed, Toestemming bekijken); empty (logo, Wat wil je weten?, no-data line, three suggestions); conversation (your bubble in solid green, the answer's paragraphs, headings and lists with bold, Ownify's own notes, a proposal card with its two buttons and then its outcome); thinking dots; notices (unavailable, free quota, today's limit, too slow, no connection — with Opnieuw proberen where it helps, the question kept in the field); composer (grows to five lines, send, "Nog 7 van 10 berichten vandaag"); Gesprekken growing out of the island (search, Nieuw gesprek in grey glass, groups Vandaag / Deze week / Eerder, title with when · n vragen, the open one's dot, delete with in-place confirm, empty, nothing found); a question sent while the shared minute is full (`busy` / `wait`) waiting, faded, while the capsule under the top (the pull-sync capsule's glass) counts down in a draining ring with rolling seconds and Annuleren, then sends it by itself at 0 |
+| `pages/ai.php` + `components/ai-consent.php`, `ai-empty-state.php`, `ai-composer.php` | `AssistantSheet` | the sheet's light (green from above, a dawn at the foot that brightens while thinking); handle, round close, the island (logo, OwnifyAI, count, chevron; *denkt na…* and a halo while thinking); consent (logo, five points, Toestaan en beginnen / Niet nu, error), declined (logo greyed, Toestemming bekijken); empty (logo, Wat wil je weten?, no-data line, three suggestions); conversation (your bubble in solid green, the answer's paragraphs, headings and lists with bold, Ownify's own notes, a proposal card with its two buttons and then its outcome); thinking dots; notices (unavailable, free quota, today's limit, too slow, no connection — with Opnieuw proberen where it helps, the question kept in the field); composer (grows to five lines, send, "Nog 7 van 10 berichten vandaag"); Gesprekken growing out of the island (search, Nieuw gesprek as a glass pill, groups Vandaag / Deze week / Eerder, title with when · n vragen, the open one's dot, delete with in-place confirm, empty, nothing found); a question sent while the shared minute is full (`busy` / `wait`) waiting, faded, while the capsule under the top (the pull-sync capsule's glass) counts down in a draining ring with rolling seconds and Annuleren, then sends it by itself at 0 |
 
 ## Chrome and motion
 
@@ -108,7 +108,8 @@ with bold only.
   pressed surface dims to 72 % instead of shrinking, numbers show their
   value.
 - Floating panels (account, devices, goal wizard, the editor, confirm and
-  pairing panels) materialise: their frost (24 dp, saturate 130 %), their
+  pairing panels) materialise: their frost (the Liquid Glass's own: 10 dp, saturate 190 %,
+  brightness 108 %), their
   scale from .96 and their opacity arrive together in 240 ms and leave in
   180 ms on the strong ease-out `(.23, 1, .32, 1)` (`--panel-in`,
   `--panel-out`; `OverlayFrame`, `panelLook`, `glassBackdrop(amount)`); the
@@ -185,7 +186,9 @@ defaults:
 - Type sizes, letter spacing per size (`--tracking-small` 0 at 12 px and
   below, body −0.01em, titles −0.02em, the large title −0.025em), the tinted
   states (`--health-wash/fill/edge/strong`, `--attention-…`), the focus halo,
-  `--radius-inner`, the scroll-edge fades and `--reduce-fade` are tokens on
+  the Liquid Glass (`--lg-tint`, `--lg-tint-thick` → `Ownify.LgTint`,
+  `LgTintThick`; the rest drawn by `liquidGlass` and `Panes`), the inset
+  shapes (`--inset-fill`, `--slot-edge`, `--row-min`), the scroll-edge fades and `--reduce-fade` are tokens on
   both sides; `TokenParityTest` reads theme.css and fails on any that differ.
 - `.settings-field` is its grid (`minmax(0, 1fr) auto auto`): the value takes
   what it needs at the right, the label the rest; `.metric-row` and
@@ -204,6 +207,8 @@ defaults:
 | Google's account chooser is the phone's own (Credential Manager, Sign in with Google) instead of Google's web page | the app asks Google on the phone for an ID token; the server verifies it, the phone believes nothing in it |
 | After deleting an account with Google linked, the app shows the website's "revoke it yourself" notice instead of redirecting | the Google revoke is a browser redirect bound to a session the app does not have |
 | Backdrop blur only on Android 12+ | `RenderEffect` does not exist before API 31; older phones get the same translucent surfaces without blur, as the website does without `backdrop-filter` — and a panel arriving there scales and fades in without its frost ramping |
+| The glass inside a page (a chip, a round button, the segmented track, the Uitdagingen actions) is drawn without a live blur in the app; the floating glass (tab bar, header buttons, panels, sheets, toasts) has it on Android 12+ | Compose blurs only what is recorded behind a layer (`glassBackdrop`); the page's own scrolling content is not, so glass in the page's flow shows the same tint, face, rim and shadow over the card without frosting it. Over a quiet card the difference is hardly visible |
+| The ground's fine grain is the website's only | it is there against banding in a browser's long dark gradients; the app draws the same nine-stop lights and ink without it, and Android's gradients are dithered |
 | System back closes the frontmost layer | Android navigation; the website relies on Escape and the pills |
 | A profile picture is decoded at a fraction of its size (never below 384 px on its shorter side), one download shared by every row showing it | the boards and friends lists get the server's 192 px copy (`avatar_small()`), which both apps show as is; the header and account still show your own picture as uploaded (up to 3 MB), and the server falls back to the original when it cannot make a copy. The browser scales an `<img>` itself; a phone decoding a full photo per row would run out of memory. Drawn the same size either way |
 | The avatar is chosen with Android's photo picker (images only) | the website's `<input type="file" accept="image/jpeg,image/png,image/webp">`; the server checks the type and size as before |

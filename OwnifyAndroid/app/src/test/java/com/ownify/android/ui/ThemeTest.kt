@@ -103,7 +103,7 @@ class ThemeTest {
         val light = mode == OwnifyMode.LIGHT
         assertEquals("status bar icons", light, bars.isAppearanceLightStatusBars)
         assertEquals("navigation bar icons", light, bars.isAppearanceLightNavigationBars)
-        assertEquals("the window", if (light) 0xFFF0EDEE.toInt() else 0xFF252223.toInt(), windowColour(activity))
+        assertEquals("the window", if (light) 0xFFF7EFEA.toInt() else 0xFF19120F.toInt(), windowColour(activity))
     }
 
     // ------------------------------------------------------- nothing chosen
@@ -238,7 +238,7 @@ class ThemeTest {
         val theme = activity.theme.obtainStyledAttributes(
             intArrayOf(android.R.attr.windowBackground, android.R.attr.windowLightStatusBar, android.R.attr.windowLightNavigationBar)
         )
-        assertEquals(0xFFF0EDEE.toInt(), theme.getColor(0, 0))
+        assertEquals(0xFFF7EFEA.toInt(), theme.getColor(0, 0))
         assertTrue("dark status bar icons", theme.getBoolean(1, false))
         assertTrue("dark navigation bar icons", theme.getBoolean(2, false))
         theme.recycle()

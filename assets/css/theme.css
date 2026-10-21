@@ -5,8 +5,66 @@
 
 :root {
     /* --- surfaces ------------------------------------------------------ */
-    --bg-main: #302D2F;
-    --bg-deep: #252223;
+    --bg-main: #1C1620;
+    --bg-mid: #131113;
+    --bg-deep: #19120F;
+    /* Randlicht (25.0): the three categories as light from just beyond the
+       screen's edges — Slaap's indigo and a plum from above, Voeding's green
+       from the right, Training's coral and an ember from the foot. Each fades
+       on a smootherstep curve in nine stops (no rim, no dot); the colours are
+       mixed 35 % toward grey so the cards keep the colour. White Mode: the
+       same at .52. OwnifyTheme.kt / Ground.App draw the same stops. */
+    --backdrop-lights:
+    radial-gradient(95% 50% at -8% 2%,
+        rgba(104, 108, 175, 0.289) 0%,
+        rgba(104, 108, 175, 0.284) 12.5%,
+        rgba(104, 108, 175, 0.259) 25%,
+        rgba(104, 108, 175, 0.209) 37.5%,
+        rgba(104, 108, 175, 0.144) 50%,
+        rgba(104, 108, 175, 0.080) 62.5%,
+        rgba(104, 108, 175, 0.030) 75%,
+        rgba(104, 108, 175, 0.005) 87.5%,
+        rgba(104, 108, 175, 0.000) 100%),
+    radial-gradient(85% 38% at 86% -10%,
+        rgba(135, 97, 142, 0.221) 0%,
+        rgba(135, 97, 142, 0.217) 12.5%,
+        rgba(135, 97, 142, 0.198) 25%,
+        rgba(135, 97, 142, 0.160) 37.5%,
+        rgba(135, 97, 142, 0.111) 50%,
+        rgba(135, 97, 142, 0.061) 62.5%,
+        rgba(135, 97, 142, 0.023) 75%,
+        rgba(135, 97, 142, 0.004) 87.5%,
+        rgba(135, 97, 142, 0.000) 100%),
+    radial-gradient(70% 46% at 112% 50%,
+        rgba(84, 145, 120, 0.187) 0%,
+        rgba(84, 145, 120, 0.184) 12.5%,
+        rgba(84, 145, 120, 0.168) 25%,
+        rgba(84, 145, 120, 0.136) 37.5%,
+        rgba(84, 145, 120, 0.093) 50%,
+        rgba(84, 145, 120, 0.051) 62.5%,
+        rgba(84, 145, 120, 0.019) 75%,
+        rgba(84, 145, 120, 0.003) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    radial-gradient(110% 38% at 16% 110%,
+        rgba(175, 121, 112, 0.255) 0%,
+        rgba(175, 121, 112, 0.251) 12.5%,
+        rgba(175, 121, 112, 0.229) 25%,
+        rgba(175, 121, 112, 0.185) 37.5%,
+        rgba(175, 121, 112, 0.128) 50%,
+        rgba(175, 121, 112, 0.070) 62.5%,
+        rgba(175, 121, 112, 0.026) 75%,
+        rgba(175, 121, 112, 0.004) 87.5%,
+        rgba(175, 121, 112, 0.000) 100%),
+    radial-gradient(80% 30% at 96% 112%,
+        rgba(183, 132, 100, 0.153) 0%,
+        rgba(183, 132, 100, 0.151) 12.5%,
+        rgba(183, 132, 100, 0.137) 25%,
+        rgba(183, 132, 100, 0.111) 37.5%,
+        rgba(183, 132, 100, 0.076) 50%,
+        rgba(183, 132, 100, 0.042) 62.5%,
+        rgba(183, 132, 100, 0.016) 75%,
+        rgba(183, 132, 100, 0.002) 87.5%,
+        rgba(183, 132, 100, 0.000) 100%);
     --bg-secondary: #3A3638;
 
     --glass: rgba(255, 255, 255, 0.08);
@@ -89,9 +147,10 @@
     --radius-md: 20px;
     --radius-sm: 14px;
     --radius-pill: 999px;
-    /* A block inside a card (the score legend, an insight): smaller than the
-       card's own corner, so the two read as one shape set in the other. */
-    --radius-inner: 14px;
+    /* Four corners and no others (25.0): 28 a card or a panel, 20 a block or
+       a note inside one, 14 a row, pill for buttons, fields, chips and
+       capsules. Icon tiles keep about a third of their size (36 → 12, 30 →
+       10); small radii are left only to what a chart draws. */
 
     /* --- spacing scale -------------------------------------------------- */
     --space-1: 4px;
@@ -115,8 +174,8 @@
        the backdrop at large radii and the resampling puts the detail back. It
        is also the cheaper number on a phone. */
     --pane-blur: 10px;
-    --panel-frost: blur(var(--blur-card)) saturate(130%);   /* a floating panel's own frost (components.css) */
-    --panel-frost-closed: blur(0px) saturate(100%);         /* … and where it starts from as it arrives */
+    --panel-frost: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));   /* a floating panel's frost: the Liquid Glass's own (--lg-filter) */
+    --panel-frost-closed: blur(0px) saturate(100%) brightness(100%);   /* … and where it starts from as it arrives */
     --hero-ring: 244px;   /* the hero's ring at most (min(62vw, …)); OwnifyTheme.kt HeroRing */
     --pane-saturate: 190%;
     --pane-brightness: 108%;
@@ -130,6 +189,54 @@
         rgba(255, 255, 255, 0.045) 52%,
         rgba(255, 255, 255, 0.10) 78%,
         rgba(255, 255, 255, 0.26) 100%);
+    /* --- Liquid Glass: the one material (25.0) -----------------------------
+       Everything that floats is this glass — the tab bar, the header's
+       buttons, capsules, round buttons, chips, the segmented control, panels,
+       sheets and tooltips: the same 177° face, the same tint over the same
+       blur, the same rim (--pane-rim, drawn by each as its ::after). Two
+       thicknesses: --lg-tint for controls and bars, --lg-tint-thick for
+       panels, sheets and tooltips, where text sits on it. The primary and
+       the cautious action are the same glass with green or gold in it.
+       Written once here; White Mode follows through --glint-k, --pane-body
+       and --shade. Mirrored in OwnifyTheme.kt (Ownify.LgTint …). */
+    --lg-tint: 0.62;
+    --lg-tint-thick: 0.84;
+    --lg-face: linear-gradient(177deg,
+        rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
+        rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
+        rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%);
+    --lg-body: rgba(var(--pane-body), max(var(--lg-tint), var(--pane-solid)));
+    --lg-body-thick: rgba(var(--pane-body), max(var(--lg-tint-thick), var(--pane-solid)));
+    --lg-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    --lg-glint: inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    --lg-shadow: 0 8px 20px rgba(var(--shade), calc(0.26 * var(--shade-k)));              /* a control */
+    --lg-shadow-small: 0 2px 7px rgba(var(--shade), calc(0.16 * var(--shade-k)));        /* a chip, a segment */
+    --lg-shadow-float: 0 18px 44px rgba(var(--shade), calc(0.46 * var(--shade-k))),
+        0 5px 14px rgba(var(--shade), calc(0.30 * var(--shade-k)));                        /* the bar, a panel */
+    --lg-green: linear-gradient(180deg, var(--health-edge), var(--health-fill));
+    --lg-green-rim: linear-gradient(152deg, var(--health-strong), var(--health-edge) 60%, var(--health-wash));
+    --lg-gold: linear-gradient(180deg, var(--attention-edge), var(--attention-fill));
+    --lg-gold-rim: linear-gradient(152deg, var(--attention-strong), var(--attention-edge) 60%, var(--attention-wash));
+    /* Inside a card (25.0), four shapes and no others: a Well — a block in a
+       card — at --radius-md with a hairline; a Row — a list row or a choice to
+       tap — at --radius-sm, no edge, at least --row-min tall; a Note — wash
+       and edge of one tone (health, attention or the category's accent) at
+       --radius-md; an empty Slot, dashed, at --radius-md. All four on the
+       same faint fill. */
+    --inset-fill: rgba(var(--fill), calc(0.04 * var(--fill-k)));
+    --slot-edge: rgba(var(--ink), 0.20);
+    --row-min: 52px;
+
+    /* The chosen piece inside the glass (the tab bar's lozenge, a segment). */
+    --lg-chosen: linear-gradient(var(--tab-selected-tint), var(--tab-selected-tint)),
+        linear-gradient(178deg,
+            rgba(255, 255, 255, calc(0.20 * var(--glint-k))) 0%,
+            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 48%,
+            rgba(255, 255, 255, calc(0.085 * var(--glint-k))) 100%);
+    --lg-chosen-edge: inset 0 1px 0 rgba(255, 255, 255, calc(0.28 * var(--glint-k))),
+        inset 0 -1px 0 rgba(255, 255, 255, calc(0.05 * var(--glint-k))),
+        0 2px 7px rgba(var(--shade), calc(var(--tab-selected-shade) * var(--shade-k)));
+
     --surface-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04));
     --surface-gradient-quiet: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028));
     --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -167,8 +274,8 @@
     --shade-k: 1;
     --scrim: 0, 0, 0;
     --scrim-k: 1;
-    --ground: 48, 45, 47;
-    --ground-deep: 37, 34, 35;          /* --bg-deep as channels: the page's foot */
+    --ground: 28, 22, 32;
+    --ground-deep: 25, 18, 15;          /* --bg-deep as channels: the page's foot */
     --pane-body: 30, 28, 29;
     --pane-solid: 0;                    /* 0–1: how solid the floating glass is at least (reduced transparency) */
 
@@ -380,7 +487,7 @@
     /* The header pair, on the same terms as the bar: one button size and one
        icon box for the two of them, the icon box the same as a tab's so the
        two rows read as one family. */
-    --header-btn: 46px;
+    --header-btn: 44px;
     --header-icon: 24px;
     --header-height: 56px;
 
@@ -475,16 +582,25 @@ button {
 
 .app { position: relative; }
 
-/* Warm dark ground with two very restrained accent washes. */
+/* The ground: deep ink, plum above and ember below, lit from its edges (Randlicht). */
 .app__backdrop {
     position: fixed;
     inset: 0;
     z-index: -1;
     background:
-        radial-gradient(90% 55% at 12% 0%, rgba(60, 158, 114, 0.14), transparent 62%),
-        radial-gradient(80% 50% at 96% 12%, rgba(191, 168, 99, 0.10), transparent 58%),
-        radial-gradient(120% 70% at 50% 104%, rgba(120, 165, 96, 0.08), transparent 60%),
-        linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+        var(--backdrop-lights),
+        linear-gradient(180deg, var(--bg-main) 0%, var(--bg-mid) 50%, var(--bg-deep) 100%);
+}
+
+/* A fine grain over the ground, so its long dark gradients never band. */
+.app__backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.28;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
 }
 
 /* --------------------------------------------------------------------------
@@ -771,8 +887,60 @@ button {
 :root[data-theme="light"] {
     color-scheme: light;
 
-    --bg-main: #FBFAFA;
-    --bg-deep: #F0EDEE;
+    --bg-main: #F6F1F6;
+    --bg-mid: #FAF8F8;
+    --bg-deep: #F7EFEA;
+    --backdrop-lights:
+    radial-gradient(95% 50% at -8% 2%,
+        rgba(104, 108, 175, 0.150) 0%,
+        rgba(104, 108, 175, 0.148) 12.5%,
+        rgba(104, 108, 175, 0.135) 25%,
+        rgba(104, 108, 175, 0.109) 37.5%,
+        rgba(104, 108, 175, 0.075) 50%,
+        rgba(104, 108, 175, 0.041) 62.5%,
+        rgba(104, 108, 175, 0.016) 75%,
+        rgba(104, 108, 175, 0.002) 87.5%,
+        rgba(104, 108, 175, 0.000) 100%),
+    radial-gradient(85% 38% at 86% -10%,
+        rgba(135, 97, 142, 0.115) 0%,
+        rgba(135, 97, 142, 0.113) 12.5%,
+        rgba(135, 97, 142, 0.103) 25%,
+        rgba(135, 97, 142, 0.083) 37.5%,
+        rgba(135, 97, 142, 0.057) 50%,
+        rgba(135, 97, 142, 0.032) 62.5%,
+        rgba(135, 97, 142, 0.012) 75%,
+        rgba(135, 97, 142, 0.002) 87.5%,
+        rgba(135, 97, 142, 0.000) 100%),
+    radial-gradient(70% 46% at 112% 50%,
+        rgba(84, 145, 120, 0.097) 0%,
+        rgba(84, 145, 120, 0.096) 12.5%,
+        rgba(84, 145, 120, 0.087) 25%,
+        rgba(84, 145, 120, 0.070) 37.5%,
+        rgba(84, 145, 120, 0.049) 50%,
+        rgba(84, 145, 120, 0.027) 62.5%,
+        rgba(84, 145, 120, 0.010) 75%,
+        rgba(84, 145, 120, 0.002) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    radial-gradient(110% 38% at 16% 110%,
+        rgba(175, 121, 112, 0.133) 0%,
+        rgba(175, 121, 112, 0.130) 12.5%,
+        rgba(175, 121, 112, 0.119) 25%,
+        rgba(175, 121, 112, 0.096) 37.5%,
+        rgba(175, 121, 112, 0.066) 50%,
+        rgba(175, 121, 112, 0.036) 62.5%,
+        rgba(175, 121, 112, 0.014) 75%,
+        rgba(175, 121, 112, 0.002) 87.5%,
+        rgba(175, 121, 112, 0.000) 100%),
+    radial-gradient(80% 30% at 96% 112%,
+        rgba(183, 132, 100, 0.080) 0%,
+        rgba(183, 132, 100, 0.078) 12.5%,
+        rgba(183, 132, 100, 0.071) 25%,
+        rgba(183, 132, 100, 0.058) 37.5%,
+        rgba(183, 132, 100, 0.040) 50%,
+        rgba(183, 132, 100, 0.022) 62.5%,
+        rgba(183, 132, 100, 0.008) 75%,
+        rgba(183, 132, 100, 0.001) 87.5%,
+        rgba(183, 132, 100, 0.000) 100%);
     --bg-secondary: #FFFFFF;
 
     --glass: rgba(36, 28, 32, 0.06);
@@ -798,7 +966,7 @@ button {
     --ring-peak: color-mix(in oklab, var(--health) 72%, #000000);
     --ring-head: color-mix(in oklab, var(--health) 55%, #ffffff);
     --ring-tail: var(--health);
-    --attention: #7D6A33;
+    --attention: #7A6731;
 
     /* The zones on white: the grey and the top orange deeper, to 3:1. */
     --zone-1: #9A9597;
@@ -808,7 +976,7 @@ button {
     /* The same three tiers, with the contrast the dark theme gives them:
        secondary 6.7–7.3:1, muted 5.0–5.5:1, faint (graphics only) ~3.3:1. */
     --text-primary: #1D1A1C;
-    --text-secondary: rgba(29, 26, 28, 0.74);
+    --text-secondary: rgba(29, 26, 28, 0.75);
     --text-muted: rgba(29, 26, 28, 0.66);
     --text-faint: rgba(29, 26, 28, 0.48);
 
@@ -836,8 +1004,8 @@ button {
     --shade-k: 0.38;
     --scrim: 38, 30, 34;
     --scrim-k: 0.5;
-    --ground: 251, 250, 250;
-    --ground-deep: 240, 237, 238;
+    --ground: 246, 241, 246;
+    --ground-deep: 247, 239, 234;
     --pane-body: 214, 210, 212;
 
     --tint-base: #1D1A1C;
@@ -850,7 +1018,7 @@ button {
     --tip-surface-solid: rgba(255, 255, 255, 0.97);
     --board-you-surface: linear-gradient(180deg, rgba(234, 245, 239, 0.97), rgba(226, 240, 233, 0.96));
     --switch-knob: #FFFFFF;
-    --error: #C2453E;
+    --error: #B03C35;
 }
 
 /* ==========================================================================

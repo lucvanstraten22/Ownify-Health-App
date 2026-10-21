@@ -1,5 +1,5 @@
 package com.ownify.android.ui.screens.settings
-
+import com.ownify.android.ui.design.well
 import androidx.compose.ui.semantics.heading
 import android.content.Intent
 import android.net.Uri
@@ -422,7 +422,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
         // .integration__head
         val head: @Composable () -> Unit = {
             OwnifyIcons.named(item.icon)?.let {
-                IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary)
+                IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary)
             }
         }
         // A <button>: its text keeps letter-spacing: normal.
@@ -997,13 +997,10 @@ private fun SectionHead(block: SettingsBlock.Section) {
 /** `.settings-note`: one framed line, its icon at the top. */
 @Composable
 fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
     Row(
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(Ownify.lift(0.035f))
-            .border(1.dp, Ownify.GlassHairline, shape)
+            .well()
             .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp),
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {

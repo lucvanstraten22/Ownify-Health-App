@@ -549,7 +549,7 @@
 
 .integration__head:active { background: rgba(var(--fill), calc(0.04 * var(--fill-k))); }
 
-.integration .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
+.integration .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
 .integration .icon-tile .icon { width: 17px; height: 17px; }
 .integration.is-connected .icon-tile { color: var(--health); }
 
@@ -739,7 +739,7 @@
     padding: var(--space-4);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
-    background: rgba(var(--lift), calc(0.035 * var(--lift-k)));
+    background: var(--inset-fill);
     font-size: var(--fs-small);
     color: var(--text-secondary);
 }
@@ -824,11 +824,6 @@
     margin-top: var(--space-5);
 }
 
-.confirm__yes {
-    border-color: var(--attention-strong);
-    background: var(--attention-fill);
-}
-
 .confirm__note {
     display: flex;
     align-items: flex-start;
@@ -847,24 +842,18 @@
 /* Two steps in one sheet; only one is ever shown. */
 .confirm__panel[hidden] { display: none; }
 
-/* The last step is the only red thing on the page, and it is meant to be. */
+/* The last step is the one that cannot be undone: its mark in the attention
+   gold, as its button (.btn--caution, components.css). */
 .confirm__mark--final {
-    color: var(--miss);
-    background: color-mix(in srgb, var(--miss) 18%, transparent);
+    color: var(--attention);
+    background: var(--attention-fill);
 }
-
-.confirm__yes--final {
-    border-color: color-mix(in srgb, var(--miss) 60%, transparent);
-    background: color-mix(in srgb, var(--miss) 24%, transparent);
-}
-
-.confirm__yes--final:disabled { opacity: 0.6; }
 
 .confirm__error {
     margin-top: var(--space-3);
     padding: var(--space-3);
     border: 1px solid var(--attention-edge);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     background: var(--attention-wash);
     font-size: var(--fs-small);
     color: var(--text-primary);
@@ -925,9 +914,9 @@
 .field-editor__input {
     width: 100%;
     min-height: 44px;
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-4);
     border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
@@ -965,18 +954,18 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 44px;
+    min-height: var(--row-min);
     padding: 0 var(--space-3);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
+    background: var(--inset-fill);
     color: var(--text-secondary);
     font-size: var(--fs-label);
     text-align: left;
 }
 
 .field-editor__option.is-active {
-    border-color: var(--health-strong);
+    box-shadow: inset 0 0 0 1px var(--health-strong);
     background: var(--health-fill);
     color: var(--text-primary);
 }
@@ -1037,12 +1026,6 @@
 }
 
 .settings-action__go[hidden] { display: none; }
-
-.settings-action__go--danger,
-.settings-action__yes {
-    border-color: color-mix(in srgb, var(--miss) 60%, transparent);
-    background: color-mix(in srgb, var(--miss) 24%, transparent);
-}
 
 .settings-action__confirm {
     margin-top: var(--space-3);

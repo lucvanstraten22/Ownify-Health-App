@@ -75,32 +75,26 @@ import com.ownify.android.ui.theme.OwnifyType
  * Chosen: the green in the glass and in its rim — restrained, no tick.
  */
 
-/** How a piece of glass is drawn. */
-data class GlassLook(val chosen: Boolean = false, val cta: Boolean = false, val shadow: Dp = 16.dp, val lift: Dp = 6.dp)
+/** How a piece of glass is drawn: chosen (the green in it), the primary (green), the cautious action (gold). */
+data class GlassLook(val chosen: Boolean = false, val cta: Boolean = false, val caution: Boolean = false, val shadow: Dp = 20.dp, val lift: Dp = 8.dp)
 
-/** The glass rim: the pane's own, or the green when [green]. */
-private fun glassRim(size: Size, green: Boolean): Brush =
-    if (!green) paneRim(size)
-    else Brush.linearGradient(listOf(Ownify.HealthStrong, Ownify.HealthEdge, Ownify.HealthWash))
-
-/** `.glass`: the material, in [shape]. */
+/** `.glass`: the Liquid Glass (Panes, theme.css `--lg-*`), in [shape]. */
 fun Modifier.glass(shape: Shape, look: GlassLook = GlassLook()): Modifier = composed {
-    val shadows = LocalGraphicsContext.current.shadowContext
-    drawWithContent {
-        val outline = shape.createOutline(size, layoutDirection, this)
-        drawBoxShadows(shape, listOf(BoxShadow(y = look.lift, blur = look.shadow, color = Ownify.shade(if (look.shadow < 10.dp) 0.16f else 0.20f))), shadows, outline)
-        val path = Path().apply { addOutline(outline) }
-        clipPath(path) {
-            drawRect(Ownify.paneBody(0.62f))
-            if (look.cta) drawRect(Brush.verticalGradient(listOf(Ownify.HealthEdge, Ownify.HealthFill)))
-            else if (look.chosen) drawRect(Ownify.HealthFill)
-            drawRect(paneFace(size, 0.46f, primary = look.chosen || look.cta))
+    val small = look.shadow < 10.dp
+    val base = if (small) Panes.Chip else Panes.Control
+    val style = remember(look, base) {
+        when {
+            look.cta -> base.copy(extra = Panes.GreenWash, rim = Panes.GreenRim)
+            look.caution -> base.copy(extra = Panes.GoldWash, rim = Panes.GoldRim)
+            look.chosen -> base.copy(extra = ChosenWash, rim = Panes.GreenRim)
+            else -> base
         }
-        drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.13f), inset = true)), shadows, outline)
-        drawBorder(outline, glassRim(size, look.chosen || look.cta))
-        drawContent()
-    }.clip(shape)
+    }
+    this.liquidGlass(shape, style)
 }
+
+/** Chosen: `--health-fill` in the glass. */
+private val ChosenWash: (Size) -> Brush = { Brush.verticalGradient(listOf(Ownify.HealthFill, Ownify.HealthFill)) }
 
 /**
  * `.glass--chip`: a bubble the size of Health Connect's data chips, taking
@@ -197,14 +191,14 @@ fun GlassRound(
  * quiet while it cannot be taken; a spinner while [loading].
  */
 @Composable
-fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, loading: Boolean = false) {
+fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, loading: Boolean = false, caution: Boolean = false) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         Row(
             modifier
                 .press(interaction, enabled = enabled && !loading)
                 .heightIn(min = 44.dp)
-                .glass(RoundedCornerShape(50), GlassLook(cta = enabled))
+                .glass(RoundedCornerShape(50), GlassLook(cta = enabled && !caution, caution = enabled && caution))
                 .clickable(interaction, indication = null, enabled = enabled && !loading, role = Role.Button, onClick = blurring(onClick))
                 .semantics { if (loading) stateDescription = text }
                 .padding(horizontal = Ownify.Space5),

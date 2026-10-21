@@ -184,7 +184,7 @@ $source  = $connect['source'];
                         <p class="setup-suggestion__basis"><?= e($suggestion['basis']) ?></p>
                         <p class="setup-suggestion__summary"><?= e($suggestion['summary']) ?></p>
                         <div class="setup-suggestion__actions">
-                            <button type="button" class="btn press setup__primary" data-setup-suggestion-add><?= e($suggestion['add']) ?></button>
+                            <button type="button" class="btn btn--primary press setup__primary" data-setup-suggestion-add><?= e($suggestion['add']) ?></button>
                             <button type="button" class="setup__link press" data-setup-suggestion-decline><?= e($suggestion['decline']) ?></button>
                         </div>
                     </div>
@@ -215,13 +215,13 @@ $source  = $connect['source'];
             <!-- Each step's own way on: one quiet, one primary. -->
             <button type="button" class="btn press setup__skip" data-setup-skip="profile" hidden><?= e($profile['skip']) ?></button>
 
-            <button type="button" class="btn press setup__primary" data-setup-next="focus"
+            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="focus"
                     <?= array_filter($focus['options'], static fn ($o) => $o['chosen']) === [] ? 'disabled' : '' ?>><?= e($setup['next']) ?></button>
-            <button type="button" class="btn press setup__primary" data-setup-next="connect" hidden>
+            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="connect" hidden>
                 <?= e($connect['connected'] ? $setup['next'] : $connect['skip']) ?>
             </button>
-            <button type="button" class="btn press setup__primary" data-setup-next="profile" hidden><?= e($profile['save']) ?></button>
-            <button type="button" class="btn press setup__primary" data-setup-next="goal" hidden><?= e($goal['finish']) ?></button>
+            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="profile" hidden><?= e($profile['save']) ?></button>
+            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="goal" hidden><?= e($goal['finish']) ?></button>
         </footer>
 
     </main>

@@ -32,11 +32,12 @@ The same on both apps (`pages/ai.php`, `assets/css/ai.css`, `ai-chat.js`;
 - **Gesprekken** opens by tapping the island and grows out of it (scaled
   from the top centre, 480 ms; back the same way, 320 ms; a fade with
   reduced motion). *Zoek in je gesprekken* filters by title (case and
-  accents aside), *Nieuw gesprek* is grey glass, and the conversations are
+  accents aside), *Nieuw gesprek* is a glass pill (the app's one glass, 25.0;
+  the search field is the pill field), and the conversations are
   grouped *Vandaag* / *Deze week* / *Eerder* by when they were last used,
   each with its title, when and how many questions (*Vandaag 08:23 · 3
   vragen*), the open one marked with a green dot; the bin still deletes in
-  two presses. The server gives the group and the count
+  two presses, the second in the gold glass of every cautious action. The server gives the group and the count
   (`ai_conversation_view`: `group`, `group_label`, `questions`, `meta`), on
   `state.php` and with every answer, so the list is put right without
   asking again.

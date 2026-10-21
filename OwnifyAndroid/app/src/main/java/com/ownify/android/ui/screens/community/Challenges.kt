@@ -115,11 +115,11 @@ internal const val CHALLENGE_ITEM = "challenge-item"
 
 /** `.btn.ch-primary`: the page's own actions, in the Health colour. */
 internal val PrimaryLook: BtnLook
-    get() = BtnLook(border = Ownify.HealthEdge, fill = Ownify.HealthFill, text = Ownify.TextPrimary)
+    get() = BtnLook.Primary
 
 /** `.btn.ch-danger`: leaving, in the attention colour. */
 internal val DangerLook: BtnLook
-    get() = BtnLook(border = Ownify.AttentionEdge, fill = Ownify.AttentionFill, text = Ownify.TextPrimary)
+    get() = BtnLook.Caution
 
 // --------------------------------------------------------------- people
 
@@ -269,16 +269,16 @@ private fun Foot(faces: Faces, text: String) {
 
 /**
  * `.icon-tile--solid.icon-tile--neutral`: the white solid mark on the
- * neutral grey, as Overzicht's tiles; [small] is `.ch-icon--sm` (28, icon 15).
+ * neutral grey, as Overzicht's tiles; [small] is `.ch-icon--sm` (30, icon 15).
  */
 @Composable
 internal fun NeutralTile(icon: String, small: Boolean = false, modifier: Modifier = Modifier) {
     val vector = OwnifyIcons.solid(icon) ?: OwnifyIcons.solidTarget
-    NeutralTile(vector, if (small) 28.dp else 36.dp, if (small) 10.dp else Ownify.RadiusSm, if (small) 15.dp else 18.dp, modifier)
+    NeutralTile(vector, if (small) Ownify.TileSmall else 36.dp, if (small) Ownify.TileRadiusSmall else Ownify.TileRadius, if (small) 15.dp else 18.dp, modifier)
 }
 
 @Composable
-internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownify.RadiusSm, iconSize: Dp = 18.dp, modifier: Modifier = Modifier) {
+internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownify.TileRadius, iconSize: Dp = 18.dp, modifier: Modifier = Modifier) {
     IconTile(icon, modifier, size = size, radius = radius, iconSize = iconSize, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
 }
 
@@ -292,11 +292,11 @@ internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Mo
     val shell = LocalShell.current
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         ActionTile(page["create"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCreate()) }) {
-            NeutralTile(OwnifyIcons.plus, size = 32.dp, radius = 11.dp, iconSize = 16.dp)
+            NeutralTile(OwnifyIcons.plus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
         }
         ActionTile(page["join"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCode) }) {
             Box(
-                Modifier.size(32.dp).border(1.5.dp, Ownify.ink(0.45f), RoundedCornerShape(11.dp)),
+                Modifier.size(30.dp).border(1.5.dp, Ownify.ink(0.45f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) { JIcon(OwnifyIcons.hash, size = 16.dp, color = Ownify.TextPrimary) }
         }
@@ -501,7 +501,8 @@ private fun IdeaRow(idea: ChallengeIdea, icon: String, onClick: () -> Unit) {
             .press(interaction)
             .heightIn(min = 56.dp)
             .clip(RoundedCornerShape(Ownify.RadiusMd))
-            .dashedBorder(Ownify.fill(0.22f), Ownify.RadiusMd)
+            .background(Ownify.InsetFill)
+            .dashedBorder(Ownify.SlotEdge, Ownify.RadiusMd)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { }
             .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2),
@@ -584,8 +585,8 @@ internal fun InviteBanner(invite: ChallengeInvite, see: String, onReview: () -> 
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(Ownify.RadiusMd))
-            .background(Ownify.fill(0.035f))
-            .dashedBorder(Ownify.GlassBorder, Ownify.RadiusMd)
+            .background(Ownify.InsetFill)
+            .dashedBorder(Ownify.SlotEdge, Ownify.RadiusMd)
             .padding(Ownify.Space3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
@@ -860,7 +861,7 @@ private fun InviteRow(label: String, hint: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(OwnifyIcons.userPlus, size = 32.dp, radius = 10.dp, iconSize = 16.dp)
+        IconTile(OwnifyIcons.userPlus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
         Column(Modifier.weight(1f)) {
             T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
             T(hint, JStyle.Meta)

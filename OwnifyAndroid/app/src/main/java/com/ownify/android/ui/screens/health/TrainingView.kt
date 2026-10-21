@@ -1,5 +1,5 @@
 package com.ownify.android.ui.screens.health
-
+import com.ownify.android.ui.design.glass
 import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -323,9 +323,8 @@ private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, la
             Modifier
                 .size(34.dp)
                 .alpha(if (enabled) 1f else 0.35f)
-                .clip(CircleShape)
-                .background(Ownify.fill(0.04f))
                 .press(interaction, enabled = enabled)
+                .glass(CircleShape)
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick)
                 .semantics { contentDescription = label },
             contentAlignment = Alignment.Center

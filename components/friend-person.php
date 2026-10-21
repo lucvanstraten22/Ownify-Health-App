@@ -58,7 +58,7 @@ $status = match ($kind) {
             <span class="friend__confirm-text"><?= e(tf('%s verwijderen uit je vrienden?', $name)) ?></span>
             <span class="friend__actions friend__actions--wide">
                 <button type="button" class="btn press" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
-                <button type="button" class="btn confirm__yes--final press" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
+                <button type="button" class="btn btn--caution press" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
             </span>
         </span>
     <?php else: ?>

@@ -161,7 +161,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                     verticalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
                 ) {
                     OwnifyIcons.solid(area.icon)?.let {
-                        IconTile(it, size = if (narrow) 28.dp else 32.dp, radius = 11.dp, iconSize = 17.dp, color = Color.White, background = accent.color, border = accent.color)
+                        IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = Color.White, background = accent.color, border = accent.color)
                     }
 
                     // .score-value--centred: the number and "/100" on one baseline.

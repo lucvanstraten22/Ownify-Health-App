@@ -1,5 +1,5 @@
 package com.ownify.android.ui.screens.community
-
+import com.ownify.android.ui.design.insetRow
 import com.ownify.android.i18n.tr
 import androidx.compose.foundation.ScrollState
 import androidx.compose.ui.graphics.PathEffect
@@ -528,7 +528,7 @@ private fun BoardRow(
 ) {
     val narrow = LocalScreen.current.narrow
     val shadows = LocalGraphicsContext.current.shadowContext
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    val shape = RoundedCornerShape(Ownify.RadiusSm)
     val you = entry.self
     val name = entry.name.takeIf { it.isNotEmpty() }
     val unit = community.labels["unit"].orEmpty()
@@ -558,7 +558,7 @@ private fun BoardRow(
                     when {
                         sticky != null -> Brush.verticalGradient(listOf(Ownify.BoardYouFrom, Ownify.BoardYouTo))
                         you -> Brush.verticalGradient(listOf(Ownify.Health.copy(alpha = 0.10f), Ownify.Health.copy(alpha = 0.045f)))
-                        else -> androidx.compose.ui.graphics.SolidColor(Ownify.lift(0.035f))
+                        else -> androidx.compose.ui.graphics.SolidColor(Ownify.InsetFill)
                     }
                 )
                 if (sticky != null) {
@@ -636,16 +636,15 @@ const val FRIENDS_ADD = "friends-add"
 @Composable
 private fun AddFriendsRow(label: String, onClick: () -> Unit) {
     val narrow = LocalScreen.current.narrow
-    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    val shape = RoundedCornerShape(Ownify.RadiusSm)
     val interaction = remember { MutableInteractionSource() }
 
     Row(
         Modifier
             .press(interaction)
             .fillMaxWidth()
-            .heightIn(min = 52.dp)
-            .clip(shape)
-            .background(Ownify.lift(0.035f))
+            .heightIn(min = Ownify.RowMin)
+            .insetRow(shape)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = label

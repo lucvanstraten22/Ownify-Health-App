@@ -29,7 +29,7 @@ declare(strict_types=1);
 
         <div class="confirm__row">
             <button type="button" class="btn press" data-pairing-close><?= e(t('Sluiten')) ?></button>
-            <button type="button" class="btn confirm__yes press" data-pairing-refresh><?= e(t('Nieuwe code')) ?></button>
+            <button type="button" class="btn btn--primary press" data-pairing-refresh><?= e(t('Nieuwe code')) ?></button>
         </div>
 
     </div>

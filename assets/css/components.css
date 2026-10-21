@@ -14,21 +14,22 @@
 
 /* --------------------------------------------------------------------------
    Card system
-   Two tiers, both from the same recipe:
-   full-width cards pad with --space-5, two-up cards with --space-4.
+   One card (25.0: the quiet card is the only card): full-width cards pad
+   with --space-5, two-up cards with --space-4, a card nested in another
+   or in a panel takes --radius-md.
    -------------------------------------------------------------------------- */
 .card {
     position: relative;
     padding: var(--space-5);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-card);
-    background: var(--surface-gradient);
+    background: var(--surface-gradient-quiet);
     /* No live blur: a card sits in the page's flow over the still, smooth
        ground, where a blur changes nothing you can see but is recomposited on
        every scrolled frame. Translucency is for what floats — the header,
        the tab bar, sheets, popovers, tooltips. The Android app draws its
        cards the same way (Surfaces.kt, cardSurface). */
-    box-shadow: var(--shadow-inset), var(--shadow-card);
+    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
     overflow: hidden;
 }
 
@@ -44,18 +45,38 @@
 }
 
 /* Floating panels — the account and devices panels, the goal wizard, a
-   confirmation, an editor — are cards too, but they float over the page: they
-   frost what is behind them, as the Android app's panels do (Overlays.kt,
-   24 dp at saturate 1.3). Without it the page reads through their fields.
-   With reduced transparency they turn solid instead (--panel-frost: none,
-   --pane-solid under the card's gradient). */
+   confirmation, an editor — are the Liquid Glass at its thick setting
+   (theme.css --lg-*): the glass face over --lg-body-thick, the one filter,
+   the rim, the floating shadow. Their frost arrives with them (--panel-in)
+   from --panel-frost-closed. With reduced transparency --pane-solid makes
+   them solid and the frost goes. */
 .account__panel,
 .devices__panel,
 .wizard__panel,
 .confirm__panel {
-    background-color: rgba(var(--pane-body), var(--pane-solid));
+    isolation: isolate;
+    border-color: transparent;
+    background: var(--lg-face), var(--lg-body-thick);
+    box-shadow: var(--lg-glint), var(--lg-shadow-float);
     -webkit-backdrop-filter: var(--panel-frost-closed);
     backdrop-filter: var(--panel-frost-closed);
+}
+
+.account__panel::after,
+.devices__panel::after,
+.wizard__panel::after,
+.confirm__panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
 }
 
 /* Open, the panel materialises: its frost, its scale (from .96) and its
@@ -68,14 +89,6 @@
     -webkit-backdrop-filter: var(--panel-frost);
     backdrop-filter: var(--panel-frost);
     transition: var(--panel-in);
-}
-
-/* Quieter surfaces for the supporting blocks. */
-.card--recommendation,
-.card--leaderboard {
-    background: var(--surface-gradient-quiet);
-    border-color: var(--glass-border-soft);
-    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
 }
 
 /* The hero — the Overzicht's score, a detail page's, the Scorekompas's —
@@ -324,17 +337,50 @@
    Pills + buttons
    -------------------------------------------------------------------------- */
 .pill {
+    position: relative;
+    isolation: isolate;
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    min-height: 42px;
+    min-height: var(--hit-min);
     padding-inline: var(--space-3);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--glass-soft);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    color: var(--text-secondary);
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    color: var(--text-primary);
+}
+
+/* The rim of the Liquid Glass (theme.css --lg-*): one hairline that catches
+   the light (--pane-rim), drawn behind a ring cut out of itself. Shared by
+   every glass surface without a rim of its own. */
+.pill::after,
+.glass::after,
+.fab::after,
+.goal__tip::after,
+.goal-chart__tip::after,
+.goal-direction__tip::after,
+.account__close::after,
+.social::after,
+.ch-sheet__close::after,
+.ch-sheet__panel::after,
+.ch-toast::after,
+.ch-act::after,
+.pull-sync__start::after,
+.range-switch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
 }
 
 /* The two header buttons: one circle, mirrored left and right of the name,
@@ -352,17 +398,10 @@
     padding-inline: 0;
     justify-content: center;
     border: 0;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    box-shadow:
-        0 8px 20px rgba(var(--shade), calc(0.30 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     transition: transform var(--press-out) var(--ease-out-strong), box-shadow var(--transition-fast);
 }
@@ -436,7 +475,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
+    min-height: var(--hit-min);
     padding-inline: var(--space-4);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-pill);
@@ -452,13 +491,50 @@
     cursor: not-allowed;
 }
 
+/* The one way forward, and the step that cannot be undone: the Liquid Glass
+   with the app's green in it (as the goal wizard's .glass--cta), or with the
+   attention gold — every primary and every leave / delete / wipe in the app.
+   The rim is ::before here: a .btn's ::after is its hit margin. */
+.btn--primary,
+.btn--caution {
+    isolation: isolate;
+    border: 0;
+    background: var(--lg-face), var(--lg-green), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn--caution { background: var(--lg-face), var(--lg-gold), var(--lg-body); }
+
+.btn--primary::before,
+.btn--caution::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--lg-green-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+.btn--caution::before { background: var(--lg-gold-rim); }
+
+.btn--primary:disabled,
+.btn--caution:disabled { opacity: 0.5; }
+
 /* Every control drawn smaller than --hit-min takes taps over at least that
    much: an invisible margin, centred on it, as far as it falls short — none
    at all along a side that is already long enough. Nothing is drawn, and
    what it overlaps (padding, a gap) holds nothing else to tap. */
 .btn,
-.pill--back,
-.pill--close,
 .account__close,
 .range-switch__option,
 .heart-chart__step,
@@ -467,10 +543,12 @@
     position: relative;
 }
 
+/* Glass controls draw their rim as ::after, so a small one takes its
+   margin as ::before (the back and close pills are 44 tall: none needed). */
 .btn::after,
-.pill--back::after,
-.pill--close::after,
-.account__close::after,
+.account__close::before,
+.ch-sheet__close::before,
+.glass--small::before,
 .range-switch__option::after,
 .heart-chart__step::after,
 .settings-delete::after,
@@ -652,9 +730,9 @@
     margin-top: var(--space-4);
     padding: var(--space-3) var(--space-2);
     /* A well inside the card: a fill, no outline of its own. */
-    border: 1px solid transparent;
-    border-radius: var(--radius-inner);
-    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
 }
 
 .legend__item {
@@ -837,7 +915,7 @@
     height: 36px;
     flex: none;
     border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-sm);
+    border-radius: 12px;
     background: rgba(var(--fill), calc(0.065 * var(--fill-k)));
     color: var(--text-secondary);
 }
@@ -862,7 +940,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-1) var(--space-3);
+    padding: 0 var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.055 * var(--fill-k)));
@@ -872,6 +950,8 @@
     text-transform: uppercase;
     color: var(--text-secondary);
     white-space: nowrap;
+    min-height: 24px;
+    line-height: 1;
 }
 
 .chip--muted {
@@ -912,9 +992,9 @@
     align-items: start;
     gap: var(--space-3);
     padding: var(--space-3);
-    border: 1px solid transparent;
-    border-radius: var(--radius-inner);
-    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--inset-fill);
 }
 
 .insights__marker {
@@ -1087,12 +1167,12 @@
     left: calc(var(--p, 0) * 1%);
     z-index: 3;
     padding: 5px 10px;
-    border: 1px solid var(--glass-border);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--tip-surface);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    backdrop-filter: blur(16px) saturate(140%);
-    box-shadow: 0 8px 22px rgba(var(--shade), calc(0.35 * var(--shade-k)));
+    background: var(--lg-face), var(--lg-body-thick);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     font-size: var(--fs-small);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -1102,6 +1182,7 @@
     opacity: 0;
     transform: translate(calc(var(--p, 0) * -1%), calc(-100% + 2px));
     transition: opacity var(--transition-fast), transform var(--transition-fast);
+    isolation: isolate;
 }
 
 .goal__track.is-reading .goal__tip,
@@ -1145,9 +1226,9 @@
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-3);
-    border: 1px solid transparent;
+    border: 0;
     border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.03 * var(--fill-k)));
+    background: var(--inset-fill);
 }
 
 .board__rank {
@@ -1282,12 +1363,7 @@
     height: var(--tabbar-height);
     margin-bottom: calc(var(--safe-bottom) + var(--dock-gap));
     border-radius: var(--radius-pill);
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 44%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    background: var(--lg-face), var(--lg-body);
     /* The blur is what makes it translucent rather than see-through: the
        page's colour and brightness still move under the glass, its words do
        not survive the trip.
@@ -1297,13 +1373,12 @@
        Chromium downsamples the backdrop at large radii and the resampling
        puts the detail back. At 48px more of the page reads through than at
        10px. It is also the cheaper number on a phone. */
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
     /* It floats, so it casts: a wide soft shadow for the height and a tight
        one directly under it for the contact. */
     box-shadow:
-        0 18px 44px rgba(var(--shade), calc(0.46 * var(--shade-k))),
-        0 5px 14px rgba(var(--shade), calc(0.30 * var(--shade-k))),
+        var(--lg-shadow-float),
         inset 0 1px 0 rgba(255, 255, 255, calc(0.14 * var(--glint-k))),
         inset 0 -1px 0 rgba(255, 255, 255, calc(0.04 * var(--glint-k)));
 }
@@ -1425,16 +1500,8 @@
 .tab__glow,
 .tabbar__glass {
     border-radius: var(--radius-pill);
-    background:
-        linear-gradient(var(--tab-selected-tint), var(--tab-selected-tint)),
-        linear-gradient(178deg,
-            rgba(255, 255, 255, calc(0.20 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 48%,
-            rgba(255, 255, 255, calc(0.085 * var(--glint-k))) 100%);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.28 * var(--glint-k))),
-        inset 0 -1px 0 rgba(255, 255, 255, calc(0.05 * var(--glint-k))),
-        0 2px 7px rgba(var(--shade), calc(var(--tab-selected-shade) * var(--shade-k)));
+    background: var(--lg-chosen);
+    box-shadow: var(--lg-chosen-edge);
     pointer-events: none;
 }
 
@@ -1493,7 +1560,7 @@
    -------------------------------------------------------------------------- */
 /* Sits on the right edge of the content column, clear of the text below it. */
 .fab {
-    --fab-size: 50px;
+    --fab-size: 44px;
     --fab-x: calc(var(--shell-w) / 2 - var(--fab-size));
 
     position: absolute;
@@ -1505,16 +1572,17 @@
     place-items: center;
     width: var(--fab-size);
     height: var(--fab-size);
-    border: 1px solid var(--glass-border);
+    border: 0;
     border-radius: 50%;
-    background: rgba(var(--ground), 0.72);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    backdrop-filter: blur(18px) saturate(140%);
-    box-shadow: var(--shadow-float);
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-secondary);
     opacity: 0;
     transform: translate(var(--fab-x), 8px);
     transition: opacity var(--transition-fast), transform var(--press-out) var(--ease-out-strong);
+    isolation: isolate;
 }
 
 .fab[hidden] { display: none; }
@@ -1559,48 +1627,23 @@
     isolation: isolate;
     border: 0;
     color: var(--text-primary);
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    box-shadow:
-        0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     -webkit-tap-highlight-color: transparent;
 }
 
-.glass::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--pane-rim);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    pointer-events: none;
-}
+/* Its rim is the shared one (.pill::after, .glass::after, above). */
 
 .glass[aria-pressed="true"],
 .glass[aria-checked="true"] {
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        linear-gradient(var(--health-fill), var(--health-fill)),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    background: var(--lg-face), linear-gradient(var(--health-fill), var(--health-fill)), var(--lg-body);
 }
 
 .glass[aria-pressed="true"]::after,
 .glass[aria-checked="true"]::after {
-    background: linear-gradient(152deg, var(--health-strong), var(--health-edge) 60%, var(--health-wash));
+    background: var(--lg-green-rim);
 }
 
 .glass:disabled,
@@ -1611,10 +1654,7 @@
 
 .glass:focus-visible {
     outline: none;
-    box-shadow:
-        0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k))),
-        var(--focus-halo);
+    box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo);
 }
 
 /* The size of a Health Connect data chip (.chip): its padding and its 1px
@@ -1642,11 +1682,7 @@
 }
 
 /* Small glass reads thinner: a shorter, lighter shadow. */
-.glass--chip {
-    box-shadow:
-        0 2px 7px rgba(var(--shade), calc(0.16 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
-}
+.glass--chip { box-shadow: var(--lg-shadow-small), var(--lg-glint); }
 
 .glass--chip[aria-pressed="true"],
 .glass--chip[aria-checked="true"] { color: var(--text-primary); font-weight: 600; }
@@ -1680,28 +1716,20 @@
     font: inherit;
     font-size: var(--fs-label);
     font-weight: 600;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        linear-gradient(180deg, var(--health-edge), var(--health-fill)),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    background: var(--lg-face), var(--lg-green), var(--lg-body);
     cursor: pointer;
 }
 
-.glass--cta::after {
-    background: linear-gradient(152deg, var(--health-strong), var(--health-edge) 60%, var(--health-wash));
-}
+.glass--cta::after { background: var(--lg-green-rim); }
+.glass--cta .icon { width: 18px; height: 18px; }
+
+/* Round, it is the same one way forward with an icon (Doelen's +). */
+.glass--round.glass--cta { padding: 0; }
+.glass--round.glass--cta .icon { width: 22px; height: 22px; }
 
 .glass--cta:disabled,
 .glass--cta[aria-disabled="true"] {
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.08 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.03 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.04 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
+    background: var(--lg-face), var(--lg-body);
     cursor: default;
 }
 
@@ -1733,7 +1761,7 @@
 }
 
 .glass--select select:focus-visible { outline: none; }
-.glass--select:focus-within { box-shadow: 0 6px 16px rgba(var(--shade), calc(0.20 * var(--shade-k))), var(--focus-halo); }
+.glass--select:focus-within { box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); }
 
 .glass--select .icon {
     position: absolute;

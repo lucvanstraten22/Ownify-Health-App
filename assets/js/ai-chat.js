@@ -416,7 +416,7 @@
             var buttons = document.createElement('div');
             buttons.className = 'ai-action__buttons';
 
-            [['confirm', action.confirm, 'btn press ai-btn--primary'], ['decline', action.decline, 'btn press']].forEach(function (b) {
+            [['confirm', action.confirm, 'btn btn--primary press'], ['decline', action.decline, 'btn press']].forEach(function (b) {
                 var button = document.createElement('button');
                 button.type = 'button';
                 button.className = b[2];

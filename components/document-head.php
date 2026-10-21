@@ -13,7 +13,7 @@ $theme  = app_theme_head($app);     // lib/theme.php
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="<?= e($theme['theme_color']) ?>"
-          data-theme-dark="<?= e($app['theme_color']) ?>" data-theme-light="<?= e($app['theme_color_light'] ?? '#FBFAFA') ?>">
+          data-theme-dark="<?= e($app['theme_color']) ?>" data-theme-light="<?= e($app['theme_color_light'] ?? '#F6F1F6') ?>">
     <meta name="color-scheme" content="<?= e($theme['color_scheme']) ?>">
     <meta name="description" content="<?= e($app['name']) ?> — <?= e(t('dagelijks overzicht van slaap, voeding en training.')) ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">

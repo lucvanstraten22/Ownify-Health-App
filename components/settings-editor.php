@@ -37,7 +37,7 @@ declare(strict_types=1);
 
         <div class="confirm__row">
             <button type="button" class="btn press" data-editor-close><?= e(t('Annuleren')) ?></button>
-            <button type="submit" class="btn confirm__yes press" data-editor-save><?= e(t('Opslaan')) ?></button>
+            <button type="submit" class="btn btn--primary press" data-editor-save><?= e(t('Opslaan')) ?></button>
         </div>
 
     </form>

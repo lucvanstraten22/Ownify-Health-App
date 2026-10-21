@@ -107,10 +107,10 @@
     gap: var(--space-3);
     width: 100%;
     padding: var(--space-4);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-md);
-    background: var(--surface-gradient), rgb(var(--ground));
-    box-shadow: var(--shadow-inset);
+    background: var(--surface-gradient-quiet), rgb(var(--ground));
+    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
     font: inherit;
     color: inherit;
     text-align: left;
@@ -154,33 +154,30 @@
     gap: var(--space-3);
     min-height: 60px;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--glass-border);
+    border: 0;
     border-radius: var(--radius-md);
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
-    box-shadow:
-        0 8px 20px rgba(var(--shade), calc(0.20 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     font: inherit;
     color: var(--text-primary);
     text-align: left;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    isolation: isolate;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
 }
-.ch-act .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
+.ch-act .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
 .ch-act .icon-tile .icon { width: 16px; height: 16px; }
 .ch-act__mark {
     display: grid;
     place-items: center;
     flex: none;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border: 1.5px solid rgba(var(--ink), 0.45);
-    border-radius: 11px;
+    border-radius: 10px;
 }
 .ch-act__mark .icon { width: 16px; height: 16px; }
 .ch-act__label { min-width: 0; font-size: var(--fs-label); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
@@ -216,9 +213,9 @@
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-3);
-    border: 1px dashed var(--glass-border);
+    border: 1px dashed var(--slot-edge);
     border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    background: var(--inset-fill);
 }
 
 .ch-invite__text {
@@ -375,21 +372,6 @@
 .ch-wide { width: 100%; gap: var(--space-2); }
 .btn .icon { width: 18px; height: 18px; flex: none; }
 
-/* The page's own actions: the Health colour, as the app's primary actions. */
-.btn.ch-primary {
-    border-color: var(--health-edge);
-    background: var(--health-fill);
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-.btn.ch-danger {
-    border-color: var(--attention-edge);
-    background: var(--attention-fill);
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
 .ch-eyebrow {
     margin: 0 var(--space-2) var(--space-2);
     font-size: var(--fs-tiny);
@@ -432,7 +414,7 @@
 .ch-standing__row.is-you .ch-person__bar i { background: var(--accent); }
 .ch-standing__value { font-size: var(--fs-small); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.icon-tile.ch-icon--sm { width: 28px; height: 28px; border-radius: 10px; }
+.icon-tile.ch-icon--sm { width: 30px; height: 30px; border-radius: 10px; }
 .icon-tile.ch-icon--sm .icon { width: 15px; height: 15px; }
 
 /* Nothing yet: the empty target and three ways to begin. */
@@ -446,9 +428,9 @@
     width: 100%;
     min-height: 56px;
     padding: var(--space-2) var(--space-3);
-    border: 1px dashed rgba(var(--fill), calc(0.22 * var(--fill-k)));
+    border: 1px dashed var(--slot-edge);
     border-radius: var(--radius-md);
-    background: none;
+    background: var(--inset-fill);
     font: inherit;
     color: inherit;
     text-align: left;
@@ -691,18 +673,17 @@
     width: min(100%, 34rem);
     max-height: calc(100% - var(--safe-top) - var(--space-6));
     margin-inline: auto;
-    border: 1px solid var(--glass-border);
-    border-bottom: 0;
+    border: 0;
     border-radius: var(--radius-card) var(--radius-card) 0 0;
-    background: var(--surface-gradient);
-    background-color: rgba(var(--pane-body), max(var(--pane-solid), 0.72));
+    background: var(--lg-face), var(--lg-body-thick);
     -webkit-backdrop-filter: var(--panel-frost);
     backdrop-filter: var(--panel-frost);
-    box-shadow: var(--shadow-inset), var(--shadow-float);
+    box-shadow: var(--lg-glint), var(--lg-shadow-float);
     transform: translate3d(0, 100%, 0);
     /* Leaving: faster than it came, the same way down. */
     transition: transform var(--panel-out-duration) var(--ease-out-strong);
     touch-action: pan-y;
+    isolation: isolate;
 }
 
 .ch-sheet.is-open .ch-sheet__scrim { opacity: 1; }
@@ -765,13 +746,18 @@
     display: grid;
     place-items: center;
     flex: none;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--glass-border-soft);
+    width: 34px;
+    height: 34px;
+    border: 0;
     border-radius: 50%;
-    background: rgba(var(--fill), calc(0.06 * var(--fill-k)));
-    color: var(--text-secondary);
+    background: var(--lg-face), var(--lg-body);
+    color: var(--text-primary);
     cursor: pointer;
+    isolation: isolate;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    position: relative;
 }
 
 .ch-sheet__close .icon { width: 18px; height: 18px; }
@@ -931,11 +917,12 @@
     gap: var(--space-2);
     margin-top: var(--space-3);
     padding: var(--space-3);
-    border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.045 * var(--fill-k)));
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
     font-size: var(--fs-footnote);
     letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
+    border: 1px solid var(--glass-hairline);
 }
 
 .ch-privacy .icon { flex: none; width: 15px; height: 15px; margin-top: 1px; color: var(--text-muted); }
@@ -975,8 +962,9 @@
     width: 100%;
     margin-top: var(--space-4);
     padding: var(--space-4);
-    border: 1px dashed var(--glass-border);
+    border: 1px dashed var(--slot-edge);
     border-radius: var(--radius-md);
+    background: var(--inset-fill);
 }
 
 .ch-ticket__label {
@@ -1023,13 +1011,12 @@
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-md);
     /* Solid under its gradient: the fields scroll away beneath it. (The
        shorthand first, or it would clear the colour.) */
-    background: var(--surface-gradient);
-    background-color: rgb(var(--pane-body));
-    box-shadow: var(--shadow-inset), 0 8px 18px rgba(var(--shade), calc(0.18 * var(--shade-k)));
+    background: var(--surface-gradient-quiet), rgb(var(--ground));
+    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
 }
 
 .ch-preview__name {
@@ -1044,29 +1031,12 @@
 .ch-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .ch-chip {
-    display: inline-flex;
-    align-items: center;
     gap: var(--space-2);
-    min-height: 40px;
-    padding: 0 var(--space-3);
-    border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-pill);
-    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
-    font: inherit;
-    font-size: var(--fs-small);
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
 }
 
-.ch-chip .icon { width: 16px; height: 16px; color: var(--accent); }
-
-.ch-chip[aria-pressed="true"] {
-    border-color: var(--health-edge);
-    background: var(--health-fill);
-    color: var(--text-primary);
-    font-weight: 600;
-}
+/* The metric to count: the goal wizard's glass chip (.glass--chip), its icon
+   in the metric's colour; chosen, the green in the glass. */
+.ch-chip .icon { width: 14px; height: 14px; color: var(--accent); }
 
 .ch-stepper { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
 .ch-stepper__value { text-align: center; font-size: var(--fs-body); color: var(--text-secondary); }
@@ -1074,10 +1044,10 @@
 
 .ch-input {
     width: 100%;
-    min-height: 46px;
+    min-height: 44px;
     padding: 0 var(--space-4);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border-soft);
+    border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     font: inherit;
     font-size: var(--fs-input);
@@ -1085,7 +1055,7 @@
 }
 
 .ch-input::placeholder { color: var(--text-faint); }
-.ch-input:focus-visible { outline: 2px solid var(--health-strong); outline-offset: 1px; }
+.ch-input:focus-visible { outline: none; border-color: var(--health-strong); background: rgba(var(--fill), calc(0.07 * var(--fill-k))); box-shadow: var(--focus-halo); }
 
 .ch-pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-2); }
 
@@ -1166,12 +1136,12 @@
     z-index: 70;
     max-width: calc(100% - 2 * var(--space-5));
     padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: rgba(var(--pane-body), max(var(--pane-solid), 0.86));
+    background: var(--lg-face), var(--lg-body-thick);
     -webkit-backdrop-filter: var(--panel-frost);
     backdrop-filter: var(--panel-frost);
-    box-shadow: var(--shadow-inset), var(--shadow-float);
+    box-shadow: var(--lg-glint), var(--lg-shadow-float);
     font-size: var(--fs-small);
     font-weight: 500;
     color: var(--text-primary);
@@ -1180,6 +1150,7 @@
     transform: translate(-50%, 8px);
     transition: opacity 180ms var(--ease-out-strong), transform 240ms var(--ease-out-strong);
     pointer-events: none;
+    isolation: isolate;
 }
 
 .ch-toast.is-on { opacity: 1; transform: translate(-50%, 0); }

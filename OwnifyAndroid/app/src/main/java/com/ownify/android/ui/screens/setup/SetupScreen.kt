@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.setup
 
+import com.ownify.android.ui.design.note
+
 import com.ownify.android.i18n.tr
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -338,14 +340,10 @@ private fun SetupColumn(data: AppData, setup: Setup, step: String, index: Int, d
     }
 }
 
-/** The wizard's next: the green pane, 48 high. */
+/** The setup's next: the primary glass (`.btn--primary`), 48 high. */
 @Composable
 private fun Primary(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val look = BtnLook(
-        border = if (enabled) Ownify.HealthStrong else Ownify.GlassBorderSoft,
-        fill = if (enabled) Ownify.HealthFill else Ownify.GlassSoft
-    )
-    Btn(label, onClick = onClick, enabled = enabled, look = look, modifier = modifier.heightIn(min = 48.dp))
+    Btn(label, onClick = onClick, enabled = enabled, look = BtnLook.Primary, modifier = modifier.heightIn(min = 48.dp))
 }
 
 /** `.setup__title` and `.setup__lede`. */
@@ -371,10 +369,11 @@ private fun FocusChoice(option: SetupFocusOption, chosen: Boolean, onClick: () -
     InButton {
         val accent = Accent.of(option.accent).color
         val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(Ownify.RadiusMd)
+        // A Row: no edge until chosen, then a ring in the focus's colour.
+        val shape = RoundedCornerShape(Ownify.RadiusSm)
         val fast = tween<Color>(Ownify.FastMs, easing = Ownify.Ease)
-        val border by animateColorAsState(if (chosen) Ownify.mix(accent, 0.42f, Color.Transparent) else Ownify.GlassHairline, fast, label = "border")
-        val fill by animateColorAsState(if (chosen) Ownify.mix(accent, 0.13f, Color.Transparent) else Ownify.fill(0.035f), fast, label = "fill")
+        val border by animateColorAsState(if (chosen) Ownify.mix(accent, 0.42f, Color.Transparent) else Color.Transparent, fast, label = "border")
+        val fill by animateColorAsState(if (chosen) Ownify.mix(accent, 0.13f, Color.Transparent) else Ownify.InsetFill, fast, label = "fill")
         val ring by animateColorAsState(if (chosen) accent else Ownify.GlassBorder, fast, label = "ring")
         val dot by animateColorAsState(if (chosen) Ownify.mix(accent, 0.20f, Color.Transparent) else Color.Transparent, fast, label = "dot")
         Row(
@@ -434,7 +433,7 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
             .fillMaxWidth()
             .padding(top = Ownify.Space5)
             .clip(shape)
-            .background(Ownify.fill(0.035f))
+            .background(Ownify.InsetFill)
             .border(1.dp, border, shape)
             .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space4), border = 1.dp)
     ) {
@@ -546,14 +545,11 @@ private fun ColumnScope.GoalStep(
 
     val suggestion = g.suggestion
     if (suggestion != null && !declined && g.goals.isEmpty()) {
-        val shape = RoundedCornerShape(Ownify.RadiusMd)
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(top = Ownify.Space5)
-                .clip(shape)
-                .background(Ownify.mix(Ownify.Health, 0.08f, Color.Transparent))
-                .border(1.dp, Ownify.mix(Ownify.Health, 0.28f, Color.Transparent), shape)
+                .note()
                 .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space4), border = 1.dp)
         ) {
             T(suggestion.eyebrow, JStyle.Caption, uppercase = true)
@@ -568,14 +564,11 @@ private fun ColumnScope.GoalStep(
     }
 
     if (g.goals.isNotEmpty()) {
-        val shape = RoundedCornerShape(Ownify.RadiusSm)
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(top = Ownify.Space4)
-                .clip(shape)
-                .background(Ownify.mix(Ownify.Health, 0.09f, Color.Transparent))
-                .border(1.dp, Ownify.mix(Ownify.Health, 0.30f, Color.Transparent), shape)
+                .note()
                 .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space3), border = 1.dp)
                 .semantics { liveRegion = LiveRegionMode.Polite },
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)

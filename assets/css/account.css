@@ -57,10 +57,15 @@
     place-items: center;
     width: 34px;
     height: 34px;
-    border: 1px solid var(--glass-hairline);
+    border: 0;
     border-radius: 50%;
-    background: rgba(var(--fill), calc(0.055 * var(--fill-k)));
-    color: var(--text-secondary);
+    background: var(--lg-face), var(--lg-body);
+    color: var(--text-primary);
+    isolation: isolate;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    position: relative;
 }
 
 .account__close .icon { width: 17px; height: 17px; }
@@ -71,8 +76,8 @@
     margin-bottom: var(--space-4);
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
     font-size: var(--fs-small);
     color: var(--text-secondary);
 }
@@ -166,9 +171,9 @@
     flex: 1;
     min-width: 0;
     min-height: 44px;
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-4);
     border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
@@ -262,16 +267,19 @@
     display: grid;
     place-items: center;
     /* Small, but never below a comfortable thumb. */
-    width: 46px;
-    height: 46px;
-    border: 1px solid var(--glass-border-soft);
+    width: 44px;
+    height: 44px;
+    border: 0;
     border-radius: 50%;
-    background: var(--glass-soft);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
     color: var(--text-primary);
     transition: transform var(--press-out) var(--ease-out-strong), background-color var(--transition-fast),
         border-color var(--transition-fast);
+    isolation: isolate;
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    position: relative;
 }
 
 .social:active:not(:disabled) {
@@ -335,11 +343,11 @@
     align-items: center;
     gap: var(--space-2);
     width: 100%;
-    min-height: 44px;
+    min-height: var(--row-min);
     padding: 0 var(--space-3);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
+    background: var(--inset-fill);
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-label);
@@ -367,9 +375,9 @@
 .account__badge {
     display: inline-flex;
     align-items: center;
-    min-height: 22px;
+    min-height: 24px;
     margin-left: auto;
-    padding: 0 var(--space-2);
+    padding: 0 var(--space-3);
     border: 1px solid color-mix(in srgb, var(--health) 42%, transparent);
     border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--health) 22%, transparent);
@@ -412,8 +420,8 @@
     margin-top: var(--space-3);
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
 }
 
 /* ---------------------------------------------------------------- person */
@@ -500,8 +508,8 @@
     gap: var(--space-3);
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
 }
 
 .friend__confirm[hidden] { display: none; }
@@ -521,11 +529,11 @@
     align-items: center;
     gap: var(--space-3);
     width: 100%;
-    min-height: 56px;
+    min-height: var(--row-min);
     padding: var(--space-3);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-sm);
-    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
+    background: var(--inset-fill);
     color: var(--text-primary);
     text-align: left;
 }

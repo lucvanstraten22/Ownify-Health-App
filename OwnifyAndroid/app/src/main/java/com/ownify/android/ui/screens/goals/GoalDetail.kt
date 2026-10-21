@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.NoteTone
+import com.ownify.android.ui.design.note
 
 import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.i18n.tr
@@ -536,7 +538,7 @@ private fun SourceFooter(goal: Goal) {
                         Box(
                             Modifier
                                 .padding(end = Ownify.Space3)
-                                .size(28.dp)
+                                .size(30.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Ownify.mix(accent, 0.15f, Color.Transparent))
                                 .clearAndSetSemantics { },
@@ -631,14 +633,11 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                 ManageButton(OwnifyIcons.trash, copy["delete"].orEmpty(), text = Ownify.TextSecondary) { confirming = true }
             } else {
                 // .goal-confirm
-                val shape = RoundedCornerShape(Ownify.RadiusMd)
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = Ownify.Space2)
-                        .clip(shape)
-                        .background(Ownify.AttentionWash)
-                        .border(1.dp, Ownify.AttentionEdge, shape)
+                        .note(NoteTone.Attention)
                         .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSmall))
@@ -651,7 +650,7 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                                 GoalBoard.delete(context, goal.id)
                             },
                             modifier = Modifier.weight(1f),
-                            look = BtnLook(border = Ownify.AttentionStrong, fill = Ownify.AttentionFill)
+                            look = BtnLook.Caution
                         )
                     }
                 }

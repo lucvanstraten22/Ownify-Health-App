@@ -475,7 +475,7 @@
             + (invited
                 ? '<button type="button" class="btn press" data-review-decline>' + esc(C.review.decline) + '</button>'
                 : '<button type="button" class="btn press" data-sheet-close>' + esc(C.review.later) + '</button>')
-            + '<button type="button" class="btn ch-primary press" data-review-join data-sheet-focus>' + esc(C.review.join) + '</button>'
+            + '<button type="button" class="btn btn--primary press" data-review-join data-sheet-focus>' + esc(C.review.join) + '</button>'
             + '</div></div>');
 
         var join = content.querySelector('[data-review-join]');
@@ -499,7 +499,7 @@
                     + '<p class="ch-hint">' + esc(r.joined) + '</p></div>'
                     + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
                     + '<button type="button" class="btn press" data-sheet-close>' + esc(C.review.close) + '</button>'
-                    + '<button type="button" class="btn ch-primary press" data-review-see data-sheet-focus>' + esc(C.review.see) + '</button>'
+                    + '<button type="button" class="btn btn--primary press" data-review-see data-sheet-focus>' + esc(C.review.see) + '</button>'
                     + '</div></div>');
 
                 content.querySelector('[data-review-see]').addEventListener('click', function () {
@@ -611,7 +611,7 @@
                 + '<p class="ch-label">' + esc(cc.metric) + '</p>'
                 + '<div class="ch-chips" role="group" aria-label="' + esc(cc.metric) + '">' + D.metrics.map(function (m) {
                     var on = draft.metric === m.key;
-                    return '<button type="button" class="ch-chip press" data-metric="' + esc(m.key) + '" data-accent="' + esc(m.accent) + '" aria-pressed="' + on + '">'
+                    return '<button type="button" class="glass glass--chip ch-chip press" data-metric="' + esc(m.key) + '" data-accent="' + esc(m.accent) + '" aria-pressed="' + on + '">'
                         + icon(m.icon) + '<span>' + esc(m.label) + '</span></button>';
                 }).join('') + '</div>'
 
@@ -638,7 +638,7 @@
                 + '</div>'
 
                 + '<div class="ch-sheet__foot">'
-                + '<button type="button" class="btn ch-primary press ch-wide" data-make' + (metric ? '' : ' disabled') + '>'
+                + '<button type="button" class="btn btn--primary press ch-wide" data-make' + (metric ? '' : ' disabled') + '>'
                 + esc(metric ? cc.make : cc.pick_first) + '</button></div>';
 
             var body = content.querySelector('.ch-sheet__body');
@@ -748,7 +748,7 @@
             + '<button type="button" class="btn press" data-made-copy>' + icon('copy') + '<span>' + esc(cc.copy) + '</span></button>'
             + '<button type="button" class="btn press" data-made-share>' + icon('share') + '<span>' + esc(cc.share) + '</span></button>'
             + '</div></div>'
-            + '<div class="ch-sheet__foot"><button type="button" class="btn ch-primary press ch-wide" data-made-open data-sheet-focus>' + esc(cc.open) + '</button></div>');
+            + '<div class="ch-sheet__foot"><button type="button" class="btn btn--primary press ch-wide" data-made-open data-sheet-focus>' + esc(cc.open) + '</button></div>');
 
         content.querySelector('[data-made-copy]').addEventListener('click', function () { copy(answer.code); });
         content.querySelector('[data-made-share]').addEventListener('click', function () { share(answer.share_text, answer.code); });
@@ -785,7 +785,7 @@
                 + '</div>'
                 + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
                 + '<button type="button" class="btn press" data-sheet-close>' + esc(ci.cancel) + '</button>'
-                + '<button type="button" class="btn ch-primary press" data-invite-send' + (chosen.length ? '' : ' disabled') + '>'
+                + '<button type="button" class="btn btn--primary press" data-invite-send' + (chosen.length ? '' : ' disabled') + '>'
                 + esc(chosen.length > 1 ? T.tf('%d uitnodigen', chosen.length) : ci.send) + '</button></div></div>';
 
             var focusKey = document.activeElement && document.activeElement.getAttribute
@@ -832,7 +832,7 @@
             + '<div class="ch-sheet__body"><p class="ch-hint ch-hint--top">' + esc(cd.leave_body) + '</p></div>'
             + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
             + '<button type="button" class="btn press" data-sheet-close data-sheet-focus>' + esc(cd.cancel) + '</button>'
-            + '<button type="button" class="btn ch-danger press" data-leave-yes>' + esc(cd.leave_confirm) + '</button>'
+            + '<button type="button" class="btn btn--caution press" data-leave-yes>' + esc(cd.leave_confirm) + '</button>'
             + '</div></div>');
 
         var yes = content.querySelector('[data-leave-yes]');

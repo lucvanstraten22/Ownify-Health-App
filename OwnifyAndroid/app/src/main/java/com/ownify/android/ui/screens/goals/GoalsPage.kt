@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.GlassLook
+import com.ownify.android.ui.design.glass
 
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
@@ -247,31 +249,17 @@ private fun EmptyCard(copy: GoalsEmpty, icon: androidx.compose.ui.graphics.vecto
 }
 
 /**
- * `.goals-add`: the green 44 circle beside the title; quiet and inert while
- * every place is taken.
+ * `.goals-add`: the primary glass, round (GlassRound with the green in it)
+ * beside the title; quiet and inert while every place is taken.
  */
 @Composable
 private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
-    val shadows = LocalGraphicsContext.current.shadowContext
     Box(
         Modifier
             .press(interaction, scale = 0.94f, enabled = enabled)
             .size(44.dp)
-            .drawWithContent {
-                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 6.dp, blur = 16.dp, color = Ownify.shade(0.22f))), shadows)
-                drawContent()
-            }
-            .clip(CircleShape)
-            .background(
-                if (enabled) Brush.verticalGradient(listOf(Ownify.Health.copy(alpha = 0.22f), Ownify.Health.copy(alpha = 0.10f)))
-                else SolidColor(Ownify.GlassSoft)
-            )
-            .drawBehind {
-                // --shadow-inset: the top light, over the fill and under the icon.
-                if (enabled) drawBoxShadows(CircleShape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows)
-            }
-            .border(1.dp, if (enabled) Ownify.mix(Ownify.Health, 0.30f, Ownify.GlassBorder) else Ownify.GlassBorderSoft, CircleShape)
+            .glass(CircleShape, GlassLook(cta = enabled))
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics {
                 contentDescription = label
@@ -422,7 +410,7 @@ fun GoalCard(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                         OwnifyIcons.named(model.icon)?.let {
                             if (primary) IconTile(it, color = accent.color)
-                            else IconTile(it, size = 32.dp, radius = 11.dp, iconSize = 17.dp, color = accent.color)
+                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = accent.color)
                         }
                         Column(Modifier.weight(1f)) {
                             T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)

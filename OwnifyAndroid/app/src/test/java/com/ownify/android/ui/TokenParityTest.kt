@@ -114,17 +114,20 @@ class TokenParityTest {
             "blur-card" to Ownify.BlurCard, "blur-bar" to Ownify.BlurBar, "pane-blur" to Ownify.PaneBlur,
             "tabbar-height" to Ownify.TabbarHeight, "dock-gap" to Ownify.DockGap, "tab-icon" to Ownify.TabIcon,
             "tab-gap" to Ownify.TabGap, "header-btn" to Ownify.HeaderButton, "header-icon" to Ownify.HeaderIcon,
-            "radius-inner" to Ownify.RadiusInner, "edge-fade" to Ownify.EdgeFade, "dock-fade" to Ownify.DockFade,
+            "edge-fade" to Ownify.EdgeFade, "dock-fade" to Ownify.DockFade, "row-min" to Ownify.RowMin,
             "ai-handle-height" to Ownify.AiHandleHeight, "hero-ring" to Ownify.HeroRing,
         )) dp(name, value)
     }
 
     @Test
     fun `a floating panel's frost and a titled detail bar`() {
-        // --panel-frost: blur(var(--blur-card)) saturate(130%) — the panel's glass on Android (panelGlass).
+        // --panel-frost is the Liquid Glass's own filter (25.0) — the panel's glass on Android (panelGlass, PaneFilter).
         val frost = raw("panel-frost")
-        assertTrue("--panel-frost blurs by --blur-card: $frost", frost.contains("blur(var(--blur-card))"))
-        near("--panel-frost's saturation", Regex("""saturate\((\d+)%\)""").find(frost)!!.groupValues[1].toFloat() / 100f, Ownify.PanelSaturate)
+        assertTrue("--panel-frost is the glass filter: $frost",
+            frost.contains("blur(var(--pane-blur))") && frost.contains("saturate(var(--pane-saturate))") && frost.contains("brightness(var(--pane-brightness))"))
+        // One glass, two thicknesses (--lg-tint, --lg-tint-thick).
+        near("--lg-tint", raw("lg-tint").toFloat(), Ownify.LgTint)
+        near("--lg-tint-thick", raw("lg-tint-thick").toFloat(), Ownify.LgTintThick)
         near("--veil-deep-top", raw("veil-deep-top").toFloat(), Ownify.VeilDeepTop)
         near("--veil-deep-mid", raw("veil-deep-mid").toFloat(), Ownify.VeilDeepMid)
     }

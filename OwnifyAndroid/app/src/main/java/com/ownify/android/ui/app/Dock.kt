@@ -1,5 +1,5 @@
 package com.ownify.android.ui.app
-
+import com.ownify.android.ui.design.drawChosenGlass
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import com.ownify.android.i18n.tr
@@ -299,31 +299,12 @@ private fun TabGlass(count: Int, at: () -> Float, modifier: Modifier) {
                 }
             }
             .testTag(TabGlassTag)
-            .drawBehind { drawTabGlass(shadows) }
+            .drawBehind { drawChosenGlass(RoundedCornerShape(50), shadows) }
     )
 }
 
 /** Where tests find the glass. */
 internal const val TabGlassTag = "tab-glass"
-
-/** `.tab__glow`: the brighter pane — its small shadow, the face, the lit top edge. */
-private fun DrawScope.drawTabGlass(shadows: androidx.compose.ui.graphics.shadow.ShadowContext) {
-    val pill = RoundedCornerShape(50)
-    val outline = pill.createOutline(size, layoutDirection, this)
-    drawBoxShadows(pill, listOf(BoxShadow(y = 2.dp, blur = 7.dp, color = Ownify.shade(Ownify.TabSelectedShade))), shadows, outline)
-    val path = Path().apply { addOutline(outline) }
-    drawPath(path, cssLinearGradient(178f, size, Stop(0f, Ownify.glint(0.20f)), Stop(0.48f, Ownify.glint(0.115f)), Stop(1f, Ownify.glint(0.085f))))
-    // White Mode: a faint warm-dark tint over the glass, so the chosen tab does not vanish on white.
-    drawPath(path, Ownify.TabSelectedTint)
-    drawBoxShadows(
-        pill,
-        listOf(
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.28f), inset = true),
-            BoxShadow(y = (-1).dp, blur = 0.dp, color = Ownify.glint(0.05f), inset = true)
-        ),
-        shadows, outline
-    )
-}
 
 /**
  * `.tabbar::before`: two soft reflections — the light at the top left and
@@ -384,7 +365,7 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
                 }
                 .drawWithContent {
                     if (glow <= 0f) return@drawWithContent
-                    drawTabGlass(shadows)
+                    drawChosenGlass(RoundedCornerShape(50), shadows)
                 }
         )
 

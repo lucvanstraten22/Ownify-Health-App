@@ -1,5 +1,11 @@
 package com.ownify.android.ui.screens.assistant
 
+import com.ownify.android.ui.design.liquidGlass
+
+import com.ownify.android.ui.design.GlassLook
+
+import com.ownify.android.ui.design.glass
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -231,15 +237,9 @@ private val AiViolet = Color(0xFF8A62D2)
 private val AiUser = Color(0xFF2F8460)
 private val EaseInOutCss = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
 
-/** The island and the round buttons: the header's floating glass, a touch more solid. */
+/** The island and the round buttons: the Liquid Glass, as every control. */
 private val IslandPane: PaneStyle
-    get() = Panes.HeaderButton.copy(
-        tint = Ownify.paneBody(0.62f),
-        shadows = listOf(
-            BoxShadow(y = 10.dp, blur = 26.dp, color = Ownify.shade(0.30f)),
-            BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.16f), inset = true)
-        )
-    )
+    get() = Panes.Control
 
 /**
  * `.ai-top`: the grabber; a round close on the left; in the middle the
@@ -284,7 +284,7 @@ private fun SheetTop(ai: AiCopy, view: AiView) {
 
 /** `.ai-round`: a round button of the island's glass. */
 @Composable
-private fun RoundGlass(icon: ImageVector, label: String, modifier: Modifier = Modifier, size: Dp = 42.dp, onClick: () -> Unit) {
+private fun RoundGlass(icon: ImageVector, label: String, modifier: Modifier = Modifier, size: Dp = 44.dp, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         Pane(
@@ -483,7 +483,7 @@ private fun AiSky(thinking: Boolean, modifier: Modifier) {
 /* ------------------------------------------------------------- consent */
 
 private val PrimaryLook: BtnLook
-    get() = BtnLook(border = Ownify.HealthStrong, fill = Ownify.HealthEdge)
+    get() = BtnLook.Primary
 
 @Composable
 private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
@@ -622,20 +622,18 @@ private fun EmptyState(ai: AiCopy, modifier: Modifier) {
     }
 }
 
-/** `.ai-suggestion`: a quiet glass chip, one question per line. */
+/** `.ai-suggestion`: a glass chip, one question per line. */
 @Composable
 private fun Suggestion(text: String, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(Ownify.RadiusMd)
+        val shape = RoundedCornerShape(50)
         Box(
             Modifier
                 .press(interaction)
                 .fillMaxWidth()
                 .heightIn(min = 44.dp)
-                .clip(shape)
-                .background(Ownify.GlassSoft)
-                .border(1.dp, Ownify.GlassBorderSoft, shape)
+                .glass(shape, GlassLook(shadow = 7.dp, lift = 2.dp))
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3),
             contentAlignment = Alignment.CenterStart
@@ -706,9 +704,7 @@ private fun SystemNote(text: String) {
         Row(
             Modifier
                 .widthIn(max = LocalScreen.current.shell * 0.9f)
-                .clip(shape)
-                .background(Ownify.GlassSoft)
-                .border(1.dp, Ownify.GlassBorderSoft, shape)
+                .glass(shape, GlassLook(shadow = 7.dp, lift = 2.dp))
                 .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
@@ -1125,13 +1121,9 @@ private fun HistoryLayer(ai: AiCopy) {
                     }
                     alpha = if (still) p else (p / 0.55f).coerceAtMost(1f)
                 }
-                // ai.css: 0 22px 50px shade .40 — a soft shadow under the card.
-                .shadow(28.dp, shape, ambientColor = Ownify.shade(0.40f), spotColor = Ownify.shade(0.40f))
-                .clip(shape)
-                // Solid: no blur behind it on Android, so the conversation must not show through.
-                .background(Ownify.ground(1f))
-                .background(Brush.verticalGradient(listOf(Ownify.glint(0.10f), Ownify.glint(0.03f))))
-                .border(1.dp, Ownify.GlassBorder, shape)
+                // The Liquid Glass, thick — solid here: there is no blur behind it on
+                // Android, so the conversation must not show through (PARITY.md).
+                .liquidGlass(shape, Panes.Panel.copy(tint = Ownify.paneBody(1f)))
                 .clickable(remember { MutableInteractionSource() }, indication = null) { }
                 .padding(start = Ownify.Space4, end = Ownify.Space4, top = Ownify.Space4, bottom = Ownify.Space2)
         ) {
@@ -1141,7 +1133,7 @@ private fun HistoryLayer(ai: AiCopy) {
                     OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em, lineHeight = 1.2.em),
                     Modifier.weight(1f).semantics { heading() }
                 )
-                RoundGlass(OwnifyIcons.chevron, tr("Sluiten"), size = 38.dp) { a.historyOpen = false }
+                RoundGlass(OwnifyIcons.chevron, tr("Sluiten"), size = 34.dp) { a.historyOpen = false }
             }
 
             if (a.conversations.isNotEmpty()) SearchField(query) { query = it }
@@ -1183,7 +1175,8 @@ private fun HistoryLayer(ai: AiCopy) {
 /** `.ai-history__search`: Zoek in je gesprekken. */
 @Composable
 private fun SearchField(value: String, onChange: (String) -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
+    // The one field (as JInput): a pill, 44, the soft border, .05; .07 while focused.
+    val shape = RoundedCornerShape(50)
     var focused by remember { mutableStateOf(false) }
     val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary, lineHeight = 1.2.em, tracking = 0.sp)
     val label = tr("Zoek in je gesprekken")
@@ -1191,11 +1184,11 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
         Modifier
             .padding(bottom = Ownify.Space2)
             .fillMaxWidth()
-            .height(40.dp)
+            .height(44.dp)
             .clip(shape)
-            .background(Ownify.Glass)
-            .border(1.dp, if (focused) Ownify.HealthStrong else Ownify.GlassHairline, shape)
-            .padding(horizontal = Ownify.Space3),
+            .background(if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f))
+            .border(1.dp, if (focused) Ownify.HealthStrong else Ownify.GlassBorderSoft, shape)
+            .padding(horizontal = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically
     ) {
         JIcon(OwnifyIcons.search, size = 16.dp, color = Ownify.TextMuted)
@@ -1226,16 +1219,13 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
 private fun NewChatButton(label: String, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(16.dp)
+        val shape = RoundedCornerShape(50)
         Row(
             Modifier
                 .press(interaction)
                 .fillMaxWidth()
-                .height(46.dp)
-                .clip(shape)
-                .background(Ownify.fill(0.08f))
-                .background(Brush.verticalGradient(listOf(Ownify.glint(0.10f), Ownify.glint(0.04f))))
-                .border(1.dp, Ownify.GlassBorder, shape)
+                .height(44.dp)
+                .glass(shape)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { contentDescription = label },
             horizontalArrangement = Arrangement.Center,

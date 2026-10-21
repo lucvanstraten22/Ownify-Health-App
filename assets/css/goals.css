@@ -26,39 +26,11 @@
 
 .goals-intro__text { min-width: 0; }
 
-/* The one affordance that adds a goal. Round, quiet, unmistakable. */
-.goals-add {
-    display: grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    flex: none;
-    border: 1px solid color-mix(in srgb, var(--health) 30%, var(--glass-border));
-    border-radius: 50%;
-    background: linear-gradient(180deg,
-        rgba(60, 158, 114, 0.22),
-        rgba(60, 158, 114, 0.10));
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-inset), 0 6px 16px rgba(var(--shade), calc(0.22 * var(--shade-k)));
-    color: var(--text-primary);
-    transition: transform var(--press-out) var(--ease-out-strong), background-color var(--transition-fast),
-        opacity var(--transition-fast);
-}
-
-.goals-add__icon { width: 22px; height: 22px; }
-
-.goals-add:active { transform: scale(0.94); }
-
-/* With every place taken (`limits` → `active` in config/goals.php) the button
-   is genuinely unavailable, and says so below. */
-.goals-add:disabled {
-    border-color: var(--glass-border-soft);
-    background: var(--glass-soft);
-    box-shadow: none;
-    cursor: not-allowed;
-    color: var(--text-muted);
-}
+/* The one affordance that adds a goal: the primary glass, round
+   (.glass.glass--round.glass--cta, components.css). With every place taken
+   (`limits` → `active` in config/goals.php) it is genuinely unavailable,
+   and says so below. */
+.goals-add:disabled { cursor: not-allowed; }
 
 .goals-notice {
     display: flex;
@@ -267,9 +239,9 @@
 
 .goal-card--secondary .icon-tile,
 .goal-card--completed .icon-tile {
-    width: 32px;
-    height: 32px;
-    border-radius: 11px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
 }
 
 .goal-card--secondary .icon-tile .icon,
@@ -565,9 +537,9 @@
     align-items: flex-start;
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
-    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
     font-size: var(--fs-small);
     font-weight: 600;
 }
@@ -615,11 +587,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
     margin-top: var(--space-3);
-}
-
-.goal-confirm__yes {
-    border-color: var(--attention-strong);
-    background: var(--attention-fill);
 }
 
 /* ==========================================================================
@@ -760,9 +727,9 @@
     width: 100%;
     min-width: 0;
     min-height: 44px;
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-4);
     border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-primary);
     font: inherit;
@@ -1126,17 +1093,18 @@
     align-items: center;
     gap: 0;
     padding: 4px 11px 5px;
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    border: 0;
+    border-radius: var(--radius-sm);
     /* Near-opaque: whatever it passes over — the unit, the edge of the head —
        must not show through the number being read. */
-    background: var(--tip-surface-solid);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    backdrop-filter: blur(18px) saturate(140%);
-    box-shadow: 0 10px 28px rgba(var(--shade), calc(0.32 * var(--shade-k)));
+    background: var(--lg-face), var(--lg-body-thick);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     white-space: nowrap;
     pointer-events: none;
     z-index: 3;
+    isolation: isolate;
 }
 
 /* display: flex above would otherwise beat the hidden attribute and leave an
@@ -1280,6 +1248,7 @@
 .goal-search__input:focus-visible {
     outline: none;
     border-color: var(--health-strong);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
     box-shadow: var(--focus-halo);
 }
 
@@ -1330,7 +1299,7 @@
     align-items: center;
     gap: var(--space-3);
     flex: none;
-    min-height: 46px;
+    min-height: var(--row-min);
     padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
     border: 0;
     border-radius: var(--radius-sm);
@@ -1361,9 +1330,9 @@
     display: grid;
     place-items: center;
     flex: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 9px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
     background: color-mix(in srgb, var(--accent, var(--health)) 16%, transparent);
     color: var(--accent, var(--health));
 }
@@ -1506,13 +1475,18 @@
     grid-column: 1 / -1;
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-sm);
-    background: var(--tip-surface, rgba(var(--pane-body), 0.94));
-    box-shadow: 0 8px 20px rgba(var(--shade), calc(0.24 * var(--shade-k)));
+    background: var(--lg-face), var(--lg-body-thick);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     font-size: var(--fs-small);
     color: var(--text-primary);
     opacity: 0;
     transform: translateY(-4px);
     transition: opacity var(--transition-fast), transform var(--transition-fast);
+    isolation: isolate;
+    border: 0;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    position: relative;
 }
 
 .goal-direction__tip.is-shown { opacity: 1; transform: none; }

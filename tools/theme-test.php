@@ -94,13 +94,13 @@ $app = (require $root . '/config/dashboard.php')['app'];
 
 $_COOKIE[APP_THEME_COOKIE] = 'dark';
 $dark = app_theme_head($app);
-check('Dark: the bar in --bg-main', $dark['theme_color'] === '#302D2F', $dark['theme_color']);
+check('Dark: the bar in --bg-main', $dark['theme_color'] === '#1C1620', $dark['theme_color']);
 check('Dark: color-scheme dark', $dark['color_scheme'] === 'dark');
 check('Dark: the iPhone status bar see-through over the dark ground', $dark['status_bar'] === 'black-translucent');
 
 $_COOKIE[APP_THEME_COOKIE] = 'light';
 $light = app_theme_head($app);
-check('White: the bar in the light --bg-main', $light['theme_color'] === '#FBFAFA', $light['theme_color']);
+check('White: the bar in the light --bg-main', $light['theme_color'] === '#F6F1F6', $light['theme_color']);
 check('White: color-scheme light', $light['color_scheme'] === 'light');
 check('White: dark status-bar text', $light['status_bar'] === 'default');
 
@@ -213,7 +213,7 @@ foreach ($roles as $role) {
 check('Dark roles are the original white, black and greys',
     $darkTokens['ink'] === '255, 255, 255' && $darkTokens['fill'] === '255, 255, 255' && $darkTokens['lift'] === '255, 255, 255'
     && $darkTokens['shade'] === '0, 0, 0' && $darkTokens['scrim'] === '0, 0, 0'
-    && $darkTokens['ground'] === '48, 45, 47' && $darkTokens['pane-body'] === '30, 28, 29'
+    && $darkTokens['ground'] === '28, 22, 32' && $darkTokens['pane-body'] === '30, 28, 29'
     && $darkTokens['tint-base'] === '#ffffff');
 check('Dark multipliers are all 1', array_unique(array_map(static fn (string $k): string => $darkTokens[$k],
     ['fill-k', 'lift-k', 'glint-k', 'shade-k', 'scrim-k', 'tint-keep'])) === ['1']);
@@ -409,11 +409,11 @@ try {
 
     [$html, $set] = front_door($port, 'light');
     check('chose White: drawn light from the first byte', (bool) preg_match('/<html[^>]* data-theme="light"/', $html));
-    check('chose White: the light bar colour', str_contains($html, 'name="theme-color" content="#FBFAFA"'));
+    check('chose White: the light bar colour', str_contains($html, 'name="theme-color" content="#F6F1F6"'));
     check('chose White: color-scheme light', str_contains($html, 'name="color-scheme" content="light"'));
     check('chose White: dark iPhone status-bar text', str_contains($html, 'apple-mobile-web-app-status-bar-style" content="default"'));
     check('chose White: both bar colours there for settings.js to swap',
-        str_contains($html, 'data-theme-dark="#302D2F"') && str_contains($html, 'data-theme-light="#FBFAFA"'));
+        str_contains($html, 'data-theme-dark="#1C1620"') && str_contains($html, 'data-theme-light="#F6F1F6"'));
     $renewed = $set[0] ?? '';
     check('chose White: the choice sent back for a year', str_contains($renewed, APP_THEME_COOKIE . '=light')
         && str_contains($renewed, 'Max-Age=31536000') && stripos($renewed, 'SameSite=Lax') !== false && stripos($renewed, 'path=/') !== false, $renewed);

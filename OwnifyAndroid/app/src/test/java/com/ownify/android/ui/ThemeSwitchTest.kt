@@ -74,12 +74,12 @@ class ThemeSwitchTest {
         compose.waitForIdle()
         assertTrue(Ownify.light)
         assertEquals("dark icons over the light ground", true to true, lightBars())
-        assertEquals(0xFFF0EDEE.toInt(), windowColour())
+        assertEquals(0xFFF7EFEA.toInt(), windowColour())
 
         compose.runOnUiThread { OwnifyThemeStore.choose(compose.activity, OwnifyThemeChoice.DARK) }
         compose.waitForIdle()
         assertFalse(Ownify.light)
         assertEquals("light icons over the dark ground", false to false, lightBars())
-        assertEquals(0xFF252223.toInt(), windowColour())
+        assertEquals(0xFF19120F.toInt(), windowColour())
     }
 }

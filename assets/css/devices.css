@@ -71,7 +71,7 @@
     gap: var(--space-3);
 }
 
-.devices__item .icon-tile { width: 32px; height: 32px; border-radius: 11px; }
+.devices__item .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
 .devices__item .icon-tile .icon { width: 17px; height: 17px; }
 .devices__item.is-connected .icon-tile { color: var(--health); }
 

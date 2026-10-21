@@ -171,10 +171,10 @@ class GoogleSignInFlowTest {
     }
 
     @Test
-    fun `the button is the website's Google mark - a 46 dp round button, the G and no label`() {
+    fun `the button is the website's Google mark - a 44 dp round button, the G and no label`() {
         openSignIn()
 
-        googleButton().assertWidthIsEqualTo(46.dp).assertHeightIsEqualTo(46.dp)
+        googleButton().assertWidthIsEqualTo(44.dp).assertHeightIsEqualTo(44.dp)
         googleButton().assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
         assertTrue("no text label, as on the website", compose.onAllNodesWithText("Doorgaan met Google", substring = true).fetchSemanticsNodes().isEmpty())
         // Centred under the form, as `.account__socials` centres it.

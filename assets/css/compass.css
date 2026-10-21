@@ -140,7 +140,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    background: var(--inset-fill);
 }
 
 .compass-cat__head {
@@ -150,9 +150,9 @@
 }
 
 .compass-cat__head .icon-tile {
-    width: 32px;
-    height: 32px;
-    border-radius: 11px;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
 }
 
 .compass-cat__head .icon-tile .icon { width: 17px; height: 17px; }
@@ -358,7 +358,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    background: var(--inset-fill);
 }
 
 .compass-day__head {
@@ -477,7 +477,7 @@
     padding: var(--space-3);
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc(0.035 * var(--fill-k)));
+    background: var(--inset-fill);
 }
 
 .compass-chance .compass-text { margin-top: var(--space-4); }

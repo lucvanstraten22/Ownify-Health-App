@@ -1,5 +1,7 @@
 package com.ownify.android.ui.app
-
+import com.ownify.android.ui.design.liquidGlass
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.PaneFilter
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -179,9 +181,9 @@ fun SheetFrame(
                         translationY = (1f - rise.value) * size.height + drag
                     }
                 }
-                .glassBackdrop(backdrop, shape, GlassFilter(Ownify.BlurCard, saturate = Ownify.PanelSaturate), panelBlur)
-                .background(Ownify.paneBody(0.72f), shape)
-                .sheetSurface(shape)
+                .glassBackdrop(backdrop, shape, PaneFilter, panelBlur)
+                // The Liquid Glass at its thick setting (theme.css --lg-tint-thick).
+                .liquidGlass(shape, Panes.Panel)
                 .semantics { paneTitle = title }
         ) {
             // The grip, and the head under it: the handle to drag it by.
@@ -220,15 +222,9 @@ fun SheetHead(title: String, onClose: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         T(title, JStyle.Subtitle, Modifier.weight(1f).semantics { heading() })
-        RoundButton(OwnifyIcons.chevronDown, tr("Sluiten"), onClose, Modifier.size(36.dp))
+        RoundButton(OwnifyIcons.chevronDown, tr("Sluiten"), onClose)
     }
 }
-
-/** The sheet's glass: the card's surface gradient and its glass border (`.ch-sheet__panel`). */
-private fun Modifier.sheetSurface(shape: androidx.compose.ui.graphics.Shape): Modifier =
-    this
-        .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(Ownify.SurfaceFrom, Ownify.SurfaceTo)), shape)
-        .border(1.dp, Ownify.GlassBorder, shape)
 
 /** The scrim's and the sheet's motion, per open sheet ([Overlay]). */
 internal class SheetMotion {

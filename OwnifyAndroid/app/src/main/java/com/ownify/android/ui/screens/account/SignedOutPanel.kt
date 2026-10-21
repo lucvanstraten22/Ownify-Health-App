@@ -1,4 +1,8 @@
 package com.ownify.android.ui.screens.account
+import com.ownify.android.ui.design.glass
+import com.ownify.android.ui.design.NoteTone
+import com.ownify.android.ui.design.note
+import com.ownify.android.ui.design.well
 
 import com.ownify.android.i18n.tr
 import com.ownify.android.i18n.trn
@@ -135,14 +139,11 @@ fun SignedOutPanel(overlay: Overlay.Account, notice: String?, link: OwnifyLink? 
 @Composable
 fun Notice(text: String, link: OwnifyLink? = null) {
     val context = LocalContext.current
-    val shape = RoundedCornerShape(Ownify.RadiusSm)
     Column(
         Modifier
             .fillMaxWidth()
             .padding(bottom = Ownify.Space4)
-            .clip(shape)
-            .background(Ownify.fill(0.04f))
-            .border(1.dp, Ownify.GlassHairline, shape)
+            .well()
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
@@ -169,15 +170,12 @@ fun Notice(text: String, link: OwnifyLink? = null) {
 /** `.account__error`: what went wrong, in the attention gold the website uses for caution. */
 @Composable
 fun ErrorBox(text: String, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(Ownify.RadiusSm)
     T(
         text,
         OwnifyType.style(Ownify.FsSmall, color = Ownify.TextPrimary),
         modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(Ownify.AttentionWash)
-            .border(1.dp, Ownify.AttentionEdge, shape)
+            .note(NoteTone.Attention)
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics { liveRegion = LiveRegionMode.Assertive }
     )
@@ -316,10 +314,8 @@ private fun GoogleButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifi
         modifier
             .press(interaction, scale = 0.94f, enabled = enabled)
             .alpha(if (enabled) 1f else 0.5f)
-            .size(46.dp)
-            .clip(CircleShape)
-            .background(fill)
-            .border(1.dp, Ownify.GlassBorderSoft, CircleShape)
+            .size(44.dp)
+            .glass(CircleShape)
             // Compose still hands a disabled node's click action through; this button does nothing then.
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button) { if (enabled) onClick() }
             .semantics { contentDescription = tr("Doorgaan met Google") },

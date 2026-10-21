@@ -41,7 +41,7 @@ $copy = goals_script_copy($goals);
                             <p class="page-intro__lede"><?= e($goals['lede']) ?></p>
                         </div>
 
-                        <button type="button" class="goals-add press" data-goal-add
+                        <button type="button" class="glass glass--round glass--cta goals-add press" data-goal-add
                                 aria-label="<?= e($labels['add_aria']) ?>"
                                 <?= $goals['can_add'] ? '' : 'disabled aria-disabled="true"' ?>>
                             <?= icon('plus', 'goals-add__icon') ?>

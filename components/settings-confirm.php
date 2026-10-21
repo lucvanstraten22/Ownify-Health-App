@@ -45,7 +45,7 @@ foreach ($data['auth']['identities'] ?? [] as $identity) {
 
         <div class="confirm__row">
             <button type="button" class="btn press" data-confirm-close><?= e($delete['cancel']) ?></button>
-            <button type="button" class="btn confirm__yes press" data-confirm-next><?= e($delete['confirm']) ?></button>
+            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-next><?= e($delete['confirm']) ?></button>
         </div>
 
         <p class="confirm__note">
@@ -71,7 +71,7 @@ foreach ($data['auth']['identities'] ?? [] as $identity) {
         <?php /* Swapped on purpose: the safe answer is on the right, where the
                  previous step's confirmation was. */ ?>
         <div class="confirm__row">
-            <button type="button" class="btn confirm__yes confirm__yes--final press" data-confirm-delete>
+            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-delete>
                 <?= e($delete['final_yes']) ?>
             </button>
             <button type="button" class="btn press" data-confirm-close><?= e($delete['final_no']) ?></button>

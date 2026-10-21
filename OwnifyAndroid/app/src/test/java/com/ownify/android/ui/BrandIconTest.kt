@@ -146,7 +146,7 @@ class BrandIconTest {
 
         // 4. The system splash (Android 12+, no splash attributes set): the
         // launcher icon in a 160 dp circle on the window's colour.
-        for ((name, ground) in mapOf("splash-dark" to 0xFF252223.toInt(), "splash-light" to 0xFFF0EDEE.toInt())) {
+        for ((name, ground) in mapOf("splash-dark" to 0xFF19120F.toInt(), "splash-light" to 0xFFF7EFEA.toInt())) {
             val w = 412 * 4 / 2; val h = 915 * 4 / 2                     // a 412 x 915 dp phone, at 2x
             save("$name.png", Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also {
                 val canvas = Canvas(it)

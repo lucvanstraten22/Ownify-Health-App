@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.settings
+import com.ownify.android.ui.design.NoteTone
+import com.ownify.android.ui.design.note
 
 import android.app.DatePickerDialog
 import androidx.compose.animation.animateColorAsState
@@ -85,7 +87,7 @@ import com.ownify.android.ui.design.blurring
 
 /** `.confirm__yes`: the answer that goes ahead, in the caution colour. */
 private val YesLook: BtnLook
-    get() = BtnLook(border = Ownify.AttentionStrong, fill = Ownify.AttentionFill)
+    get() = BtnLook.Primary
 
 /** `.confirm__scrim` is a little darker than the account panel's. */
 private const val CONFIRM_SCRIM = 0.55f
@@ -336,13 +338,14 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
                 val interaction = remember { MutableInteractionSource() }
                 val shape = RoundedCornerShape(Ownify.RadiusSm)
                 val fast = tween<Color>(Ownify.FastMs, easing = Ownify.Ease)
-                val border by animateColorAsState(if (active) Ownify.HealthStrong else Ownify.GlassBorderSoft, fast, label = "border")
-                val fill by animateColorAsState(if (active) Ownify.HealthFill else Ownify.fill(0.04f), fast, label = "fill")
+                // A Row: no edge until chosen, then the green ring.
+                val border by animateColorAsState(if (active) Ownify.HealthStrong else Color.Transparent, fast, label = "border")
+                val fill by animateColorAsState(if (active) Ownify.HealthFill else Ownify.InsetFill, fast, label = "fill")
                 Row(
                     Modifier
                         .press(interaction)
                         .fillMaxWidth()
-                        .heightIn(min = 44.dp)
+                        .heightIn(min = Ownify.RowMin)
                         .clip(shape)
                         .background(fill)
                         .border(1.dp, border, shape)
@@ -367,7 +370,7 @@ internal fun DateControl(input: FieldInput, value: String, label: String, onPick
     InButton {
         val context = LocalContext.current
         val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(Ownify.RadiusSm)
+        val shape = RoundedCornerShape(50)
         val date = runCatching { LocalDate.parse(value) }.getOrNull()
         val shown = date?.let { "%02d-%02d-%04d".format(it.dayOfMonth, it.monthValue, it.year) }
 
@@ -385,7 +388,7 @@ internal fun DateControl(input: FieldInput, value: String, label: String, onPick
                         input.max?.let { runCatching { datePicker.maxDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
                     }.show()
                 }
-                .padding(horizontal = Ownify.Space3),
+                .padding(horizontal = Ownify.Space4),
             contentAlignment = Alignment.CenterStart
         ) {
             T(shown ?: "dd-mm-jjjj", OwnifyType.style(Ownify.FsLabel, color = if (shown != null) Ownify.TextPrimary else Ownify.TextFaint, tabular = true))
@@ -419,7 +422,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
             ConfirmRow(
                 { Btn(copy["cancel"].orEmpty(), onClick = { shell.close(overlay) }, modifier = it) },
-                { Btn(copy["confirm"].orEmpty(), onClick = { step = 2 }, look = YesLook, modifier = it) }
+                { Btn(copy["confirm"].orEmpty(), onClick = { step = 2 }, look = BtnLook.Caution, modifier = it) }
             )
             // .confirm__note
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
@@ -430,20 +433,17 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                 }
             }
         } else {
-            IconTile(OwnifyIcons.trash, color = Ownify.Miss, background = Ownify.mix(Ownify.Miss, 0.18f, Color.Transparent))
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
             ConfirmTitle(copy["final_title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["final_body"].orEmpty() + if (google) " " + copy["final_google"].orEmpty() else "")
             error?.let {
-                val shape = RoundedCornerShape(Ownify.RadiusSm)
                 T(
                     it,
                     OwnifyType.style(Ownify.FsSmall),
                     Modifier
                         .fillMaxWidth()
                         .padding(top = Ownify.Space3)
-                        .clip(shape)
-                        .background(Ownify.AttentionWash)
-                        .border(1.dp, Ownify.AttentionEdge, shape)
+                        .note(NoteTone.Attention)
                         .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )

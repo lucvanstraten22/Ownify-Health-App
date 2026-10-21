@@ -94,7 +94,7 @@ if (!function_exists('app_theme')) {
 
         return [
             'theme'        => $light ? 'light' : 'dark',
-            'theme_color'  => $light ? (string) ($app['theme_color_light'] ?? '#FBFAFA') : (string) $app['theme_color'],
+            'theme_color'  => $light ? (string) ($app['theme_color_light'] ?? '#F6F1F6') : (string) $app['theme_color'],
             'color_scheme' => $light ? 'light' : 'dark',
             'status_bar'   => $light ? 'default' : 'black-translucent',
         ];

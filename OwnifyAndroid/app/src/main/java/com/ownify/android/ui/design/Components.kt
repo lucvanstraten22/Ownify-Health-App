@@ -321,13 +321,17 @@ fun JIcon(icon: ImageVector, modifier: Modifier = Modifier, size: Dp = 20.dp, co
     )
 }
 
-/** `.icon-tile`: 36 square, radius 14, hairline border, `.065` white, a secondary-coloured icon of 18. */
+/**
+ * `.icon-tile`: 36 square at radius 12, or [Ownify.TileSmall] (30) at 10 —
+ * the two sizes since 25.0; hairline border, `.065` white, a
+ * secondary-coloured icon of 18.
+ */
 @Composable
 fun IconTile(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     size: Dp = 36.dp,
-    radius: Dp = Ownify.RadiusSm,
+    radius: Dp = if (size < 34.dp) Ownify.TileRadiusSmall else Ownify.TileRadius,
     iconSize: Dp = 18.dp,
     color: Color = Ownify.TextSecondary,
     background: Color = Ownify.fill(0.065f),
@@ -370,10 +374,12 @@ fun Chip(
     val shape = RoundedCornerShape(50)
     Row(
         modifier
+            // One height for every label chip and badge (25.0).
+            .heightIn(min = 24.dp)
             .clip(shape)
             .background(background)
             .border(1.dp, border, shape)
-            .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
+            .cssPadding(PaddingValues(horizontal = Ownify.Space3), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (leading != null) 6.dp else Ownify.Space2)
     ) {
@@ -405,8 +411,8 @@ fun AccentChip(text: String, accent: Color, modifier: Modifier = Modifier) {
 }
 
 /**
- * `.pill`: at least 42 high, 12 either side, the soft border and `--glass-soft`,
- * in the secondary colour — the back and close controls.
+ * `.pill`: the back and close controls in the Liquid Glass (Panes.Control):
+ * at least 44 high, 12 either side.
  */
 @Composable
 fun Pill(
@@ -428,16 +434,14 @@ fun Pill(
                         .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
                 )
                 .press(interaction)
-                .heightIn(min = 42.dp)
-                .clip(shape)
-                .background(Ownify.GlassSoft)
-                .border(1.dp, Ownify.GlassBorderSoft, shape)
-                .cssPadding(padding, border = 1.dp),
+                .heightIn(min = 44.dp)
+                .glass(shape)
+                .padding(padding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
-            if (icon != null) JIcon(icon, size = 18.dp, color = Ownify.TextSecondary)
-            ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary), maxLines = 1) }
+            if (icon != null) JIcon(icon, size = 18.dp, color = Ownify.TextPrimary)
+            ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextPrimary), maxLines = 1) }
         }
     }
 }
@@ -450,18 +454,29 @@ data class BtnLook(
     val border: Color = Ownify.GlassBorder,
     val fill: Color = Ownify.Glass,
     val text: Color = Ownify.TextPrimary,
-    val disabledAlpha: Float = 0.45f
+    val disabledAlpha: Float = 0.45f,
+    /** Drawn in the Liquid Glass instead of [fill] and [border]. */
+    val glass: GlassLook? = null
 ) {
     companion object {
-        /** `.confirm__yes--final`: the step that cannot be undone, in the miss red; 60% while it works. */
+        /** `.btn--primary`: the one way forward — the app's green in the glass. */
+        val Primary: BtnLook
+            get() = BtnLook(glass = GlassLook(cta = true), disabledAlpha = 0.5f)
+
+        /** `.btn--caution`: leave, remove, delete, wipe — the attention gold in the glass. */
+        val Caution: BtnLook
+            get() = BtnLook(glass = GlassLook(caution = true), disabledAlpha = 0.5f)
+
+        /** The step that cannot be undone: the cautious action (gold since 25.0). */
         val Final: BtnLook
-            get() = BtnLook(border = Ownify.mix(Ownify.Miss, 0.60f, Color.Transparent), fill = Ownify.mix(Ownify.Miss, 0.24f, Color.Transparent), disabledAlpha = 0.6f)
+            get() = Caution
     }
 }
 
 /**
- * `.btn`: a capsule at least 42 high, 16 either side, `--glass` over the
- * glass border, 13/600; disabled at 45%.
+ * `.btn`: a capsule at least 44 high, 16 either side, `--glass` over the
+ * glass border, 13/600; disabled at 45%. [BtnLook.Primary] and
+ * [BtnLook.Caution] draw it in the Liquid Glass, green or gold.
  */
 @Composable
 fun Btn(
@@ -487,11 +502,15 @@ fun Btn(
                 )
                 .press(interaction, enabled = enabled)
                 .alpha(if (enabled) 1f else look.disabledAlpha)
-                .heightIn(min = 42.dp)
-                .clip(shape)
-                .background(look.fill)
-                .border(1.dp, look.border, shape)
-                .cssPadding(PaddingValues(horizontal = Ownify.Space4), border = 1.dp),
+                .heightIn(min = 44.dp)
+                .then(
+                    if (look.glass != null) Modifier.glass(shape, look.glass).padding(horizontal = Ownify.Space4)
+                    else Modifier
+                        .clip(shape)
+                        .background(look.fill)
+                        .border(1.dp, look.border, shape)
+                        .cssPadding(PaddingValues(horizontal = Ownify.Space4), border = 1.dp)
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.CenterHorizontally)
         ) {
@@ -788,18 +807,16 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
 data class LegendItem(val label: String, val value: Int?, val accent: Accent, val dot: Color = accent.color)
 
 /**
- * `.legend`: three equal columns in a quiet well inside the card (fill only,
- * `--radius-inner`), each a dot with its 3 px halo, the name and the score.
+ * `.legend`: three equal columns in a Well inside the card, each a dot with
+ * its 3 px halo, the name and the score.
  * One column below 360 dp.
  */
 @Composable
 fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boolean = true) {
     val narrow = LocalScreen.current.narrow
-    val shape = RoundedCornerShape(Ownify.RadiusInner)
     val box = modifier
         .fillMaxWidth()
-        .clip(shape)
-        .background(Ownify.fill(0.05f))
+        .well()
         .cssPadding(PaddingValues(vertical = Ownify.Space3, horizontal = Ownify.Space2), border = 1.dp)
 
     @Composable
@@ -875,8 +892,9 @@ fun CardHint(
 // ---------------------------------------------------------------------------
 
 /**
- * `.range-switch`: options in a hairline capsule, the chosen one a lit pane
- * of its own. [wide] is `--wide`: the options share the width equally.
+ * `.range-switch`: options in a capsule of the Liquid Glass, the chosen one
+ * the tab bar's own lozenge (`--lg-chosen`). [wide] is `--wide`: the options
+ * share the width equally.
  * An option in [disabled] is shown faded and does nothing (`:disabled`).
  */
 @Composable
@@ -897,10 +915,19 @@ fun RangeSwitch(
         Row(
             modifier
                 .then(if (wide) Modifier.fillMaxWidth() else Modifier)
-                // Not clipped: the options' hit areas reach past its edge, as on the website.
-                .background(Ownify.fill(0.04f), shape)
-                .border(1.dp, Ownify.GlassHairline, shape)
-                .cssPadding(PaddingValues(3.dp), border = 1.dp)
+                // The glass drawn, not clipped: the options' hit areas reach past its edge, as on the website.
+                .drawWithContent {
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    val track = Panes.Chip
+                    drawBoxShadows(shape, track.shadows.filter { !it.inset }, shadows, outline)
+                    val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
+                    drawPath(path, track.tint)
+                    drawPath(path, paneFace(size, track.faceMiddle))
+                    drawBoxShadows(shape, track.shadows.filter { it.inset }, shadows, outline)
+                    drawBorder(outline, paneRim(size))
+                    drawContent()
+                }
+                .padding(3.dp)
                 .semantics { if (label != null) contentDescription = label },
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
@@ -924,13 +951,7 @@ fun RangeSwitch(
                         .alpha(if (off) 0.45f else 1f)
                         .heightIn(min = optionHeight)
                         .drawWithContent {
-                            if (active) {
-                                val outline = shape.createOutline(size, layoutDirection, this)
-                                val path = androidx.compose.ui.graphics.Path().apply { addOutline(outline) }
-                                drawPath(path, Brush.verticalGradient(listOf(Ownify.glint(0.12f), Ownify.glint(0.03f))))
-                                drawBoxShadows(shape, listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.ShadowInset, inset = true)), shadows, outline)
-                                drawBorder(outline, Ownify.GlassHairline)
-                            }
+                            if (active) drawChosenGlass(shape, shadows)
                             drawContent()
                         }
                         .clip(shape)
@@ -971,7 +992,7 @@ fun Toggle(on: Boolean, modifier: Modifier = Modifier, dimmed: Boolean = false) 
 }
 
 /**
- * `.account__input` (and the wizard's and editor's): at least 44 high, 12
+ * The one text field (25.0, as "Zoek een doel"): a pill at least 44 high, 16
  * either side, the soft border and `.05`, the text at `--fs-input` (16 sp);
  * focused, the border turns [Ownify.HealthStrong], the fill `.07`, and a soft
  * 3 dp halo (`--focus-halo`) surrounds it. The placeholder is in the muted
@@ -987,12 +1008,11 @@ fun JInput(
     actions: KeyboardActions = KeyboardActions.Default,
     password: Boolean = false,
     enabled: Boolean = true,
-    radius: Dp = Ownify.RadiusSm,
     textSize: TextUnit = Ownify.FsInput,
     label: String? = null
 ) {
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(radius)
+    val shape = RoundedCornerShape(50)
     val border = if (focused) Ownify.HealthStrong else Ownify.GlassBorderSoft
     val fill = if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f)
     // A field's text, like a button's, keeps `letter-spacing: normal`.
@@ -1021,7 +1041,7 @@ fun JInput(
                         if (focused) {
                             // box-shadow: 0 0 0 3px — a ring just outside the border.
                             val ring = Ownify.FocusHaloWidth.toPx()
-                            val r = radius.toPx() + ring / 2f
+                            val r = size.height / 2f + ring / 2f
                             drawRoundRect(
                                 color = Ownify.FocusHalo,
                                 topLeft = Offset(-ring / 2f, -ring / 2f),
@@ -1034,7 +1054,7 @@ fun JInput(
                     .clip(shape)
                     .background(fill)
                     .border(1.dp, border, shape)
-                    .cssPadding(PaddingValues(horizontal = Ownify.Space3), border = 1.dp),
+                    .cssPadding(PaddingValues(horizontal = Ownify.Space4), border = 1.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (value.isEmpty() && placeholder.isNotEmpty()) {

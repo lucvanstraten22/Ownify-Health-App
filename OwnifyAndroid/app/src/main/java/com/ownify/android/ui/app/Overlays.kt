@@ -1,4 +1,8 @@
 package com.ownify.android.ui.app
+import com.ownify.android.ui.design.glass
+import com.ownify.android.ui.design.liquidGlass
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.PaneFilter
 
 import com.ownify.android.i18n.tr
 import androidx.compose.animation.core.Animatable
@@ -194,23 +198,23 @@ fun OverlayFrame(
 }
 
 /**
- * A panel's card: its glass looks through the scrim at the app — blurred
- * 24 px and saturated 130%, darkened as the scrim darkens it — under the
- * card's own surface, border and highlight.
+ * A panel: the Liquid Glass at its thick setting (theme.css --lg-tint-thick),
+ * looking through the scrim at the app — the glass's own filter, darkened as
+ * the scrim darkens it — with its face, rim and floating shadow.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun Modifier.panelGlass(shape: Shape = cardShape(), scrim: Float = 0.52f, style: CardStyle = CardStyle.Default): Modifier {
     val backdrop = LocalBackdrop.current
     val layer = rememberBlurLayer()
-    val shadows = LocalGraphicsContext.current.shadowContext
     val arrival = LocalPanelArrival.current
     return this
-        .glassBackdrop(backdrop, shape, GlassFilter(Ownify.BlurCard, saturate = Ownify.PanelSaturate), layer, amount = arrival)
+        .glassBackdrop(backdrop, shape, PaneFilter, layer, amount = arrival)
         .drawBehind {
             val path = Path().apply { addOutline(shape.createOutline(size, layoutDirection, this@drawBehind)) }
             clipPath(path, ClipOp.Intersect) { drawRect(Ownify.scrim(scrim)) }
         }
-        .cardSurface(shape, style, ground = null, shadows = shadows)
+        .liquidGlass(shape, Panes.Panel)
 }
 
 /**
@@ -260,7 +264,7 @@ fun PanelHead(
     }
 }
 
-/** `.account__close`: a 34 circle, hairline border, `.055` white, a secondary 17 icon. */
+/** `.account__close`: the small round glass — 34, a 17 icon. */
 @Composable
 fun RoundButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
@@ -268,14 +272,12 @@ fun RoundButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier:
         modifier
             .press(interaction)
             .size(34.dp)
-            .clip(CircleShape)
-            .background(Ownify.fill(0.055f))
-            .border(1.dp, Ownify.GlassHairline, CircleShape)
+            .glass(CircleShape)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
     ) {
-        JIcon(icon, size = 17.dp, color = Ownify.TextSecondary)
+        JIcon(icon, size = 17.dp, color = Ownify.TextPrimary)
     }
 }
 

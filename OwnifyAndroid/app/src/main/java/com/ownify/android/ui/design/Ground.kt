@@ -20,26 +20,48 @@ import androidx.compose.ui.unit.toSize
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
 
-/** One `radial-gradient(<rx>% <ry>% at <x>% <y>%, <color>, transparent <fade>%)`. */
+/**
+ * One `radial-gradient(<rx>% <ry>% at <x>% <y>%, <color>, transparent <fade>%)`.
+ * An [eased] one is a light of theme.css's `--backdrop-lights`: it fades over
+ * its whole radius on a smootherstep curve, in nine stops, as the website's.
+ */
 @Immutable
-data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float)
+data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float, val eased: Boolean = false)
+
+/** A Randlicht light (`--backdrop-lights`): [alpha] in Dark Mode; drawn × .52 in White ([drawGround]). */
+private fun light(rx: Float, ry: Float, x: Float, y: Float, r: Int, g: Int, b: Int, alpha: Float) =
+    Wash(rx, ry, x, y, Color(r, g, b).copy(alpha = alpha), 1f, eased = true)
+
+/** The nine stops of a smootherstep fade from [color] to nothing. */
+internal fun easedStops(color: Color): Array<Stop> = Array(9) { i ->
+    val t = i / 8f
+    val s = t * t * t * (t * (t * 6f - 15f) + 10f)
+    Stop(t, color.copy(alpha = color.alpha * (1f - s)))
+}
 
 /**
  * A page's ground: a few soft washes of colour over the vertical gradient
- * of the theme's ground ([Ownify.BgMain] to [Ownify.BgDeep]). Three exist on
+ * of the theme's ground ([Ownify.BgMain] through [Ownify.BgMid] to [Ownify.BgDeep]). Three exist on
  * the website — the app's (`.app__backdrop`), a detail page's (in its area's
- * accent) and the assistant sheet's (which paints its own light over it). The washes are the same in both themes.
+ * accent) and the assistant sheet's (which paints its own light over it). The app's lights are about half as strong in White Mode.
  */
 @Immutable
 data class Ground(val washes: List<Wash>) {
 
     companion object {
-        /** `.app__backdrop`, fixed behind every page. */
+        /**
+         * `.app__backdrop`, fixed behind every page: Randlicht (25.0) — Slaap's
+         * indigo and a plum from above, Voeding's green from the right,
+         * Training's coral and an ember from the foot, each centred just
+         * beyond the edge, over the ink ground.
+         */
         val App = Ground(
             listOf(
-                Wash(0.90f, 0.55f, 0.12f, 0.00f, Ownify.Health.copy(alpha = 0.14f), 0.62f),
-                Wash(0.80f, 0.50f, 0.96f, 0.12f, Ownify.AttentionGold.copy(alpha = 0.10f), 0.58f),
-                Wash(1.20f, 0.70f, 0.50f, 1.04f, Ownify.AmbientOlive.copy(alpha = 0.08f), 0.60f)
+                light(0.95f, 0.50f, -0.08f, 0.02f, 104, 108, 175, 0.289f),
+                light(0.85f, 0.38f, 0.86f, -0.10f, 135, 97, 142, 0.221f),
+                light(0.70f, 0.46f, 1.12f, 0.50f, 84, 145, 120, 0.187f),
+                light(1.10f, 0.38f, 0.16f, 1.10f, 175, 121, 112, 0.255f),
+                light(0.80f, 0.30f, 0.96f, 1.12f, 183, 132, 100, 0.153f)
             )
         )
 
@@ -73,17 +95,25 @@ fun DrawScope.drawGround(ground: Ground, box: Size, origin: Offset = Offset.Zero
 
     shifted(origin) {
         drawRect(
-            brush = Brush.verticalGradient(listOf(tone(Ownify.BgMain), tone(Ownify.BgDeep)), startY = 0f, endY = box.height),
+            brush = Brush.verticalGradient(
+                0f to tone(Ownify.BgMain), 0.5f to tone(Ownify.BgMid), 1f to tone(Ownify.BgDeep),
+                startY = 0f, endY = box.height
+            ),
             size = box
         )
         for (wash in ground.washes) {
             val color = tone(wash.color)
-            cssRadialGradient(
-                wash.rx, wash.ry, wash.x, wash.y,
-                Stop(0f, color),
-                Stop(wash.fade, color.copy(alpha = 0f)),
-                box = box
-            )
+            if (wash.eased) {
+                val lit = if (Ownify.light) color.copy(alpha = color.alpha * 0.52f) else color
+                cssRadialGradient(wash.rx, wash.ry, wash.x, wash.y, *easedStops(lit), box = box)
+            } else {
+                cssRadialGradient(
+                    wash.rx, wash.ry, wash.x, wash.y,
+                    Stop(0f, color),
+                    Stop(wash.fade, color.copy(alpha = 0f)),
+                    box = box
+                )
+            }
         }
     }
 }

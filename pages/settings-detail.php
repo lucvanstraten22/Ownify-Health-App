@@ -341,14 +341,14 @@ foreach ($page['blocks'] as $block) {
                                                 <span class="settings-toggle__label"><?= e($item['label']) ?></span>
                                                 <span class="settings-toggle__note" data-setting-action-note role="status"><?= e($item['note'] ?? '') ?></span>
                                             </span>
-                                            <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' settings-action__go--danger' : '' ?>"
+                                            <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' btn--caution' : '' ?>"
                                                     data-setting-action-go><?= e($item['confirm']) ?></button>
                                         </div>
                                         <div class="settings-action__confirm" data-setting-action-confirm hidden>
                                             <p class="settings-action__question"><?= e($item['question']) ?></p>
                                             <div class="settings-action__buttons">
                                                 <button type="button" class="btn press" data-setting-action-no><?= e($item['cancel']) ?></button>
-                                                <button type="button" class="btn press settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
+                                                <button type="button" class="btn btn--caution press settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
                                             </div>
                                         </div>
                                     </div>

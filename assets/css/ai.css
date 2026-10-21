@@ -180,35 +180,34 @@
 
 .ai-top__row {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
     align-items: center;
     gap: var(--space-2);
     padding-top: var(--space-2);
 }
 
-.ai-top__balance { width: 42px; }
+.ai-top__balance { width: 44px; }
 
-/* The floating glass of the header's buttons (.pill--devices): the island
-   and the round buttons are cut from the same pane. */
+/* The Liquid Glass (theme.css --lg-*): the island and the round buttons are
+   the same material as the tab bar and the header's buttons. */
 .ai-glass {
     position: relative;
     isolation: isolate;
     border: 0;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.04 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    box-shadow:
-        0 10px 26px rgba(var(--shade), calc(0.30 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.16 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     cursor: pointer;
 }
 
-.ai-glass::after {
+.ai-glass::after,
+.ai-suggestion::after,
+.ai-msg--system .ai-msg__note::after,
+.ai-history__card::after,
+.ai-history__new::after,
+.ai-history__delete.is-armed::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -222,16 +221,18 @@
     pointer-events: none;
 }
 
+.ai-history__delete.is-armed::after { background: var(--lg-gold-rim); }
+
 .ai-round {
     display: grid;
     place-items: center;
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border-radius: 50%;
 }
 
-.ai-round--small { width: 38px; height: 38px; }
+.ai-round--small { width: 34px; height: 34px; }
 .ai-round__icon { width: 20px; height: 20px; }
 
 /* The island: the Ownify logo, OwnifyAI, how many conversations there are,
@@ -416,31 +417,30 @@
 .ai-suggestion {
     min-height: 44px;
     padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--glass-border-soft);
-    border-radius: var(--radius-md);
-    background: var(--glass-soft);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
     color: var(--text-secondary);
     font-size: var(--fs-small);
     text-align: left;
     cursor: pointer;
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    position: relative;
+    isolation: isolate;
+    box-shadow: var(--lg-shadow-small), var(--lg-glint);
 }
 
 .ai-suggestion:focus-visible {
-    border-color: var(--glass-border);
-    background: var(--glass);
+    outline: none;
+    box-shadow: var(--lg-shadow-small), var(--lg-glint), var(--focus-halo);
     color: var(--text-primary);
 }
 
 /* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
 @media (hover: hover) and (pointer: fine) {
-    .ai-suggestion:hover {
-        border-color: var(--glass-border);
-        background: var(--glass);
-        color: var(--text-primary);
-    }
+    .ai-suggestion:hover { color: var(--text-primary); }
 }
 
 /* --------------------------------------------------------------------------
@@ -539,14 +539,19 @@
     gap: var(--space-2);
     max-width: 90%;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--glass-border-soft);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--glass-soft);
+    background: var(--lg-face), var(--lg-body);
     color: var(--text-secondary);
     font-size: var(--fs-footnote);
     letter-spacing: var(--tracking-small);
     line-height: 1.4;
     text-align: center;
+    position: relative;
+    isolation: isolate;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow-small), var(--lg-glint);
 }
 
 .ai-msg__note .icon { width: 14px; height: 14px; flex: none; color: var(--health); }
@@ -581,7 +586,6 @@
     margin-top: var(--space-3);
 }
 
-.ai-action__buttons .btn { min-height: 38px; }
 
 .ai-action__status {
     margin-top: var(--space-2);
@@ -593,19 +597,6 @@
 
 .ai-action--done { border-color: var(--glass-border-soft); background: var(--glass-soft); }
 .ai-action--done .ai-action__status { color: var(--health); }
-
-.ai-btn--primary {
-    border-color: var(--health-strong);
-    background: var(--health-edge);
-    cursor: pointer;
-}
-
-.ai-btn--primary:focus-visible { background: color-mix(in srgb, var(--health-edge), var(--health-strong)); }
-
-/* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
-@media (hover: hover) and (pointer: fine) {
-    .ai-btn--primary:hover { background: color-mix(in srgb, var(--health-edge), var(--health-strong)); }
-}
 
 /* Thinking: three dots in OwnifyAI's glass. */
 .ai-msg--assistant .ai-msg__bubble:has(> .ai-typing) { padding: 13px 15px; }
@@ -755,13 +746,9 @@
     padding: 6px 6px 6px var(--space-4);
     border: 1px solid var(--glass-border);
     border-radius: 28px;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
-            rgba(255, 255, 255, calc(0.04 * var(--glint-k)))),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
     box-shadow: 0 10px 28px rgba(var(--shade), calc(0.28 * var(--shade-k))), inset 0 1px 0 rgba(255, 255, 255, calc(0.09 * var(--glint-k)));
     transition: border-color var(--transition-fast);
 }
@@ -890,21 +877,15 @@
     align-self: flex-start;
     padding: var(--space-4) var(--space-4) var(--space-2);
     border-radius: 28px;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
-            rgba(255, 255, 255, calc(0.03 * var(--glint-k)))),
-        rgba(var(--ground), max(0.94, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    backdrop-filter: blur(24px) saturate(160%);
-    box-shadow:
-        0 22px 50px rgba(var(--shade), calc(0.40 * var(--shade-k))),
-        inset 0 0 0 1px var(--glass-border),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.10 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body-thick);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-glint), var(--lg-shadow-float);
     transform-origin: 50% 0;
     transform: translateY(-6px) scale(0.42, 0.08);
     opacity: 0;
     transition: transform 480ms var(--ease-out-strong), opacity 260ms var(--ease-out);
+    isolation: isolate;
 }
 
 .ai-history.is-open .ai-history__card {
@@ -934,19 +915,19 @@
     flex: none;
     align-items: center;
     gap: var(--space-2);
-    height: 40px;
     margin-bottom: var(--space-2);
-    padding-inline: var(--space-3);
-    border-radius: 12px;
-    background: var(--glass);
-    box-shadow: inset 0 0 0 1px var(--glass-hairline);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--fill), calc(0.05 * var(--fill-k)));
     color: var(--text-muted);
     cursor: text;
+    min-height: 44px;
+    border: 1px solid var(--glass-border-soft);
 }
 
 .ai-history__search[hidden] { display: none; }
 
-.ai-history__search:focus-within { box-shadow: inset 0 0 0 1px var(--health-strong), var(--focus-halo); }
+.ai-history__search:focus-within { border-color: var(--health-strong); box-shadow: var(--focus-halo); }
 
 .ai-history__search-icon { width: 16px; height: 16px; flex: none; }
 
@@ -973,25 +954,22 @@
     justify-content: center;
     gap: var(--space-2);
     width: 100%;
-    min-height: 46px;
+    min-height: 44px;
     border: 0;
-    border-radius: 16px;
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.10 * var(--glint-k))),
-            rgba(255, 255, 255, calc(0.04 * var(--glint-k)))),
-        rgba(var(--fill), calc(0.08 * var(--fill-k)));
-    box-shadow:
-        inset 0 0 0 1px var(--glass-border),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.10 * var(--glint-k)));
+    border-radius: var(--radius-pill);
+    background: var(--lg-face), var(--lg-body);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-body);
     font-weight: 600;
     cursor: pointer;
+    position: relative;
+    isolation: isolate;
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
 }
 
-.ai-history__new:active { background: rgba(var(--fill), calc(0.14 * var(--fill-k))); }
 .ai-history__new-icon { width: 18px; height: 18px; }
 
 .ai-history__list {
@@ -1110,10 +1088,13 @@
 }
 
 .ai-history__delete.is-armed {
+    position: relative;
+    isolation: isolate;
     width: auto;
     padding-inline: var(--space-3);
     border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--miss) 24%, transparent);
+    background: var(--lg-face), var(--lg-gold), var(--lg-body);
+    box-shadow: var(--lg-shadow-small), var(--lg-glint);
     font-size: var(--fs-tiny);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
@@ -1190,17 +1171,10 @@
     margin-top: var(--space-1);
     overflow: hidden;
     border-radius: var(--radius-pill);
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.62, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    box-shadow:
-        0 8px 20px rgba(var(--shade), calc(0.26 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     pointer-events: auto;
     transform-origin: 50% 0;

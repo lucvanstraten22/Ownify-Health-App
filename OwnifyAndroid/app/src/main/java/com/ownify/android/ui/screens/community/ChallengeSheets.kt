@@ -1,4 +1,13 @@
 package com.ownify.android.ui.screens.community
+import com.ownify.android.ui.design.LocalGround
+import com.ownify.android.ui.design.CardStyle
+
+import com.ownify.android.ui.design.cardSurface
+import androidx.compose.ui.platform.LocalGraphicsContext
+import com.ownify.android.ui.design.hitArea
+import com.ownify.android.ui.design.GlassLook
+import com.ownify.android.ui.design.glass
+import com.ownify.android.ui.design.well
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
@@ -163,8 +172,7 @@ private fun Note(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
     Row(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(Ownify.RadiusSm))
-            .background(Ownify.fill(0.045f))
+            .well()
             .padding(Ownify.Space3),
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
     ) {
@@ -509,9 +517,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(Ownify.RadiusMd))
-                .background(Ownify.fill(0.05f))
-                .border(1.dp, Ownify.GlassBorder, RoundedCornerShape(Ownify.RadiusMd))
+                .cardSurface(RoundedCornerShape(Ownify.RadiusMd), CardStyle.Default, LocalGround.current, LocalGraphicsContext.current.shadowContext)
                 .padding(Ownify.Space4)
                 .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
             verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
@@ -612,19 +618,20 @@ private fun MetricChip(label: String, icon: String, accent: Accent, selected: Bo
     val shape = RoundedCornerShape(50)
     Row(
         Modifier
+            .hitArea(
+                Modifier
+                    .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
+                    .semantics { this.selected = selected },
+                across = false
+            )
             .press(interaction)
-            .heightIn(min = 40.dp)
-            .clip(shape)
-            .background(if (selected) Ownify.HealthFill else Ownify.fill(0.05f))
-            .border(1.dp, if (selected) Ownify.HealthEdge else Ownify.GlassBorderSoft, shape)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics { this.selected = selected }
-            .cssPadding(PaddingValues(horizontal = Ownify.Space3), border = 1.dp),
+            .glass(shape, GlassLook(chosen = selected, shadow = 7.dp, lift = 2.dp))
+            .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
     ) {
-        OwnifyIcons.named(icon)?.let { JIcon(it, size = 16.dp, color = accent.color) }
-        T(label, OwnifyType.style(Ownify.FsSmall, if (selected) FontWeight.SemiBold else FontWeight.Medium, if (selected) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
+        OwnifyIcons.named(icon)?.let { JIcon(it, size = 14.dp, color = accent.color) }
+        T(label, OwnifyType.style(Ownify.FsTiny, if (selected) FontWeight.SemiBold else FontWeight.Medium, if (selected) Ownify.TextPrimary else Ownify.TextSecondary, tracking = 0.em), maxLines = 1)
     }
 }
 
@@ -687,7 +694,8 @@ private fun MadeSheet(overlay: Overlay, data: AppData, answer: JSONObject) {
             Modifier
                 .fillMaxWidth()
                 .padding(top = Ownify.Space4)
-                .dashedBorder(Ownify.GlassBorder, Ownify.RadiusMd)
+                .background(Ownify.InsetFill, RoundedCornerShape(Ownify.RadiusMd))
+                .dashedBorder(Ownify.SlotEdge, Ownify.RadiusMd)
                 .padding(Ownify.Space4),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Ownify.Space3)

@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.liquidGlass
 
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
@@ -468,15 +470,11 @@ private fun Reading(point: ChartPoint, accent: Color) {
     val shadows = LocalGraphicsContext.current.shadowContext
     Layout(
         content = {
-            val shape = RoundedCornerShape(12.dp)
+            val shape = RoundedCornerShape(Ownify.RadiusSm)
             Column(
                 Modifier
-                    .drawBehind {
-                        drawBoxShadows(shape, listOf(BoxShadow(y = 10.dp, blur = 28.dp, color = Ownify.shade(0.32f))), shadows)
-                    }
-                    .clip(shape)
-                    .background(Ownify.TipSurfaceSolid)
-                    .border(1.dp, Ownify.GlassBorder, shape)
+                    // A tooltip: the Liquid Glass, thick.
+                    .liquidGlass(shape, Panes.Tip)
                     .cssPadding(PaddingValues(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp), border = 1.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

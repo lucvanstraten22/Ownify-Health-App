@@ -1,5 +1,11 @@
 package com.ownify.android.ui.screens.overview
 
+import com.ownify.android.ui.design.hitArea
+import com.ownify.android.ui.design.glass
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.liquidGlass
+import com.ownify.android.ui.design.insetRow
+
 import com.ownify.android.i18n.OwnifyFormat
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
@@ -356,10 +362,7 @@ private fun ReadingBubble(text: String, modifier: Modifier) {
     Box(
         modifier
             .clearAndSetSemantics { testTag = GoalReadingTag }
-            .shadow(14.dp, shape, ambientColor = Ownify.shade(0.35f), spotColor = Ownify.shade(0.35f))
-            .clip(shape)
-            .background(Ownify.TipSurface)
-            .border(1.dp, Ownify.GlassBorder, shape)
+            .liquidGlass(shape, Panes.Tip)
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         T(text, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
@@ -438,11 +441,9 @@ private fun InsightsCard(insights: Insights) {
             insights.items.forEachIndexed { index, item ->
                 val accent = Accent.of(item.accent).color
                 val empty = item.state == "empty"
-                // `.insights__item`: a well inside the card — fill only, `--radius-inner`.
-                val shape = RoundedCornerShape(Ownify.RadiusInner)
+                // `.insights__item`: a Row inside the card.
                 val row = if (!dimmed) Modifier
-                    .clip(shape)
-                    .background(Ownify.fill(0.05f))
+                    .insetRow()
                     .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
                 else Modifier
                     .drawBehind { if (index > 0) drawRect(Ownify.GlassHairline, size = size.copy(height = 1.dp.toPx())) }
@@ -548,30 +549,21 @@ private fun ScrollTop(scroll: ScrollState) {
         Box(
             Modifier
                 .padding(bottom = dockClearance(bottom) + Ownify.Space4)
-                .offset(x = screen.shell / 2 - 50.dp + 25.dp)
+                .offset(x = screen.shell / 2 - 44.dp + 22.dp)
                 .graphicsLayer {
                     alpha = shown
                     translationY = (1f - shown) * 8.dp.toPx()
                 }
+                .hitArea(
+                    Modifier
+                        .clickable(interaction, indication = null, role = Role.Button, enabled = show) {
+                            scope.launch { scroll.animateScrollTo(0) }
+                        }
+                        .semantics { contentDescription = tr("Terug naar je dagscore") }
+                )
                 .press(interaction, scale = 0.94f)
-                .size(50.dp)
-                .drawBehind {
-                    // --shadow-float
-                    drawCircle(
-                        Brush.radialGradient(
-                            0f to Ownify.ShadowFloat, 1f to Ownify.ShadowFloat.copy(alpha = 0f),
-                            center = center + Offset(0f, 12.dp.toPx()), radius = size.width / 2f + 28.dp.toPx()
-                        ),
-                        radius = size.width / 2f + 28.dp.toPx(), center = center + Offset(0f, 12.dp.toPx())
-                    )
-                }
-                .clip(CircleShape)
-                .background(Ownify.ground(0.72f))
-                .border(1.dp, Ownify.GlassBorder, CircleShape)
-                .clickable(interaction, indication = null, role = Role.Button, enabled = show) {
-                    scope.launch { scroll.animateScrollTo(0) }
-                }
-                .semantics { contentDescription = tr("Terug naar je dagscore") },
+                .size(44.dp)
+                .glass(CircleShape),
             contentAlignment = Alignment.Center
         ) {
             JIcon(OwnifyIcons.chevron, color = Ownify.TextSecondary)

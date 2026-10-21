@@ -1,4 +1,6 @@
 package com.ownify.android.ui.app
+import com.ownify.android.ui.design.Panes
+import com.ownify.android.ui.design.liquidGlass
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -94,8 +96,8 @@ fun BoxScope.ToastHost() {
                 alpha = shown.value
                 if (!reduced) translationY = (1f - shown.value) * 8.dp.toPx()
             }
-            .background(Ownify.paneBody(0.94f), shape)
-            .border(1.dp, Ownify.GlassBorderSoft, shape)
+            // The Liquid Glass, thick (theme.css --lg-tint-thick).
+            .liquidGlass(shape, Panes.Panel)
             .cssPadding(PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space2), border = 1.dp)
             .semantics {
                 liveRegion = LiveRegionMode.Polite

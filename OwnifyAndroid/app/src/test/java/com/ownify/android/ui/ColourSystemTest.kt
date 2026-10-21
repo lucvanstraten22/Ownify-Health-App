@@ -169,7 +169,7 @@ class ColourSystemTest {
             val b = block(css, selector)
             fun same(name: String, expected: Any) = assertEquals("$selector --$name", expected, if (expected is Float) number(b, name) else if (expected is List<*>) colours(b, name) else colour(b, name))
 
-            same("bg-main", p.bgMain); same("bg-deep", p.bgDeep); same("bg-secondary", p.bgSecondary)
+            same("bg-main", p.bgMain); same("bg-mid", p.bgMid); same("bg-deep", p.bgDeep); same("bg-secondary", p.bgSecondary)
             same("glass", p.glass); same("glass-strong", p.glassStrong); same("glass-soft", p.glassSoft)
             same("glass-border", p.glassBorder); same("glass-border-soft", p.glassBorderSoft); same("glass-hairline", p.glassHairline)
             same("score-mid", p.scoreMid); same("score-low", p.scoreLow); same("attention", p.attention)
@@ -198,7 +198,7 @@ class ColourSystemTest {
             assertEquals(Color.White.copy(alpha = a), Ownify.glint(a))
             assertEquals(Color.Black.copy(alpha = a), Ownify.shade(a))
             assertEquals(Color.Black.copy(alpha = a), Ownify.scrim(a))
-            assertEquals(Color(48, 45, 47).copy(alpha = a), Ownify.ground(a))
+            assertEquals(Color(28, 22, 32).copy(alpha = a), Ownify.ground(a))
             assertEquals(Color(30, 28, 29).copy(alpha = a), Ownify.paneBody(a))
         }
         for (accent in Accent.entries) for (share in listOf(0.34f, 0.40f, 0.78f)) {
@@ -216,7 +216,7 @@ class ColourSystemTest {
         assertEquals("light is clamped as CSS clamps it", 1f, Ownify.glint(0.46f).alpha)
         assertEquals(Color(62, 46, 54).copy(alpha = 0.30f * 0.38f), Ownify.shade(0.30f))
         assertEquals(Color(38, 30, 34).copy(alpha = 0.26f), Ownify.scrim(0.52f))
-        assertEquals(Color(251, 250, 250).copy(alpha = 0.72f), Ownify.ground(0.72f))
+        assertEquals(Color(246, 241, 246).copy(alpha = 0.72f), Ownify.ground(0.72f))
         assertEquals(Ownify.mix(Ownify.Health, 1f - 0.66f * 0.4f, Color(0xFF1D1A1C)), Ownify.tint(Ownify.Health, 0.34f))
     }
 
@@ -230,7 +230,7 @@ class ColourSystemTest {
         assertEquals(high, Ownify.ScoreHigh)
         assertEquals("#7D910B", hex(ScoreBand.MID.color))
         assertEquals("#AC8032", hex(ScoreBand.LOW.color))
-        assertEquals("#7D6A33", hex(Ownify.Attention))
+        assertEquals("#7A6731", hex(Ownify.Attention))
         // The same hue: deeper, not another colour.
         for ((was, now) in listOf(OwnifyPalette.Dark.scoreMid to Ownify.ScoreMid, OwnifyPalette.Dark.scoreLow to Ownify.ScoreLow, OwnifyPalette.Dark.attention to Ownify.Attention)) {
             assertEquals(hue(was), hue(now), 1.5f)

@@ -75,6 +75,8 @@ class OwnifyPalette(
     val mode: OwnifyMode,
 
     val bgMain: Color,
+    /** `--bg-mid`: the ground's middle, its deepest point in Dark Mode (25.0). */
+    val bgMid: Color,
     val bgDeep: Color,
     val bgSecondary: Color,
     val glass: Color,
@@ -150,8 +152,9 @@ class OwnifyPalette(
         /** `:root` — the original design, value for value. */
         val Dark = OwnifyPalette(
             mode = OwnifyMode.DARK,
-            bgMain = Color(0xFF302D2F),
-            bgDeep = Color(0xFF252223),
+            bgMain = Color(0xFF1C1620),
+            bgMid = Color(0xFF131113),
+            bgDeep = Color(0xFF19120F),
             bgSecondary = Color(0xFF3A3638),
             glass = white(0.08f),
             glassStrong = white(0.11f),
@@ -186,8 +189,8 @@ class OwnifyPalette(
             shadeK = 1f,
             scrim = Color.Black,
             scrimK = 1f,
-            ground = Color(48, 45, 47),
-            groundDeep = Color(37, 34, 35),
+            ground = Color(28, 22, 32),
+            groundDeep = Color(25, 18, 15),
             paneBody = Color(30, 28, 29),
             tintBase = Color.White,
             tintKeep = 1f,
@@ -217,8 +220,9 @@ class OwnifyPalette(
          */
         val Light = OwnifyPalette(
             mode = OwnifyMode.LIGHT,
-            bgMain = Color(0xFFFBFAFA),
-            bgDeep = Color(0xFFF0EDEE),
+            bgMain = Color(0xFFF6F1F6),
+            bgMid = Color(0xFFFAF8F8),
+            bgDeep = Color(0xFFF7EFEA),
             bgSecondary = Color(0xFFFFFFFF),
             glass = warm(0.06f),
             glassStrong = warm(0.085f),
@@ -228,13 +232,13 @@ class OwnifyPalette(
             glassHairline = warm(0.07f),
             scoreMid = Color(0xFF7D910B),
             scoreLow = Color(0xFFAC8032),
-            attention = Color(0xFF7D6A33),
+            attention = Color(0xFF7A6731),
             zones = listOf(Color(0xFF9A9597), Color(0xFFB98A80), Color(0xFFC97867), Color(0xFFD66A44)),
             textPrimary = Color(0xFF1D1A1C),
-            textSecondary = text(0.74f),
+            textSecondary = text(0.75f),
             textMuted = text(0.66f),
             textFaint = text(0.48f),
-            error = Color(0xFFC2453E),
+            error = Color(0xFFB03C35),
             paneSaturate = 1.7f,
             paneBrightness = 1.04f,
             paneRim = listOf(white(0.95f), white(0.55f), text(0.06f), text(0.09f), white(0.70f)),
@@ -253,8 +257,8 @@ class OwnifyPalette(
             shadeK = 0.38f,
             scrim = Color(38, 30, 34),
             scrimK = 0.5f,
-            ground = Color(251, 250, 250),
-            groundDeep = Color(240, 237, 238),
+            ground = Color(246, 241, 246),
+            groundDeep = Color(247, 239, 234),
             paneBody = Color(214, 210, 212),
             tintBase = Color(0xFF1D1A1C),
             tintKeep = 0.4f,
@@ -320,6 +324,7 @@ object Ownify {
 
     // --- surfaces ---------------------------------------------------------
     val BgMain: Color get() = palette.bgMain
+    val BgMid: Color get() = palette.bgMid
     val BgDeep: Color get() = palette.bgDeep
     val BgSecondary: Color get() = palette.bgSecondary
 
@@ -480,8 +485,24 @@ object Ownify {
     val RadiusCard = 28.dp
     val RadiusMd = 20.dp
     val RadiusSm = 14.dp
-    /** `--radius-inner`: a block inside a card — a fill, no outline of its own. */
-    val RadiusInner = 14.dp
+    /** Icon tiles keep about a third of their size: 36 → 12, 30 → 10 (theme.css). */
+    val TileRadius = 12.dp
+    val TileRadiusSmall = 10.dp
+    val TileSmall = 30.dp
+
+    // --- inside a card (theme.css --inset-fill, --slot-edge, --row-min) -----
+    /** A Well, a Row, an empty Slot: all on this faint fill. */
+    val InsetFill: Color get() = fill(0.04f)
+    /** An empty Slot's dashed edge. */
+    val SlotEdge: Color get() = ink(0.20f)
+    /** A Row's least height: a list row or a choice to tap. */
+    val RowMin = 52.dp
+
+    // --- Liquid Glass: the one material (theme.css --lg-*) ------------------
+    /** `--lg-tint`: the floating glass's own tint — controls, bars, capsules, chips. */
+    const val LgTint = 0.62f
+    /** `--lg-tint-thick`: the same glass for panels, sheets and tooltips, where text sits on it. */
+    const val LgTintThick = 0.84f
 
     // --- spacing ----------------------------------------------------------
     val Space1 = 4.dp
@@ -575,7 +596,7 @@ object Ownify {
     val TabGlowInset = 4.dp
     /** `--tab-glow-reach`: the chosen tab's pane is this much wider on each side than its inset. */
     val TabGlowReach = 6.dp
-    val HeaderButton = 46.dp
+    val HeaderButton = 44.dp
     val HeaderIcon = 24.dp
     val SheenOverhang = 16.dp
 
@@ -603,8 +624,6 @@ object Ownify {
     const val VeilDeepTop = 0.97f
     const val VeilDeepMid = 0.94f
 
-    /** `--panel-frost`: a floating panel's frost is [BlurCard] at this saturation (130%). */
-    const val PanelSaturate = 1.3f
 
     /** `--shell-w: min(92vw, 33.5rem)`. */
     val ShellMax = 536.dp

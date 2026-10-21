@@ -97,17 +97,10 @@
     height: var(--tabbar-height);
     padding-inline: var(--space-4);
     border-radius: var(--radius-pill);
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.115 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.042 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
-    -webkit-backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    backdrop-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
-    box-shadow:
-        0 12px 28px rgba(var(--shade), calc(0.34 * var(--shade-k))),
-        inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     font-size: var(--fs-body);
     font-weight: 600;
@@ -118,15 +111,7 @@
 /* The primary way on for somebody new takes the app's own green — the same
    tint as the goal wizard's next step. */
 .welcome__button--primary {
-    background:
-        linear-gradient(177deg,
-            rgba(255, 255, 255, calc(0.13 * var(--glint-k))) 0%,
-            rgba(255, 255, 255, calc(0.045 * var(--glint-k))) 46%,
-            rgba(255, 255, 255, calc(0.06 * var(--glint-k))) 100%),
-        linear-gradient(180deg,
-            rgba(60, 158, 114, 0.30) 0%,
-            rgba(60, 158, 114, 0.18) 100%),
-        rgba(var(--pane-body), max(0.46, var(--pane-solid)));
+    background: var(--lg-face), var(--lg-green), var(--lg-body);
 }
 
 /* The rim: a hairline that catches the light, as on the tab bar. */
@@ -148,6 +133,8 @@
     mask-composite: exclude;
     pointer-events: none;
 }
+
+.welcome__button--primary::after { background: var(--lg-green-rim); }
 
 .welcome__button:focus-visible {
     outline: 2px solid rgba(var(--ink), 0.55);
