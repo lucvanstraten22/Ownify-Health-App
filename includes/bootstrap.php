@@ -47,6 +47,16 @@ if (function_exists('persistent_login_resume')) {
     persistent_login_resume();
 }
 
+/* ...and a session that a password change elsewhere has ended is signed out
+   here, before anything acts on it (includes/account-security.php). */
+if (function_exists('account_session_enforce')) {
+    try {
+        account_session_enforce();
+    } catch (Throwable $e) {
+        error_log('[ownify] session check skipped for this request: ' . $e->getMessage());
+    }
+}
+
 /* The signed-in account's language and units, once it is known who is signed
    in (includes/i18n.php). An app request carrying a token applies its own
    account when the token is checked (api_require_account_user()). */
@@ -207,6 +217,11 @@ if (!function_exists('app_auth')) {
             ],
             'google_pending' => $pending,
             'identities'     => $user === null ? [] : auth_identities_for_user((int) $user['id']),
+            /* Settings › Account › Inloggen (includes/account-security.php). */
+            'signin'         => $user === null ? null : account_signin_state((int) $user['id']),
+            /* Back from confirming with Google: deleting may follow now. */
+            'reauth_ready'   => $user !== null && account_reauth_waiting((int) $user['id'], 'delete'),
+            'email_registration' => account_email_registration_open(),
             'flash'          => auth_flash_take(),
         ];
 

@@ -135,4 +135,10 @@ return [
     'Eerder' => 'Earlier',
     '%d vraag' => '%d question',
     '%d vragen' => '%d questions',
+
+    /* The desktop layout (docs/DESKTOP.md): the view switch and the sidebar. */
+    'Weergave' => 'View',
+    'Telefoon' => 'Phone',
+    'Desktop' => 'Desktop',
+    'OwnifyAI' => 'OwnifyAI',
 ];

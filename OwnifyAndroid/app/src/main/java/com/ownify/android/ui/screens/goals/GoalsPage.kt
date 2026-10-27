@@ -289,7 +289,9 @@ data class GoalCardModel(
     val deadline: String,
     val pausedChip: String?,
     /** Reached 100% — it wears the award; an ended goal does not. */
-    val reached: Boolean = false
+    val reached: Boolean = false,
+    /** The red dot's key on its tile (docs/NOTICES.md); none in the wizard's preview. */
+    val notice: String? = null
 ) {
     companion object {
         fun of(goal: Goal, pausedChip: String?) = GoalCardModel(
@@ -304,7 +306,8 @@ data class GoalCardModel(
             completed = goal.isCompleted,
             deadline = goal.deadlineLine,
             pausedChip = pausedChip,
-            reached = goal.isReached
+            reached = goal.isReached,
+            notice = "goal:" + goal.id
         )
     }
 }
@@ -409,8 +412,8 @@ fun GoalCard(
                     // .goal-card__top
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                         OwnifyIcons.named(model.icon)?.let {
-                            if (primary) IconTile(it, color = accent.color)
-                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = accent.color)
+                            if (primary) IconTile(it, color = accent.color, notice = model.notice)
+                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = accent.color, notice = model.notice)
                         }
                         Column(Modifier.weight(1f)) {
                             T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)

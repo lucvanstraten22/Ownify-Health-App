@@ -8,6 +8,14 @@
  * of the confirmation sends. A stray or forged call without it deletes
  * nothing, and the CSRF token stops one from another site at all.
  *
+ * And the account proves it is itself again (account_require_proof(),
+ * docs/ACCOUNT-SECURITY.md §7): its current password (`password`) when it has
+ * one, counted like a wrong sign-in; otherwise Google — on the website a
+ * confirmation through Google within the last 5 minutes
+ * (api/auth/reauth.php), in the app the ID token from Credential Manager
+ * (`id_token`) with the nonce from api/auth/reauth.php. Without it: 403 with
+ * `reauth` saying which proof is wanted, and nothing is deleted.
+ *
  * What goes is listed in user_delete_account(): every row of the account's,
  * the Google link and paired phones included, and the profile picture.
  * Then this browser is signed out; any other still signed in to the account
@@ -37,6 +45,16 @@ $userId = api_require_account_user();
 
 if (($_POST['confirm'] ?? '') !== 'verwijderen') {
     api_fail('Bevestig eerst dat je je account wilt verwijderen.', 422);
+}
+
+$proof = account_require_proof($userId, 'delete', $_POST, api_current_device());
+
+if ($proof !== null) {
+    if (isset($proof['retry_after'])) {
+        header('Retry-After: ' . $proof['retry_after']);
+    }
+
+    api_json(['ok' => false, 'error' => $proof['error'], 'reauth' => $proof['reauth']], $proof['status']);
 }
 
 /* The board periods this account earned points in: its points leave with it,

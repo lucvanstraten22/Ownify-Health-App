@@ -15,7 +15,7 @@ $today = $data['area']['rating_today'] ?? null;
 ?>
 <section class="card card--check reveal" data-nutrition-rating aria-labelledby="nutrition-rating-title">
     <div class="card__head card__head--compact">
-        <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
+        <span class="icon-tile" aria-hidden="true"><?= icon('check') ?><?= notice_dot('rating') ?></span>
         <h2 class="card__eyebrow" id="nutrition-rating-title"><?= e($copy['title']) ?></h2>
     </div>
 

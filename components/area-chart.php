@@ -33,8 +33,10 @@ $periods = $mini ? array_slice($chart['periods'], 0, 1) : $chart['periods'];
 $default = $mini ? (string) $periods[0]['key'] : (string) $chart['default'];
 $filled  = array_filter($periods, static fn ($p) => $p['has_data']) !== [];
 $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mixed ? 'light' : 'line');
+/* Levels of five characters or more ("2.000") need a wider gutter than "75". */
+$wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['grid'], static fn ($l) => mb_strlen((string) $l['label']) >= 5) !== []) !== [];
 ?>
-<section class="<?= $bare ? 'is-bare' : 'card' ?> area-chart <?= $mini ? 'area-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?>"
+<section class="<?= $bare ? 'is-bare' : 'card' ?> area-chart <?= $mini ? 'area-chart--mini' : 'card--trend compass-history' ?> health-history reveal <?= $filled ? 'is-filled' : 'is-empty' ?><?= $mixed ? ' is-mixed' : '' ?><?= $wide ? ' has-wide-levels' : '' ?>"
          data-health-history data-accent="<?= e($area) ?>"<?php if ($mini): ?> data-detail-open="<?= e($id) ?>" data-area-mini<?php endif; ?>
          aria-labelledby="<?= e($suffix) ?>-title">
 
@@ -55,10 +57,15 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
                         <span class="area-chart__pair">
                             <?php if (count($series) > 1): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
                             <span class="area-chart__value"><?= e($latest['texts'][$k] ?? '—') ?></span>
+                            <?php if ($k === 0 && !empty($latest['of'])): ?><span class="area-chart__of"><?= e($latest['of']) ?></span><?php endif; ?>
                         </span>
                     <?php endforeach; ?>
                     <?php if ($latest['date'] !== null): ?>
                         <span class="area-chart__when"><?= e($latest['date']) ?></span>
+                    <?php endif; ?>
+                    <?php /* The same value in its second unit (kJ, ml), on a line of its own. */ ?>
+                    <?php if (!empty($latest['sub'])): ?>
+                        <span class="area-chart__sub"><?= e($latest['sub']) ?></span>
                     <?php endif; ?>
                 <?php endif; ?>
             </p>
@@ -85,20 +92,33 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
             foreach ($period['lines'] as $line) { $ys[$line['key']] = $line['y']; }
             foreach ($period['bars'] as $bar) { $ys[$bar['key']] = $bar['top']; }
             $levels = $mini ? [] : $period['grid'];
+            $alt    = $mini ? [] : ($period['grid_alt'] ?? []);   // a second scale's labels, on the right (kJ); its narrower plot takes 7 dagen's dates in two rows
+            $band   = $period['band'] ?? null;                    // the bereik, a green zone behind the bars
             $small  = count($x) > 7 && $period['group'] === 'day';
             $carried = array_flip($period['carried']);
             ?>
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
                  data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $ys)) ?>">
 
-                <div class="compass-plot area-chart__plot<?= $levels !== [] ? ' has-levels' : '' ?>"<?php if ($period['has_data']): ?>
+                <?php if ($alt !== []): ?>
+                    <p class="area-chart__units" aria-hidden="true"><span><?= e((string) ($chart['units'][0] ?? '')) ?></span><span><?= e((string) ($chart['units'][1] ?? '')) ?></span></p>
+                <?php endif; ?>
+                <div class="compass-plot area-chart__plot<?= $levels !== [] ? ' has-levels' : '' ?><?= $alt !== [] ? ' has-alt' : '' ?>"<?php if ($period['has_data']): ?>
                      data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
                      aria-label="<?= e($period['aria']) ?>" aria-describedby="<?= e($suffix) ?>-hint"<?php else: ?>
                      role="img" aria-label="<?= e($period['aria']) ?>"<?php endif; ?>>
 
-                    <?php foreach ($levels as $level): ?>
+                    <?php foreach ($levels as $i => $level): ?>
                         <span class="compass-plot__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
+                        <?php if (isset($alt[$i])): ?>
+                            <span class="compass-plot__level compass-plot__level--alt" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($alt[$i]) ?></span>
+                        <?php endif; ?>
                     <?php endforeach; ?>
+
+                    <?php if ($band !== null): ?>
+                        <span class="area-chart__band" aria-hidden="true"
+                              style="top: <?= e((string) $band['top']) ?>%; height: <?= e((string) round($band['bottom'] - $band['top'], 2)) ?>%;"></span>
+                    <?php endif; ?>
 
                     <?php /* Bars are HTML, as the dots are: rounded ends that never
                              stretch with the SVG. Each over its point, from the bottom. */ ?>
@@ -164,7 +184,7 @@ $tone    = static fn (array $s): string => $s['kind'] === 'bars' ? 'bars' : ($mi
                     <?php endif; ?>
                 </div>
 
-                <?php component('chart-axis', ['ticks' => $mini ? ($period['axis_rows'] ?? $period['axis']) : $period['axis'], 'class' => $levels !== [] ? 'has-levels' : null]); ?>
+                <?php component('chart-axis', ['ticks' => ($mini || $alt !== []) ? ($period['axis_rows'] ?? $period['axis']) : $period['axis'], 'class' => trim(($levels !== [] ? 'has-levels' : '') . ($alt !== [] ? ' has-alt' : '')) ?: null]); ?>
 
                 <?php if (!$period['has_data']): ?>
                     <p class="chart__empty"><?= e($chart['empty']) ?></p>

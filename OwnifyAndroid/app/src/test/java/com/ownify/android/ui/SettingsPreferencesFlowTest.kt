@@ -3,6 +3,7 @@ package com.ownify.android.ui
 import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -230,6 +231,33 @@ class SettingsPreferencesFlowTest {
         OwnifyPreferences.use(weekStart = "monday")
         assertEquals(listOf("M", "D", "W", "D", "V", "Z", "Z"), OwnifyPreferences.weekInitials())
         assertEquals(LocalDate.of(2026, 10, 12), OwnifyPreferences.weekFirstDay(LocalDate.of(2026, 10, 15)))
+    }
+
+    @Test
+    fun `Apparaten - disconnecting Polar keeps you on Apparaten and Gezondheid, the card updated in place`() {
+        server.connectPolar()
+        MemoryTokenStorage.signedIn()
+        show()
+        open("Apparaten & Gezondheid", "Polar")
+
+        fun polar() = compose.onNode(hasContentDescription("Polar", substring = true) and hasClickAction())
+        polar().performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Ontkoppelen")
+        val reads = server.requestsTo("state.php").size
+        button("Ontkoppelen").performScrollTo().performClick()
+
+        compose.waitUntil(15_000) { server.requestsTo("disconnect.php").isNotEmpty() }
+        assertEquals("provider=polar", server.requestsTo("disconnect.php").single().body.optString("form"))
+        compose.waitUntil(15_000) { server.requestsTo("state.php").size > reads }
+        compose.waitUntil(15_000) {
+            ((OwnifyAppState.load as? com.ownify.android.data.AppLoad.Ready)?.data?.settings?.integrations
+                ?.firstOrNull { it.provider == "polar" }?.connected) == false
+        }
+        compose.waitForIdle()
+        // Still on Apparaten & Gezondheid, Polar's card there and open, now offering Koppelen.
+        polar().assertIsDisplayed()
+        waitFor("Koppelen")
+        button("Koppelen").assertIsDisplayed()
     }
 
     @Test

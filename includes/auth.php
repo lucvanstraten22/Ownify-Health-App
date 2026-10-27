@@ -21,6 +21,7 @@ require_once __DIR__ . '/i18n.php';   // language and units (docs/I18N.md)
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/account-security.php';   // the address rule, the password check (28.0)
 
 if (!function_exists('auth_provider_available')) {
 
@@ -88,30 +89,30 @@ if (!function_exists('auth_provider_available')) {
 
     /* --------------------------------------------------------- validation */
 
+    /**
+     * The canonical address (account_email_canonical(), includes/account-security.php).
+     * Something that is not an address comes back trimmed and lower-cased, so
+     * a lookup with it simply finds nothing.
+     */
     function auth_normalise_email(string $email): string
     {
-        return mb_strtolower(trim($email));
+        return account_email_canonical($email) ?? mb_strtolower(trim($email));
     }
 
     function auth_validate_email(string $email): ?string
     {
-        $email = auth_normalise_email($email);
-
-        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 191) {
-            return t('Vul een geldig e-mailadres in.');
-        }
-
-        return null;
+        return account_email_canonical($email) === null ? t('Vul een geldig e-mailadres in.') : null;
     }
 
+    /** The length rule alone; account_password_problem() is the whole rule. */
     function auth_validate_password(string $password): ?string
     {
-        if (mb_strlen($password) < 8) {
+        if (mb_strlen($password) < ACCOUNT_PASSWORD_MIN) {
             return t('Kies een wachtwoord van minimaal 8 tekens.');
         }
 
-        if (mb_strlen($password) > 200) {
-            return 'Dit wachtwoord is te lang.';
+        if (mb_strlen($password) > ACCOUNT_PASSWORD_MAX) {
+            return t('Kies een wachtwoord van hoogstens 200 tekens.');
         }
 
         return null;
@@ -122,8 +123,11 @@ if (!function_exists('auth_provider_available')) {
     /**
      * Creates an account with an email identity.
      * Returns ['ok' => bool, 'error' => ?string, 'user_id' => ?int].
+     *
+     * Closed in Release A (account_email_registration_open()): the endpoints
+     * refuse before they get here. $repeat is the "Herhaal wachtwoord" field.
      */
-    function auth_register_email(string $email, string $password, string $username): array
+    function auth_register_email(string $email, string $password, string $username, ?string $repeat = null): array
     {
         require_once __DIR__ . '/user.php';
 
@@ -132,20 +136,24 @@ if (!function_exists('auth_provider_available')) {
             return ['ok' => false, 'error' => t('Geen databaseverbinding.')];
         }
 
+        $canonical = account_email_canonical($email);
+
         $error = auth_validate_email($email)
-            ?? auth_validate_password($password)
-            ?? user_validate_username($username);
+            ?? user_validate_username($username)
+            ?? account_password_problem($password, $repeat ?? $password, $username, $canonical === null ? [] : [$canonical]);
 
         if ($error !== null) {
             return ['ok' => false, 'error' => $error];
         }
 
-        $email = auth_normalise_email($email);
+        $email = (string) $canonical;
 
+        /* Taken: another account's sign-in address, or another account's
+           verified address (a Google one too), or one nobody may claim yet. */
         $existing = db_value(
             'SELECT id FROM user_auth_identities WHERE provider = ? AND provider_subject = ?',
             ['email', $email]
-        );
+        ) ?? (account_email_claimed($email) ? 1 : null);
 
         /* `taken` marks the two answers that say something about other
            accounts, which the app's registration limit counts
@@ -196,18 +204,18 @@ if (!function_exists('auth_provider_available')) {
     /* ------------------------------------------------------------- login */
 
     /**
-     * Verifies an email/password pair.
-     * The same message is returned for an unknown address and a wrong password,
-     * so the response never reveals which addresses have accounts.
-     */
-    /**
      * Signs in with a password.
      *
-     * The identifier is a username or the e-mail the account was created with:
-     * a username is `^[A-Za-z0-9._-]+$` and an e-mail always has an `@`, so the
-     * two can never collide and one lookup covers both. Everything else about
-     * this function is unchanged — same hash, same generic error whether the
-     * account is unknown or the password is wrong, same rehash on the way out.
+     * The identifier is a username or the e-mail address the account signs in
+     * with: a username is `^[A-Za-z0-9._-]+$` and an address always has an
+     * `@`, so the two never collide. An address is made canonical first
+     * (account_email_canonical()).
+     *
+     * One generic answer whether the name is unknown, has no password, or the
+     * password is wrong, and the same work every time: exactly
+     * AUTH_SIGNIN_PASSWORD_CHECKS comparisons through auth_password_matches()
+     * (docs/ACCOUNT-SECURITY.md §3a), so the time taken says nothing either.
+     * The stored hash is renewed only after a successful check.
      */
     function auth_login_password(string $identifier, string $password): array
     {
@@ -217,29 +225,43 @@ if (!function_exists('auth_provider_available')) {
 
         $identifier = trim($identifier);
 
-        $identity = db_one(
-            'SELECT i.id, i.user_id, i.password_hash, u.status
-               FROM user_auth_identities i
-               JOIN users u ON u.id = i.user_id
-              WHERE i.provider = ?
-                AND (i.provider_subject = ? OR u.username = ?)
-              LIMIT 1',
-            ['email', auth_normalise_email($identifier), $identifier]
-        );
+        if (str_contains($identifier, '@')) {
+            $address  = account_email_canonical($identifier);
+            $identity = $address === null ? null : db_one(
+                'SELECT i.id, i.user_id, i.password_hash, u.status
+                   FROM user_auth_identities i
+                   JOIN users u ON u.id = i.user_id
+                  WHERE i.provider = ? AND i.provider_subject = ?
+                  LIMIT 1',
+                ['email', $address]
+            );
+        } else {
+            $identity = $identifier === '' ? null : db_one(
+                'SELECT i.id, i.user_id, i.password_hash, u.status
+                   FROM user_auth_identities i
+                   JOIN users u ON u.id = i.user_id
+                  WHERE i.provider = ? AND u.username = ?
+                  LIMIT 1',
+                ['email', $identifier]
+            );
+        }
+
+        /* Step 1: the account itself, always first. A pending registration
+           can never stand in front of it. */
+        $matches = auth_password_matches($identity === null ? null : $identity['password_hash'], $password);
+
+        /* The rest of the fixed work. Release B checks the identifier's
+           pending registrations here (at most 3); until then the same number
+           of comparisons against the dummy. */
+        for ($i = 1; $i < AUTH_SIGNIN_PASSWORD_CHECKS; $i++) {
+            auth_password_matches(null, $password);
+        }
 
         /* `credentials` marks the one failure that is a wrong guess, so the
            sign-in limit (includes/auth-throttle.php) counts that and nothing
            else. It never reaches a response. */
-        $generic = ['ok' => false, 'error' => t('Gebruikersnaam of wachtwoord klopt niet.'), 'credentials' => true];
-
-        if ($identity === null || empty($identity['password_hash'])) {
-            // Spend comparable time so the response cannot be used to probe.
-            password_verify($password, '$2y$12$usesomesillystringforsalt0000000000000000000000000000000');
-            return $generic;
-        }
-
-        if (!password_verify($password, $identity['password_hash'])) {
-            return $generic;
+        if (!$matches) {
+            return ['ok' => false, 'error' => t('Gebruikersnaam of wachtwoord klopt niet.'), 'credentials' => true];
         }
 
         if ($identity['status'] !== 'active') {
@@ -261,7 +283,7 @@ if (!function_exists('auth_provider_available')) {
     function auth_identities_for_user(int $userId): array
     {
         return db_all(
-            'SELECT provider, email, created_at, last_login_at
+            'SELECT provider, email, email_verified_at, created_at, last_login_at
                FROM user_auth_identities
               WHERE user_id = ?
               ORDER BY created_at',

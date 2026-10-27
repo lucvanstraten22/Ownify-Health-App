@@ -48,7 +48,7 @@
             useTheme(key === 'light' || key === 'dark' ? key : 'system', option.querySelector('.settings-option__label'));
         }
 
-        if (name === 'language' || name === 'units' || name === 'week') {
+        if (name === 'language' || name === 'units' || name === 'week' || name === 'rating_notice') {
             savePreference(name, option.getAttribute('data-choice-key'), option);
         }
     });
@@ -96,6 +96,17 @@
             })
             .catch(function () { return { ok: false }; })
             .then(function (result) {
+                /* Meldingen › Stip bij Voeding changes no word or number on
+                   any page: kept, the dot follows its new hour, and the main
+                   page's row says it — no reload. */
+                if (result && result.ok && name === 'rating_notice') {
+                    Array.prototype.forEach.call(group, function (button) { button.disabled = false; });
+                    var hour = parseInt(key, 10);
+                    var value = document.querySelector('[data-detail-open="settings-notifications"] .settings-row__value');
+                    if (value) { value.textContent = T.tf('Voeding vanaf %s', (hour < 10 ? '0' : '') + hour + ':00'); }
+                    if (window.OwnifyNotices) { window.OwnifyNotices.hour(hour); }
+                    return;
+                }
                 if (result && result.ok) {
                     try { sessionStorage.setItem('ownify-reopen', 'settings-' + (name === 'language' ? 'language' : 'preferences')); } catch (e) { /* private mode */ }
                     window.location.reload();
@@ -336,9 +347,10 @@
      * it is and what it is asking for. A consent screen inside a fetch would
      * be a phishing pattern, and every provider blocks it.
      *
-     * Disconnecting is a normal request, then a reload — the row, the count on
-     * the settings page and the sync summary all follow from stored state, so
-     * re-reading is both simpler and more truthful than patching three places.
+     * Disconnecting is a normal request, then the page is read again and the
+     * row, the count on the settings page and the sync summary are swapped in
+     * where the user is (pull-sync.js `refresh`) — the same page and tab, no
+     * reload. Only when that cannot be done does the page reload.
      */
     document.addEventListener('click', function (event) {
         var connect = event.target.closest('[data-integration-connect]');
@@ -373,12 +385,13 @@
     });
 
     /**
-     * Posts one named field with the CSRF token, then reloads on success.
+     * Posts one named field with the CSRF token; on success the page is read
+     * again in place (no reload, no navigation), reloading only as a fallback.
      *
      * Both buttons here change what the server holds and then need the page to
-     * say so, and the page is rendered server-side — so a reload is the honest
-     * way to show the result rather than patching the DOM into a shape the
-     * next render might disagree with.
+     * say so, and the page is rendered server-side — so the parts are taken
+     * from a fresh render rather than patched into a shape the next render
+     * might disagree with.
      *
      * The button is re-enabled on failure. Leaving it disabled would mean a
      * network blip costs the user the ability to try again without reloading.
@@ -399,7 +412,11 @@
             .catch(function () { return { ok: false }; })
             .then(function (result) {
                 if (result && result.ok) {
-                    window.location.reload();
+                    var inPlace = window.OwnifyPullSync && window.OwnifyPullSync.refresh
+                        ? window.OwnifyPullSync.refresh() : Promise.resolve(false);
+                    inPlace.then(function (done) {
+                        if (!done) { window.location.reload(); }
+                    });
                 } else {
                     button.disabled = false;
                 }
@@ -519,6 +536,45 @@
         /** Builds the input for one field and returns how to read it back. */
         function renderControl(spec) {
             control.innerHTML = '';
+
+            /* Wachtwoord wijzigen: the current password, the new one, and the
+               new one again — each with the account panel's own label, in the
+               editor's own field. Read back as the three fields the endpoint
+               takes (api/account/password.php). */
+            if (spec.type === 'passwords') {
+                var boxes = {};
+                [['current', T.t('Huidig wachtwoord'), 'current-password'],
+                 ['password', T.t('Nieuw wachtwoord'), 'new-password'],
+                 ['password_confirm', T.t('Herhaal nieuw wachtwoord'), 'new-password']].forEach(function (part, i) {
+                    var field = document.createElement('div');
+                    field.className = 'account__field';
+                    var label = document.createElement('label');
+                    label.className = 'account__label';
+                    label.htmlFor = 'editor-' + part[0];
+                    label.textContent = part[1];
+                    var box = document.createElement('input');
+                    box.className = 'field-editor__input';
+                    box.type = 'password';
+                    box.id = 'editor-' + part[0];
+                    box.autocomplete = part[2];
+                    box.maxLength = 200;
+                    if (i > 0) { box.minLength = 8; }
+                    field.appendChild(label);
+                    field.appendChild(box);
+                    control.appendChild(field);
+                    boxes[part[0]] = box;
+                });
+
+                var hint = document.createElement('p');
+                hint.className = 'field-editor__note';
+                hint.textContent = T.t('Minimaal 8 tekens. Je blijft hier ingelogd; op je andere apparaten word je uitgelogd.');
+                control.appendChild(hint);
+
+                return function () {
+                    if (boxes.current.value === '' || boxes.password.value === '' || boxes.password_confirm.value === '') { return ''; }
+                    return { current: boxes.current.value, password: boxes.password.value, password_confirm: boxes.password_confirm.value };
+                };
+            }
 
             if (spec.type === 'choice') {
                 var chosen = spec.value;
@@ -677,7 +733,12 @@
 
             var body = new FormData();
             body.append('csrf', csrf());
-            body.append(current.key, value);
+            /* One value, or — the password editor — several fields. */
+            if (typeof value === 'object') {
+                Object.keys(value).forEach(function (name) { body.append(name, value[name]); });
+            } else {
+                body.append(current.key, value);
+            }
             Object.keys(current.fields).forEach(function (name) { body.append(name, current.fields[name]); });
             // The unit it was typed in: the endpoint converts once (cm/in, kg/lb).
             if (current.unit) { body.append(current.key + '_unit', current.unit); }
@@ -801,6 +862,19 @@
         body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
         body.append('confirm', 'verwijderen');
 
+        /* The proof (28.0): the account's password, when it has one. An
+           account without one has confirmed with Google first. */
+        var secret = confirmPanel.querySelector('[data-confirm-password]');
+        if (secret) {
+            if (secret.value === '') {
+                var empty = confirmPanel.querySelector('[data-confirm-error]');
+                if (empty) { empty.textContent = T.t('Vul je wachtwoord in om dit te bevestigen.'); empty.hidden = false; }
+                secret.focus({ preventScroll: true });
+                return;
+            }
+            body.append('password', secret.value);
+        }
+
         button.disabled = true;
 
         fetch('api/profile/delete.php', { method: 'POST', body: body, credentials: 'same-origin' })
@@ -833,6 +907,40 @@
             });
     }
 
+    /**
+     * An account without a password confirms with Google before it is
+     * deleted: off to Google, which asks for the password again, and back
+     * to Settings › Account, where the Inloggen block says it worked. The
+     * deletion itself is then one tap away, for 5 minutes.
+     */
+    function confirmWithGoogle(button) {
+        var panel = document.querySelector('[data-account]');
+        var body = new FormData();
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+        body.append('action', 'google');
+        body.append('purpose', 'delete');
+
+        button.disabled = true;
+
+        fetch('api/auth/reauth.php', { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) { return response.json().catch(function () { return { ok: false }; }); })
+            .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
+            .then(function (result) {
+                if (result && result.ok && result.redirect) {
+                    try { sessionStorage.setItem('ownify-reopen', 'settings-account'); } catch (e) { /* private mode */ }
+                    window.location.assign(result.redirect);
+                    return;
+                }
+
+                button.disabled = false;
+                var error = confirmPanel.querySelector('[data-confirm-error]');
+                if (error) {
+                    error.textContent = (result && result.error) || T.t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.');
+                    error.hidden = false;
+                }
+            });
+    }
+
     var deleteButton = page.querySelector('[data-settings-delete]');
     if (deleteButton) {
         deleteButton.addEventListener('click', function () {
@@ -846,7 +954,10 @@
             if (event.target.closest('[data-confirm-next]')) { showStep(2); return; }
 
             var final = event.target.closest('[data-confirm-delete]');
-            if (final && !final.disabled) { deleteAccount(final); }
+            if (final && !final.disabled) { deleteAccount(final); return; }
+
+            var reauth = event.target.closest('[data-confirm-reauth]');
+            if (reauth && !reauth.disabled) { confirmWithGoogle(reauth); }
         });
     }
 

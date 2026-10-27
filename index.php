@@ -86,7 +86,7 @@ foreach ($data['navigation'] as $position => $item) {
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community', 'challenges',
-        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training',
+        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training', 'nutrition', 'desktop',
     ]]); ?>
 </head>
 <body class="app">
@@ -133,6 +133,10 @@ foreach ($data['navigation'] as $position => $item) {
 
         <!-- Parked on the starting page server-side, so the rail never has to
              animate into place on load — and lands right without JavaScript. -->
+        <?php /* The window the rail is seen through: the whole screen on a
+                 phone; on desktop the room beside the sidebar (desktop.css),
+                 so the pages either side of the one shown stay out of sight. */ ?>
+        <div class="rail-window">
         <div class="rail" data-rail
              style="transform: translate3d(<?= e((string) (-100 * $startIndex)) ?>%, 0, 0);">
             <?php foreach ($data['navigation'] as $position => $item):
@@ -156,6 +160,7 @@ foreach ($data['navigation'] as $position => $item) {
                     ?>
                 </div>
             <?php endforeach; ?>
+        </div>
         </div>
 
         <!-- Detail pages: above the rail, below the dock, so the tab bar and
@@ -233,6 +238,9 @@ foreach ($data['navigation'] as $position => $item) {
     }
     ?>
 
+    <?php /* The red dots' summary (lib/notices.php), for notices.js. */ ?>
+    <script type="application/json" data-notices><?= json_encode($data['notices'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
+    <script src="<?= e(asset('assets/js/notices.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/hero-ring.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/dashboard.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/interactions.js')) ?>" defer></script>
@@ -244,6 +252,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/detail-layer.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/health-trend.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/health-rating.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/nutrition.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-chart.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/compass-history.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/area-charts.js')) ?>" defer></script>
@@ -258,5 +267,6 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/devices.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/pull-sync.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/desktop.js')) ?>" defer></script>
 </body>
 </html>

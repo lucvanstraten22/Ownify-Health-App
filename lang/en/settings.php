@@ -245,4 +245,16 @@ return [
     'De database is nog niet bijgewerkt voor deze voorkeuren (migratie 024).' => 'The database has not been updated for these preferences yet (migration 024).',
     'Onbekende eerste dag van de week.' => 'Unknown first day of the week.',
     'Onbekende waarde.' => 'Unknown value.',
+
+    /* Meldingen › the red dots (26.0, docs/NOTICES.md) */
+    'Een rode stip in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.' => 'A red dot in the app points you to what is waiting for you. Notifications outside the app are not sent yet.',
+    'Stippen in de app' => 'Dots in the app',
+    'Een stip staat op wat je zelf nog moet doen: je cijfer bij Voeding, een doel dat je zelf afvinkt, een vriendverzoek, een uitnodiging of een bron die niet werkt. Hij verdwijnt zodra het gedaan is.' => 'A dot sits on what you still have to do yourself: your Nutrition rating, a goal you tick off yourself, a friend request, an invitation or a source that is not working. It disappears as soon as it is done.',
+    'Stip bij Voeding vanaf' => 'Nutrition dot from',
+    'Standaard' => 'Default',
+    'Meldingen buiten de app' => 'Notifications outside the app',
+    'Voeding vanaf 20:00' => 'Nutrition from 20:00',
+    'Voeding vanaf %s' => 'Nutrition from %s',
+    'Onbekend tijdstip.' => 'Unknown time.',
+    'De database is nog niet bijgewerkt voor deze instelling (migratie 026).' => 'The database has not been updated for this setting yet (migration 026).',
 ];

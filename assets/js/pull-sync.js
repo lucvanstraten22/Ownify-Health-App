@@ -222,6 +222,7 @@
             .then(function (html) {
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 if (!fresh.querySelector('[data-deck]')) { throw new Error('no page'); }
+                if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); }
 
                 if (window.OwnifyRefresh && window.OwnifyRefresh.scores) { window.OwnifyRefresh.scores(fresh); }
                 if (window.OwnifyGoals) { window.OwnifyGoals.apply(fresh); }
@@ -257,6 +258,17 @@
                 /* The header's quick look: which sources, and how they are. */
                 swap(document.querySelector('[data-devices] .devices__panel > :first-child'),
                     fresh.querySelector('[data-devices] .devices__panel > :first-child'));
+
+                /* The sources a pull asks: one disconnected meanwhile is not asked again. */
+                var nextConfig = fresh.querySelector('[data-pull-sync]');
+                if (nextConfig) {
+                    try {
+                        var next = JSON.parse(nextConfig.getAttribute('data-pull-sync') || '{}');
+                        sources = (next.sources || []).filter(function (source) {
+                            return /^[a-z0-9_]+$/.test(source.provider || '');
+                        });
+                    } catch (error) { /* keep the list it had */ }
+                }
 
                 return true;
             })
@@ -433,7 +445,7 @@
 
     /* Under the sheet or a detail page the capsule, and its button, are out of reach too. */
     nav.onRefresh(function () {
-        var covered = nav.state.aiOpen || nav.state.detailOpen;
+        var covered = !nav.sideBySide() && (nav.state.aiOpen || nav.state.detailOpen);
         root.inert = covered;
         if (covered) { root.setAttribute('aria-hidden', 'true'); } else { root.removeAttribute('aria-hidden'); }
     });
@@ -457,6 +469,9 @@
     /** For the browser tests: where it stands. */
     window.OwnifyPullSync = {
         state: function () { return state; },
-        offset: function () { return offset; }
+        offset: function () { return offset; },
+        /* Reads the page again and swaps in what it shows, where the user is
+           (settings.js, after disconnecting): resolves true when it did. */
+        refresh: refresh
     };
 }());

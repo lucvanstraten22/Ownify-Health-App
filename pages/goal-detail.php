@@ -149,7 +149,7 @@ $height = 96.0;
                     <section class="card card--check reveal" data-goal-manual="<?= e($id) ?>"
                              aria-labelledby="goal-check-<?= e($id) ?>">
                         <div class="card__head card__head--compact">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
+                            <span class="icon-tile" aria-hidden="true"><?= icon('check') ?><?= notice_dot('goal:' . $id) ?></span>
                             <h2 class="card__eyebrow" id="goal-check-<?= e($id) ?>"><?= e($copy['manual']) ?></h2>
                         </div>
 

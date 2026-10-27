@@ -323,6 +323,7 @@ if (!function_exists('health_connect_map')) {
             'consumed_at' => $when,
             'label'       => isset($r['name']) ? (string) $r['name'] : null,
             'meal_type'   => health_connect_meal_type($r['mealType'] ?? null),
+            'data_origin' => health_connect_origin($r),   // the app that logged it: the same meal from two apps counts once
         ];
 
         /* Health Connect's nutrient names, onto the catalogue's. Grams and

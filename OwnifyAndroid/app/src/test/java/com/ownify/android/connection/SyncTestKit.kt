@@ -269,11 +269,46 @@ class FakeOwnifyServer {
     @Volatile
     var calibration: JSONObject? = null
 
+    /* ------------------------------------------------ account security (28.0) */
+
+    /** Settings › Inloggen's `auth.signin`, put into the pages; null as an older server sends none. */
+    @Volatile
+    var signin: JSONObject? = null
+
+    /** Whether the pages say Google sign-in is set up on the server (`auth.providers.google`); null: as the snapshot has it. */
+    @Volatile
+    var googleOffered: Boolean? = null
+
+    /** What app-google.php's status says about registering with e-mail; Release A says false. */
+    @Volatile
+    var emailRegistration = true
+
+    /** The one current password the fake account has. */
+    val currentPassword = "huidig-wachtwoord"
+
+    /** The forms api/account/password.php took. */
+    val passwordChanges = CopyOnWriteArrayList<Map<String, String>>()
+
+    /** api/auth/reauth.php's nonces, by the ownify_session cookie of the conversation that asked. */
+    private val reauthSessions = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /** `auth.signin` for a password account (unconfirmed address) or a Google-only one. */
+    fun signinFor(password: Boolean): JSONObject = JSONObject()
+        .put("email", if (password) "sanne@example.com" else JSONObject.NULL)
+        .put("email_verified", false)
+        .put("password", password)
+        .put("google", !password)
+        .put("google_email", if (password) JSONObject.NULL else "sanne@gmail.com")
+        .put("can_change_password", password)
+        .put("can_link_google", false)
+
     /** The pages as the server would send them now: [stateBody], with the setup and the first days. */
     private fun currentState(): String {
-        if (!setupPending && calibration == null) return stateBody
+        if (!setupPending && calibration == null && signin == null && googleOffered == null) return stateBody
         val state = JSONObject(stateBody)
         val data = state.getJSONObject("data")
+        signin?.let { data.getJSONObject("auth").put("signin", it) }
+        googleOffered?.let { data.getJSONObject("auth").getJSONObject("providers").put("google", it) }
         if (setupPending) {
             val setup = JSONObject(FakeOwnifyServer::class.java.classLoader!!.getResource("setup-pending.json").readText())
             if (setupFresh) setup.put("resume", "focus")
@@ -327,6 +362,18 @@ class FakeOwnifyServer {
                 .put("connected", true).put("transport", "cloud").put("available", true).put("can_sync", true)
                 .put("devices", org.json.JSONArray())
         )
+        stateBody = state.toString()
+    }
+
+    /** A source shown as not connected in the pages, as after api/integrations/disconnect.php. */
+    @Synchronized
+    fun disconnect(provider: String) {
+        val state = JSONObject(stateBody)
+        val integrations = state.getJSONObject("data").getJSONObject("settings").getJSONArray("integrations")
+        for (i in 0 until integrations.length()) {
+            val item = integrations.getJSONObject(i)
+            if (item.optString("provider") == provider) item.put("connected", false).put("status", "disconnected")
+        }
         stateBody = state.toString()
     }
 
@@ -505,11 +552,45 @@ class FakeOwnifyServer {
                     reply(exchange, 200, """{"ok":true,"pending":false}""")
                 }
             }
+            // Changing the password (api/account/password.php): the current one, then the rules.
+            path.endsWith("/account/password.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                val fields = form(body)
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    fields["current"] != currentPassword -> reply(exchange, 403, """{"ok":false,"error":"Je huidige wachtwoord klopt niet."}""")
+                    fields["password"] != fields["password_confirm"] -> reply(exchange, 422, """{"ok":false,"error":"De twee wachtwoorden zijn niet hetzelfde."}""")
+                    else -> {
+                        passwordChanges += fields
+                        reply(exchange, 200, """{"ok":true,"message":"Je wachtwoord is gewijzigd. Je bent op je andere apparaten uitgelogd."}""")
+                    }
+                }
+            }
+            // Confirming with Google before deleting (api/auth/reauth.php): a nonce, in a session of its own.
+            path.endsWith("/auth/reauth.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else {
+                    val id = "reauth${googleIds.incrementAndGet()}"
+                    val nonce = "reauth-nonce-$id"
+                    reauthSessions[id] = nonce
+                    exchange.responseHeaders.add("Set-Cookie", "ownify_session=$id; path=/; secure; HttpOnly; SameSite=Lax")
+                    reply(exchange, 200, """{"ok":true,"nonce":"$nonce","client_id":"$GOOGLE_WEB_CLIENT","expires_in":300}""")
+                }
+            }
             // Deleting the account (api/profile/delete.php): the token goes with the account's rows.
             path.endsWith("/profile/delete.php") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                val fields = form(body)
+                val proof = signin
+                val session = headers["cookie"]?.split(';')?.map { it.trim() }?.firstOrNull { it.startsWith("ownify_session=") }?.substringAfter('=')
+                val nonce = session?.let { reauthSessions.remove(it) }
                 when {
                     !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    proof != null && proof.optBoolean("password") && fields["password"] != currentPassword ->
+                        reply(exchange, 403, """{"ok":false,"error":"Je wachtwoord klopt niet.","reauth":"password"}""")
+                    proof != null && !proof.optBoolean("password") && (nonce == null || fields["id_token"] != fakeGoogleIdToken(GOOGLE_WEB_CLIENT, nonce)) ->
+                        reply(exchange, 403, """{"ok":false,"error":"Bevestig eerst met Google.","reauth":"google"}""")
                     deleteFails -> reply(exchange, 500, """{"ok":false,"error":"Je account kon niet worden verwijderd."}""")
                     else -> {
                         revoked += bearer!!
@@ -555,6 +636,15 @@ class FakeOwnifyServer {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
                 if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
                 else reply(exchange, 200, savePreferences(form(body)).toString())
+            }
+            // Disconnecting a source (api/integrations/disconnect.php): it shows as not connected from then on.
+            path.endsWith("/integrations/disconnect.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (!works) reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                else {
+                    disconnect(form(body)["provider"].orEmpty())
+                    reply(exchange, 200, """{"ok":true,"message":"Ontkoppeld"}""")
+                }
             }
             // A paired phone's name (api/integrations/device-rename.php): only the name, empty its own again.
             path.endsWith("/integrations/device-rename.php") -> {
@@ -861,7 +951,7 @@ class FakeOwnifyServer {
 
         if (action == "status") {
             val available = googleMode != GoogleMode.NOT_CONFIGURED
-            return reply(exchange, 200, """{"ok":true,"available":$available}""")
+            return reply(exchange, 200, """{"ok":true,"available":$available,"email_registration":$emailRegistration}""")
         }
 
         if (googleMode == GoogleMode.NOT_CONFIGURED) {

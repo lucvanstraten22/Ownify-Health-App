@@ -18,7 +18,7 @@ $items = $data['navigation'];
                         data-nav="<?= e($item['id']) ?>"
                         <?= $isActive ? 'aria-current="page"' : '' ?>>
                     <span class="tab__glow" aria-hidden="true"></span>
-                    <span class="tab__icon" aria-hidden="true"><?= icon($item['icon']) ?></span>
+                    <span class="tab__icon" aria-hidden="true"><?= icon($item['icon']) ?><?= notice_dot('tab:' . $item['id'], 'beside') ?></span>
                     <span class="tab__label"><?= e($item['label']) ?></span>
                 </button>
             </li>

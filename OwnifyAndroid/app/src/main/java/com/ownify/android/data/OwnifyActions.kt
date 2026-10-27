@@ -58,12 +58,52 @@ object OwnifyActions {
      * endpoint insists on). Once the server says it is gone, the phone lets go
      * of the token that went with it and shows the server's words.
      *
+     * The account proves it is itself again (28.0): [password] when it has
+     * one. An account without one confirms with Google instead
+     * ([deleteAccountWithGoogle]).
+     *
      * The caller is the confirmation sheet, which leaves the screen with the
      * account's pages: so the signing out is finished whatever happens to the
      * sheet (NonCancellable), and the opening screen is chosen before the
      * pages are emptied — never a moment of the signed-in app with nothing in it.
      */
-    suspend fun deleteAccount(context: Context, fallback: String): Outcome =
+    suspend fun deleteAccount(context: Context, fallback: String, password: String? = null): Outcome {
+        val fields = buildMap {
+            put("confirm", "verwijderen")
+            if (password != null) put("password", password)
+        }
+        return deleted(context, fallback) { token -> OwnifyConnection.api.form("api/profile/delete.php", fields, token) }
+    }
+
+    /**
+     * Deleting an account without a password: Google confirms it first, on
+     * this phone (docs/ACCOUNT-SECURITY.md §7). A nonce from the server
+     * (api/auth/reauth.php), Google's account chooser with it (Credential
+     * Manager), then the deletion with the ID token Google gave — in one
+     * conversation with the server, which checks the token is the account's
+     * own Google account. [activity] shows Google's chooser.
+     *
+     * Closing Google's chooser comes back as Refused with an empty message:
+     * nothing to say, nothing deleted.
+     */
+    suspend fun deleteAccountWithGoogle(activity: Context, fallback: String): Outcome {
+        val conversation = OwnifyConnection.api.reauth()
+        return deleted(activity, fallback) { token ->
+            val start = when (val result = conversation.start(token)) {
+                is OwnifyResult.Success -> result.value
+                is OwnifyResult.Failure -> return@deleted result
+            }
+            when (val google = OwnifyConnection.google.request(activity, start.serverClientId, start.nonce)) {
+                is com.ownify.android.connection.GoogleIdResult.Token -> conversation.form(
+                    "api/profile/delete.php", mapOf("confirm" to "verwijderen", "id_token" to google.idToken), token
+                )
+                com.ownify.android.connection.GoogleIdResult.Cancelled -> OwnifyResult.HttpError(0, "")
+                else -> OwnifyResult.HttpError(0, com.ownify.android.i18n.tr("Bevestigen met Google is niet gelukt. Probeer het opnieuw."))
+            }
+        }
+    }
+
+    private suspend fun deleted(context: Context, fallback: String, call: suspend (token: String) -> OwnifyResult<JSONObject>): Outcome =
         run(context, fallback, reload = false, after = { token, body ->
             val link = body.optJSONObject("link")?.let { l ->
                 val href = l.optString("href")
@@ -73,7 +113,7 @@ object OwnifyActions {
                 OwnifyConnection.accountDeleted(context.applicationContext, token, body.optString("message"), link)
                 OwnifyAppState.clear()
             }
-        }) { token -> OwnifyConnection.api.form("api/profile/delete.php", mapOf("confirm" to "verwijderen"), token) }
+        }, call = call)
 
     /** The profile picture, as the website uploads it. */
     suspend fun upload(

@@ -115,7 +115,7 @@
             })
             .then(function (html) {
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
-                if (fresh.querySelector('[data-deck]')) { swap(fresh); }
+                if (fresh.querySelector('[data-deck]')) { swap(fresh); if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); } }
             })
             .catch(function () { /* what was saved is saved; the next load shows it */ });
     }

@@ -116,7 +116,10 @@ if (!function_exists('ch_avatar')) {
         $who = $invite['inviter'];
 
         return '<div class="ch-invite">'
-            . ($who !== null ? ch_avatar($who, 32) : '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon_solid('target') . '</span>')
+            /* The red dot on the invitation's picture (lib/notices.php). */
+            . ($who !== null
+                ? '<span class="notice-frame notice-frame--round">' . ch_avatar($who, 32) . (function_exists('notice_dot') ? notice_dot('invite:' . (int) $invite['id']) : '') . '</span>'
+                : '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon_solid('target') . (function_exists('notice_dot') ? notice_dot('invite:' . (int) $invite['id']) : '') . '</span>')
             . '<p class="ch-invite__text">' . ($who !== null ? '<b>' . e($who['name']) . '</b> ' : '') . e($invite['invite_text']) . '</p>'
             . '<button type="button" class="btn press ch-invite__btn" data-challenge-review="' . (int) $invite['id'] . '">' . e($see) . '</button>'
             . '</div>';

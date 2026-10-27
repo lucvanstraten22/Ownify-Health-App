@@ -116,6 +116,21 @@ $theme  = app_theme_head($app);     // lib/theme.php
         }
 
         window.ownifyAccess = { apply: access };
+
+        /* Telefoon or Desktop (desktop.css, desktop.js), before anything is
+           painted: from 768px wide the desktop layout unless this browser
+           chose the phone's (kept in localStorage); narrower is always the
+           phone's own, and has no switch. */
+        var wide = window.matchMedia ? window.matchMedia('(min-width: 768px)') : null;
+        function layout() {
+            var chosen = null;
+            try { chosen = window.localStorage.getItem('ownify_view'); } catch (error) { chosen = null; }
+            root.setAttribute('data-layout', wide && wide.matches ? (chosen === 'phone' ? 'phone-frame' : 'desktop') : 'phone');
+        }
+        layout();
+        if (wide && wide.addEventListener) { wide.addEventListener('change', layout); }
+        else if (wide && wide.addListener) { wide.addListener(layout); }
+        window.ownifyLayout = { apply: layout };
     })();
     </script>
 

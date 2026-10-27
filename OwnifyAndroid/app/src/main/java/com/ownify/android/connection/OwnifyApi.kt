@@ -70,12 +70,16 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
         username: String,
         password: String,
         label: String,
-        current: String?
+        current: String?,
+        repeat: String? = null
     ): OwnifyResult<OwnifySession> {
         val body = JSONObject()
             .put("email", email)
             .put("username", username)
             .put("password", password)
+        // "Herhaal wachtwoord" (28.0): the server checks the two are the same.
+        if (repeat != null) body.put("password_confirm", repeat)
+        body
             .put("label", label)
             .put("platform", "android")
 
@@ -83,12 +87,42 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
     }
 
     /**
-     * Whether this server offers Google sign-in to the app at all
-     * (app-google.php, `status`). False: the button is shown as the website
-     * shows an unconfigured Google — disabled, "Google is nog niet gekoppeld."
+     * Which ways in this server offers the app (app-google.php, `status`):
+     * Google sign-in — false: the button is shown as the website shows an
+     * unconfigured Google, disabled, "Google is nog niet gekoppeld." — and
+     * whether an account can be made with e-mail and a password (closed in
+     * Release A; an older server that does not say is taken as open).
      */
-    suspend fun googleAvailable(): OwnifyResult<Boolean> =
-        post(GOOGLE_PATH, JSONObject().put("action", "status"), token = null) { json -> json.opt("available") as? Boolean }
+    suspend fun googleAvailable(): OwnifyResult<ServerWays> =
+        post(GOOGLE_PATH, JSONObject().put("action", "status"), token = null) { json ->
+            (json.opt("available") as? Boolean)?.let { ServerWays(it, json.opt("email_registration") as? Boolean ?: true) }
+        }
+
+    /**
+     * Confirming the account with Google before deleting it (28.0), for an
+     * account without a password: a nonce from api/auth/reauth.php, then the
+     * deletion itself with the ID token Google gave — both in this one
+     * conversation's session (its cookie is kept here, for these two
+     * requests only), with the account [token].
+     */
+    fun reauth(): ReauthConversation = ReauthConversation()
+
+    inner class ReauthConversation internal constructor() {
+
+        private val cookies = LinkedHashMap<String, String>()
+
+        /** A nonce for Credential Manager, and the Web client to ask Google for a token for. */
+        suspend fun start(token: String): OwnifyResult<GoogleStart> =
+            post("api/auth/reauth.php", JSONObject().put("action", "nonce"), token, jar = cookies) { json ->
+                val nonce = json.text("nonce")
+                val client = json.text("client_id")
+                if (nonce == null || client == null) null else GoogleStart(nonce, client)
+            }
+
+        /** A form post in this conversation: the deletion with its `id_token`. */
+        suspend fun form(path: String, fields: Map<String, String>, token: String): OwnifyResult<JSONObject> =
+            this@OwnifyApi.form(path, fields, token, cookies)
+    }
 
     /** One sign-in with Google, from the nonce to the account token. */
     fun google(): GoogleConversation = GoogleConversation()
@@ -218,11 +252,11 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
      * of its session. The whole answer comes back; its `error` is in the
      * failure.
      */
-    suspend fun form(path: String, fields: Map<String, String>, token: String): OwnifyResult<JSONObject> {
+    suspend fun form(path: String, fields: Map<String, String>, token: String, jar: MutableMap<String, String>? = null): OwnifyResult<JSONObject> {
         val body = fields.entries.joinToString("&") { (key, value) ->
             URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
         }
-        return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, TIMEOUT_MS, MAX_RESPONSE_BYTES) { it }
+        return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, TIMEOUT_MS, MAX_RESPONSE_BYTES, jar) { it }
     }
 
     /**
@@ -501,6 +535,9 @@ private val TOKEN_FORMAT = Regex("[0-9a-f]{64}")
  * eight characters from A–Z and 2–9, the rule pair.php applies. Spaces and
  * dashes are dropped and letters upper-cased, so "abcd-2345" works too.
  */
+/** What [OwnifyApi.googleAvailable] answers: Google in the app, and registering with e-mail. */
+data class ServerWays(val google: Boolean, val emailRegistration: Boolean)
+
 fun normalizePairingCode(input: String): String? =
     input.filterNot { it.isWhitespace() || it == '-' }
         .uppercase()

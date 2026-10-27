@@ -5,6 +5,8 @@
  *     php tools/check-config.php
  *     php tools/check-config.php --generate-key
  *     php tools/check-config.php --ai-ping        does the Gemini key work?
+ *     php tools/check-config.php --check-schema-rules   before importing migration 027
+ *     php tools/check-config.php --send-test=you@example.com   one test message (Release B setup)
  *
  * Answers the questions you cannot answer by looking at the site: is the
  * database reachable with the credentials this checkout will actually use, and
@@ -96,6 +98,111 @@ if (in_array('--ai-ping', $argvFlags, true)) {
     };
 
     exit($answer['ok'] ? 0 : 1);
+}
+
+/* Before migration 027 is imported (docs/ACCOUNT-SECURITY.md §5a): the
+   server's version and sql_mode, and the 027 address rule — read verbatim
+   from the migration file — tried on TEMPORARY tables (they create no
+   database and vanish on disconnect) with the same cases as
+   tools/canonical-check.php. Also: the advisory-lock name Release B uses.
+   Changes nothing. Import 027 only when this says PASS. */
+if (in_array('--check-schema-rules', $argvFlags, true)) {
+    require_once dirname(__DIR__) . '/includes/account-security.php';
+    require_once __DIR__ . '/sql-source.php';
+
+    $pdo = db();
+    if ($pdo === null) {
+        echo "No database connection (config/database.php).\n";
+        exit(1);
+    }
+
+    $version = (string) $pdo->query('SELECT VERSION()')->fetchColumn();
+    $mode    = (string) $pdo->query('SELECT @@SESSION.sql_mode')->fetchColumn();
+    echo "Server:   $version\nsql_mode: " . ($mode === '' ? '(empty)' : $mode) . "\n";
+
+    $maria   = stripos($version, 'mariadb') !== false;
+    $number  = preg_match('/^(\d+\.\d+\.\d+)/', $version, $m) ? $m[1] : '0.0.0';
+    $checks  = $maria ? version_compare($number, '10.2.1', '>=') : version_compare($number, '8.0.16', '>=');
+    if (!$checks) {
+        echo "FAIL: this server ignores CHECK constraints; the code alone would hold the address rule. Ask before importing 027.\n";
+        exit(1);
+    }
+
+    $pattern = source_pattern();
+    $ok      = !str_contains($pattern, '\\');
+    printf("pattern from the migration: '%s' (%s)\n", $pattern, hex_bytes($pattern));
+
+    $clause = source_checks()['chk_pending_email_canonical'];
+    $values = ['sanne@example.com' => true, 'Sanne@example.com' => false, "sanne@example.com\n" => false, 'sanne@example.com ' => false,
+               ' sanne@example.com' => false, "sanne@exa\0mple.com" => false, 'sänne@example.com' => false, 'sanne+tag@example.com' => true, '' => false];
+    foreach (['' => 'default', 'NO_BACKSLASH_ESCAPES' => 'NO_BACKSLASH_ESCAPES'] as $setMode => $label) {
+        $pdo->exec("SET SESSION sql_mode = '" . $setMode . "'");
+        $pdo->exec('DROP TEMPORARY TABLE IF EXISTS ownify_chk_probe');
+        $pdo->exec('CREATE TEMPORARY TABLE ownify_chk_probe (`email` VARCHAR(191) NOT NULL, CONSTRAINT `c` CHECK (' . $clause . ')) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        foreach ($values as $value => $accepted) {
+            try {
+                $pdo->prepare('INSERT INTO ownify_chk_probe (email) VALUES (?)')->execute([$value]);
+                $pdo->exec('DELETE FROM ownify_chk_probe');
+                $got = true;
+            } catch (PDOException $e) {
+                $got = false;
+            }
+            if ($got !== $accepted || $got !== account_email_storable($value)) {
+                $ok = false;
+                echo "  differs in $label: " . json_encode($value) . ' ' . ($got ? 'accepted' : 'refused') . "\n";
+            }
+        }
+        foreach (['Sanne@Example.COM', "  sanne@example.com\n"] as $typed) {
+            try {
+                $pdo->prepare('INSERT INTO ownify_chk_probe (email) VALUES (?)')->execute([(string) account_email_canonical($typed)]);
+                $pdo->exec('DELETE FROM ownify_chk_probe');
+            } catch (PDOException $e) {
+                $ok = false;
+                echo "  the canonical form of " . json_encode($typed) . " was refused in $label\n";
+            }
+        }
+        $pdo->exec('DROP TEMPORARY TABLE ownify_chk_probe');
+        echo "  $label: " . count($values) . " direct inserts compared\n";
+    }
+    $pdo->exec('SET SESSION sql_mode = ' . $pdo->quote($mode));
+
+    $lock = 'ownify:pending:' . substr(hash('sha256', 'sanne@example.com'), 0, 48);
+    $held = (int) $pdo->query('SELECT GET_LOCK(' . $pdo->quote($lock) . ', 0)')->fetchColumn() === 1
+        && (int) $pdo->query('SELECT RELEASE_LOCK(' . $pdo->quote($lock) . ')')->fetchColumn() === 1;
+    echo '  advisory lock name (' . strlen($lock) . ' bytes): ' . ($held ? 'accepted' : 'REFUSED') . "\n";
+    $ok = $ok && $held;
+
+    echo $ok ? "PASS: migration 027's address rule works on this server.\n" : "FAIL: do not import 027; send this output.\n";
+    exit($ok ? 0 : 1);
+}
+
+/* One message, sent at once (not through the outbox), to check Gmail works
+   from this server: when the App Password is in config/mail.local.php.
+   Prints "verstuurd" or the SMTP reply code — never the settings. */
+foreach ($argvFlags as $flag) {
+    if (str_starts_with($flag, '--send-test=')) {
+        require_once dirname(__DIR__) . '/includes/mailer.php';
+
+        $to = account_email_canonical(substr($flag, strlen('--send-test=')));
+        if ($to === null) {
+            echo "Not an address.\n";
+            exit(1);
+        }
+        foreach (['host', 'username', 'password', 'from'] as $key) {
+            if (trim((string) (mail_settings()[$key] ?? '')) === '') {
+                echo "config/mail.php: '$key' is not set (config/mail.local.php on this server).\n";
+                exit(1);
+            }
+        }
+
+        $code = mail_smtp_send(
+            ['recipient' => $to, 'message_id' => '<' . bin2hex(random_bytes(16)) . '@' . (parse_url((string) (mail_settings()['public_url'] ?? ''), PHP_URL_HOST) ?: 'ownify.invalid') . '>'],
+            ['subject' => 'Ownify: testbericht', 'text' => "Dit is een testbericht van Ownify. Je hoeft er niets mee te doen.\n"]
+        );
+
+        echo $code === null ? "verstuurd\n" : "niet verstuurd (SMTP $code)\n";
+        exit($code === null ? 0 : 1);
+    }
 }
 
 $problems = 0;
@@ -553,6 +660,50 @@ if ($googleBroken !== null) {
 if ($googleBroken === null && is_file(dirname(__DIR__) . '/config/auth.local.php')) {
     line('ok', 'auth.local.php', 'present');
 }
+
+/* ----------------------------------------------------- account security */
+
+require_once dirname(__DIR__) . '/includes/account-security.php';
+require_once dirname(__DIR__) . '/includes/mailer.php';
+
+if (db_available()) {
+    $schema = account_security_schema();
+    $have   = array_keys(array_filter(array_diff_key($schema, ['complete' => true])));
+    if ($schema['complete']) {
+        line('ok', 'migration 027', 'imported: verified addresses, session numbers, outbox');
+    } elseif ($have === []) {
+        line('warn', 'migration 027', 'not imported yet — password change is off until it is (php tools/check-config.php --check-schema-rules first)');
+    } else {
+        line('warn', 'migration 027', 'only partly there (' . implode(', ', $have) . ') — import it again; it adds what is missing');
+    }
+}
+
+/* PHPMailer as vendored (D5): every file as its VERSION file lists it. */
+$vendor  = dirname(__DIR__) . '/includes/vendor/phpmailer/';
+$listed  = is_file($vendor . 'VERSION') ? (string) file_get_contents($vendor . 'VERSION') : '';
+$changed = [];
+preg_match_all('/^\s+([0-9a-f]{64})\s+(\S+)$/m', $listed, $sums, PREG_SET_ORDER);
+foreach ($sums as [, $sum, $file]) {
+    if (!is_file($vendor . $file) || hash_file('sha256', $vendor . $file) !== $sum) {
+        $changed[] = $file;
+    }
+}
+if ($sums === []) {
+    line('fail', 'PHPMailer', 'includes/vendor/phpmailer/VERSION is missing');
+    $problems++;
+} elseif ($changed !== []) {
+    line('fail', 'PHPMailer', 'differs from v7.1.1 as vendored: ' . implode(', ', $changed));
+    $problems++;
+} else {
+    line('ok', 'PHPMailer', 'v7.1.1, ' . count($sums) . ' files as vendored');
+}
+
+/* Mail: off is fine in Release A. Never the password. */
+$mailReason = mail_unavailable_reason();
+line($mailReason === null ? 'ok' : 'warn', 'mail', $mailReason === null
+    ? 'configured (' . (mail_settings()['host'] ?? '') . ':' . (mail_settings()['port'] ?? '') . ', from ' . (mail_settings()['from'] ?? '') . ')'
+    : 'not configured — nothing is sent (' . $mailReason . ')');
+line('ok', 'e-mail registration', account_email_registration_open() ? 'OPEN (test server only)' : 'closed (Release A)');
 
 /* ------------------------------------------------------------- version */
 

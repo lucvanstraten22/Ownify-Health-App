@@ -13,6 +13,11 @@
  * both — the one field only registering needs is hidden while logging in —
  * and says which it is in its title.
  *
+ * Registering with e-mail is closed in Release A (28.0): in the Registreren
+ * flow the form is replaced by one line, "Registreren met e-mail is
+ * tijdelijk niet beschikbaar.", and Google stays (docs/ACCOUNT-SECURITY.md).
+ * When it is open, registering asks for the password twice.
+ *
  * Signing in takes a username and a password. Google is a small mark under
  * the form rather than a full-width button above it — it is secondary. It
  * works once it is configured (includes/google-signin.php); until then it
@@ -37,6 +42,7 @@ $autoOpen  = $flash !== null || $pending !== null;
 
 /* The two flows, and what the panel is called in each. */
 $flows     = !$signedIn && $pending === null;
+$canRegister = !empty($auth['email_registration']);
 $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome']['register']];
 ?>
 <div class="account" data-overlay data-account data-csrf="<?= e($auth['csrf']) ?>"
@@ -195,7 +201,14 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
 
         <?php else: ?>
 
-            <form class="account__form" data-account-form="email" novalidate>
+            <?php if (!$canRegister): ?>
+                <p class="account__hint account__hint--centred" data-account-only="register" hidden>
+                    <?= e(t('Registreren met e-mail is tijdelijk niet beschikbaar.')) ?>
+                </p>
+            <?php endif; ?>
+
+            <form class="account__form" data-account-form="email" novalidate
+                  <?= $canRegister ? '' : 'data-account-register-closed' ?>>
 
                 <div class="account__field">
                     <label class="account__label" for="account-username"><?= e(t('Gebruikersnaam')) ?></label>
@@ -216,6 +229,14 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                     <input class="account__input" type="password" id="account-password" name="password"
                            minlength="8" autocomplete="current-password" required>
                 </div>
+
+                <?php if ($canRegister): ?>
+                    <div class="account__field" data-account-only="register" hidden>
+                        <label class="account__label" for="account-password-confirm"><?= e(t('Herhaal wachtwoord')) ?></label>
+                        <input class="account__input" type="password" id="account-password-confirm" name="password_confirm"
+                               minlength="8" autocomplete="new-password">
+                    </div>
+                <?php endif; ?>
 
                 <button type="submit" class="btn account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
             </form>

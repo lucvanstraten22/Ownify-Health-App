@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.ownify.android.ui.design.hitArea
+import com.ownify.android.ui.design.NoticePlace
+import com.ownify.android.ui.design.notice
 import com.ownify.android.ui.design.GlassFilter
 import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.OwnifyIcons
@@ -126,7 +128,7 @@ fun SharedHeader(
                     requests >= 1 -> ", " + trn(requests, "%d nieuw vriendverzoek", "%d nieuwe vriendverzoeken")
                     else -> ""
                 }
-                HeaderButton(onClick = onAccount, label = accountAria + waiting, dot = requests > 0) {
+                HeaderButton(onClick = onAccount, label = accountAria + waiting, notice = "account") {
                     Avatar(avatar, iconSize = Ownify.HeaderIcon, iconColor = Ownify.TextPrimary, modifier = Modifier.clip(CircleShape))
                 }
             }
@@ -211,7 +213,7 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
  * shorter shadow). [dot] is the friend-request dot on the rim.
  */
 @Composable
-fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, content: @Composable BoxScope.() -> Unit) {
+fun HeaderButton(onClick: () -> Unit, label: String, notice: String? = null, content: @Composable BoxScope.() -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -227,6 +229,8 @@ fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, conte
                 scaleX = scale
                 scaleY = scale
             }
+            // The red dot on the button's own circle (docs/NOTICES.md).
+            .then(if (notice != null) Modifier.notice(notice, NoticePlace.Circle) else Modifier)
     ) {
         Pane(
             Modifier
@@ -239,29 +243,6 @@ fun HeaderButton(onClick: () -> Unit, label: String, dot: Boolean = false, conte
             style = if (pressed) Panes.HeaderButtonPressed else Panes.HeaderButton,
             content = content
         )
-        if (dot) {
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-1).dp, y = 1.dp)
-                    .size(11.dp)
-                    .drawBehind {
-                        // box-shadow: 0 0 8px health 55%
-                        drawCircle(
-                            Brush.radialGradient(
-                                0f to Ownify.Health.copy(alpha = 0.55f),
-                                1f to Ownify.Health.copy(alpha = 0f),
-                                center = center,
-                                radius = size.width / 2f + 8.dp.toPx()
-                            ),
-                            radius = size.width / 2f + 8.dp.toPx()
-                        )
-                    }
-                    .background(Ownify.Health, CircleShape)
-                    // border: 2px solid var(--bg-deep)
-                    .border(2.dp, Ownify.BgDeep, CircleShape)
-            )
-        }
     }
 }
 

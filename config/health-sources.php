@@ -62,6 +62,17 @@ return [
         'active_energy',
         'total_energy',
         'floors',
+        /* Voeding (docs/NUTRITION.md): water has spans, as steps do; a meal's
+           nutrients are moments, counted once per minute over the apps. */
+        'water',
+        'energy',
+        'protein',
+        'carbs',
+        'fat',
+        'saturated_fat',
+        'fibre',
+        'sugar',
+        'sodium',
     ],
 
     /* App package names, most trusted first. Empty: the rule above decides.

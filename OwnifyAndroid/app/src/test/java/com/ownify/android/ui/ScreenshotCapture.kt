@@ -102,6 +102,8 @@ class ScreenshotCapture {
         File(out).mkdirs()
         if (server.isNotEmpty()) OwnifyConnection.api = OwnifyApi(server)
         Ownify.use(OwnifyMode.of(System.getProperty("ownify.theme")))
+        // The red dots' clock (OwnifyNotices): the hour the shots are taken at.
+        System.getProperty("ownify.hour")?.toIntOrNull()?.let { h -> com.ownify.android.data.OwnifyNotices.clock = { java.time.LocalTime.of(h, 30) } }
     }
 
     @After
@@ -430,6 +432,22 @@ class ScreenshotCapture {
     @Test fun sleepChartBed() = detail("health", Detail.AreaChart("sleep", "bed"), "sleep-chart-bed")
     @Test fun sleepChartSpo2() = detail("health", Detail.AreaChart("sleep", "spo2"), "sleep-chart-spo2")
     @Test fun detailNutrition() = detail("health", Detail.HealthArea("nutrition"), "detail-nutrition", 760, 1520)
+    @Test fun nutritionChartEnergy() = detail("health", Detail.AreaChart("nutrition", "energy"), "nutrition-chart-energy")
+    @Test fun nutritionChartWater() = detail("health", Detail.AreaChart("nutrition", "water"), "nutrition-chart-water")
+
+    /** Voeding with Vetten open, as a tap on its row or its part of the ring opens it. */
+    @Test fun nutritionOpen() {
+        app { tab("health") }
+        compose.runOnUiThread { shell.openDetail(Detail.HealthArea("nutrition")) }
+        settle()
+        scroll(1100, detail = true)
+        tap("Vetten")
+        compose.mainClock.advanceTimeBy(600)
+        settle()
+        shoot("nutrition-open")
+        scroll(1900, detail = true)
+        shoot("nutrition-open-2")
+    }
     @Test fun detailTraining() = detail("health", Detail.HealthArea("training"), "detail-training", 760, 1520, 2280, 3040)
     @Test fun trainingChartSteps() = detail("health", Detail.AreaChart("training", "steps"), "training-chart-steps")
 
@@ -544,6 +562,24 @@ class ScreenshotCapture {
     }
 
     @Test fun account() = panel(Overlay.Account(), "account")
+    @Test fun passwordEditor() = panel(Overlay.ChangePassword, "password-editor", "settings", Detail.SettingsPage("account"))
+
+    /* The red dots (docs/NOTICES.md): each place a waiting thing shows. */
+    @Test fun noticeVoeding() = detail("health", Detail.HealthArea("nutrition"), "notice-voeding")
+    @Test fun noticeGoal() {
+        val goal = data().notices.goals.firstOrNull() ?: return
+        detail("goals", Detail.GoalPage(goal), "notice-goal")
+    }
+    @Test fun noticeFriends() {
+        app { tab("overview") }
+        compose.runOnUiThread { shell.open(Overlay.Account()) }
+        settle()
+        compose.onAllNodes(hasText("vrienden", substring = true, ignoreCase = true) and hasClickAction()).onLast().performClick()
+        settle()
+        shoot("notice-friends")
+    }
+    @Test fun noticeDevices() = detail("settings", Detail.SettingsPage("devices"), "notice-devices")
+    @Test fun noticeMeldingen() = detail("settings", Detail.SettingsPage("notifications"), "notice-meldingen")
     @Test fun devices() = panel(Overlay.Devices, "devices")
     /**
      * The three steps and the review: Activiteit, Stappen; a suggested name

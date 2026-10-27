@@ -4,7 +4,10 @@
  * browser to; the browser goes there itself.
  *
  *   provider=google  mode=login   from the account panel, signed out
- *   provider=google  mode=link    from Settings > Account, signed in
+ *   provider=google  mode=link    from Settings > Account, signed in — not
+ *                                 before Release B (docs/ACCOUNT-SECURITY.md §8)
+ *
+ * At most 20 starts per quarter of an hour from one network address.
  *
  * POST with the CSRF token, like every other endpoint, so no other site can
  * start a sign-in — and in particular a link — in somebody's session.
@@ -14,6 +17,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/google-signin.php';
+require_once dirname(__DIR__, 2) . '/includes/auth-throttle.php';
 
 api_require_post();
 api_require_csrf();
@@ -37,12 +41,23 @@ if ($mode === 'link') {
     if ($userId === null) {
         api_fail('Log eerst in om Google aan je account te koppelen.', 401);
     }
+
+    if (!account_google_link_open()) {
+        api_fail('Bevestig eerst je e-mailadres. Dat kan binnenkort.', 409);
+    }
 } elseif ($mode === 'login') {
     if ($userId !== null) {
         api_fail('Je bent al ingelogd.', 409);
     }
 } else {
     api_fail('Onbekende actie.', 400);
+}
+
+$wait = auth_throttle_attempt('google', '', ACCOUNT_GOOGLE_LIMIT, 900);
+
+if ($wait !== null) {
+    header('Retry-After: ' . $wait);
+    api_fail(auth_throttle_message($wait), 429);
 }
 
 $url = google_signin_begin($mode, $userId);

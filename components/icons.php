@@ -17,6 +17,10 @@ if (!function_exists('icon')) {
                 // connected devices — smartwatch
                 'device'   => '<rect x="7" y="6" width="10" height="12" rx="3"/><path d="M10 6V3.6h4V6M10 18v2.4h4V18"/><path d="M12 10.6v2.2l1.4 1"/>',
 
+                // the view switch (desktop.js): the phone's layout, and the wide one
+                'phone'    => '<rect x="7" y="3.4" width="10" height="17.2" rx="2.6"/><path d="M11 17.6h2"/>',
+                'desktop'  => '<rect x="3.6" y="4.6" width="16.8" height="11.4" rx="2.2"/><path d="M9.4 20h5.2M12 16v4"/>',
+
                 // account
                 'user'     => '<circle cx="12" cy="9" r="3.2"/><path d="M5.6 19.6a6.6 6.6 0 0 1 12.8 0"/>',
 

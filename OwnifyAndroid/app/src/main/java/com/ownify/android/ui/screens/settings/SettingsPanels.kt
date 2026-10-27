@@ -75,6 +75,9 @@ import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.screens.health.EditorError
+import com.ownify.android.ui.screens.account.FieldLabel
+import com.ownify.android.ui.screens.account.findActivity
+import com.ownify.android.ui.app.OwnifyToast
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.OwnifyThemeStore
@@ -325,6 +328,91 @@ fun DeviceNameEditor(overlay: Overlay.RenameDevice, data: AppData) {
     }
 }
 
+/**
+ * Wachtwoord wijzigen (Instellingen › Account › Inloggen, 28.0): the field
+ * editor's panel with the three fields the website's editor has — the
+ * current password, the new one, the new one again — each with the account
+ * panel's label, and the line saying what saving does. The server checks
+ * everything (api/account/password.php): this app stays signed in, every
+ * other sign-in ends, health sync carries on.
+ */
+@Composable
+fun PasswordEditor(overlay: Overlay) {
+    val shell = LocalShell.current
+    val context = LocalContext.current
+    val focus = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    // Only in these fields while the panel is open: never saved, never logged.
+    var current by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val title = tr("Wachtwoord wijzigen")
+
+    fun save() {
+        if (current.isEmpty() || password.isEmpty() || repeat.isEmpty()) {
+            error = tr("Vul eerst een waarde in.")
+            return
+        }
+        focus.clearFocus()
+        error = null
+        saving = true
+        scope.launch {
+            val fields = mapOf("current" to current, "password" to password, "password_confirm" to repeat)
+            when (val outcome = OwnifyActions.form(context, "api/account/password.php", fields, tr("Je wachtwoord kon niet worden gewijzigd. Probeer het opnieuw."))) {
+                is Outcome.Done -> {
+                    OwnifyToast.show(outcome.body.optString("message").ifEmpty { null })
+                    shell.close(overlay)
+                }
+                is Outcome.Refused -> error = outcome.message
+                Outcome.SignedOut -> Unit
+            }
+            saving = false
+        }
+    }
+
+    ConfirmFrame(overlay, title = title, start = true) {
+        ConfirmTitle(title, align = TextAlign.Start)
+        val first = rememberFocusOnOpen()
+        Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            listOf(
+                Triple(tr("Huidig wachtwoord"), current) { v: String -> current = v },
+                Triple(tr("Nieuw wachtwoord"), password) { v: String -> password = v },
+                Triple(tr("Herhaal nieuw wachtwoord"), repeat) { v: String -> repeat = v }
+            ).forEachIndexed { i, (label, value, set) ->
+                Column {
+                    FieldLabel(label)
+                    JInput(
+                        value, { set(it.take(PASSWORD_MAX)) },
+                        modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
+                        password = true,
+                        label = label,
+                        keyboard = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = if (i < 2) ImeAction.Next else ImeAction.Done),
+                        actions = KeyboardActions(onDone = { if (!saving) save() })
+                    )
+                }
+            }
+        }
+        // `.field-editor__note`: what saving does.
+        T(
+            tr("Minimaal 8 tekens. Je blijft hier ingelogd; op je andere apparaten word je uitgelogd."),
+            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            Modifier.fillMaxWidth().padding(top = Ownify.Space2)
+        )
+
+        error?.let { EditorError(it) }
+
+        ConfirmRow(
+            { Btn(tr("Annuleren"), onClick = { shell.close(overlay) }, modifier = it) },
+            { Btn(tr("Opslaan"), onClick = ::save, enabled = !saving, look = YesLook, modifier = it) }
+        )
+    }
+}
+
+/** The longest password: includes/account-security.php's ACCOUNT_PASSWORD_MAX. */
+private const val PASSWORD_MAX = 200
+
 /** The longest name a phone can be given: includes/devices.php's DEVICE_NAME_MAX. */
 private const val DEVICE_NAME_MAX = 40
 
@@ -403,6 +491,11 @@ internal fun DateControl(input: FieldInput, value: String, label: String, onPick
  * nothing leaves the phone until the second. The answers swap sides between
  * them, so a double tap cancels instead of deleting. Closing, from either
  * step, starts over at the first.
+ *
+ * The second step asks the account to prove it is itself again (28.0): its
+ * password when it has one; otherwise Google, natively on this phone
+ * ("Bevestig met Google": Google's chooser, then the deletion with the token
+ * Google gave — OwnifyActions.deleteAccountWithGoogle).
  */
 @Composable
 fun DeleteConfirm(overlay: Overlay, data: AppData) {
@@ -414,6 +507,19 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
     var step by remember { mutableIntStateOf(1) }
     var deleting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    // An older server sends no `signin`: no proof is asked, as before.
+    val signin = data.auth.signin
+    val byPassword = signin?.password == true
+    val byGoogle = signin != null && !signin.password
+    var password by remember { mutableStateOf("") }
+
+    /** What a refusal says, in the website's words for the two ways there is no answer. */
+    fun said(outcome: Outcome.Refused): String? = when (outcome.message) {
+        OwnifyAppState.UNREACHABLE -> tr("Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.")
+        OwnifyAppState.UNEXPECTED -> tr("Je account kon niet worden verwijderd.")
+        "" -> null                                   // Google's chooser closed: nothing to say
+        else -> outcome.message
+    }
 
     ConfirmFrame(overlay, title = if (step == 1) copy["title"].orEmpty() else copy["final_title"].orEmpty()) {
         if (step == 1) {
@@ -436,6 +542,20 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
             IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
             ConfirmTitle(copy["final_title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["final_body"].orEmpty() + if (google) " " + copy["final_google"].orEmpty() else "")
+            if (byPassword) {
+                Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+                    FieldLabel(tr("Wachtwoord"))
+                    JInput(
+                        password, { password = it.take(PASSWORD_MAX) },
+                        password = true,
+                        enabled = !deleting,
+                        label = tr("Wachtwoord"),
+                        keyboard = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                    )
+                }
+            } else if (byGoogle) {
+                ConfirmBody(tr("Bevestig met Google om je account te verwijderen."))
+            }
             error?.let {
                 T(
                     it,
@@ -452,19 +572,23 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
             ConfirmRow(
                 {
                     Btn(
-                        copy["final_yes"].orEmpty(),
+                        if (byGoogle) tr("Bevestig met Google") else copy["final_yes"].orEmpty(),
                         onClick = {
+                            if (byPassword && password.isEmpty()) {
+                                error = tr("Vul je wachtwoord in om dit te bevestigen.")
+                                return@Btn
+                            }
                             deleting = true
                             error = null
                             scope.launch {
-                                val outcome = OwnifyActions.deleteAccount(context, tr("Je account kon niet worden verwijderd."))
+                                val fallback = tr("Je account kon niet worden verwijderd.")
+                                val outcome = if (byGoogle) {
+                                    OwnifyActions.deleteAccountWithGoogle(context.findActivity() ?: context, fallback)
+                                } else {
+                                    OwnifyActions.deleteAccount(context, fallback, if (byPassword) password else null)
+                                }
                                 if (outcome is Outcome.Refused) {
-                                    // The website's words for the two ways there is no answer.
-                                    error = when (outcome.message) {
-                                        OwnifyAppState.UNREACHABLE -> tr("Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.")
-                                        OwnifyAppState.UNEXPECTED -> tr("Je account kon niet worden verwijderd.")
-                                        else -> outcome.message
-                                    }
+                                    error = said(outcome)
                                     deleting = false
                                 }
                             }

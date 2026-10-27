@@ -14,10 +14,20 @@
  * The buttons swap sides between the steps: the safe answer on step 2 sits
  * exactly where "Ja, verwijderen" was, so a double tap cancels instead of
  * deleting.
+ *
+ * Step 2 also asks the account to prove it is itself again (28.0,
+ * docs/ACCOUNT-SECURITY.md §7): its password when it has one; otherwise
+ * Google, through "Bevestig met Google" first (api/auth/reauth.php), after
+ * which deleting may follow within 5 minutes.
  */
 declare(strict_types=1);
 
 $delete = $data['settings']['actions']['delete'];
+
+/* How this account proves itself before it is deleted. */
+$signin   = $data['auth']['signin'] ?? null;
+$byPassword = $signin !== null && !empty($signin['password']);
+$googleReady = !empty($data['auth']['reauth_ready']);
 
 /* Whether this account has Google linked, which both steps mention. */
 $hasGoogle = false;
@@ -66,12 +76,26 @@ foreach ($data['auth']['identities'] ?? [] as $identity) {
             <?php if ($hasGoogle): ?><?= ' ' . e($delete['final_google']) ?><?php endif; ?>
         </p>
 
+        <?php if ($byPassword): ?>
+            <div class="account__field field-editor__control">
+                <label class="account__label" for="confirm-password"><?= e(t('Wachtwoord')) ?></label>
+                <input class="field-editor__input" type="password" id="confirm-password" name="password"
+                       autocomplete="current-password" maxlength="200" data-confirm-password>
+            </div>
+        <?php elseif (!$googleReady): ?>
+            <div class="field-editor__control" data-confirm-google>
+                <p class="confirm__body"><?= e(t('Bevestig eerst met Google. Daarna kun je je account binnen 5 minuten verwijderen.')) ?></p>
+                <button type="button" class="btn press" data-confirm-reauth><?= e(t('Bevestig met Google')) ?></button>
+            </div>
+        <?php endif; ?>
+
         <p class="confirm__error" data-confirm-error role="alert" hidden></p>
 
         <?php /* Swapped on purpose: the safe answer is on the right, where the
                  previous step's confirmation was. */ ?>
         <div class="confirm__row">
-            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-delete>
+            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-delete
+                    <?= !$byPassword && !$googleReady ? 'disabled' : '' ?>>
                 <?= e($delete['final_yes']) ?>
             </button>
             <button type="button" class="btn press" data-confirm-close><?= e($delete['final_no']) ?></button>

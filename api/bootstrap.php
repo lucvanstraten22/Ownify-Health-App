@@ -134,7 +134,7 @@ if (!function_exists('api_json')) {
            session here still names it. It is signed out rather than left to
            write rows for somebody who no longer exists. */
         if (db_available()
-            && db_value('SELECT id FROM users WHERE id = ? AND status <> ?', [$userId, 'deleted']) === null) {
+            && db_value("SELECT id FROM users WHERE id = ? AND status NOT IN ('deleted', 'pending')", [$userId]) === null) {
             session_logout();
             api_fail('Je bent niet ingelogd.', 401);
         }
@@ -195,8 +195,25 @@ if (!function_exists('api_json')) {
         }
 
         i18n_use_account($device['user_id']);
+        api_current_device((int) $device['device_id']);
 
         return $device['user_id'];
+    }
+
+    /**
+     * The app token row this request was authenticated with
+     * (api_require_account_user()), or null for a browser. A password change
+     * keeps exactly this one signed in (includes/account-security.php).
+     */
+    function api_current_device(?int $set = null): ?int
+    {
+        static $deviceId = null;
+
+        if ($set !== null) {
+            $deviceId = $set;
+        }
+
+        return $deviceId;
     }
 
     /**

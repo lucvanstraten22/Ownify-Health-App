@@ -60,6 +60,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/google-signin.php';
 require_once dirname(__DIR__, 2) . '/includes/devices.php';
+require_once dirname(__DIR__, 2) . '/includes/auth-throttle.php';
 
 api_require_post();
 api_require_https();
@@ -69,7 +70,12 @@ $action = is_string($input['action'] ?? null) ? $input['action'] : '';
 
 /* 0. Whether to offer it at all: yes only when every step below can work. */
 if ($action === 'status') {
-    api_ok(['available' => db_available() && google_signin_native_configured() && devices_scoped()]);
+    api_ok([
+        'available'          => db_available() && google_signin_native_configured() && devices_scoped(),
+        /* And whether an account can be made with e-mail and a password:
+           not in Release A (account_email_registration_open()). */
+        'email_registration' => account_email_registration_open(),
+    ]);
 }
 
 api_require_database();
@@ -93,6 +99,15 @@ switch ($action) {
 
     /* ------------------------------------------------------------ 1. nonce */
     case 'nonce':
+        /* At most 20 Google sign-ins per quarter of an hour from one network
+           address (docs/ACCOUNT-SECURITY.md §12). */
+        $wait = auth_throttle_attempt('google', '', ACCOUNT_GOOGLE_LIMIT, 900);
+
+        if ($wait !== null) {
+            header('Retry-After: ' . $wait);
+            api_fail(auth_throttle_message($wait), 429);
+        }
+
         /* A fresh session id for a fresh conversation, and one conversation
            at a time: asking again replaces the last nonce. */
         session_regenerate_id(true);

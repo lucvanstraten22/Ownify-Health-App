@@ -505,17 +505,21 @@ if (!function_exists('google_signin_config')) {
         return ['ok' => true, 'error' => null, 'claims' => $claims];
     }
 
-    /** The e-mail address, only if Google says it has verified it. */
+    /**
+     * The e-mail address, only if Google says it has verified it — exactly
+     * `true`, not the string "true" — and only in its canonical form
+     * (account_email_canonical()). Null otherwise.
+     */
     function google_signin_verified_email(array $claims): ?string
     {
-        $verified = ($claims['email_verified'] ?? false) === true || ($claims['email_verified'] ?? null) === 'true';
+        $verified = ($claims['email_verified'] ?? false) === true;
         $email    = $claims['email'] ?? null;
 
-        if (!$verified || !is_string($email) || auth_validate_email($email) !== null) {
+        if (!$verified || !is_string($email)) {
             return null;
         }
 
-        return auth_normalise_email($email);
+        return account_email_canonical($email);
     }
 
     /* ==================================================================
@@ -524,18 +528,21 @@ if (!function_exists('google_signin_config')) {
 
     /**
      * Starts a sign-in (mode 'login'), a link from Settings (mode 'link', for
-     * the signed-in user) or, after an account was deleted, the request to
-     * Google to forget Ownify (mode 'revoke', for the Google account `$sub`).
+     * the signed-in user), a confirmation of the signed-in account before an
+     * action like deleting it (mode 'reauth': Google asks for the password
+     * again) or, after an account was deleted, the request to Google to
+     * forget Ownify (mode 'revoke', for the Google account `$sub`).
      * Returns the URL to send the browser to, or null when Google sign-in is
      * not configured.
      */
-    function google_signin_begin(string $mode, ?int $userId = null, ?string $sub = null): ?string
+    function google_signin_begin(string $mode, ?int $userId = null, ?string $sub = null, ?string $purpose = null): ?string
     {
-        if (!google_signin_configured() || !in_array($mode, ['login', 'link', 'revoke'], true)) {
+        if (!google_signin_configured() || !in_array($mode, ['login', 'link', 'revoke', 'reauth'], true)) {
             return null;
         }
 
-        if (($mode === 'link' && $userId === null) || ($mode === 'revoke' && ($sub === null || $sub === ''))) {
+        if ((in_array($mode, ['link', 'reauth'], true) && $userId === null)
+            || ($mode === 'revoke' && ($sub === null || $sub === ''))) {
             return null;
         }
 
@@ -552,8 +559,9 @@ if (!function_exists('google_signin_config')) {
             'nonce'        => $nonce,
             'verifier'     => $verifier,
             'mode'         => $mode,
-            'user_id'      => $mode === 'link' ? $userId : null,
+            'user_id'      => in_array($mode, ['link', 'reauth'], true) ? $userId : null,
             'sub'          => $mode === 'revoke' ? $sub : null,
+            'purpose'      => $mode === 'reauth' ? (string) $purpose : null,
             'redirect_uri' => $config['redirect_uri'],
             'started'      => time(),
         ];
@@ -562,9 +570,13 @@ if (!function_exists('google_signin_config')) {
            named, so a person signed in to Google in this browser is sent
            straight back. If Google would have to ask anything, it answers with
            an error instead — and the page says how to finish it by hand. */
-        $prompt = $mode === 'revoke'
-            ? ['prompt' => 'none', 'login_hint' => $sub]
-            : ['prompt' => 'select_account'];
+        /* Confirming asks Google to ask for the password again, now
+           (prompt=login, max_age=0); the answer's auth_time is checked. */
+        $prompt = match ($mode) {
+            'revoke' => ['prompt' => 'none', 'login_hint' => $sub],
+            'reauth' => ['prompt' => 'login', 'max_age' => '0'],
+            default  => ['prompt' => 'select_account'],
+        };
 
         return GOOGLE_SIGNIN_AUTHORIZE_URL . '?' . http_build_query([
             'client_id'             => $config['client_id'],
@@ -668,12 +680,13 @@ if (!function_exists('google_signin_config')) {
         $flow = $_SESSION['google_signin_flow'] ?? null;
         unset($_SESSION['google_signin_flow']);        // single use, whatever happens next
 
-        $mode = is_array($flow) && in_array($flow['mode'] ?? null, ['link', 'revoke'], true) ? $flow['mode'] : 'login';
+        $mode = is_array($flow) && in_array($flow['mode'] ?? null, ['link', 'revoke', 'reauth'], true) ? $flow['mode'] : 'login';
         $out  = static fn (string $outcome, ?string $message = null): array
             => ['outcome' => $outcome, 'mode' => $mode, 'message' => $message];
 
         $failed = match ($mode) {
             'link'   => t('Google koppelen is niet gelukt. Probeer het opnieuw.'),
+            'reauth' => t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.'),
             'revoke' => GOOGLE_SIGNIN_NOT_REVOKED,
             default  => t('Inloggen met Google is niet gelukt. Probeer het opnieuw.'),
         };
@@ -698,6 +711,7 @@ if (!function_exists('google_signin_config')) {
             return match ($mode) {
                 'revoke' => $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED),
                 'link'   => $out('cancelled', t('Google koppelen is geannuleerd.')),
+                'reauth' => $out('cancelled', t('Bevestigen met Google is geannuleerd.')),
                 default  => $out('cancelled', t('Inloggen met Google is geannuleerd.')),
             };
         }
@@ -729,14 +743,55 @@ if (!function_exists('google_signin_config')) {
         return match ($mode) {
             'link'   => google_signin_link($sub, $email, $flow, $out),
             'revoke' => google_signin_forget($sub, $tokens['access_token'], $flow, $out),
+            'reauth' => google_signin_reauth($sub, $verified['claims'], $flow, $out),
             default  => google_signin_login($sub, $email, $out),
         };
+    }
+
+    /**
+     * Back from Google having confirmed the signed-in account: the same
+     * account still signed in, the account's own Google id, and a password
+     * typed at Google within the last five minutes (auth_time). Then one
+     * action may follow within five minutes (account_reauth_grant()).
+     *
+     * @param callable(string, ?string): array $out
+     */
+    function google_signin_reauth(string $sub, array $claims, array $flow, callable $out): array
+    {
+        $userId = current_user_id();
+
+        if ($userId === null || $userId !== (int) ($flow['user_id'] ?? 0)) {
+            return $out('error', t('Log eerst in.'));
+        }
+
+        $own = account_google_sub($userId);
+
+        if ($own === null || !hash_equals($own, $sub)) {
+            return $out('error', t('Gebruik het Google-account dat aan je Ownify-account is gekoppeld.'));
+        }
+
+        $authTime = $claims['auth_time'] ?? null;
+
+        if (!is_int($authTime) || $authTime < time() - ACCOUNT_REAUTH_SECONDS || $authTime > time() + GOOGLE_SIGNIN_LEEWAY) {
+            error_log('[google-signin] reauth without a fresh auth_time');
+            return $out('error', t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.'));
+        }
+
+        account_reauth_grant($userId, (string) ($flow['purpose'] ?? 'delete'));
+
+        return $out('confirmed', t('Bevestigd met Google. Je kunt je account nu binnen 5 minuten verwijderen.'));
     }
 
     /** @param callable(string, ?string): array $out */
     function google_signin_link(string $sub, ?string $email, array $flow, callable $out): array
     {
         $userId = current_user_id();
+
+        /* Not before Release B: linking needs the account's own address to
+           be verified, which needs mail (docs/ACCOUNT-SECURITY.md §8). */
+        if (!account_google_link_open()) {
+            return $out('error', t('Bevestig eerst je e-mailadres. Dat kan binnenkort.'));
+        }
 
         /* The account that asked must be the account that is still signed in. */
         if ($userId === null || $userId !== (int) ($flow['user_id'] ?? 0)) {
@@ -896,13 +951,23 @@ if (!function_exists('google_signin_config')) {
         ];
     }
 
-    /** Whether an e-mail/password account already uses this address. */
+    /**
+     * Whether a new Google account may not have this address: an e-mail
+     * account signs in with it, another account has it verified, or it is
+     * contested (account_email_claimed()).
+     */
     function google_signin_email_taken(string $email): bool
     {
+        $canonical = account_email_canonical($email);
+
+        if ($canonical === null) {
+            return true;
+        }
+
         return db_value(
             'SELECT id FROM user_auth_identities WHERE provider = ? AND provider_subject = ?',
-            ['email', auth_normalise_email($email)]
-        ) !== null;
+            ['email', $canonical]
+        ) !== null || account_email_claimed($canonical);
     }
 
     /* ==================================================================
@@ -1009,6 +1074,16 @@ if (!function_exists('google_signin_config')) {
                  VALUES (?, ?, ?, ?, NOW(), NOW())',
                 [$userId, 'google', $pending['sub'], $pending['email']]
             );
+
+            /* Google vouched for the address: it is this account's verified
+               address, and nobody else's (migration 027; a duplicate rolls
+               everything back). */
+            if (account_security_schema()['account_emails']) {
+                db_run(
+                    'INSERT INTO account_emails (email, user_id, via_google) VALUES (?, ?, 1)',
+                    [$pending['email'], $userId]
+                );
+            }
 
             $pdo->commit();
         } catch (PDOException $e) {

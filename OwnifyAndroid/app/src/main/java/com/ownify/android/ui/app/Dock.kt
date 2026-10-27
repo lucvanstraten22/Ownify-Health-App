@@ -1,4 +1,6 @@
 package com.ownify.android.ui.app
+import com.ownify.android.ui.design.NoticePlace
+import com.ownify.android.ui.design.notice
 import com.ownify.android.ui.design.drawChosenGlass
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -374,7 +376,8 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Ownify.TabGap)
         ) {
-            OwnifyIcons.named(item.icon)?.let { JIcon(it, size = Ownify.TabIcon, color = color) }
+            // The red dot beside the icon, where it covers nothing (docs/NOTICES.md).
+            OwnifyIcons.named(item.icon)?.let { JIcon(it, Modifier.notice("tab:" + item.id, NoticePlace.Beside), size = Ownify.TabIcon, color = color) }
             ChromeText {
                 T(
                     item.label,

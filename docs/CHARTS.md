@@ -119,6 +119,25 @@ These are the same on every chart and are not part of the time rule:
   in the range switch's glass;
 - every colour through the theme (`docs/THEME.md`), Dark and White Mode.
 
+## A chart's own options
+
+An area chart (`lib/area-charts.php`) may carry, besides its series:
+
+- `band` [lo, hi]: its bereik, a green zone behind the bars
+  (`--health-wash`, a `--health-fill` line above and below; `PlotBand` with
+  an `edge` in the app), and each day's reading says Binnen, Onder or Boven
+  bereik. Energie's and Water's (docs/NUTRITION.md).
+- `of`: a target; the small chart's head reads "1.844 van 2.300 kcal" —
+  "van …" after the value, quieter.
+- `sub` [unit, factor]: the same value once more in a second unit, on a line
+  of its own under the head ("1.200 ml").
+- a series' `alt` [unit, factor]: a second scale — its levels named on the
+  right of the large chart, both units over the plot ("kcal", "kJ"), the
+  reading in both ("1.844 kcal · 7.715 kJ") and the head's line under it.
+  Its narrower plot takes 7 dagen's dates in two rows, as 30 and 90 dagen
+  always are. Levels of five characters or more ("2.000") take a wider
+  gutter (34 instead of 26).
+
 ## Where it lives
 
 | | Server (draws the geometry) | Website | Android app |
@@ -127,7 +146,7 @@ These are the same on every chart and are not part of the time rule:
 | Gezondheid's Verloop, a category's own | `hydrate_health_history()` (`lib/hydrate-compass.php`) | `components/health-history.php` (`history_area` for a category's page) | `HistoryCard` (`only` for a category's page) |
 | The Scorekompas's history | `hydrate_compass_periods()` | `components/compass-history.php` | `PeriodChart` in `ScoreCompass.kt` |
 | A goal's Verloop | `goal_chart_build()` (`lib/goal-chart.php`) | `pages/goal-detail.php`, `goal-chart.js` | `GoalChart.kt` |
-| An area's charts, small two by two and each on its own page — Slaap's four (docs/SLEEP.md), Training's seven (docs/TRAINING.md) | `area_charts()` (`lib/area-charts.php`), fed by `hydrate_sleep_charts()` and `hydrate_training()` | `components/area-chart.php`, `area-charts-grid.php`, `pages/area-chart.php` | `AreaChartsGrid`, `AreaChartDetail` (`AreaCharts.kt`) |
+| An area's charts, small two by two and each on its own page — Slaap's four (docs/SLEEP.md), Training's seven (docs/TRAINING.md), Voeding's Energie and Water (docs/NUTRITION.md) | `area_charts()` (`lib/area-charts.php`), fed by `hydrate_sleep_charts()`, `hydrate_training()` and `hydrate_nutrition_charts()` | `components/area-chart.php`, `area-charts-grid.php`, `pages/area-chart.php` | `AreaChartsGrid`, `AreaChartDetail` (`AreaCharts.kt`) |
 | Training's heart rate: a day, a period, a session (docs/TRAINING.md) | `hydrate_training_heart()` (`lib/hydrate-training.php`) | `components/heart-chart.php`, `heart-plot.php`, `assets/js/training.js` | `HeartCard`, `HeartPlotView` (`TrainingView.kt`) |
 | Reading a chart | — | `assets/js/compass-history.js`, `goal-chart.js` | `HistoryPlot` (`ui/design/HistoryChart.kt`), `GoalChart.kt` |
 

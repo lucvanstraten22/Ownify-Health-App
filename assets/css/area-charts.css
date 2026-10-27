@@ -56,6 +56,53 @@
 
 .area-chart__legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+/* A bereik (Voeding, docs/NUTRITION.md): a green zone behind the bars. */
+.area-chart__band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--health-wash);
+    border-block: 1px solid var(--health-fill);
+    pointer-events: none;
+}
+
+/* A second scale for the same values (kJ beside kcal): its levels on the
+   right, as the first's are on the left, and both units named over them. */
+.area-chart.compass-history { --level-gutter-alt: 40px; }
+.area-chart.compass-history.has-wide-levels { --level-gutter: 34px; }
+.area-chart.compass-history .compass-plot.has-alt,
+.area-chart.compass-history .chart__axis.has-alt { margin-right: var(--level-gutter-alt); }
+.compass-plot__level--alt {
+    left: auto;
+    right: calc(-1 * var(--level-gutter-alt));
+    width: calc(var(--level-gutter-alt) - 8px);
+    text-align: left;
+}
+.area-chart__units {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 var(--space-1);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Its target after the value, quieter: "van 2.300 kcal". */
+.area-chart__of {
+    margin-left: 0.3em;
+    font-size: var(--fs-tiny);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* The small card's value once more, in its second unit (kJ, ml). */
+.area-chart__sub {
+    display: block;
+    flex-basis: 100%;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
 /* --- small, on the area's page ------------------------------------------- */
 .area-chart--mini {
     display: flex;

@@ -208,10 +208,14 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     // The password lives only in this field while it is on screen: never saved, never logged.
     var password by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    // Registering with e-mail closed (Release A, 28.0): the form makes way for
+    // one line, as on the website, and Google stays below it.
+    val closed = register && OwnifyConnection.emailRegistration == false
 
     fun submit() {
         focus.clearFocus()
-        if (register) OwnifyConnection.register(context, username, email, password)
+        if (register) OwnifyConnection.register(context, username, email, password, repeat)
         else OwnifyConnection.login(context, username, password)
     }
 
@@ -224,7 +228,9 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
 
     if (auth is OwnifyAuthState.Failed) ErrorBox(auth.message, Modifier.padding(bottom = Ownify.Space4))
 
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+    if (closed) FieldHint(tr("Registreren met e-mail is tijdelijk niet beschikbaar."), centred = true)
+
+    if (!closed) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
         Column {
             FieldLabel(tr("Gebruikersnaam"))
             JInput(
@@ -256,13 +262,26 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
                 enabled = !working,
                 password = true,
                 label = tr("Wachtwoord"),
-                keyboard = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboard = KeyboardOptions(imeAction = if (register) ImeAction.Next else ImeAction.Done),
                 actions = KeyboardActions(onDone = { submit() })
             )
         }
+        if (register) {
+            Column {
+                FieldLabel(tr("Herhaal wachtwoord"))
+                JInput(
+                    repeat, { repeat = it.take(MAX_PASSWORD) },
+                    enabled = !working,
+                    password = true,
+                    label = tr("Herhaal wachtwoord"),
+                    keyboard = KeyboardOptions(imeAction = ImeAction.Done),
+                    actions = KeyboardActions(onDone = { submit() })
+                )
+            }
+        }
     }
 
-    Btn(
+    if (!closed) Btn(
         if (register) tr("Account aanmaken") else tr("Inloggen"),
         onClick = { submit() },
         enabled = !working && OwnifyConnection.canSignIn,
@@ -407,7 +426,7 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
 }
 
 /** The activity behind a composable's context, to show Google's chooser from. */
-private fun Context.findActivity(): Activity? {
+internal fun Context.findActivity(): Activity? {
     var context: Context = this
     while (context is ContextWrapper) {
         if (context is Activity) return context

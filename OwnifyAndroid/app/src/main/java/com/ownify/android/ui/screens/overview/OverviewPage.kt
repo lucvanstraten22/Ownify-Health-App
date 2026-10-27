@@ -112,6 +112,7 @@ import com.ownify.android.ui.theme.ScoreBand
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 import com.ownify.android.ui.design.PillarRings
+import com.ownify.android.ui.design.HeroArrivalMs
 
 /**
  * Overzicht (pages/overview.php): in a new account's first days the card of
@@ -223,7 +224,12 @@ private fun HealthScoreCard(data: AppData) {
             align = TextAlign.Center
         )
 
-        PillarRings(overviewLegend(data.overview.contributors), play, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space5))
+        // The pillars wait until the score ring has wholly arrived (none moves without a score).
+        PillarRings(
+            overviewLegend(data.overview.contributors), play,
+            Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space5),
+            after = if (empty) 0 else HeroArrivalMs
+        )
 
         if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
     }

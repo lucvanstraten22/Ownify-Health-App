@@ -16,7 +16,17 @@
  *                 shared  every series from 0 on one height, its levels
  *                         named: two measures of one unit (Actieve and
  *                         Totale calorieën, both kcal)
- *   a series    `key`, `label`, `unit`, `kind`, `decimals`, and `format`:
+ *               and, for Voeding (docs/NUTRITION.md):
+ *                 band    [low, high]: a reference range, drawn as a green
+ *                         zone behind the bars, and named in each day's
+ *                         reading (binnen, onder or boven bereik)
+ *                 of      a target: the small card says "1.844 van 2.300 kcal"
+ *                 sub     ['unit' => 'ml', 'factor' => 1000]: the small card's
+ *                         value once more, converted, on a line under it
+ *   a series    `key`, `label`, `unit`, `kind`, `decimals`, `alt` — a second
+ *               scale for the same values, ['unit' => 'kJ', 'factor' => 4.184]:
+ *               its levels named on the right, its value beside each reading;
+ *               a conversion, never a second measurement — and `format`:
  *               hours (7:45 u), score (a whole number), count (a whole
  *               number of `unit`/`units`, "2 trainingen"; a week's or
  *               month's mean per day, "0,6 per dag"), or a number with its
@@ -122,7 +132,11 @@ if (!function_exists('area_charts')) {
                 'label' => (string) $s['label'],
                 'kind'  => (string) $s['kind'],
             ], $chart['series']),
-            'latest'  => area_chart_latest($built[0], $today),
+            'latest'  => area_chart_latest_of($chart, $built[0], area_chart_latest($built[0], $today)),
+            /* A chart with a second scale names both units over it: kcal, kJ. */
+            'units'   => isset($chart['series'][0]['alt']['unit'])
+                ? [(string) ($chart['series'][0]['unit'] ?? ''), (string) $chart['series'][0]['alt']['unit']]
+                : null,
             'default' => (string) $periods[0]['days'],
             'periods' => $built,
         ];
@@ -170,6 +184,12 @@ if (!function_exists('area_charts')) {
     /** A value as its series writes it — a day's, or a week's or month's mean. */
     function area_chart_text(array $s, float $value): string
     {
+        /* A second scale (kJ beside kcal): the same value, converted. */
+        if (isset($s['alt']['factor'], $s['alt']['unit'])) {
+            return area_chart_text(array_diff_key($s, ['alt' => 0]), $value) . ' · '
+                . area_chart_number(round($value * (float) $s['alt']['factor']), 0, (string) $s['alt']['unit']);
+        }
+
         return match ((string) ($s['format'] ?? 'number')) {
             'hours' => hydrate_hours((int) round($value * 60)) . ' ' . t('u'),
             'score' => (string) (int) round($value),
@@ -252,6 +272,9 @@ if (!function_exists('area_charts')) {
 
             if (array_filter($row['texts'], static fn ($t) => $t !== null) === []) {
                 $row['note'] = (string) ($copy['none'][$grain] ?? '');
+            } elseif ($grain === 'day' && isset($chart['band']) && $values[0][count($values[0]) - 1] !== null) {
+                $v = (float) $values[0][count($values[0]) - 1];
+                $row['detail'] = $v < (float) $chart['band'][0] ? t('Onder bereik') : ($v > (float) $chart['band'][1] ? t('Boven bereik') : t('Binnen bereik'));
             } elseif ($grain !== 'day') {
                 $row['detail'] = ['week' => t('weekgemiddelde'), 'month' => t('maandgemiddelde')][$grain];
             }
@@ -259,7 +282,7 @@ if (!function_exists('area_charts')) {
             $points[] = $row;
         }
 
-        $geometry = area_chart_geometry($chart['series'], array_column($points, 'x'), $values, $spacing * (1 - 2 * $pad) * 100, (string) ($chart['scale'] ?? 'own'));
+        $geometry = area_chart_geometry($chart['series'], array_column($points, 'x'), $values, $spacing * (1 - 2 * $pad) * 100, (string) ($chart['scale'] ?? 'own'), $chart['band'] ?? null);
         $per      = ['day' => t('per dag'), 'week' => t('per week'), 'month' => t('per maand')][$grain];
 
         return [
@@ -289,7 +312,7 @@ if (!function_exists('area_charts')) {
      *
      * @param list<list<?float>> $values  each series' value at each point
      */
-    function area_chart_geometry(array $defs, array $x, array $values, float $barRoom, string $scale = 'own'): array
+    function area_chart_geometry(array $defs, array $x, array $values, float $barRoom, string $scale = 'own', ?array $band = null): array
     {
         $w     = AREA_CHART_W;
         $h     = AREA_CHART_H;
@@ -300,6 +323,8 @@ if (!function_exists('area_charts')) {
         $bars  = [];
         $grid  = [];
         $has   = false;
+        $zone  = null;   // the band, in % from the top
+        $alt   = [];     // the second scale's labels, beside $grid's
 
         /* From the bottom: bars always, and a line on a shared height. */
         $based = static function (array $kept, int $decimals) : array {
@@ -314,7 +339,7 @@ if (!function_exists('area_charts')) {
             $out      = [];
             $decimals = goal_chart_step_decimals($step);
             for ($level = $step; $level <= $high + $step / 1000; $level += $step) {
-                $out[] = ['y' => $baseY($level, $high), 'label' => i18n_number($level, $decimals)];
+                $out[] = ['y' => $baseY($level, $high), 'label' => i18n_number($level, $decimals), 'v' => $level];
             }
 
             return $out;
@@ -338,9 +363,17 @@ if (!function_exists('area_charts')) {
             $has  = $has || $kept !== [];
 
             if ($def['kind'] === 'bars') {
-                [, $high, $step] = $shared ?? $based($kept, (int) ($def['decimals'] ?? 0));
+                /* With a band the height reaches its top too, so the zone
+                   always shows. */
+                [, $high, $step] = $shared ?? $based($band !== null ? array_merge($kept, [(float) $band[1]]) : $kept, (int) ($def['decimals'] ?? 0));
                 if ($shared === null && !$mixed) {
                     $grid = $levels($high, $step);
+                    if (isset($def['alt']['factor'])) {
+                        $alt = array_map(static fn (array $l): string => i18n_number($l['v'] * (float) $def['alt']['factor'], 0), $grid);
+                    }
+                }
+                if ($band !== null && $k === 0) {
+                    $zone = ['top' => $baseY(min((float) $band[1], $high), $high), 'bottom' => $baseY(max((float) $band[0], 0.0), $high)];
                 }
                 $bars[] = [
                     'key' => (string) $def['key'],
@@ -376,7 +409,9 @@ if (!function_exists('area_charts')) {
             'has_data' => $has,
             'lines'    => $lines,
             'bars'     => $bars,
-            'grid'     => $grid,
+            'grid'     => array_map(static fn (array $l): array => array_diff_key($l, ['v' => 0]), $grid),
+            'grid_alt' => $alt,
+            'band'     => $zone,
         ];
     }
 
@@ -471,6 +506,41 @@ if (!function_exists('area_charts')) {
      *
      * @return array{texts: list<?string>, date: ?string}|null
      */
+    function area_chart_latest_of(array $chart, array $week, ?array $latest): ?array
+    {
+        $s = $chart['series'][0];
+        if ($latest === null || (!isset($chart['of']) && !isset($s['alt']) && !isset($chart['sub']))) {
+            return $latest;
+        }
+
+        /* The value the week ends on, found again among its points. */
+        $value = null;
+        foreach ($week['points'] as $i => $p) {
+            if (($p[3] ?? null) !== null) {
+                $value = $week['values'][0][$i];
+            }
+        }
+        if ($value === null) {
+            return $latest;
+        }
+
+        $decimals = (int) ($s['decimals'] ?? 0);
+        $unit     = (string) ($s['unit'] ?? '');
+        /* Its second scale has a line of its own under it ('sub'). */
+        $latest['texts'][0] = area_chart_number((float) $value, $decimals, $unit);
+        if (isset($chart['of'])) {
+            /* "1.844" with "van 2.300 kcal" after it, quieter — "1,2 L" with "van 1,8 L". */
+            $latest['texts'][0] = $unit === 'kcal' ? i18n_number((float) $value, $decimals) : area_chart_number((float) $value, $decimals, $unit);
+            $latest['of']       = tf('van %s', area_chart_number((float) $chart['of'], $decimals, $unit));
+        }
+        $second = $chart['sub'] ?? $s['alt'] ?? null;
+        if (isset($second['factor'])) {
+            $latest['sub'] = area_chart_number(round((float) $value * (float) $second['factor']), 0, (string) $second['unit']);
+        }
+
+        return $latest;
+    }
+
     function area_chart_latest(array $week, string $today): ?array
     {
         for ($i = count($week['points']) - 1; $i >= 0; $i--) {

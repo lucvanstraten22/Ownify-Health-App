@@ -48,6 +48,7 @@ import com.ownify.android.ui.screens.settings.DeleteConfirm
 import com.ownify.android.ui.screens.settings.DeviceNameEditor
 import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
+import com.ownify.android.ui.screens.settings.PasswordEditor
 import com.ownify.android.ui.screens.settings.SettingsDetail
 import com.ownify.android.ui.screens.settings.SettingsPage
 import com.ownify.android.ui.screens.setup.SetupScreen
@@ -97,6 +98,7 @@ object OwnifyScreens {
                 Overlay.DeleteAccount -> DeleteConfirm(overlay, data)
                 is Overlay.EditField -> FieldEditor(overlay, data)
                 is Overlay.RenameDevice -> DeviceNameEditor(overlay, data)
+                Overlay.ChangePassword -> PasswordEditor(Overlay.ChangePassword)
                 is Overlay.Pairing -> PairingPanel(overlay, data)
                 is Overlay.ChallengeCreate -> ChallengeCreateSheet(overlay, data)
                 Overlay.ChallengeCode -> ChallengeCodeSheet(Overlay.ChallengeCode, data)

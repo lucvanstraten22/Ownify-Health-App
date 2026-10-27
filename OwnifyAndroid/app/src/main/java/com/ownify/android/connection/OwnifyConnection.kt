@@ -131,6 +131,14 @@ object OwnifyConnection {
     var googleAvailable: Boolean? by mutableStateOf(null)
         private set
 
+    /**
+     * Whether this server lets an account be made with e-mail and a password:
+     * closed in Release A (28.0), when the Registreren flow shows one line
+     * instead of the form and Google stays. Null until asked ([checkGoogle]).
+     */
+    var emailRegistration: Boolean? by mutableStateOf(null)
+        private set
+
     /** Somebody new after Google, choosing their username; null otherwise. */
     var googleStep: GoogleUsernameStep? by mutableStateOf(null)
         private set
@@ -265,7 +273,7 @@ object OwnifyConnection {
     }
 
     /** Creates a Ownify account (app-register.php) and signs in as it, like [login]. */
-    fun register(context: Context, username: String, email: String, password: String) {
+    fun register(context: Context, username: String, email: String, password: String, repeat: String? = null) {
         val name = username.trim()
         val address = email.trim()
 
@@ -274,7 +282,7 @@ object OwnifyConnection {
             return
         }
 
-        signIn(context, tr("Account aanmaken...")) { current -> api.register(address, name, password, deviceLabel(), current) }
+        signIn(context, tr("Account aanmaken...")) { current -> api.register(address, name, password, deviceLabel(), current, repeat) }
     }
 
     /**
@@ -285,7 +293,8 @@ object OwnifyConnection {
         scope.launch {
             val result = api.googleAvailable()
             if (result is OwnifyResult.Success) {
-                googleAvailable = result.value
+                googleAvailable = result.value.google
+                emailRegistration = result.value.emailRegistration
             }
         }
     }
@@ -544,6 +553,7 @@ object OwnifyConnection {
         googleConversation = null
         googleStep = null
         googleAvailable = null
+        emailRegistration = null
         state = OwnifyState.Checking
         auth = OwnifyAuthState.Idle
     }

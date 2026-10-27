@@ -158,7 +158,7 @@ foreach ($settings['pages'] as $id => $page) {
         check("$id: the $name choice saves", ($block['saves'] ?? false) === true);
     }
 }
-check('language, units and the week are the other choices', $others === ['language', 'units', 'week'], implode(', ', $others));
+check('the Voeding dot\'s hour, language, units and the week are the other choices', $others === ['rating_notice', 'language', 'units', 'week'], implode(', ', $others));
 
 $asLight = settings_use_theme($settings, 'light');
 check('White: Licht is ticked', theme_choice($asLight)['selected'] === 'light');

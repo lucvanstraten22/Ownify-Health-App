@@ -1,0 +1,456 @@
+/* ==========================================================================
+   Ownify — the desktop layout (prototype B+, docs/DESKTOP.md)
+
+   On <html data-layout> (components/document-head.php, assets/js/desktop.js):
+
+     phone        narrower than 768px — the phone's own layout; nothing here
+     desktop      the sidebar, the page, and a second page on the right
+     phone-frame  the phone's layout chosen on a wide screen (Telefoon)
+
+   Nothing in the app is drawn twice: the dock becomes the sidebar, the tab
+   bar stacks inside it, and a detail page, OwnifyAI, Nieuw doel, the account
+   and Apparaten all open in the same column on the right — beside the page
+   from 1200px (.has-second makes room for it), over it below that. The same
+   glass, cards, radii and timing as everywhere else; only places change.
+   The Android app has no such layout (PARITY.md).
+   ========================================================================== */
+
+/* The switch exists only where there is a second layout to switch to. */
+.view-switch,
+.sidebar__brand,
+.sidebar__foot,
+.devices__head { display: none; }
+
+.view-switch__icon { width: 16px; height: 16px; flex: none; }
+
+.view-switch .range-switch__option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+:root[data-layout="desktop"] .view-switch,
+:root[data-layout="phone-frame"] .view-switch { display: inline-flex; }
+
+/* ==========================================================================
+   Desktop
+   ========================================================================== */
+:root[data-layout="desktop"] {
+    --side-w: 236px;
+    --side-gap: var(--space-4);
+    --side-space: calc(var(--side-w) + 2 * var(--side-gap));
+    --second-w: 544px;
+    --second-space: calc(var(--second-w) + var(--side-gap));
+    --second-in: 340ms var(--ease-out-strong);
+    --page-max: 1320px;
+    --fs-score: 3.1rem;
+}
+
+/* --- the sidebar: the dock, standing up --------------------------------- */
+:root[data-layout="desktop"] .app-dock {
+    inset: var(--side-gap) auto var(--side-gap) var(--side-gap);
+    width: var(--side-w);
+    padding: var(--space-4) var(--space-2) var(--space-2);
+    align-items: stretch;
+    gap: var(--space-1);
+    border-radius: var(--radius-card);
+    isolation: isolate;
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow-float), var(--lg-glint);
+    pointer-events: auto;
+    touch-action: auto;
+}
+
+:root[data-layout="desktop"] .app-dock::before { display: none; }
+
+:root[data-layout="desktop"] .app-dock::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+:root[data-layout="desktop"] .ai-handle { display: none; }
+
+:root[data-layout="desktop"] .sidebar__brand {
+    display: block;
+    margin: 0;
+    padding: var(--space-1) var(--space-4) var(--space-4);
+    font-size: var(--fs-brand);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+}
+
+/* The tab bar inside it: no glass of its own, the tabs one under another,
+   the chosen pane moving down them (page-navigation.js). */
+:root[data-layout="desktop"] .tabbar {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+}
+
+:root[data-layout="desktop"] .tabbar::before,
+:root[data-layout="desktop"] .tabbar::after { display: none; }
+
+:root[data-layout="desktop"] .tabbar__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    height: auto;
+    padding: 0;
+}
+
+:root[data-layout="desktop"] .tab,
+:root[data-layout="desktop"] .sidebar__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    height: 46px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-pill);
+}
+
+:root[data-layout="desktop"] .tab__icon .icon,
+:root[data-layout="desktop"] .sidebar__icon .icon { width: 20px; height: 20px; }
+
+:root[data-layout="desktop"] .tab__label {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: left;
+}
+
+:root[data-layout="desktop"] .tab__glow { inset: 0; }
+
+:root[data-layout="desktop"] .sidebar__foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: auto;
+}
+
+:root[data-layout="desktop"] .sidebar__item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 46px;
+    color: var(--text-secondary);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    text-align: left;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+:root[data-layout="desktop"] .sidebar__icon { display: grid; place-items: center; flex: none; }
+
+/* OwnifyAI's mark: the Ownify logo in the grey of the items around it (the
+   greyed logo of the declined consent, ai.css .ai-logo--off). */
+:root[data-layout="desktop"] .sidebar__logo,
+:root[data-layout="desktop"] .sidebar__avatar { width: 22px; height: 22px; }
+
+:root[data-layout="desktop"] .sidebar__logo img {
+    display: block;
+    width: 22px;
+    height: 22px;
+    filter: grayscale(1);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+:root[data-layout="desktop"] .sidebar__item:hover .sidebar__logo img { opacity: 1; }
+
+/* The account: the profile picture, round, at the icons' size. */
+:root[data-layout="desktop"] .sidebar__avatar {
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+:root[data-layout="desktop"] .sidebar__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+:root[data-layout="desktop"] .sidebar__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    :root[data-layout="desktop"] .tab:not(.is-active):hover,
+    :root[data-layout="desktop"] .sidebar__item:hover {
+        background-color: var(--inset-fill);
+        color: var(--text-primary);
+    }
+}
+
+/* --- the header: the switch on the right, the rest is in the sidebar ---- */
+:root[data-layout="desktop"] .app-header--shared {
+    left: var(--side-space);
+    transition: right var(--second-in);
+}
+
+:root[data-layout="desktop"] .app-header__inner {
+    display: flex;
+    justify-content: flex-end;
+}
+
+:root[data-layout="desktop"] .app-header__brand,
+:root[data-layout="desktop"] .app-header .pill--devices,
+:root[data-layout="desktop"] .app-header .pill--account { display: none; }
+
+/* --- the page: beside the sidebar, as wide as is good to read ----------- */
+:root[data-layout="desktop"] .rail-window,
+:root[data-layout="desktop"] .pull-sync {
+    left: var(--side-space);
+}
+
+:root[data-layout="desktop"] .rail-window { transition: right var(--second-in); }
+
+:root[data-layout="desktop"] .rail-window,
+:root[data-layout="desktop"] .app-header--shared {
+    --content-width: calc(100% - 2 * var(--space-6));
+}
+
+:root[data-layout="desktop"] .app__main {
+    padding-bottom: var(--space-7, 48px);
+}
+
+/* The way back to the top of Overzicht: the page's own corner. */
+:root[data-layout="desktop"] .fab {
+    --fab-x: 0px;
+    left: auto;
+    right: var(--space-6);
+    bottom: var(--space-6);
+}
+
+/* --- the pages: columns where they help, measured on the page's own width
+   (it narrows beside a second page, and re-flows with it) ---------------- */
+:root[data-layout="desktop"] .app__main { container: page / inline-size; }
+
+/* Instellingen reads as one column; so does a detail page covering the page. */
+:root[data-layout="desktop"] [data-page="settings"] .shell,
+:root[data-layout="desktop"] .detail .shell { max-width: 760px; }
+
+@container page (min-width: 760px) {
+    /* Overzicht: the score beside what follows from it. */
+    [data-page="overview"] .app__main > .shell {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-auto-flow: row dense;
+        gap: var(--space-5);
+        align-items: start;
+    }
+    [data-page="overview"] .app__main > .shell > * { grid-column: 1 / -1; }
+    [data-page="overview"] .app__main > .shell > .card--hero { grid-column: 1 / 6; grid-row: span 3; }
+    [data-page="overview"] .app__main > .shell > .card--goal,
+    [data-page="overview"] .app__main > .shell > .card--insights,
+    [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 6 / -1; }
+
+    /* Doelen: the switch at its own width, the goals side by side. */
+    .goals-intro .range-switch { width: min(100%, 26rem); }
+    [data-goals] .goals-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4);
+        align-items: start;
+    }
+
+    /* Community: Ranglijst and Uitdagingen next to each other. */
+    .community-home {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-5);
+        align-items: start;
+    }
+    .community-home > * { grid-column: 1 / -1; }
+    .community-home > .cm-dest { grid-column: auto; }
+}
+
+@container page (min-width: 1100px) {
+    [data-page="overview"] .app__main > .shell > .card--hero { grid-column: 1 / 5; grid-row: span 2; }
+    [data-page="overview"] .app__main > .shell > .card--goal { grid-column: 5 / 9; }
+    [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 9 / -1; }
+    [data-page="overview"] .app__main > .shell > .card--insights { grid-column: 5 / -1; }
+
+    [data-goals] .goals-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Beside a second page (from 1200px) the page makes room for it. */
+@media (min-width: 1200px) {
+    :root[data-layout="desktop"].has-second .rail-window,
+    :root[data-layout="desktop"].has-second .app-header--shared,
+    :root[data-layout="desktop"].has-second .pull-sync {
+        right: var(--second-space);
+    }
+}
+
+/* --- the second page ----------------------------------------------------- */
+
+/* One column on the right, for all of them. Below 1200px it covers the page
+   (but never the sidebar). */
+:root[data-layout="desktop"] .detail,
+:root[data-layout="desktop"] .sheet--ai,
+:root[data-layout="desktop"] .account:not([hidden]),
+:root[data-layout="desktop"] .devices:not([hidden]),
+:root[data-layout="desktop"] .goal-wizard:not([hidden]) {
+    inset: var(--side-gap) var(--side-gap) var(--side-gap) auto;
+    width: var(--second-w);
+}
+
+@media (max-width: 1199.98px) {
+    :root[data-layout="desktop"] .detail,
+    :root[data-layout="desktop"] .sheet--ai,
+    :root[data-layout="desktop"] .account:not([hidden]),
+    :root[data-layout="desktop"] .devices:not([hidden]),
+    :root[data-layout="desktop"] .goal-wizard:not([hidden]) {
+        left: var(--side-space);
+        width: auto;
+    }
+}
+
+/* A detail page and OwnifyAI: the thick glass, with the detail's own
+   accent light kept in it. They arrive from the right (detail-layer.js,
+   ai-sheet.js park them past the edge). */
+/* Parked: past the edge by the gap beside them too (nav.PARK_GAP), so no
+   sliver of a closed one shows at the screen's right. */
+:root[data-layout="desktop"] .detail,
+:root[data-layout="desktop"] .sheet--ai { transform: translate3d(calc(100% + 32px), 0, 0); }
+
+:root[data-layout="desktop"] .detail {
+    --content-width: calc(100% - 2 * var(--space-5));
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    isolation: isolate;
+    background:
+        radial-gradient(88% 46% at 82% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 62%),
+        var(--lg-face), var(--lg-body-thick);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    transition: transform var(--second-in);
+}
+
+:root[data-layout="desktop"] .deck[data-detail-state="moving"] .detail.is-current,
+:root[data-layout="desktop"] .deck[data-detail-state="open"] .detail.is-current {
+    box-shadow: var(--lg-shadow-float), var(--lg-glint);
+}
+
+:root[data-layout="desktop"] .sheet--ai {
+    border-radius: var(--radius-card);
+    transition: transform var(--second-in);
+}
+
+:root[data-layout="desktop"] .deck[data-ai-state="moving"] .sheet--ai,
+:root[data-layout="desktop"] .deck[data-ai-state="open"] .sheet--ai {
+    box-shadow: var(--lg-shadow-float), var(--lg-glint);
+}
+
+:root[data-layout="desktop"] .sheet-scrim { display: none; }
+
+/* The panels: no scrim — the page beside them stays the user's — and the
+   panel fills the column, coming in from the right like the others. */
+:root[data-layout="desktop"] .account:not([hidden]),
+:root[data-layout="desktop"] .devices:not([hidden]),
+:root[data-layout="desktop"] .goal-wizard:not([hidden]) {
+    display: block;
+    padding: 0;
+    pointer-events: none;
+}
+
+:root[data-layout="desktop"] .account__scrim,
+:root[data-layout="desktop"] .devices__scrim,
+:root[data-layout="desktop"] .goal-wizard .wizard__scrim { display: none; }
+
+:root[data-layout="desktop"] .devices__head { display: flex; }
+
+:root[data-layout="desktop"] .devices__frame {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+:root[data-layout="desktop"] .account__panel,
+:root[data-layout="desktop"] .devices__panel,
+:root[data-layout="desktop"] .goal-wizard .wizard__panel {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: var(--radius-card);
+    overflow-y: auto;
+    pointer-events: auto;
+    opacity: 1;
+    transform: translate3d(calc(100% + 32px), 0, 0);
+    transition: transform var(--second-in), -webkit-backdrop-filter 240ms var(--ease-out-strong), backdrop-filter 240ms var(--ease-out-strong);
+}
+
+:root[data-layout="desktop"] .account.is-open .account__panel,
+:root[data-layout="desktop"] .devices.is-open .devices__panel,
+:root[data-layout="desktop"] .goal-wizard.is-open .wizard__panel {
+    transform: none;
+}
+
+/* What opened the second page stays marked in the page: the inset ring of a
+   chosen row (Phase 2), on the card, row or tile it is. */
+:root[data-layout="desktop"] .is-second-source {
+    box-shadow: inset 0 0 0 1.5px var(--health-strong), var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
+}
+
+/* Reduced motion: nothing slides; what arrives fades (navigation-core.js). */
+@media (prefers-reduced-motion: reduce) {
+    :root[data-layout="desktop"] .rail-window,
+    :root[data-layout="desktop"] .app-header--shared,
+    :root[data-layout="desktop"] .account__panel,
+    :root[data-layout="desktop"] .devices__panel,
+    :root[data-layout="desktop"] .goal-wizard .wizard__panel { transition: none; }
+}
+
+:root[data-layout="desktop"][data-motion="reduce"] .rail-window,
+:root[data-layout="desktop"][data-motion="reduce"] .app-header--shared { transition: none; }
+
+/* ==========================================================================
+   Telefoon on a wide screen: the phone's layout in a phone's width
+   ========================================================================== */
+:root[data-layout="phone-frame"] {
+    --shell-w: calc(430px - 2 * var(--space-4));
+    --content-width: var(--shell-w);
+    --fs-score: 2.9rem;
+}
+
+:root[data-layout="phone-frame"] .deck {
+    left: calc(50% - 215px);
+    right: auto;
+    width: 430px;
+}
+
+:root[data-layout="phone-frame"] .tabbar { width: calc(430px - 2 * var(--space-3)); }
+
+:root[data-layout="phone-frame"] .view-switch {
+    position: fixed;
+    top: calc(var(--safe-top) + var(--space-3));
+    right: var(--space-5);
+    z-index: 70;
+}
+
+/* The red dot beside a sidebar icon: closer in than in the tab bar, where
+   the label sits under the icon instead of beside it. */
+:root[data-layout="desktop"] .tab__icon > .notice-dot--beside,
+:root[data-layout="desktop"] .sidebar__item .notice-dot--beside { right: -4px; }

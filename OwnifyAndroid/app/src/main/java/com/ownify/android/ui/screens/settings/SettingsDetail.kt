@@ -278,43 +278,78 @@ private fun FieldColumns(
 }
 
 /**
- * Inloggen: the ways into this account, in the fields' shape. Linking Google
- * to an account that has a password is the website's own flow — Google's
- * pages in a browser signed in to Ownify — so the row that links it opens the
- * website (docs/PARITY.md). Signing in with a Google account that is already
- * linked, or starting a new account with Google, is the sign-in panel's
- * "Doorgaan met Google".
+ * Inloggen: the ways into this account, in the fields' shape — as the
+ * website's signin block (pages/settings-detail.php, 28.0):
+ *
+ *   E-mailadres  the address, and whether it is confirmed (the status dot)
+ *   Wachtwoord   "Wijzigen" opens the password editor (current, new, repeat)
+ *   Google       linked, or why it cannot be linked yet: linking needs the
+ *                account's own address confirmed, which needs mail — not
+ *                before Release B (docs/ACCOUNT-SECURITY.md §8)
+ *
+ * An older server sends no `signin`: the rows it always had.
  */
 @Composable
 private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
-    val context = LocalContext.current
+    val shell = LocalShell.current
     val auth = data.auth
+    val signin = auth.signin
     val email = auth.identities.firstOrNull { it.first == "email" }
     val google = auth.identities.firstOrNull { it.first == "google" }
 
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)
         SettingsCard {
-            if (!auth.signedIn) {
-                StaticField(tr("Niet ingelogd"), null, "—", filled = false)
-            } else {
-                StaticField(
-                    tr("E-mail en wachtwoord"),
-                    if (email != null) tr("Inloggen met je gebruikersnaam of e-mailadres") else tr("Je logt in met Google"),
-                    email?.second ?: tr("Niet ingesteld"),
-                    filled = email != null
-                )
-                when {
-                    google != null -> StaticField("Google", tr("Gekoppeld — je kunt ook met Google inloggen"), google.second ?: tr("Gekoppeld"), filled = true, check = true, divided = true)
-                    auth.googleAvailable -> FieldRow(
-                        ProfileField("google", "Google", tr("Koppel Google om daarmee in te loggen"), null, null, null, "editable", null, tr("Koppel Google"), null),
-                        divided = true
-                    ) {
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, OwnifyConnection.api.siteUrl.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            when {
+                !auth.signedIn -> StaticField(tr("Niet ingelogd"), null, "—", filled = false)
+
+                signin != null -> {
+                    val address = signin.email ?: signin.googleEmail
+                    val verified = if (signin.email != null) signin.emailVerified else signin.googleEmail != null
+                    StaticField(
+                        tr("E-mailadres"),
+                        if (address == null) tr("Je logt in met Google") else null,
+                        address ?: tr("Niet ingesteld"),
+                        filled = address != null,
+                        status = when {
+                            address == null -> null
+                            verified -> (if (signin.email != null) tr("Bevestigd") else tr("Bevestigd door Google")) to StatusTone.On
+                            else -> tr("Niet bevestigd") to StatusTone.Warn
                         }
+                    )
+                    if (signin.canChangePassword) {
+                        FieldRow(
+                            ProfileField("password", tr("Wachtwoord"), tr("Inloggen met je gebruikersnaam of e-mailadres"), null, null, null, "editable", tr("Wijzigen"), tr("Wijzigen"), null),
+                            divided = true
+                        ) { shell.open(Overlay.ChangePassword) }
+                    } else {
+                        StaticField(
+                            tr("Wachtwoord"),
+                            if (signin.password) tr("Dit kan even niet. Probeer het later opnieuw.") else tr("Een wachtwoord instellen kan binnenkort."),
+                            if (signin.password) tr("Ingesteld") else tr("Niet ingesteld"),
+                            filled = signin.password,
+                            divided = true
+                        )
                     }
-                    else -> StaticField("Google", null, tr("Nog niet beschikbaar"), filled = false, divided = true)
+                    when {
+                        signin.google -> StaticField("Google", tr("Gekoppeld — je kunt ook met Google inloggen"), signin.googleEmail ?: tr("Gekoppeld"), filled = true, check = true, divided = true)
+                        auth.googleAvailable -> StaticField("Google", tr("Bevestig eerst je e-mailadres. Dat kan binnenkort."), tr("Niet gekoppeld"), filled = false, divided = true)
+                        else -> StaticField("Google", null, tr("Nog niet beschikbaar"), filled = false, divided = true)
+                    }
+                }
+
+                else -> {
+                    StaticField(
+                        tr("E-mail en wachtwoord"),
+                        if (email != null) tr("Inloggen met je gebruikersnaam of e-mailadres") else tr("Je logt in met Google"),
+                        email?.second ?: tr("Niet ingesteld"),
+                        filled = email != null
+                    )
+                    if (google != null) {
+                        StaticField("Google", tr("Gekoppeld — je kunt ook met Google inloggen"), google.second ?: tr("Gekoppeld"), filled = true, check = true, divided = true)
+                    } else {
+                        StaticField("Google", null, tr("Nog niet beschikbaar"), filled = false, divided = true)
+                    }
                 }
             }
         }
@@ -323,7 +358,16 @@ private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
 
 /** A field row that is a fact, not a control. */
 @Composable
-private fun StaticField(label: String, note: String?, value: String, filled: Boolean, check: Boolean = false, divided: Boolean = false) {
+private fun StaticField(
+    label: String,
+    note: String?,
+    value: String,
+    filled: Boolean,
+    check: Boolean = false,
+    divided: Boolean = false,
+    /** A status under the label instead of a note: `.status`, its word and its dot. */
+    status: Pair<String, StatusTone>? = null
+) {
     val narrow = LocalScreen.current.narrow
     FieldColumns(
         Modifier
@@ -335,6 +379,7 @@ private fun StaticField(label: String, note: String?, value: String, filled: Boo
             Column {
                 T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
                 if (note != null) T(note, JStyle.Footnote, Modifier.padding(top = 2.dp))
+                if (status != null) StatusBadge(status.first, status.second, Modifier.padding(top = 2.dp))
             }
         },
         value = {
@@ -422,7 +467,8 @@ private fun IntegrationCard(data: AppData, item: Integration) {
         // .integration__head
         val head: @Composable () -> Unit = {
             OwnifyIcons.named(item.icon)?.let {
-                IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary)
+                IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary,
+                    notice = "source:" + item.provider.orEmpty())
             }
         }
         // A <button>: its text keeps letter-spacing: normal.

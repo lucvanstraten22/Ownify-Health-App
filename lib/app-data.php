@@ -30,11 +30,15 @@ if (is_file(dirname(__DIR__) . '/includes/challenges.php') && is_file(__DIR__ . 
     require_once __DIR__ . '/challenges-ui.php';
 }
 require_once __DIR__ . '/hydrate-compass.php';
+require_once __DIR__ . '/notices.php';
 if (is_file(__DIR__ . '/hydrate-sleep.php')) {
     require_once __DIR__ . '/hydrate-sleep.php';
 }
 if (is_file(__DIR__ . '/hydrate-training.php') && is_file(__DIR__ . '/area-charts.php')) {
     require_once __DIR__ . '/hydrate-training.php';
+}
+if (is_file(__DIR__ . '/hydrate-nutrition.php') && is_file(dirname(__DIR__) . '/config/nutrition-reference.php')) {
+    require_once __DIR__ . '/hydrate-nutrition.php';
 }
 
 /* The first days (includes/setup.php). Guarded as persistent-login.php is in
@@ -155,6 +159,20 @@ if (!function_exists('app_page_data')) {
               $data['health']['areas']['training']['charts'], $data['health']['areas']['training']['chart_copy'],
               $data['health']['areas']['training']['heart']);
 
+        /* Voeding, drawn: the day's composition, your cijfer and Energie and
+           Water (lib/hydrate-nutrition.php, docs/NUTRITION.md). Guarded the
+           same way. */
+        if (function_exists('hydrate_nutrition') && isset($data['health']['areas']['nutrition']['composition'])) {
+            $data['health']['areas']['nutrition']['view'] = hydrate_nutrition(
+                $data['health']['areas']['nutrition'],
+                $compass['history']['periods'],
+                $userId,
+                date('Y-m-d')
+            );
+        }
+        unset($data['health']['areas']['nutrition']['charts'], $data['health']['areas']['nutrition']['chart_copy'],
+              $data['health']['areas']['nutrition']['composition']);
+
         /* Gezondheid's Verloop: that same history, as Slaap, Voeding and
            Training — three lines over the Scorekompas's periods. Guarded as
            the first days are: a deploy lands one file at a time. */
@@ -218,6 +236,10 @@ if (!function_exists('app_page_data')) {
             $data['calibration'] = null;
         }
 
+        /* The red dots: what waits for the person to do it, worked out from
+           everything above (lib/notices.php), the same for both apps. */
+        $data['notices'] = notices_current(notices_for($data, $userId));
+
         return $data;
     }
 
@@ -251,6 +273,8 @@ if (!function_exists('app_page_data')) {
             ],
             'google_pending' => null,
             'identities'     => $user === null ? [] : auth_identities_for_user($userId),
+            'signin'         => $user === null ? null : account_signin_state($userId),
+            'email_registration' => account_email_registration_open(),
             'flash'          => null,
         ];
     }

@@ -181,8 +181,9 @@ foreach (['' => 'an empty string', 'abc' => 'one part', 'a.b' => 'two parts', 'a
 
 check('a verified address is used, lower-cased',
     google_signin_verified_email($claims) === 'someone@example.com');
-check("email_verified as the string 'true' counts",
-    google_signin_verified_email(['email_verified' => 'true'] + $claims) === 'someone@example.com');
+/* 28.0 (docs/ACCOUNT-SECURITY.md §1): exactly true — the string is not enough. */
+check("email_verified as the string 'true' does not count",
+    google_signin_verified_email(['email_verified' => 'true'] + $claims) === null);
 check('an unverified address is not used',
     google_signin_verified_email(['email_verified' => false] + $claims) === null);
 check('no email_verified claim means not verified',

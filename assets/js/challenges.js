@@ -271,6 +271,7 @@
             .then(function (html) {
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 swap(fresh);
+                if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); }
             })
             .catch(function () { /* what was saved is saved; the next load shows it */ });
     }
@@ -491,6 +492,8 @@
                 }
 
                 var id = answer.id;
+                /* An answered invitation: its dot goes now. */
+                if (window.OwnifyNotices && r.id) { window.OwnifyNotices.done('invite:' + r.id); }
                 var ready = refresh();
 
                 show('<div class="ch-sheet__body ch-done">'
@@ -514,6 +517,7 @@
                 decline.disabled = true;
                 post('api/challenges/respond.php', { challenge_id: r.id, action: 'decline' }).then(function (answer) {
                     if (!answer.ok) { decline.disabled = false; toast(failed(answer)); return; }
+                    if (window.OwnifyNotices) { window.OwnifyNotices.done('invite:' + r.id); }
                     hide();
                     toast(answer.message);
                     refresh();

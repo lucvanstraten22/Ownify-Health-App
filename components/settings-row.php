@@ -19,7 +19,7 @@ $meta = $row['value'] ?? $row['hint'] ?? null;
         data-detail-open="settings-<?= e($row['id']) ?>"
         aria-label="<?= e($row['label']) ?><?= $meta !== null ? ' — ' . e((string) $meta) : '' ?>. <?= e(t('Open instellingen.')) ?>">
 
-    <span class="settings-row__mark" aria-hidden="true"><?= icon($row['icon']) ?></span>
+    <span class="settings-row__mark" aria-hidden="true"><?= icon($row['icon']) ?><?= $row['id'] === 'devices' ? notice_dot('sources') : '' ?></span>
 
     <span class="settings-row__text">
         <span class="settings-row__label"><?= e($row['label']) ?></span>

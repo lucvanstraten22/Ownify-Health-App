@@ -296,14 +296,10 @@ try {
     check('the session and the token read the same scores and health',
         ($web['body']['data']['scores'] ?? 1) === ($app['body']['data']['scores'] ?? 2)
         && ($web['body']['data']['health']['areas'] ?? 1) === ($app['body']['data']['health']['areas'] ?? 2));
-    $rated = null;
-    foreach ($app['body']['data']['health']['areas']['nutrition']['highlights'] ?? [] as $metric) {
-        if (($metric['key'] ?? null) === 'self_rating') {
-            $rated = $metric['value'];
-        }
-    }
+    /* Voeding, drawn (27.0, docs/NUTRITION.md): today's cijfer on the slider, in the view both apps read. */
+    $rated = $app['body']['data']['health']['areas']['nutrition']['view']['days'][0]['rating'] ?? null;
     check('the page shows the day\'s cijfer the app reads (' . var_export($rated, true) . ')',
-        $rated === 8 && preg_match('/data-detail="nutrition".*?card--tiles.*?data-count-to="8"/s', $page['raw']) === 1);
+        $rated === 8 && preg_match('/data-detail="nutrition".*?data-nutrition-days>[^<]*"rating":8/s', $page['raw']) === 1);
     check('the session and the token read the same Scorekompas',
         isset($app['body']['data']['compass']) && ($web['body']['data']['compass'] ?? 1) === ($app['body']['data']['compass'] ?? 2));
     check('the score card opens it, and the page is there to open',
@@ -707,7 +703,7 @@ try {
         check('a profile row made later keeps it so', $read($old)['setup']['pending'] === false);
 
         $pending = app_account('pending-delete', true);
-        $gone = http('/api/profile/delete.php', ['bearer' => $pending['token'], 'form' => ['confirm' => 'verwijderen']]);
+        $gone = http('/api/profile/delete.php', ['bearer' => $pending['token'], 'form' => ['confirm' => 'verwijderen', 'password' => $password]]);
         check('an account deleted in the middle of its setup is gone, not stuck', $gone['status'] === 200
             && db_value('SELECT id FROM users WHERE id = ?', [$pending['id']]) === null
             && http('/api/app/state.php', ['bearer' => $pending['token']])['status'] === 401);
@@ -719,7 +715,11 @@ try {
     check('without confirm=verwijderen: 422, nothing deleted',
         http('/api/profile/delete.php', ['bearer' => $sanne['token'], 'form' => []])['status'] === 422
         && db_value('SELECT id FROM users WHERE id = ?', [$sanne['id']]) !== null);
-    $gone = http('/api/profile/delete.php', ['bearer' => $sanne['token'], 'form' => ['confirm' => 'verwijderen']]);
+    $noProof = http('/api/profile/delete.php', ['bearer' => $sanne['token'], 'form' => ['confirm' => 'verwijderen']]);
+    check('without the password: 403 asking for it, nothing deleted', $noProof['status'] === 403
+        && ($noProof['body']['reauth'] ?? null) === 'password'
+        && db_value('SELECT id FROM users WHERE id = ?', [$sanne['id']]) !== null, summary($noProof));
+    $gone = http('/api/profile/delete.php', ['bearer' => $sanne['token'], 'form' => ['confirm' => 'verwijderen', 'password' => $password]]);
     check('200: no redirect, the website\'s own sentence', $gone['status'] === 200
         && array_key_exists('redirect', $gone['body'] ?? []) && $gone['body']['redirect'] === null
         && ($gone['body']['message'] ?? null) === 'Je account is verwijderd, met alles wat erbij hoorde.', summary($gone));
@@ -729,7 +729,7 @@ try {
     $google = app_account('google');
     db_run('INSERT INTO user_auth_identities (user_id, provider, provider_subject, email, email_verified_at) VALUES (?, ?, ?, ?, NOW())',
         [$google['id'], 'google', 'as-test-sub-' . $run, $google['username'] . '@gmail.invalid']);
-    $gone = http('/api/profile/delete.php', ['bearer' => $google['token'], 'form' => ['confirm' => 'verwijderen']]);
+    $gone = http('/api/profile/delete.php', ['bearer' => $google['token'], 'form' => ['confirm' => 'verwijderen', 'password' => $password]]);
     check('with Google linked: the "remove it yourself" notice and its link, no redirect', $gone['status'] === 200
         && array_key_exists('redirect', $gone['body'] ?? []) && $gone['body']['redirect'] === null && ($gone['body']['message'] ?? null) === GOOGLE_SIGNIN_NOT_REVOKED
         && ($gone['body']['link']['href'] ?? null) === GOOGLE_ACCOUNT_CONNECTIONS_URL, summary($gone));

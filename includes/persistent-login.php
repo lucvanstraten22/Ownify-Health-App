@@ -242,6 +242,13 @@ if (!function_exists('persistent_login_resume')) {
         $_SESSION['csrf_token']   = (string) $row['csrf_token'];
 
         $_SESSION['persistent_login'] = ['selector' => $selector, 'confirm' => $confirm];
+
+        /* A session put back is a new session: it starts at the account's
+           current number (includes/account-security.php). A browser whose
+           cookie row a security action deleted never gets this far. */
+        if (function_exists('account_session_stamp')) {
+            account_session_stamp((int) $row['user_id']);
+        }
     }
 
     /**

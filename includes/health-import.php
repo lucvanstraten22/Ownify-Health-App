@@ -417,6 +417,9 @@ if (!function_exists('health_import_records')) {
                     'metric_code' => $nutrient,
                     'value'       => $r[$nutrient],
                     'recorded_at' => $when->format('Y-m-d H:i:s'),
+                    /* The app that logged the meal, so the same meal from two
+                       apps counts once (health_reconcile_days()). */
+                    'data_origin' => $r['data_origin'] ?? null,
                     'context'     => ['nutrition_entry_id' => (int) $entryId],
                 ]);
             }

@@ -101,19 +101,16 @@ foreach ($page['blocks'] as $block) {
                         </section>
 
                     <?php elseif ($block['type'] === 'signin'):
-                        /* Rows in the same shape as the profile fields. The
-                           Google row is the only live one: a button while
-                           Google can be linked and is not, a fact once it is. */
-                        $auth       = $data['auth'];
-                        $identities = [];
-                        foreach ($auth['identities'] ?? [] as $identity) {
-                            $identities[$identity['provider']] = $identity;
-                        }
-                        $email      = $identities['email'] ?? null;
-                        $google     = $identities['google'] ?? null;
-                        $canLink    = !empty($auth['providers']['google']);
-                        $flash      = $auth['flash'] ?? null;
-                        $flash      = ($flash !== null && $flash['target'] === 'settings-account') ? $flash : null;
+                        /* The ways into this account, in the shape of the profile
+                           fields (docs/ACCOUNT-SECURITY.md, Release A):
+                             E-mailadres  the address and whether it is confirmed
+                             Wachtwoord   "Wijzigen" opens the editor (current, new, repeat)
+                             Google       linked, or why it cannot be linked yet */
+                        $auth    = $data['auth'];
+                        $signin  = $auth['signin'] ?? null;
+                        $googleOn = !empty($auth['providers']['google']);
+                        $flash   = $auth['flash'] ?? null;
+                        $flash   = ($flash !== null && $flash['target'] === 'settings-account') ? $flash : null;
                         ?>
 
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>" data-signin>
@@ -130,7 +127,7 @@ foreach ($page['blocks'] as $block) {
                             <p class="settings-note settings-note--flash" data-signin-error role="alert" hidden></p>
 
                             <div class="card settings-card">
-                                <?php if (empty($auth['signed_in'])): ?>
+                                <?php if (empty($auth['signed_in']) || $signin === null): ?>
 
                                     <div class="settings-field is-empty">
                                         <span class="settings-field__text">
@@ -139,32 +136,69 @@ foreach ($page['blocks'] as $block) {
                                         <span class="settings-field__value">—</span>
                                     </div>
 
-                                <?php else: ?>
+                                <?php else:
+                                    $address  = $signin['email'] ?? $signin['google_email'];
+                                    $verified = $signin['email'] !== null ? $signin['email_verified'] : $signin['google_email'] !== null;
+                                    ?>
 
-                                    <div class="settings-field <?= $email !== null ? 'is-filled' : 'is-empty' ?>">
+                                    <div class="settings-field <?= $address !== null ? 'is-filled' : 'is-empty' ?>" data-signin-row="email">
                                         <span class="settings-field__text">
-                                            <span class="settings-field__label"><?= e(t('E-mail en wachtwoord')) ?></span>
+                                            <span class="settings-field__label"><?= e(t('E-mailadres')) ?></span>
                                             <span class="settings-field__note">
-                                                <?= e($email !== null ? t('Inloggen met je gebruikersnaam of e-mailadres') : t('Je logt in met Google')) ?>
+                                                <?php if ($address === null): ?>
+                                                    <?= e(t('Je logt in met Google')) ?>
+                                                <?php elseif ($verified): ?>
+                                                    <span class="status" data-tone="on"><span class="status__dot" aria-hidden="true"></span><span class="status__text"><?= e($signin['email'] !== null ? t('Bevestigd') : t('Bevestigd door Google')) ?></span></span>
+                                                <?php else: ?>
+                                                    <span class="status" data-tone="warn"><span class="status__dot" aria-hidden="true"></span><span class="status__text"><?= e(t('Niet bevestigd')) ?></span></span>
+                                                <?php endif; ?>
                                             </span>
                                         </span>
-                                        <span class="settings-field__value"><?= e($email['email'] ?? t('Niet ingesteld')) ?></span>
+                                        <span class="settings-field__value"><?= e($address ?? t('Niet ingesteld')) ?></span>
                                     </div>
 
-                                    <?php if ($google !== null): ?>
+                                    <?php if (!empty($signin['can_change_password'])): ?>
 
-                                        <div class="settings-field is-filled">
+                                        <button type="button" class="settings-field press is-editable is-filled" data-signin-row="password"
+                                                data-field-edit="password"
+                                                data-field-label="<?= e(t('Wachtwoord wijzigen')) ?>"
+                                                data-field-input="<?= e(json_encode(['type' => 'passwords', 'endpoint' => 'api/account/password.php'])) ?>">
+                                            <span class="settings-field__text">
+                                                <span class="settings-field__label"><?= e(t('Wachtwoord')) ?></span>
+                                                <span class="settings-field__note"><?= e(t('Inloggen met je gebruikersnaam of e-mailadres')) ?></span>
+                                            </span>
+                                            <span class="settings-field__value"><?= e(t('Wijzigen')) ?></span>
+                                            <?= icon('chevron-right', 'settings-field__mark') ?>
+                                        </button>
+
+                                    <?php else: ?>
+
+                                        <div class="settings-field <?= !empty($signin['password']) ? 'is-filled' : 'is-empty' ?>" data-signin-row="password">
+                                            <span class="settings-field__text">
+                                                <span class="settings-field__label"><?= e(t('Wachtwoord')) ?></span>
+                                                <span class="settings-field__note">
+                                                    <?= e(!empty($signin['password']) ? t('Dit kan even niet. Probeer het later opnieuw.') : t('Een wachtwoord instellen kan binnenkort.')) ?>
+                                                </span>
+                                            </span>
+                                            <span class="settings-field__value"><?= e(!empty($signin['password']) ? t('Ingesteld') : t('Niet ingesteld')) ?></span>
+                                        </div>
+
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($signin['google'])): ?>
+
+                                        <div class="settings-field is-filled" data-signin-row="google">
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
                                                 <span class="settings-field__note"><?= e(t('Gekoppeld — je kunt ook met Google inloggen')) ?></span>
                                             </span>
-                                            <span class="settings-field__value"><?= e($google['email'] ?? t('Gekoppeld')) ?></span>
+                                            <span class="settings-field__value"><?= e($signin['google_email'] ?? t('Gekoppeld')) ?></span>
                                             <?= icon('check', 'settings-field__mark') ?>
                                         </div>
 
-                                    <?php elseif ($canLink): ?>
+                                    <?php elseif ($googleOn && !empty($signin['can_link_google'])): ?>
 
-                                        <button type="button" class="settings-field press is-editable is-empty" data-google-link>
+                                        <button type="button" class="settings-field press is-editable is-empty" data-google-link data-signin-row="google">
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
                                                 <span class="settings-field__note"><?= e(t('Koppel Google om daarmee in te loggen')) ?></span>
@@ -175,11 +209,16 @@ foreach ($page['blocks'] as $block) {
 
                                     <?php else: ?>
 
-                                        <div class="settings-field is-empty">
+                                        <?php /* Release A: linking needs the account's own address
+                                                 confirmed, which needs mail (§8). Said, not hidden. */ ?>
+                                        <div class="settings-field is-empty" data-signin-row="google">
                                             <span class="settings-field__text">
                                                 <span class="settings-field__label">Google</span>
+                                                <?php if ($googleOn): ?>
+                                                    <span class="settings-field__note"><?= e(t('Bevestig eerst je e-mailadres. Dat kan binnenkort.')) ?></span>
+                                                <?php endif; ?>
                                             </span>
-                                            <span class="settings-field__value"><?= e(t('Nog niet beschikbaar')) ?></span>
+                                            <span class="settings-field__value"><?= e($googleOn ? t('Niet gekoppeld') : t('Nog niet beschikbaar')) ?></span>
                                         </div>
 
                                     <?php endif; ?>

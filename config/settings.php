@@ -88,7 +88,8 @@ return [
         [
             'label' => 'App',
             'rows'  => [
-                ['id' => 'notifications', 'icon' => 'bell',    'label' => 'Meldingen',         'value' => 'Uit'],
+                /* "Voeding vanaf 20:00": the hour the dot appears (settings_prepare()). */
+                ['id' => 'notifications', 'icon' => 'bell',    'label' => 'Meldingen',         'value' => 'Voeding vanaf 20:00'],
                 ['id' => 'theme',         'icon' => 'moon',    'label' => 'Thema & uiterlijk', 'value' => 'Systeem'],
                 ['id' => 'language',      'icon' => 'globe',   'label' => 'Taal',              'value' => 'Nederlands'],
                 /* Eenheden, Eerste dag van de week and Toegankelijkheid, together on one screen. */
@@ -99,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 25.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 28.0'],
             ],
         ],
     ],
@@ -338,8 +339,34 @@ return [
         'notifications' => [
             'title' => 'Meldingen',
             'icon'  => 'bell',
-            'lede'  => 'Er worden nog geen meldingen verstuurd. Dit zijn de soorten die er komen.',
+            'lede'  => 'Een rode stip in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.',
             'blocks' => [
+                /* The red dots (lib/notices.php, docs/NOTICES.md): on what
+                   waits for you, gone once it is done. */
+                ['type' => 'section', 'title' => 'Stippen in de app', 'icon' => 'bell',
+                 'lede' => 'Een stip staat op wat je zelf nog moet doen: je cijfer bij Voeding, een doel dat je zelf afvinkt, een vriendverzoek, een uitnodiging of een bron die niet werkt. Hij verdwijnt zodra het gedaan is.'],
+
+                /* Saved on the account (api/profile/preferences.php,
+                   migration 026), so the website and the app agree. */
+                [
+                    'type'     => 'choice',
+                    'title'    => 'Stip bij Voeding vanaf',
+                    'name'     => 'rating_notice',
+                    'saves'    => true,
+                    'selected' => '20',
+                    'options'  => [
+                        ['key' => '16', 'label' => '16:00'],
+                        ['key' => '18', 'label' => '18:00'],
+                        ['key' => '19', 'label' => '19:00'],
+                        ['key' => '20', 'label' => '20:00', 'note' => 'Standaard'],
+                        ['key' => '21', 'label' => '21:00'],
+                        ['key' => '22', 'label' => '22:00'],
+                    ],
+                ],
+
+                ['type' => 'section', 'title' => 'Meldingen buiten de app', 'icon' => 'bell',
+                 'lede' => 'Er worden nog geen meldingen verstuurd. Dit zijn de soorten die er komen.'],
+
                 [
                     'type'  => 'toggles',
                     'title' => 'Soorten',
@@ -530,7 +557,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 25.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 28.0'],
                     ],
                 ],
 

@@ -42,12 +42,21 @@
 
     /** 0 = closed, 1 = open. */
     function place(value) {
-        sheet.style.transform = 'translate3d(0, ' + ((1 - value) * 100) + '%, 0)';
-        if (scrim) { scrim.style.opacity = (value * SCRIM_MAX).toFixed(3); }
+        var rest = 1 - value;
+        /* On desktop OwnifyAI is a second page: it comes in from the right
+           (desktop.css), with no scrim, beside the page it leaves usable. */
+        sheet.style.transform = nav.isDesktop()
+            ? 'translate3d(calc(' + (rest * 100) + '% + ' + (rest * nav.PARK_GAP).toFixed(2) + 'px), 0, 0)'
+            : 'translate3d(0, ' + (rest * 100) + '%, 0)';
+        if (scrim) { scrim.style.opacity = nav.isDesktop() ? '0' : (value * SCRIM_MAX).toFixed(3); }
     }
 
     /** Where the sheet is right now: mid-way included. */
     function shownProgress() {
+        if (nav.isDesktop()) {
+            var width = (sheet.offsetWidth || window.innerWidth) + nav.PARK_GAP;
+            return width ? 1 - nav.translation(sheet).x / width : (nav.state.aiOpen ? 1 : 0);
+        }
         var height = sheet.offsetHeight || window.innerHeight;
         return height ? 1 - nav.translation(sheet).y / height : (nav.state.aiOpen ? 1 : 0);
     }
@@ -129,6 +138,8 @@
 
     nav.register('y', {
         canStart: function (ctx) {
+            // On desktop it opens and closes by its buttons: no vertical pull.
+            if (nav.isDesktop()) { return false; }
             // Opening: upward, and started on the dock — the one place that
             // hands vertical movement to us instead of to a scroller.
             if (!nav.state.aiOpen) {
@@ -176,6 +187,13 @@
     });
 
     /* ------------------------------------------------- taps and keyboard */
+
+    /* For desktop.js: one second page at a time, and the layout switch. */
+    nav.ai = {
+        open: open,
+        close: close,
+        replace: function () { if (!drag) { held(true); place(nav.state.aiOpen ? 1 : 0); void sheet.offsetWidth; held(false); } }
+    };
 
     deck.addEventListener('click', function (event) {
         if (event.target.closest('[data-ai-open]')) {

@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.settings
 
+import com.ownify.android.ui.design.notice
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.composed
@@ -192,7 +193,7 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
         ) {
-            Mark(OwnifyIcons.named(row.icon))
+            Mark(OwnifyIcons.named(row.icon), notice = if (row.id == "devices") "sources" else null)
             Column(Modifier.weight(1f)) {
                 T(row.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
                 if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = 2.dp))
@@ -204,10 +205,11 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
 
 /** `.settings-row__mark`: a 30 square with a hairline, the row's icon in the secondary colour. */
 @Composable
-private fun Mark(icon: ImageVector?) {
+private fun Mark(icon: ImageVector?, notice: String? = null) {
     val shape = RoundedCornerShape(10.dp)
     Box(
         Modifier
+            .then(if (notice != null) Modifier.notice(notice) else Modifier)
             .size(30.dp)
             .clip(shape)
             .background(Ownify.fill(0.055f))

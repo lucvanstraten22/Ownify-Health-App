@@ -307,11 +307,18 @@ if (!function_exists('health_metric_totals')) {
      * midnight is split over both days. A reading without a span counts whole
      * on the date it was taken, and so does one whose span is longer than a
      * day: that is no record of particular moments.
+     *
+     * Readings without a span — a meal's nutrients, a value typed in — that
+     * two apps wrote for the same minute are one moment recorded twice (a
+     * food log and the phone's own app copying it): it counts once, from the
+     * highest-ranked app. One app's readings at one minute (two dishes of a
+     * meal) all count.
      */
     function health_reconcile_days(array $rows, string $from, string $to, array $priority = []): array
     {
-        $totals = [];
-        $spans  = [];   // date => the spans that fall in it, cut to it
+        $totals  = [];
+        $spans   = [];   // date => the spans that fall in it, cut to it
+        $moments = [];   // date => minute => app => the readings' sum there
 
         foreach ($rows as $row) {
             /* Times are compared as the clock showed them, which is how Ownify
@@ -330,7 +337,13 @@ if (!function_exists('health_metric_totals')) {
                 $day = gmdate('Y-m-d', $end);
 
                 if ($day >= $from && $day <= $to) {
-                    $totals[$day] = ($totals[$day] ?? 0.0) + $value;
+                    if ($start === false) {
+                        $origin = ($row['data_origin'] ?? '') !== '' ? (string) $row['data_origin'] : 'source:' . ($row['source_id'] ?? '');
+                        $minute = gmdate('H:i', $end);
+                        $moments[$day][$minute][$origin] = ($moments[$day][$minute][$origin] ?? 0.0) + $value;
+                    } else {
+                        $totals[$day] = ($totals[$day] ?? 0.0) + $value;
+                    }
                 }
                 continue;
             }
@@ -359,6 +372,19 @@ if (!function_exists('health_metric_totals')) {
 
         foreach ($spans as $day => $daySpans) {
             $totals[$day] = ($totals[$day] ?? 0.0) + health_reconcile_day($daySpans, $priority);
+        }
+
+        /* A minute two apps both recorded: the highest-ranked app's, then
+           the first by name, so the answer never depends on the row order. */
+        foreach ($moments as $day => $minutes) {
+            foreach ($minutes as $apps) {
+                uksort($apps, static function (string $a, string $b) use ($priority): int {
+                    $ra = array_search($a, $priority, true);
+                    $rb = array_search($b, $priority, true);
+                    return [$ra === false ? PHP_INT_MAX : $ra, $a] <=> [$rb === false ? PHP_INT_MAX : $rb, $b];
+                });
+                $totals[$day] = ($totals[$day] ?? 0.0) + reset($apps);
+            }
         }
 
         ksort($totals);

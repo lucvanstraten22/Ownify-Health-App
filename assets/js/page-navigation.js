@@ -72,25 +72,34 @@
     /** Offscreen pages — and everything under the sheet — stay unreachable. */
     function refresh() {
         pages.forEach(function (page, n) {
-            var hidden = n !== index || nav.state.aiOpen || nav.state.detailOpen;
+            var beside = nav.sideBySide();
+            var hidden = n !== index || (!beside && (nav.state.aiOpen || nav.state.detailOpen));
             page.inert = hidden;
             if (hidden) { page.setAttribute('aria-hidden', 'true'); }
             else { page.removeAttribute('aria-hidden'); }
         });
 
         if (dock) {
-            dock.inert = nav.state.aiOpen;
-            if (nav.state.aiOpen) { dock.setAttribute('aria-hidden', 'true'); }
+            var under = nav.state.aiOpen && !nav.isDesktop();   // the desktop sidebar stays usable
+            dock.inert = under;
+            if (under) { dock.setAttribute('aria-hidden', 'true'); }
             else { dock.removeAttribute('aria-hidden'); }
         }
 
         /* The pages' shared header is theirs: covered, and out of reach, by
            whatever covers them. */
         if (header) {
-            var covered = nav.state.aiOpen || nav.state.detailOpen;
-            header.inert = covered;
-            if (covered) { header.setAttribute('aria-hidden', 'true'); }
-            else { header.removeAttribute('aria-hidden'); }
+            var covered = !nav.sideBySide() && (nav.state.aiOpen || nav.state.detailOpen);
+            /* All of it but the view switch (desktop.js), which stays in reach
+               whatever covers the page: on a wide screen it is never under
+               anything on a phone's layout, and it changes nothing there is. */
+            var inner = header.querySelector('.app-header__inner') || header;
+            Array.prototype.forEach.call(inner.children, function (part) {
+                var off = covered && !part.hasAttribute('data-view-switch');
+                part.inert = off;
+                if (off) { part.setAttribute('aria-hidden', 'true'); }
+                else { part.removeAttribute('aria-hidden'); }
+            });
         }
     }
 
@@ -139,7 +148,8 @@
         var decay = DAMPING * omega;
         var ring = omega * Math.sqrt(1 - DAMPING * DAMPING);
 
-        var slots = [];       // each tab's pane: its left edge, px from the bar
+        var slots = [];       // each tab's pane: its left edge, px from the bar (its top in a vertical bar)
+        var vertical = false; // the desktop sidebar: the tabs stacked, the glass moving down
         var x = index;        // where the glass is, in tabs
         var v = 0;            // and how fast it is going, in tabs per second
         var target = index;
@@ -159,12 +169,27 @@
             var originX = box.left + bar.clientLeft;
             var originY = box.top + bar.clientTop;
 
-            slots = tabs.map(function (tab) {
-                return tab.getBoundingClientRect().left - originX + side;
-            });
-            pane.style.top = (first.top - originY + inset) + 'px';
-            pane.style.width = Math.max(0, first.width - 2 * side) + 'px';
-            pane.style.height = Math.max(0, first.height - 2 * inset) + 'px';
+            var second = tabs[1] ? tabs[1].getBoundingClientRect() : first;
+            vertical = Math.abs(second.top - first.top) > Math.abs(second.left - first.left);
+
+            if (vertical) {
+                // Down the sidebar the pane fills its tab: no reach sideways.
+                slots = tabs.map(function (tab) {
+                    return tab.getBoundingClientRect().top - originY;
+                });
+                pane.style.top = '0px';
+                pane.style.left = (first.left - originX) + 'px';
+                pane.style.width = first.width + 'px';
+                pane.style.height = first.height + 'px';
+            } else {
+                slots = tabs.map(function (tab) {
+                    return tab.getBoundingClientRect().left - originX + side;
+                });
+                pane.style.left = '';
+                pane.style.top = (first.top - originY + inset) + 'px';
+                pane.style.width = Math.max(0, first.width - 2 * side) + 'px';
+                pane.style.height = Math.max(0, first.height - 2 * inset) + 'px';
+            }
             draw();
         }
 
@@ -180,8 +205,9 @@
             if (!slots.length) { return; }
             var long = 1 + STRETCH * (1 - Math.exp(-Math.abs(v) / STRETCH_SPEED));
             var thin = 1 - THIN * (long - 1);
-            pane.style.transform = 'translate3d(' + left(x).toFixed(2) + 'px, 0, 0) scale('
-                + long.toFixed(4) + ', ' + thin.toFixed(4) + ')';
+            pane.style.transform = vertical
+                ? 'translate3d(0, ' + left(x).toFixed(2) + 'px, 0) scale(' + thin.toFixed(4) + ', ' + long.toFixed(4) + ')'
+                : 'translate3d(' + left(x).toFixed(2) + 'px, 0, 0) scale(' + long.toFixed(4) + ', ' + thin.toFixed(4) + ')';
         }
 
         /** The spring at a moment: x and v, from its start. */

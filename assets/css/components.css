@@ -443,24 +443,83 @@
 .pill--devices > *,
 .pill--account > * { position: relative; }
 
-/* A friend request waiting for an answer: a small dot on the account button,
-   in the app's own green, set off from the glass by a ring of the page
-   colour. Sits on the rim, where a notification is looked for. */
-.pill--account > .pill__dot {
+/* ----------------------------------------------------------------------
+   The red dot: something waits for you to do it (lib/notices.php,
+   docs/NOTICES.md). Always on the icon it belongs to, never beside a word;
+   one on each step of the way to it. Flat, in --notice.
+
+     --corner  on a tile, a picture or a round button: inside its top-right
+               corner, peeking a little past the edge, cut out of it by a
+               ring of the page's ground. The ring is a spread shadow, so it
+               is always exactly concentric with the dot.
+     --beside  beside a bare line icon (the tab bar, the sidebar), where a
+               dot in the corner would cover the icon: a little smaller,
+               with a soft halo of its own colour instead of a ring.
+
+   notices.js shows and clears them in place; [hidden] is the resting state.
+   ---------------------------------------------------------------------- */
+.notice-dot {
     position: absolute;
-    top: 1px;
-    right: 1px;
-    z-index: 1;
-    width: 11px;
-    height: 11px;
-    border: 2px solid var(--bg-deep);
+    z-index: 2;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: var(--health);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--health) 55%, transparent);
+    background: var(--notice);
     pointer-events: none;
 }
 
-.pill--account > .pill__dot[hidden] { display: none; }
+.notice-dot[hidden] { display: none; }
+
+.notice-dot--corner {
+    top: var(--notice-inset, 0.5px);
+    right: var(--notice-inset, 0.5px);
+    box-shadow: 0 0 0 1.5px rgb(var(--ground));
+}
+
+.notice-dot--beside {
+    top: -3px;
+    right: -6px;
+    width: 7px;
+    height: 7px;
+    box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--notice) 18%, transparent);
+}
+
+/* What a dot sits on is its frame. A round one keeps its dot further in, on
+   the circle's own corner. */
+.icon-tile,
+.settings-row__mark,
+.tab__icon,
+.pill__avatar,
+.sidebar__icon { position: relative; }
+
+/* A picture clips what is inside it, so its dot sits on a frame around it. */
+.notice-frame {
+    position: relative;
+    display: inline-grid;
+    flex: none;
+}
+
+.pill--account > .notice-dot { position: absolute; }
+
+/* On a circle the box's corner lies outside it: 14.64% of the diameter in
+   from the corner is where the circle's own edge is, so the dot peeks past
+   the edge by the same little bit on any size of picture. */
+.pill--account > .notice-dot,
+.notice-frame--round > .notice-dot { --notice-inset: calc(14.64% - 3.3px); }
+
+/* Arriving: it grows out of its own centre; going: the same, back. */
+.notice-dot.is-arriving { animation: notice-in 220ms var(--ease-out) both; }
+.notice-dot.is-leaving  { animation: notice-in 160ms var(--ease-out) reverse both; }
+
+@keyframes notice-in {
+    from { opacity: 0; transform: scale(0.4); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notice-dot.is-arriving,
+    .notice-dot.is-leaving { animation-duration: 1ms; }
+}
 
 .pill--close { padding-inline: var(--space-2) var(--space-3); }
 
@@ -807,7 +866,7 @@
     /* 2 * PI * r (r = 16): undrawn until hero-ring.js draws it. */
     stroke-dasharray: 100.53;
     stroke-dashoffset: 100.53;
-    transition: stroke-dashoffset 900ms var(--ease-out-strong);
+    transition: stroke-dashoffset 1500ms var(--ease-out-strong);
 }
 
 .pillar-ring.is-empty .pillar-ring__arc { stroke: transparent; }

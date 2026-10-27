@@ -344,6 +344,11 @@
 
             syncResult(answer.person, row);
 
+            /* An answered request: its dot, and the account button's, go now. */
+            if ((action === 'accept' || action === 'decline') && window.OwnifyNotices) {
+                window.OwnifyNotices.done('friend:' + id);
+            }
+
             /* The leaderboards change at once; the lists a moment later, so
                "Jullie zijn nu vrienden." can be read before the row moves. */
             refresh({ lists: true, hold: 1100 });
@@ -437,16 +442,12 @@
                 var nextSummary = fresh.querySelector('[data-friends-summary]');
                 if (summary && nextSummary) { summary.innerHTML = nextSummary.innerHTML; }
 
-                /* The dot on the account button, and what it says aloud. */
-                var dot = document.querySelector('[data-friends-dot]');
-                var nextDot = fresh.querySelector('[data-friends-dot]');
-                if (dot && nextDot) {
-                    dot.hidden = nextDot.hidden;
-                    var button = dot.closest('[data-account-open]');
-                    var nextButton = nextDot.closest('[data-account-open]');
-                    if (button && nextButton) {
-                        button.setAttribute('aria-label', nextButton.getAttribute('aria-label'));
-                    }
+                /* The red dots (notices.js), and what the account button says aloud. */
+                if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); }
+                var button = document.querySelector('.app-header [data-account-open]');
+                var nextButton = fresh.querySelector('.app-header [data-account-open]');
+                if (button && nextButton) {
+                    button.setAttribute('aria-label', nextButton.getAttribute('aria-label'));
                 }
 
                 /* Every leaderboard's rows (community.js). */

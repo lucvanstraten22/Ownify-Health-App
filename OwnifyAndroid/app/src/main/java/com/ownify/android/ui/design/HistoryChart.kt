@@ -103,9 +103,9 @@ class PlotLine(
 @Immutable
 class PlotBars(val color: Color, val width: Float, val top: List<Float?>, val focus: Color = color)
 
-/** A band across the plot from [top] to [bottom], % from its top, in [color] (a heart-rate zone). */
+/** A band across the plot from [top] to [bottom], % from its top, in [color] (a heart-rate zone), with a 1 dp [edge] above and below it (a bereik). */
 @Immutable
-class PlotBand(val top: Float, val bottom: Float, val color: Color)
+class PlotBand(val top: Float, val bottom: Float, val color: Color, val edge: Color? = null)
 
 /**
  * A score's history, read with a finger (`.compass-plot`, compass-history.js)
@@ -153,6 +153,9 @@ fun HistoryPlot(
     readOnDrag: Boolean = false,
     compact: Boolean = false,
     bands: List<PlotBand> = emptyList(),
+    /** The same levels in a second unit (kJ), named in a gutter of [gutterEnd] on the right. */
+    levelsEnd: List<String> = emptyList(),
+    gutterEnd: Dp = 0.dp,
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
     val still = LocalStillMotion.current
@@ -209,7 +212,7 @@ fun HistoryPlot(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = gutter)
+                    .padding(start = gutter, end = gutterEnd)
                     .height(height)
                     .then(
                         if (!filled || xs.isEmpty()) Modifier.clearAndSetSemantics { contentDescription = aria }
@@ -297,9 +300,14 @@ fun HistoryPlot(
                 // the plot, so not under the faded layer of an empty one, which would cut it off.
                 if (levels != null) {
                     Canvas(Modifier.fillMaxSize()) {
-                        for (level in levels) {
+                        levels.forEachIndexed { i, level ->
                             val text = measurer.measure(level.label, levelStyle)
                             drawText(text, topLeft = Offset(-8.dp.toPx() - text.size.width, level.y / 100f * size.height - text.size.height / 2f))
+                            // Its second unit on the right, left-aligned 8 dp past the plot.
+                            levelsEnd.getOrNull(i)?.let { alt ->
+                                val right = measurer.measure(alt, levelStyle)
+                                drawText(right, topLeft = Offset(size.width + 8.dp.toPx(), level.y / 100f * size.height - right.size.height / 2f))
+                            }
                         }
                     }
                 }
@@ -319,6 +327,11 @@ fun HistoryPlot(
                         val top = band.top.coerceIn(0f, 100f) / 100f * size.height
                         val bottom = band.bottom.coerceIn(0f, 100f) / 100f * size.height
                         if (bottom > top) drawRect(band.color, topLeft = Offset(0f, top), size = Size(size.width, bottom - top))
+                        band.edge?.let { edge ->
+                            val px = 1.dp.toPx()
+                            drawRect(edge, topLeft = Offset(0f, top), size = Size(size.width, px))
+                            drawRect(edge, topLeft = Offset(0f, bottom - px), size = Size(size.width, px))
+                        }
                     }
                     if (levels == null) {
                         for (line in listOf(0.25f, 0.5f, 0.75f)) {
@@ -410,9 +423,9 @@ fun HistoryPlot(
             // A history card keeps room for two rows of dates in every period (`.compass-history .chart__axis`).
             if (compact) {
                 // `.area-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
-                TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true)
+                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true)
             } else {
-                TickAxis(axis, Modifier.padding(start = gutter, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
+                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
             }
         }
 

@@ -188,6 +188,7 @@ function hc(string $type, string $id, string $origin, string $from, string $to, 
         'Distance'             => ['distance' => ['meters' => $value]],
         'ActiveCaloriesBurned' => ['energy' => ['kilocalories' => $value]],
         'Hydration'            => ['volume' => ['liters' => $value]],
+        'Nutrition'            => ['energy' => ['kilocalories' => $value]],
     };
 }
 
@@ -496,15 +497,43 @@ foreach ($sent as $id => $record) {
 check('every record sent is stored, with the value it arrived with — the ones that did not count included', $intact);
 check('  the watch\'s 4.900 of scenario 4 among them', ($stored['s4w'] ?? null) === 4900.0);
 
-/* ============================================ a metric not reconciled */
-echo "A metric that is not in the list\n";
+/* ============================================ Voeding: water and meals (26.x) */
+echo "Water and meals, counted once (docs/NUTRITION.md)\n";
 
 import([
     hc('Hydration', 'w1', PHONE, "$d11 08:00", "$d11 08:05", 0.5),
     hc('Hydration', 'w2', WATCH, "$d11 08:00", "$d11 08:05", 0.25),
 ]);
-check('two glasses of water logged at the same moment in two apps are two glasses: 0,75 l',
-    health_daily_metric($userId, 'water', $d11) === 0.75, json_encode(health_daily_metric($userId, 'water', $d11)));
+check('the same glass of water written by two apps counts once: the one that ranks higher, 0,5 l',
+    health_daily_metric($userId, 'water', $d11) === 0.5, json_encode(health_daily_metric($userId, 'water', $d11)));
+
+$d7 = day(5);
+import([
+    hc('Hydration', 'w3', PHONE, "$d7 08:00", "$d7 08:05", 0.5),
+    hc('Hydration', 'w4', PHONE, "$d7 13:00", "$d7 13:05", 0.25),
+]);
+check('two glasses at two times are two glasses: 0,75 l',
+    health_daily_metric($userId, 'water', $d7) === 0.75, json_encode(health_daily_metric($userId, 'water', $d7)));
+
+/* A meal is a moment: its record has a start, no span worth cutting. */
+$meal = static fn (string $id, string $origin, string $at, float $kcal): array =>
+    ['recordType' => 'Nutrition', 'metadata' => ['id' => $id, 'dataOrigin' => $origin], 'startTime' => iso($at), 'endTime' => iso($at), 'energy' => ['kilocalories' => $kcal]];
+$d8 = day(4);
+import([
+    $meal('m1', 'com.myfitnesspal.android', "$d8 12:30", 640.0),
+    $meal('m2', PHONE,                      "$d8 12:30", 640.0),
+    $meal('m3', 'com.myfitnesspal.android', "$d8 19:00", 820.0),
+]);
+check('a meal two apps wrote for the same minute counts once: 640 + 820 = 1.460 kcal',
+    health_daily_metric($userId, 'energy', $d8) === 1460.0, json_encode(health_daily_metric($userId, 'energy', $d8)));
+
+$d12 = day(6);
+import([
+    $meal('m4', 'com.myfitnesspal.android', "$d12 12:30", 400.0),
+    $meal('m5', 'com.myfitnesspal.android', "$d12 12:30", 250.0),
+]);
+check('two dishes one app wrote for the same minute both count: 650 kcal',
+    health_daily_metric($userId, 'energy', $d12) === 650.0, json_encode(health_daily_metric($userId, 'energy', $d12)));
 
 /* ======================================================= the kept totals */
 echo "The kept day totals (health_metric_day_totals)\n";

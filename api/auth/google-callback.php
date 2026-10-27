@@ -58,6 +58,7 @@ switch ($result['outcome']) {
         break;                                       // the panel opens on the username step
 
     case 'linked':
+    case 'confirmed':                                // back from confirming the account (mode reauth)
         auth_flash((string) $result['message'], 'ok', 'settings-account');
         break;
 
@@ -65,7 +66,7 @@ switch ($result['outcome']) {
         auth_flash(
             (string) $result['message'],
             $result['outcome'] === 'cancelled' ? 'info' : 'error',
-            $result['mode'] === 'link' ? 'settings-account' : 'account'
+            in_array($result['mode'], ['link', 'reauth'], true) ? 'settings-account' : 'account'
         );
 }
 

@@ -30,9 +30,9 @@ $account = $data['header']['account'];
         </p>
 
         <?php
-        /* Friend requests waiting for an answer put a dot on the account
-           button, so they are seen from every page — not only once the
-           account panel is opened. friends.js keeps it in step. */
+        /* Friend requests waiting for an answer put the red dot on the
+           account button, so they are seen from every page — not only once
+           the account panel is opened (lib/notices.php, notices.js). */
         $requests = count($data['community']['pending'] ?? []);
         $requestsLabel = tn($requests, '%d nieuw vriendverzoek', '%d nieuwe vriendverzoeken');
         ?>
@@ -46,8 +46,20 @@ $account = $data['header']['account'];
                     <?= icon('user', 'pill__icon') ?>
                 <?php endif; ?>
             </span>
-            <span class="pill__dot" data-friends-dot aria-hidden="true" <?= $requests > 0 ? '' : 'hidden' ?>></span>
+            <?= notice_dot('account') ?>
         </button>
+
+        <?php /* Telefoon or Desktop: only on a screen wide enough for the
+                 second (desktop.css, desktop.js). It changes the layout, never
+                 the page or anything on it. */ ?>
+        <div class="range-switch view-switch" role="group" aria-label="<?= e(t('Weergave')) ?>" data-view-switch>
+            <button type="button" class="range-switch__option" data-view-choice="phone" aria-pressed="false">
+                <?= icon('phone', 'view-switch__icon') ?><span><?= e(t('Telefoon')) ?></span>
+            </button>
+            <button type="button" class="range-switch__option" data-view-choice="desktop" aria-pressed="false">
+                <?= icon('desktop', 'view-switch__icon') ?><span><?= e(t('Desktop')) ?></span>
+            </button>
+        </div>
 
     </div>
 </header>

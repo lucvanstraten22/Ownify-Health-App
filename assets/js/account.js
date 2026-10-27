@@ -137,6 +137,11 @@
             if (input) { input.required = !field.hidden; }
         });
 
+        /* Registering with e-mail closed (Release A): the form makes way for
+           the one line that says so; Google stays below it. */
+        var form = panel.querySelector('[data-account-form="email"]');
+        if (form) { form.hidden = mode === 'register' && form.hasAttribute('data-account-register-closed'); }
+
         var title = panel.querySelector('[data-account-title]');
         if (title) { title.textContent = title.getAttribute('data-title-' + mode); }
 

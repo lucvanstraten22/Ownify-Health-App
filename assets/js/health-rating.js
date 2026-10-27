@@ -76,6 +76,8 @@
                 }
 
                 if (status) { status.textContent = result.message || 'Opgeslagen.'; }
+                /* Today's cijfer is in: the Voeding dots go now. */
+                if (window.OwnifyNotices) { window.OwnifyNotices.done('rating'); }
                 refresh();
             });
     }
@@ -183,6 +185,7 @@
                 var fresh = new DOMParser().parseFromString(html, 'text/html');
                 if (!fresh.querySelector('[data-deck]')) { return; }
                 scores(fresh);
+                if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); }
             })
             .catch(function () { /* the save itself has happened; the next load shows it */ });
     }

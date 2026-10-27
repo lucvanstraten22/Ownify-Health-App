@@ -57,6 +57,16 @@ foreach ($data['settings']['integrations'] as $source) {
     <div class="devices__frame shell">
         <div class="devices__panel card">
 
+            <?php /* In the desktop layout this is a second page with no scrim
+                     around it (desktop.css): it says what it is and closes
+                     like the account panel does. Not shown on a phone. */ ?>
+            <div class="account__head devices__head">
+                <h2 class="card__eyebrow"><?= e(t('Apparaten')) ?></h2>
+                <button type="button" class="account__close press" data-devices-close aria-label="<?= e(t('Sluiten')) ?>">
+                    <?= icon('chevron-down') ?>
+                </button>
+            </div>
+
             <?php if ($lines === []): ?>
                 <p class="devices__empty"><?= e($copy['empty']) ?></p>
             <?php else: ?>

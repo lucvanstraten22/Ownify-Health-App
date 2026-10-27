@@ -1,4 +1,6 @@
 package com.ownify.android.ui.screens.account
+import com.ownify.android.ui.design.NoticePlace
+import com.ownify.android.ui.design.notice
 import com.ownify.android.ui.design.insetRow
 import com.ownify.android.ui.design.well
 
@@ -616,7 +618,8 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
                 val state = rows[key] ?: RowState()
                 PersonRow(
                     person, state, status = tr("Wil vrienden met je worden"),
-                    below = if (!state.done) ({ AnswerButtons(state.busy, { act(key, person.id, "accept") }, { act(key, person.id, "decline") }) }) else null
+                    below = if (!state.done) ({ AnswerButtons(state.busy, { act(key, person.id, "accept") }, { act(key, person.id, "decline") }) }) else null,
+                    notice = if (!state.done) "friend:" + person.id else null
                 )
             }
         }
@@ -723,11 +726,13 @@ private fun PersonRow(
     status: String?,
     trailing: (@Composable () -> Unit)? = null,
     full: (@Composable () -> Unit)? = null,
-    below: (@Composable () -> Unit)? = null
+    below: (@Composable () -> Unit)? = null,
+    /** The red dot's key on their picture: a request waiting for you (docs/NOTICES.md). */
+    notice: String? = null
 ) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            AvatarCircle(person.avatar, 40.dp, 18.dp)
+            Box(if (notice != null) Modifier.notice(notice, NoticePlace.Circle) else Modifier) { AvatarCircle(person.avatar, 40.dp, 18.dp) }
             Column(Modifier.weight(1f)) {
                 T(person.username, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
                 val line = state.message ?: status

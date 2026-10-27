@@ -108,7 +108,8 @@ BODY="$(curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/auth/register.php" \
     --data-urlencode "csrf=$(csrf)" \
     --data-urlencode "username=$USER_NAME" \
     --data-urlencode "email=$USER_MAIL" \
-    --data-urlencode "password=$USER_PASS")"
+    --data-urlencode "password=$USER_PASS" \
+    --data-urlencode "password_confirm=$USER_PASS")"
 has "the test account exists" "$BODY" '"ok":true'
 
 if [ "$(echo "$BODY" | field ok)" != "1" ]; then

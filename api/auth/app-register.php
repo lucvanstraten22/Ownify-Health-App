@@ -2,6 +2,10 @@
 /**
  * The Ownify app creates an account: e-mail address, username, password.
  *
+ * Closed in Release A (28.0), as on the website (api/auth/register.php):
+ * 403 "Registreren met e-mail is tijdelijk niet beschikbaar." The app offers
+ * Google instead. `password_confirm` is the repeat of the password.
+ *
  *   POST  { "email": "…", "username": "…", "password": "…",
  *           "label": "Pixel 10", "platform": "android", "app_version": "1.0" }
  *
@@ -36,6 +40,10 @@ if (!devices_scoped()) {
     api_fail('Registreren in de app is op deze server nog niet beschikbaar.', 503);
 }
 
+if (!account_email_registration_open()) {
+    api_fail('Registreren met e-mail is tijdelijk niet beschikbaar.', 403);
+}
+
 $input    = api_json_body();
 $email    = is_string($input['email'] ?? null) ? $input['email'] : '';
 $username = is_string($input['username'] ?? null) ? trim($input['username']) : '';
@@ -48,7 +56,9 @@ if ($wait !== null) {
     api_fail(auth_throttle_message($wait), 429);
 }
 
-$result = auth_register_email($email, $password, $username);
+$repeat = is_string($input['password_confirm'] ?? null) ? $input['password_confirm'] : null;
+
+$result = auth_register_email($email, $password, $username, $repeat);
 
 if (!$result['ok']) {
     /* Only an answer about somebody else's account is worth limiting: a

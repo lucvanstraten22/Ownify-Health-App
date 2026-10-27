@@ -1,0 +1,19 @@
+<?php
+/**
+ * Copy to config/mail.local.php ON THE SERVER and fill in the App Password.
+ * Git-ignored and not deployed. Never commit it, never paste the password
+ * anywhere else. Check with:  php tools/check-config.php
+ *
+ * The App Password: Google Account of ownify.noreply@gmail.com
+ *   → Security → 2-Step Verification (on) → App passwords → "Ownify server".
+ * NEVER the account's normal password.
+ */
+declare(strict_types=1);
+
+return [
+    'username'   => 'ownify.noreply@gmail.com',
+    'password'   => 'xxxx xxxx xxxx xxxx',
+    'from'       => 'ownify.noreply@gmail.com',
+    'public_url' => 'https://ownify.acits.nl',
+    // 'email_registration' => true,   // only after the test message arrived
+];

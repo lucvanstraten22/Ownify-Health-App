@@ -29,12 +29,16 @@ $status = match ($kind) {
 <li class="friend<?= $kind === 'incoming' ? ' friend--request' : '' ?>" data-friend
     <?php if ($kind !== 'template'): ?>data-user-id="<?= e((string) $id) ?>" data-username="<?= e($name) ?>"<?php endif; ?>>
 
-    <span class="account__avatar friend__avatar" data-friend-avatar aria-hidden="true">
-        <?php if (!empty($avatar)): ?>
-            <img src="<?= e((string) $avatar) ?>" alt="">
-        <?php else: ?>
-            <?= icon('user') ?>
-        <?php endif; ?>
+    <span class="notice-frame notice-frame--round">
+        <span class="account__avatar friend__avatar" data-friend-avatar aria-hidden="true">
+            <?php if (!empty($avatar)): ?>
+                <img src="<?= e((string) $avatar) ?>" alt="">
+            <?php else: ?>
+                <?= icon('user') ?>
+            <?php endif; ?>
+        </span>
+        <?php /* A request waiting for you: the red dot on their picture. */ ?>
+        <?php if ($kind === 'incoming'): ?><?= notice_dot('friend:' . $id) ?><?php endif; ?>
     </span>
 
     <span class="friend__text">

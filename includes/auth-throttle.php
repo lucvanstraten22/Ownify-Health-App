@@ -86,9 +86,11 @@ if (!function_exists('auth_throttle_available')) {
 
     /**
      * Seconds until this name may be tried again from here, or null when it
-     * may be tried now.
+     * may be tried now. $limit per $window seconds; the sign-in's own unless
+     * a limit says otherwise (Google 20 per quarter hour, registration 20 per
+     * hour from one address — docs/ACCOUNT-SECURITY.md §12).
      */
-    function auth_throttle_wait(string $action, string $identifier): ?int
+    function auth_throttle_wait(string $action, string $identifier, int $limit = AUTH_THROTTLE_LIMIT, int $window = AUTH_THROTTLE_WINDOW): ?int
     {
         if (!auth_throttle_available()) {
             return null;
@@ -101,8 +103,8 @@ if (!function_exists('auth_throttle_available')) {
                FROM auth_attempts
               WHERE action = ? AND key_hash = ? AND attempted_at > NOW() - INTERVAL ? SECOND
               ORDER BY attempted_at DESC, id DESC
-              LIMIT 1 OFFSET ' . (AUTH_THROTTLE_LIMIT - 1),
-            [AUTH_THROTTLE_WINDOW, $action, auth_throttle_key($action, $identifier), AUTH_THROTTLE_WINDOW]
+              LIMIT 1 OFFSET ' . max(0, $limit - 1),
+            [$window, $action, auth_throttle_key($action, $identifier), $window]
         );
 
         return $wait === null ? null : max(1, (int) $wait);
@@ -123,6 +125,22 @@ if (!function_exists('auth_throttle_available')) {
         /* Housekeeping on the one occasion somebody is already writing here,
            as with pairing codes: one indexed DELETE, and no cron job to forget. */
         db_run('DELETE FROM auth_attempts WHERE attempted_at < NOW() - INTERVAL 1 DAY');
+    }
+
+    /**
+     * A limit on attempts rather than failures: when there is room, this one
+     * is counted and null comes back; otherwise the seconds to wait. Keyed on
+     * the network address alone when $identifier is ''.
+     */
+    function auth_throttle_attempt(string $action, string $identifier, int $limit, int $window): ?int
+    {
+        $wait = auth_throttle_wait($action, $identifier, $limit, $window);
+
+        if ($wait === null) {
+            auth_throttle_fail($action, $identifier);
+        }
+
+        return $wait;
     }
 
     /** A success: the failures before it no longer count. */

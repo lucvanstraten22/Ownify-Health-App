@@ -61,8 +61,14 @@ No user id, no e-mail address, nothing about health comes back.
 
 ### `api/auth/app-register.php`
 
+**Closed since 28.0** (docs/ACCOUNT-SECURITY.md §1): `403` *"Registreren met
+e-mail is tijdelijk niet beschikbaar."* The app knows beforehand —
+`app-google.php`'s `status` answers `email_registration: false` — and shows
+that line instead of the form. What follows describes it when open (only a
+local test server, `OWNIFY_TEST_EMAIL_REGISTRATION=1`, until Release B).
+
 ```json
-{ "email": "…", "username": "…", "password": "…", "label": "…", "platform": "android", "app_version": "…" }
+{ "email": "…", "username": "…", "password": "…", "password_confirm": "…", "label": "…", "platform": "android", "app_version": "…" }
 ```
 
 Creates the account with `auth_register_email()` — the website's rules, hash

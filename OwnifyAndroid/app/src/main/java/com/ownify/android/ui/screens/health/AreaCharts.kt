@@ -57,6 +57,7 @@ import com.ownify.android.ui.design.Legend
 import com.ownify.android.ui.design.LegendItem
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.PageIntro
+import com.ownify.android.ui.design.PlotBand
 import com.ownify.android.ui.design.PlotBars
 import com.ownify.android.ui.design.PlotLine
 import com.ownify.android.ui.design.RangeSwitch
@@ -164,10 +165,14 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
                                     .background(seriesColor(s, chart.mixed, accent))
                             )
                         }
-                        T(text, valueStyle, maxLines = 1)
+                        T(text, valueStyle, Modifier.alignByBaseline(), maxLines = 1)
+                        // `.area-chart__of`: its target after the value, quieter — "van 2.300 kcal".
+                        if (k == 0) latest.of?.let { T(it, OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, Ownify.TextMuted), Modifier.alignByBaseline(), maxLines = 1) }
                     }
                 }
                 latest.date?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1) }
+                // `.area-chart__sub`: the same value in its second unit (kJ, ml), on a line of its own.
+                latest.sub?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), Modifier.fillMaxWidth(), maxLines = 1) }
             }
         }
     }
@@ -215,6 +220,10 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
     val lineSeries = period.lines.mapNotNull { line -> chart.series.firstOrNull { it.key == line.key }?.let { it to line } }
     // A line's levels named on the large chart; otherwise none — the baseline alone, as on the website.
     val levels = if (mini) emptyList() else period.grid
+    // A second scale (kJ) on the right of the large chart; its narrower plot takes 7 dagen's dates in two rows.
+    val alt = if (mini) emptyList() else period.gridAlt
+    // Levels of five characters or more ("2.000") need a wider gutter than "75" (`.has-wide-levels`).
+    val wide = !mini && chart.periods.any { p -> p.grid.any { it.label.length >= 5 } }
     HistoryPlot(
         key = chart.id + period.key + if (mini) ":mini" else "",
         viewBox = Size(period.width, period.height),
@@ -224,7 +233,7 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
         dayDots = true,
         small = period.group == "day" && period.x.size > 7,
         carried = { i -> i in period.carried },
-        axis = if (mini) period.axisRows ?: period.axis else period.axis,
+        axis = if (mini || alt.isNotEmpty()) period.axisRows ?: period.axis else period.axis,
         centredAxis = true,
         aria = period.aria,
         readable = { i -> period.points.getOrNull(i) != null },
@@ -239,8 +248,12 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
         onRead = { },
         height = height,
         levels = levels,
-        gutter = if (levels.isNotEmpty()) 26.dp else 0.dp,
+        gutter = if (levels.isNotEmpty()) (if (wide) 34.dp else 26.dp) else 0.dp,
         bars = period.bars.map { PlotBars(barColor(accent), it.w, it.top, focus = accent.color) },
+        // `.area-chart__band`: the bereik, a green zone behind the bars, a line of the green above and below it.
+        bands = period.band?.let { listOf(PlotBand(it.top, it.bottom, Ownify.HealthWash, edge = Ownify.HealthFill)) }.orEmpty(),
+        levelsEnd = alt,
+        gutterEnd = if (alt.isNotEmpty()) 40.dp else 0.dp,
         readOnDrag = mini,
         compact = mini
     ) { i ->
@@ -308,7 +321,16 @@ private fun AreaChartCard(chart: AreaChart, accent: Accent) {
             wide = true,
             label = chart.switchLabel
         )
-        Box(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+        // `.area-chart__units`: both units named over their scales, kcal on the left, kJ on the right.
+        val units = chart.units
+        if (units != null && period.gridAlt.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth().padding(top = Ownify.Space4), horizontalArrangement = Arrangement.SpaceBetween) {
+                val unitStyle = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted)
+                T(units.first, unitStyle)
+                T(units.second, unitStyle)
+            }
+        }
+        Box(Modifier.fillMaxWidth().padding(top = if (units != null && period.gridAlt.isNotEmpty()) Ownify.Space1 else Ownify.Space4)) {
             AreaPlot(chart, accent, period, Modifier, height = 160.dp, mini = false)
         }
         if (chart.series.size > 1) {

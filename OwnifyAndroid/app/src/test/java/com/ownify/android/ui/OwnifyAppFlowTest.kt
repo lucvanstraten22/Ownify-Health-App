@@ -21,6 +21,11 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performTextClearance
+import com.ownify.android.connection.FakeGoogle
+import com.ownify.android.connection.GoogleIdResult
+import com.ownify.android.connection.GOOGLE_WEB_CLIENT
+import com.ownify.android.connection.fakeGoogleIdToken
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasTestTag
@@ -201,11 +206,132 @@ class OwnifyAppFlowTest {
         field("Gebruikersnaam").performTextInput("nieuw")
         field("E-mailadres").performTextInput("nieuw@example.com")
         field("Wachtwoord").performTextInput("lang-genoeg-wachtwoord")
+        field("Herhaal wachtwoord").performTextInput("lang-genoeg-wachtwoord")
         button("Account aanmaken").performScrollTo().performClick()
 
         waitForPages()
         assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
-        assertEquals("nieuw", server.requestsTo("app-register.php").single().body.getString("username"))
+        val sent = server.requestsTo("app-register.php").single().body
+        assertEquals("nieuw", sent.getString("username"))
+        assertEquals("the repeat goes to the server, which compares", "lang-genoeg-wachtwoord", sent.getString("password_confirm"))
+    }
+
+    @Test
+    fun `registration closed (Release A) - one line instead of the form, Google stays, nothing is sent`() {
+        server.emailRegistration = false
+        show()
+
+        waitFor("Registreren")
+        button("Registreren").performClick()
+        waitFor("Registreren met e-mail is tijdelijk niet beschikbaar.")
+        assertTrue("no form", compose.onAllNodes(hasContentDescription("Gebruikersnaam") and hasSetTextAction()).fetchSemanticsNodes().isEmpty())
+        assertTrue("no button to make an account", compose.onAllNodes(hasText("Account aanmaken") and hasClickAction()).fetchSemanticsNodes().isEmpty())
+        compose.onAllNodes(hasContentDescription("Doorgaan met Google")).onLast().assertIsDisplayed()
+        assertTrue(server.requestsTo("app-register.php").isEmpty())
+    }
+
+    // ---------------------------------------------- account security (28.0)
+
+    /** Instellingen › Account, at its Inloggen block. */
+    private fun openSignin() {
+        button("Instellingen").performClick()
+        compose.onNode(hasContentDescription("Account openen") and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Inloggen")
+    }
+
+    @Test
+    fun `Inloggen - the address says it is not confirmed, Google waits, and the password is changed in its editor`() {
+        server.signin = server.signinFor(password = true)
+        server.googleOffered = true
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+        openSignin()
+
+        waitFor("Niet bevestigd")
+        waitFor("Bevestig eerst je e-mailadres. Dat kan binnenkort.")
+        button("Wachtwoord").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Wachtwoord wijzigen")
+
+        field("Huidig wachtwoord").performTextInput("niet-het-goede")
+        field("Nieuw wachtwoord").performTextInput("nieuw-wachtwoord")
+        field("Herhaal nieuw wachtwoord").performTextInput("nieuw-wachtwoord")
+        button("Opslaan").performClick()
+        waitFor("Je huidige wachtwoord klopt niet.")
+        assertTrue(server.passwordChanges.isEmpty())
+
+        field("Huidig wachtwoord").performTextClearance()
+        field("Huidig wachtwoord").performTextInput(server.currentPassword)
+        button("Opslaan").performClick()
+        compose.waitUntil(10_000) { server.passwordChanges.isNotEmpty() }
+        assertEquals(mapOf("current" to server.currentPassword, "password" to "nieuw-wachtwoord", "password_confirm" to "nieuw-wachtwoord"),
+            server.passwordChanges.single())
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Wachtwoord wijzigen").fetchSemanticsNodes().isEmpty() }
+        assertEquals("this app stays signed in", OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
+    }
+
+    @Test
+    fun `deleting with a password - the last step asks for it, and sends it`() {
+        server.signin = server.signinFor(password = true)
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        deleteTheAccount()
+        waitFor("Vul je wachtwoord in om dit te bevestigen.")
+        assertTrue("nothing sent without it", server.requestsTo("profile/delete.php").isEmpty())
+
+        field("Wachtwoord").performTextInput("verkeerd")
+        button("Definitief verwijderen").performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Je wachtwoord klopt niet.")
+        assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
+
+        field("Wachtwoord").performTextClearance()
+        field("Wachtwoord").performTextInput(server.currentPassword)
+        button("Definitief verwijderen").performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Je account is verwijderd")
+        assertNull(MemoryTokenStorage.load())
+        assertEquals(server.currentPassword, form(server.requestsTo("profile/delete.php").last())["password"])
+    }
+
+    @Test
+    fun `deleting without a password - Google confirms it on the phone, then the account goes`() {
+        server.signin = server.signinFor(password = false)
+        OwnifyConnection.google = FakeGoogle
+        FakeGoogle.reset()
+        try {
+            MemoryTokenStorage.signedIn()
+            show()
+            waitForPages()
+
+            button("Instellingen").performClick()
+            button("Account verwijderen").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+            waitFor("Account verwijderen?")
+            button("Ja, verwijderen").performSemanticsAction(SemanticsActions.OnClick)
+            waitFor("Bevestig met Google om je account te verwijderen.")
+
+            FakeGoogle.answer = { _, _ -> GoogleIdResult.Cancelled }
+            button("Bevestig met Google").performSemanticsAction(SemanticsActions.OnClick)
+            compose.waitUntil(10_000) { FakeGoogle.asked.size == 1 }
+            compose.waitForIdle()
+            assertTrue("the chooser closed: nothing deleted", server.requestsTo("profile/delete.php").isEmpty())
+            assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
+
+            FakeGoogle.reset()
+            button("Bevestig met Google").performSemanticsAction(SemanticsActions.OnClick)
+            waitFor("Je account is verwijderd")
+            assertNull(MemoryTokenStorage.load())
+            val (audience, nonce) = FakeGoogle.asked.single()
+            assertEquals(GOOGLE_WEB_CLIENT, audience)
+            val delete = server.requestsTo("profile/delete.php").single()
+            assertEquals(fakeGoogleIdToken(GOOGLE_WEB_CLIENT, nonce), form(delete)["id_token"])
+            assertTrue("in the conversation that asked for the nonce", delete.headers["cookie"].orEmpty().contains("ownify_session=reauth"))
+            // One nonce for the try that was cancelled, one for this one: each with the account token.
+            assertTrue(server.requestsTo("auth/reauth.php").all { it.headers["authorization"] == "Bearer $ACCOUNT_TOKEN" })
+        } finally {
+            OwnifyConnection.google = com.ownify.android.connection.CredentialManagerGoogle
+        }
     }
 
     // -------------------------------------------------------------- signed in

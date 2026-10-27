@@ -84,6 +84,8 @@ sealed interface Overlay {
     data class EditField(val key: String) : Overlay
     /** A paired phone's name ([device]: its id), in the field editor's panel. */
     data class RenameDevice(val device: Int) : Overlay
+    /** Wachtwoord wijzigen (Instellingen › Account › Inloggen), in the field editor's panel. */
+    data object ChangePassword : Overlay
     data class Pairing(val provider: String) : Overlay
 
     /** Uitdagingen's one bottom sheet, in its five uses (components/challenge-sheet.php). */

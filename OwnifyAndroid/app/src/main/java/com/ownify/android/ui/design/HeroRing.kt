@@ -40,6 +40,9 @@ private const val RIPPLE = 700f
 private const val BLOOM = 1000f
 private const val TOTAL = TRAVEL + BLOOM
 
+/** The whole arrival, in ms: what the pillar rings wait for (hero-ring.js `remaining`). */
+const val HeroArrivalMs = 3500
+
 /** Where the arrival is: the ring's share now, and the moments after it. */
 class HeroArrival(val shown: Float, val elapsed: Float, val moving: Boolean, val target: Float) {
     /** 0..1 of how far it has come towards the score (the number counts with it). */

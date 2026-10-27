@@ -95,7 +95,7 @@ for PAIR in "$A:$USER_A" "$S:$USER_S" "$T:$USER_T" "$B:$USER_B"; do
     JAR="${PAIR%%:*}"; NAME="${PAIR##*:}"
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/auth/register.php" \
         --data-urlencode "csrf=$(csrf "$JAR")" --data-urlencode "username=$NAME" \
-        --data-urlencode "email=$NAME@ownify-test.invalid" --data-urlencode "password=$PASSWORD" > /dev/null
+        --data-urlencode "email=$NAME@ownify-test.invalid" --data-urlencode "password=$PASSWORD" --data-urlencode "password_confirm=$PASSWORD" > /dev/null
     # A new account starts with its setup (includes/setup.php); finished at
     # once here, so the pages under test are the app's.
     curl -s -b "$JAR" -c "$JAR" -X POST "$BASE_URL/api/setup/finish.php" \

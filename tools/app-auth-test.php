@@ -236,6 +236,7 @@ function web_account(string $who, ?string $baseUrl = null): array
         'username' => $username,
         'email'    => $username . '@ownify-test.invalid',
         'password' => $password,
+        'password_confirm' => $password,
     ], $baseUrl);
 
     if (($result['body']['ok'] ?? false) !== true) {
@@ -804,8 +805,13 @@ check('and cannot sign in again: 401, no token', $suspendedLogin['status'] === 4
 section('a deleted account takes its tokens with it');
 $jip      = web_account('jip');
 $jipToken = (string) (http('/api/auth/app-login.php', ['json' => ['identifier' => $jip['username'], 'password' => $password]])['body']['token'] ?? '');
-$deleted  = web($jip, '/api/profile/delete.php', ['confirm' => 'verwijderen']);
-check('deleted on the website: 200', $deleted['status'] === 200, summary($deleted));
+$noProof  = web($jip, '/api/profile/delete.php', ['confirm' => 'verwijderen']);
+check('without the password: 403, the password is asked for, nothing deleted', $noProof['status'] === 403
+    && ($noProof['body']['reauth'] ?? null) === 'password' && row_of($jipToken) !== null, summary($noProof));
+$wrong    = web($jip, '/api/profile/delete.php', ['confirm' => 'verwijderen', 'password' => 'not-' . $password]);
+check('with a wrong password: 403, nothing deleted', $wrong['status'] === 403 && row_of($jipToken) !== null, summary($wrong));
+$deleted  = web($jip, '/api/profile/delete.php', ['confirm' => 'verwijderen', 'password' => $password]);
+check('deleted on the website, with the password: 200', $deleted['status'] === 200, summary($deleted));
 check('the app token: 401', http('/api/goals/update.php', ['bearer' => $jipToken, 'json' => ['goal_id' => 1, 'action' => 'pause']])['status'] === 401);
 check('and its row is gone', row_of($jipToken) === null);
 

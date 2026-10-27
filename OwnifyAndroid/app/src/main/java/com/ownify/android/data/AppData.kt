@@ -33,7 +33,9 @@ data class AppData(
     /** The language and units it is all written in (includes/i18n.php). */
     val i18n: I18n = I18n("nl", null, "metric"),
     /** Uitdagingen (includes/challenges.php): the ones you are in or invited to. */
-    val challenges: Challenges = Challenges.parse(null)
+    val challenges: Challenges = Challenges.parse(null),
+    /** The red dots (lib/notices.php): what waits for the person to do it. */
+    val notices: Notices = Notices()
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -58,7 +60,8 @@ data class AppData(
                 setup = Setup.parse(data.obj("setup")),
                 calibration = Calibration.parse(data.obj("calibration")),
                 i18n = I18n.parse(data.obj("i18n")),
-                challenges = Challenges.parse(data.obj("challenges"))
+                challenges = Challenges.parse(data.obj("challenges")),
+                notices = Notices.parse(data.obj("notices"))
             )
         }
     }
@@ -914,6 +917,7 @@ data class Area(
             },
             view = when (id) {
                 "training" -> TrainingView.parse(o.obj("view"))
+                "nutrition" -> NutritionView.parse(o.obj("view"))
                 else -> SleepView.parse(o.obj("view"))
             }
         )
@@ -1029,7 +1033,9 @@ data class AreaChart(
     val series: List<AreaSeries>,
     val latest: AreaLatest?,
     val defaultPeriod: String,
-    val periods: List<AreaPeriod>
+    val periods: List<AreaPeriod>,
+    /** The two units over a chart with a second scale — "kcal" on the left, "kJ" on the right — or null. */
+    val units: Pair<String, String>? = null
 ) {
     /** Bars and a line: drawn in two shades. */
     val mixed get() = series.map { it.kind }.distinct().size > 1
@@ -1048,9 +1054,10 @@ data class AreaChart(
                 hint = o.str("hint").orEmpty(),
                 empty = o.str("empty").orEmpty(),
                 series = o.arr("series").map { AreaSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line") },
-                latest = o.obj("latest")?.let { AreaLatest(it.arr("texts").let(::textsOf), it.str("date")) },
+                latest = o.obj("latest")?.let { AreaLatest(it.arr("texts").let(::textsOf), it.str("date"), it.str("of"), it.str("sub")) },
                 defaultPeriod = o.str("default") ?: periods.first().key,
-                periods = periods
+                periods = periods,
+                units = o.arr("units")?.let { u -> if (u.length() >= 2) u.optString(0) to u.optString(1) else null }
             )
         }
     }
@@ -1058,7 +1065,12 @@ data class AreaChart(
 
 data class AreaSeries(val key: String, val label: String, val kind: String)
 
-data class AreaLatest(val texts: List<String?>, val date: String?)
+/**
+ * The small chart's head: each series' value, the day when it is not today's,
+ * its target after the first ([of], "van 2.300 kcal") and the same value in
+ * a second unit on a line of its own ([sub], "7.715 kJ").
+ */
+data class AreaLatest(val texts: List<String?>, val date: String?, val of: String? = null, val sub: String? = null)
 
 /**
  * A chart over one period (docs/CHARTS.md): its dates ([axis]; [axisRows]
@@ -1081,7 +1093,11 @@ data class AreaPeriod(
     val hasData: Boolean,
     val lines: List<AreaLine>,
     val bars: List<AreaBars>,
-    val grid: List<HistoryLevel>
+    val grid: List<HistoryLevel>,
+    /** The levels once more in a second unit (kJ), on the right; empty without one. */
+    val gridAlt: List<String> = emptyList(),
+    /** The bereik as a green zone behind the bars: its top and bottom in % of the plot. */
+    val band: AreaZone? = null
 ) {
     companion object {
         fun parse(o: JSONObject): AreaPeriod? {
@@ -1108,11 +1124,16 @@ data class AreaPeriod(
                 hasData = o.bool("has_data"),
                 lines = o.arr("lines").map { AreaLine(it.str("key") ?: return@map null, it.arr("line").strings(), it.arr("y").floats()) },
                 bars = o.arr("bars").map { AreaBars(it.str("key") ?: return@map null, (it.num("w") ?: 0.0).toFloat(), it.arr("top").floats()) },
-                grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) }
+                grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) },
+                gridAlt = o.arr("grid_alt").strings(),
+                band = o.obj("band")?.let { b -> AreaZone((b.num("top") ?: return@let null).toFloat(), (b.num("bottom") ?: return@let null).toFloat()) }
             )
         }
     }
 }
+
+/** A zone across the plot, from [top] to [bottom] in % of its height. */
+data class AreaZone(val top: Float, val bottom: Float)
 
 /** A point as the reading shows it: its date or days, [detail] (a week's or month's mean), a [note], each series' value as written. */
 data class AreaPoint(val label: String, val detail: String?, val note: String?, val texts: List<String?>)
@@ -1121,6 +1142,143 @@ data class AreaLine(val key: String, val line: List<String>, val y: List<Float?>
 
 /** Bars from the bottom: [w] each one's width and [top] its height, in % of the plot. */
 data class AreaBars(val key: String, val w: Float, val top: List<Float?>)
+
+/**
+ * Voeding, drawn (lib/hydrate-nutrition.php, docs/NUTRITION.md): the slider's
+ * words ([rating]), the composition card's ([composition]), the seven [days]
+ * — today first, then the six before it — and Energie and Water as [charts].
+ */
+data class NutritionView(
+    val rating: NutritionRatingCopy,
+    val composition: NutritionComposition,
+    val days: List<NutritionDay>,
+    override val charts: List<AreaChart>
+) : AreaView {
+    companion object {
+        fun parse(o: JSONObject?): NutritionView? {
+            val days = o.arr("days").map(NutritionDay::parse)
+            if (o == null || days.isEmpty()) return null
+            val r = o.obj("rating")
+            val c = o.obj("composition")
+            return NutritionView(
+                rating = NutritionRatingCopy(
+                    title = r.str("title").orEmpty(),
+                    label = r.str("label").orEmpty(),
+                    question = r.str("question").orEmpty(),
+                    saved = r.str("saved").orEmpty(),
+                    savedFor = r.str("saved_for").orEmpty(),
+                    unsaved = r.str("unsaved").orEmpty(),
+                    error = r.str("error").orEmpty()
+                ),
+                composition = NutritionComposition(c.str("title").orEmpty(), c.str("hint").orEmpty(), c.str("older").orEmpty(), c.str("newer").orEmpty()),
+                days = days,
+                charts = o.arr("charts").map(AreaChart::parse)
+            )
+        }
+    }
+}
+
+/** "Hoe at je?": its [question] ("hoe at je %s?"), and what the line under the slider says. */
+data class NutritionRatingCopy(
+    val title: String,
+    val label: String,
+    val question: String,
+    val saved: String,
+    val savedFor: String,
+    val unsaved: String,
+    val error: String
+)
+
+data class NutritionComposition(val title: String, val hint: String, val older: String, val newer: String)
+
+/**
+ * A day: its name ("Vandaag", "Gisteren", "vrijdag 16 oktober"), its cijfer,
+ * its energy ([kcal], null when nothing was logged — then [note] says why),
+ * the ring's middle ([centre]) and the three macronutrients.
+ */
+data class NutritionDay(
+    val date: String,
+    val name: String,
+    /** The day as it reads inside a sentence: "hoe at je gisteren?", "8 voor vandaag". */
+    val word: String,
+    val rating: Int?,
+    val kcal: Double?,
+    val centre: NutritionCentre?,
+    val note: String?,
+    val macros: List<NutritionMacro>
+) {
+    companion object {
+        fun parse(o: JSONObject): NutritionDay? {
+            val date = o.str("date") ?: return null
+            return NutritionDay(
+            date = date,
+            name = o.str("name").orEmpty(),
+            word = o.str("word") ?: o.str("name").orEmpty().lowercase(),
+            rating = o.int("rating"),
+            kcal = o.num("kcal"),
+            centre = o.obj("centre")?.let { NutritionCentre(it.str("value").orEmpty(), it.str("sub").orEmpty()) },
+            note = o.str("note"),
+            macros = o.arr("macros").map(NutritionMacro::parse)
+            )
+        }
+    }
+}
+
+data class NutritionCentre(val value: String, val sub: String)
+
+/**
+ * A macronutrient on a day: its grams and [share] of the energy, its [head]
+ * ("212 g", "niet gelogd"), the [sub] line, a [verdict] ("in", "low",
+ * "high", "none") in words, its [meter], and what opens: [facts], [why],
+ * [details] (fibre and sugar under carbohydrates, saturated fat under fat).
+ */
+data class NutritionMacro(
+    val key: String,
+    val label: String,
+    val grams: Double?,
+    val share: Double?,
+    val logged: Boolean,
+    val head: String,
+    val sub: List<String>,
+    val verdict: String?,
+    val verdictText: String?,
+    val meter: NutritionMeter?,
+    val facts: List<Pair<String, String>>,
+    val why: String?,
+    val details: List<NutritionDetail>
+) {
+    companion object {
+        fun parse(o: JSONObject): NutritionMacro? {
+            val key = o.str("key") ?: return null
+            return NutritionMacro(
+            key = key,
+            label = o.str("label").orEmpty(),
+            grams = o.num("grams"),
+            share = o.num("share"),
+            logged = o.bool("logged"),
+            head = o.str("head").orEmpty(),
+            sub = o.arr("sub").strings(),
+            verdict = o.str("verdict"),
+            verdictText = o.str("verdict_text"),
+            meter = o.obj("meter")?.let { m ->
+                val max = m.num("max") ?: return@let null
+                val value = m.num("value") ?: return@let null
+                NutritionMeter(m.num("low")?.toFloat(), m.num("high")?.toFloat(), max.toFloat(), value.toFloat())
+            },
+            facts = o.arr("facts").map { (it.str("label") ?: return@map null) to it.str("value").orEmpty() },
+            why = o.str("why"),
+            details = o.arr("details").map { d ->
+                NutritionDetail(d.str("key") ?: return@map null, d.str("label").orEmpty(), d.str("value"), d.str("extra"), d.str("verdict"), d.str("verdict_text"))
+            }
+            )
+        }
+    }
+}
+
+/** The meter: the range [low]–[high] as a green band, [value] the marker, all on a scale to [max]. */
+data class NutritionMeter(val low: Float?, val high: Float?, val max: Float, val value: Float)
+
+data class NutritionDetail(val key: String, val label: String, val value: String?, val extra: String?, val verdict: String?, val verdictText: String?)
 
 /**
  * Training, drawn (lib/hydrate-training.php, docs/TRAINING.md): the latest
@@ -2185,7 +2343,9 @@ data class Auth(
     val createdAt: String?,
     val avatar: String?,
     val googleAvailable: Boolean,
-    val identities: List<Pair<String, String?>>
+    val identities: List<Pair<String, String?>>,
+    /** Settings › Account › Inloggen (`auth.signin`, includes/account-security.php); null from an older server. */
+    val signin: Signin? = null
 ) {
     val hasGoogle: Boolean get() = identities.any { it.first == "google" }
 
@@ -2196,9 +2356,32 @@ data class Auth(
                 o.bool("signed_in"), o.bool("database"),
                 user.str("username"), user.str("created_at"), user.str("avatar_path"),
                 o.obj("providers").bool("google"),
-                o.arr("identities").map { (it.str("provider").orEmpty()) to it.str("email") }
+                o.arr("identities").map { (it.str("provider").orEmpty()) to it.str("email") },
+                o?.optJSONObject("signin")?.let { Signin.parse(it) }
             )
         }
+    }
+}
+
+/**
+ * The account's ways in, as Settings shows them (28.0): the sign-in address
+ * and whether it is confirmed, whether there is a password and it may be
+ * changed now, and Google. Linking Google waits for Release B.
+ */
+data class Signin(
+    val email: String?,
+    val emailVerified: Boolean,
+    val password: Boolean,
+    val google: Boolean,
+    val googleEmail: String?,
+    val canChangePassword: Boolean,
+    val canLinkGoogle: Boolean
+) {
+    companion object {
+        fun parse(o: JSONObject): Signin = Signin(
+            o.str("email"), o.bool("email_verified"), o.bool("password"), o.bool("google"),
+            o.str("google_email"), o.bool("can_change_password"), o.bool("can_link_google")
+        )
     }
 }
 

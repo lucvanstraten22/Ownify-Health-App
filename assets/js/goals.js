@@ -586,6 +586,7 @@
                 if (!fresh.querySelector('[data-goals]')) { throw new Error('no board'); }
 
                 apply(fresh);
+                if (window.OwnifyNotices) { window.OwnifyNotices.read(fresh); }
                 return true;
             })
             .catch(function () { return false; });
@@ -677,6 +678,12 @@
                         slot.hidden = false;
                     }
                     return;
+                }
+
+                /* Today ticked off, or taken back: its dots follow at once. */
+                if (tick && window.OwnifyNotices) {
+                    if (tick.getAttribute('data-done') === '0') { window.OwnifyNotices.waits('goal:' + goalId); }
+                    else { window.OwnifyNotices.done('goal:' + goalId); }
                 }
 
                 /* Saved. The goal stays open and its detail page is redrawn

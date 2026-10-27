@@ -66,7 +66,7 @@ return [
         'meals'            => ['label' => 'Maaltijden',      'unit' => '',     'availability' => 'input'],
         'meal_window'      => ['label' => 'Eetvenster',      'unit' => '',     'availability' => 'input'],
         'self_rating'      => ['label' => 'Eigen beoordeling', 'unit' => '/10', 'availability' => 'input'],
-        'water'            => ['label' => 'Water',           'unit' => 'l'],
+        'water'            => ['label' => 'Water',           'unit' => 'L'],
         'hydration_goal'   => ['label' => 'Van je doel',     'unit' => '%'],
         'energy'           => ['label' => 'Energie',         'unit' => 'kcal'],
         'protein'          => ['label' => 'Eiwit',           'unit' => 'g'],
@@ -226,53 +226,57 @@ return [
             'collecting' => 'Nog %s met een dagcijfer nodig voor je voedingsscore.',
             'expired'    => 'Je laatste dagcijfer is van %s: je voedingsscore telt nu niet mee.',
 
-            /* The daily self-assessment the Nutrition score is built from.
-               One cijfer per day; saving again replaces it. */
+            /* The daily self-assessment the Nutrition score is built from:
+               a slider, saved when it is let go, for the day shown — today or
+               one of the six before (api/health/rating.php). */
             'rating' => [
-                'title'       => 'Hoe at je vandaag?',
-                'label'       => 'Jouw dagcijfer, van 1 tot 10',
-                'placeholder' => '1 tot 10',
-                'button'      => 'Opslaan',
-                'hint'        => 'Eén cijfer per dag. Opnieuw opslaan vervangt het cijfer van vandaag.',
+                'title'     => 'Hoe at je?',
+                'label'     => 'Jouw dagcijfer, van 1 tot 10',
+                'question'  => 'hoe at je %s?',
+                'saved'     => 'Opgeslagen',
+                'saved_for' => '%1$s voor %2$s',
+                'unsaved'   => 'Nog niet opgeslagen — schuif en laat los',
+                'error'     => 'Dit kon niet worden opgeslagen.',
             ],
 
-            'highlights' => [
-                ['key' => 'meals',       'value' => null],
-                ['key' => 'water',       'value' => null],
-                ['key' => 'protein',     'value' => null],
-                ['key' => 'self_rating', 'value' => null],
+            /* Voeding, drawn (lib/hydrate-nutrition.php, docs/NUTRITION.md):
+               the day's composition — a doughnut of the energy from
+               carbohydrates, protein and fat, each a row that opens — and
+               Energie and Water, two small charts that open their own page.
+               Every reference value is config/nutrition-reference.php's. */
+            'composition' => [
+                'title'     => 'Samenstelling',
+                'hint'      => 'Tik een deel van de ring of een rij om alles erover te zien.',
+                'too_little'=> 'Voor %s is te weinig gelogd voor een verdeling; niets wordt aangevuld of geschat.',
+                'nothing'   => 'Nog niets gelogd. Een app die maaltijden in Health Connect zet, vult dit.',
+                'older'     => 'Eerdere dag',
+                'newer'     => 'Latere dag',
+                'macros'    => ['carbs' => 'Koolhydraten', 'protein' => 'Eiwitten', 'fat' => 'Vetten'],
+                'details'   => ['fibre' => 'Vezels', 'sugar' => 'Suikers (totaal)', 'saturated_fat' => 'Verzadigd vet'],
             ],
 
-            'groups' => [
-                [
-                    'title'   => 'Energie en macro\'s',
-                    'metrics' => [
-                        ['key' => 'energy',        'value' => null],
-                        ['key' => 'protein',       'value' => null],
-                        ['key' => 'carbs',         'value' => null],
-                        ['key' => 'fat',           'value' => null],
-                        ['key' => 'saturated_fat', 'value' => null],
-                        ['key' => 'fibre',         'value' => null],
-                        ['key' => 'sugar',         'value' => null],
-                        ['key' => 'sodium',        'value' => null],
-                    ],
-                ],
-                [
-                    'title'   => 'Hydratatie',
-                    'metrics' => [
-                        ['key' => 'water',          'value' => null],
-                        ['key' => 'hydration_goal', 'value' => null],
-                    ],
-                ],
-                [
-                    'title'   => 'Eigen invoer',
-                    'hint'    => 'Jij bepaalt dit zelf — er komt geen sensor aan te pas.',
-                    'metrics' => [
-                        ['key' => 'self_rating', 'value' => null],
-                        ['key' => 'meal_window', 'value' => null],
-                    ],
-                ],
+            'charts' => [
+                /* One set of bars, its kJ the same bars converted (× 4,184). */
+                'energy' => ['title' => 'Energie',
+                             'series' => [['key' => 'energy', 'label' => 'Energie', 'unit' => 'kcal', 'kind' => 'bars', 'decimals' => 0,
+                                           'alt' => ['unit' => 'kJ', 'factor' => 4.184]]]],
+                'water'  => ['title' => 'Water',
+                             'sub'    => ['unit' => 'ml', 'factor' => 1000],
+                             'series' => [['key' => 'water', 'label' => 'Water', 'unit' => 'L', 'kind' => 'bars', 'decimals' => 1]]],
             ],
+            'chart_copy' => [
+                'empty'   => 'Nog geen metingen.',
+                'hint'    => 'Tik of schuif over de grafiek om de waarden te zien.',
+                'open'    => 'Open %s',
+                'aria'    => '%1$s %2$s, %3$s',
+                'none'    => ['day' => 'Geen meting op deze dag.', 'week' => 'Geen meting in deze week.', 'month' => 'Geen meting in deze maand.'],
+                'carried' => '',
+                'back'    => 'Voeding',
+            ],
+
+            /* Every value is drawn now: no tiles and no lists under them. */
+            'highlights' => [],
+            'groups'     => [],
         ],
 
         'training' => [

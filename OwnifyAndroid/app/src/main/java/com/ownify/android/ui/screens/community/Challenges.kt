@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens.community
 
+import com.ownify.android.ui.design.NoticePlace
+import com.ownify.android.ui.design.notice
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -592,7 +594,10 @@ internal fun InviteBanner(invite: ChallengeInvite, see: String, onReview: () -> 
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         val who = invite.inviter
-        if (who != null) ChallengeAvatar(who, 32.dp) else NeutralTile(OwnifyIcons.solidTarget)
+        // The red dot on the invitation's picture (docs/NOTICES.md).
+        val dot = "invite:" + invite.id
+        if (who != null) Box(Modifier.notice(dot, NoticePlace.Circle)) { ChallengeAvatar(who, 32.dp) }
+        else NeutralTile(OwnifyIcons.solidTarget, modifier = Modifier.notice(dot))
         val text = if (who != null) "${who.name} ${invite.inviteText}" else invite.inviteText
         T(text, JStyle.Lede, Modifier.weight(1f))
         Btn(see, onClick = onReview)

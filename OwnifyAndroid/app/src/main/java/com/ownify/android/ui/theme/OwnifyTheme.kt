@@ -103,6 +103,8 @@ class OwnifyPalette(
     val textMuted: Color,
     val textFaint: Color,
     val error: Color,
+    /** `--notice`: the red dot, something waits for you (Granaat). */
+    val notice: Color,
 
     val paneSaturate: Float,
     val paneBrightness: Float,
@@ -171,6 +173,7 @@ class OwnifyPalette(
             textMuted = white(0.60f),
             textFaint = white(0.42f),
             error = Color(0xFFFF8B8B),
+            notice = Color(0xFFD4564E),
             paneSaturate = 1.9f,
             paneBrightness = 1.08f,
             paneRim = listOf(white(0.46f), white(0.13f), white(0.045f), white(0.10f), white(0.26f)),
@@ -239,6 +242,7 @@ class OwnifyPalette(
             textMuted = text(0.66f),
             textFaint = text(0.48f),
             error = Color(0xFFB03C35),
+            notice = Color(0xFFB9382F),
             paneSaturate = 1.7f,
             paneBrightness = 1.04f,
             paneRim = listOf(white(0.95f), white(0.55f), text(0.06f), text(0.09f), white(0.70f)),
@@ -400,6 +404,9 @@ object Ownify {
 
     /** The error red the wizard, the editor and the rating use (`--error`). */
     val Error: Color get() = palette.error
+
+    /** The red dot: something waits for you to do it (`--notice`, docs/NOTICES.md). */
+    val Notice: Color get() = palette.notice
 
     // --- surfaces' light and shade ------------------------------------------
     /** `--surface-gradient`: a card's face, from its top-left to its bottom-right. */

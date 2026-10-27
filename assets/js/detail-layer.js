@@ -46,15 +46,21 @@
 
     /* ------------------------------------------------------------ helpers */
 
+    /** Off-screen right: its own width, and on desktop the gap beside it too. */
+    function gap() { return nav.isDesktop() ? nav.PARK_GAP : 0; }
+
     /** 1 = open, 0 = parked off-screen right. */
     function place(value) {
         if (!current) { return; }
-        current.style.transform = 'translate3d(' + ((1 - value) * 100) + '%, 0, 0)';
+        var rest = 1 - value;
+        current.style.transform = gap()
+            ? 'translate3d(calc(' + (rest * 100) + '% + ' + (rest * gap()).toFixed(2) + 'px), 0, 0)'
+            : 'translate3d(' + (rest * 100) + '%, 0, 0)';
     }
 
     /** Where the current detail is right now: mid-way included. */
     function shownProgress() {
-        var width = current.offsetWidth || window.innerWidth;
+        var width = (current.offsetWidth || window.innerWidth) + gap();
         return width ? 1 - nav.translation(current).x / width : (shown ? 1 : 0);
     }
 
@@ -68,7 +74,7 @@
 
     function refresh() {
         details.forEach(function (detail) {
-            var live = detail === current && shown && !nav.state.aiOpen;
+            var live = detail === current && shown && (nav.isDesktop() || !nav.state.aiOpen);
             detail.inert = !live;
             if (live) { detail.removeAttribute('aria-hidden'); }
             else { detail.setAttribute('aria-hidden', 'true'); }
@@ -155,6 +161,20 @@
             current = null;
         }
 
+        /* On desktop the second page changes to the new one: the one in front
+           (and the one it opened over) goes at once, the new one arrives with
+           a short slide. On a phone another one's way out comes first. */
+        var swapping = false;
+        if (current && current !== detail && shown && nav.isDesktop() && !drag) {
+            window.clearTimeout(settleTimer);
+            settleTimer = null;
+            if (parent) { park(parent); parent = null; parentOpener = null; }
+            park(current);
+            current = null;
+            shown = false;
+            swapping = true;
+        }
+
         if (current && current !== detail) {
             if (shown) { return; }   // another one is in front; its own way out comes first
             park(current);           // one still sliding out finishes at once
@@ -172,6 +192,13 @@
             if (scroller) { scroller.scrollTop = 0; }
         }
 
+        if (swapping && !nav.reduceMotion) {
+            detail.classList.add('is-dragging');
+            place(0.86);
+            void detail.offsetWidth;
+            detail.classList.remove('is-dragging');
+        }
+
         settle(1, true);
     }
 
@@ -186,7 +213,10 @@
         canStart: function (ctx) {
             // Only a rightward drag, only while a detail is in front, and
             // never while the assistant covers it.
-            return !!current && shown && !nav.state.aiOpen && ctx.dx > 0;
+            // On desktop only a drag that starts on the detail itself: the
+            // page beside it is the user's own.
+            return !!current && shown && !nav.state.aiOpen && ctx.dx > 0
+                && (!nav.isDesktop() || current.contains(ctx.target));
         },
 
         begin: function () {
@@ -238,7 +268,7 @@
 
         // Leaving for another section closes the detail behind you — and
         // the one it opened over, which goes with it.
-        if (current && shown && event.target.closest('[data-nav]')) {
+        if (current && shown && !nav.isDesktop() && event.target.closest('[data-nav]')) {
             if (parent) {
                 park(current);
                 current = parent;
@@ -283,6 +313,14 @@
                 deck.dataset.detailState = 'closed';
                 nav.refresh();
             }
+        },
+        /* For desktop.js: back to its place after the layout changed. */
+        replace: function () {
+            if (!current || drag) { return; }
+            current.classList.add('is-dragging');
+            place(shown ? 1 : 0);
+            void current.offsetWidth;
+            current.classList.remove('is-dragging');
         },
         adopt: function (detail) {
             if (details.indexOf(detail) === -1) { details.push(detail); }

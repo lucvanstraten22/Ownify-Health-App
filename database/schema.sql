@@ -88,6 +88,13 @@ DROP TABLE IF EXISTS `health_metrics`;
 DROP TABLE IF EXISTS `health_metric_types`;
 DROP TABLE IF EXISTS `user_measurements`;
 DROP TABLE IF EXISTS `data_sources`;
+DROP TABLE IF EXISTS `mail_outbox`;
+DROP TABLE IF EXISTS `email_change_google_baseline`;
+DROP TABLE IF EXISTS `email_changes`;
+DROP TABLE IF EXISTS `auth_email_tokens`;
+DROP TABLE IF EXISTS `account_email_conflicts`;
+DROP TABLE IF EXISTS `account_emails`;
+DROP TABLE IF EXISTS `pending_registrations`;
 DROP TABLE IF EXISTS `auth_attempts`;
 DROP TABLE IF EXISTS `user_login_tokens`;
 DROP TABLE IF EXISTS `user_auth_identities`;
@@ -108,10 +115,12 @@ CREATE TABLE `users` (
     -- utf8mb4_unicode_ci is case-insensitive, so this unique key already
     -- prevents "Lisa" and "lisa" from both existing.
     `username`      VARCHAR(30)  NOT NULL COMMENT 'Public handle, used to find and add friends',
-    `status`        ENUM('active','suspended','deleted') NOT NULL DEFAULT 'active',
+    -- 'pending': a registration waiting for its link, or a privacy placeholder (027).
+    `status`        ENUM('active','suspended','deleted','pending') NOT NULL DEFAULT 'active',
     `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `last_seen_at`  DATETIME     NULL COMMENT 'Touched on each authenticated request',
+    `session_generation` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Browser sessions signed in under an older generation are ended',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_users_username` (`username`),
     KEY `idx_users_status` (`status`)
@@ -150,6 +159,10 @@ CREATE TABLE `user_profiles` (
                     COMMENT 'Toegankelijkheid › Extra contrast: 1 = stronger borders and text',
     `motion_off`    TINYINT(1) NOT NULL DEFAULT 0
                     COMMENT 'Toegankelijkheid › Animaties uit: 1 = no animations, whatever the device says',
+    -- Meldingen (migration 026): the hour from which a red dot asks for
+    -- today's Voeding cijfer when it is not given yet.
+    `rating_notice_hour` TINYINT UNSIGNED NULL DEFAULT NULL
+                    COMMENT 'Meldingen › Stip bij Voeding: the hour the dot appears; NULL is 20',
     `allow_friend_requests` TINYINT(1) NOT NULL DEFAULT 1
                     COMMENT 'Vriendverzoeken toestaan: 0 = nobody can send this account a new request',
     `leaderboard_avatar` TINYINT(1) NOT NULL DEFAULT 1
@@ -246,6 +259,106 @@ CREATE TABLE `auth_attempts` (
     PRIMARY KEY (`id`),
     KEY `idx_attempt_key` (`action`, `key_hash`, `attempted_at`),
     KEY `idx_attempt_time` (`attempted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================================
+--  1b. ACCOUNT SECURITY (migration 027, 28.0) — docs/ACCOUNT-SECURITY.md
+-- ============================================================================
+-- Every address column holds the canonical form only, and a CHECK says so:
+-- the rule and its tests are in database/migrations/027-account-security.sql
+-- and tools/canonical-check.php (which reads that file, not this one).
+
+CREATE TABLE `pending_registrations` (
+    `user_id`        BIGINT UNSIGNED NOT NULL COMMENT 'The users row, status = pending',
+    `email`          VARCHAR(191) NOT NULL COMMENT 'Canonical; NOT a sign-in address until verified',
+    `password_hash`  VARCHAR(255) NOT NULL COMMENT 'password_hash() of the registrant''s chosen password',
+    `address_taken`  TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `expires_at`     DATETIME NOT NULL COMMENT 'created_at + 7 days: then the users row is deleted',
+    PRIMARY KEY (`user_id`),
+    KEY `idx_pending_email` (`email`),
+    KEY `idx_pending_expiry` (`expires_at`),
+    CONSTRAINT `fk_pending_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `chk_pending_email_canonical` CHECK (CHAR_LENGTH(`email`) BETWEEN 1 AND 191 AND NOT (CAST(`email` AS BINARY) REGEXP '[^!-@[-~]'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `account_emails` (
+    `email`        VARCHAR(191) NOT NULL COMMENT 'Canonical',
+    `user_id`      BIGINT UNSIGNED NOT NULL,
+    `via_password` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Ownify link, completed reset or revert',
+    `via_google`   TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'The linked Google account, email_verified = true',
+    `verified_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`email`),
+    KEY `idx_account_emails_user` (`user_id`),
+    CONSTRAINT `fk_account_emails_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `chk_account_emails_canonical` CHECK (CHAR_LENGTH(`email`) BETWEEN 1 AND 191 AND NOT (CAST(`email` AS BINARY) REGEXP '[^!-@[-~]'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `account_email_conflicts` (
+    `email`        VARCHAR(191) NOT NULL COMMENT 'The address as canonicalised by LOWER(TRIM())',
+    `reason`       VARCHAR(32)  NOT NULL COMMENT 'shared_google | not_canonical | already_owned | unverified_shadow',
+    `user_ids`     VARCHAR(255) NOT NULL COMMENT 'The accounts involved, for the person resolving it',
+    `found_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `resolved_at`  DATETIME NULL,
+    PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `auth_email_tokens` (
+    `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`        BIGINT UNSIGNED NOT NULL,
+    `purpose`        ENUM('verify_signup','verify_link','verify_change','password_reset','revert_email') NOT NULL,
+    `email`          VARCHAR(191) NOT NULL COMMENT 'Canonical address the link was sent to',
+    `change_id`      BIGINT UNSIGNED NULL COMMENT 'verify_change and revert_email: the address change it belongs to',
+    `token_hash`     CHAR(64) NOT NULL COMMENT 'sha256 of the token',
+    `created_at`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `expires_at`     DATETIME NOT NULL,
+    `used_at`        DATETIME NULL COMMENT 'Set once, atomically; also when superseded',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_email_token_hash` (`token_hash`),
+    KEY `idx_email_token_user` (`user_id`, `purpose`),
+    KEY `idx_email_token_expiry` (`expires_at`),
+    CONSTRAINT `fk_email_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `chk_token_email_canonical` CHECK (CHAR_LENGTH(`email`) BETWEEN 1 AND 191 AND NOT (CAST(`email` AS BINARY) REGEXP '[^!-@[-~]'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `email_changes` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `user_id`       BIGINT UNSIGNED NOT NULL,
+    `old_email`     VARCHAR(191) NOT NULL COMMENT 'Canonical',
+    `old_verified`  TINYINT(1) NOT NULL,
+    `new_email`     VARCHAR(191) NOT NULL COMMENT 'Canonical',
+    `requested_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `changed_at`    DATETIME NULL COMMENT 'When confirmed (for people); a revert uses email_change_google_baseline, not this time',
+    `reverted_at`   DATETIME NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_email_changes_user` (`user_id`, `changed_at`),
+    CONSTRAINT `fk_email_changes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `chk_change_canonical` CHECK (CHAR_LENGTH(`old_email`) BETWEEN 1 AND 191 AND NOT (CAST(`old_email` AS BINARY) REGEXP '[^!-@[-~]') AND CHAR_LENGTH(`new_email`) BETWEEN 1 AND 191 AND NOT (CAST(`new_email` AS BINARY) REGEXP '[^!-@[-~]'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `email_change_google_baseline` (
+    `change_id`    BIGINT UNSIGNED NOT NULL,
+    `identity_id`  BIGINT UNSIGNED NOT NULL COMMENT 'user_auth_identities.id of a Google identity present at confirmation',
+    PRIMARY KEY (`change_id`, `identity_id`),
+    CONSTRAINT `fk_baseline_change` FOREIGN KEY (`change_id`) REFERENCES `email_changes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `mail_outbox` (
+    `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `kind`        VARCHAR(24) NOT NULL COMMENT 'signup, link, change, reset, password, email_changed, google_removed, already, none',
+    `recipient`   VARCHAR(191) NULL COMMENT 'Canonical; NULL for kind = none (a decoy)',
+    `payload`     TEXT NULL COMMENT 'Encrypted JSON (app key): username, link, locale, facts. Never a password',
+    `message_id`  VARCHAR(128) NULL COMMENT 'Fixed per job, so a duplicate send carries the same Message-ID',
+    `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `send_after`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `claim_token` CHAR(32) NULL COMMENT 'Random per claim; only its holder may finish the job',
+    `lease_until` DATETIME NULL COMMENT 'Claimable again once this has passed (a worker that died)',
+    `attempts`    TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Claims so far; at 5 the job is deleted',
+    `expires_at`  DATETIME NOT NULL COMMENT 'Deleted unsent after this (its link is dead anyway)',
+    PRIMARY KEY (`id`),
+    KEY `idx_outbox_expiry` (`expires_at`),
+    KEY `idx_outbox_due` (`lease_until`, `send_after`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

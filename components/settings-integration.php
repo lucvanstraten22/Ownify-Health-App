@@ -34,7 +34,7 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
             aria-expanded="false" aria-controls="<?= e($id) ?>"
             aria-label="<?= e(sprintf($labels['expand'], $item['label'])) ?>">
 
-        <span class="icon-tile" aria-hidden="true"><?= icon($item['icon']) ?></span>
+        <span class="icon-tile" aria-hidden="true"><?= icon($item['icon']) ?><?= notice_dot('source:' . ($item['provider'] ?? '')) ?></span>
 
         <span class="integration__text">
             <span class="integration__label"><?= e($item['label']) ?></span>

@@ -161,6 +161,7 @@ if (!function_exists('settings_prepare')) {
         $settings = settings_use_theme($settings, app_theme_preference());
         $settings = settings_use_language_units($settings);
         $settings = settings_use_accessibility($settings, accessibility_choices());
+        $settings = settings_use_notices($settings, rating_notice_hour());
 
         return $settings;
     }
@@ -307,6 +308,20 @@ if (!function_exists('settings_use_accessibility')) {
         }
 
         return $settings;
+    }
+}
+
+if (!function_exists('settings_use_notices')) {
+    /** Meldingen › Stip bij Voeding as the account has it: the ticked hour, and the main page's row. */
+    function settings_use_notices(array $settings, int $hour): array
+    {
+        foreach ($settings['pages']['notifications']['blocks'] ?? [] as $b => $block) {
+            if (($block['type'] ?? '') === 'choice' && ($block['name'] ?? '') === 'rating_notice') {
+                $settings['pages']['notifications']['blocks'][$b]['selected'] = (string) $hour;
+            }
+        }
+
+        return settings_set_row_value($settings, 'notifications', tf('Voeding vanaf %s', sprintf('%02d:00', $hour)));
     }
 }
 

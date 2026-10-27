@@ -49,6 +49,12 @@ if (!function_exists('session_boot')) {
         $_SESSION['user_id'] = $userId;
         $_SESSION['logged_in_at'] = time();
 
+        /* A new session starts at the account's session number, so a later
+           password change elsewhere can end it (includes/account-security.php). */
+        if (function_exists('account_session_stamp')) {
+            account_session_stamp($userId);
+        }
+
         /* And stays signed in, past the end of this session, until signing
            out. Guarded because a deploy lands one file at a time: this file
            may be new while the one defining it is not yet there. */

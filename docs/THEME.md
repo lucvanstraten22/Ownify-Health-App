@@ -154,7 +154,14 @@ faint fill and hairline, and on focus the health edge with its halo
 keeps `--radius-sm`.
 
 **Chips**: a label chip is a 24 high pill (`.chip`, `Chip`); a chip to choose
-is the glass chip (`.glass--chip`).
+is the glass chip (`.glass--chip`). A status bubble (27.0, Voeding's
+verdicts) is the same glass chip, never pressed: the chosen green glass
+inside a range, the gold glass with `--attention` text above it, plain
+otherwise.
+
+**The slider** (27.0, Voeding's cijfer): the pill's rail (8 tall,
+`--fill` at .08, a hairline), `--health-edge` → `--health` up to a 28 round
+glass thumb (`.glass`), on a 44 tall track. The only slider.
 
 **Icon tiles**, two sizes: 36 at radius 12 and 30 at radius 10
 (`Ownify.TileRadius`, `TileSmall`, `TileRadiusSmall`). A challenge's 48
@@ -162,6 +169,11 @@ artwork is an illustration, not a tile.
 
 **Radii**: 28 (a card), 20 (a well, a note, a slot, a small card), 14 (a row,
 a date button, a tooltip on a chart), pill. `--radius-inner` is gone.
+
+**The red dot** (26.0, docs/NOTICES.md): `--notice` (`Ownify.Notice`), flat,
+cut out of a tile, a picture or a round button by a ring of the ground, or
+beside a bare line icon with a soft halo of its own colour. The only red that
+means "this waits for you"; `--error` stays the colour of a failed entry.
 
 ## Contrast
 

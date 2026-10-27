@@ -11,6 +11,10 @@
  *   text_large     0 | 1            Toegankelijkheid › Grotere tekst
  *   contrast_more  0 | 1            Toegankelijkheid › Extra contrast
  *   motion_off     0 | 1            Toegankelijkheid › Animaties uit
+ *   rating_notice  16 | 18 | 19 | 20 | 21 | 22
+ *                                   Meldingen › Stip bij Voeding: from which
+ *                                   hour a dot asks for today's cijfer
+ *                                   (migration 026)
  *
  * Kept on the account, so the choice is the same on the website and in the
  * app and survives signing out and in. The website also keeps the language
@@ -48,7 +52,18 @@ foreach (['text_large', 'contrast_more', 'motion_off'] as $key) {
     }
 }
 
-if ($language === null && $units === null && $week === null && $switches === []) {
+$notice = isset($_POST['rating_notice']) ? (string) $_POST['rating_notice'] : null;
+
+if ($notice !== null) {
+    if (!in_array((int) $notice, NOTICE_RATING_HOURS, true) || (string) (int) $notice !== $notice) {
+        api_fail('Onbekend tijdstip.', 422);
+    }
+    if (!notice_columns_present()) {
+        api_fail('De database is nog niet bijgewerkt voor deze instelling (migratie 026).', 503);
+    }
+}
+
+if ($language === null && $units === null && $week === null && $switches === [] && $notice === null) {
     api_fail('Kies een taal of eenheden.', 422);
 }
 
@@ -99,6 +114,13 @@ if ($week !== null) {
     $state['week_start'] = $week;
 }
 
+if ($notice !== null) {
+    $hour = (int) $notice;
+    db_run('UPDATE user_profiles SET rating_notice_hour = ? WHERE user_id = ?', [$hour === NOTICE_RATING_HOUR ? null : $hour, $userId]);
+    $state = &i18n_state();
+    $state['rating_notice_hour'] = $hour;
+}
+
 foreach ($switches as $key => $on) {
     /* $key is one of the three names above, never the request's own text. */
     db_run('UPDATE user_profiles SET ' . $key . ' = ? WHERE user_id = ?', [$on, $userId]);
@@ -111,6 +133,7 @@ api_ok([
     'chosen'  => i18n_chosen(),
     'units'   => units_system(),
     'week'    => week_start(),
+    'rating_notice' => rating_notice_hour(),
     /* As privacy.php answers a switch: its key and whether it is on now. */
     ...accessibility_choices(),
     'message' => t('Opgeslagen.'),

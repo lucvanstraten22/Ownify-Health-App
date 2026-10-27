@@ -42,6 +42,12 @@ if (!defined('I18N_LOCALES')) {
     define('I18N_COOKIE', 'ownify_lang');
 }
 
+/* Meldingen › Stip bij Voeding: the hours to choose from, and the default. */
+if (!defined('NOTICE_RATING_HOUR')) {
+    define('NOTICE_RATING_HOUR', 20);
+    define('NOTICE_RATING_HOURS', [16, 18, 19, 20, 21, 22]);
+}
+
 if (!function_exists('i18n_locale')) {
 
     /* ============================================================ locale */
@@ -69,6 +75,7 @@ if (!function_exists('i18n_locale')) {
                 'text_large'    => false,
                 'contrast_more' => false,
                 'motion_off'    => false,
+                'rating_notice_hour' => NOTICE_RATING_HOUR,
                 'user'   => null,
             ];
         }
@@ -166,6 +173,33 @@ if (!function_exists('i18n_locale')) {
         $state['text_large']    = !empty($row['text_large']);
         $state['contrast_more'] = !empty($row['contrast_more']);
         $state['motion_off']    = !empty($row['motion_off']);
+
+        /* Meldingen › Stip bij Voeding (migration 026): read on its own, so
+           an account keeps everything above before the migration is in. */
+        $state['rating_notice_hour'] = NOTICE_RATING_HOUR;
+        if ($row !== null && notice_columns_present()) {
+            $hour = db_value('SELECT rating_notice_hour FROM user_profiles WHERE user_id = ?', [$userId]);
+            if ($hour !== null && in_array((int) $hour, NOTICE_RATING_HOURS, true)) {
+                $state['rating_notice_hour'] = (int) $hour;
+            }
+        }
+    }
+
+    /** Migration 026: the hour the Voeding dot appears. */
+    function notice_columns_present(): bool
+    {
+        static $present = null;
+
+        return $present ??= (bool) db_value(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles' AND COLUMN_NAME = 'rating_notice_hour'"
+        );
+    }
+
+    /** The hour from which a red dot asks for today's Voeding cijfer: 20 unless the account chose another. */
+    function rating_notice_hour(): int
+    {
+        return (int) (i18n_state()['rating_notice_hour'] ?? NOTICE_RATING_HOUR);
     }
 
     /** Migration 024: the week's first day and the accessibility choices. */

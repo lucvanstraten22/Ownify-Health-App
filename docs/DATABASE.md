@@ -495,6 +495,18 @@ be carried over (their types and sources mean other things now), so goals
 start afresh. Re-running it is safe. Until it is imported, Doelen shows no
 goals and a new one cannot be made.
 
+**Account security** (28.0): `database/migrations/027-account-security.sql`
+adds `users.session_generation` (ending other browser sessions by number),
+`'pending'` to `users.status`, and the tables for verified addresses
+(`account_emails`, `account_email_conflicts`), mailed links
+(`auth_email_tokens`, `email_changes`, `email_change_google_baseline`),
+pending registrations and the mail outbox. Additive and re-runnable; every
+address column carries the canonical-address CHECK. Run
+`php tools/check-config.php --check-schema-rules` first and take a backup.
+Until it is imported, everything works except changing the password (503).
+See [ACCOUNT-SECURITY.md](ACCOUNT-SECURITY.md), which also describes
+`027-rollback.sql` and when it refuses.
+
 There is no `age` column: Leeftijd is no longer a field in Instellingen
 (19.0). Whatever needs an age — the nutrition targets, the estimated maximum
 heart rate, OwnifyAI's context — works it out from `date_of_birth` when it

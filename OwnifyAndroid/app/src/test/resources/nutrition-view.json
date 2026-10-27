@@ -1,0 +1,1466 @@
+{
+ "rating": {
+  "title": "Hoe at je?",
+  "label": "Jouw dagcijfer, van 1 tot 10",
+  "question": "hoe at je %s?",
+  "saved": "Opgeslagen",
+  "saved_for": "%1$s voor %2$s",
+  "unsaved": "Nog niet opgeslagen — schuif en laat los",
+  "error": "Dit kon niet worden opgeslagen."
+ },
+ "composition": {
+  "title": "Samenstelling",
+  "hint": "Tik een deel van de ring of een rij om alles erover te zien.",
+  "older": "Eerdere dag",
+  "newer": "Latere dag"
+ },
+ "days": [
+  {
+   "date": "2026-10-22",
+   "name": "Vandaag",
+   "word": "vandaag",
+   "rating": 8,
+   "kcal": 1844,
+   "centre": {
+    "value": "1.844",
+    "sub": "kcal · 70 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 212,
+     "share": 46,
+     "logged": true,
+     "head": "212 g",
+     "sub": [
+      "46 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 45.98698481561822
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "212 g · 848 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "46,0 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "22 g",
+       "extra": null,
+       "verdict": "low",
+       "verdict_text": "Onder bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "71 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 96,
+     "share": 20.8,
+     "logged": true,
+     "head": "96 g",
+     "sub": [
+      "21 % van je energie",
+      "83 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 96
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "96 g · 384 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "20,8 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 83 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 68,
+     "share": 33.2,
+     "logged": true,
+     "head": "68 g",
+     "sub": [
+      "33 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 33.18872017353579
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "68 g · 612 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "33,2 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "24 g",
+       "extra": "11,7 %",
+       "verdict": "high",
+       "verdict_text": "Boven bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-21",
+   "name": "Gisteren",
+   "word": "gisteren",
+   "rating": 7,
+   "kcal": 2010,
+   "centre": {
+    "value": "2.010",
+    "sub": "kcal · 76 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 248,
+     "share": 49.4,
+     "logged": true,
+     "head": "248 g",
+     "sub": [
+      "49 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 49.353233830845774
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "248 g · 992 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "49,4 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "31 g",
+       "extra": null,
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "58 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 88,
+     "share": 17.5,
+     "logged": true,
+     "head": "88 g",
+     "sub": [
+      "18 % van je energie",
+      "77 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 88
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "88 g · 352 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "17,5 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 77 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 74,
+     "share": 33.1,
+     "logged": true,
+     "head": "74 g",
+     "sub": [
+      "33 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 33.134328358208954
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "74 g · 666 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "33,1 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "21 g",
+       "extra": "9,4 %",
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-20",
+   "name": "Eergisteren",
+   "word": "eergisteren",
+   "rating": null,
+   "kcal": 1781,
+   "centre": {
+    "value": "1.781",
+    "sub": "kcal · 67 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 196,
+     "share": 44,
+     "logged": true,
+     "head": "196 g",
+     "sub": [
+      "44 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 44.02021336327906
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "196 g · 784 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "44,0 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "27 g",
+       "extra": null,
+       "verdict": "low",
+       "verdict_text": "Onder bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "49 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 112,
+     "share": 25.2,
+     "logged": true,
+     "head": "112 g",
+     "sub": [
+      "25 % van je energie",
+      "97 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 112
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "112 g · 448 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "25,2 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 97 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 61,
+     "share": 30.8,
+     "logged": true,
+     "head": "61 g",
+     "sub": [
+      "31 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 30.825379000561483
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "61 g · 549 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "30,8 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "17 g",
+       "extra": "8,6 %",
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-19",
+   "name": "maandag 19 oktober",
+   "word": "maandag 19 oktober",
+   "rating": null,
+   "kcal": 2356,
+   "centre": {
+    "value": "2.356",
+    "sub": "kcal · 89 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 301,
+     "share": 51.1,
+     "logged": true,
+     "head": "301 g",
+     "sub": [
+      "51 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 51.103565365025474
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "301 g · 1.204 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "51,1 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "18 g",
+       "extra": null,
+       "verdict": "low",
+       "verdict_text": "Onder bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "104 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 72,
+     "share": 12.2,
+     "logged": true,
+     "head": "72 g",
+     "sub": [
+      "12 % van je energie",
+      "63 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 72
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "72 g · 288 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "12,2 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 63 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 96,
+     "share": 36.7,
+     "logged": true,
+     "head": "96 g",
+     "sub": [
+      "37 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 36.6723259762309
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "96 g · 864 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "36,7 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "33 g",
+       "extra": "12,6 %",
+       "verdict": "high",
+       "verdict_text": "Boven bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-18",
+   "name": "zondag 18 oktober",
+   "word": "zondag 18 oktober",
+   "rating": null,
+   "kcal": 1926,
+   "centre": {
+    "value": "1.926",
+    "sub": "kcal · 73 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 230,
+     "share": 47.8,
+     "logged": true,
+     "head": "230 g",
+     "sub": [
+      "48 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 47.767393561786086
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "230 g · 920 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "47,8 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "34 g",
+       "extra": null,
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "55 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 94,
+     "share": 19.5,
+     "logged": true,
+     "head": "94 g",
+     "sub": [
+      "20 % van je energie",
+      "82 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 94
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "94 g · 376 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "19,5 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 82 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 70,
+     "share": 32.7,
+     "logged": true,
+     "head": "70 g",
+     "sub": [
+      "33 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 32.71028037383177
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "70 g · 630 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "32,7 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "20 g",
+       "extra": "9,3 %",
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-17",
+   "name": "zaterdag 17 oktober",
+   "word": "zaterdag 17 oktober",
+   "rating": null,
+   "kcal": 1818,
+   "centre": {
+    "value": "1.818",
+    "sub": "kcal · 69 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 205,
+     "share": 45.1,
+     "logged": true,
+     "head": "205 g",
+     "sub": [
+      "45 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 45.1045104510451
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "205 g · 820 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "45,1 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "29 g",
+       "extra": null,
+       "verdict": "low",
+       "verdict_text": "Onder bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "47 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 101,
+     "share": 22.2,
+     "logged": true,
+     "head": "101 g",
+     "sub": [
+      "22 % van je energie",
+      "88 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 101
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "101 g · 404 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "22,2 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 88 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 66,
+     "share": 32.7,
+     "logged": true,
+     "head": "66 g",
+     "sub": [
+      "33 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 32.67326732673268
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "66 g · 594 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "32,7 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "19 g",
+       "extra": "9,4 %",
+       "verdict": "in",
+       "verdict_text": "Binnen bereik"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "date": "2026-10-16",
+   "name": "vrijdag 16 oktober",
+   "word": "vrijdag 16 oktober",
+   "rating": null,
+   "kcal": 2102,
+   "centre": {
+    "value": "2.102",
+    "sub": "kcal · 80 % van 2.639"
+   },
+   "note": null,
+   "macros": [
+    {
+     "key": "carbs",
+     "label": "Koolhydraten",
+     "grams": 258,
+     "share": 49.1,
+     "logged": true,
+     "head": "258 g",
+     "sub": [
+      "49 % van je energie",
+      "richtlijn 40–70 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 40,
+      "high": 70,
+      "max": 100,
+      "value": 49.096098953377734
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "258 g · 1.032 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "49,1 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "40–70 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "fibre",
+       "label": "Vezels",
+       "value": "24 g",
+       "extra": null,
+       "verdict": "low",
+       "verdict_text": "Onder bereik"
+      },
+      {
+       "key": "sugar",
+       "label": "Suikers (totaal)",
+       "value": "66 g",
+       "extra": null,
+       "verdict": "none",
+       "verdict_text": "Geen oordeel"
+      }
+     ]
+    },
+    {
+     "key": "protein",
+     "label": "Eiwitten",
+     "grams": 83,
+     "share": 15.8,
+     "logged": true,
+     "head": "83 g",
+     "sub": [
+      "16 % van je energie",
+      "72 % van je doel"
+     ],
+     "verdict": null,
+     "verdict_text": null,
+     "meter": {
+      "low": null,
+      "high": null,
+      "max": 184,
+      "value": 83
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "83 g · 332 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "15,8 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "115 g (jouw doel) · 72 % van je doel"
+      }
+     ],
+     "why": "Jouw doel: 1,6 g per kg lichaamsgewicht bij je activiteit (je profiel).",
+     "details": []
+    },
+    {
+     "key": "fat",
+     "label": "Vetten",
+     "grams": 82,
+     "share": 35.1,
+     "logged": true,
+     "head": "82 g",
+     "sub": [
+      "35 % van je energie",
+      "richtlijn 20–40 %"
+     ],
+     "verdict": "in",
+     "verdict_text": "Binnen bereik",
+     "meter": {
+      "low": 20,
+      "high": 40,
+      "max": 100,
+      "value": 35.10941960038059
+     },
+     "facts": [
+      {
+       "label": "Gegeten",
+       "value": "82 g · 738 kcal"
+      },
+      {
+       "label": "Deel van je energie",
+       "value": "35,1 %"
+      },
+      {
+       "label": "Richtlijn",
+       "value": "20–40 % van je energie"
+      }
+     ],
+     "why": null,
+     "details": [
+      {
+       "key": "saturated_fat",
+       "label": "Verzadigd vet",
+       "value": "26 g",
+       "extra": "11,1 %",
+       "verdict": "high",
+       "verdict_text": "Boven bereik"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "id": "energy",
+   "title": "Energie",
+   "open": "Open Energie",
+   "back": "Voeding",
+   "switch": "Periode kiezen",
+   "hint": "Tik of schuif over de grafiek om de waarden te zien.",
+   "empty": "Nog geen metingen.",
+   "series": [
+    {
+     "key": "energy",
+     "label": "Energie",
+     "kind": "bars"
+    }
+   ],
+   "latest": {
+    "texts": [
+     "1.844"
+    ],
+    "date": null,
+    "of": "van 2.639 kcal",
+    "sub": "7.715 kJ"
+   },
+   "units": [
+    "kcal",
+    "kJ"
+   ],
+   "default": "7",
+   "periods": [
+    {
+     "key": "7",
+     "label": "7 dagen",
+     "days": 7,
+     "group": "day",
+     "aria": "Energie per dag, de afgelopen 7 dagen",
+     "axis": [
+      {
+       "x": 5,
+       "label": "16 okt"
+      },
+      {
+       "x": 20.003,
+       "label": "17 okt"
+      },
+      {
+       "x": 34.997,
+       "label": "18 okt"
+      },
+      {
+       "x": 50,
+       "label": "19 okt"
+      },
+      {
+       "x": 65.003,
+       "label": "20 okt"
+      },
+      {
+       "x": 79.997,
+       "label": "21 okt"
+      },
+      {
+       "x": 95,
+       "label": "22 okt"
+      }
+     ],
+     "axis_rows": [
+      {
+       "x": 5,
+       "label": "16 okt",
+       "day": "16",
+       "month": "okt"
+      },
+      {
+       "x": 20.003,
+       "label": "17 okt",
+       "day": "17",
+       "month": null
+      },
+      {
+       "x": 34.997,
+       "label": "18 okt",
+       "day": "18",
+       "month": null
+      },
+      {
+       "x": 50,
+       "label": "19 okt",
+       "day": "19",
+       "month": null
+      },
+      {
+       "x": 65.003,
+       "label": "20 okt",
+       "day": "20",
+       "month": null
+      },
+      {
+       "x": 79.997,
+       "label": "21 okt",
+       "day": "21",
+       "month": null
+      },
+      {
+       "x": 95,
+       "label": "22 okt",
+       "day": "22",
+       "month": null
+      }
+     ],
+     "x": [
+      5,
+      20.003,
+      34.997,
+      50,
+      65.003,
+      79.997,
+      95
+     ],
+     "points": [
+      [
+       "16 oktober",
+       "Onder bereik",
+       null,
+       "2.102 kcal · 8.795 kJ"
+      ],
+      [
+       "17 oktober",
+       "Onder bereik",
+       null,
+       "1.818 kcal · 7.607 kJ"
+      ],
+      [
+       "18 oktober",
+       "Onder bereik",
+       null,
+       "1.926 kcal · 8.058 kJ"
+      ],
+      [
+       "19 oktober",
+       "Onder bereik",
+       null,
+       "2.356 kcal · 9.858 kJ"
+      ],
+      [
+       "20 oktober",
+       "Onder bereik",
+       null,
+       "1.781 kcal · 7.452 kJ"
+      ],
+      [
+       "21 oktober",
+       "Onder bereik",
+       null,
+       "2.010 kcal · 8.410 kJ"
+      ],
+      [
+       "22 oktober",
+       "Onder bereik",
+       null,
+       "1.844 kcal · 7.715 kJ"
+      ]
+     ],
+     "carried": [],
+     "width": 300,
+     "height": 160,
+     "has_data": true,
+     "lines": [],
+     "bars": [
+      {
+       "key": "energy",
+       "w": 9.3,
+       "top": [
+        35.19,
+        43.95,
+        40.62,
+        27.36,
+        45.09,
+        38.03,
+        43.14
+       ]
+      }
+     ],
+     "grid": [
+      {
+       "y": 69.17,
+       "label": "1.000"
+      },
+      {
+       "y": 38.33,
+       "label": "2.000"
+      },
+      {
+       "y": 7.5,
+       "label": "3.000"
+      }
+     ],
+     "grid_alt": [
+      "4.184",
+      "8.368",
+      "12.552"
+     ],
+     "band": {
+      "top": 10.49,
+      "bottom": 26.77
+     }
+    }
+   ]
+  },
+  {
+   "id": "water",
+   "title": "Water",
+   "open": "Open Water",
+   "back": "Voeding",
+   "switch": "Periode kiezen",
+   "hint": "Tik of schuif over de grafiek om de waarden te zien.",
+   "empty": "Nog geen metingen.",
+   "series": [
+    {
+     "key": "water",
+     "label": "Water",
+     "kind": "bars"
+    }
+   ],
+   "latest": {
+    "texts": [
+     "1,2 L"
+    ],
+    "date": null,
+    "of": "van 1,8 L",
+    "sub": "1.200 ml"
+   },
+   "units": null,
+   "default": "7",
+   "periods": [
+    {
+     "key": "7",
+     "label": "7 dagen",
+     "days": 7,
+     "group": "day",
+     "aria": "Water per dag, de afgelopen 7 dagen",
+     "axis": [
+      {
+       "x": 5,
+       "label": "16 okt"
+      },
+      {
+       "x": 20.003,
+       "label": "17 okt"
+      },
+      {
+       "x": 34.997,
+       "label": "18 okt"
+      },
+      {
+       "x": 50,
+       "label": "19 okt"
+      },
+      {
+       "x": 65.003,
+       "label": "20 okt"
+      },
+      {
+       "x": 79.997,
+       "label": "21 okt"
+      },
+      {
+       "x": 95,
+       "label": "22 okt"
+      }
+     ],
+     "axis_rows": [
+      {
+       "x": 5,
+       "label": "16 okt",
+       "day": "16",
+       "month": "okt"
+      },
+      {
+       "x": 20.003,
+       "label": "17 okt",
+       "day": "17",
+       "month": null
+      },
+      {
+       "x": 34.997,
+       "label": "18 okt",
+       "day": "18",
+       "month": null
+      },
+      {
+       "x": 50,
+       "label": "19 okt",
+       "day": "19",
+       "month": null
+      },
+      {
+       "x": 65.003,
+       "label": "20 okt",
+       "day": "20",
+       "month": null
+      },
+      {
+       "x": 79.997,
+       "label": "21 okt",
+       "day": "21",
+       "month": null
+      },
+      {
+       "x": 95,
+       "label": "22 okt",
+       "day": "22",
+       "month": null
+      }
+     ],
+     "x": [
+      5,
+      20.003,
+      34.997,
+      50,
+      65.003,
+      79.997,
+      95
+     ],
+     "points": [
+      [
+       "16 oktober",
+       "Binnen bereik",
+       null,
+       "1,6 L"
+      ],
+      [
+       "17 oktober",
+       "Boven bereik",
+       null,
+       "2,1 L"
+      ],
+      [
+       "18 oktober",
+       null,
+       "Geen meting op deze dag.",
+       null
+      ],
+      [
+       "19 oktober",
+       "Onder bereik",
+       null,
+       "1,4 L"
+      ],
+      [
+       "20 oktober",
+       "Binnen bereik",
+       null,
+       "1,9 L"
+      ],
+      [
+       "21 oktober",
+       "Boven bereik",
+       null,
+       "2,3 L"
+      ],
+      [
+       "22 oktober",
+       "Onder bereik",
+       null,
+       "1,2 L"
+      ]
+     ],
+     "carried": [],
+     "width": 300,
+     "height": 160,
+     "has_data": true,
+     "lines": [],
+     "bars": [
+      {
+       "key": "water",
+       "w": 9.3,
+       "top": [
+        50.67,
+        35.25,
+        null,
+        56.83,
+        41.42,
+        29.08,
+        63
+       ]
+      }
+     ],
+     "grid": [
+      {
+       "y": 69.17,
+       "label": "1"
+      },
+      {
+       "y": 38.33,
+       "label": "2"
+      },
+      {
+       "y": 7.5,
+       "label": "3"
+      }
+     ],
+     "grid_alt": [],
+     "band": {
+      "top": 38.33,
+      "bottom": 53.75
+     }
+    }
+   ]
+  }
+ ]
+}

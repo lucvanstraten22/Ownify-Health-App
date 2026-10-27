@@ -1,0 +1,374 @@
+/* ==========================================================================
+   nutrition.css — Voeding, drawn (docs/NUTRITION.md,
+   components/nutrition-view.php): your cijfer as a slider, the day's
+   composition as a doughnut the size of the score's ring with its three
+   rows that open in place, and Energie and Water as Ownify's small area
+   charts (area-charts.css). Every colour is the theme's.
+   ========================================================================== */
+
+/* The three macronutrients, told apart in the Voeding green — lightest,
+   the green itself, deepest — as Slaap's stages are in its colour. Each
+   also has its name on its row, so none is told by its colour alone. */
+.nutrition-composition {
+    --macro-carbs: color-mix(in oklab, var(--nutrition-light) 55%, rgb(var(--lift)));
+    --macro-protein: var(--nutrition-light);
+    --macro-fat: color-mix(in oklab, var(--nutrition) 80%, rgb(var(--shade)));
+}
+
+:root[data-theme="light"] .nutrition-composition {
+    --macro-carbs: color-mix(in oklab, var(--nutrition-light) 60%, rgb(var(--lift)));
+    --macro-fat: color-mix(in oklab, var(--nutrition) 75%, rgb(var(--shade)));
+}
+
+[data-macro="carbs"]   { --macro: var(--macro-carbs); }
+[data-macro="protein"] { --macro: var(--macro-protein); }
+[data-macro="fat"]     { --macro: var(--macro-fat); }
+
+/* --------------------------------------------------------------------------
+   Hoe at je? — the slider: the pill track, a glass thumb, the health green
+   -------------------------------------------------------------------------- */
+.rating-slider {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.rating-slider__top {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    margin: 0;
+}
+
+.rating-slider__value {
+    min-width: 1.4em;
+    font-size: var(--fs-figure);
+    font-weight: 700;
+    letter-spacing: var(--tracking-title);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.rating-slider__question { font-size: var(--fs-small); color: var(--text-muted); }
+
+.rating-slider__track {
+    position: relative;
+    height: var(--hit-min);
+    touch-action: none;
+    cursor: pointer;
+    outline: none;
+    --at: 0.5;      /* 0 at 1, 1 at 10 */
+}
+
+.rating-slider__rail,
+.rating-slider__fill {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 8px;
+    margin-top: -4px;
+    border-radius: var(--radius-pill);
+}
+
+.rating-slider__rail {
+    right: 0;
+    background: rgba(var(--fill), calc(0.08 * var(--fill-k)));
+    border: 1px solid var(--glass-hairline);
+}
+
+.rating-slider__fill {
+    width: calc(14px + var(--at) * (100% - 28px));
+    background: linear-gradient(90deg, var(--health-edge), var(--health));
+}
+
+.rating-slider__ticks {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.rating-slider__ticks i {
+    width: 2px;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 50%;
+    background: rgba(var(--ink), 0.35);
+}
+
+.rating-slider__thumb {
+    position: absolute;
+    top: 50%;
+    left: calc(14px + var(--at) * (100% - 28px));
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    border-radius: 50%;
+    transition: transform var(--press-out) var(--ease-out-strong);
+}
+
+.rating-slider__track.is-dragging .rating-slider__thumb { transform: scale(1.12); }
+.rating-slider__track:focus-visible .rating-slider__thumb { box-shadow: var(--lg-shadow-small), var(--focus-halo); }
+.rating-slider__track.is-empty .rating-slider__fill { opacity: 0.45; }
+
+.rating-slider__scale {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0 9px;
+    font-size: var(--fs-tiny);
+    color: var(--text-faint);
+}
+
+.rating-slider__saved { white-space: normal; }
+
+/* --------------------------------------------------------------------------
+   Samenstelling — the day, its doughnut and its three rows
+   -------------------------------------------------------------------------- */
+.nutrition-daynav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-2) 0 var(--space-4);
+}
+
+.nutrition-daynav__name {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font-weight: 650;
+}
+
+.nutrition-daynav .glass:disabled { opacity: 0.35; }
+
+.nutrition-day__grid {
+    display: grid;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+@container page (min-width: 700px) {
+    .nutrition-day__grid { grid-template-columns: minmax(0, var(--hero-ring)) minmax(0, 1fr); }
+}
+
+/* The ring: the score's own size (--hero-ring). */
+.nutrition-ring {
+    position: relative;
+    width: min(62vw, var(--hero-ring));
+    aspect-ratio: 1;
+    margin: 0 auto;
+}
+
+.nutrition-ring__svg { display: block; width: 100%; height: 100%; }
+
+.nutrition-ring__part {
+    fill: var(--macro);
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+
+.nutrition-ring.is-focused .nutrition-ring__part { opacity: 0.35; }
+.nutrition-ring.is-focused .nutrition-ring__part.is-on { opacity: 1; }
+
+.nutrition-ring__empty {
+    fill: none;
+    stroke: rgba(var(--ink), 0.30);
+    stroke-width: 3;
+    stroke-dasharray: 1 9;
+    stroke-linecap: round;
+}
+
+.nutrition-ring__center {
+    position: absolute;
+    inset: 22%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.nutrition-ring__center p { margin: 0; }
+.nutrition-ring__label { font-size: var(--fs-small); font-weight: 600; color: var(--text-muted); }
+.nutrition-ring__value { font-size: var(--fs-score-sm); font-weight: 700; letter-spacing: var(--tracking-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.nutrition-ring__sub { font-size: var(--fs-tiny); color: var(--text-muted); }
+
+/* A row: the Row shape (docs/THEME.md), opening in place. */
+.nutrition-rows { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+
+.nutrition-row {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--inset-fill);
+    border: 1px solid transparent;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.nutrition-row.is-open { border-color: var(--glass-hairline); background: rgba(var(--fill), calc(0.07 * var(--fill-k))); }
+
+.nutrition-row__head {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 28px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+}
+
+.nutrition-row__head:disabled { cursor: default; }
+.nutrition-row__head:disabled .nutrition-row__grams { font-weight: 500; color: var(--text-muted); }
+
+.nutrition-row__key { width: 10px; height: 10px; border-radius: 3px; background: var(--macro); }
+.nutrition-row__name { font-weight: 600; }
+.nutrition-row__grams { font-weight: 650; font-variant-numeric: tabular-nums; }
+
+.nutrition-row__chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--text-faint);
+    transition: transform 260ms var(--ease-out-strong);
+}
+
+.nutrition-row.is-open .nutrition-row__chevron { transform: rotate(90deg); }
+
+.nutrition-row > :not(.nutrition-row__head) { grid-column: 2; }
+
+.nutrition-row__sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+    margin: 0;
+    font-size: var(--fs-tiny);
+    color: var(--text-muted);
+}
+
+/* The bubbles: the goal wizard's glass chip (.glass--chip), as a status —
+   green glass inside its range, gold above it, plain under it or without a
+   verdict. */
+.nutrition-bubble {
+    justify-self: start;
+    cursor: default;
+    pointer-events: none;
+}
+
+.nutrition-bubble[data-verdict="in"] {
+    color: var(--text-primary);
+    font-weight: 600;
+    background: var(--lg-face), linear-gradient(var(--health-fill), var(--health-fill)), var(--lg-body);
+}
+
+.nutrition-bubble[data-verdict="in"]::after { background: var(--lg-green-rim); }
+
+.nutrition-bubble[data-verdict="high"] {
+    color: var(--attention);
+    font-weight: 600;
+    background: var(--lg-face), var(--lg-gold), var(--lg-body);
+}
+
+.nutrition-bubble[data-verdict="high"]::after { background: var(--lg-gold-rim); }
+
+/* The meter: the range as a green band, the marker you. */
+.nutrition-meter {
+    position: relative;
+    display: block;
+    height: 6px;
+    margin-top: var(--space-1);
+    border-radius: var(--radius-pill);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
+}
+
+.nutrition-meter__band {
+    position: absolute;
+    inset-block: 0;
+    border-radius: var(--radius-pill);
+    background: var(--health-fill);
+    box-shadow: inset 0 0 0 1px var(--health-edge);
+}
+
+.nutrition-meter__value {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--macro) 55%, transparent);
+}
+
+.nutrition-meter__mark {
+    position: absolute;
+    top: -3px;
+    width: 3px;
+    height: 12px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background: var(--text-primary);
+}
+
+/* What opens: the grid rows from 0fr to 1fr, so it animates its height. */
+.nutrition-row__more {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 280ms var(--ease-out-strong), opacity var(--transition-fast);
+}
+
+.nutrition-row.is-open .nutrition-row__more { grid-template-rows: 1fr; opacity: 1; }
+.nutrition-row__more > div { overflow: hidden; min-height: 0; }
+
+.nutrition-row__facts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 3px var(--space-3);
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-small);
+}
+
+.nutrition-row__facts dt { color: var(--text-muted); }
+.nutrition-row__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.nutrition-row__why { margin: var(--space-2) 0 0; font-size: var(--fs-tiny); color: var(--text-muted); }
+
+.nutrition-row__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 0;
+    padding: var(--space-2) 0 0;
+    border-top: 1px solid var(--glass-hairline);
+    list-style: none;
+}
+
+.nutrition-row__details li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-small);
+    color: var(--text-secondary);
+}
+
+.nutrition-row__detail { flex: 1; min-width: 0; }
+.nutrition-row__details strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+.nutrition-row__extra { color: var(--text-muted); font-size: var(--fs-tiny); }
+
+.nutrition-day__hint { margin: var(--space-3) 0 0; font-size: var(--fs-tiny); color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+    .nutrition-row__more,
+    .nutrition-row__chevron,
+    .rating-slider__thumb { transition: none; }
+}
+
+:root[data-motion="reduce"] .nutrition-row__more,
+:root[data-motion="reduce"] .nutrition-row__chevron { transition: none; }

@@ -293,14 +293,25 @@
 
     function shown(ring) { return ring && ring.__heroRing ? ring.__heroRing.shown : null; }
 
+    /** How long (ms) until the score ring in [root] has wholly arrived: 0 when none is moving. */
+    function remaining(root) {
+        var ring = root.querySelector('.score-ring.has-canvas');
+        var state = ring && ring.__heroRing;
+        if (!state || !state.moving) { return 0; }
+        var end = state.start + state.duration + Math.max(SETTLE, RIPPLE, BLOOM);
+        return Math.max(0, end - performance.now());
+    }
+
     /**
      * The three pillar rings under the score (components/health-score.php):
-     * each arc drawn to its data-progress. Played (animate), they follow the
-     * big ring — a moment after it starts, one after another; otherwise, and
-     * with reduced motion, they are simply there.
+     * each arc drawn to its data-progress. Played (animate), they start once
+     * the big ring has wholly arrived — never while it moves — one after
+     * another, each over 1.5 s; otherwise, and with reduced motion, they are
+     * simply there.
      */
     function pillars(root, animate) {
         var still = !animate || reduceQuery.matches;
+        var wait = still ? 0 : remaining(root);
         Array.prototype.forEach.call(root.querySelectorAll('[data-pillar]'), function (arc, i) {
             var length = 2 * Math.PI * (arc.r && arc.r.baseVal ? arc.r.baseVal.value : 16);
             var target = clamp01(parseFloat(arc.getAttribute('data-progress')) || 0);
@@ -314,7 +325,7 @@
             arc.style.strokeDashoffset = length;
             void arc.getBoundingClientRect();
             arc.style.transition = '';
-            arc.style.transitionDelay = (450 + i * 90) + 'ms';
+            arc.style.transitionDelay = Math.round(wait + i * 90) + 'ms';
             arc.style.strokeDashoffset = length * (1 - target);
         });
     }

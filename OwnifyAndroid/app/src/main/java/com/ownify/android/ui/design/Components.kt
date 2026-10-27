@@ -335,11 +335,14 @@ fun IconTile(
     iconSize: Dp = 18.dp,
     color: Color = Ownify.TextSecondary,
     background: Color = Ownify.fill(0.065f),
-    border: Color = Ownify.GlassHairline
+    border: Color = Ownify.GlassHairline,
+    /** The red dot's key (docs/NOTICES.md), shown on the tile's corner while it waits. */
+    notice: String? = null
 ) {
     val shape = RoundedCornerShape(radius)
     Box(
         modifier
+            .then(if (notice != null) Modifier.notice(notice) else Modifier)
             .size(size)
             .clip(shape)
             .background(background)
@@ -742,11 +745,12 @@ fun ScoreRing(
  * drawn like the big one — 40 across, a 4-wide track at `.08` and the arc in
  * the colour of the score's band ([LegendItem.dot]; no score, no arc), the
  * number inside and the name under it — in a row of at most 300 wide. When
- * [play], each draws over 900 ms, 450 ms after the big ring starts and 90 ms
- * after the one before (hero-ring.js `pillars`); still, they are simply there.
+ * [play], each draws over 1.5 s, starting [after] ms on — once the big ring
+ * has wholly arrived — and 90 ms after the one before (hero-ring.js
+ * `pillars`); still, they are simply there.
  */
 @Composable
-fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Modifier) {
+fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Modifier, after: Int = 0) {
     val still = LocalStillMotion.current || LocalReducedMotion.current
     Row(modifier.widthIn(max = 300.dp).fillMaxWidth()) {
         items.forEachIndexed { i, item ->
@@ -754,7 +758,7 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
             val drawn = remember { androidx.compose.animation.core.Animatable(if (still) target else 0f) }
             androidx.compose.runtime.LaunchedEffect(play, target, still) {
                 if (still) drawn.snapTo(target)
-                else if (play) drawn.animateTo(target, tween(900, delayMillis = 450 + i * 90, easing = Ownify.EaseOutStrong))
+                else if (play) drawn.animateTo(target, tween(1500, delayMillis = after + i * 90, easing = Ownify.EaseOutStrong))
             }
             Column(
                 Modifier.weight(1f).clearAndSetSemantics { contentDescription = item.label + ": " + (item.value?.toString() ?: "—") },
@@ -1150,7 +1154,7 @@ enum class StatusTone {
  * and the header's quick look (12 sp, [textSize]).
  */
 @Composable
-fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, textSize: TextUnit = Ownify.FsSmall) {
+fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, textSize: TextUnit = Ownify.FsSmall, wrap: Boolean = false) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         Box(
             Modifier
@@ -1169,6 +1173,6 @@ fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, t
                     }
                 }
         )
-        T(text, OwnifyType.style(textSize, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.3.em), maxLines = 1)
+        T(text, OwnifyType.style(textSize, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.3.em), maxLines = if (wrap) Int.MAX_VALUE else 1)
     }
 }

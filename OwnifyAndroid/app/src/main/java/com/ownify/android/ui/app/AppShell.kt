@@ -106,6 +106,21 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
     // For tests and screenshots: the shell, to move it as a finger would.
     LaunchedEffect(shell) { onShell?.invoke(shell) }
 
+    // The red dots (docs/NOTICES.md): the server's summary of this read, and
+    // this phone's hour — kept current, so the Voeding dot turns up at its
+    // hour on a screen left open.
+    SideEffect { com.ownify.android.data.OwnifyNotices.adopt(source.notices) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            com.ownify.android.data.OwnifyNotices.tick()
+            val now = java.time.LocalTime.now()
+            // On the real clock, outside the frame clock, so a test's idling never waits an hour.
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                kotlinx.coroutines.delay(((60 - now.minute) * 60L - now.second) * 1000L + 500L)
+            }
+        }
+    }
+
     // Pull to sync, on all five pages (PullSync.kt): what it syncs, with the
     // pages as they are now, and its one tick.
     val context = LocalContext.current

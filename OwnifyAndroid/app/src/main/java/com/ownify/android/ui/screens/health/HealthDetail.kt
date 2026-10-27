@@ -60,6 +60,7 @@ import com.ownify.android.data.RatingCopy
 import com.ownify.android.data.SleepView
 import com.ownify.android.data.Timeline
 import com.ownify.android.data.TrainingView
+import com.ownify.android.data.NutritionView
 import com.ownify.android.data.numberText
 import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.design.Btn
@@ -100,7 +101,8 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
         DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid"), title = area.label) {
             HeroCard(area)
-            area.rating?.let { NutritionRating(area, it) }
+            // Voeding drawn has its own slider (NutritionView.kt); otherwise the cijfer's field.
+            if (area.view !is NutritionView) area.rating?.let { NutritionRating(area, it) }
             // An area drawn — Slaap (docs/SLEEP.md), Training (docs/TRAINING.md) — instead
             // of the numbers and the bar of stages it shows.
             when (val view = area.view) {
@@ -109,6 +111,7 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
                     AreaChartsGrid(area.id, view.charts)
                 }
                 is TrainingView -> TrainingViewContent(view)
+                is NutritionView -> NutritionViewContent(view)
                 else -> {
                     MetricTiles(area.highlights)
                     area.timeline?.let { SleepTimeline(it) }
@@ -200,7 +203,7 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            IconTile(OwnifyIcons.check)
+            IconTile(OwnifyIcons.check, notice = "rating")
             T(copy.title, JStyle.Eyebrow, Modifier.semantics { heading() })
         }
 

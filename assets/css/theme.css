@@ -301,6 +301,11 @@
     /* The error red of the wizard, the editor and the rating. */
     --error: #ff8b8b;
 
+    /* The red dot: something waits for you (lib/notices.php,
+       docs/NOTICES.md). Granaat — deeper and less saturated than a
+       system red, so it is seen without shouting. */
+    --notice: #D4564E;
+
     /* --- tinted states ----------------------------------------------------
        The app's green and the attention gold as surfaces, in four strengths
        instead of an alpha per rule: a wash behind something positive, the
@@ -619,6 +624,13 @@ button {
 }
 
 /* --- horizontal: the page rail ---------------------------------------- */
+.rail-window {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+}
+
 .rail {
     position: absolute;
     inset: 0;
@@ -1019,6 +1031,7 @@ button {
     --board-you-surface: linear-gradient(180deg, rgba(234, 245, 239, 0.97), rgba(226, 240, 233, 0.96));
     --switch-knob: #FFFFFF;
     --error: #B03C35;
+    --notice: #B9382F;
 }
 
 /* ==========================================================================

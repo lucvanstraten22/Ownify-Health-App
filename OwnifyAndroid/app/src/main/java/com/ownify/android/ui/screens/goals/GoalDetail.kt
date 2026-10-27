@@ -295,13 +295,13 @@ private fun FactRow(label: String, value: String?, first: Boolean = false) {
 
 /** A card head: an icon tile and the eyebrow, 16 above the body (`.card__head--compact`). */
 @Composable
-private fun CompactHead(icon: ImageVector, title: String) {
+private fun CompactHead(icon: ImageVector, title: String, notice: String? = null) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon)
+        IconTile(icon, notice = notice)
         T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
     }
 }
@@ -430,7 +430,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
     }
 
     JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.check, copy["manual"].orEmpty())
+        CompactHead(OwnifyIcons.check, copy["manual"].orEmpty(), notice = "goal:" + goal.id)
 
         if (entry.kind == "tick") {
             if (!entry.done) {
