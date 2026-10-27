@@ -154,9 +154,9 @@ class OwnifyPalette(
         /** `:root` — the original design, value for value. */
         val Dark = OwnifyPalette(
             mode = OwnifyMode.DARK,
-            bgMain = Color(0xFF1C1620),
-            bgMid = Color(0xFF131113),
-            bgDeep = Color(0xFF19120F),
+            bgMain = Color(0xFF28222C),
+            bgMid = Color(0xFF1E1C1E),
+            bgDeep = Color(0xFF251D1A),
             bgSecondary = Color(0xFF3A3638),
             glass = white(0.08f),
             glassStrong = white(0.11f),
@@ -192,8 +192,8 @@ class OwnifyPalette(
             shadeK = 1f,
             scrim = Color.Black,
             scrimK = 1f,
-            ground = Color(28, 22, 32),
-            groundDeep = Color(25, 18, 15),
+            ground = Color(40, 34, 44),
+            groundDeep = Color(37, 29, 26),
             paneBody = Color(30, 28, 29),
             tintBase = Color.White,
             tintKeep = 1f,

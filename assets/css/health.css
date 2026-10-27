@@ -493,6 +493,80 @@
         linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
 }
 
+/* Slaap, Voeding and Training (28.1, Twee randen): the area's accent as a
+   wide wash from the top centre, and the ground's green low and even at
+   both middle edges — the general ground's two greens, quieter. Same
+   nine-stop smootherstep as Randlicht. Ground.areaDetail in Ground.kt. */
+.detail--area {
+    background:
+    radial-gradient(120% 44% at 50% -8%,
+        color-mix(in srgb, var(--accent) 16.00%, transparent) 0%,
+        color-mix(in srgb, var(--accent) 15.74%, transparent) 12.5%,
+        color-mix(in srgb, var(--accent) 14.34%, transparent) 25%,
+        color-mix(in srgb, var(--accent) 11.60%, transparent) 37.5%,
+        color-mix(in srgb, var(--accent) 8.00%, transparent) 50%,
+        color-mix(in srgb, var(--accent) 4.40%, transparent) 62.5%,
+        color-mix(in srgb, var(--accent) 1.66%, transparent) 75%,
+        color-mix(in srgb, var(--accent) 0.26%, transparent) 87.5%,
+        color-mix(in srgb, var(--accent) 0.00%, transparent) 100%),
+    radial-gradient(76% 58% at -18% 56%,
+        rgba(84, 145, 120, 0.070) 0%,
+        rgba(84, 145, 120, 0.069) 12.5%,
+        rgba(84, 145, 120, 0.063) 25%,
+        rgba(84, 145, 120, 0.051) 37.5%,
+        rgba(84, 145, 120, 0.035) 50%,
+        rgba(84, 145, 120, 0.019) 62.5%,
+        rgba(84, 145, 120, 0.007) 75%,
+        rgba(84, 145, 120, 0.001) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    radial-gradient(76% 58% at 118% 56%,
+        rgba(84, 145, 120, 0.070) 0%,
+        rgba(84, 145, 120, 0.069) 12.5%,
+        rgba(84, 145, 120, 0.063) 25%,
+        rgba(84, 145, 120, 0.051) 37.5%,
+        rgba(84, 145, 120, 0.035) 50%,
+        rgba(84, 145, 120, 0.019) 62.5%,
+        rgba(84, 145, 120, 0.007) 75%,
+        rgba(84, 145, 120, 0.001) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+}
+
+:root[data-theme="light"] .detail--area {
+    background:
+    radial-gradient(120% 44% at 50% -8%,
+        color-mix(in srgb, var(--accent) 16.00%, transparent) 0%,
+        color-mix(in srgb, var(--accent) 15.74%, transparent) 12.5%,
+        color-mix(in srgb, var(--accent) 14.34%, transparent) 25%,
+        color-mix(in srgb, var(--accent) 11.60%, transparent) 37.5%,
+        color-mix(in srgb, var(--accent) 8.00%, transparent) 50%,
+        color-mix(in srgb, var(--accent) 4.40%, transparent) 62.5%,
+        color-mix(in srgb, var(--accent) 1.66%, transparent) 75%,
+        color-mix(in srgb, var(--accent) 0.26%, transparent) 87.5%,
+        color-mix(in srgb, var(--accent) 0.00%, transparent) 100%),
+    radial-gradient(76% 58% at -18% 56%,
+        rgba(84, 145, 120, 0.036) 0%,
+        rgba(84, 145, 120, 0.035) 12.5%,
+        rgba(84, 145, 120, 0.032) 25%,
+        rgba(84, 145, 120, 0.026) 37.5%,
+        rgba(84, 145, 120, 0.018) 50%,
+        rgba(84, 145, 120, 0.010) 62.5%,
+        rgba(84, 145, 120, 0.004) 75%,
+        rgba(84, 145, 120, 0.001) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    radial-gradient(76% 58% at 118% 56%,
+        rgba(84, 145, 120, 0.036) 0%,
+        rgba(84, 145, 120, 0.035) 12.5%,
+        rgba(84, 145, 120, 0.032) 25%,
+        rgba(84, 145, 120, 0.026) 37.5%,
+        rgba(84, 145, 120, 0.018) 50%,
+        rgba(84, 145, 120, 0.010) 62.5%,
+        rgba(84, 145, 120, 0.004) 75%,
+        rgba(84, 145, 120, 0.001) 87.5%,
+        rgba(84, 145, 120, 0.000) 100%),
+    linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%);
+}
+
 .detail.is-dragging { transition: none; }
 
 /* Only the detail in front is lifted off the rail. The others wait just

@@ -198,7 +198,7 @@ class ColourSystemTest {
             assertEquals(Color.White.copy(alpha = a), Ownify.glint(a))
             assertEquals(Color.Black.copy(alpha = a), Ownify.shade(a))
             assertEquals(Color.Black.copy(alpha = a), Ownify.scrim(a))
-            assertEquals(Color(28, 22, 32).copy(alpha = a), Ownify.ground(a))
+            assertEquals(Color(40, 34, 44).copy(alpha = a), Ownify.ground(a))
             assertEquals(Color(30, 28, 29).copy(alpha = a), Ownify.paneBody(a))
         }
         for (accent in Accent.entries) for (share in listOf(0.34f, 0.40f, 0.78f)) {

@@ -26,7 +26,7 @@ import com.ownify.android.ui.theme.Ownify
  * its whole radius on a smootherstep curve, in nine stops, as the website's.
  */
 @Immutable
-data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float, val eased: Boolean = false)
+data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float, val eased: Boolean = false, val white: Float = 0.52f)
 
 /** A Randlicht light (`--backdrop-lights`): [alpha] in Dark Mode; drawn × .52 in White ([drawGround]). */
 private fun light(rx: Float, ry: Float, x: Float, y: Float, r: Int, g: Int, b: Int, alpha: Float) =
@@ -50,18 +50,33 @@ data class Ground(val washes: List<Wash>) {
 
     companion object {
         /**
-         * `.app__backdrop`, fixed behind every page: Randlicht (25.0) — Slaap's
-         * indigo and a plum from above, Voeding's green from the right,
-         * Training's coral and an ember from the foot, each centred just
-         * beyond the edge, over the ink ground.
+         * `.app__backdrop`, fixed behind every page: Randlicht (25.0, Horizon
+         * 28.1) — Slaap's indigo and a plum just above the top, Training's
+         * coral and an ember just below the foot (at .45 of 25.0), Voeding's
+         * green high on the right and low on the left, wide and far beyond
+         * the edge, over the ink ground.
          */
         val App = Ground(
             listOf(
-                light(0.95f, 0.50f, -0.08f, 0.02f, 104, 108, 175, 0.289f),
-                light(0.85f, 0.38f, 0.86f, -0.10f, 135, 97, 142, 0.221f),
-                light(0.70f, 0.46f, 1.12f, 0.50f, 84, 145, 120, 0.187f),
-                light(1.10f, 0.38f, 0.16f, 1.10f, 175, 121, 112, 0.255f),
-                light(0.80f, 0.30f, 0.96f, 1.12f, 183, 132, 100, 0.153f)
+                light(0.95f, 0.44f, -0.08f, -0.04f, 104, 108, 175, 0.130f),
+                light(0.85f, 0.34f, 0.86f, -0.16f, 135, 97, 142, 0.099f),
+                light(0.86f, 0.64f, 1.20f, 0.28f, 84, 145, 120, 0.187f),
+                light(0.86f, 0.64f, -0.20f, 0.74f, 84, 145, 120, 0.187f),
+                light(1.10f, 0.34f, 0.16f, 1.16f, 175, 121, 112, 0.115f),
+                light(0.80f, 0.27f, 0.96f, 1.18f, 183, 132, 100, 0.069f)
+            )
+        )
+
+        /**
+         * `.detail--area` (28.1, Twee randen): Slaap, Voeding and Training —
+         * the area's accent as a wide wash from the top centre (16 %, the same
+         * in both themes), the ground's green low and even at both middle edges.
+         */
+        fun areaDetail(accent: Accent) = Ground(
+            listOf(
+                Wash(1.20f, 0.44f, 0.50f, -0.08f, accent.color.copy(alpha = 0.16f), 1f, eased = true, white = 1f),
+                light(0.76f, 0.58f, -0.18f, 0.56f, 84, 145, 120, 0.07f),
+                light(0.76f, 0.58f, 1.18f, 0.56f, 84, 145, 120, 0.07f)
             )
         )
 
@@ -104,7 +119,7 @@ fun DrawScope.drawGround(ground: Ground, box: Size, origin: Offset = Offset.Zero
         for (wash in ground.washes) {
             val color = tone(wash.color)
             if (wash.eased) {
-                val lit = if (Ownify.light) color.copy(alpha = color.alpha * 0.52f) else color
+                val lit = if (Ownify.light) color.copy(alpha = color.alpha * wash.white) else color
                 cssRadialGradient(wash.rx, wash.ry, wash.x, wash.y, *easedStops(lit), box = box)
             } else {
                 cssRadialGradient(

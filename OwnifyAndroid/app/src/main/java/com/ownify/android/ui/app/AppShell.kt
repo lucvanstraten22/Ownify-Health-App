@@ -343,7 +343,7 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
         Detail.Challenges -> Accent.TRAINING
         is Detail.Challenge -> Accent.of(data.challenges.view(detail.id)?.accent)
     }
-    val ground = remember(detail.key, accent) { GroundPlacement(Ground.detail(accent)) }
+    val ground = remember(detail.key, accent) { GroundPlacement(if (detail is Detail.HealthArea) Ground.areaDetail(accent) else Ground.detail(accent)) }
     val visibility = remember(detail.key) { Visibility() }
 
     Box(

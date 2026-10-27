@@ -103,7 +103,7 @@ class ThemeTest {
         val light = mode == OwnifyMode.LIGHT
         assertEquals("status bar icons", light, bars.isAppearanceLightStatusBars)
         assertEquals("navigation bar icons", light, bars.isAppearanceLightNavigationBars)
-        assertEquals("the window", if (light) 0xFFF7EFEA.toInt() else 0xFF19120F.toInt(), windowColour(activity))
+        assertEquals("the window", if (light) 0xFFF7EFEA.toInt() else 0xFF251D1A.toInt(), windowColour(activity))
     }
 
     // ------------------------------------------------------- nothing chosen

@@ -17,7 +17,7 @@ $area  = $data['area'];
 $score = $area['score'];
 $ratio = score_ratio($score['value'], $score['max']);
 ?>
-<article class="detail" data-detail="<?= e($area['id']) ?>" data-accent="<?= e($area['accent']) ?>"
+<article class="detail detail--area" data-detail="<?= e($area['id']) ?>" data-accent="<?= e($area['accent']) ?>"
          aria-label="<?= e($area['label']) ?>" aria-hidden="true" inert>
 
     <div class="screen__scroll" data-scroller>

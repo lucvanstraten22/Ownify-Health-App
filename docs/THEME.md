@@ -85,20 +85,35 @@ from dim to bright; on White from pale to its deepest green, so its end
 always stands out most from the ground. `OwnifyTheme.kt` mirrors them as
 `Ownify.RingFrom` … (`lerp` is the same OKLab mix).
 
-## The ground: Randlicht (25.0)
+## The ground: Randlicht (25.0, Horizon 28.1)
 
 Behind every page (`.app__backdrop`, Android's `Ground.App`) is a deep ink —
-`--bg-main` #1C1620 at the top (a plum), `--bg-mid` #131113 in the middle
-where you read, `--bg-deep` #19120F at the foot (an ember) — lit from just
-beyond the screen's edges by the three categories: Slaap's indigo and a plum
-from above, Voeding's green from the right, Training's coral and an ember
-from the foot (`--backdrop-lights`). Each light fades over its whole radius on
-a smootherstep curve in nine stops, so it has no rim and never reads as a dot,
-and its colour is mixed 35 % toward grey so the cards keep the colour. White
-Mode: #F6F1F6 → #FAF8F8 → #F7EFEA with the same lights × .52. A fine grain
-lies over it on the website against banding. Since the darker ground raised
-Dark Mode's contrast, White Mode's `--text-secondary` (.75), `--attention` and
-`--error` went one step deeper to stay at least as legible.
+`--bg-main` #28222C at the top (a plum), `--bg-mid` #1E1C1E in the middle
+where you read, `--bg-deep` #251D1A at the foot (an ember); 28.1 made these
+.05 lighter in OKLab with the same tint (they were #1C1620, #131113,
+#19120F) — lit from beyond the screen's edges by the three categories
+(`--backdrop-lights`):
+
+- Slaap's indigo and a plum just above the top edge, Training's coral and an
+  ember just below the foot, each at .45 of its 25.0 strength, so the violet
+  stays in the top band and the warmth in the foot;
+- Voeding's green twice, at 25.0's full strength (.187): high on the right
+  (28 % down) and low on the left (74 % down), each wide (86 % × 64 %) and
+  centred far beyond the edge, so it reads as light coming in from the side,
+  never as a glow with a centre.
+
+Each light fades over its whole radius on a smootherstep curve in nine stops,
+so it has no rim, and its colour is mixed 35 % toward grey so the cards keep
+the colour. White Mode: #F6F1F6 → #FAF8F8 → #F7EFEA with the same lights
+× .52. A fine grain lies over it on the website against banding. White
+Mode's `--text-secondary` (.75), `--attention` and `--error` are one step
+deeper than Dark's, to stay at least as legible.
+
+**Slaap, Voeding and Training (28.1, Twee randen)** have their own ground
+(`.detail--area`, `Ground.areaDetail(accent)`): the area's accent as a wide
+wash from the top centre (16 %) and the ground's green low and even at both
+middle edges (.07, White .036), on the same fade. Every other detail page
+keeps `.detail` / `Ground.detail(accent)`: the accent from the top right.
 
 ## The surfaces (25.0)
 

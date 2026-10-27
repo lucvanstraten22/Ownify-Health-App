@@ -80,6 +80,6 @@ class ThemeSwitchTest {
         compose.waitForIdle()
         assertFalse(Ownify.light)
         assertEquals("light icons over the dark ground", false to false, lightBars())
-        assertEquals(0xFF19120F.toInt(), windowColour())
+        assertEquals(0xFF251D1A.toInt(), windowColour())
     }
 }
