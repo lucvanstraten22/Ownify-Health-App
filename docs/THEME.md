@@ -105,14 +105,14 @@ where you read, `--bg-deep` #251D1A at the foot (an ember); 28.1 made these
 Each light fades over its whole radius on a smootherstep curve in nine stops,
 so it has no rim, and its colour is mixed 35 % toward grey so the cards keep
 the colour. White Mode: #F6F1F6 → #FAF8F8 → #F7EFEA with the same lights
-× .52. A fine grain lies over it on the website against banding. White
+× .85 (28.2; .52 before). A fine grain lies over it on the website against banding. White
 Mode's `--text-secondary` (.75), `--attention` and `--error` are one step
 deeper than Dark's, to stay at least as legible.
 
 **Slaap, Voeding and Training (28.1, Twee randen)** have their own ground
 (`.detail--area`, `Ground.areaDetail(accent)`): the area's accent as a wide
 wash from the top centre (16 %) and the ground's green low and even at both
-middle edges (.07, White .036), on the same fade. Every other detail page
+middle edges (.07, White .06; the accent 22 % in White), on the same fade. Every other detail page
 keeps `.detail` / `Ground.detail(accent)`: the accent from the top right.
 
 ## The surfaces (25.0)

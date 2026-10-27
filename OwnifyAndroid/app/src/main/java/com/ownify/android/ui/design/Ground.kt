@@ -26,9 +26,9 @@ import com.ownify.android.ui.theme.Ownify
  * its whole radius on a smootherstep curve, in nine stops, as the website's.
  */
 @Immutable
-data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float, val eased: Boolean = false, val white: Float = 0.52f)
+data class Wash(val rx: Float, val ry: Float, val x: Float, val y: Float, val color: Color, val fade: Float, val eased: Boolean = false, val white: Float = 0.85f)
 
-/** A Randlicht light (`--backdrop-lights`): [alpha] in Dark Mode; drawn × .52 in White ([drawGround]). */
+/** A Randlicht light (`--backdrop-lights`): [alpha] in Dark Mode; drawn × .85 in White ([drawGround]). */
 private fun light(rx: Float, ry: Float, x: Float, y: Float, r: Int, g: Int, b: Int, alpha: Float) =
     Wash(rx, ry, x, y, Color(r, g, b).copy(alpha = alpha), 1f, eased = true)
 
@@ -69,12 +69,11 @@ data class Ground(val washes: List<Wash>) {
 
         /**
          * `.detail--area` (28.1, Twee randen): Slaap, Voeding and Training —
-         * the area's accent as a wide wash from the top centre (16 %, the same
-         * in both themes), the ground's green low and even at both middle edges.
+         * the area's accent as a wide wash from the top centre (16 %, 22 % in White), the ground's green low and even at both middle edges.
          */
         fun areaDetail(accent: Accent) = Ground(
             listOf(
-                Wash(1.20f, 0.44f, 0.50f, -0.08f, accent.color.copy(alpha = 0.16f), 1f, eased = true, white = 1f),
+                Wash(1.20f, 0.44f, 0.50f, -0.08f, accent.color.copy(alpha = 0.16f), 1f, eased = true, white = 1.375f),
                 light(0.76f, 0.58f, -0.18f, 0.56f, 84, 145, 120, 0.07f),
                 light(0.76f, 0.58f, 1.18f, 0.56f, 84, 145, 120, 0.07f)
             )
