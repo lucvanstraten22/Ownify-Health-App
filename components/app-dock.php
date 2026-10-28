@@ -52,6 +52,9 @@ declare(strict_types=1);
             </span>
             <span class="sidebar__label"><?= e((string) ($data['auth']['user']['username'] ?? t('Account'))) ?></span>
         </button>
+
+        <?php /* Telefoon or Desktop, under everything else (view-switch.php). */ ?>
+        <?php component('view-switch', ['view_switch_place' => 'side'] + $data); ?>
     </div>
 
 </div>

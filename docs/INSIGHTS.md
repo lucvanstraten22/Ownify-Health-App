@@ -11,7 +11,7 @@ blijkt" — is [RESEARCH.md](RESEARCH.md).
 | Where | What |
 | --- | --- |
 | Overzicht › **Nuttige inzichten** | the day's insight for Slaap, Voeding and Training — or a quiet placeholder for an area without one |
-| Overzicht › **Eén kleine suggestie** | at most one a day, always optional ("Altijd een suggestie, nooit een opdracht.") |
+| Overzicht › **Eén kleine suggestie** | at most one a day, always optional (its line "Altijd een suggestie, nooit een opdracht." is no longer shown, 29.2) |
 | Slaap, Voeding, Training (their own page) | the same stored insight as that area's own card, right under the area's score (29.1); nothing when the area has none |
 | Instellingen › Account | the BMI, under Lichaamsmaten (`settings` block `insight`, slot `body`) |
 | Voeding's cijfer | the research on eating patterns (NUT-03): context for the cijfer, never a score of it |

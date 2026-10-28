@@ -500,7 +500,6 @@ private fun RecommendationCard(rec: Recommendation) {
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         if (filled) ResearchEvidence(rec.evidence)
-        CardHint(rec.note, icon = null, plain = true)
     }
 }
 

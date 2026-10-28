@@ -156,7 +156,6 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
                     ChallengeActions(ch.copy["page"])
                 }
             }
-            T(ch.note, JStyle.Footnote, Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).reveal())
         }
     }
 }

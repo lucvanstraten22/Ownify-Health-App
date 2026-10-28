@@ -196,7 +196,8 @@ class ResearchFlowTest {
         assertEquals(4, research().fetchSemanticsNodes().size)
         assertEquals(0, count("Betrouwbaar"))
         text("Misschien iets voor deze week: één avond wat eerder naar bed gaan, en kijken hoe die nacht verloopt.").assertExists()
-        text("Altijd een suggestie, nooit een opdracht.").assertExists()
+        // 29.2: the suggestion's closing line is no longer shown.
+        assertEquals(0, count("Altijd een suggestie, nooit een opdracht."))
     }
 
     @Test

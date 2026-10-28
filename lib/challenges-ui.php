@@ -144,7 +144,7 @@ if (!function_exists('ch_avatar')) {
             . '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon('plus') . '</span>'
             . '<span class="ch-act__label">' . e($page['create']) . '</span></button>'
             . '<button type="button" class="ch-act ch-act--code press" data-challenge-join>'
-            . '<span class="ch-act__mark" aria-hidden="true">' . icon('hash') . '</span>'
+            . '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon('hash') . '</span>'
             . '<span class="ch-act__label">' . e($page['join']) . '</span></button>'
             . '</div>';
     }

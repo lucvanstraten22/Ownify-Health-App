@@ -124,8 +124,6 @@ $alone = count($preview['rows']) <= 1;
 
                         <?= ch_actions($copy['page']) ?>
                     </section>
-
-                    <p class="ch-note reveal"><?= e($challenges['note']) ?></p>
                 <?php endif; ?>
 
             </div>

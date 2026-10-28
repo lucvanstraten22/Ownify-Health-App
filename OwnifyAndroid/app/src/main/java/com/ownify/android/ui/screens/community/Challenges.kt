@@ -286,8 +286,8 @@ internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownif
 
 /**
  * `.ch-acts`: Nieuwe uitdaging and Code invoeren side by side — two glass
- * tiles of one size (the sync capsule's material), told apart by their mark:
- * a solid tile for making one, an outlined one for joining with a code.
+ * tiles of one size (the sync capsule's material), each with the same solid
+ * neutral mark: a plus for making one, a hash for joining with a code.
  */
 @Composable
 internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Modifier) {
@@ -297,10 +297,7 @@ internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Mo
             NeutralTile(OwnifyIcons.plus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
         }
         ActionTile(page["join"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCode) }) {
-            Box(
-                Modifier.size(30.dp).border(1.5.dp, Ownify.ink(0.45f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) { JIcon(OwnifyIcons.hash, size = 16.dp, color = Ownify.TextPrimary) }
+            NeutralTile(OwnifyIcons.hash, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
         }
     }
 }

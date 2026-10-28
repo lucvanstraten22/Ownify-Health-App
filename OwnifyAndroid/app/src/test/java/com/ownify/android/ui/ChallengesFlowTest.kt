@@ -119,7 +119,7 @@ class ChallengesFlowTest {
         show()
         waitFor("Gezondheidsscore")
         compose.onAllNodes(hasText("Community") and hasClickAction()).onLast().performClick()
-        waitFor("Uitdagingen staan los van je punten")
+        waitFor("Code invoeren")
     }
 
     /** From Community, Uitdagingen's card: the list. */
@@ -143,7 +143,8 @@ class ChallengesFlowTest {
         assertEquals(1, compose.onAllNodes(hasTestTag("challenge-tile")).fetchSemanticsNodes().size)
         compose.onAllNodes(hasText("Nieuwe uitdaging") and hasClickAction()).onFirst().assertIsEnabled()
         compose.onAllNodes(hasText("Code invoeren") and hasClickAction()).onFirst().assertIsEnabled()
-        waitFor("Uitdagingen staan los van je punten op de ranglijst.")
+        // 29.2: no small print under the two cards any more.
+        assertTrue("no note on Community", compose.onAllNodes(hasText("Uitdagingen staan los van je punten op de ranglijst.")).fetchSemanticsNodes().isEmpty())
         assertTrue("no code field on Community", compose.onAllNodes(hasTestTag("challenge-code")).fetchSemanticsNodes().isEmpty())
 
         compose.onAllNodes(hasText("Uitdagingen") and hasClickAction()).onFirst().performClick()

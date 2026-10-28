@@ -28,6 +28,4 @@ $filled = ($rec['state'] ?? 'empty') === 'filled';
         ]]); ?>
     <?php endif; ?>
 
-    <p class="card__hint card__hint--plain"><?= e($rec['note']) ?></p>
-
 </section>

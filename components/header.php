@@ -49,17 +49,9 @@ $account = $data['header']['account'];
             <?= notice_dot('account') ?>
         </button>
 
-        <?php /* Telefoon or Desktop: only on a screen wide enough for the
-                 second (desktop.css, desktop.js). It changes the layout, never
-                 the page or anything on it. */ ?>
-        <div class="range-switch view-switch" role="group" aria-label="<?= e(t('Weergave')) ?>" data-view-switch>
-            <button type="button" class="range-switch__option" data-view-choice="phone" aria-pressed="false">
-                <?= icon('phone', 'view-switch__icon') ?><span><?= e(t('Telefoon')) ?></span>
-            </button>
-            <button type="button" class="range-switch__option" data-view-choice="desktop" aria-pressed="false">
-                <?= icon('desktop', 'view-switch__icon') ?><span><?= e(t('Desktop')) ?></span>
-            </button>
-        </div>
+        <?php /* Telefoon or Desktop, in Telefoon on a wide screen; in the
+                 desktop layout it is at the sidebar's foot (view-switch.php). */ ?>
+        <?php component('view-switch', $data); ?>
 
     </div>
 </header>

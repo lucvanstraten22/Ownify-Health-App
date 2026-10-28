@@ -29,8 +29,10 @@
     gap: var(--space-2);
 }
 
-:root[data-layout="desktop"] .view-switch,
-:root[data-layout="phone-frame"] .view-switch { display: inline-flex; }
+/* Desktop: at the sidebar's foot. Telefoon on a wide screen: at the top
+   right (below), the way back to Desktop. */
+:root[data-layout="desktop"] .view-switch--side { display: grid; }
+:root[data-layout="phone-frame"] .view-switch--header { display: inline-flex; }
 
 /* ==========================================================================
    Desktop
@@ -42,7 +44,7 @@
     --second-w: 544px;
     --second-space: calc(var(--second-w) + var(--side-gap));
     --second-in: 340ms var(--ease-out-strong);
-    --page-max: 1320px;
+    --page-max: 1600px;
     --fs-score: 3.1rem;
 }
 
@@ -200,11 +202,39 @@
     }
 }
 
-/* --- the header: the switch on the right, the rest is in the sidebar ---- */
-:root[data-layout="desktop"] .app-header--shared {
-    left: var(--side-space);
-    transition: right var(--second-in);
+/* The switch at the sidebar's foot: the two choices share its width. Like
+   the tabs above it, no glass of its own on the sidebar's glass — it sits
+   in the sidebar's own inset fill, the chosen side in the chosen pane. */
+:root[data-layout="desktop"] .view-switch--side {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    width: 100%;
+    margin-top: var(--space-2);
+    background: var(--inset-fill);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
 }
+
+:root[data-layout="desktop"] .view-switch--side::after { display: none; }
+
+:root[data-layout="desktop"] .view-switch--side .range-switch__option {
+    justify-content: center;
+    min-height: 34px;
+    padding-inline: var(--space-2);
+}
+
+/* --- the header: everything in it is in the sidebar now, so it is not
+   drawn, and the pages start at the sidebar's top edge (below) ---------- */
+:root[data-layout="desktop"] {
+    --app-header-space: 0px;
+    --page-intro-top: var(--side-gap);
+}
+
+:root[data-layout="desktop"] .app-header--shared { display: none; }
+
+/* Overzicht's "Vandaag" on that same line as every other page's title. */
+:root[data-layout="desktop"] [data-page="overview"] .card--hero { padding-top: 0; }
 
 :root[data-layout="desktop"] .app-header__inner {
     display: flex;
@@ -215,7 +245,8 @@
 :root[data-layout="desktop"] .app-header .pill--devices,
 :root[data-layout="desktop"] .app-header .pill--account { display: none; }
 
-/* --- the page: beside the sidebar, as wide as is good to read ----------- */
+/* --- the page: beside the sidebar, as wide as is good to read: the same
+   gap from the screen's right edge as the sidebar keeps from its left ---- */
 :root[data-layout="desktop"] .rail-window,
 :root[data-layout="desktop"] .pull-sync {
     left: var(--side-space);
@@ -225,7 +256,7 @@
 
 :root[data-layout="desktop"] .rail-window,
 :root[data-layout="desktop"] .app-header--shared {
-    --content-width: calc(100% - 2 * var(--space-6));
+    --content-width: calc(100% - 2 * var(--side-gap));
 }
 
 :root[data-layout="desktop"] .app__main {
@@ -283,13 +314,123 @@
     .community-home > .cm-dest { grid-column: auto; }
 }
 
-@container page (min-width: 1100px) {
+@container page (min-width: 960px) {
     [data-page="overview"] .app__main > .shell > .card--hero { grid-column: 1 / 5; grid-row: span 2; }
     [data-page="overview"] .app__main > .shell > .card--goal { grid-column: 5 / 9; }
     [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 9 / -1; }
     [data-page="overview"] .app__main > .shell > .card--insights { grid-column: 5 / -1; }
+}
 
+@container page (min-width: 1100px) {
     [data-goals] .goals-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* --- Overzicht and Gezondheid: as tall as the sidebar -------------------
+   They end where the sidebar ends (its gap from the bottom), so the page and
+   the sidebar close on one line; each page's own grid then shares that
+   height out (below). Content taller than the screen still just scrolls.
+   Doelen and Community keep their cards at their own height. */
+:root[data-layout="desktop"] :is([data-page="overview"], [data-page="health"]) .app__main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding-bottom: var(--side-gap);
+}
+
+:root[data-layout="desktop"] :is([data-page="overview"], [data-page="health"]) .app__main > .shell {
+    flex: 1 0 auto;
+}
+
+@container page (min-width: 760px) {
+    /* Gezondheid: the height left under the three pillars shared between
+       them and the Verloop (the pillars up to 260px, their content centred;
+       the Verloop's line grows with it). On a short screen there is nothing
+       to share and both keep their own height. */
+    [data-page="health"] .shell > .grid--three {
+        flex: 1 0 auto;
+        max-height: 260px;
+    }
+    [data-page="health"] .health-card { justify-content: center; }
+    [data-page="health"] .card--trend {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    [data-page="health"] .card--trend .compass-history__chart {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    [data-page="health"] .card--trend .chart__range.is-active {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+    [data-page="health"] .card--trend .compass-plot {
+        flex: 1 0 auto;
+        height: auto;
+        min-height: 160px;
+    }
+
+    /* Community: Ranglijst and Uitdagingen one height, what they show
+       centred in them, their buttons at the bottom. */
+    .community-home { align-items: stretch; }
+    .community-home > .cm-dest > :is(.cm-podium, .cm-none, .cm-fan) { margin-block: auto; }
+
+    /* Overzicht, the three under each other beside the score: Primair doel
+       and Eén kleine suggestie still one size (their rows share one). */
+    [data-page="overview"] .app__main > .shell { grid-template-rows: 1fr auto 1fr; }
+    [data-page="overview"] .app__main > .shell > :is(.card--goal, .card--recommendation) { align-self: stretch; }
+}
+
+@container page (min-width: 960px) {
+    /* Overzicht: Primair doel and Eén kleine suggestie one size, Nuttige
+       inzichten under them down to the sidebar's foot, the score beside all
+       three, its ring centred in that height. */
+    [data-page="overview"] .app__main > .shell {
+        grid-template-rows: auto minmax(0, 1fr);
+        align-items: stretch;
+    }
+    [data-page="overview"] .app__main > .shell > .card--hero {
+        display: flex;
+        flex-direction: column;
+    }
+    [data-page="overview"] .card--hero .score-ring {
+        width: clamp(220px, 30vh, 290px);
+        margin-top: auto;
+    }
+    [data-page="overview"] .card--hero .pillar-rings { margin-bottom: auto; }
+}
+
+@container page (min-width: 1100px) {
+    /* Doelen: the primary goal in a column of its own, as tall as the
+       other goals two by two beside it; every card at its own height, so
+       nothing is stretched to the screen. In the primary card the name
+       stays at the top and the progress keeps together at the bottom. */
+    [data-goals] [data-goal-panel="active"].is-active {
+        display: grid;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        grid-template-rows: auto auto auto;
+        align-items: start;
+        gap: var(--space-2) var(--space-4);
+    }
+    [data-goal-panel="active"] > * { grid-column: 1 / -1; }
+    [data-goal-panel="active"] > [data-goal-eyebrow="primary"] { grid-column: 1; grid-row: 1; }
+    [data-goal-panel="active"] > [data-goal-slot="primary"] {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: stretch;
+        display: flex;
+    }
+    [data-goal-panel="active"] > [data-goal-eyebrow="secondary"] { grid-column: 2; grid-row: 1; margin-top: 0; }
+    [data-goal-panel="active"] > [data-goal-slot="secondary"] {
+        grid-column: 2;
+        grid-row: 2;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+    }
+    [data-goal-panel="active"] > [data-goal-slot="primary"] > .goal-card { flex: 1; }
+    [data-goal-panel="active"] > [data-goal-slot="primary"] .goal-card__figures { margin-top: auto; }
 }
 
 /* Beside a second page (from 1200px) the page makes room for it. */

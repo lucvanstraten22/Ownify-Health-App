@@ -24,19 +24,33 @@ navigation: the page, an open second page and every scroll position stay.
   `assets/css/desktop.css`): the name, the five tabs — the same chosen glass
   moving down them (`page-navigation.js`) — and at its foot OwnifyAI,
   Apparaten and the account, which the header's buttons and the handle open
-  on a phone. Pressed again, they close what they opened. The red dots
+  on a phone, and under them the view switch (`components/view-switch.php`;
+  like the tabs, no glass of its own on the sidebar's, the sidebar's inset
+  fill instead). Pressed again, they close what they opened. The red dots
   (docs/NOTICES.md) sit beside the sidebar's icons as beside the tab bar's.
-- **The header** keeps only the view switch (`components/header.php`).
-- **The page** stands beside the sidebar, at most `--page-max` (1320px) wide,
-  in columns where they help — measured on the page's own width (container
-  queries), so it re-flows when a second page opens:
+- **No header.** Everything in it is in the sidebar, so it is not drawn and
+  every page's title starts on the sidebar's top edge (29.2).
+- **The page** stands beside the sidebar, at most `--page-max` (1600px) wide,
+  with the same gap from the screen's right edge as the sidebar keeps from
+  its left, in columns where they help — measured on the page's own width
+  (container queries), so it re-flows when a second page opens:
   - Overzicht: the score beside the primary goal, the suggestion and the
-    insights (two, then three columns).
-  - Doelen: the switch at its own width; the secondary goals in two, then
-    three columns.
-  - Community: Ranglijst and Uitdagingen side by side.
-  - Gezondheid: the three areas across, the Verloop under them.
+    insights. From 960px Primair doel and Eén kleine suggestie side by side,
+    one size, with Nuttige inzichten under them; narrower, the three under
+    each other, Primair doel and Eén kleine suggestie still one height.
+  - Doelen: the switch at its own width; the secondary goals in two
+    columns. From 1100px the primary goal in a column of its own, as tall
+    as the four others two by two beside it; every card at its own height.
+    Afgerond: two, then (from 1100px) three columns.
+  - Community: Ranglijst and Uitdagingen side by side, one height, at their
+    own height; what they show centred in them, their buttons at the bottom.
+  - Gezondheid: the three areas across, the Verloop under them; the height
+    left is shared between the areas (up to 260px) and the Verloop's line.
   - Instellingen: one column (760px).
+- **As tall as the sidebar (29.2).** Overzicht and Gezondheid end where
+  the sidebar ends: their cards share the screen's height out, so the page
+  and the sidebar close on one line. Content taller than the screen still
+  just scrolls. Doelen and Community keep every card at its own height.
 - **The second page.** A detail page (a goal, Slaap, Voeding, Training, a
   chart, a training, a settings page, the Ranglijst, Uitdagingen, a
   challenge, the Scorekompas), OwnifyAI, Nieuw doel, the account and
@@ -57,7 +71,8 @@ navigation: the page, an open second page and every scroll position stay.
 
 Telefoon on a wide screen: the whole app — header, pages, tab bar, detail
 pages, OwnifyAI — in a 430px column in the middle, exactly as on a phone; the
-switch stays at the window's top right.
+switch floats at the window's top right (the header's copy of
+`view-switch.php`), the way back to Desktop.
 
 ## Not changed
 
