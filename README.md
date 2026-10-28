@@ -124,7 +124,7 @@ components/
     goal-progress.php         personal goal progress
     insights.php              Nuttige inzichten: the day's stored insights, or one area's
     recommendation.php        Eén kleine suggestie: the day's one at most, always optional
-    research-evidence.php     the label as the glass chip and "Bekijk onderzoek"
+    research-evidence.php     "Bekijk onderzoek" as the glass chip
     leaderboard.php           compact social layer
     scroll-top.php            floating glass control
     bottom-navigation.php     the five primary destinations (overview screen)

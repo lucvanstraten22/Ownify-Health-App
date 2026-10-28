@@ -105,8 +105,19 @@ class ResearchFlowTest {
 
     private fun count(text: String) = compose.onAllNodes(hasText(text), useUnmergedTree = true).fetchSemanticsNodes().size
 
-    /** An evidence chip, by what TalkBack says: "Bewijskracht: Betrouwbaar". */
-    private fun chips(label: String) = compose.onAllNodes(hasContentDescription("Bewijskracht: $label") and hasClickAction())
+    /** Every "Bekijk onderzoek" chip in the tree, the page under a detail first. */
+    private fun research() = compose.onAllNodes(hasText("Bekijk onderzoek") and hasClickAction())
+
+    /** A label (Betrouwbaar, …) anyone could tap: none, since 29.1 — it is only said in the detail. */
+    private fun tappableLabels(label: String) = compose.onAllNodes(hasText(label) and hasClickAction()).fetchSemanticsNodes().size
+
+    /** Taps the [index]th "Bekijk onderzoek" chip. */
+    private fun tapResearch(index: Int) {
+        val node = research()[index]
+        node.performScrollTo()
+        node.performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+    }
 
     /**
      * Taps the [matcher]'s last node on screen: a detail is drawn after the
@@ -181,9 +192,9 @@ class ResearchFlowTest {
     fun `Overzicht - three insights each with its chip and link, and the suggestion with its own`() {
         show()
         for (title in listOf("Slaapduur", "Verzadigd vet", "Beweging")) assertTrue(title, count(title) >= 1)
-        // Three insights and the suggestion, each with "Betrouwbaar" and "Bekijk onderzoek".
-        assertEquals(4, chips("Betrouwbaar").fetchSemanticsNodes().size)
-        assertEquals(4, compose.onAllNodes(hasText("Bekijk onderzoek") and hasClickAction()).fetchSemanticsNodes().size)
+        // Three insights and the suggestion, each with "Bekijk onderzoek" — and no label: that is the detail's.
+        assertEquals(4, research().fetchSemanticsNodes().size)
+        assertEquals(0, count("Betrouwbaar"))
         text("Misschien iets voor deze week: één avond wat eerder naar bed gaan, en kijken hoe die nacht verloopt.").assertExists()
         text("Altijd een suggestie, nooit een opdracht.").assertExists()
     }
@@ -191,7 +202,7 @@ class ResearchFlowTest {
     @Test
     fun `the chip opens the detail over Overzicht - what Ownify says, how strong, what was found, the source`() {
         show()
-        tap(hasContentDescription("Bewijskracht: Betrouwbaar") and hasClickAction())
+        tapResearch(0)
         assertEquals(Detail.Research("c2-0"), shell.detail)
         assertNull(shell.under)
         heading("Uit onderzoek blijkt").assertExists()
@@ -204,8 +215,9 @@ class ResearchFlowTest {
         assertEquals(1, compose.onAllNodes(hasText("Bekijk de publicatie") and hasClickAction()).fetchSemanticsNodes().size)
         assertEquals(0, count("Lees de pdf"))
         text("Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.").assertExists()
-        // The label in the detail is a status: nothing to tap.
-        assertEquals(0, chips("Betrouwbaar").fetchSemanticsNodes().size)
+        // The label is said here, as a status: nothing to tap.
+        assertTrue(count("Betrouwbaar") >= 1)
+        assertEquals(0, tappableLabels("Betrouwbaar"))
 
         compose.runOnUiThread { shell.back() }
         compose.waitForIdle()
@@ -222,7 +234,7 @@ class ResearchFlowTest {
         compose.waitForIdle()
         // Overzicht's row, and the same stored insight on Slaap's own card.
         assertEquals(2, count("Je sliep de afgelopen 7 nachten gemiddeld 6:40 per nacht, volgens je metingen. Voor jouw leeftijd wordt minstens 7 uur aangeraden."))
-        tap(hasContentDescription("Bewijskracht: Betrouwbaar") and hasClickAction())
+        tapResearch(0)   // Slaap's own insight: the first chip on the page, right under its score
         assertEquals(Detail.Research("c2-0", over = Detail.HealthArea("sleep")), shell.detail)
         assertEquals(Detail.HealthArea("sleep"), shell.under)
 
@@ -239,7 +251,7 @@ class ResearchFlowTest {
         compose.runOnUiThread { shell.openDetail(Detail.ScoreCompass) }
         compose.waitForIdle()
         text("Mogelijk aandachtspunt").assertExists()
-        tap(hasContentDescription("Bewijskracht: Zeer betrouwbaar") and hasClickAction())
+        tap(hasText("Bekijk onderzoek") and hasClickAction())
         assertEquals(Detail.Research("c23-0", over = Detail.ScoreCompass), shell.detail)
         text("Richtlijnen goede voeding 2015").assertExists()
         // The publisher's PDF, read in the app.
@@ -257,7 +269,8 @@ class ResearchFlowTest {
         compose.waitForIdle()
         text("BMI").assertExists()
         text("Met je lengte en gewicht is je BMI 25,2. De WHO noemt bij volwassenen een BMI vanaf 25 overgewicht en vanaf 30 obesitas. BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.").assertExists()
-        tap(hasContentDescription("Bewijskracht: Beperkt onderbouwd") and hasClickAction())
+        assertEquals(0, count("Beperkt onderbouwd"))
+        tap(hasText("Bekijk onderzoek") and hasClickAction())
         assertEquals(Detail.Research("c25-2", over = Detail.SettingsPage("account")), shell.detail)
         // Two steps lower, and why.
         text("Je gegevens passen maar deels bij wat het onderzoek mat. Daarom staat het label hier twee stappen lager dan het onderzoek zelf.").assertExists()

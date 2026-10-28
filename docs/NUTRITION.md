@@ -86,7 +86,7 @@ needs no request.
   saturated fat under fat. A detail line too narrow for all it says (fibre's
   "per 1.000 kcal" on a small phone) moves what does not fit under it, on
   both apps; nothing runs over the name. Fat's and carbohydrates' rows end
-  with their research (the label and "Bekijk onderzoek").
+  with their research ("Bekijk onderzoek").
 - **The bubbles** are the goal wizard's glass chip (`.glass--chip`,
   `GlassChip`'s glass), as a status: green glass for Binnen bereik, plain
   glass for Onder bereik and Geen oordeel, gold glass with gold text for

@@ -104,6 +104,8 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
         DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid"), title = area.label) {
             HeroCard(area)
+            // The area's own stored insight with its research (docs/INSIGHTS.md), right under its score, or nothing.
+            InsightsCard(data.overview.insights, slot = area.id)
             // Voeding drawn has its own slider (NutritionView.kt); otherwise the cijfer's field.
             if (area.view !is NutritionView) area.rating?.let { NutritionRating(area, it) }
             // An area drawn — Slaap (docs/SLEEP.md), Training (docs/TRAINING.md) — instead
@@ -120,8 +122,6 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
                     area.timeline?.let { SleepTimeline(it) }
                 }
             }
-            // The area's own stored insight with its research (docs/INSIGHTS.md), or nothing.
-            InsightsCard(data.overview.insights, slot = area.id)
             area.groups.forEach { MetricGroupCard(it) }
             // Its own Verloop: Gezondheid's, its one line (docs/CHARTS.md); a server from before it: the week and month.
             val history = data.health.history

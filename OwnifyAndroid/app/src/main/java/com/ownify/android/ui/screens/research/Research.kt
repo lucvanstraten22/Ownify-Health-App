@@ -6,11 +6,9 @@ import android.content.Intent
 import android.os.Build
 import android.os.Environment
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -24,10 +22,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
@@ -60,7 +56,6 @@ import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.chWidth
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.reveal
-import com.ownify.android.ui.screens.account.LinkButton
 import com.ownify.android.ui.screens.settings.SettingsCard
 import com.ownify.android.ui.screens.settings.SettingsEyebrow
 import com.ownify.android.ui.screens.settings.SettingsNote
@@ -89,11 +84,10 @@ val LocalResearch = staticCompositionLocalOf { Research.parse(null) }
 
 /**
  * The evidence beside an insight or a reference value: nothing when there
- * is no detail to open. 8 above it (`.research-evidence`), the link's text 16
- * from the chip — its own padding pulled back on the start side, so that
- * wrapped under the chip on a narrow phone its text starts on the chip's edge.
+ * is no detail to open. "Bekijk onderzoek" as the goal wizard's glass chip,
+ * 8 above it (`.research-evidence`); how strong the research is, is said in
+ * the detail it opens, not here.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ResearchEvidence(evidence: Evidence?, modifier: Modifier = Modifier) {
     val research = LocalResearch.current
@@ -104,25 +98,9 @@ fun ResearchEvidence(evidence: Evidence?, modifier: Modifier = Modifier) {
         val over = shell.detail?.takeIf { shell.detailShown }
         shell.openDetail(Detail.Research(evidence.research, over))
     }
-    FlowRow(
-        modifier.fillMaxWidth().padding(top = Ownify.Space2),
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space4),
-        verticalArrangement = Arrangement.spacedBy(Ownify.Space2),
-        itemVerticalAlignment = Alignment.CenterVertically
-    ) {
-        GlassChip(
-            evidence.strengthLabel, chosen = false, onClick = open,
-            description = listOf(research.copy.evidence, evidence.strengthLabel).filter { it.isNotEmpty() }.joinToString(": ")
-        )
-        LinkButton(evidence.label, Modifier.pullStart(Ownify.Space2), pull = false, onClick = open)
+    Box(modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
+        GlassChip(evidence.label, chosen = false, onClick = open)
     }
-}
-
-/** `margin-inline-start: -[by]`: drawn [by] before its place, and that much narrower to whatever lays it out. */
-private fun Modifier.pullStart(by: Dp) = layout { measurable, constraints ->
-    val past = by.roundToPx()
-    val placeable = measurable.measure(constraints)
-    layout((placeable.width - past).coerceAtLeast(0), placeable.height) { placeable.placeRelative(-past, 0) }
 }
 
 /**

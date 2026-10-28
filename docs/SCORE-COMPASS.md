@@ -184,7 +184,7 @@ Called "Grootste kans" before 29.0; the new name says what it is — a
 possible point of attention for the score — and is a wording change only:
 the calculation below is the same. Where approved research is about the
 component it names (sleep duration and regularity, sleep stages, Voeding's
-cijfer, training volume), its label and "Bekijk onderzoek" stand under the
+cijfer, training volume), "Bekijk onderzoek" stands under the
 explanation — its context, never its reason (docs/INSIGHTS.md).
 
 For every component with data, in a category with at least **3 days** of

@@ -149,11 +149,11 @@ Below Beperkt onderbouwd there is no insight at all.
 
 ## "Uit onderzoek blijkt"
 
-The evidence beside an insight or a reference value is the label as the goal
-wizard's glass chip (`.glass--chip`; Android `GlassChip`) and "Bekijk
-onderzoek" as the quiet link (`.btn--link`; Android `LinkButton`). Both open
-the claim's detail, titled "Uit onderzoek blijkt", over whatever page showed
-them (`data-detail-parent="*"`; Android `Detail.Research(id, over)`), one
+The evidence beside an insight or a reference value is "Bekijk onderzoek" as
+the goal wizard's glass chip (`.glass--chip`; Android `GlassChip`). It opens
+the claim's detail, titled "Uit onderzoek blijkt" — the one place the label
+(Zeer betrouwbaar, …) is shown, since 29.1 — over whatever page showed
+it (`data-detail-parent="*"`; Android `Detail.Research(id, over)`), one
 level deep; back returns there.
 
 The detail (`pages/research-detail.php`, Android `ResearchDetailPage`) is

@@ -12,7 +12,7 @@ blijkt" — is [RESEARCH.md](RESEARCH.md).
 | --- | --- |
 | Overzicht › **Nuttige inzichten** | the day's insight for Slaap, Voeding and Training — or a quiet placeholder for an area without one |
 | Overzicht › **Eén kleine suggestie** | at most one a day, always optional ("Altijd een suggestie, nooit een opdracht.") |
-| Slaap, Voeding, Training (their own page) | the same stored insight as that area's own card, before the groups; nothing when the area has none |
+| Slaap, Voeding, Training (their own page) | the same stored insight as that area's own card, right under the area's score (29.1); nothing when the area has none |
 | Instellingen › Account | the BMI, under Lichaamsmaten (`settings` block `insight`, slot `body`) |
 | Voeding's cijfer | the research on eating patterns (NUT-03): context for the cijfer, never a score of it |
 | Voeding's fat and carbohydrate rows | the 2026 norm behind fat's range, and that carbohydrates have none |
@@ -20,8 +20,9 @@ blijkt" — is [RESEARCH.md](RESEARCH.md).
 | Training's heart rate, with data | how accurate a wearable's heart rate is (MEA-01) — on Training's own page, not on a session's |
 | Scorekompas › **Mogelijk aandachtspunt** | the research about the component it names, where there is any: its context, never its reason |
 
-Every one carries its label as the goal wizard's glass chip and "Bekijk
-onderzoek" as the quiet link, both opening the detail ("Uit onderzoek blijkt"). No new card,
+Every one carries "Bekijk onderzoek" as the goal wizard's glass chip, opening
+the detail ("Uit onderzoek blijkt"), which is the one place that says how
+strong the research is (29.1: the label is no longer beside the insight). No new card,
 chip or button: the insights card, the suggestion card and Instellingen'
 blocks are the ones that were there.
 

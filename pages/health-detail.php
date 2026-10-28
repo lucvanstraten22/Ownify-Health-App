@@ -74,6 +74,13 @@ $ratio = score_ratio($score['value'], $score['max']);
                 </section>
 
                 <?php
+                /* The area's own insight (docs/INSIGHTS.md), right under its
+                   score: the same stored one Overzicht shows, nothing when
+                   there is none. */
+                if (isset($data['insights']['context']) && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+                    component('insights', $data + ['insights_slot' => $area['id']]);
+                }
+
                 /* Voeding only: the daily cijfer its score is built from. */
                 if (!empty($area['rating']) && !isset($area['view'])) {
                     component('nutrition-rating', $data + ['area' => $area]);
@@ -93,12 +100,6 @@ $ratio = score_ratio($score['value'], $score['max']);
                     if (!empty($area['timeline'])) {
                         component('sleep-timeline', $data + ['area' => $area]);
                     }
-                }
-
-                /* The area's own insight (docs/INSIGHTS.md): the same stored one
-                   Overzicht shows, and nothing when there is none. */
-                if (isset($data['insights']['context']) && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
-                    component('insights', $data + ['insights_slot' => $area['id']]);
                 }
 
                 foreach ($area['groups'] as $index => $group) {

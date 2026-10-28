@@ -175,12 +175,10 @@ inside a range, the gold glass with `--attention` text above it, plain
 otherwise.
 
 **Research evidence** (29.0, docs/RESEARCH.md) is made of what is here, no
-new style: the label (Zeer betrouwbaar, Betrouwbaar, Beperkt onderbouwd) is
-the plain glass chip — tappable beside an insight, a status in its detail —
-and "Bekijk onderzoek" the quiet link (`.btn--link`, Android
-`LinkButton`), its text 16 from the chip: its padding is pulled back on the
-left instead of the right, so that wrapped under the chip on a narrow phone
-its text starts on the chip's edge. The detail is Instellingen'
+new style: beside an insight, "Bekijk onderzoek" is the plain glass chip
+(`.glass--chip`, Android `GlassChip`) that opens the detail; the label (Zeer
+betrouwbaar, Betrouwbaar, Beperkt onderbouwd) is said only in that detail,
+as the same chip used as a status (29.1). The detail is Instellingen'
 page: the page intro, eyebrows, the settings card's rows and notes, `.btn`
 (the green glass for Lees de pdf); a PDF read inside it sits in a Well. The
 paper of a PDF's pages is the document's own white, in either theme — it is
