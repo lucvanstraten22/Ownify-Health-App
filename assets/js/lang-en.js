@@ -46,6 +46,7 @@ window.OWNIFY_LANG = {
     "Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.": "Ownify cannot be reached. Check your internet connection and try again.",
     "OwnifyAI denkt na…": "OwnifyAI is thinking…",
     "Stap %1$d van %2$d": "Step %1$d of %2$d",
+    "Uit onderzoek blijkt": "Research shows",
     "Versturen…": "Sending…",
     "Voeding vanaf %s": "Nutrition from %s",
     "Voet": "Feet",

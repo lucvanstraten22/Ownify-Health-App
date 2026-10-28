@@ -212,6 +212,13 @@ foreach ($data['navigation'] as $position => $item) {
                     'settings_page_id' => $pageId,
                 ]); ?>
             <?php endforeach; ?>
+
+            <?php /* "Uit onderzoek blijkt" (docs/INSIGHTS.md): one page per piece
+                     of research this page shows, last, so it opens over any of
+                     the ones above (data-detail-parent="*"). */ ?>
+            <?php foreach (is_file(__DIR__ . '/pages/research-detail.php') ? $data['research']['details'] ?? [] : [] as $researchDetail): ?>
+                <?php page('research-detail', ['research_detail' => $researchDetail] + $data); ?>
+            <?php endforeach; ?>
         </div>
 
         <!-- Dims the page while the assistant is in front of it. -->
@@ -250,6 +257,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/ai-sheet.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/ai-chat.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/detail-layer.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/research.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/health-trend.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/health-rating.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/nutrition.js')) ?>" defer></script>

@@ -38,6 +38,9 @@ require_once __DIR__ . '/health-data.php';
 require_once __DIR__ . '/goal-progress.php';
 require_once __DIR__ . '/health-score.php';
 require_once __DIR__ . '/points.php';
+if (is_file(__DIR__ . '/insights/notify.php')) {
+    require_once __DIR__ . '/insights/notify.php';
+}
 
 if (!function_exists('health_import_records')) {
 
@@ -101,6 +104,13 @@ if (!function_exists('health_import_records')) {
            Two separate things: the score does not pay out. */
         $awards = $written > 0 ? points_process($userId, $touched) : [];
         $scores = $written > 0 ? health_score_refresh($userId) : null;
+
+        /* Today's insights look again on the next load, without a new
+           Gemini call (docs/INSIGHTS.md). A sync that repeats the same week
+           finds the same facts and changes nothing. */
+        if ($written > 0 && function_exists('insights_note_change')) {
+            insights_note_change($userId);
+        }
 
         return [
             'ok'              => true,

@@ -122,7 +122,8 @@ $opportunity = $compass['opportunity'];
                     <?php endif; ?>
                 </section>
 
-                <?php /* 4 — Where the most room is. */ ?>
+                <?php /* 4 — Where the most room is: a possible point of attention for
+                         the score, with the research about it where there is any. */ ?>
                 <section class="card reveal compass-card compass-chance <?= $opportunity['state'] === 'filled' ? 'is-filled' : 'is-empty' ?>"
                          aria-labelledby="compass-chance-title">
                     <div class="card__head card__head--compact">
@@ -145,6 +146,9 @@ $opportunity = $compass['opportunity'];
                             <p><?= e($opportunity['fact']) ?></p>
                             <p><?= e($opportunity['relation']) ?></p>
                         </div>
+                        <?php if (!empty($opportunity['research']) && is_file(dirname(__DIR__) . '/components/research-evidence.php')): ?>
+                            <?php component('research-evidence', $data + ['evidence' => $opportunity['research']]); ?>
+                        <?php endif; ?>
                         <p class="card__hint card__hint--plain"><?= e($opportunity['gain_text']) ?></p>
                     <?php else: ?>
                         <p class="compass-empty"><?= e($opportunity['empty']) ?></p>

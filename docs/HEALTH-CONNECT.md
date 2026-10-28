@@ -203,11 +203,11 @@ without eventually duplicating them.
 | `OxygenSaturation` | metric `spo2` | |
 | `RespiratoryRate` | metric `respiratory_rate` | |
 | `SkinTemperature`, `BodyTemperature` | metric `skin_temp` | |
-| `Hydration` | metric `water` | litres |
+| `Hydration` | metric `water` | litres; sent by Ownify for Android since 29.0 |
 | `Nutrition` | a meal + its nutrients | sodium grams → milligrams |
-| `Weight` | measurement `weight` | kg |
-| `Height` | measurement `height` | metres → cm |
-| `BodyFat` | measurement `body_fat_pct` | |
+| `Weight` | measurement `weight` | kg; sent by Ownify for Android since 29.0 |
+| `Height` | measurement `height` | metres → cm; sent by Ownify for Android since 29.0 |
+| `BodyFat` | measurement `body_fat_pct` | sent by Ownify for Android since 29.0 |
 | `LeanBodyMass` | measurement `lean_mass` | |
 
 Anything else is reported in `unmapped` and ignored — `Vo2Max` too, since
@@ -418,21 +418,20 @@ code is ever minted that nothing could receive.
     'app_available' => true,        // the Ownify Android app reads it
     'store_url'     => '',
 ],
-'apple_health' => [
-    'app_available' => false,       // needs an iPhone app, which Ownify does not have
-    'store_url'     => '',
-],
 ```
 
 A source with `false` is shown on the devices screen with the reason it cannot
-be connected, and no pairing code is offered or issued for it.
+be connected, and no pairing code is offered or issued for it. Health Connect
+is the only phone source: Ownify does not support Apple Health (29.0;
+migration 028 removes its catalogue row wherever nothing refers to it).
 
 ## What you still have to do outside the code
 
 - **Publish the Android app.** Health Connect access requires a declaration
   form about which data types you read and why, and health data has its own
   Play Store policy. Check the current requirements when you submit — they
-  change, and they are stricter than for an ordinary app.
+  change, and they are stricter than for an ordinary app. What to declare is
+  under *The Play Console declaration* below.
 - **Set `OWNIFY_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
   on Hestia*, has the exact commands. None of this flow needs it: a device
   token is hashed, not encrypted, and the test above passes on a server with no
@@ -441,6 +440,58 @@ be connected, and no pairing code is offered or issued for it.
   says whether a machine has one.
 - **Serve over HTTPS.** A bearer token over plain HTTP is a token anyone on the
   network has.
+
+## The Play Console declaration
+
+Google Play asks every app that reads Health Connect to declare, per data
+type, which feature uses it and why (Play Console › App content › Health
+apps / Health Connect), and checks it against the app's privacy policy and
+its rationale screen. This is what the app reads (29.0: sixteen types, all
+read-only; `IngestPayload.TYPES`, `AndroidManifest.xml`) and what to declare
+for each. Check the form's current wording when you submit: it changes.
+
+| Permission | Read for | Shown in |
+| --- | --- | --- |
+| `READ_SLEEP` | sleep duration, regularity and stages | Slaap, the sleep score, insights |
+| `READ_EXERCISE` | workouts | Training, the training score, goals, challenges |
+| `READ_STEPS` | steps | Training, goals, challenges, insights |
+| `READ_DISTANCE` | distance | Training, goals, challenges |
+| `READ_ACTIVE_CALORIES_BURNED` | active energy | Training |
+| `READ_TOTAL_CALORIES_BURNED` | total energy | Training |
+| `READ_FLOORS_CLIMBED` | floors | Training |
+| `READ_HEART_RATE` | heart rate, and sleeping heart rate | Training's heart rate, Slaap |
+| `READ_RESTING_HEART_RATE` | resting heart rate | Training, goals |
+| `READ_HEART_RATE_VARIABILITY` | HRV (RMSSD) | Slaap, Training |
+| `READ_OXYGEN_SATURATION` | SpO₂ | Slaap |
+| `READ_NUTRITION` | meals and their nutrients | Voeding, insights |
+| `READ_HYDRATION` (29.0) | water drunk | Voeding's Water |
+| `READ_WEIGHT` (29.0) | weight | Lichaamsmaten, a weight goal, the energy target, the BMI insight |
+| `READ_HEIGHT` (29.0) | height | Lichaamsmaten, the energy target, the BMI insight |
+| `READ_BODY_FAT` (29.0) | body fat | a body-fat goal |
+| `READ_HEALTH_DATA_IN_BACKGROUND` | the hourly sync while the app is closed | — |
+
+With its own consent, OwnifyAI can also use any of these to answer the
+person's questions (docs/AI.md).
+
+Also part of the review:
+
+- **The rationale screen.** `PermissionsRationaleActivity` answers
+  `ACTION_SHOW_PERMISSIONS_RATIONALE` and, through its alias,
+  `VIEW_PERMISSION_USAGE` with `HEALTH_PERMISSIONS`. Its sentence names every
+  type above (29.0) — keep the two lists the same when a type is added.
+- **The privacy policy** has to name Health Connect, the types read, that the
+  data goes to the person's own Ownify account, how long it is kept and how
+  it is deleted (Instellingen › Account verwijderen).
+- **Data safety.** Health and fitness data is collected, sent encrypted (HTTPS),
+  and deleted with the account; it is not sold.
+- **Before publishing, check the Gemini features against Health Connect's
+  policy.** With their own consents, OwnifyAI and the insights' wording
+  (docs/INSIGHTS.md) send figures derived from Health Connect data to Google
+  Gemini's free API, whose terms let Google use what it receives to improve
+  its products, and let its staff read it. Play limits how Health Connect data
+  may be used and passed on; whether this is allowed, and how it has to be
+  declared, is for whoever submits the app to decide — it may need Gemini's
+  paid tier, or keeping Health Connect figures out of what Gemini receives.
 
 ## Pull to sync (20.0; all five pages since 20.1)
 
@@ -481,9 +532,7 @@ readers the same sync is a button (website, visible on focus) and a
 
 ## What this cannot do
 
-- **iPhones.** Apple Health is the same shape of problem with a different SDK;
-  the server side here already accepts an `apple_health` provider, but it needs
-  its own app.
+- **iPhones.** Ownify has no iPhone app and does not read Apple Health.
 - **Backfill before the app is installed.** Health Connect keeps a limited
   history, so a new user brings whatever their phone still holds, not years.
 - **Data the user did not grant.** Permissions are per category and revocable

@@ -90,6 +90,11 @@ $count  = count($rows);
     <?php endif; ?>
 
     <?php if ($staged): ?>
+        <?php /* How far a wearable's stages can be trusted (docs/INSIGHTS.md). */
+        $reference = $data['insights']['references']['sleep.stages'] ?? null;
+        if ($reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+            component('research-evidence', $data + ['evidence' => $reference]);
+        } ?>
         <p class="compass-history__hint" id="sleep-night-hint"><?= e($night['hint']) ?></p>
         <p class="sr-only" aria-live="polite" data-night-live></p>
         <?php /* Each block as the reading needs it: [its row, from, to (% of the

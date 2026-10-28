@@ -95,6 +95,12 @@ $ratio = score_ratio($score['value'], $score['max']);
                     }
                 }
 
+                /* The area's own insight (docs/INSIGHTS.md): the same stored one
+                   Overzicht shows, and nothing when there is none. */
+                if (isset($data['insights']['context']) && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+                    component('insights', $data + ['insights_slot' => $area['id']]);
+                }
+
                 foreach ($area['groups'] as $index => $group) {
                     component('metric-group', $data + [
                         'area'        => $area,

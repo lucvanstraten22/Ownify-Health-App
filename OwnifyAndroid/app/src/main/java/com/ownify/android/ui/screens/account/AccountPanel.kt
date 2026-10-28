@@ -818,18 +818,19 @@ private fun SentMark() {
 
 /**
  * `.btn--link`: quiet — no border, no fill — with a full-height target,
- * pulled 8 past the right edge so its text ends where the values above end.
+ * pulled 8 past the right edge so its text ends where the values above end
+ * ([pull]; not beside an evidence chip, `.research-evidence .btn--link`).
  */
 @Composable
-fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, pull: Boolean = true, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         Box(
             modifier
                 .layout { measurable, constraints ->
-                    val pull = Ownify.Space2.roundToPx()
+                    val past = if (pull) Ownify.Space2.roundToPx() else 0
                     val placeable = measurable.measure(constraints)
-                    layout((placeable.width - pull).coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
+                    layout((placeable.width - past).coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
                 }
                 .press(interaction, enabled = enabled)
                 .alpha(if (enabled) 1f else 0.45f)

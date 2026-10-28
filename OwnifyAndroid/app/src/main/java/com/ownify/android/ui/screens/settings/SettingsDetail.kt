@@ -99,6 +99,7 @@ import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.screens.account.AvatarCircle
 import com.ownify.android.ui.screens.account.LinkButton
+import com.ownify.android.ui.screens.research.ResearchEvidence
 import com.ownify.android.ui.design.StatusBadge
 import com.ownify.android.ui.design.StatusTone
 import com.ownify.android.ui.theme.Ownify
@@ -133,6 +134,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.Note -> NoteBlock(block)
                 is SettingsBlock.Actions -> ActionsBlock(block)
                 is SettingsBlock.Section -> SectionHead(block)
+                is SettingsBlock.Insight -> InsightBlock(data, block)
             }
         }
         if (page.blocks.any { it is SettingsBlock.Choice && !it.saves }) Disclaimer(data.settings.notSaved)
@@ -1036,6 +1038,31 @@ private fun SectionHead(block: SettingsBlock.Section) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             T(block.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em), Modifier.semantics { heading() })
             block.lede?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)) }
+        }
+    }
+}
+
+/**
+ * A stored insight that belongs on this screen (docs/INSIGHTS.md): the
+ * body's BMI under Lichaamsmaten — its title as the eyebrow, its sentence
+ * and its evidence in the card. Nothing when there is none.
+ */
+@Composable
+private fun InsightBlock(data: AppData, block: SettingsBlock.Insight) {
+    val insight = data.overview.insights.context[block.slot] ?: return
+    val narrow = LocalScreen.current.narrow
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(insight.title)
+        SettingsCard {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .settingsRow(false)
+                    .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3)
+            ) {
+                T(insight.body, JStyle.Footnote, Modifier.padding(top = Ownify.Space1).widthIn(max = chWidth(JStyle.Footnote, 44f)))
+                ResearchEvidence(insight.evidence)
+            }
         }
     }
 }

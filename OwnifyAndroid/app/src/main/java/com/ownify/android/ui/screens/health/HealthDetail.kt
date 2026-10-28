@@ -89,6 +89,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.focusSafely
 import com.ownify.android.ui.app.heroName
+import com.ownify.android.ui.screens.overview.InsightsCard
 
 /**
  * One health area in full (pages/health-detail.php), in the order it
@@ -98,6 +99,8 @@ import com.ownify.android.ui.app.heroName
  */
 @Composable
 fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
+    // The research beside the area's own reference values (docs/INSIGHTS.md).
+    val references = data.overview.insights.references
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
         DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid"), title = area.label) {
             HeroCard(area)
@@ -107,16 +110,18 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
             // of the numbers and the bar of stages it shows.
             when (val view = area.view) {
                 is SleepView -> {
-                    SleepNightCard(view.night)
+                    SleepNightCard(view.night, references["sleep.stages"])
                     AreaChartsGrid(area.id, view.charts)
                 }
-                is TrainingView -> TrainingViewContent(view)
-                is NutritionView -> NutritionViewContent(view)
+                is TrainingView -> TrainingViewContent(view, references["training.measurement"])
+                is NutritionView -> NutritionViewContent(view, references)
                 else -> {
                     MetricTiles(area.highlights)
                     area.timeline?.let { SleepTimeline(it) }
                 }
             }
+            // The area's own stored insight with its research (docs/INSIGHTS.md), or nothing.
+            InsightsCard(data.overview.insights, slot = area.id)
             area.groups.forEach { MetricGroupCard(it) }
             // Its own Verloop: Gezondheid's, its one line (docs/CHARTS.md); a server from before it: the week and month.
             val history = data.health.history

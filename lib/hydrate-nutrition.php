@@ -165,6 +165,10 @@ if (!function_exists('hydrate_nutrition')) {
                 $range   = $rule['range'];
                 $verdict = hydrate_nutrition_verdict($share, $range);
             }
+            /* No norm (carbohydrates since 2026): shown, never judged. */
+            if ($rule['measure'] === 'none' && $share !== null) {
+                $verdict = 'none';
+            }
             if ($rule['measure'] === 'target' && $grams !== null && $proteinTarget) {
                 $progress = $grams / $proteinTarget * 100;
             }
@@ -184,15 +188,22 @@ if (!function_exists('hydrate_nutrition')) {
                 'verdict'  => $verdict,
                 'verdict_text' => hydrate_nutrition_verdict_text($verdict),
                 /* The meter: the range as the green band, the marker you. */
-                'meter'    => $grams === null ? null : ($rule['measure'] === 'share'
-                    ? ($share === null ? null : ['low' => $range[0], 'high' => $range[1], 'max' => 100, 'value' => $share])
-                    : ($proteinTarget ? ['low' => null, 'high' => null, 'max' => $proteinTarget * 1.6, 'value' => $grams] : null)),
+                'meter'    => $grams === null ? null : match ($rule['measure']) {
+                    'share'  => $share === null ? null : ['low' => $range[0], 'high' => $range[1], 'max' => 100, 'value' => $share],
+                    /* Its share, without a band: there is no range to draw. */
+                    'none'   => $share === null ? null : ['low' => null, 'high' => null, 'max' => 100, 'value' => $share],
+                    default  => $proteinTarget ? ['low' => null, 'high' => null, 'max' => $proteinTarget * 1.6, 'value' => $grams] : null,
+                },
                 'facts'    => $grams === null ? [] : array_values(array_filter([
                     ['label' => t('Gegeten'), 'value' => tf('%1$s g · %2$s kcal', i18n_number($grams, 0), i18n_number($mkcal, 0))],
                     $share === null ? null : ['label' => t('Deel van je energie'), 'value' => i18n_number($share, 1) . ' %'],
-                    $rule['measure'] === 'share'
-                        ? ['label' => t('Richtlijn'), 'value' => tf('%1$s–%2$s %% van je energie', i18n_number($rule['range'][0], 0), i18n_number($rule['range'][1], 0))]
-                        : ($proteinTarget ? ['label' => t('Richtlijn'), 'value' => tf('%1$s g (jouw doel) · %2$s %% van je doel', i18n_number($proteinTarget, 0), i18n_number((float) $progress, 0))] : null),
+                    match (true) {
+                        $rule['measure'] === 'share' => ['label' => t('Richtlijn'), 'value' => tf('%1$s–%2$s %% van je energie', i18n_number($rule['range'][0], 0), i18n_number($rule['range'][1], 0))],
+                        $rule['measure'] === 'target' && $proteinTarget => ['label' => t('Richtlijn'), 'value' => tf('%1$s g (jouw doel) · %2$s %% van je doel', i18n_number($proteinTarget, 0), i18n_number((float) $progress, 0))],
+                        /* No percentage norm: said, so its absence is not read as a gap. */
+                        $rule['measure'] === 'none' => ['label' => t('Richtlijn'), 'value' => t('Geen percentage')],
+                        default => null,
+                    },
                 ])),
                 'why'      => $rule['measure'] === 'target' && $proteinTarget && $perKg
                     ? tf('Jouw doel: %s g per kg lichaamsgewicht bij je activiteit (je profiel).', i18n_number($perKg, 1))
@@ -230,17 +241,21 @@ if (!function_exists('hydrate_nutrition')) {
             }
             $grams = $of[$key] ?? null;
             $share = ($grams !== null && $kcal && $key === 'saturated_fat') ? $grams * $ref['kcal_per_gram']['fat'] / $kcal * 100 : null;
+            /* Grams per 1.000 kcal of the day (fibre, 2026): only with the day's energy. */
+            $perKcal = ($grams !== null && $kcal && $rule['measure'] === 'per_kcal') ? $grams / $kcal * 1000 : null;
             $verdict = match (true) {
-                $grams === null            => null,
-                $rule['measure'] === 'none' => 'none',
-                $rule['measure'] === 'share' => $share === null ? null : hydrate_nutrition_verdict($share, $rule['range']),
-                default                     => hydrate_nutrition_verdict($grams, $rule['range']),
+                $grams === null               => null,
+                $rule['measure'] === 'none'    => 'none',
+                $rule['measure'] === 'share'   => $share === null ? null : hydrate_nutrition_verdict($share, $rule['range']),
+                $rule['measure'] === 'per_kcal' => $perKcal === null ? null : hydrate_nutrition_verdict($perKcal, $rule['range']),
+                default                        => hydrate_nutrition_verdict($grams, $rule['range']),
             };
             $out[] = [
                 'key'          => $key,
                 'label'        => (string) $copy['details'][$key],
                 'value'        => $grams === null ? null : tf('%s g', i18n_number($grams, 0)),
-                'extra'        => $share === null ? null : i18n_number($share, 1) . ' %',
+                'extra'        => $share !== null ? i18n_number($share, 1) . ' %'
+                    : ($perKcal === null ? null : tf('%s g per 1.000 kcal', i18n_number_trim($perKcal, 1))),
                 'verdict'      => $verdict,
                 'verdict_text' => $grams === null ? t('niet gelogd') : hydrate_nutrition_verdict_text($verdict),
             ];

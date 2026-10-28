@@ -183,6 +183,9 @@ return [
     '%1$s g · %2$s kcal' => '%1$s g · %2$s kcal',
     'Deel van je energie' => 'Share of your energy',
     'Richtlijn' => 'Guideline',
+    /* 29.0: the 2026 norms (config/nutrition-reference.php). */
+    'Geen percentage' => 'No percentage',
+    '%s g per 1.000 kcal' => '%s g per 1,000 kcal',
     '%1$s–%2$s %% van je energie' => '%1$s–%2$s %% of your energy',
     '%1$s g (jouw doel) · %2$s %% van je doel' => '%1$s g (your goal) · %2$s %% of your goal',
     'Jouw doel: %s g per kg lichaamsgewicht bij je activiteit (je profiel).' => 'Your goal: %s g per kg of body weight for your activity (your profile).',

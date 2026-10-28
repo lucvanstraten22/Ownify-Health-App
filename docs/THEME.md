@@ -174,6 +174,18 @@ verdicts) is the same glass chip, never pressed: the chosen green glass
 inside a range, the gold glass with `--attention` text above it, plain
 otherwise.
 
+**Research evidence** (29.0, docs/RESEARCH.md) is made of what is here, no
+new style: the label (Zeer betrouwbaar, Betrouwbaar, Beperkt onderbouwd) is
+the plain glass chip — tappable beside an insight, a status in its detail —
+and "Bekijk onderzoek" the quiet link (`.btn--link`, Android
+`LinkButton`), its text 16 from the chip: its padding is pulled back on the
+left instead of the right, so that wrapped under the chip on a narrow phone
+its text starts on the chip's edge. The detail is Instellingen'
+page: the page intro, eyebrows, the settings card's rows and notes, `.btn`
+(the green glass for Lees de pdf); a PDF read inside it sits in a Well. The
+paper of a PDF's pages is the document's own white, in either theme — it is
+the publication, not Ownify's surface.
+
 **The slider** (27.0, Voeding's cijfer): the pill's rail (8 tall,
 `--fill` at .08, a hairline), `--health-edge` → `--health` up to a 28 round
 glass thumb (`.glass`), on a 44 tall track. The only slider.

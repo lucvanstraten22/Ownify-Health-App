@@ -395,6 +395,28 @@ foreach ($page['blocks'] as $block) {
                             </div>
                         </section>
 
+                    <?php elseif ($block['type'] === 'insight'):
+                        /* A stored insight that belongs here (docs/INSIGHTS.md): the
+                           body's BMI under Lichaamsmaten. Nothing when there is none. */
+                        $insight = $data['insights']['context'][$block['slot']] ?? null;
+                        if ($insight !== null): ?>
+
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($insight['title']) ?></h2>
+                            <div class="card settings-card">
+                                <div class="settings-state">
+                                    <span class="settings-state__note"><?= e($insight['body']) ?></span>
+                                    <?php component('research-evidence', $data + ['evidence' => [
+                                        'research' => $insight['research'],
+                                        'strength' => $insight['strength'],
+                                        'label'    => $insight['research_label'],
+                                    ]]); ?>
+                                </div>
+                            </div>
+                        </section>
+
+                        <?php endif; ?>
+
                     <?php elseif ($block['type'] === 'rows'): ?>
 
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">

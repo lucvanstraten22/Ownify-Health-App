@@ -44,6 +44,7 @@ import com.ownify.android.ui.screens.health.TrainingSessionDetail
 import com.ownify.android.ui.screens.health.HealthPage
 import com.ownify.android.ui.screens.overview.OverviewPage
 import com.ownify.android.ui.screens.overview.ScoreCompassDetail
+import com.ownify.android.ui.screens.research.ResearchDetailPage
 import com.ownify.android.ui.screens.settings.DeleteConfirm
 import com.ownify.android.ui.screens.settings.DeviceNameEditor
 import com.ownify.android.ui.screens.settings.FieldEditor
@@ -87,6 +88,7 @@ object OwnifyScreens {
                 Detail.Leaderboard -> LeaderboardDetail(data)
                 Detail.Challenges -> ChallengesDetail(data, scroll)
                 is Detail.Challenge -> data.challenges.view(detail.id)?.let { ChallengeDetail(data, it, detail.overList, scroll) }
+                is Detail.Research -> data.research.detail(detail.id)?.let { ResearchDetailPage(data.research, it, scroll) }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },

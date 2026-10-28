@@ -352,15 +352,19 @@
 
 .nutrition-row__details li {
     display: flex;
+    /* Where a line is too narrow for all four (fibre's "per 1.000 kcal",
+       29.0, on a small phone), the bubble moves under it: nothing runs over
+       the name, nothing is cut off. */
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-1) var(--space-2);
     font-size: var(--fs-small);
     color: var(--text-secondary);
 }
 
-.nutrition-row__detail { flex: 1; min-width: 0; }
-.nutrition-row__details strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
-.nutrition-row__extra { color: var(--text-muted); font-size: var(--fs-tiny); }
+.nutrition-row__detail { flex: 1 0 auto; }
+.nutrition-row__details strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nutrition-row__extra { color: var(--text-muted); font-size: var(--fs-tiny); white-space: nowrap; }
 
 .nutrition-day__hint { margin: var(--space-3) 0 0; font-size: var(--fs-tiny); color: var(--text-muted); }
 

@@ -133,9 +133,13 @@ $ref     = nutrition_reference();
 section('7. The reference values: one file');
 
 check('4, 4 and 9 kcal per gram', $ref['kcal_per_gram'] === ['carbs' => 4.0, 'protein' => 4.0, 'fat' => 9.0]);
-check('carbohydrates 40–70 % of the energy, fat 20–40 %', $ref['macros']['carbs']['range'] === [40, 70] && $ref['macros']['fat']['range'] === [20, 40]);
+/* The 2026 norms (Gezondheidsraad 2026/14, NUT-01): carbohydrates have no
+   percentage any more; fibre follows the day's own energy. */
+check('carbohydrates: no percentage norm (2026), fat 20–40 %', $ref['macros']['carbs']['measure'] === 'none' && !isset($ref['macros']['carbs']['range'])
+    && $ref['macros']['fat']['range'] === [20, 40]);
 check('protein against your own goal', $ref['macros']['protein']['measure'] === 'target');
-check('saturated fat under 10 % of the energy, fibre 30–40 g', $ref['details']['saturated_fat']['range'] === [0, 10] && $ref['details']['fibre']['range'] === [30, 40]);
+check('saturated fat under 10 % of the energy (the interim step), fibre 12,6–14,6 g per 1.000 kcal', $ref['details']['saturated_fat']['range'] === [0, 10]
+    && $ref['details']['fibre']['measure'] === 'per_kcal' && $ref['details']['fibre']['range'] === [12.6, 14.6]);
 check('sugar has no verdict', $ref['details']['sugar']['measure'] === 'none');
 check('energy 90–110 % of the target, water 1,5–2,0 L, target 1,8 L', $ref['energy']['range'] === [0.9, 1.1] && $ref['water']['range'] === [1.5, 2.0] && (float) $ref['water']['target'] === 1.8);
 
@@ -182,17 +186,27 @@ $fat   = $macro($t, 'fat');
 
 check('the lunch two apps wrote counts once: 200 g carbohydrates', abs((float) $carbs['grams'] - 200) < 0.01, (string) $carbs['grams']);
 check('energy from the three: 200×4 + 90×4 + 65×9 = 1.745 kcal', $t['kcal'] == 1745, (string) $t['kcal']);
-check('carbohydrates 45,8 % of it, Binnen bereik', abs($carbs['share'] - 45.8) < 0.05 && $carbs['verdict'] === 'in' && $carbs['verdict_text'] === 'Binnen bereik');
+check('carbohydrates 45,8 % of it, Geen oordeel: no norm to judge it by', abs($carbs['share'] - 45.8) < 0.05 && $carbs['verdict'] === 'none' && $carbs['verdict_text'] === 'Geen oordeel');
 check('fat 33,5 %, Binnen bereik', abs($fat['share'] - 33.5) < 0.05 && $fat['verdict'] === 'in');
 check('the head in grams', $carbs['head'] === '200 g' && $fat['head'] === '65 g');
-check('the sub line: share and guideline', $carbs['sub'] === ['46 % van je energie', 'richtlijn 40–70 %']);
-check('the meter: the range as its band, the share its marker', $carbs['meter']['low'] === 40 && $carbs['meter']['high'] === 70 && abs($carbs['meter']['value'] - 45.85) < 0.05);
+check('the sub line: the share alone, no guideline', $carbs['sub'] === ['46 % van je energie'], json_encode($carbs['sub'], JSON_UNESCAPED_UNICODE));
+check('the meter: no band, the share its marker', $carbs['meter']['low'] === null && $carbs['meter']['high'] === null && abs($carbs['meter']['value'] - 45.85) < 0.05);
+check('Richtlijn says there is no percentage', ($carbs['facts'][2]['value'] ?? null) === 'Geen percentage');
+check('fat keeps its sub line and band', $fat['sub'] === ['34 % van je energie', 'richtlijn 20–40 %'] && $fat['meter']['low'] === 20 && $fat['meter']['high'] === 40,
+    json_encode($fat['sub'], JSON_UNESCAPED_UNICODE));
 check('what opens: Gegeten, Deel van je energie, Richtlijn', array_column($carbs['facts'], 'label') === ['Gegeten', 'Deel van je energie', 'Richtlijn']);
 check('Gegeten in grams and kcal', $carbs['facts'][0]['value'] === '200 g · 800 kcal');
 
 $details = array_column($carbs['details'], null, 'key');
 check('fibre and sugar under carbohydrates', array_keys($details) === ['fibre', 'sugar']);
-check('fibre 22 g: Onder bereik', $details['fibre']['value'] === '22 g' && $details['fibre']['verdict'] === 'low');
+check('fibre 22 g of 1.745 kcal: 12,6 g per 1.000 kcal, Binnen bereik', $details['fibre']['value'] === '22 g'
+    && $details['fibre']['extra'] === '12,6 g per 1.000 kcal' && $details['fibre']['verdict'] === 'in', json_encode($details['fibre'], JSON_UNESCAPED_UNICODE));
+$fibre = static fn (?float $grams, ?float $kcal): array => hydrate_nutrition_details(['details' => ['fibre' => 'Vezels', 'sugar' => 'Suiker']], $ref, 'carbs',
+    ['fibre' => $grams, 'sugar' => null], $kcal)[0];
+check('…10 g of 2.000 kcal (5 per 1.000): Onder bereik', $fibre(10, 2000)['verdict'] === 'low' && $fibre(10, 2000)['extra'] === '5 g per 1.000 kcal');
+check('…40 g of 2.000 kcal (20 per 1.000): Boven bereik', $fibre(40, 2000)['verdict'] === 'high');
+check('…28 g of 2.000 kcal (14 per 1.000): Binnen bereik', $fibre(28, 2000)['verdict'] === 'in');
+check('…without the day\'s energy: its grams, no verdict', $fibre(20, null)['value'] === '20 g' && $fibre(20, null)['verdict'] === null && $fibre(20, null)['extra'] === null);
 check('sugar: Geen oordeel', $details['sugar']['verdict'] === 'none' && $details['sugar']['verdict_text'] === 'Geen oordeel');
 $sat = $fat['details'][0];
 check('saturated fat under fat: 22 g, 11,3 % of the energy, Boven bereik', $sat['key'] === 'saturated_fat' && $sat['value'] === '22 g' && $sat['extra'] === '11,3 %' && $sat['verdict'] === 'high');

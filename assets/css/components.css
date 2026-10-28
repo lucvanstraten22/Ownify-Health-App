@@ -1110,6 +1110,69 @@
 }
 
 /* --------------------------------------------------------------------------
+   Research (docs/INSIGHTS.md): the evidence beside an insight — its label as
+   the goal wizard's glass chip, and "Bekijk onderzoek" as a quiet link —
+   and the detail both open. Layout only: every look here is an existing one
+   (.glass--chip, .btn--link, .btn, the settings card's states and notes, the
+   Well's radius, fill and hairline). OverviewPage.kt and ResearchDetail.kt
+   draw the same.
+   -------------------------------------------------------------------------- */
+.research-evidence {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-2);
+}
+
+/* The link's text 16 from the chip, its own padding pulled back on the left
+   instead of the right: wrapped under the chip on a narrow phone, its text
+   starts on the chip's edge, as .btn--link's text ends on the edge elsewhere. */
+.research-evidence .btn--link {
+    margin-right: 0;
+    margin-left: calc(-1 * var(--space-2));
+}
+
+/* The label in the detail: the same chip as a status, as Voeding's bubbles —
+   never pressed, nothing to tap. */
+.research-detail__strength {
+    align-self: flex-start;
+    cursor: default;
+    pointer-events: none;
+}
+
+.research-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block: var(--space-3);
+}
+
+/* Links that act as the existing buttons: no underline, as a .btn has none. */
+.research-detail__actions .btn {
+    flex: 1 1 160px;
+    text-decoration: none;
+}
+
+/* The PDF read inside the page: in a Well, most of the screen tall. */
+.research-detail__frame {
+    margin-top: var(--space-3);
+    overflow: hidden;
+    border: 1px solid var(--glass-hairline);
+    border-radius: var(--radius-md);
+    background: var(--inset-fill);
+}
+
+.research-detail__frame[hidden] { display: none; }
+
+.research-detail__frame iframe {
+    display: block;
+    width: 100%;
+    height: min(78vh, 900px);
+    border: 0;
+}
+
+/* --------------------------------------------------------------------------
    Goal progress
    -------------------------------------------------------------------------- */
 .goal__headline {

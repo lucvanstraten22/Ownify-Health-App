@@ -62,6 +62,8 @@ import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.ownify.android.ui.screens.research.ResearchEvidence
+import com.ownify.android.data.Evidence
 
 /*
  * Slaap, drawn (docs/SLEEP.md) — the website's components/sleep-view.php
@@ -103,8 +105,9 @@ private fun stageColor(key: String): Color = when (key) {
  * wake time at the right. A finger on the night reads the period there: its
  * stage, and when it began and ended.
  */
+/** [evidence]: how far a wearable's stages can be trusted (docs/INSIGHTS.md), beside a night that has them. */
 @Composable
-fun SleepNightCard(night: SleepNight) {
+fun SleepNightCard(night: SleepNight, evidence: Evidence? = null) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Row(Modifier.fillMaxWidth().padding(bottom = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
@@ -151,6 +154,7 @@ fun SleepNightCard(night: SleepNight) {
             T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
         }
         if (night.staged) {
+            ResearchEvidence(evidence)
             T(night.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }

@@ -56,6 +56,7 @@ import com.ownify.android.data.CompassComposition
 import com.ownify.android.data.CompassDay
 import com.ownify.android.data.CompassDirection
 import com.ownify.android.data.CompassOpportunity
+import com.ownify.android.ui.screens.research.ResearchEvidence
 import com.ownify.android.data.CompassPart
 import com.ownify.android.data.CompassPeriod
 import com.ownify.android.data.CompassReadout
@@ -606,6 +607,8 @@ private fun OpportunityCard(opportunity: CompassOpportunity) {
                 opportunity.fact?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextPrimary)) }
                 opportunity.relation?.let { T(it, JStyle.Lede) }
             }
+            // The research about the component it names, where there is any: its context, not its reason.
+            ResearchEvidence(opportunity.research)
             opportunity.gainText?.let { CardHint(it, icon = null, plain = true) }
         } else {
             T(opportunity.empty.orEmpty(), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted))

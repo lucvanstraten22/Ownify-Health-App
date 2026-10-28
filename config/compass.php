@@ -231,14 +231,18 @@ return [
     ],
 
     /* ------------------------------------------------------------------
-       4  GROOTSTE KANS
+       4  MOGELIJK AANDACHTSPUNT (29.0; "Grootste kans" before)
        The component where the Health Score has the most room: its weight in
        the score times what it lacks of 100. Each pair says what was measured
-       and what a higher score would go together with — never what to do.
+       and what a higher score would go together with — never what to do. A
+       possible point of attention for the score, not the person's greatest
+       possible health improvement: the calculation is unchanged, only the
+       name. Where approved research is about that component, its evidence
+       stands under it (docs/INSIGHTS.md).
        ------------------------------------------------------------------ */
     'opportunity' => [
-        'title' => 'Grootste kans',
-        'empty' => 'Nog niet genoeg gegevens om een kans aan te wijzen.',
+        'title' => 'Mogelijk aandachtspunt',
+        'empty' => 'Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.',
         'none'  => 'Geen onderdeel springt eruit: overal zit weinig ruimte.',
         'gain'  => 'Op 100 zou dit onderdeel je Gezondheidsscore met zo\'n %d punten verhogen.',
 

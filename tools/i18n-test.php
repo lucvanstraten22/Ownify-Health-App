@@ -312,6 +312,9 @@ function page_texts(string $html): array
         }
     }
     $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#si', ' ', $html);
+    /* Text marked as Dutch is Dutch on purpose: a Dutch publication's own
+       title ("Uit onderzoek blijkt", docs/RESEARCH.md). */
+    $html = preg_replace('#<((?!html\b)[a-z][a-z0-9]*)\b[^>]*\slang="nl"[^>]*>.*?</\1>#si', ' ', $html);
     if (preg_match_all('/\s([a-z][a-z0-9-]*)="([^"]*)"/', $html, $m, PREG_SET_ORDER)) {
         foreach ($m as [, $name, $value]) {
             if (in_array($name, ['class', 'style', 'href', 'src', 'id', 'for', 'type', 'name', 'd', 'viewbox', 'viewBox', 'content',
@@ -358,6 +361,10 @@ function state_texts(mixed $node, string $key = ''): array
         $out = [];
         foreach ($node as $k => $v) {
             if (is_string($k) && in_array($k, $skip, true)) {
+                continue;
+            }
+            /* A Dutch publication's title, as published (docs/RESEARCH.md). */
+            if ($k === 'title' && ($node['language'] ?? null) === 'nl') {
                 continue;
             }
             $out = array_merge($out, state_texts($v, is_string($k) ? $k : $key));

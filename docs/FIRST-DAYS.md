@@ -65,10 +65,8 @@ before.
 | 4 Doel | *Wil je meteen een doel stellen?* | `api/goals/create.php` | **Naar Ownify** finishes, with or without a goal |
 
 **Gegevens** offers Health Connect only, because it is the one source a
-phone can link today. It is left out:
-
-- Apple Health has no app to link it with.
-- Google Health in the cloud has no way to connect yet (no `start.php`).
+phone can link today. Google Health in the cloud is left out: it has no way
+to connect yet (no `start.php`). Ownify does not support Apple Health (29.0).
 
 The website cannot reach a phone, so it says where to go: the Ownify app on
 an Android phone, signed in to this account. The app asks Health Connect

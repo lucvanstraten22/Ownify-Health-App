@@ -60,7 +60,15 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.IntrinsicMeasurable
+import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -79,6 +87,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import com.ownify.android.data.Evidence
 import com.ownify.android.data.NutritionDay
 import com.ownify.android.data.NutritionMacro
 import com.ownify.android.data.NutritionMeter
@@ -108,6 +117,7 @@ import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
+import com.ownify.android.ui.screens.research.ResearchEvidence
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
@@ -138,13 +148,19 @@ import kotlin.math.sin
 /** How long a row takes to open (nutrition.css: 280ms, the strong ease-out). */
 private const val OPEN_MS = 280
 
+/**
+ * [references]: the research beside Voeding's own reference values
+ * (`insights.references`, docs/INSIGHTS.md) — the cijfer's (what the
+ * guidelines count as eating well), fat's range and that carbohydrates have
+ * none, each in its own place.
+ */
 @Composable
-fun NutritionViewContent(view: NutritionView) {
+fun NutritionViewContent(view: NutritionView, references: Map<String, Evidence> = emptyMap()) {
     // The day shown: 0 today, up to 6 days back. Both cards follow it.
     var shown by rememberSaveable { mutableIntStateOf(0) }
     val index = shown.coerceIn(0, view.days.lastIndex)
-    RatingSliderCard(view, index)
-    CompositionCard(view, index) { shown = it.coerceIn(0, view.days.lastIndex) }
+    RatingSliderCard(view, index, references["nutrition.rating"])
+    CompositionCard(view, index, references) { shown = it.coerceIn(0, view.days.lastIndex) }
     AreaChartsGrid("nutrition", view.charts)
 }
 
@@ -153,7 +169,7 @@ fun NutritionViewContent(view: NutritionView) {
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun RatingSliderCard(view: NutritionView, index: Int) {
+private fun RatingSliderCard(view: NutritionView, index: Int, evidence: Evidence?) {
     val copy = view.rating
     val day = view.days[index]
     val context = LocalContext.current
@@ -287,6 +303,8 @@ private fun RatingSliderCard(view: NutritionView, index: Int) {
             modifier = Modifier.padding(top = Ownify.Space2),
             wrap = true
         )
+        // What the Dutch guidelines count as eating well: context for the cijfer, never a score of it.
+        ResearchEvidence(evidence)
     }
 }
 
@@ -308,7 +326,7 @@ private fun CardHead(icon: androidx.compose.ui.graphics.vector.ImageVector, titl
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun CompositionCard(view: NutritionView, index: Int, onDay: (Int) -> Unit) {
+private fun CompositionCard(view: NutritionView, index: Int, references: Map<String, Evidence>, onDay: (Int) -> Unit) {
     val copy = view.composition
     val day = view.days[index]
     // One row open at a time, on the day shown; a new day starts closed.
@@ -345,7 +363,7 @@ private fun CompositionCard(view: NutritionView, index: Int, onDay: (Int) -> Uni
             val rows = @Composable { modifier: Modifier ->
                 Column(modifier, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                     day.macros.forEach { m ->
-                        MacroRow(m, open == m.key, if (open == m.key) fromRing else 0) { open = if (open == m.key) null else m.key }
+                        MacroRow(m, open == m.key, if (open == m.key) fromRing else 0, references["nutrition." + m.key]) { open = if (open == m.key) null else m.key }
                     }
                 }
             }
@@ -486,7 +504,7 @@ private fun arcPath(c: Offset, r: Float, ri: Float, a0: Float, a1: Float): Path 
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, onToggle: () -> Unit) {
+private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: Evidence?, onToggle: () -> Unit) {
     val reduced = LocalReducedMotion.current || LocalStillMotion.current
     val shape = RoundedCornerShape(Ownify.RadiusSm)
     val color = macroColor(m.key)
@@ -556,24 +574,32 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, onToggle: 
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
                             Column(Modifier.padding(top = Ownify.Space2), verticalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
                                 m.details.forEach { d ->
-                                    Row(
+                                    // Where a line is too narrow for all four (fibre's "per 1.000 kcal"
+                                    // on a small phone), what does not fit moves under it: nothing runs
+                                    // over the name, nothing is cut off (`.nutrition-row__details li`).
+                                    // The name keeps its whole width and takes what is left
+                                    // (`.nutrition-row__detail`, `flex: 1 0 auto`).
+                                    FlowRow(
                                         Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
+                                        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
+                                        verticalArrangement = Arrangement.spacedBy(Ownify.Space1),
+                                        itemVerticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        T(d.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+                                        T(d.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f).wholeWidth())
                                         if (d.value != null) {
-                                            T(d.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true))
-                                            d.extra?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)) }
+                                            T(d.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true), maxLines = 1)
+                                            d.extra?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1) }
                                             if (d.verdict != null && d.verdictText != null) Bubble(d.verdictText, d.verdict)
                                         } else {
-                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted))
+                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1)
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                    // The research behind this row's guideline: fat's range, and that carbohydrates have none.
+                    ResearchEvidence(evidence)
                 }
             }
         }
@@ -689,4 +715,30 @@ internal fun oklabMix(a: Color, share: Float, b: Color): Color {
         gam(-1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s),
         gam(-0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s)
     )
+}
+
+/**
+ * `flex: 1 0 auto` for a weighted item in a [FlowRow]: the line breaks at
+ * its whole width. FlowRow asks a weighted item only for its narrowest width
+ * (its longest word), and would then squeeze it into what is left and cut it
+ * off — "Suikers (tot" on the narrowest phones.
+ */
+private fun Modifier.wholeWidth(): Modifier = this then WholeWidthElement
+
+private data object WholeWidthElement : ModifierNodeElement<WholeWidthNode>() {
+    override fun create() = WholeWidthNode()
+    override fun update(node: WholeWidthNode) = Unit
+    override fun InspectorInfo.inspectableProperties() {
+        name = "wholeWidth"
+    }
+}
+
+private class WholeWidthNode : Modifier.Node(), LayoutModifierNode {
+    override fun MeasureScope.measure(measurable: Measurable, constraints: Constraints): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    }
+
+    override fun IntrinsicMeasureScope.minIntrinsicWidth(measurable: IntrinsicMeasurable, height: Int): Int =
+        measurable.maxIntrinsicWidth(height)
 }

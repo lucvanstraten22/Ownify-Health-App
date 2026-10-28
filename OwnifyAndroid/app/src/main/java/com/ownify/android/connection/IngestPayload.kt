@@ -1,11 +1,14 @@
 package com.ownify.android.connection
 
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.HeightRecord
+import androidx.health.connect.client.records.HydrationRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.Record
@@ -13,6 +16,7 @@ import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.units.Mass
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -36,10 +40,12 @@ import org.json.JSONObject
 internal object IngestPayload {
 
     /**
-     * The record types a sync reads and sends — all twelve this app may read
-     * (AndroidManifest.xml). The last five arrived with 13.0, for the
-     * Training and Slaap pages: a phone that granted the first seven before
-     * shows them as not yet granted until they are asked for.
+     * The record types a sync reads and sends — all sixteen this app may read
+     * (AndroidManifest.xml). Five arrived with 13.0, for the Training and
+     * Slaap pages; the last four with 29.0 — water for Voeding, and weight,
+     * height and body fat, so Lichaamsmaten and the BMI follow the scale and
+     * the app that measured them. A phone that granted the earlier ones
+     * shows the new ones as not yet granted until they are asked for.
      */
     val TYPES = listOf(
         SleepSessionRecord::class,
@@ -53,7 +59,11 @@ internal object IngestPayload {
         FloorsClimbedRecord::class,
         RestingHeartRateRecord::class,
         HeartRateVariabilityRmssdRecord::class,
-        OxygenSaturationRecord::class
+        OxygenSaturationRecord::class,
+        HydrationRecord::class,
+        WeightRecord::class,
+        HeightRecord::class,
+        BodyFatRecord::class
     )
 
     /**
@@ -83,6 +93,10 @@ internal object IngestPayload {
                 is HeartRateVariabilityRmssdRecord -> heartRateVariability(record)
                 is OxygenSaturationRecord -> oxygenSaturation(record)
                 is NutritionRecord -> nutrition(record)
+                is HydrationRecord -> hydration(record)
+                is WeightRecord -> weight(record)
+                is HeightRecord -> height(record)
+                is BodyFatRecord -> bodyFat(record)
                 is HeartRateRecord -> heartRate(record, nights)
                 else -> null
             }
@@ -184,6 +198,26 @@ internal object IngestPayload {
             .putGrams("dietaryFiber", r.dietaryFiber)
             .putGrams("sugar", r.sugar)
             .putGrams("sodium", r.sodium)
+
+    /** Water drunk over an interval, in litres (Voeding's Water). */
+    private fun hydration(r: HydrationRecord): JSONObject =
+        interval("Hydration", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
+            .put("volume", JSONObject().put("liters", r.volume.inLiters))
+
+    /** A weighing, in kilograms. */
+    private fun weight(r: WeightRecord): JSONObject =
+        instant("Weight", r, r.time, r.zoneOffset)
+            .put("weight", JSONObject().put("kilograms", r.weight.inKilograms))
+
+    /** A height, in metres (the server keeps centimetres). */
+    private fun height(r: HeightRecord): JSONObject =
+        instant("Height", r, r.time, r.zoneOffset)
+            .put("height", JSONObject().put("meters", r.height.inMeters))
+
+    /** A body-fat reading, as a percentage. */
+    private fun bodyFat(r: BodyFatRecord): JSONObject =
+        instant("BodyFat", r, r.time, r.zoneOffset)
+            .put("percentage", r.percentage.value)
 
     /** `samples`: only those inside one of [nights]; `allSamples`: every one. Null without samples. */
     private fun heartRate(r: HeartRateRecord, nights: List<SleepSessionRecord>): JSONObject? {

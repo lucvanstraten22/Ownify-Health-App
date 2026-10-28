@@ -1,0 +1,641 @@
+{
+ "_about": "api/app/state.php for a synthetic account (tools: a throwaway database, synthetic Health Connect records), 28 October 2026: the day's stored insights, the suggestion, the Scorekompas's point of attention and every research detail they open. Merged into state-demo.json by ResearchFlowTest.",
+ "insights": {
+  "title": "Nuttige inzichten",
+  "subtitle": "Uit je eigen gegevens, met het onderzoek erbij",
+  "state": "filled",
+  "items": [
+   {
+    "id": 1,
+    "slot": "sleep",
+    "rule": "sleep.duration",
+    "outcome": "below",
+    "title": "Slaapduur",
+    "body": "Je sliep de afgelopen 7 nachten gemiddeld 6:40 per nacht, volgens je metingen. Voor jouw leeftijd wordt minstens 7 uur aangeraden.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c2-0",
+    "research_label": "Bekijk onderzoek",
+    "icon": "pulse",
+    "accent": "sleep",
+    "state": "filled"
+   },
+   {
+    "id": 2,
+    "slot": "nutrition",
+    "rule": "nutrition.saturated_fat",
+    "outcome": "above",
+    "title": "Verzadigd vet",
+    "body": "Op de 6 dagen die je volledig lijkt te hebben gelogd, kwam 12,6 % van je energie uit verzadigd vet. De Gezondheidsraad noemt zo laag mogelijk, met 10 % als tussenstap.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c16-1",
+    "research_label": "Bekijk onderzoek",
+    "icon": "utensils",
+    "accent": "nutrition",
+    "state": "filled"
+   },
+   {
+    "id": 3,
+    "slot": "training",
+    "rule": "activity.minutes",
+    "outcome": "below",
+    "title": "Beweging",
+    "body": "Je legde de afgelopen 7 dagen 114 minuten training vast. De Beweegrichtlijn noemt minstens 150 minuten matig intensief bewegen per week. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c10-1",
+    "research_label": "Bekijk onderzoek",
+    "icon": "bolt",
+    "accent": "training",
+    "state": "filled"
+   }
+  ],
+  "context": {
+   "sleep": {
+    "id": 1,
+    "slot": "sleep",
+    "rule": "sleep.duration",
+    "outcome": "below",
+    "title": "Slaapduur",
+    "body": "Je sliep de afgelopen 7 nachten gemiddeld 6:40 per nacht, volgens je metingen. Voor jouw leeftijd wordt minstens 7 uur aangeraden.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c2-0",
+    "research_label": "Bekijk onderzoek",
+    "icon": "pulse",
+    "accent": "sleep"
+   },
+   "nutrition": {
+    "id": 2,
+    "slot": "nutrition",
+    "rule": "nutrition.saturated_fat",
+    "outcome": "above",
+    "title": "Verzadigd vet",
+    "body": "Op de 6 dagen die je volledig lijkt te hebben gelogd, kwam 12,6 % van je energie uit verzadigd vet. De Gezondheidsraad noemt zo laag mogelijk, met 10 % als tussenstap.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c16-1",
+    "research_label": "Bekijk onderzoek",
+    "icon": "utensils",
+    "accent": "nutrition"
+   },
+   "training": {
+    "id": 3,
+    "slot": "training",
+    "rule": "activity.minutes",
+    "outcome": "below",
+    "title": "Beweging",
+    "body": "Je legde de afgelopen 7 dagen 114 minuten training vast. De Beweegrichtlijn noemt minstens 150 minuten matig intensief bewegen per week. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.",
+    "phrased": false,
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "research": "c10-1",
+    "research_label": "Bekijk onderzoek",
+    "icon": "bolt",
+    "accent": "training"
+   },
+   "body": {
+    "id": 4,
+    "slot": "body",
+    "rule": "body.bmi",
+    "outcome": "overweight",
+    "title": "BMI",
+    "body": "Met je lengte en gewicht is je BMI 25,2. De WHO noemt bij volwassenen een BMI vanaf 25 overgewicht en vanaf 30 obesitas. BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.",
+    "phrased": false,
+    "strength": {
+     "key": "beperkt",
+     "label": "Beperkt onderbouwd"
+    },
+    "research": "c25-2",
+    "research_label": "Bekijk onderzoek",
+    "icon": "sparkle",
+    "accent": "neutral"
+   }
+  },
+  "references": {
+   "nutrition.fat": {
+    "research": "c15-1",
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "label": "Bekijk onderzoek"
+   },
+   "nutrition.carbs": {
+    "research": "c17-0",
+    "strength": {
+     "key": "zeer_betrouwbaar",
+     "label": "Zeer betrouwbaar"
+    },
+    "label": "Bekijk onderzoek"
+   },
+   "nutrition.rating": {
+    "research": "c23-0",
+    "strength": {
+     "key": "zeer_betrouwbaar",
+     "label": "Zeer betrouwbaar"
+    },
+    "label": "Bekijk onderzoek"
+   },
+   "sleep.stages": {
+    "research": "c6-0",
+    "strength": {
+     "key": "beperkt",
+     "label": "Beperkt onderbouwd"
+    },
+    "label": "Bekijk onderzoek"
+   },
+   "training.measurement": {
+    "research": "c14-0",
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar"
+    },
+    "label": "Bekijk onderzoek"
+   }
+  }
+ },
+ "recommendation": {
+  "title": "Eén kleine suggestie",
+  "state": "filled",
+  "headline": "Slaapduur",
+  "description": "Misschien iets voor deze week: één avond wat eerder naar bed gaan, en kijken hoe die nacht verloopt.",
+  "note": "Altijd een suggestie, nooit een opdracht.",
+  "strength": {
+   "key": "betrouwbaar",
+   "label": "Betrouwbaar"
+  },
+  "research": "c2-0",
+  "research_label": "Bekijk onderzoek",
+  "id": 5
+ },
+ "compass_opportunity": {
+  "title": "Mogelijk aandachtspunt",
+  "state": "filled",
+  "empty": null,
+  "category": "nutrition",
+  "label": "Voeding",
+  "accent": "nutrition",
+  "icon": "utensils",
+  "part": "rating",
+  "name": "Dagcijfer voor voeding",
+  "value": 70,
+  "band": "mid",
+  "fact": "Je gemiddelde dagcijfer voor voeding is 7,0, over 4 dagen.",
+  "relation": "Hogere dagcijfers zouden samengaan met een hogere voedingsscore.",
+  "gain": 10,
+  "gain_text": "Op 100 zou dit onderdeel je Gezondheidsscore met zo'n 10 punten verhogen.",
+  "research": {
+   "research": "c23-0",
+   "strength": {
+    "key": "zeer_betrouwbaar",
+    "label": "Zeer betrouwbaar"
+   },
+   "label": "Bekijk onderzoek"
+  }
+ },
+ "research": {
+  "copy": {
+   "title": "Uit onderzoek blijkt",
+   "found": "Wat het onderzoek vond",
+   "claim": "Wat Ownify ermee zegt",
+   "evidence": "Bewijskracht",
+   "population": "Voor wie",
+   "limitations": "Beperkingen",
+   "source": "Bron",
+   "kind_label": "Soort onderzoek",
+   "language": {
+    "nl": "De publicatie is in het Nederlands.",
+    "en": "De publicatie is in het Engels."
+   },
+   "published": "Verschenen",
+   "verified": "Gecontroleerd op %s",
+   "open_source": "Bekijk de publicatie",
+   "read_pdf": "Lees de pdf",
+   "open_pdf": "Open de pdf",
+   "download_pdf": "Download de pdf",
+   "pdf_hosted": "Een ongewijzigde kopie van de publicatie, gedeeld onder %s.",
+   "pdf_official": "De officiële pdf, rechtstreeks van de uitgever.",
+   "pdf_none": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+   "pdf_loading": "De pdf wordt geladen…",
+   "pdf_failed": "De pdf kon niet worden geladen. Je kunt hem bij de uitgever openen.",
+   "offline": "Je bent offline. De publicatie opent zodra je weer verbinding hebt.",
+   "page": "Pagina %1$d van %2$d",
+   "retired": "Ownify gebruikt inmiddels een nieuwere versie van deze bewering."
+  },
+  "details": {
+   "c2-0": {
+    "id": "c2-0",
+    "claim_id": 2,
+    "claim_key": "sleep.duration.adults",
+    "version": 1,
+    "retired": false,
+    "statement": "Volwassenen van 18 tot 60 jaar: regelmatig minstens 7 uur slaap per nacht. Korter slapen hangt samen met meer gezondheidsrisico's.",
+    "population": "Gezonde volwassenen van 18 tot 60 jaar.",
+    "limitations": [
+     "Gebaseerd op verbanden, niet op bewezen oorzaken.",
+     "Gaat alleen over duur, niet over kwaliteit of tijdstip.",
+     "Niet voor mensen met een slaapstoornis."
+    ],
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar",
+     "means": "Een consensus van deskundigen of een meta-analyse van vooral observationeel onderzoek, of een sterke richtlijn die Ownify maar bij benadering kan toepassen.",
+     "lowered": false,
+     "why": null,
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "SLP-02",
+     "kind": "Consensusverklaring van deskundigen, na literatuuronderzoek",
+     "title": "Recommended Amount of Sleep for a Healthy Adult: A Joint Consensus Statement of the American Academy of Sleep Medicine and Sleep Research Society",
+     "language": "en",
+     "language_note": "De publicatie is in het Engels.",
+     "authors": "Watson NF, Badr MS, Belenky G, et al.",
+     "organisation": "American Academy of Sleep Medicine en Sleep Research Society",
+     "year": "2015",
+     "citation": "Sleep 2015;38(6):843–844",
+     "findings": "Volwassenen horen regelmatig 7 uur of meer per nacht te slapen. Regelmatig korter dan 7 uur slapen hangt samen met onder meer gewichtstoename, diabetes, hoge bloeddruk, hart- en vaatziekten, depressie en een hoger sterfterisico. Meer dan 9 uur kan passend zijn voor jonge volwassenen, bij het inhalen van slaaptekort of bij ziekte; voor anderen is onzeker of dat een risico geeft.",
+     "href": "https://doi.org/10.5665/sleep.4716",
+     "doi": "10.5665/sleep.4716",
+     "pmid": "26039963",
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "link",
+     "href": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4434546/",
+     "embed": false,
+     "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+     "licence": "Gratis te lezen, alle rechten voorbehouden"
+    }
+   },
+   "c16-1": {
+    "id": "c16-1",
+    "claim_id": 16,
+    "claim_key": "nutrition.saturated_fat",
+    "version": 1,
+    "retired": false,
+    "statement": "Verzadigd vet: zo laag mogelijk, met 10% van je energie als tussenstap.",
+    "population": "Iedereen.",
+    "limitations": [
+     "Ownify ziet wat je logt, niet alles wat je eet."
+    ],
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar",
+     "means": "Een consensus van deskundigen of een meta-analyse van vooral observationeel onderzoek, of een sterke richtlijn die Ownify maar bij benadering kan toepassen.",
+     "lowered": true,
+     "why": "Ownify past dit maar bij benadering toe op je eigen gegevens. Daarom staat het label hier een stap lager dan het onderzoek zelf.",
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "NUT-01",
+     "kind": "Officiële voedingsnormen",
+     "title": "Voedingsnormen voor vetten, vetzuren, verteerbare koolhydraten en voedingsvezels",
+     "language": "nl",
+     "language_note": null,
+     "authors": null,
+     "organisation": "Gezondheidsraad",
+     "year": "2026",
+     "citation": "Gezondheidsraad, Den Haag 2026, publicatienr. 2026/14 (gecorrigeerde pdf 7 september 2026)",
+     "findings": "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet. Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap. Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel. Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal.",
+     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "official_pdf",
+     "href": "https://www.gezondheidsraad.nl/site/binaries/site-content/collections/documents/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels/14-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels-erratum.pdf",
+     "embed": true,
+     "note": "De officiële pdf, rechtstreeks van de uitgever.",
+     "licence": "Gratis te lezen, auteursrecht voorbehouden"
+    }
+   },
+   "c10-1": {
+    "id": "c10-1",
+    "claim_id": 10,
+    "claim_key": "activity.gr.adults",
+    "version": 1,
+    "retired": false,
+    "statement": "Minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, en minstens twee keer per week spier- en botversterkende activiteiten.",
+    "population": "Volwassenen en ouderen (ouderen ook balansoefeningen).",
+    "limitations": [
+     "Alle beweging telt mee, ook wandelen en fietsen.",
+     "Ownify ziet alleen de trainingen die je vastlegt."
+    ],
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar",
+     "means": "Een consensus van deskundigen of een meta-analyse van vooral observationeel onderzoek, of een sterke richtlijn die Ownify maar bij benadering kan toepassen.",
+     "lowered": true,
+     "why": "Ownify past dit maar bij benadering toe op je eigen gegevens. Daarom staat het label hier een stap lager dan het onderzoek zelf.",
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "ACT-02",
+     "kind": "Officiële richtlijn, op basis van systematische reviews",
+     "title": "Beweegrichtlijnen 2017",
+     "language": "nl",
+     "language_note": null,
+     "authors": null,
+     "organisation": "Gezondheidsraad",
+     "year": "2017",
+     "citation": "Gezondheidsraad, Den Haag 2017, publicatienr. 2017/08",
+     "findings": "Bewegen is goed, meer bewegen is beter. Volwassenen en ouderen: minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, minstens twee keer per week spier- en botversterkende activiteiten (ouderen met balansoefeningen) en voorkom veel stilzitten. Kinderen van 4 tot 18 jaar: elke dag minstens een uur matig intensief bewegen en minstens drie keer per week spier- en botversterkende activiteiten.",
+     "href": "https://www.gezondheidsraad.nl/documenten/adviezen/2017/08/22/beweegrichtlijnen-2017",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "official_pdf",
+     "href": "https://www.gezondheidsraad.nl/site/binaries/site-content/collections/documents/2017/08/22/beweegrichtlijnen-2017/kernadvies-Beweegrichtlijnen-2017.pdf",
+     "embed": true,
+     "note": "De officiële pdf, rechtstreeks van de uitgever.",
+     "licence": "Gratis te lezen, auteursrecht voorbehouden"
+    }
+   },
+   "c25-2": {
+    "id": "c25-2",
+    "claim_id": 25,
+    "claim_key": "body.bmi",
+    "version": 1,
+    "retired": false,
+    "statement": "De WHO noemt bij volwassenen een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas.",
+    "population": "Volwassenen vanaf 18 jaar.",
+    "limitations": [
+     "BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.",
+     "Een indeling voor groepen, geen oordeel over één persoon."
+    ],
+    "strength": {
+     "key": "beperkt",
+     "label": "Beperkt onderbouwd",
+     "means": "Eén studie, een standpunt van een vereniging, of een meting die maar deels past bij wat het onderzoek mat.",
+     "lowered": true,
+     "why": "Je gegevens passen maar deels bij wat het onderzoek mat. Daarom staat het label hier twee stappen lager dan het onderzoek zelf.",
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "BOD-01",
+     "kind": "Officieel feitenblad",
+     "title": "Obesity and overweight",
+     "language": "en",
+     "language_note": "De publicatie is in het Engels.",
+     "authors": null,
+     "organisation": "Wereldgezondheidsorganisatie (WHO)",
+     "year": "2026",
+     "citation": "WHO-feitenblad, bijgewerkt 7 oktober 2026",
+     "findings": "Bij volwassenen (18+) noemt de WHO een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas. Voor 5–19 jaar gelden groeicurves. Ook buikomvang kan worden gebruikt.",
+     "href": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "link",
+     "href": null,
+     "embed": false,
+     "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+     "licence": "Webpagina, geen pdf"
+    }
+   },
+   "c15-1": {
+    "id": "c15-1",
+    "claim_id": 15,
+    "claim_key": "nutrition.fat",
+    "version": 1,
+    "retired": false,
+    "statement": "Totaal vet: 20–40% van je energie. De kwaliteit van wat je eet telt meer dan de hoeveelheid vet.",
+    "population": "Iedereen vanaf 4 jaar.",
+    "limitations": [
+     "Ownify ziet wat je logt, niet alles wat je eet."
+    ],
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar",
+     "means": "Een consensus van deskundigen of een meta-analyse van vooral observationeel onderzoek, of een sterke richtlijn die Ownify maar bij benadering kan toepassen.",
+     "lowered": true,
+     "why": "Ownify past dit maar bij benadering toe op je eigen gegevens. Daarom staat het label hier een stap lager dan het onderzoek zelf.",
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "NUT-01",
+     "kind": "Officiële voedingsnormen",
+     "title": "Voedingsnormen voor vetten, vetzuren, verteerbare koolhydraten en voedingsvezels",
+     "language": "nl",
+     "language_note": null,
+     "authors": null,
+     "organisation": "Gezondheidsraad",
+     "year": "2026",
+     "citation": "Gezondheidsraad, Den Haag 2026, publicatienr. 2026/14 (gecorrigeerde pdf 7 september 2026)",
+     "findings": "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet. Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap. Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel. Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal.",
+     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "official_pdf",
+     "href": "https://www.gezondheidsraad.nl/site/binaries/site-content/collections/documents/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels/14-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels-erratum.pdf",
+     "embed": true,
+     "note": "De officiële pdf, rechtstreeks van de uitgever.",
+     "licence": "Gratis te lezen, auteursrecht voorbehouden"
+    }
+   },
+   "c17-0": {
+    "id": "c17-0",
+    "claim_id": 17,
+    "claim_key": "nutrition.carbohydrates",
+    "version": 1,
+    "retired": false,
+    "statement": "Koolhydraten hebben geen percentagenorm: het gaat om de bron, vooral volkoren, groente, fruit, peulvruchten en zuivel.",
+    "population": "Iedereen.",
+    "limitations": [
+     "Ownify ziet niet uit welke producten je koolhydraten komen."
+    ],
+    "strength": {
+     "key": "zeer_betrouwbaar",
+     "label": "Zeer betrouwbaar",
+     "means": "Een officiële richtlijn of norm, gebaseerd op systematisch beoordeeld onderzoek, die past bij wat Ownify meet.",
+     "lowered": false,
+     "why": null,
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "NUT-01",
+     "kind": "Officiële voedingsnormen",
+     "title": "Voedingsnormen voor vetten, vetzuren, verteerbare koolhydraten en voedingsvezels",
+     "language": "nl",
+     "language_note": null,
+     "authors": null,
+     "organisation": "Gezondheidsraad",
+     "year": "2026",
+     "citation": "Gezondheidsraad, Den Haag 2026, publicatienr. 2026/14 (gecorrigeerde pdf 7 september 2026)",
+     "findings": "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet. Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap. Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel. Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal.",
+     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "official_pdf",
+     "href": "https://www.gezondheidsraad.nl/site/binaries/site-content/collections/documents/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels/14-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels-erratum.pdf",
+     "embed": true,
+     "note": "De officiële pdf, rechtstreeks van de uitgever.",
+     "licence": "Gratis te lezen, auteursrecht voorbehouden"
+    }
+   },
+   "c23-0": {
+    "id": "c23-0",
+    "claim_id": 23,
+    "claim_key": "nutrition.pattern",
+    "version": 1,
+    "retired": false,
+    "statement": "Gezond eten is meer plantaardig en minder dierlijk: veel groente, fruit, volkoren, peulvruchten en noten, en weinig rood en bewerkt vlees en suikerhoudende dranken.",
+    "population": "De algemene bevolking.",
+    "limitations": [
+     "Deels bijgewerkt: in 2025 kwam een nieuw advies over eiwitbronnen; groente, fruit en granen volgen.",
+     "Ownify ziet niet welke producten je eet."
+    ],
+    "strength": {
+     "key": "zeer_betrouwbaar",
+     "label": "Zeer betrouwbaar",
+     "means": "Een officiële richtlijn of norm, gebaseerd op systematisch beoordeeld onderzoek, die past bij wat Ownify meet.",
+     "lowered": false,
+     "why": null,
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "NUT-03",
+     "kind": "Officiële richtlijn, op basis van systematische reviews",
+     "title": "Richtlijnen goede voeding 2015",
+     "language": "nl",
+     "language_note": null,
+     "authors": null,
+     "organisation": "Gezondheidsraad",
+     "year": "2015",
+     "citation": "Gezondheidsraad, Den Haag 2015, publicatienr. 2015/24, ISBN 978-94-6281-089-1",
+     "findings": "Eet meer plantaardig en minder dierlijk: dagelijks minstens 200 gram groente en 200 gram fruit, minstens 90 gram volkoren, wekelijks peulvruchten, 15 gram ongezouten noten, enkele porties zuivel en wekelijks vis. Beperk rood en vooral bewerkt vlees, drink zo min mogelijk suikerhoudende dranken, geen of hooguit één glas alcohol per dag, en maximaal 6 gram zout per dag.",
+     "href": "https://www.gezondheidsraad.nl/documenten/adviezen/2015/11/04/richtlijnen-goede-voeding-2015",
+     "doi": null,
+     "pmid": null,
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "official_pdf",
+     "href": "https://www.gezondheidsraad.nl/site/binaries/site-content/collections/documents/2015/11/04/richtlijnen-goede-voeding-2015/201524_Richtlijnen+goede+voeding+2015.pdf",
+     "embed": true,
+     "note": "De officiële pdf, rechtstreeks van de uitgever.",
+     "licence": "Gratis te lezen, auteursrecht voorbehouden"
+    }
+   },
+   "c6-0": {
+    "id": "c6-0",
+    "claim_id": 6,
+    "claim_key": "sleep.tracking",
+    "version": 1,
+    "retired": false,
+    "statement": "Wearables herkennen slaap goed, maar wakker liggen en slaapfasen zoals diep en REM veel minder betrouwbaar.",
+    "population": "Gezonde jonge volwassenen, apparaten uit 2019.",
+    "limitations": [
+     "Eén kleine studie.",
+     "Oudere apparaten dan die van nu."
+    ],
+    "strength": {
+     "key": "beperkt",
+     "label": "Beperkt onderbouwd",
+     "means": "Eén studie, een standpunt van een vereniging, of een meting die maar deels past bij wat het onderzoek mat.",
+     "lowered": false,
+     "why": null,
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "SLP-06",
+     "kind": "Validatiestudie in een slaaplaboratorium",
+     "title": "Performance of seven consumer sleep-tracking devices compared with polysomnography",
+     "language": "en",
+     "language_note": "De publicatie is in het Engels.",
+     "authors": "Chinoy ED, Cuellar JA, Huwa KE, et al.",
+     "organisation": null,
+     "year": "2021",
+     "citation": "Sleep 2021;44(5):zsaa291",
+     "findings": "In een slaaplaboratorium (34 gezonde jonge volwassenen, 3 nachten) herkenden zeven consumentenapparaten slaap goed, maar wakker zijn veel minder goed. Slaapfasen kwamen wisselend overeen en op onrustige nachten werkten de apparaten slechter.",
+     "href": "https://doi.org/10.1093/sleep/zsaa291",
+     "doi": "10.1093/sleep/zsaa291",
+     "pmid": "33378539",
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "link",
+     "href": "https://academic.oup.com/sleep/article-pdf/44/5/zsaa291/37933402/zsaa291.pdf",
+     "embed": false,
+     "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+     "licence": "CC BY-NC 4.0"
+    }
+   },
+   "c14-0": {
+    "id": "c14-0",
+    "claim_id": 14,
+    "claim_key": "measurement.wearables",
+    "version": 1,
+    "retired": false,
+    "statement": "Wearables meten hartslag en stappen redelijk nauwkeurig, maar energieverbruik en slaaptijd veel minder: calorieën kunnen ruim 20% afwijken en slaaptijd wordt meestal overschat.",
+    "population": "Consumentenwearables, vooral bij gezonde volwassenen.",
+    "limitations": [
+     "Studies gebruiken verschillende methoden.",
+     "Apparaten veranderen sneller dan het onderzoek."
+    ],
+    "strength": {
+     "key": "betrouwbaar",
+     "label": "Betrouwbaar",
+     "means": "Een consensus van deskundigen of een meta-analyse van vooral observationeel onderzoek, of een sterke richtlijn die Ownify maar bij benadering kan toepassen.",
+     "lowered": false,
+     "why": null,
+     "note": "Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage."
+    },
+    "source": {
+     "code": "MEA-01",
+     "kind": "Overzicht van systematische reviews",
+     "title": "Keeping Pace with Wearables: A Living Umbrella Review of Systematic Reviews Evaluating the Accuracy of Consumer Wearable Technologies in Health Measurement",
+     "language": "en",
+     "language_note": "De publicatie is in het Engels.",
+     "authors": "Doherty C, Baldwin M, Keogh A, et al.",
+     "organisation": null,
+     "year": "2024",
+     "citation": "Sports Med 2024;54(11):2907–2926",
+     "findings": "Een overzicht van 24 systematische reviews (249 validatiestudies): hartslag wijkt gemiddeld ongeveer 3% af, stappen worden meestal iets ondergeschat (−9% tot 12%), energieverbruik kan flink afwijken (−21% tot +15%), zuurstofsaturatie tot 2 procentpunt, en slaaptijd wordt meestal overschat, vaak met meer dan 10%. Ongeveer 11% van de apparaten is voor minstens één meting gevalideerd.",
+     "href": "https://doi.org/10.1007/s40279-024-02077-2",
+     "doi": "10.1007/s40279-024-02077-2",
+     "pmid": "39080098",
+     "verified": "Gecontroleerd op 27 oktober 2026"
+    },
+    "pdf": {
+     "mode": "hosted",
+     "href": "assets/research/MEA-01.pdf",
+     "embed": true,
+     "note": "Een ongewijzigde kopie van de publicatie, gedeeld onder CC BY 4.0.",
+     "licence": "CC BY 4.0"
+    }
+   }
+  }
+ }
+}

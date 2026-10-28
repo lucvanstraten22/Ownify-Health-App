@@ -53,6 +53,12 @@ if ($workoutId === null) {
 $awards = points_process($userId, ['workouts' => [$workoutId]]);
 $scores = health_score_summary(health_score_refresh($userId));
 
+/* Today's insights look again on the next load (docs/INSIGHTS.md). */
+if (is_file(dirname(__DIR__, 2) . '/includes/insights/notify.php')) {
+    require_once dirname(__DIR__, 2) . '/includes/insights/notify.php';
+    insights_note_change($userId);
+}
+
 api_ok([
     'workout_id' => $workoutId,
     'scores'     => array_diff_key($scores, ['overall' => true]),

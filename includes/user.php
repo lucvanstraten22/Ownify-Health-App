@@ -287,6 +287,12 @@ if (!function_exists('user_validate_username')) {
         $params[] = $userId;
         db_run('UPDATE user_profiles SET ' . implode(', ', $set) . ' WHERE user_id = ?', $params);
 
+        /* An age is known now: today's insights look again (docs/INSIGHTS.md). */
+        if (is_file(__DIR__ . '/insights/notify.php')) {
+            require_once __DIR__ . '/insights/notify.php';
+            insights_note_change($userId);
+        }
+
         return ['ok' => true, 'error' => null];
     }
 
@@ -339,8 +345,16 @@ if (!function_exists('user_validate_username')) {
                   VALUES (?, ?, ?, ?, ?, ?)',
             [$userId, $type, $value, $unit, health_source_id($sourceCode), $measuredAt ?? date('Y-m-d H:i:s')]
         );
+        $id = db_insert_id();
 
-        return db_insert_id();
+        /* A new height or weight: today's insights look again on the next
+           load (docs/INSIGHTS.md). */
+        if (is_file(__DIR__ . '/insights/notify.php')) {
+            require_once __DIR__ . '/insights/notify.php';
+            insights_note_change($userId);
+        }
+
+        return $id;
     }
 
     /* ------------------------------------------------------------ avatar */

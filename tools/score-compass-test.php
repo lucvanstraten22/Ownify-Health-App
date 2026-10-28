@@ -123,7 +123,7 @@ check('every comparison is withheld, none is a zero',
     && count(array_filter(array_column($c['comparison']['rows'], 'note'), static fn ($n) => $n === 'Nog niet genoeg gegevens')) === 4
     && $c['comparison']['delta'] === null);
 check('no opportunity, and it says why', $c['opportunity']['state'] === 'empty'
-    && $c['opportunity']['empty'] === 'Nog niet genoeg gegevens om een kans aan te wijzen.');
+    && $c['opportunity']['empty'] === 'Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.');
 check('a category without days says what to connect', $c['composition']['categories'][0]['meta'] === $areas['sleep']['empty']);
 
 section('A few days: collecting');

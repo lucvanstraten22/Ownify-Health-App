@@ -75,6 +75,13 @@ $y      = static fn (array $p): string => (string) json_encode((object) ['heart'
 
     <?php component('heart-zones', ['zones' => $zones]); ?>
 
+    <?php /* How accurate a wearable's heart rate is (docs/INSIGHTS.md) — on
+             Training's own page, not on a session's, which is a page deeper. */
+    $reference = !empty($data['heart_research']) ? ($data['insights']['references']['training.measurement'] ?? null) : null;
+    if ($filled && $reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+        component('research-evidence', $data + ['evidence' => $reference]);
+    } ?>
+
     <?php if ($filled): ?>
         <p class="compass-history__hint" id="<?= e($suffix) ?>-hint"><?= e($heart['hint']) ?></p>
         <p class="sr-only" aria-live="polite" data-reading-live></p>

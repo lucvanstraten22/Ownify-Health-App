@@ -71,6 +71,17 @@ sealed interface Detail {
         override val parent: Detail? get() = if (overList) Challenges else null
     }
 
+    /**
+     * "Uit onderzoek blijkt" (pages/research-detail.php): one approved claim
+     * as Ownify uses it, opened from its evidence chip over whatever showed
+     * it — [over], the detail in front then, or the rail (the website's
+     * `data-detail-parent="*"`). One level, as every detail over another.
+     */
+    data class Research(val id: String, val over: Detail? = null) : Detail {
+        override val key get() = "research:$id"
+        override val parent: Detail? get() = over
+    }
+
     /** The detail this one opens over, or null: it opens over the rail. */
     val parent: Detail? get() = null
 }

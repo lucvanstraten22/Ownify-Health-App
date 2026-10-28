@@ -66,6 +66,12 @@ $bubble = static fn (?string $verdict, ?string $text): string => $verdict === nu
             <span class="status__text" data-rating-saved-text></span>
         </p>
     </div>
+    <?php /* What the Dutch guidelines count as eating well — context for the
+             cijfer, never a score of it (docs/INSIGHTS.md). */
+    $reference = $data['insights']['references']['nutrition.rating'] ?? null;
+    if ($reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+        component('research-evidence', $data + ['evidence' => $reference]);
+    } ?>
 </section>
 
 <section class="card nutrition-composition reveal" data-nutrition aria-labelledby="nutrition-composition-title">
@@ -164,6 +170,12 @@ $bubble = static fn (?string $verdict, ?string $text): string => $verdict === nu
                                                 <?php endforeach; ?>
                                             </ul>
                                         <?php endif; ?>
+                                        <?php /* The research behind this row's guideline (docs/INSIGHTS.md):
+                                                 fat's range, and that carbohydrates have none. */
+                                        $reference = $data['insights']['references']['nutrition.' . $m['key']] ?? null;
+                                        if ($reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+                                            component('research-evidence', $data + ['evidence' => $reference]);
+                                        } ?>
                                     </div>
                                 </div>
                             <?php endif; ?>

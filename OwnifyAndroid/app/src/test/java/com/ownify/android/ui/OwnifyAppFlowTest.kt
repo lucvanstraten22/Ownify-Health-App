@@ -718,7 +718,7 @@ class OwnifyAppFlowTest {
         // The page under it is out of reach, as the website makes it inert.
         compose.onAllNodes(hasText("Vandaag") and isHeading()).assertCountEquals(0)
 
-        for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf", "Grootste kans")) {
+        for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf", "Mogelijk aandachtspunt")) {
             compose.onNode(hasText(title) and isHeading()).performScrollTo().assertIsDisplayed()
         }
         // What is changing: the score's own week first, today read closely under it.

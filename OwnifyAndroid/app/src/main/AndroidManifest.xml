@@ -15,6 +15,11 @@
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
     <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
+    <!-- 29.0: water for Voeding, and the body measurements for Lichaamsmaten and the BMI. -->
+    <uses-permission android:name="android.permission.health.READ_HYDRATION" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_HEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
     <!-- The automatic Ownify sync reads while the app is closed. Health Connect
          asks the user for it separately ("Access data in the background"), and
          only offers it where its FEATURE_READ_HEALTH_DATA_IN_BACKGROUND is

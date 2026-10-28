@@ -113,6 +113,7 @@ import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 import com.ownify.android.ui.design.PillarRings
 import com.ownify.android.ui.design.HeroArrivalMs
+import com.ownify.android.ui.screens.research.ResearchEvidence
 
 /**
  * Overzicht (pages/overview.php): in a new account's first days the card of
@@ -434,17 +435,24 @@ private fun Milestones(goal: GoalCard) {
 private val DOT = 7.dp
 
 /**
- * `components/insights.php`. With nothing in it yet it stays, quieter
- * (`.card--insights.is-empty`): a well instead of glass, its rows divided by
- * hairlines; a real insight gets the full card back.
+ * `components/insights.php`: one row per area — Slaap, Voeding, Training —
+ * each the day's stored insight with its evidence, or a quiet placeholder.
+ * With nothing in it yet it stays, quieter (`.card--insights.is-empty`): a
+ * well instead of glass, its rows divided by hairlines; a real insight gets
+ * the full card back.
+ *
+ * With a [slot] it is that area's own card, on that area's page: the same
+ * stored insight, the same row, and nothing at all when the area has none.
  */
 @Composable
-private fun InsightsCard(insights: Insights) {
-    val dimmed = insights.items.all { it.state == "empty" }
+internal fun InsightsCard(insights: Insights, slot: String? = null) {
+    val items = if (slot == null) insights.items else listOfNotNull(insights.context[slot])
+    if (items.isEmpty()) return
+    val dimmed = items.all { it.state == "empty" }
     JCard(Modifier.fillMaxWidth().reveal(), style = if (dimmed) CardStyle.Dimmed else CardStyle.Default, highlight = !dimmed) {
-        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle, dimmed = dimmed)
+        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null }, dimmed = dimmed)
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            insights.items.forEachIndexed { index, item ->
+            items.forEachIndexed { index, item ->
                 val accent = Accent.of(item.accent).color
                 val empty = item.state == "empty"
                 // `.insights__item`: a Row inside the card.
@@ -469,6 +477,7 @@ private fun InsightsCard(insights: Insights) {
                     Column(Modifier.weight(1f)) {
                         T(item.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
                         T(item.body, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
+                        if (!empty) ResearchEvidence(item.evidence)
                     }
                 }
             }
@@ -477,16 +486,20 @@ private fun InsightsCard(insights: Insights) {
 }
 
 /**
- * `components/recommendation.php`: at most one, and never an instruction.
- * There is none yet for anyone, so it is the quiet empty card
- * (`.card--recommendation.is-empty`).
+ * `components/recommendation.php`: the day's one at most — from the
+ * person's own data and approved research, always optional — with its
+ * evidence. Without one it is the quiet empty card
+ * (`.card--recommendation.is-empty`) saying so; a suggestion that no longer
+ * fits newer data says that instead.
  */
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
-    JCard(Modifier.fillMaxWidth().reveal(), style = CardStyle.Dimmed, highlight = false) {
-        CompactHead(OwnifyIcons.solidSparkle, rec.title, dimmed = true)
+    val filled = rec.filled
+    JCard(Modifier.fillMaxWidth().reveal(), style = if (filled) CardStyle.Default else CardStyle.Dimmed, highlight = filled) {
+        CompactHead(OwnifyIcons.solidSparkle, rec.title, dimmed = !filled)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
+        if (filled) ResearchEvidence(rec.evidence)
         CardHint(rec.note, icon = null, plain = true)
     }
 }

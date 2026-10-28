@@ -7,7 +7,10 @@ It answers four questions:
 1. **Waar je score uit bestaat** — what the score is made of
 2. **Wat er verandert** — what is changing
 3. **Vergeleken met jezelf** — how it compares with the person's own past
-4. **Grootste kans** — where the score has the most room
+4. **Mogelijk aandachtspunt** — where the score has the most room ("Grootste
+   kans" until 29.0; a wording change only, the calculation is the same), with
+   the approved research about that component where there is any
+   (docs/INSIGHTS.md)
 
 ## It reads the score, it never scores
 
@@ -175,7 +178,14 @@ The difference ("+5 ten opzichte van de 30 dagen daarvoor") is taken from the
 two numbers shown, so it always adds up. A day without a score is left out of
 an average, never counted as zero. Nobody else's score is ever shown.
 
-## 4 — The biggest opportunity
+## 4 — Mogelijk aandachtspunt
+
+Called "Grootste kans" before 29.0; the new name says what it is — a
+possible point of attention for the score — and is a wording change only:
+the calculation below is the same. Where approved research is about the
+component it names (sleep duration and regularity, sleep stages, Voeding's
+cijfer, training volume), its label and "Bekijk onderzoek" stand under the
+explanation — its context, never its reason (docs/INSIGHTS.md).
 
 For every component with data, in a category with at least **3 days** of
 data (the minimum for a score, now that the window is 7 days):

@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 28.2'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 29.0'],
             ],
         ],
     ],
@@ -206,6 +206,11 @@ return [
                     ],
                 ],
 
+                /* The body's insight (docs/INSIGHTS.md): the BMI these two give,
+                   with the WHO's classification, its limits and its evidence.
+                   Only for an adult with a recent weight; otherwise nothing. */
+                ['type' => 'insight', 'slot' => 'body'],
+
                 ['type' => 'note', 'icon' => 'lock',
                  'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar. Lengte en gewicht bewaren hun verloop: elke wijziging komt erbij, de vorige verdwijnt niet.'],
             ],
@@ -250,7 +255,9 @@ return [
                            leave the account — for Gemini, per question. */
                         ['label' => 'Gezondheidsgegevens', 'value' => 'Privé',
                          'note' => 'Slaap, voeding, training en metingen verlaten je account niet',
-                         'note_ai' => 'Als je OwnifyAI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini'],
+                         'note_ai' => 'Als je OwnifyAI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini',
+                         /* With only the insight wording on (below). */
+                         'note_insights' => 'Alleen de cijfers van je inzichten gaan eenmaal per dag naar Google Gemini, om ze anders te verwoorden'],
                         ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
                          'note' => 'Verder niets — geen scores, geen metingen'],
                         ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
@@ -287,6 +294,24 @@ return [
                         ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
                          'note_on'  => 'Bij elke vraag gaan je profiel, scores, doelen en een samenvatting van twee weken naar Gemini, en per onderwerp meer, zoals slaap, voeding of training.',
                          'note_off' => 'OwnifyAI werkt niet, en er gaat niets naar Gemini.',
+                         'on' => false],
+                    ],
+                ],
+
+                /* Inzichten (docs/INSIGHTS.md): a question of its own, off
+                   until it is answered. Off, every insight is Ownify's own
+                   sentence and nothing goes to Gemini for it; on, the day's
+                   insights may be reworded once a day — only their numbers
+                   and the research behind them go along. Removed by
+                   settings_prepare() before migration 028. */
+                [
+                    'type'  => 'toggles',
+                    'title' => 'Inzichten',
+                    'lede'  => 'Je inzichten schrijft Ownify zelf, uit je eigen gegevens en goedgekeurd onderzoek. Met deze toestemming mag Google Gemini ze eenmaal per dag anders verwoorden.',
+                    'items' => [
+                        ['key' => 'ai_insights_consent', 'label' => 'Inzichten laten verwoorden door Google Gemini',
+                         'note_on'  => 'Eenmaal per dag gaan de cijfers van je inzichten en het onderzoek erachter naar Gemini, zonder je naam of andere gegevens. Ownify controleert elke tekst; wat niet klopt, wordt niet getoond.',
+                         'note_off' => 'Je inzichten staan in Ownify\'s eigen woorden, en er gaat niets naar Gemini.',
                          'on' => false],
                     ],
                 ],
@@ -557,7 +582,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 28.2'],
+                        ['label' => 'Versie',  'value' => 'Beta 29.0'],
                     ],
                 ],
 

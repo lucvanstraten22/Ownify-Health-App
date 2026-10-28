@@ -25,17 +25,29 @@ Every range lives in `config/nutrition-reference.php`, and nowhere else:
 | --- | --- | --- |
 | `kcal_per_gram` | carbohydrates 4, protein 4, fat 9 | the energy from each macronutrient |
 | `kj_per_kcal` | 4.184 | the kJ beside every kcal |
-| `macros.carbs` | 40–70 % of the energy | its meter, bubble and guideline |
+| `macros.carbs` | no percentage (since 29.0) | its share, shown on a meter without a band; "Geen oordeel"; Richtlijn "Geen percentage" |
 | `macros.protein` | your own goal (`nutrition_targets_for_user()`, g per kg for your activity) | its meter and "% van je doel" |
 | `macros.fat` | 20–40 % of the energy | its meter, bubble and guideline |
-| `details.fibre` | 30–40 g | its bubble |
+| `details.fibre` | 12,6–14,6 g per 1.000 kcal of the day (since 29.0) | "… g per 1.000 kcal" and its bubble — only on a day whose energy is known |
 | `details.sugar` | no verdict | "Geen oordeel" |
-| `details.saturated_fat` | under 10 % of the energy | its share and bubble |
+| `details.saturated_fat` | under 10 % of the energy — the interim step; the advice is as low as possible | its share and bubble |
 | `energy.range` | 90–110 % of your energy target | the Energie chart's bereik |
 | `water.range`, `water.target` | 1,5–2,0 L, 1,8 L | the Water chart's bereik and "van 1,8 L" |
 
-Change a value there and both apps follow; nothing else needs to change. A
-later research-based reference replaces this file.
+Change a value there and both apps follow; nothing else needs to change.
+
+**The 2026 norms** (29.0, the owner's decision of 27 October 2026): fat,
+saturated fat, carbohydrates and fibre follow the Gezondheidsraad's
+*Voedingsnormen voor vetten, vetzuren, verteerbare koolhydraten en
+voedingsvezels* (2026/14, NUT-01 in [RESEARCH.md](RESEARCH.md)) — total fat
+20–40 % of the energy; saturated fat as low as possible, 10 % as the interim
+step; no percentage for carbohydrates (their source matters, which a log
+does not show); fibre 3,0–3,5 g per MJ, 12,6–14,6 g per 1.000 kcal. Protein
+keeps the person's own target (`nutrition_targets_for_user()`), unchanged.
+Water is the Voedingscentrum's drinks a day, and the energy range around the
+person's own target is Ownify's own assumption — neither is a reviewed
+research source. The fat and carbohydrate rows, and the cijfer, carry the
+research behind them (docs/INSIGHTS.md).
 
 ## Hoe at je? — the slider
 
@@ -64,13 +76,17 @@ needs no request.
   mix with the theme's lift and shade, in both themes). Its middle shows the
   day's kcal and "% van" the energy target; with a part focused, that
   macronutrient's name, share and "g · kcal". A tap on a part opens its row.
-- **The rows**, Koolhydraten, Eiwitten, Vetten: grams; "% van je energie" and
-  "richtlijn 40–70 %" (or "% van je doel" for protein); a bubble; a meter
-  with the range as a green band and the day's marker. A row **opens in
+- **The rows**, Koolhydraten, Eiwitten, Vetten: grams; "% van je energie" and,
+  for fat, "richtlijn 20–40 %" (protein: "% van je doel"; carbohydrates have
+  no guideline to show); a bubble; a meter with the range as a green band —
+  none for carbohydrates — and the day's marker. A row **opens in
   place** (280 ms, the strong ease-out; at once with reduced motion), one at
   a time, and shows Gegeten, Deel van je energie and Richtlijn; protein's
   line on how its goal is set; fibre and sugar under carbohydrates,
-  saturated fat under fat.
+  saturated fat under fat. A detail line too narrow for all it says (fibre's
+  "per 1.000 kcal" on a small phone) moves what does not fit under it, on
+  both apps; nothing runs over the name. Fat's and carbohydrates' rows end
+  with their research (the label and "Bekijk onderzoek").
 - **The bubbles** are the goal wizard's glass chip (`.glass--chip`,
   `GlassChip`'s glass), as a status: green glass for Binnen bereik, plain
   glass for Onder bereik and Geen oordeel, gold glass with gold text for

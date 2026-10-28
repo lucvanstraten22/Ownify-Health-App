@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.ownify.android.ui.screens.research.LocalResearch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -152,6 +153,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             Detail.Leaderboard -> true
             Detail.Challenges -> data.challenges.available
             is Detail.Challenge -> data.challenges.view(detail.id) != null
+            is Detail.Research -> data.research.detail(detail.id) != null
         }
         if (!exists) shell.closeDetail()
     }
@@ -168,7 +170,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
         }
     }
 
-    CompositionLocalProvider(LocalShell provides shell, LocalOwnedAreas provides owned) {
+    CompositionLocalProvider(LocalShell provides shell, LocalOwnedAreas provides owned, LocalResearch provides data.research) {
         Box(Modifier.fillMaxSize().background(Ownify.BgDeep)) {
             // Everything below the panels, recorded for their scrims and glass.
             Box(
@@ -342,6 +344,8 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
         Detail.Leaderboard -> Accent.HEALTH
         Detail.Challenges -> Accent.TRAINING
         is Detail.Challenge -> Accent.of(data.challenges.view(detail.id)?.accent)
+        // `data-accent="health"`, as the website's.
+        is Detail.Research -> Accent.HEALTH
     }
     val ground = remember(detail.key, accent) { GroundPlacement(if (detail is Detail.HealthArea) Ground.areaDetail(accent) else Ground.detail(accent)) }
     val visibility = remember(detail.key) { Visibility() }

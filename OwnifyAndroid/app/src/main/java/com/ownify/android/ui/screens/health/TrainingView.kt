@@ -87,6 +87,8 @@ import com.ownify.android.ui.theme.LocalAccent
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
 import kotlin.math.abs
+import com.ownify.android.ui.screens.research.ResearchEvidence
+import com.ownify.android.data.Evidence
 
 /*
  * Training, drawn (docs/TRAINING.md) — the website's
@@ -106,12 +108,13 @@ private const val FLICK_MS = 350L
  * `components/training-view.php`: the sessions beside the sessions per day,
  * the four charts two by two, the heart rate, and HRV beside Hartbelasting.
  */
+/** [heartEvidence]: how accurate a wearable's heart rate is — on Training's own page, not on a session's. */
 @Composable
-fun TrainingViewContent(view: TrainingView) {
+fun TrainingViewContent(view: TrainingView, heartEvidence: Evidence? = null) {
     val charts = view.charts.associateBy { it.id }
     TrainingTop(view.sessions, charts[view.perDay])
     AreaChartsGrid("training", view.grid.mapNotNull { charts[it] })
-    HeartCard(view.heart)
+    HeartCard(view.heart, heartEvidence)
     AreaChartsGrid("training", view.lower.mapNotNull { charts[it] })
 }
 
@@ -220,7 +223,7 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
  * of daily averages; the zones named under it.
  */
 @Composable
-private fun HeartCard(heart: HeartChart) {
+private fun HeartCard(heart: HeartChart, evidence: Evidence?) {
     var selected by rememberSaveable { mutableStateOf(heart.defaultKey) }
     var day by rememberSaveable { mutableIntStateOf(0) }
     val last = heart.days.lastIndex
@@ -259,6 +262,7 @@ private fun HeartCard(heart: HeartChart) {
 
         HeartZonesLegend(heart.zones)
         if (filled) {
+            ResearchEvidence(evidence)
             T(heart.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }

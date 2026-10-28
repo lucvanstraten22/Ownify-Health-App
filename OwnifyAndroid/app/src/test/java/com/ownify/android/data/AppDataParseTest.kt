@@ -390,7 +390,7 @@ class AppDataParseTest {
         assertTrue(c.comparison.rows.all { it.value == null && it.note == "Nog niet genoeg gegevens" })
         assertNull(c.comparison.delta)
         assertFalse(c.opportunity.filled)
-        assertEquals("Nog niet genoeg gegevens om een kans aan te wijzen.", c.opportunity.empty)
+        assertEquals("Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.", c.opportunity.empty)
         // What the score will be made of, before there is one: the weights it will have.
         assertEquals(listOf(45, 30, 25), c.composition.categories.first().parts.map { it.weight })
         assertTrue(c.composition.categories.flatMap { it.parts }.all { it.value == null })

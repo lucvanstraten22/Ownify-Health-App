@@ -222,6 +222,22 @@ if (!function_exists('app_page_data')) {
         /* Settings: integrations resolved, profile read off the signed-in record. */
         $data['settings'] = settings_prepare(config_copy('settings'), $data['auth']);
 
+        /* Insights (docs/INSIGHTS.md): the day's, worked out once from the
+           person's own data and approved research, stored, and shown the
+           same on both apps — Overzicht's Nuttige inzichten and Eén kleine
+           suggestie, each page's own, the research behind them. Before
+           migration 028 the cards keep their empty state. Guarded as the
+           first days are: a deploy lands one file at a time. */
+        if (is_file(dirname(__DIR__) . '/includes/insights.php') && is_file($config . '/insights.php')
+            && is_file($config . '/research.php')) {
+            require_once dirname(__DIR__) . '/includes/insights.php';
+            try {
+                $data = insights_hydrate($data, $userId);
+            } catch (Throwable $e) {
+                error_log('[ownify] insights: not shown on this load: ' . $e->getMessage());
+            }
+        }
+
         /* The first days: the setup a new account starts with, and the card
            Overzicht opens with until the baseline is there. Read from the
            same engine and records as everything above; nothing is scored. */

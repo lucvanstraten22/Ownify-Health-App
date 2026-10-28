@@ -16,9 +16,11 @@
  * finger; a released swipe always ends fully open or fully closed.
  *
  * One detail can open over another: a page whose [data-detail-parent] names
- * the detail in front (Slaap's charts, over Slaap). It slides in over it the
- * same way and leaves the same way, back to that detail as it was left —
- * its scroll, its focus. Leaving for another section closes both.
+ * the detail in front (Slaap's charts, over Slaap), or says "*" — over
+ * whichever detail is in front ("Uit onderzoek blijkt", opened from Slaap, the
+ * Scorekompas or Instellingen alike). It slides in over it the same way and
+ * leaves the same way, back to that detail as it was left — its scroll, its
+ * focus. Leaving for another section closes both.
  */
 
 (function () {
@@ -154,8 +156,8 @@
         if (current === detail && shown) { return; }   // already open, or opening
 
         /* Over the detail in front, when it is this one's own. */
-        if (current && current !== detail && shown && !parent && !settleTimer
-            && detail.dataset.detailParent && current.dataset.detail === detail.dataset.detailParent) {
+        if (current && current !== detail && shown && !parent && !settleTimer && detail.dataset.detailParent
+            && (detail.dataset.detailParent === '*' || current.dataset.detail === detail.dataset.detailParent)) {
             parent = current;
             parentOpener = opener;
             current = null;

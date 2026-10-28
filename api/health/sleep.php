@@ -50,6 +50,12 @@ $night  = (new DateTimeImmutable($session['ended_at']))->format('Y-m-d');
 $awards = points_process($userId, ['nights' => [$night]]);
 $scores = health_score_summary(health_score_refresh($userId));
 
+/* Today's insights look again on the next load (docs/INSIGHTS.md). */
+if (is_file(dirname(__DIR__, 2) . '/includes/insights/notify.php')) {
+    require_once dirname(__DIR__, 2) . '/includes/insights/notify.php';
+    insights_note_change($userId);
+}
+
 api_ok([
     'sleep_id' => $sleepId,
     'scores'   => array_diff_key($scores, ['overall' => true]),

@@ -31,6 +31,6 @@ $perDay = $charts[$view['layout']['per_day']] ?? null;
 
 <?php component('area-charts-grid', $data + ['grid_charts' => $pick($view['layout']['grid']), 'chart_area' => 'training']); ?>
 
-<?php component('heart-chart', $data + ['heart' => $view['heart']]); ?>
+<?php component('heart-chart', $data + ['heart' => $view['heart'], 'heart_research' => true]); ?>
 
 <?php component('area-charts-grid', $data + ['grid_charts' => $pick($view['layout']['lower']), 'chart_area' => 'training']); ?>

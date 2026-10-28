@@ -740,9 +740,9 @@
         "delta": null
     },
     "opportunity": {
-        "title": "Grootste kans",
+        "title": "Mogelijk aandachtspunt",
         "state": "empty",
-        "empty": "Nog niet genoeg gegevens om een kans aan te wijzen.",
+        "empty": "Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.",
         "category": null,
         "label": null,
         "accent": null,

@@ -1,5 +1,13 @@
 package com.ownify.android.connection
 
+import androidx.health.connect.client.records.BodyFatRecord
+import androidx.health.connect.client.records.HeightRecord
+import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.Mass
+import androidx.health.connect.client.units.Percentage
+import androidx.health.connect.client.units.Volume
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -43,8 +51,41 @@ class IngestPayloadTest {
     }
 
     @Test
+    fun `the four types added in 29_0 - water and the body, in Health Connect's own names and units`() {
+        assertEquals(16, IngestPayload.TYPES.size)
+        val sent = IngestPayload.of(
+            listOf(
+                HydrationRecord(SyncFixtures.at("2026-09-25T09:00:00"), SyncFixtures.CEST, SyncFixtures.at("2026-09-25T09:05:00"), SyncFixtures.CEST,
+                    Volume.liters(0.25), SyncFixtures.meta("b-water", "com.myfitnesspal.android")),
+                WeightRecord(SyncFixtures.at("2026-09-25T07:30:00"), SyncFixtures.CEST, Mass.kilograms(71.4), SyncFixtures.meta("b-weight", "com.withings.wiscale2")),
+                HeightRecord(SyncFixtures.at("2026-09-25T07:31:00"), SyncFixtures.CEST, Length.meters(1.68), SyncFixtures.meta("b-height")),
+                BodyFatRecord(SyncFixtures.at("2026-09-25T07:30:00"), SyncFixtures.CEST, Percentage(24.5), SyncFixtures.meta("b-fat", "com.withings.wiscale2"))
+            )
+        ).associateBy { it.getJSONObject("metadata").getString("id") }
+
+        sent.getValue("b-water").let {
+            assertEquals("Hydration", it.getString("recordType"))
+            assertEquals(0.25, it.getJSONObject("volume").getDouble("liters"), 1e-9)
+            assertEquals("2026-09-25T09:05:00+02:00", it.getString("endTime"))
+        }
+        sent.getValue("b-weight").let {
+            assertEquals("Weight", it.getString("recordType"))
+            assertEquals(71.4, it.getJSONObject("weight").getDouble("kilograms"), 1e-9)
+            assertEquals("2026-09-25T07:30:00+02:00", it.getString("time"))
+            assertEquals("com.withings.wiscale2", it.getJSONObject("metadata").getString("dataOrigin"))
+        }
+        sent.getValue("b-height").let {
+            assertEquals("Height", it.getString("recordType"))
+            assertEquals(1.68, it.getJSONObject("height").getDouble("meters"), 1e-9)
+        }
+        sent.getValue("b-fat").let {
+            assertEquals("BodyFat", it.getString("recordType"))
+            assertEquals(24.5, it.getDouble("percentage"), 1e-9)
+        }
+    }
+
+    @Test
     fun `the five types added in 13_0 - in Health Connect's own names and units`() {
-        assertEquals(12, IngestPayload.TYPES.size)
 
         record("p-total").let {
             assertEquals("TotalCaloriesBurned", it.getString("recordType"))

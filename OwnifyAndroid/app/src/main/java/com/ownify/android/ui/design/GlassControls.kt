@@ -98,25 +98,34 @@ private val ChosenWash: (Size) -> Brush = { Brush.verticalGradient(listOf(Ownify
 
 /**
  * `.glass--chip`: a bubble the size of Health Connect's data chips, taking
- * taps over 48 dp (hitArea) without being drawn any larger.
+ * taps over 48 dp (hitArea) without being drawn any larger. Without
+ * [onClick] it is the same chip as a status — never pressed, nothing to tap
+ * (an evidence label in its detail, `.research-detail__strength`).
+ * [description]: what TalkBack says instead of [text], for a chip whose word
+ * needs its context ("Bewijskracht: Betrouwbaar").
  */
 @Composable
 fun GlassChip(
     text: String,
     chosen: Boolean,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     radio: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    description: String? = null
 ) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val shape = RoundedCornerShape(50)
         Box(
-            modifier.hitArea(
+            if (onClick == null) modifier.semantics(mergeDescendants = true) { if (description != null) contentDescription = description }
+            else modifier.hitArea(
                 Modifier
                     .clickable(interaction, indication = null, enabled = enabled, role = if (radio) Role.RadioButton else Role.Button, onClick = blurring(onClick))
-                    .semantics(mergeDescendants = true) { selected = chosen },
+                    .semantics(mergeDescendants = true) {
+                        selected = chosen
+                        if (description != null) contentDescription = description
+                    },
                 across = false
             )
         ) {
@@ -124,7 +133,7 @@ fun GlassChip(
                 text,
                 OwnifyType.style(Ownify.FsTiny, if (chosen) FontWeight.SemiBold else FontWeight.Medium, if (chosen) Ownify.TextPrimary else Ownify.TextSecondary, tracking = 0.em),
                 Modifier
-                    .press(interaction, enabled = enabled)
+                    .press(interaction, enabled = enabled && onClick != null)
                     .alpha(if (enabled) 1f else 0.5f)
                     .glass(shape, GlassLook(chosen = chosen, shadow = 7.dp, lift = 2.dp))
                     .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),

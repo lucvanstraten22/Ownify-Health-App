@@ -54,6 +54,12 @@ $date   = (new DateTimeImmutable((string) $entry['consumed_at']))->format('Y-m-d
 $awards = $entry['rating'] === null ? [] : points_process($userId, ['nutrition_days' => [$date]]);
 $scores = health_score_summary(health_score_refresh($userId));
 
+/* Today's insights look again on the next load (docs/INSIGHTS.md). */
+if (is_file(dirname(__DIR__, 2) . '/includes/insights/notify.php')) {
+    require_once dirname(__DIR__, 2) . '/includes/insights/notify.php';
+    insights_note_change($userId);
+}
+
 api_ok([
     'entry_id' => $entryId,
     'scores'   => array_diff_key($scores, ['overall' => true]),

@@ -72,6 +72,12 @@ goal_refresh_all($userId);
 $awards = points_process($userId, ['nutrition_days' => [$date]]);
 $scores = health_score_summary(health_score_refresh($userId));
 
+/* Today's insights look again on the next load (docs/INSIGHTS.md). */
+if (is_file(dirname(__DIR__, 2) . '/includes/insights/notify.php')) {
+    require_once dirname(__DIR__, 2) . '/includes/insights/notify.php';
+    insights_note_change($userId);
+}
+
 $earned = points_feedback($awards);
 $lowered = array_filter($awards, static fn ($a) => $a['delta'] < 0);
 

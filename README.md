@@ -47,6 +47,9 @@ database/
     schema.sql                the MySQL schema — repeatable, import and go
     seed-dev.sql              fake development data, never production
 includes/                     the data layer: db, session, auth, repositories
+    research.php              the research registry: reading, checking, the detail
+    insights/                 insights: facts, rules, the daily lifecycle, texts and
+                              Gemini's wording with its own consent (docs/INSIGHTS.md)
     ai/                       OwnifyAI: config and consent, the Gemini client, what goes
                               along with a question, tools, prompt, the conversation store
 api/                          JSON endpoints for sign-in and profile edits
@@ -60,7 +63,12 @@ tools/
     theme-test.php            Dark and White Mode: the cookie, the settings, the
                               tokens, contrast, the page served in each
     score-compass-test.php    the Scorekompas: directions, sentences, averages, the
-                              biggest opportunity, empty states, wording — no database
+                              point of attention, empty states, wording — no database
+    research-registry.php     the approved research: --check the file, the English, the
+                              seeds and the database agree; --write the seed; --sync
+    insights-test.php         insights end to end on a throwaway database, with a
+                              stand-in Gemini: once a day, labels, wording, consent
+    migration-028-test.php    migration 028 and its rollback, on a throwaway database
     first-days-test.php       the first days: every day of the baseline card, the focus,
                               the suggested first goal, the tone — no database
     goal-order-test.php       the order of Secundaire doelen on the goals board — no
@@ -82,6 +90,8 @@ pages/
     community.php             the leaderboard
     settings.php              Instellingen — categories, not settings
     settings-detail.php       one settings screen, built from its blocks
+    research-detail.php       "Uit onderzoek blijkt": one claim, its source and its PDF
+                              (docs/RESEARCH.md), over whatever page showed it
     ai.php                    the assistant sheet
 config/dashboard.php          copy, data and settings for the app
 config/health.php             the health areas, their metrics and their trends
@@ -89,6 +99,9 @@ config/community.php          leaderboard scopes, periods and copy
 config/goals.php              goal vocabulary, copy and the example goals
 config/settings.php           the settings tree, its screens and their copy
 config/compass.php            the Scorekompas: its words, and when it may say something
+config/research.php           the approved sources and the claims Ownify uses (docs/RESEARCH.md)
+config/insights.php           the insight rules, data rules, lifecycle and texts (docs/INSIGHTS.md)
+config/nutrition-reference.php Voeding's reference values: the Gezondheidsraad's 2026 norms
 config/setup.php              the first days: the setup's and the baseline card's words
 config/ai.php                 OwnifyAI: model, limits, consent version — no key
 config/ai-prompt.php          what the assistant is told about itself
@@ -109,8 +122,9 @@ components/
     compass-category.php      one category as the Scorekompas shows it, also the first score
     calibration.php           the first days on Overzicht: baseline, first score, starting point
     goal-progress.php         personal goal progress
-    insights.php              useful insights
-    recommendation.php        one small suggestion placeholder
+    insights.php              Nuttige inzichten: the day's stored insights, or one area's
+    recommendation.php        Eén kleine suggestie: the day's one at most, always optional
+    research-evidence.php     the label as the glass chip and "Bekijk onderzoek"
     leaderboard.php           compact social layer
     scroll-top.php            floating glass control
     bottom-navigation.php     the five primary destinations (overview screen)
@@ -178,11 +192,14 @@ assets/js/
     training.js               the heart rate's day: back over seven days, by arrow or swipe
     community.js              scope and period switching
     goals.js                  view switching, priority, pause and delete
+    research.js               "Uit onderzoek blijkt": a publication's PDF in the page, or the browser
     goal-wizard.js            Nieuw doel: search, categories, type, setup, calendar, review
     setup.js                  the setup's four steps, each saved where it always is
     settings.js               choices, integrations, sign-out, deleting the account
     account.js                the account panel
     devices.js                the devices quick look, and its way to the devices screen
+assets/research/              Ownify's own unmodified copies of CC BY publications, with
+                              their attribution (README.md; docs/RESEARCH.md)
 assets/brand/
     ownify-icon.webp          the logo on the opening screen
     ownify-icon-192.png       the icon link; apple-touch-icon.png the iPhone home screen
@@ -433,7 +450,7 @@ Scorekompas ──┬── Waar je score uit bestaat   the categories, each com
               ├── Wat er verandert            30 days: a line, and dated sentences
               ├── Vergeleken met jezelf       now, and the daily score's average over
               │                               7 days, 30 days and the 30 before
-              └── Grootste kans               the component with the most room
+              └── Mogelijk aandachtspunt      the component with the most room
 ```
 
 It reads the Health Score and never scores: `includes/score-compass.php`
@@ -806,7 +823,6 @@ figures and the rules for adding something are in
 
 Live literature search and links to studies (the assistant answers research
 questions from general knowledge and says so), speech or images in the
-assistant, an iPhone app (and so Apple Health), the Google Health cloud
-connection, notifications, English, imperial units, stored preferences other
+assistant, an iPhone app, the Google Health cloud connection, notifications, English, imperial units, stored preferences other
 than the theme and the Privacy switches, real medical analysis and real
 personal recommendations.

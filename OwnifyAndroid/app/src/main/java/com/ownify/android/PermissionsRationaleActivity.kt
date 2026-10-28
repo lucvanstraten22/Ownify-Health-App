@@ -42,7 +42,7 @@ class PermissionsRationaleActivity : ComponentActivity() {
                     ) {
                         Text(
                             // One literal: tools/i18n-build.php finds the English by it.
-                            text = tr("Ownify leest je stappen, afstand, actieve calorieën, hartslag, slaap, trainingen en voeding uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.")
+                            text = tr("Ownify leest je stappen, afstand, verdiepingen, calorieën, hartslag, rusthartslag, hartslagvariabiliteit, zuurstofsaturatie, slaap, trainingen, voeding, water, gewicht, lengte en vetpercentage uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.")
                         )
                     }
                 }

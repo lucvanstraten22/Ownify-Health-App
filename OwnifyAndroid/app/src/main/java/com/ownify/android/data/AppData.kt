@@ -35,7 +35,9 @@ data class AppData(
     /** Uitdagingen (includes/challenges.php): the ones you are in or invited to. */
     val challenges: Challenges = Challenges.parse(null),
     /** The red dots (lib/notices.php): what waits for the person to do it. */
-    val notices: Notices = Notices()
+    val notices: Notices = Notices(),
+    /** "Uit onderzoek blijkt" (docs/RESEARCH.md): every detail an evidence chip on these pages opens. */
+    val research: Research = Research.parse(null)
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -61,7 +63,8 @@ data class AppData(
                 calibration = Calibration.parse(data.obj("calibration")),
                 i18n = I18n.parse(data.obj("i18n")),
                 challenges = Challenges.parse(data.obj("challenges")),
-                notices = Notices.parse(data.obj("notices"))
+                notices = Notices.parse(data.obj("notices")),
+                research = Research.parse(data.obj("research"))
             )
         }
     }
@@ -620,7 +623,9 @@ data class CompassOpportunity(
     val band: String?,
     val fact: String?,
     val relation: String?,
-    val gainText: String?
+    val gainText: String?,
+    /** The research about the component it names (docs/INSIGHTS.md): its context, not its reason. */
+    val research: Evidence? = null
 ) {
     companion object {
         fun parse(o: JSONObject?) = CompassOpportunity(
@@ -635,7 +640,8 @@ data class CompassOpportunity(
             band = o.str("band"),
             fact = o.str("fact"),
             relation = o.str("relation"),
-            gainText = o.str("gain_text")
+            gainText = o.str("gain_text"),
+            research = Evidence.parse(o.obj("research"))
         )
     }
 }
@@ -685,28 +691,245 @@ data class GoalCard(
 
 data class Milestone(val label: String, val reached: Boolean, val at: Int = 0)
 
-data class Insights(val title: String, val subtitle: String, val items: List<Insight>) {
+/**
+ * Nuttige inzichten (components/insights.php, docs/INSIGHTS.md): the day's
+ * stored insight per area in [items] — Slaap, Voeding, Training — or a quiet
+ * placeholder; [context] the same stored insights by area (and the body's
+ * BMI), for the page that area is about; [references] the research beside
+ * Ownify's own reference values, by where it shows (`nutrition.fat`…).
+ */
+data class Insights(
+    val title: String,
+    val subtitle: String,
+    val items: List<Insight>,
+    val state: String = "empty",
+    val context: Map<String, Insight> = emptyMap(),
+    val references: Map<String, Evidence> = emptyMap()
+) {
     companion object {
         fun parse(o: JSONObject?) = Insights(
             o.str("title").orEmpty(), o.str("subtitle").orEmpty(),
-            o.arr("items").map {
-                Insight(
-                    it.str("icon").orEmpty(), it.str("accent").orEmpty(), it.str("title").orEmpty(),
-                    it.str("body").orEmpty(), it.str("state") ?: "empty"
-                )
-            }
+            o.arr("items").map { Insight.parse(it) },
+            state = o.str("state") ?: "empty",
+            context = o.obj("context").entries { slot, it -> slot to Insight.parse(it, "filled") }.toMap(),
+            references = o.obj("references").entries { key, it -> Evidence.parse(it)?.let { key to it } }.toMap()
         )
     }
 }
 
-data class Insight(val icon: String, val accent: String, val title: String, val body: String, val state: String)
-
-data class Recommendation(val title: String, val headline: String, val description: String, val note: String) {
+/**
+ * One insight: Ownify's own template — or, with the separate consent, the
+ * same insight in Gemini's words, checked ([phrased]) — and its [evidence].
+ * An empty one is the area's quiet placeholder and has none.
+ */
+data class Insight(
+    val icon: String,
+    val accent: String,
+    val title: String,
+    val body: String,
+    val state: String,
+    val slot: String? = null,
+    val phrased: Boolean = false,
+    val evidence: Evidence? = null
+) {
     companion object {
-        fun parse(o: JSONObject?) = Recommendation(
-            o.str("title").orEmpty(), o.str("headline").orEmpty(), o.str("description").orEmpty(), o.str("note").orEmpty()
+        fun parse(o: JSONObject, state: String? = null) = Insight(
+            o.str("icon").orEmpty(), o.str("accent").orEmpty(), o.str("title").orEmpty(),
+            o.str("body").orEmpty(), state ?: o.str("state") ?: "empty",
+            slot = o.str("slot"),
+            phrased = o.bool("phrased"),
+            evidence = Evidence.parse(o, label = "research_label")
         )
     }
+}
+
+/**
+ * Een kleine suggestie (components/recommendation.php): the day's one at
+ * most, always optional. Not [filled], it is the quiet card saying there is
+ * none — or that the day's no longer fits newer data.
+ */
+data class Recommendation(
+    val title: String,
+    val headline: String,
+    val description: String,
+    val note: String,
+    val state: String = "empty",
+    val evidence: Evidence? = null
+) {
+    val filled: Boolean get() = state == "filled"
+
+    companion object {
+        fun parse(o: JSONObject?) = Recommendation(
+            o.str("title").orEmpty(), o.str("headline").orEmpty(), o.str("description").orEmpty(), o.str("note").orEmpty(),
+            state = o.str("state") ?: "empty",
+            evidence = o?.let { Evidence.parse(it, label = "research_label") }
+        )
+    }
+}
+
+/**
+ * The research behind something shown (components/research-evidence.php):
+ * its label ([strengthLabel]: Zeer betrouwbaar, Betrouwbaar, Beperkt
+ * onderbouwd — never a percentage) and "Bekijk onderzoek" ([label]),
+ * both opening [research]'s detail.
+ */
+data class Evidence(val research: String, val strengthKey: String, val strengthLabel: String, val label: String) {
+    companion object {
+        /** From an insight (`research_label`) or a reference (`label`); null without a detail to open. */
+        fun parse(o: JSONObject?, label: String = "label"): Evidence? {
+            val id = o.str("research")?.takeIf { it.isNotEmpty() } ?: return null
+            val strength = o.obj("strength")
+            return Evidence(id, strength.str("key").orEmpty(), strength.str("label").orEmpty(), o.str(label).orEmpty())
+        }
+    }
+}
+
+/**
+ * "Uit onderzoek blijkt" (pages/research-detail.php): the detail view's
+ * words ([copy]) and every detail an evidence chip on these pages opens, by
+ * its id ("c12-1": the claim version, and how many steps its label stands
+ * lower for how closely Ownify's data fits it there).
+ */
+data class Research(val copy: ResearchCopy, val details: Map<String, ResearchDetail>) {
+    fun detail(id: String): ResearchDetail? = details[id]
+
+    companion object {
+        fun parse(o: JSONObject?) = Research(
+            ResearchCopy.parse(o.obj("copy")),
+            o.obj("details").entries { id, it -> ResearchDetail.parse(it)?.let { detail -> id to detail } }.toMap()
+        )
+    }
+}
+
+/** The detail view's own words (config/research.php `detail`), in the account's language. */
+data class ResearchCopy(
+    val title: String,
+    val found: String,
+    val evidence: String,
+    val population: String,
+    val limitations: String,
+    val source: String,
+    val kindLabel: String,
+    val openSource: String,
+    val readPdf: String,
+    val openPdf: String,
+    val downloadPdf: String,
+    val pdfLoading: String,
+    val pdfFailed: String,
+    val offline: String,
+    /** "Pagina %1$d van %2$d". */
+    val page: String,
+    val retired: String
+) {
+    companion object {
+        fun parse(o: JSONObject?) = ResearchCopy(
+            title = o.str("title") ?: tr("Uit onderzoek blijkt"),
+            found = o.str("found").orEmpty(),
+            evidence = o.str("evidence").orEmpty(),
+            population = o.str("population").orEmpty(),
+            limitations = o.str("limitations").orEmpty(),
+            source = o.str("source").orEmpty(),
+            kindLabel = o.str("kind_label").orEmpty(),
+            openSource = o.str("open_source").orEmpty(),
+            readPdf = o.str("read_pdf").orEmpty(),
+            openPdf = o.str("open_pdf").orEmpty(),
+            downloadPdf = o.str("download_pdf").orEmpty(),
+            pdfLoading = o.str("pdf_loading").orEmpty(),
+            pdfFailed = o.str("pdf_failed").orEmpty(),
+            offline = o.str("offline").orEmpty(),
+            page = o.str("page").orEmpty(),
+            retired = o.str("retired").orEmpty()
+        )
+    }
+}
+
+/** One approved claim as Ownify uses it, with its source and its PDF (includes/research.php research_detail). */
+data class ResearchDetail(
+    val id: String,
+    val claimKey: String,
+    val retired: Boolean,
+    val statement: String,
+    val population: String,
+    val limitations: List<String>,
+    val strength: ResearchStrength,
+    val source: ResearchSource,
+    val pdf: ResearchPdf
+) {
+    companion object {
+        fun parse(o: JSONObject): ResearchDetail? {
+            val id = o.str("id")?.takeIf { it.isNotEmpty() } ?: return null
+            val strength = o.obj("strength")
+            val source = o.obj("source")
+            val pdf = o.obj("pdf")
+            return ResearchDetail(
+                id = id,
+                claimKey = o.str("claim_key").orEmpty(),
+                retired = o.bool("retired"),
+                statement = o.str("statement").orEmpty(),
+                population = o.str("population").orEmpty(),
+                limitations = o.arr("limitations").strings(),
+                strength = ResearchStrength(
+                    key = strength.str("key").orEmpty(),
+                    label = strength.str("label").orEmpty(),
+                    means = strength.str("means").orEmpty(),
+                    lowered = strength.bool("lowered"),
+                    why = strength.str("why")?.takeIf { it.isNotEmpty() },
+                    note = strength.str("note").orEmpty()
+                ),
+                source = ResearchSource(
+                    code = source.str("code").orEmpty(),
+                    kind = source.str("kind").orEmpty(),
+                    title = source.str("title").orEmpty(),
+                    language = source.str("language") ?: "en",
+                    languageNote = source.str("language_note")?.takeIf { it.isNotEmpty() },
+                    authors = source.str("authors")?.takeIf { it.isNotEmpty() },
+                    organisation = source.str("organisation")?.takeIf { it.isNotEmpty() },
+                    year = source.text("year").orEmpty(),
+                    citation = source.str("citation").orEmpty(),
+                    findings = source.str("findings").orEmpty(),
+                    // Only a publication's address on the web: never anything else to hand the browser.
+                    href = source.str("href")?.takeIf { it.startsWith("https://") },
+                    verified = source.str("verified").orEmpty()
+                ),
+                pdf = ResearchPdf(
+                    mode = pdf.str("mode") ?: "link",
+                    // Ownify's own copy (relative: on the server the app talks to) or the publisher's (https).
+                    href = pdf.str("href")?.takeIf { it.startsWith("https://") || it.matches(Regex("^assets/research/[A-Z]{3}-\\d{2}\\.pdf$")) },
+                    note = pdf.str("note").orEmpty()
+                )
+            )
+        }
+    }
+}
+
+/** How strong the research is as Ownify uses it here: the label, what it means, and why it stands lower when it does. */
+data class ResearchStrength(val key: String, val label: String, val means: String, val lowered: Boolean, val why: String?, val note: String)
+
+/** The publication, exactly as published: its title in its own [language], [languageNote] when that is not the app's. */
+data class ResearchSource(
+    val code: String,
+    val kind: String,
+    val title: String,
+    val language: String,
+    val languageNote: String?,
+    val authors: String?,
+    val organisation: String?,
+    val year: String,
+    val citation: String,
+    val findings: String,
+    val href: String?,
+    val verified: String
+)
+
+/**
+ * The PDF ([mode]): `hosted` Ownify's own unmodified CC BY copy, `official_pdf`
+ * the publisher's own file, both read in the app; `link` none to read here —
+ * the publication opens at its publisher.
+ */
+data class ResearchPdf(val mode: String, val href: String?, val note: String) {
+    /** Something the app can read itself. */
+    val readable: Boolean get() = mode != "link" && href != null
+    val hosted: Boolean get() = mode == "hosted" && href != null
 }
 
 // ------------------------------------------------------------ gezondheid
@@ -2084,6 +2307,8 @@ sealed interface SettingsBlock {
     data class Actions(val title: String, val items: List<ActionItem>) : SettingsBlock
     /** A heading over the blocks after it, with its icon and one line (Voorkeuren: one per setting it holds). */
     data class Section(val title: String, val icon: String, val lede: String?) : SettingsBlock
+    /** The stored insight that belongs on this screen ([slot]: the body's BMI under Lichaamsmaten), or nothing. */
+    data class Insight(val slot: String) : SettingsBlock
 
     companion object {
         fun parse(o: JSONObject): SettingsBlock? =
@@ -2124,6 +2349,7 @@ sealed interface SettingsBlock {
                 "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty(), o.str("title")?.takeIf { it.isNotEmpty() })
                 "actions" -> Actions(o.str("title").orEmpty(), o.arr("items").map(ActionItem::parse))
                 "section" -> Section(o.str("title").orEmpty(), o.str("icon").orEmpty(), o.str("lede"))
+                "insight" -> o.str("slot")?.takeIf { it.isNotEmpty() }?.let { Insight(it) }
                 else -> null
             }
     }
