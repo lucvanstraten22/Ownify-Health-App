@@ -161,8 +161,7 @@ private fun ActiveView(data: AppData, board: Board, onAdd: () -> Unit) {
         Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             board.secondary.forEach { goal -> key(goal.id) { BoardCard(data, goal, "secondary", goal.id in board.leaving) } }
         }
-
-        if (any) SlotNote(slotNote(board.slotsLeft, data.goals.limits, labels))
+        // No line about the places left (30.0), as on the web.
     }
 }
 

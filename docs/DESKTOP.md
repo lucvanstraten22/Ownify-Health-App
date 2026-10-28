@@ -1,7 +1,9 @@
 # The desktop layout (web only)
 
 The website has a layout for desktop and tablet screens next to
-the phone's. The Android app has none (it is a phone app) and is unchanged.
+the phone's. The Android app has none (it is a phone app); what the desktop
+changes on the phone too — the challenge card in the green Note — is in
+docs/CHALLENGES.md.
 
 ## Which layout
 
@@ -20,45 +22,70 @@ navigation: the page, an open second page and every scroll position stay.
 
 ## Desktop
 
+- **The frame (30.0).** The sidebar and the page are one group, centred on
+  the screen, at most 1760 × 1060 design pixels, with a quiet margin above
+  and below (3.2% of the screen's height, 20–56px). The head's script sets
+  `--frame-x/-y/-w/-h` and `--ui-scale` before anything is painted. The
+  group is drawn at one scale (CSS `zoom` on the sidebar, the page and the
+  second page): ×1 at 1920 × 1080, ×1.2 at 2560 × 1440, never more than
+  ×1.25 and never less than ×1 — so on a larger, denser screen type keeps
+  its size instead of shrinking. Nothing is stretched to the screen's
+  height: every block keeps its own height.
+  - Zoom and measuring: `getBoundingClientRect()` answers in screen pixels,
+    `offsetWidth`/`offsetTop` in the element's own; scripts that place
+    things from a rect divide by `k = rect.width / offsetWidth`
+    (`page-navigation.js`, `chart-axis.js`, `nutrition.js`, and
+    `hero-ring.js` draws its canvas at the zoomed density).
 - **The sidebar** is the dock, standing up (`components/app-dock.php`,
-  `assets/css/desktop.css`): the name, the five tabs — the same chosen glass
-  moving down them (`page-navigation.js`) — and at its foot OwnifyAI,
-  Apparaten and the account, which the header's buttons and the handle open
-  on a phone, and under them the view switch (`components/view-switch.php`;
-  like the tabs, no glass of its own on the sidebar's, the sidebar's inset
-  fill instead). Pressed again, they close what they opened. The red dots
-  (docs/NOTICES.md) sit beside the sidebar's icons as beside the tab bar's.
+  `assets/css/desktop.css`): the name, then one list of eight rows — the
+  five tabs (the same chosen glass moving down them, `page-navigation.js`),
+  OwnifyAI, Apparaten and the account — every row 40px, every icon in one
+  24px column, every label on one edge; under them, in the middle, the view
+  switch (`components/view-switch.php`; like the tabs, no glass of its own,
+  the sidebar's inset fill instead). Pressed again, the last three close
+  what they opened. The red dots (docs/NOTICES.md) sit beside its icons.
+  - **It grows with the page (30.0).** Its bottom is where the page's last
+    block ends (`desktop.js` sets `--nav-h`, measured without a block's
+    slide-in): never shorter than its own rows, never taller than the
+    frame, so a page that scrolls gets the frame's height. When there is
+    room, OwnifyAI, Apparaten and the account stand at its foot; at its
+    shortest they follow the tabs. Switching pages it eases to the new
+    length (360ms, the strong ease-out; none with reduced motion).
 - **No header.** Everything in it is in the sidebar, so it is not drawn and
   every page's title starts on the sidebar's top edge (29.2).
-- **The page** stands beside the sidebar, at most `--page-max` (1600px) wide,
-  with the same gap from the screen's right edge as the sidebar keeps from
-  its left, in columns where they help — measured on the page's own width
-  (container queries), so it re-flows when a second page opens:
-  - Overzicht: the score beside the primary goal, the suggestion and the
-    insights. From 960px Primair doel and Eén kleine suggestie side by side,
-    one size, with Nuttige inzichten under them; narrower, the three under
-    each other, Primair doel and Eén kleine suggestie still one height.
-  - Doelen: the switch at its own width; the secondary goals in two
-    columns. From 1100px the primary goal in a column of its own, as tall
-    as the four others two by two beside it; every card at its own height.
-    Afgerond: two, then (from 1100px) three columns.
-  - Community: Ranglijst and Uitdagingen side by side, one height, at their
-    own height; what they show centred in them, their buttons at the bottom.
-  - Gezondheid: the three areas across, the Verloop under them; the height
-    left is shared between the areas (up to 260px) and the Verloop's line.
+- **The page** fills the frame beside the sidebar (20px between them), in
+  columns where they help — measured on the page's own width (container
+  queries), so it re-flows when a second page opens. From 1100px:
+  - Overzicht, in bands: the score as one band (the ring | what it is, its
+    direction and lede | the three pillar rings); Primair doel | Eén kleine
+    suggestie; Nuttige inzichten with its three insights side by side.
+  - Gezondheid, three columns: Slaap, Voeding and Training under each other
+    in the first (icon, name, the big score, its bar), the Verloop across
+    the other two, as tall as the three.
+  - Doelen, three columns: the primary goal beside the four others two by
+    two, every card at its own height. Afgerond: three columns.
+  - Community, three columns: the Ranglijst across two — Vrienden and
+    Nederland side by side, each the six rows around your place (two above
+    you and three below, five below when you lead; when you are not in its
+    top, its top five and you), with "#2 van 5" (`hydrate_community_windows()`
+    in `lib/hydrate-community.php`, the board's own rows) and "deze maand";
+    Uitdagingen in the third, its buttons at the bottom. Narrower, and on a
+    phone, the Ranglijst keeps its podium.
+  - Between 760 and 1100px each page falls back to two columns or one.
   - Instellingen: one column (760px).
-- **As tall as the sidebar (29.2).** Overzicht and Gezondheid end where
-  the sidebar ends: their cards share the screen's height out, so the page
-  and the sidebar close on one line. Content taller than the screen still
-  just scrolls. Doelen and Community keep every card at its own height.
 - **The second page.** A detail page (a goal, Slaap, Voeding, Training, a
   chart, a training, a settings page, the Ranglijst, Uitdagingen, a
-  challenge, the Scorekompas), OwnifyAI, Nieuw doel, the account and
-  Apparaten all open in one column on the right (544px), sliding in from the
-  right — one at a time (`assets/js/desktop.js` closes the one in front).
+  challenge, the Scorekompas, research), OwnifyAI, Nieuw doel, the account
+  and Apparaten all open in one column at the frame's right (544px, at the
+  frame's scale), sliding in from the right — one at a time
+  (`assets/js/desktop.js` closes the one in front). Closed, they wait past
+  the screen's edge by the frame's margin too (`nav.PARK_GAP`), so no sliver
+  shows. Their rows are as wide as the column (`--content-width`), never the
+  phone's width.
   - From 1200px it stands **beside** the page, which makes room for it and
     stays usable; below that it **covers** the page (not the sidebar).
-  - What opened it stays marked in the page (the chosen row's inset ring).
+  - What opened it stays marked in the page (the chosen card's inset ring;
+    not on Overzicht's score band, which has no card edge for it).
   - Opening another item swaps it with a short slide; a deeper page (a
     chart of Slaap) opens over it with a back pill; Escape and its own
     button close it. Leaving for another tab keeps it open.

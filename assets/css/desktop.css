@@ -38,23 +38,40 @@
    Desktop
    ========================================================================== */
 :root[data-layout="desktop"] {
-    --side-w: 236px;
-    --side-gap: var(--space-4);
-    --side-space: calc(var(--side-w) + 2 * var(--side-gap));
+    /* The frame (set by the head's script, components/document-head.php):
+       --frame-x/-y its corner, --frame-w/-h its size, in screen pixels, and
+       --ui-scale what the sidebar, the page and the second page are drawn
+       at (CSS zoom). Lengths below are design pixels unless they say so. */
+    --ui-scale: 1;
+    --frame-x: 16px;
+    --frame-y: 16px;
+    --frame-w: calc(100vw - 32px);
+    --frame-h: calc(100vh - 32px);
+    --nav-w: 220px;
+    --nav-gap: 20px;
+    --page-left: calc(var(--frame-x) + (var(--nav-w) + var(--nav-gap)) * var(--ui-scale));
     --second-w: 544px;
-    --second-space: calc(var(--second-w) + var(--side-gap));
     --second-in: 340ms var(--ease-out-strong);
+    --side-gap: var(--space-4);
     --page-max: 1600px;
     --fs-score: 3.1rem;
 }
 
 /* --- the sidebar: the dock, standing up --------------------------------- */
+/* At the frame's top left, drawn at the frame's scale (zoom multiplies its
+   own offsets too, hence the division). Its length follows the page:
+   desktop.js sets --nav-h to where the page's last block ends — never
+   shorter than its own rows, never taller than the frame — and it eases
+   there when the page changes. */
 :root[data-layout="desktop"] .app-dock {
-    inset: var(--side-gap) auto var(--side-gap) var(--side-gap);
-    width: var(--side-w);
-    padding: var(--space-4) var(--space-2) var(--space-2);
+    zoom: var(--ui-scale);
+    inset: calc(var(--frame-y) / var(--ui-scale)) auto auto calc(var(--frame-x) / var(--ui-scale));
+    width: var(--nav-w);
+    height: calc(var(--nav-h, var(--frame-h)) / var(--ui-scale));
+    padding: var(--space-3) var(--space-2) var(--space-2);
     align-items: stretch;
-    gap: var(--space-1);
+    gap: 3px;
+    transition: height 360ms var(--ease-out-strong);
     border-radius: var(--radius-card);
     isolation: isolate;
     background: var(--lg-face), var(--lg-body);
@@ -86,7 +103,7 @@
 :root[data-layout="desktop"] .sidebar__brand {
     display: block;
     margin: 0;
-    padding: var(--space-1) var(--space-4) var(--space-4);
+    padding: var(--space-1) 14px var(--space-2);
     font-size: var(--fs-brand);
     font-weight: 600;
     letter-spacing: -0.03em;
@@ -98,6 +115,7 @@
     width: 100%;
     height: auto;
     margin: 0;
+    padding: 0;
     background: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -110,19 +128,23 @@
 :root[data-layout="desktop"] .tabbar__list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: 3px;
     width: 100%;
+    max-width: none;
     height: auto;
+    margin: 0;
     padding: 0;
 }
 
+/* The five pages and OwnifyAI, Apparaten and the account: one list of
+   rows, every icon in the same 24px column, every label on one edge. */
 :root[data-layout="desktop"] .tab,
 :root[data-layout="desktop"] .sidebar__item {
     flex-direction: row;
     justify-content: flex-start;
     gap: var(--space-3);
-    height: 46px;
-    padding: 0 var(--space-4);
+    height: 40px;
+    padding: 0 14px;
     border-radius: var(--radius-pill);
 }
 
@@ -138,10 +160,12 @@
 
 :root[data-layout="desktop"] .tab__glow { inset: 0; }
 
+/* Right under the pages when the sidebar is at its shortest; with room to
+   spare, at its foot. */
 :root[data-layout="desktop"] .sidebar__foot {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: 3px;
     margin-top: auto;
 }
 
@@ -149,7 +173,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 46px;
+    min-height: 40px;
     color: var(--text-secondary);
     font-size: var(--fs-small);
     font-weight: 600;
@@ -157,11 +181,19 @@
     transition: color var(--transition-fast), background-color var(--transition-fast);
 }
 
-:root[data-layout="desktop"] .sidebar__icon { display: grid; place-items: center; flex: none; }
+:root[data-layout="desktop"] .tab__icon,
+:root[data-layout="desktop"] .sidebar__icon,
+:root[data-layout="desktop"] .sidebar__item > .notice-frame {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+}
 
 /* OwnifyAI's mark: the Ownify logo in the grey of the items around it (the
-   greyed logo of the declined consent, ai.css .ai-logo--off). */
-:root[data-layout="desktop"] .sidebar__logo,
+   greyed logo of the declined consent, ai.css .ai-logo--off). The account's
+   picture: round, at the logo's size. */
 :root[data-layout="desktop"] .sidebar__avatar { width: 22px; height: 22px; }
 
 :root[data-layout="desktop"] .sidebar__logo img {
@@ -202,13 +234,15 @@
     }
 }
 
-/* The switch at the sidebar's foot: the two choices share its width. Like
-   the tabs above it, no glass of its own on the sidebar's glass — it sits
-   in the sidebar's own inset fill, the chosen side in the chosen pane. */
+/* The switch at the sidebar's foot, in its middle, the two choices one
+   width. Like the tabs above it, no glass of its own on the sidebar's glass
+   — it sits in the sidebar's own inset fill, the chosen side in the chosen
+   pane. */
 :root[data-layout="desktop"] .view-switch--side {
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    width: 100%;
+    align-self: center;
+    width: auto;
     margin-top: var(--space-2);
     background: var(--inset-fill);
     -webkit-backdrop-filter: none;
@@ -245,30 +279,35 @@
 :root[data-layout="desktop"] .app-header .pill--devices,
 :root[data-layout="desktop"] .app-header .pill--account { display: none; }
 
-/* --- the page: beside the sidebar, as wide as is good to read: the same
-   gap from the screen's right edge as the sidebar keeps from its left ---- */
+/* --- the page: in the frame, from the sidebar's gap to the frame's right
+   edge, drawn at the frame's scale; its title on the sidebar's top edge
+   and its last block, when it is short enough, where the sidebar ends --- */
 :root[data-layout="desktop"] .rail-window,
 :root[data-layout="desktop"] .pull-sync {
-    left: var(--side-space);
+    left: var(--page-left);
+    right: var(--frame-x);
 }
 
 :root[data-layout="desktop"] .rail-window { transition: right var(--second-in); }
 
-:root[data-layout="desktop"] .rail-window,
-:root[data-layout="desktop"] .app-header--shared {
-    --content-width: calc(100% - 2 * var(--side-gap));
+:root[data-layout="desktop"] .rail-window .app__main {
+    zoom: var(--ui-scale);
+    padding-top: calc(var(--frame-y) / var(--ui-scale));
+    padding-bottom: calc(var(--frame-y) / var(--ui-scale));
 }
 
-:root[data-layout="desktop"] .app__main {
-    padding-bottom: var(--space-7, 48px);
+:root[data-layout="desktop"] .rail-window .app__main > .shell {
+    --content-width: 100%;
+    width: 100%;
+    max-width: none;
 }
 
-/* The way back to the top of Overzicht: the page's own corner. */
+/* The way back to the top of Overzicht: the frame's own corner. */
 :root[data-layout="desktop"] .fab {
     --fab-x: 0px;
     left: auto;
-    right: var(--space-6);
-    bottom: var(--space-6);
+    right: calc(var(--frame-x) + var(--space-5) * var(--ui-scale));
+    bottom: calc(var(--frame-y) + var(--space-5) * var(--ui-scale));
 }
 
 /* --- the pages: columns where they help, measured on the page's own width
@@ -276,25 +315,100 @@
 :root[data-layout="desktop"] .app__main { container: page / inline-size; }
 
 /* Instellingen reads as one column; so does a detail page covering the page. */
-:root[data-layout="desktop"] [data-page="settings"] .shell,
+:root[data-layout="desktop"] .rail-window [data-page="settings"] .app__main > .shell,
 :root[data-layout="desktop"] .detail .shell { max-width: 760px; }
 
 @container page (min-width: 760px) {
-    /* Overzicht: the score beside what follows from it. */
+    /* Overzicht — bands, read left to right: the score as one band (ring,
+       what it is, the three pillars), Primair doel | Eén kleine suggestie,
+       and Nuttige inzichten with its three insights side by side. Every
+       block at its own height. */
     [data-page="overview"] .app__main > .shell {
         display: grid;
-        grid-template-columns: repeat(12, minmax(0, 1fr));
-        grid-auto-flow: row dense;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: row dense;   /* the suggestion beside the goal, whatever comes between them */
         gap: var(--space-5);
-        align-items: start;
+        align-items: stretch;
     }
     [data-page="overview"] .app__main > .shell > * { grid-column: 1 / -1; }
-    [data-page="overview"] .app__main > .shell > .card--hero { grid-column: 1 / 6; grid-row: span 3; }
-    [data-page="overview"] .app__main > .shell > .card--goal,
-    [data-page="overview"] .app__main > .shell > .card--insights,
-    [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 6 / -1; }
+    [data-page="overview"] .app__main > .shell > .card--goal { grid-column: 1; }
+    [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 2; }
+    [data-page="overview"] .card--hero {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr) 440px;
+        grid-template-areas: "head head head" "ring label pillars" "ring dir pillars" "ring lede pillars";
+        grid-template-rows: auto 1fr auto 1fr;
+        column-gap: 44px;
+        align-items: center;
+        padding-bottom: 0;
+        text-align: left;
+    }
+    [data-page="overview"] .card--hero > .card__head { grid-area: head; margin-bottom: var(--space-1); }
+    [data-page="overview"] .card--hero .score-ring { grid-area: ring; width: 236px; margin: var(--space-2) 0 0; }
+    [data-page="overview"] .card--hero .score-ring__label { grid-area: label; align-self: end; font-size: var(--fs-title-1); }
+    [data-page="overview"] .card--hero .score-direction { grid-area: dir; justify-content: flex-start; margin-top: 10px; }
+    [data-page="overview"] .card--hero .card__lede {
+        grid-area: lede;
+        align-self: start;
+        max-width: 44ch;
+        margin: 10px 0 0;
+        font-size: var(--fs-body);
+        text-align: left;
+    }
+    [data-page="overview"] .card--hero .pillar-rings { grid-area: pillars; width: 100%; margin: 0; }
+    [data-page="overview"] .card--hero .pillar-ring__dial { width: 64px; height: 64px; }
+    [data-page="overview"] .card--hero .pillar-ring__value { font-size: var(--fs-headline); }
+    [data-page="overview"] .card--hero .pillar-ring__label { font-size: var(--fs-label); }
+    [data-page="overview"] .card--insights .insights {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-4);
+    }
+    [data-page="overview"] .card--insights .insights__item { padding: 18px; align-items: stretch; }
+    [data-page="overview"] .card--insights .insights__body { display: flex; flex-direction: column; gap: 6px; }
+    [data-page="overview"] .card--insights .insights__body > .research-evidence { margin-top: auto; padding-top: 6px; }
 
-    /* Doelen: the switch at its own width, the goals side by side. */
+    /* Gezondheid — three columns: the three pillars down the first, each its
+       name, its score as the figure and its bar; the Verloop across the
+       other two, as tall as the pillars, its line taking that height. */
+    [data-page="health"] .app__main > .shell {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-5);
+        align-items: stretch;
+    }
+    [data-page="health"] .app__main > .shell > * { grid-column: 1 / -1; }
+    [data-page="health"] .app__main > .shell > .grid--three {
+        grid-column: 1;
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
+        align-self: start;
+    }
+    [data-page="health"] .app__main > .shell > .card--trend { grid-column: 2 / -1; grid-row: 2; }
+    [data-page="health"] .health-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas: "icon label score" "bar bar bar";
+        align-items: center;
+        justify-items: start;
+        gap: 22px var(--space-4);
+        padding: 30px 28px;
+        text-align: left;
+    }
+    [data-page="health"] .health-card .icon-tile { grid-area: icon; width: 44px; height: 44px; border-radius: 13px; }
+    [data-page="health"] .health-card .icon-tile .icon { width: 22px; height: 22px; }
+    [data-page="health"] .health-card .health-card__label { grid-area: label; font-size: var(--fs-headline); }
+    [data-page="health"] .health-card .score-value { grid-area: score; margin: 0; }
+    [data-page="health"] .health-card .score-value__number { font-size: var(--fs-score); }
+    [data-page="health"] .health-card .score-value__max { font-size: var(--fs-label); }
+    [data-page="health"] .health-card .meter { grid-area: bar; width: 100%; }
+    [data-page="health"] .card--trend { display: flex; flex-direction: column; }
+    [data-page="health"] .card--trend .compass-history__chart { display: flex; flex-direction: column; flex: 1 0 auto; }
+    [data-page="health"] .card--trend .chart__range.is-active { display: flex; flex-direction: column; flex: 1 0 auto; }
+    [data-page="health"] .card--trend .compass-plot { flex: 1 0 auto; height: auto; min-height: 200px; }
+
+    /* Doelen: the switch at its own width; the primary goal in a column of
+       its own, as tall as the other four two by two beside it. */
     .goals-intro .range-switch { width: min(100%, 26rem); }
     [data-goals] .goals-list {
         display: grid;
@@ -302,126 +416,16 @@
         gap: var(--space-4);
         align-items: start;
     }
-
-    /* Community: Ranglijst and Uitdagingen next to each other. */
-    .community-home {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--space-5);
-        align-items: start;
-    }
-    .community-home > * { grid-column: 1 / -1; }
-    .community-home > .cm-dest { grid-column: auto; }
-}
-
-@container page (min-width: 960px) {
-    [data-page="overview"] .app__main > .shell > .card--hero { grid-column: 1 / 5; grid-row: span 2; }
-    [data-page="overview"] .app__main > .shell > .card--goal { grid-column: 5 / 9; }
-    [data-page="overview"] .app__main > .shell > .card--recommendation { grid-column: 9 / -1; }
-    [data-page="overview"] .app__main > .shell > .card--insights { grid-column: 5 / -1; }
-}
-
-@container page (min-width: 1100px) {
-    [data-goals] .goals-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-/* --- Overzicht and Gezondheid: as tall as the sidebar -------------------
-   They end where the sidebar ends (its gap from the bottom), so the page and
-   the sidebar close on one line; each page's own grid then shares that
-   height out (below). Content taller than the screen still just scrolls.
-   Doelen and Community keep their cards at their own height. */
-:root[data-layout="desktop"] :is([data-page="overview"], [data-page="health"]) .app__main {
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-    padding-bottom: var(--side-gap);
-}
-
-:root[data-layout="desktop"] :is([data-page="overview"], [data-page="health"]) .app__main > .shell {
-    flex: 1 0 auto;
-}
-
-@container page (min-width: 760px) {
-    /* Gezondheid: the height left under the three pillars shared between
-       them and the Verloop (the pillars up to 260px, their content centred;
-       the Verloop's line grows with it). On a short screen there is nothing
-       to share and both keep their own height. */
-    [data-page="health"] .shell > .grid--three {
-        flex: 1 0 auto;
-        max-height: 260px;
-    }
-    [data-page="health"] .health-card { justify-content: center; }
-    [data-page="health"] .card--trend {
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-    }
-    [data-page="health"] .card--trend .compass-history__chart {
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-    }
-    [data-page="health"] .card--trend .chart__range.is-active {
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-    }
-    [data-page="health"] .card--trend .compass-plot {
-        flex: 1 0 auto;
-        height: auto;
-        min-height: 160px;
-    }
-
-    /* Community: Ranglijst and Uitdagingen one height, what they show
-       centred in them, their buttons at the bottom. */
-    .community-home { align-items: stretch; }
-    .community-home > .cm-dest > :is(.cm-podium, .cm-none, .cm-fan) { margin-block: auto; }
-
-    /* Overzicht, the three under each other beside the score: Primair doel
-       and Eén kleine suggestie still one size (their rows share one). */
-    [data-page="overview"] .app__main > .shell { grid-template-rows: 1fr auto 1fr; }
-    [data-page="overview"] .app__main > .shell > :is(.card--goal, .card--recommendation) { align-self: stretch; }
-}
-
-@container page (min-width: 960px) {
-    /* Overzicht: Primair doel and Eén kleine suggestie one size, Nuttige
-       inzichten under them down to the sidebar's foot, the score beside all
-       three, its ring centred in that height. */
-    [data-page="overview"] .app__main > .shell {
-        grid-template-rows: auto minmax(0, 1fr);
-        align-items: stretch;
-    }
-    [data-page="overview"] .app__main > .shell > .card--hero {
-        display: flex;
-        flex-direction: column;
-    }
-    [data-page="overview"] .card--hero .score-ring {
-        width: clamp(220px, 30vh, 290px);
-        margin-top: auto;
-    }
-    [data-page="overview"] .card--hero .pillar-rings { margin-bottom: auto; }
-}
-
-@container page (min-width: 1100px) {
-    /* Doelen: the primary goal in a column of its own, as tall as the
-       other goals two by two beside it; every card at its own height, so
-       nothing is stretched to the screen. In the primary card the name
-       stays at the top and the progress keeps together at the bottom. */
     [data-goals] [data-goal-panel="active"].is-active {
         display: grid;
         grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto auto;
         align-items: start;
-        gap: var(--space-2) var(--space-4);
+        gap: var(--space-2) 20px;
     }
     [data-goal-panel="active"] > * { grid-column: 1 / -1; }
     [data-goal-panel="active"] > [data-goal-eyebrow="primary"] { grid-column: 1; grid-row: 1; }
-    [data-goal-panel="active"] > [data-goal-slot="primary"] {
-        grid-column: 1;
-        grid-row: 2;
-        align-self: stretch;
-        display: flex;
-    }
+    [data-goal-panel="active"] > [data-goal-slot="primary"] { grid-column: 1; grid-row: 2; align-self: stretch; display: flex; }
     [data-goal-panel="active"] > [data-goal-eyebrow="secondary"] { grid-column: 2; grid-row: 1; margin-top: 0; }
     [data-goal-panel="active"] > [data-goal-slot="secondary"] {
         grid-column: 2;
@@ -429,8 +433,50 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: stretch;
     }
+    /* With no secondary goals the primary one takes the width. */
+    [data-goal-panel="active"]:has(> [data-goal-eyebrow="secondary"][hidden]) > [data-goal-slot="primary"] { grid-column: 1 / -1; }
     [data-goal-panel="active"] > [data-goal-slot="primary"] > .goal-card { flex: 1; }
     [data-goal-panel="active"] > [data-goal-slot="primary"] .goal-card__figures { margin-top: auto; }
+
+    /* Community — three columns: the Ranglijst across two, with Vrienden
+       and Nederland side by side around your place; Uitdagingen in the
+       third, its two buttons at the foot. Both one height. */
+    .community-home {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-5);
+        align-items: stretch;
+    }
+    .community-home > * { grid-column: 1 / -1; }
+    .community-home > .cm-dest { padding: var(--space-5); gap: 20px; }
+    .community-home > .cm-dest:nth-of-type(1) { grid-column: 1 / 3; }
+    .community-home > .cm-dest:nth-of-type(2) { grid-column: 3; }
+    .community-home > .cm-dest--boards .cm-podium { display: none; }
+    .community-home > .cm-dest--boards .cm-head__scope { display: none; }
+    .community-home > .cm-dest--boards .cm-boards { display: grid; }
+    .community-home .cm-line { padding-inline: var(--space-2); }
+    .community-home > .cm-dest > :is(.cm-fan, .cm-none) { margin-block: 0; }
+    .community-home .ch-acts { margin-top: auto; grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Smaller windows: the pillars of the score under its text, the insights
+   and the pages' columns fewer. */
+@container page (min-width: 760px) and (max-width: 1099px) {
+    [data-page="overview"] .card--hero {
+        grid-template-columns: 200px minmax(0, 1fr);
+        grid-template-areas: "head head" "ring label" "ring dir" "ring lede" "ring pillars";
+        column-gap: 32px;
+    }
+    [data-page="overview"] .card--hero .score-ring { width: 200px; }
+    [data-page="overview"] .card--hero .pillar-rings { width: 340px; margin-top: var(--space-4); }
+    [data-page="overview"] .card--hero .pillar-ring__dial { width: 48px; height: 48px; }
+    [data-page="overview"] .card--insights .insights { grid-template-columns: minmax(0, 1fr); }
+    [data-page="health"] .app__main > .shell { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    [data-page="health"] .app__main > .shell > .card--trend { grid-column: 2; }
+    [data-goals] [data-goal-panel="active"].is-active { display: flex; flex-direction: column; }
+    .community-home { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .community-home > .cm-dest:nth-of-type(1) { grid-column: 1 / -1; }
+    .community-home > .cm-dest:nth-of-type(2) { grid-column: 1 / -1; }
 }
 
 /* Beside a second page (from 1200px) the page makes room for it. */
@@ -438,20 +484,22 @@
     :root[data-layout="desktop"].has-second .rail-window,
     :root[data-layout="desktop"].has-second .app-header--shared,
     :root[data-layout="desktop"].has-second .pull-sync {
-        right: var(--second-space);
+        right: calc(var(--frame-x) + (var(--second-w) + var(--nav-gap)) * var(--ui-scale));
     }
 }
 
 /* --- the second page ----------------------------------------------------- */
 
-/* One column on the right, for all of them. Below 1200px it covers the page
-   (but never the sidebar). */
+/* One column on the right of the frame, as tall as the frame and drawn at
+   its scale, for all of them. Below 1200px it covers the page (but never
+   the sidebar). */
 :root[data-layout="desktop"] .detail,
 :root[data-layout="desktop"] .sheet--ai,
 :root[data-layout="desktop"] .account:not([hidden]),
 :root[data-layout="desktop"] .devices:not([hidden]),
 :root[data-layout="desktop"] .goal-wizard:not([hidden]) {
-    inset: var(--side-gap) var(--side-gap) var(--side-gap) auto;
+    zoom: var(--ui-scale);
+    inset: calc(var(--frame-y) / var(--ui-scale)) calc(var(--frame-x) / var(--ui-scale)) calc(var(--frame-y) / var(--ui-scale)) auto;
     width: var(--second-w);
 }
 
@@ -461,7 +509,7 @@
     :root[data-layout="desktop"] .account:not([hidden]),
     :root[data-layout="desktop"] .devices:not([hidden]),
     :root[data-layout="desktop"] .goal-wizard:not([hidden]) {
-        left: var(--side-space);
+        left: calc(var(--page-left) / var(--ui-scale));
         width: auto;
     }
 }
@@ -469,10 +517,10 @@
 /* A detail page and OwnifyAI: the thick glass, with the detail's own
    accent light kept in it. They arrive from the right (detail-layer.js,
    ai-sheet.js park them past the edge). */
-/* Parked: past the edge by the gap beside them too (nav.PARK_GAP), so no
-   sliver of a closed one shows at the screen's right. */
+/* Parked: past the edge by the gap beside them and the frame's margin too
+   (nav.PARK_GAP), so no sliver of a closed one shows at the screen's right. */
 :root[data-layout="desktop"] .detail,
-:root[data-layout="desktop"] .sheet--ai { transform: translate3d(calc(100% + 32px), 0, 0); }
+:root[data-layout="desktop"] .sheet--ai { transform: translate3d(calc(100% + 32px + var(--frame-x) / var(--ui-scale)), 0, 0); }
 
 :root[data-layout="desktop"] .detail {
     --content-width: calc(100% - 2 * var(--space-5));
@@ -493,6 +541,8 @@
 }
 
 :root[data-layout="desktop"] .sheet--ai {
+    /* Its rows inside it, as a detail page's are (not the phone's width). */
+    --content-width: calc(100% - 2 * var(--space-5));
     border-radius: var(--radius-card);
     transition: transform var(--second-in);
 }
@@ -539,7 +589,7 @@
     overflow-y: auto;
     pointer-events: auto;
     opacity: 1;
-    transform: translate3d(calc(100% + 32px), 0, 0);
+    transform: translate3d(calc(100% + 32px + var(--frame-x) / var(--ui-scale)), 0, 0);
     transition: transform var(--second-in), -webkit-backdrop-filter 240ms var(--ease-out-strong), backdrop-filter 240ms var(--ease-out-strong);
 }
 
@@ -554,9 +604,13 @@
 :root[data-layout="desktop"] .is-second-source {
     box-shadow: inset 0 0 0 1.5px var(--health-strong), var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
 }
+/* Not on Overzicht's score band: it has no card edge for the ring to sit
+   on, and the ring would run through its title. */
+:root[data-layout="desktop"] .card--hero.is-second-source { box-shadow: none; }
 
 /* Reduced motion: nothing slides; what arrives fades (navigation-core.js). */
 @media (prefers-reduced-motion: reduce) {
+    :root[data-layout="desktop"] .app-dock,
     :root[data-layout="desktop"] .rail-window,
     :root[data-layout="desktop"] .app-header--shared,
     :root[data-layout="desktop"] .account__panel,
@@ -564,6 +618,7 @@
     :root[data-layout="desktop"] .goal-wizard .wizard__panel { transition: none; }
 }
 
+:root[data-layout="desktop"][data-motion="reduce"] .app-dock,
 :root[data-layout="desktop"][data-motion="reduce"] .rail-window,
 :root[data-layout="desktop"][data-motion="reduce"] .app-header--shared { transition: none; }
 

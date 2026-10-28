@@ -47,6 +47,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import com.ownify.android.ui.design.cssPadding
+import com.ownify.android.ui.design.note
+import com.ownify.android.ui.design.NoteTone
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -360,9 +365,11 @@ internal fun ChallengeFan(running: List<ChallengeView>, onOpen: (ChallengeView) 
                     .matchParentSize()
                     .padding(horizontal = 12.dp * n)
                     .offset(y = 9.dp * n)
-                    .clip(shape)
-                    .background(Ownify.fill(0.07f - n * 0.02f))
-                    .border(1.dp, Ownify.GlassHairline, shape)
+                    .alpha(1f - n * 0.3f)
+                    // Only its foot: the card in front is see-through (a Note)
+                    // and the layer must not show through it.
+                    .drawWithContent { clipRect(top = size.height - 9.dp.toPx()) { this@drawWithContent.drawContent() } }
+                    .note(NoteTone.Positive, shape = shape)
             )
         }
         FanFront(front) { onOpen(front) }
@@ -375,15 +382,16 @@ private fun FanFront(view: ChallengeView, onClick: () -> Unit) {
     val accent = Accent.of(view.accent)
     val shape = RoundedCornerShape(Ownify.RadiusMd)
     val interaction = remember { MutableInteractionSource() }
-    JCard(
+    // A Note in the health tone (docs/THEME.md): Ownify's green wash and
+    // edge, inside the card like every other shape in a card (30.0).
+    Column(
         Modifier
             .fillMaxWidth()
             .press(interaction)
-            .background(Ownify.ground(1f), shape)
+            .note(NoteTone.Positive, shape = shape)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics { testTag = CHALLENGE_TILE },
-        shape = shape,
-        padding = PaddingValues(Ownify.Space4)
+            .semantics { testTag = CHALLENGE_TILE }
+            .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {

@@ -228,7 +228,8 @@ final percentage, highest first, then the newest goal first. A reached goal
 wears its award; an ended one does not. The first goal made is primary on its
 own; when the primary goal finishes or is deleted, the first of Secundaire
 doelen takes its place. Up to five active goals (`limits` in the config);
-finished goals do not count.
+finished goals do not count. Since 30.0 the board says nothing about the
+places left; a full board only disables the ways to add a goal.
 
 ## The tables
 

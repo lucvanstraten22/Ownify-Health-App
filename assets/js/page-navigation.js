@@ -160,14 +160,19 @@
 
         function measure() {
             var box = bar.getBoundingClientRect();
+            /* The desktop sidebar is drawn at the frame's scale (CSS zoom,
+               desktop.css): what the screen measures is divided by it, to
+               the bar's own pixels the pane is placed in. */
+            var k = bar.offsetWidth ? box.width / bar.offsetWidth : 1;
+            if (!k || !isFinite(k)) { k = 1; }
             var glow = tabs[0].querySelector('.tab__glow');
             var inset = glow ? parseFloat(getComputedStyle(glow).top) || 0 : 0;
             // Sideways the pane reaches past its tab (--tab-glow-reach).
             var side = glow ? parseFloat(getComputedStyle(glow).left) || 0 : 0;
             var first = tabs[0].getBoundingClientRect();
             // The pane is placed inside the bar's border (the desktop bar has one).
-            var originX = box.left + bar.clientLeft;
-            var originY = box.top + bar.clientTop;
+            var originX = box.left + bar.clientLeft * k;
+            var originY = box.top + bar.clientTop * k;
 
             var second = tabs[1] ? tabs[1].getBoundingClientRect() : first;
             vertical = Math.abs(second.top - first.top) > Math.abs(second.left - first.left);
@@ -175,20 +180,20 @@
             if (vertical) {
                 // Down the sidebar the pane fills its tab: no reach sideways.
                 slots = tabs.map(function (tab) {
-                    return tab.getBoundingClientRect().top - originY;
+                    return (tab.getBoundingClientRect().top - originY) / k;
                 });
                 pane.style.top = '0px';
-                pane.style.left = (first.left - originX) + 'px';
-                pane.style.width = first.width + 'px';
-                pane.style.height = first.height + 'px';
+                pane.style.left = ((first.left - originX) / k) + 'px';
+                pane.style.width = (first.width / k) + 'px';
+                pane.style.height = (first.height / k) + 'px';
             } else {
                 slots = tabs.map(function (tab) {
-                    return tab.getBoundingClientRect().left - originX + side;
+                    return (tab.getBoundingClientRect().left - originX) / k + side;
                 });
                 pane.style.left = '';
-                pane.style.top = (first.top - originY + inset) + 'px';
-                pane.style.width = Math.max(0, first.width - 2 * side) + 'px';
-                pane.style.height = Math.max(0, first.height - 2 * inset) + 'px';
+                pane.style.top = ((first.top - originY) / k + inset) + 'px';
+                pane.style.width = Math.max(0, first.width / k - 2 * side) + 'px';
+                pane.style.height = Math.max(0, first.height / k - 2 * inset) + 'px';
             }
             draw();
         }

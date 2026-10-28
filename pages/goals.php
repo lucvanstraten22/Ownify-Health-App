@@ -90,8 +90,8 @@ $copy = goals_script_copy($goals);
                         <?php endforeach; ?>
                     </div>
 
-                    <p class="goals-slots" data-goal-slots
-                       <?= $hasAny ? '' : 'hidden' ?>><?= e(goals_slot_note($goals)) ?></p>
+                    <?php /* No line about the places left (30.0); a full board
+                             disables the ways to add a goal (goals.js). */ ?>
 
                 </div>
 

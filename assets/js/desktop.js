@@ -134,6 +134,73 @@
         }
     });
 
+    /* ------------------------------------------------ the sidebar's length */
+
+    /* The sidebar ends where the page's last block ends (desktop.css reads
+       --nav-h, in screen pixels): never shorter than its own rows, never
+       taller than the frame — a page that scrolls gets the frame's height.
+       It eases to the new length when the page changes or grows. */
+    var dock = document.querySelector('.app-dock');
+
+    function px(name) { return parseFloat(window.getComputedStyle(root).getPropertyValue(name)) || 0; }
+
+    function fitSidebar() {
+        if (!dock || !nav.isDesktop()) { root.style.removeProperty('--nav-h'); return; }
+
+        var page = document.querySelector('.rail-window [data-page="' + (root.dataset.activePage || '') + '"]')
+            || document.querySelector('.rail-window [data-page]:not([inert])');
+        var shell = page && page.querySelector('.app__main > .shell');
+        var scroller = page && page.querySelector('[data-scroller]');
+        if (!shell) { return; }
+
+        var top = px('--frame-y');
+        var height = px('--frame-h');
+
+        // Its shortest: as tall as its own rows, measured without the ease.
+        var transition = dock.style.transition;
+        dock.style.transition = 'none';
+        dock.style.height = 'auto';
+        var rows = dock.getBoundingClientRect().height;
+        dock.style.height = '';
+        void dock.offsetHeight;
+        dock.style.transition = transition;
+
+        // Where the page's last block ends, wherever the page is scrolled —
+        // and where it comes to rest: a block still sliding in (.reveal, 14px
+        // lower until it is shown) is measured without that slide. The
+        // page's own pixels are zoomed (desktop.css): k turns them to the
+        // screen's.
+        var k = shell.offsetWidth ? shell.getBoundingClientRect().width / shell.offsetWidth : 1;
+        var scrolled = scroller ? scroller.scrollTop : 0;   // the scroller is not zoomed
+        var bottom = 0;
+        Array.prototype.forEach.call(shell.children, function (block) {
+            if (!block.offsetParent) { return; }
+            var box = block.getBoundingClientRect();
+            if (!box.height) { return; }
+            var moved = window.getComputedStyle(block).transform;
+            var slide = moved && moved !== 'none' && window.DOMMatrixReadOnly ? new DOMMatrixReadOnly(moved).m42 * k : 0;
+            bottom = Math.max(bottom, box.bottom - slide + scrolled);
+        });
+
+        var length = Math.min(height, Math.max(rows, bottom - top));
+        root.style.setProperty('--nav-h', Math.round(length) + 'px');
+    }
+
+    var fitting = 0;
+    function refit() {
+        window.cancelAnimationFrame(fitting);
+        fitting = window.requestAnimationFrame(fitSidebar);
+    }
+
+    new MutationObserver(refit).observe(root, { attributes: true, attributeFilter: ['data-active-page', 'data-layout'] });
+    window.addEventListener('resize', refit);
+    if ('ResizeObserver' in window) {
+        var grows = new ResizeObserver(refit);
+        Array.prototype.forEach.call(document.querySelectorAll('.rail-window .app__main > .shell'), function (shell) {
+            grows.observe(shell);
+        });
+    }
+
     /* --------------------------------------------------------- the switch */
 
     var choices = Array.prototype.slice.call(document.querySelectorAll('[data-view-choice]'));
@@ -162,6 +229,7 @@
         sync();
         if (source) { source.classList.toggle('is-second-source', opened()); }
         nav.refresh();
+        refit();
     }
 
     choices.forEach(function (button) {

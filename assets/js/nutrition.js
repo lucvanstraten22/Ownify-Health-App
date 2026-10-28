@@ -147,7 +147,9 @@
 
     function fromX(x) {
         var box = track.getBoundingClientRect();
-        var f = Math.max(0, Math.min(1, (x - box.left - 14) / (box.width - 28)));
+        // The thumb's 14px half, in screen pixels (the desktop's zoom).
+        var edge = 14 * (track.offsetWidth ? box.width / track.offsetWidth : 1);
+        var f = Math.max(0, Math.min(1, (x - box.left - edge) / (box.width - 2 * edge)));
         return Math.round(f * 9) + 1;
     }
 

@@ -33,6 +33,9 @@
     function settle(axis) {
         var box = axis.getBoundingClientRect();
         if (!box.width) { return; }
+        // Measured on the screen, set in the axis's own pixels: on the
+        // desktop they differ by the frame's scale (CSS zoom).
+        var k = axis.offsetWidth ? box.width / axis.offsetWidth : 1;
 
         Array.prototype.forEach.call(centred(axis), function (tick) {
             tick.style.removeProperty('--edge-shift');
@@ -43,7 +46,7 @@
             } else if (at.right > box.right) {
                 shift = box.right - at.right;
             }
-            if (shift) { tick.style.setProperty('--edge-shift', Math.round(shift) + 'px'); }
+            if (shift) { tick.style.setProperty('--edge-shift', Math.round(shift / (k || 1)) + 'px'); }
         });
     }
 

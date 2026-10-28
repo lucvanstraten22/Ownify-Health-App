@@ -62,6 +62,7 @@ return [
     'Van %s' => 'From %s',
     'Bekijken' => 'View',
     'Nog %s pt tot %s' => '%s pts to %s',
+    '#%s van %s' => '#%s of %s',
     'Voeg vrienden toe om je met hen te meten.' => 'Add friends to compare yourself with them.',
     'deze maand' => 'this month',
     'Terug naar Community' => 'Back to Community',

@@ -259,7 +259,7 @@ done
 R="$(create "$B" "name=Een te veel" "measurement=custom" "category=training" "type=accumulate" "unit=times" "target_value=10" "duration=month")"
 has "  one more is refused" "$R" '"ok":false'
 has "  saying how many fit" "$R" "Je hebt al $LIMIT actieve doelen"
-has "  and the board says it is full, with the same number" "$(page "$B")" "Je $LIMIT doelplekken zijn bezet"
+hasnt "  and the board has no line about its places (30.0)" "$(page "$B")" "data-goal-slots"
 hasnt "another account's goals are not on this board" "$(board "$B" active)" "Bankdrukken"
 
 echo

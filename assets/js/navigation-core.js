@@ -87,8 +87,15 @@ window.AppNav = (function () {
         sideBySide: function () {
             return api.isDesktop() && window.matchMedia('(min-width: 1200px)').matches;
         },
-        /** How far right a second page is parked: its own width and the gap beside it. */
-        PARK_GAP: 32,
+        /** How far right a second page is parked: its own width and the gap
+            beside it — past the frame's margin too (desktop.css), in the
+            panel's own (zoomed) pixels, so no sliver of a closed one shows. */
+        get PARK_GAP() {
+            var style = window.getComputedStyle(document.documentElement);
+            var margin = parseFloat(style.getPropertyValue('--frame-x')) || 0;
+            var scale = parseFloat(style.getPropertyValue('--ui-scale')) || 1;
+            return 32 + margin / scale;
+        },
 
         /** Shared, so every controller can read what the others are doing. */
         state: { aiOpen: false, detailOpen: false },

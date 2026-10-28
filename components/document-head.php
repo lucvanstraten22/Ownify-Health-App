@@ -131,6 +131,29 @@ $theme  = app_theme_head($app);     // lib/theme.php
         if (wide && wide.addEventListener) { wide.addEventListener('change', layout); }
         else if (wide && wide.addListener) { wide.addListener(layout); }
         window.ownifyLayout = { apply: layout };
+
+        /* The desktop's frame (desktop.css, docs/DESKTOP.md): the sidebar and
+           the page as one group, centred, at most 1760 × 1060 design pixels,
+           with a quiet margin above and below, and scaled as one — ×1 at
+           1920 × 1080, ×1.2 at 2560 × 1440, never more than ×1.25 — so on a
+           larger, denser screen type keeps its size instead of shrinking or
+           growing with the screen. Set before anything is painted. */
+        function frame() {
+            var w = window.innerWidth, h = window.innerHeight;
+            var r = Math.min(w / 1920, h / 1080);
+            var s = Math.max(1, Math.min(1.25, 1 + (r - 1) * 0.6));
+            var m = Math.round(Math.max(20, Math.min(56, h * 0.032)));
+            var fw = Math.min(w - 2 * m, 1760 * s), fh = Math.min(h - 2 * m, 1060 * s);
+            var style = root.style;
+            style.setProperty('--ui-scale', s.toFixed(4));
+            style.setProperty('--frame-x', Math.round((w - fw) / 2) + 'px');
+            style.setProperty('--frame-y', Math.round((h - fh) / 2) + 'px');
+            style.setProperty('--frame-w', Math.round(fw) + 'px');
+            style.setProperty('--frame-h', Math.round(fh) + 'px');
+        }
+        frame();
+        window.addEventListener('resize', frame);
+        window.ownifyFrame = { apply: frame };
     })();
     </script>
 

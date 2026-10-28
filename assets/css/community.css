@@ -87,7 +87,7 @@
 }
 
 .board-list {
-    width: var(--shell-w);
+    width: var(--content-width);   /* the phone's shell; on desktop the second page's own width */
     max-width: var(--page-max);
     margin-inline: auto;
     display: flex;
@@ -229,7 +229,7 @@
    the icon; its rank slot stays empty so it lines up with the rows below.
    -------------------------------------------------------------------------- */
 .board-add {
-    width: var(--shell-w);
+    width: var(--content-width);   /* the phone's shell; on desktop the second page's own width */
     max-width: var(--page-max);
     margin-inline: auto;
     padding-top: var(--board-dock);
@@ -285,7 +285,7 @@
 .board-list--single,
 .board__scroll > .card--badges,
 .board-you-label {
-    width: var(--shell-w);
+    width: var(--content-width);   /* the phone's shell; on desktop the second page's own width */
     max-width: var(--page-max);
     margin-inline: auto;
 }

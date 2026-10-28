@@ -103,11 +103,79 @@ if (!function_exists('hydrate_community')) {
         }
 
         return [
-            'title' => $community['labels']['board_head'],
-            'sub'   => $community['scopes'][$scope]['label'] . ' · ' . t('deze maand'),
-            'rows'  => $rows,
-            'line'  => $line,
+            'title'  => $community['labels']['board_head'],
+            'sub'    => $community['scopes'][$scope]['label'] . ' · ' . t('deze maand'),
+            /* The same, in its two parts: the desktop shows both boards at
+               once and says only the period (desktop.css). */
+            'scope'  => $community['scopes'][$scope]['label'],
+            'period' => t('deze maand'),
+            'rows'   => $rows,
+            'line'   => $line,
+            'boards' => hydrate_community_windows($community, $period),
         ];
+    }
+
+    /**
+     * The desktop's Ranglijst card: Vrienden and Nederland side by side, each
+     * the six rows around you — two above and three below, or the five below
+     * you when you are first — and your place ("#2 van 5"). Outside a board's
+     * top 50 you are its last row, under its top five. A board with nobody on
+     * it, you included, is left out.
+     */
+    function hydrate_community_windows(array $community, string $period): array
+    {
+        $boards = [];
+
+        foreach (['friends', 'netherlands'] as $scope) {
+            $board   = $community['boards'][$scope][$period] ?? ['entries' => [], 'you' => ['rank' => null, 'points' => null]];
+            $entries = array_values($board['entries']);
+            $you     = $board['you'];
+            $mine    = null;
+
+            foreach ($entries as $index => $entry) {
+                if (!empty($entry['self'])) {
+                    $mine = $index;
+                }
+            }
+
+            if ($mine !== null) {
+                $start = max(0, min($mine - 2, count($entries) - 6));
+                $rows  = array_slice($entries, $start, 6);
+            } elseif (has_value($you['rank'] ?? null)) {
+                $rows   = array_slice($entries, 0, 5);
+                $rows[] = [
+                    'rank'   => (int) $you['rank'],
+                    'name'   => $community['you']['name'],
+                    'points' => $you['points'],
+                    'self'   => true,
+                    'avatar' => $community['you']['avatar'] ?? null,
+                ];
+            } else {
+                $rows = array_slice($entries, 0, 6);
+            }
+
+            if ($rows === []) {
+                continue;
+            }
+
+            $rank  = $you['rank'] ?? null;
+            $total = count($entries) < (int) ($community['scopes'][$scope]['limit'] ?? 50) ? count($entries) : null;
+            $place = '';
+            if (has_value($rank)) {
+                $place = $total !== null && $mine !== null
+                    ? tf('#%s van %s', community_rank((int) $rank), i18n_number($total))
+                    : '#' . community_rank((int) $rank);
+            }
+
+            $boards[] = [
+                'scope' => $scope,
+                'label' => $community['scopes'][$scope]['label'],
+                'place' => $place,
+                'rows'  => $rows,
+            ];
+        }
+
+        return $boards;
     }
 
     /** One scope/period board, in the shape the leaderboard component renders. */

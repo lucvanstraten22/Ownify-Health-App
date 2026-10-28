@@ -34,6 +34,7 @@ foreach ($preview['rows'] as $entry) {
     }
 }
 $alone = count($preview['rows']) <= 1;
+$boards = $preview['boards'] ?? [];
 ?>
 <section class="screen page" data-page="community" aria-label="<?= e(t('Community')) ?>"
          <?= empty($data['page_active']) ? 'aria-hidden="true" inert' : '' ?>>
@@ -46,13 +47,14 @@ $alone = count($preview['rows']) <= 1;
                     <h1 class="page-intro__title"><?= e($community['title']) ?></h1>
                 </header>
 
-                <!-- Ranglijst: the top three on a podium, you among them -->
-                <section class="card cm-dest reveal" aria-labelledby="home-board-title">
+                <!-- Ranglijst: the top three on a podium, you among them; on the
+                     desktop Vrienden and Nederland side by side, around your place -->
+                <section class="card cm-dest reveal<?= $boards !== [] ? ' cm-dest--boards' : '' ?>" aria-labelledby="home-board-title">
                     <button type="button" class="cm-head press" data-detail-open="leaderboard">
                         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('ranking') ?></span>
                         <span class="cm-head__text">
                             <span class="cm-head__title" id="home-board-title"><?= e($preview['title']) ?></span>
-                            <span class="cm-head__sub"><?= e($preview['sub']) ?></span>
+                            <span class="cm-head__sub"><span class="cm-head__scope"><?= e($preview['scope'] ?? '') ?> · </span><?= e($preview['period'] ?? $preview['sub']) ?></span>
                         </span>
                         <?= icon('chevron-right', 'cm-head__chev') ?>
                     </button>
@@ -81,6 +83,24 @@ $alone = count($preview['rows']) <= 1;
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </ol>
+
+                    <?php if ($boards !== []): ?>
+                        <div class="cm-boards">
+                            <?php foreach ($boards as $board): ?>
+                                <div class="cm-board">
+                                    <p class="cm-board__title">
+                                        <span><?= e($board['label']) ?></span>
+                                        <?php if ($board['place'] !== ''): ?><span class="cm-board__place"><?= e($board['place']) ?></span><?php endif; ?>
+                                    </p>
+                                    <ol class="board-list cm-board__list" role="list" aria-label="<?= e($board['label']) ?>">
+                                        <?php foreach ($board['rows'] as $entry): ?>
+                                            <?php component('leaderboard-row', $data + ['entry' => $entry]); ?>
+                                        <?php endforeach; ?>
+                                    </ol>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ($alone): ?>
                         <button type="button" class="btn cm-btn press" data-account-open data-friends-add-open>

@@ -94,11 +94,14 @@
 .cm-fan__layer {
     position: absolute;
     /* Each layer 12px narrower a side and 9px lower than the one in front:
-       its foot shows under it. */
+       its foot shows under it — only its foot, since the card in front is
+       see-through (a Note) and the layer must not show through it. */
     inset: calc(var(--n) * 9px) calc(var(--n) * 12px) calc((var(--behind) - var(--n)) * 9px);
-    border: 1px solid var(--glass-hairline);
+    border: 1px solid var(--health-edge);
     border-radius: var(--radius-md);
-    background: rgba(var(--fill), calc((0.07 - var(--n) * 0.02) * var(--fill-k)));
+    background: var(--health-wash);
+    opacity: calc(1 - var(--n) * 0.3);
+    clip-path: inset(calc(100% - 9px) 0 0 0);
 }
 .cm-fan__front {
     position: relative;
@@ -107,10 +110,11 @@
     gap: var(--space-3);
     width: 100%;
     padding: var(--space-4);
-    border: 1px solid var(--glass-border-soft);
+    /* A Note in the health tone (docs/THEME.md): Ownify's green wash and
+       edge, inside the card like every other shape in a card (30.0). */
+    border: 1px solid var(--health-edge);
     border-radius: var(--radius-md);
-    background: var(--surface-gradient-quiet), rgb(var(--ground));
-    box-shadow: var(--shadow-inset), 0 10px 24px rgba(var(--shade), calc(0.14 * var(--shade-k)));
+    background: var(--health-wash);
     font: inherit;
     color: inherit;
     text-align: left;
@@ -120,6 +124,40 @@
 .cm-fan__name { flex: 1; min-width: 0; font-size: var(--fs-label); font-weight: 600; line-height: 1.25; text-wrap: balance; }
 .cm-fan__fig { font-size: var(--fs-small); color: var(--text-secondary); }
 .cm-fan__fig b { color: var(--text-primary); font-weight: 600; }
+
+/* The desktop's Ranglijst card (desktop.css turns it on): Vrienden and
+   Nederland side by side, each the rows around your place, in the board's
+   own rows. Not drawn on a phone, which keeps the podium. */
+.cm-boards { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.cm-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.cm-board__title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: 0;
+    padding-inline: var(--space-2);
+    font-size: var(--fs-tiny);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.cm-board__place {
+    font-size: var(--fs-footnote);
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+}
+.cm-board .cm-board__list {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 6px;
+    list-style: none;
+}
 
 /* Nothing yet: the empty target. */
 .cm-none { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-3) 0 var(--space-1); }
@@ -1150,7 +1188,7 @@
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
     .ch-pick__person:hover .ch-pick__name { color: var(--text-primary); }
-    .cm-fan__front:hover,
+    .cm-fan__front:hover { border-color: var(--health-strong); }
     .ch-idea:hover { border-color: var(--glass-border); }
 }
 
