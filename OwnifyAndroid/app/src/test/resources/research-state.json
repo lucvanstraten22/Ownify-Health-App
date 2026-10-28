@@ -12,7 +12,6 @@
     "outcome": "below",
     "title": "Slaapduur",
     "body": "Je sliep de afgelopen 7 nachten gemiddeld 6:40 per nacht, volgens je metingen. Voor jouw leeftijd wordt minstens 7 uur aangeraden.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -30,7 +29,6 @@
     "outcome": "above",
     "title": "Verzadigd vet",
     "body": "Op de 6 dagen die je volledig lijkt te hebben gelogd, kwam 12,6 % van je energie uit verzadigd vet. De Gezondheidsraad noemt zo laag mogelijk, met 10 % als tussenstap.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -48,7 +46,6 @@
     "outcome": "below",
     "title": "Beweging",
     "body": "Je legde de afgelopen 7 dagen 114 minuten training vast. De Beweegrichtlijn noemt minstens 150 minuten matig intensief bewegen per week. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -68,7 +65,6 @@
     "outcome": "below",
     "title": "Slaapduur",
     "body": "Je sliep de afgelopen 7 nachten gemiddeld 6:40 per nacht, volgens je metingen. Voor jouw leeftijd wordt minstens 7 uur aangeraden.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -85,7 +81,6 @@
     "outcome": "above",
     "title": "Verzadigd vet",
     "body": "Op de 6 dagen die je volledig lijkt te hebben gelogd, kwam 12,6 % van je energie uit verzadigd vet. De Gezondheidsraad noemt zo laag mogelijk, met 10 % als tussenstap.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -102,7 +97,6 @@
     "outcome": "below",
     "title": "Beweging",
     "body": "Je legde de afgelopen 7 dagen 114 minuten training vast. De Beweegrichtlijn noemt minstens 150 minuten matig intensief bewegen per week. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.",
-    "phrased": false,
     "strength": {
      "key": "betrouwbaar",
      "label": "Betrouwbaar"
@@ -119,7 +113,6 @@
     "outcome": "overweight",
     "title": "BMI",
     "body": "Met je lengte en gewicht is je BMI 25,2. De WHO noemt bij volwassenen een BMI vanaf 25 overgewicht en vanaf 30 obesitas. BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.",
-    "phrased": false,
     "strength": {
      "key": "beperkt",
      "label": "Beperkt onderbouwd"

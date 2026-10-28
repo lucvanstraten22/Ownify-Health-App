@@ -51,8 +51,8 @@ return [
         /* A 'running' day older than this was left by a request that died. */
         'stale_running_seconds' => 120,
         /* After a save or a sync: a reassessment on the next load, at most
-           this often and this many times a day. Never a new Gemini call,
-           never a second suggestion. */
+           this often and this many times a day. Never a second
+           suggestion. */
         'reassess_min_minutes'  => 10,
         'reassess_max_per_day'  => 8,
         /* Stored insights and days older than this are deleted. */
@@ -292,35 +292,18 @@ return [
         'no_suggestion_text' => 'Er is vandaag niets waarbij een kleine suggestie past. Dat is ook een uitkomst.',
     ],
 
-    /* ------------------------------------------------- Gemini's wording */
-    /* Only with the separate consent (user_profiles.ai_insights_consent) and
-       only to reword what the template already says: the facts, the claim
-       and its limits go along, nothing else. One request per person per day
-       at most, under the shared limits of config/ai.php. */
-    'consent_version' => '2026-10-insights-gemini-free',
-    'gemini' => [
-        /* Off for now: whether health data may go to Gemini's free API is
-           not decided yet. Off, the Inzichten switch is not shown, a yes
-           cannot be given, no wording is asked for and none is shown; every
-           insight is Ownify's own sentence. OwnifyAI is not affected. Set to
-           true once that is decided (docs/INSIGHTS.md). */
-        'enabled'              => false,
-        'calls_per_user_day'   => 1,
-        /* Of config/ai.php's global_daily_limit, the most insights may use:
-           the chat keeps the rest. */
-        'global_daily_calls'   => 60,
-        'max_output_tokens'    => 2048,
-        'body_max_chars'       => 420,
-        /* Words a reworded insight may never contain: causes, diagnoses,
-           orders and comparisons with other people. */
-        'forbidden' => [
-            'nl' => ['omdat', 'doordat', 'vanwege', 'dankzij', 'waardoor', 'veroorzaak', 'zorgt ervoor', 'leidt tot', 'komt door',
-                     'het gevolg', 'je moet', 'moet je', 'zorg dat', 'zorg voor', 'diagnose', 'ziekte', 'stoornis', 'apneu',
-                     'slapeloosheid', 'gegarandeerd', 'garantie', 'altijd beter', 'anderen', 'leeftijdsgenoten', 'gemiddelde nederlander',
-                     'http', 'www.'],
-            'en' => ['because', 'due to', 'thanks to', 'caused', 'causes', 'leads to', 'results in', 'you must', 'you should',
-                     'make sure', 'diagnos', 'disease', 'disorder', 'apnea', 'apnoea', 'insomnia', 'guarantee', 'others',
-                     'other people', 'your peers', 'average person', 'http', 'www.'],
-        ],
+    /* ------------------------------------------------ what is never said */
+    /* Words no insight or suggestion sentence may contain, in either
+       language: causes, orders, diagnoses and comparisons with other people.
+       tools/insights-test.php checks every template against them. Since 30.1
+       every sentence is Ownify's own: no AI service writes or rewords one. */
+    'forbidden' => [
+        'nl' => ['omdat', 'doordat', 'vanwege', 'dankzij', 'waardoor', 'veroorzaak', 'zorgt ervoor', 'leidt tot', 'komt door',
+                 'het gevolg', 'je moet', 'moet je', 'zorg dat', 'zorg voor', 'diagnose', 'ziekte', 'stoornis', 'apneu',
+                 'slapeloosheid', 'gegarandeerd', 'garantie', 'altijd beter', 'anderen', 'leeftijdsgenoten', 'gemiddelde nederlander',
+                 'http', 'www.'],
+        'en' => ['because', 'due to', 'thanks to', 'caused', 'causes', 'leads to', 'results in', 'you must', 'you should',
+                 'make sure', 'diagnos', 'disease', 'disorder', 'apnea', 'apnoea', 'insomnia', 'guarantee', 'others',
+                 'other people', 'your peers', 'average person', 'http', 'www.'],
     ],
 ];

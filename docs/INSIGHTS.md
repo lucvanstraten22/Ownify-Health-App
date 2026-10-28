@@ -102,7 +102,7 @@ every later load, on either app, reads what was stored
   day — against the stored facts. Nothing changed: nothing is rewritten. A
   slot whose finding changed is updated in place; the day's suggestion that
   no longer fits is **withdrawn, never replaced** ("Deze suggestie past niet
-  meer bij je nieuwste gegevens."). Reassessing never asks Gemini again.
+  meer bij je nieuwste gegevens.").
 - **One row per slot per day** (`user_insights`, unique on `user_id`,
   `local_date`, `slot`): a re-sync that brings the same records twice writes
   nothing new.
@@ -115,43 +115,32 @@ label and applicability, the facts it was written from (`facts_json`) and a
 fingerprint of them — so it can be explained later, and never silently
 changes meaning when the registry moves on.
 
-## In Gemini's words — only with its own consent
+## No AI service (30.1)
 
-> **Switched off for now** (`config/insights.php` `gemini.enabled` = false),
-> until it is decided whether health data may go to Gemini's free API. While
-> off: the Inzichten switch is not on Instellingen › Privacy (both apps), a
-> yes cannot be saved (`api/profile/privacy.php` answers 409), no wording is
-> asked for, and a wording stored earlier is not shown — every insight is
-> Ownify's own sentence. OwnifyAI is not affected. Turning it back on is that
-> one setting. `tools/insights-test.php` checks the off state, then tests the
-> wording with `OWNIFY_TEST_INSIGHTS_GEMINI=1`.
+Every insight and every suggestion is Ownify's own sentence: application
+code, the approved research and fixed templates in Dutch and English. No AI
+service writes, rewords or interprets one, so they work without any API, key
+or token cost. OwnifyAI, the chat, is a separate thing and unchanged
+([AI.md](AI.md)).
 
-By default every insight is Ownify's own template. With the separate switch
-in Instellingen › Privacy › **Inzichten** ("Inzichten laten verwoorden door
-Google Gemini", `user_profiles.ai_insights_consent`, version
-`2026-10-insights-gemini-free`), Gemini may reword the day's insights once:
+29.0 could let Gemini reword the day's insights with a consent of its own;
+that was switched off from the start and was removed in 30.1: the code
+(`includes/insights/phrase.php`), the Inzichten switch on Instellingen ›
+Privacy (both apps), the `ai_insights_consent` field of
+`api/profile/privacy.php` (an older app that still sends it gets a 410 that
+says so) and the app's `phrased` flag. The database columns 028 added for it
+stay, unused, so nothing had to be dropped:
+`user_profiles.ai_insights_consent` (+ `_version`, `_at`),
+`insight_days.gemini_calls`, `phrase_state`, `phrase_note` and
+`user_insights.phrased_body`, `phrased_locale`, `phrased_model`. Whatever may
+be in them is counted, and emptied on request, by
+`php tools/insights-gemini-leftovers.php` (`--clear`); OwnifyAI's own consent
+is never touched.
 
-- **What is sent:** the template sentences, the numbers in them and the claims
-  behind them — never a name, an account or any other data.
-- **When:** after the response has gone (`register_shutdown_function`,
-  `session_write_close`, `fastcgi_finish_request`), so no page waits for it.
-- **How often:** one call per person per day; insights may use at most 60 of
-  `config/ai.php`'s shared daily calls (the chat keeps the rest), and they
-  respect the same pace and quota block as OwnifyAI. A quota or timeout
-  leaves the templates; nothing retries in a loop.
-- **What comes back** is checked before anything is stored
-  (`insights_phrase_validate()`): JSON in the requested schema
-  (`responseJsonSchema`, falling back to plain JSON on a model that refuses
-  the schema), exactly the slots and claim ids asked for, at most 420
-  characters, exactly the template's numbers and no others, no markup, the
-  right language, and none of the forbidden words (causes, orders, diagnoses,
-  comparisons with others, links). Anything else is dropped and the template
-  shown.
-- **Withdrawing** the consent removes every stored wording at once.
-
-The free Gemini API may use what it receives to improve Google's products,
-and Google's staff may read it — the Privacy page says so, beside both
-Gemini switches.
+The words no sentence may contain — causes, orders, diagnoses, comparisons
+with other people — are `forbidden` in `config/insights.php`, and
+`tools/insights-test.php` checks every template in both languages against
+them.
 
 ## Data and privacy
 
@@ -163,23 +152,17 @@ serves only the signed-in person's own; nothing is shared with Community.
 
 ## Efficiency, measured
 
-`tools/insights-test.php` (a throwaway database, a stand-in Gemini):
-
-- the day's first evaluation: about 25 ms; a stored read: under 1 ms;
-- people today 8, evaluations 12, Gemini requests 5 — one per person with the
-  consent who was asked;
-- one wording request for 4 insights: about 3,360 bytes of JSON, roughly 840
-  tokens by the usual 4 bytes a token. That is an estimate: the stand-in
-  reports whatever tokens it is told to, so the real count (and
-  `cachedContentTokenCount`, which is recorded) needs a real key.
+`tools/insights-test.php` (a throwaway database): the day's first evaluation
+takes about 25–40 ms, a stored read under 1 ms. No request leaves the server.
 
 ## Tests
 
 - `tools/insights-test.php` — the lifecycle (once a day, concurrency, a dead
   worker, re-syncs, reassessment, withdrawal, pruning), age gating, missing
-  data, every rule's outcomes, the labels, Gemini's wording and every way it
-  is refused, quota and timeouts, consent withdrawal, and that the points and
-  the Health Score are untouched.
+  data, every rule's outcomes, the labels, that no AI service is ever asked
+  (a stand-in Gemini that must stay silent), the templates against the
+  forbidden words in both languages, and that the points and the Health
+  Score are untouched.
 - `tools/migration-028-test.php` — migration 028 and its rollback on a
   throwaway database, the registry against it.
 - `tools/i18n-test.php` — no Dutch in English, the research included.

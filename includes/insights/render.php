@@ -4,9 +4,8 @@
  * the person's language and units, written from the stored facts at read
  * time, the evidence label, and the key of its "Uit onderzoek blijkt" detail.
  *
- * Gemini's wording (includes/insights/phrase.php) replaces the template
- * sentence only when it was written in the language shown now; otherwise the
- * template is shown. Nothing here works anything out again.
+ * Every sentence is Ownify's own template (30.1: no AI service rewords
+ * them). Nothing here works anything out again.
  */
 
 declare(strict_types=1);
@@ -112,12 +111,6 @@ if (!function_exists('insights_render')) {
             $body = $copy['suggestions'][$rule . '.' . $row['outcome']] ?? null;
         } else {
             $body = insights_template($row, $copy);
-            /* Gemini's wording, when it was written in this language and
-               Gemini's wording is on at all. */
-            if (insights_gemini_enabled() && $row['phrased_body'] !== null && $row['phrased_locale'] === i18n_locale()) {
-                $body = (string) $row['phrased_body'];
-                $phrased = true;
-            }
         }
 
         if (!is_string($body) || $body === '') {
@@ -133,7 +126,6 @@ if (!function_exists('insights_render')) {
             'outcome'     => (string) $row['outcome'],
             'title'       => (string) ($copy['titles'][$rule] ?? ''),
             'body'        => $body,
-            'phrased'     => $phrased ?? false,
             'strength'    => [
                 'key'   => $strength,
                 'label' => (string) (config_copy('research')['strengths'][$strength]['label'] ?? ''),
@@ -159,11 +151,6 @@ if (!function_exists('insights_render')) {
         $today = insights_today($userId);
         $copy  = insights_copy();
 
-        /* Gemini's wording, after the response — only with its own consent,
-           at most once a day (includes/insights/phrase.php). */
-        if (function_exists('insights_phrase_after_response')) {
-            insights_phrase_after_response($userId, $today['date']);
-        }
         $used  = [];   // research detail ids, with what they need
 
         /* Each slot's insight, rendered once and used wherever it shows. */

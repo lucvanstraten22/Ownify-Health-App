@@ -11,8 +11,7 @@
  *   after a save or sync    (insights_note_change(): data_changed_at) the
  *                           next load reassesses: the stored insights are
  *                           kept, updated, replaced or withdrawn as the new
- *                           facts say — never a second suggestion, never a
- *                           Gemini call
+ *                           facts say — never a second suggestion
  *   a request that died     leaves 'running'; after two minutes the next
  *                           load takes the day over (compare-and-set)
  *
@@ -233,7 +232,7 @@ if (!function_exists('insights_today')) {
                 db_run('UPDATE user_insights SET withdrawn_at = ? WHERE id = ?', [$stamp, $old['id']]);
             } elseif (research_json($still['facts']) !== (string) $old['facts_json']) {
                 /* Same suggestion, newer numbers behind it. */
-                db_run('UPDATE user_insights SET facts_json = ?, fingerprint = ?, phrased_body = NULL, phrased_locale = NULL, phrased_model = NULL WHERE id = ?',
+                db_run('UPDATE user_insights SET facts_json = ?, fingerprint = ? WHERE id = ?',
                     [research_json($still['facts']), insights_fingerprint(['claim_id' => (int) $old['claim_id']] + $still), $old['id']]);
             }
         }
@@ -242,11 +241,10 @@ if (!function_exists('insights_today')) {
         insights_finish_day($userId, $date, $hash, $stamp);
     }
 
-    /** Upserts one slot's insight. Gemini's wording is kept only while the text it reworded is unchanged. */
+    /** Upserts one slot's insight. */
     function insights_put(int $userId, string $date, string $slot, array $candidate, string $until, ?array $old): void
     {
         $fingerprint = insights_fingerprint($candidate);
-        $keep        = $old !== null && $old['fingerprint'] === $fingerprint && $old['withdrawn_at'] === null;
 
         db_run(
             'INSERT INTO user_insights
@@ -257,15 +255,11 @@ if (!function_exists('insights_today')) {
                 rule_key = VALUES(rule_key), outcome = VALUES(outcome), claim_id = VALUES(claim_id),
                 strength = VALUES(strength), applicability = VALUES(applicability),
                 facts_json = VALUES(facts_json), fingerprint = VALUES(fingerprint),
-                rank_score = VALUES(rank_score), valid_until = VALUES(valid_until), withdrawn_at = NULL,
-                phrased_body   = IF(?, phrased_body, NULL),
-                phrased_locale = IF(?, phrased_locale, NULL),
-                phrased_model  = IF(?, phrased_model, NULL)',
+                rank_score = VALUES(rank_score), valid_until = VALUES(valid_until), withdrawn_at = NULL',
             [
                 $userId, $date, $slot, $candidate['rule'], $candidate['outcome'], (int) $candidate['claim_id'],
                 $candidate['strength'], $candidate['applicability'], research_json($candidate['facts']),
                 $fingerprint, max(-32000, min(32000, (int) ($candidate['score'] ?? 0))), $until,
-                $keep ? 1 : 0, $keep ? 1 : 0, $keep ? 1 : 0,
             ]
         );
     }
@@ -290,7 +284,7 @@ if (!function_exists('insights_today')) {
         $out = [];
         foreach (db_all(
             'SELECT id, slot, rule_key, outcome, claim_id, strength, applicability, facts_json, fingerprint,
-                    rank_score, phrased_locale, phrased_body, phrased_model, created_at, updated_at, valid_until, withdrawn_at
+                    rank_score, created_at, updated_at, valid_until, withdrawn_at
                FROM user_insights WHERE user_id = ? AND local_date = ?',
             [$userId, $date]
         ) as $row) {

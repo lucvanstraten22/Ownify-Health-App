@@ -6,7 +6,6 @@ return [
 
     /* ---- the cards */
     'Bekijk onderzoek' => 'View research',
-    'Inzichten laten verwoorden staat tijdelijk uit.' => 'Having insights reworded is switched off for now.',
     'Altijd een suggestie, nooit een opdracht.' => 'Always a suggestion, never an order.',
     'Deze suggestie past niet meer bij je nieuwste gegevens.' => 'This suggestion no longer fits your latest data.',
     'Verschijnt zodra er genoeg gegevens zijn' => 'Appears once there is enough data',
@@ -20,15 +19,9 @@ return [
     'Voeding' => 'Nutrition',
     'Beweging' => 'Activity',
 
-    /* ---- Instellingen → Privacy */
-    'Alleen de cijfers van je inzichten gaan eenmaal per dag naar Google Gemini, om ze anders te verwoorden' => 'Only the numbers of your insights go to Google Gemini once a day, to put them in other words',
-    'Je inzichten schrijft Ownify zelf, uit je eigen gegevens en goedgekeurd onderzoek. Met deze toestemming mag Google Gemini ze eenmaal per dag anders verwoorden.' => 'Ownify writes your insights itself, from your own data and approved research. With this permission, Google Gemini may put them in other words once a day.',
+    /* ---- Instellingen → Privacy (30.1: no Gemini switch for insights) */
+    'Je inzichten schrijft Ownify zelf. Er gaat niets over naar Gemini, dus hier is niets meer aan of uit te zetten.' => 'Ownify writes your insights itself. Nothing about them goes to Gemini, so there is nothing left to switch on or off here.',
     'Inzichten' => 'Insights',
-    'Inzichten laten verwoorden door Google Gemini' => 'Let Google Gemini word your insights',
-    'Eenmaal per dag gaan de cijfers van je inzichten en het onderzoek erachter naar Gemini, zonder je naam of andere gegevens. Ownify controleert elke tekst; wat niet klopt, wordt niet getoond.' => 'Once a day, the numbers of your insights and the research behind them go to Gemini, without your name or any other data. Ownify checks every text; anything that is not right is not shown.',
-    'Je inzichten staan in Ownify\'s eigen woorden, en er gaat niets naar Gemini.' => 'Your insights are in Ownify\'s own words, and nothing goes to Gemini.',
-    'Gemini mag je inzichten anders verwoorden.' => 'Gemini may put your insights in other words.',
-    'Je inzichten staan in Ownify\'s eigen woorden. Er gaat niets naar Gemini.' => 'Your insights are in Ownify\'s own words. Nothing goes to Gemini.',
 
     /* ---- titles */
     'Slaapduur' => 'Sleep duration',

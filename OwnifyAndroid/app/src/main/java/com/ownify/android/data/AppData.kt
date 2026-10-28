@@ -718,9 +718,9 @@ data class Insights(
 }
 
 /**
- * One insight: Ownify's own template — or, with the separate consent, the
- * same insight in Gemini's words, checked ([phrased]) — and its [evidence].
- * An empty one is the area's quiet placeholder and has none.
+ * One insight: Ownify's own sentence (since 30.1 no AI service writes or
+ * rewords one) and its [evidence]. An empty one is the area's quiet
+ * placeholder and has none.
  */
 data class Insight(
     val icon: String,
@@ -729,7 +729,6 @@ data class Insight(
     val body: String,
     val state: String,
     val slot: String? = null,
-    val phrased: Boolean = false,
     val evidence: Evidence? = null
 ) {
     companion object {
@@ -737,7 +736,6 @@ data class Insight(
             o.str("icon").orEmpty(), o.str("accent").orEmpty(), o.str("title").orEmpty(),
             o.str("body").orEmpty(), state ?: o.str("state") ?: "empty",
             slot = o.str("slot"),
-            phrased = o.bool("phrased"),
             evidence = Evidence.parse(o, label = "research_label")
         )
     }

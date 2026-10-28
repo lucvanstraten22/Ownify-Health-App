@@ -134,23 +134,8 @@ if (!function_exists('settings_prepare')) {
         $aiOn     = $userId !== null && db_available() && ai_consented($userId);
         $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
 
-        /* Inzichten: Gemini's wording of insights, a question of its own
-           (docs/INSIGHTS.md). Before migration 028 there is nothing to
-           switch, and while config/insights.php has Gemini's wording off
-           there is nothing to allow: either way the switch is not shown. */
-        $insightsOn = false;
-        if (is_file(dirname(__DIR__) . '/includes/insights.php') && is_file(dirname(__DIR__) . '/config/insights.php')) {
-            require_once dirname(__DIR__) . '/includes/insights.php';
-        }
-        if (function_exists('insights_consent_state') && db_available() && insights_installed() && insights_gemini_enabled()) {
-            $insightsOn = $userId !== null && insights_consent_state($userId) === 'accepted';
-            $settings   = settings_set_toggle($settings, 'privacy', 'ai_insights_consent', $insightsOn);
-        } else {
-            $settings = settings_drop_toggle($settings, 'privacy', 'ai_insights_consent');
-        }
-        if ($insightsOn && !$aiOn) {
-            $settings = settings_use_state_variant($settings, 'privacy', ['Gezondheidsgegevens'], 'insights');
-        }
+        /* Insights are Ownify's own sentences (30.1): nothing about them
+           goes to Gemini, so Privacy has no switch for them. */
 
         if ($aiOn) {
             $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'OwnifyAI']);

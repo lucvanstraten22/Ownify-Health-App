@@ -39,17 +39,6 @@ if (!function_exists('insights_facts')) {
     }
 
     /**
-     * Whether Gemini may reword insights at all (config/insights.php
-     * `gemini.enabled`). OWNIFY_TEST_INSIGHTS_GEMINI=1 in the environment of a
-     * LOCAL test run (tools/insights-test.php) turns it on to test the wording;
-     * never set it on a server people use.
-     */
-    function insights_gemini_enabled(): bool
-    {
-        return !empty(insights_config()['gemini']['enabled']) || getenv('OWNIFY_TEST_INSIGHTS_GEMINI') === '1';
-    }
-
-    /**
      * Everything the rules read, as of $now.
      *
      * @return array<string, mixed>

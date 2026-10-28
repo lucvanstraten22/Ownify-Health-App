@@ -4,7 +4,8 @@
  * tested on a THROWAWAY database this script makes and drops
  * (ownify_ins_<random>) — never an existing one — with synthetic people and
  * synthetic measurements only, and a stand-in for Gemini
- * (tools/ai-fake-gemini.php): no key, no Google, no real person.
+ * (tools/ai-fake-gemini.php) that must never be asked: since 30.1 no AI
+ * service writes or rewords an insight. No key, no Google, no real person.
  *
  *     DB_USER=root php tools/insights-test.php
  *
@@ -23,10 +24,11 @@
  *   insight traceable to an approved source · the website and the app read
  *   the same stored result
  *
- * Gemini's wording, on the stand-in:
- *   only with its own consent · what is sent · a valid answer kept, an invalid
- *   one thrown away · one call a day · quota, timeouts and broken answers
- *   leave the template · tokens counted
+ * No AI service (30.1):
+ *   the stand-in is never asked · no insight code reaches an AI client · an
+ *   old stored wording is never shown · no Inzichten switch on Privacy ·
+ *   every template, in both languages, without causes, orders, diagnoses or
+ *   comparisons with other people
  */
 
 declare(strict_types=1);
@@ -103,19 +105,6 @@ require_once $root . '/lib/app-data.php';
 
 echo "\nInsights, on $name\n" . str_repeat('-', 72) . "\n";
 
-/** Gemini answers $text next (a 200), or the given raw response. */
-function queue(array ...$answers): void
-{
-    global $fakeDir;
-    file_put_contents($fakeDir . '/queue.json', json_encode($answers));
-}
-function gemini_text(string $text, int $in = 812, int $out = 164): array
-{
-    return ['status' => 200, 'body' => [
-        'candidates'    => [['content' => ['role' => 'model', 'parts' => [['text' => $text]]], 'finishReason' => 'STOP']],
-        'usageMetadata' => ['promptTokenCount' => $in, 'candidatesTokenCount' => $out, 'thoughtsTokenCount' => 40, 'cachedContentTokenCount' => 0],
-    ]];
-}
 function requests(): array
 {
     global $fakeDir;
@@ -364,8 +353,7 @@ insights_note_change($ann, $now->modify('+1 minute'));
 $re = insights_today($ann, $now->modify('+11 minutes'));
 check('the next load reassesses — and finds the same facts', $re['mode'] === 'reassess');
 check('… nothing stored changes', array_map(static fn ($row) => $row['id'] . '/' . $row['updated_at'], $re['slots']) === $ids);
-check('… and nobody was asked anything (no Gemini request, no wording)', count(requests()) === $requestsBefore
-    && (int) db_value('SELECT gemini_calls FROM insight_days WHERE user_id = ? AND local_date = ?', [$ann, $now->format('Y-m-d')]) === 0);
+check('… and nobody was asked anything', count(requests()) === $requestsBefore);
 
 section('A real change (11)');
 $sugBefore = $first['suggestion'];
@@ -464,171 +452,56 @@ check('in English: the same insights, in English, the numbers the English way', 
 i18n_force('nl');
 
 /* ======================================================================
-   GEMINI'S WORDING, ON THE STAND-IN
+   NO AI SERVICE (30.1)
    ====================================================================== */
-section('Gemini\'s wording switched off (config/insights.php, until it is decided)');
-putenv('OWNIFY_TEST_INSIGHTS_GEMINI');
-check('off by default', insights_gemini_enabled() === false);
+section('No AI service writes or rewords an insight (30.1)');
+check('everything above ran with a Gemini key and a stand-in answering — and the stand-in was never asked', requests() === []);
+$insightCode = '';
+foreach (glob($root . '/includes/insights/*.php') ?: [] as $file) {
+    $insightCode .= (string) file_get_contents($file);
+}
+$insightCode .= (string) file_get_contents($root . '/includes/insights.php');
+check('no insight code reaches an AI client', !preg_match('/gemini|includes\/ai\/|ai_request|ai_generate/i', $insightCode));
+check('Gemini\'s wording is gone from the code and the config', !is_file($root . '/includes/insights/phrase.php')
+    && !isset(insights_config()['gemini']) && !isset(insights_config()['consent_version']));
+$rendered = insights_render(db_one('SELECT * FROM user_insights WHERE user_id = ? AND slot <> \'suggestion\' ORDER BY id LIMIT 1', [$ann]));
+check('an insight as both apps get it: the template, nothing else', $rendered !== null && !array_key_exists('phrased', $rendered));
+db_run("UPDATE user_insights SET phrased_body = 'Een oude Gemini-tekst.', phrased_locale = 'nl' WHERE user_id = ?", [$ann]);
+$shown = insights_render(db_one('SELECT * FROM user_insights WHERE user_id = ? AND slot <> \'suggestion\' ORDER BY id LIMIT 1', [$ann]));
+check('a wording left in the database from 29.0 is never shown', $shown !== null && $shown['body'] === $rendered['body']);
+db_run('UPDATE user_insights SET phrased_body = NULL, phrased_locale = NULL WHERE user_id = ?', [$ann]);
+
 require_once $root . '/lib/settings.php';
-$offSettings = settings_prepare(config_copy('settings'), ['signed_in' => true, 'user' => ['id' => $ann, 'username' => 'ann']]);
-$offKeys = [];
-foreach ($offSettings['pages']['privacy']['blocks'] ?? [] as $block) {
-    foreach ((array) ($block['items'] ?? []) as $item) { $offKeys[] = $item['key'] ?? null; }
+$privacy = settings_prepare(config_copy('settings'), ['signed_in' => true, 'user' => ['id' => $ann, 'username' => 'ann']]);
+$keys = [];
+foreach ($privacy['pages']['privacy']['blocks'] ?? [] as $block) {
+    foreach ((array) ($block['items'] ?? []) as $item) { $keys[] = $item['key'] ?? null; }
 }
-check('off: the Inzichten switch is not on the Privacy page; OwnifyAI\'s is', !in_array('ai_insights_consent', $offKeys, true)
-    && in_array('ai_consent', $offKeys, true));
-$offYes = insights_consent_set($ann, true);
-check('off: a yes cannot be saved', $offYes['ok'] === false && insights_consent_state($ann) === 'unknown');
-check('off: a no still can', insights_consent_set($ann, false)['ok'] === true);
-db_run('UPDATE user_profiles SET ai_insights_consent = NULL, ai_insights_consent_version = NULL, ai_insights_consent_at = NULL WHERE user_id = ?', [$ann]);
-$offRow = db_one('SELECT * FROM user_insights WHERE user_id = ? AND slot <> \'suggestion\' ORDER BY id LIMIT 1', [$ann]);
-$offRow['phrased_body'] = 'Een oude Gemini-tekst.';
-$offRow['phrased_locale'] = i18n_locale();
-check('off: a wording stored earlier is not shown, the template is', ($r = insights_render($offRow)) !== null
-    && $r['body'] !== 'Een oude Gemini-tekst.' && $r['phrased'] === false);
-/* The rest of this file tests the wording itself. */
-putenv('OWNIFY_TEST_INSIGHTS_GEMINI=1');
+check('Privacy: no Inzichten switch; OwnifyAI\'s is still there', !in_array('ai_insights_consent', $keys, true) && in_array('ai_consent', $keys, true));
 
-section('Consent');
-check('nobody is asked anything without the insight consent (the default)', insights_consent_state($ann) === 'unknown'
-    && !insights_phrase_wanted($ann, $tomorrow->format('Y-m-d')));
-$dee = person('dee', $now->modify('-37 years')->format('Y-m-d'));
-health_import_records($dee, 'google_health_connect', week($now));
-db_run('UPDATE user_profiles SET ai_consent = 1, ai_consent_version = ? WHERE user_id = ?', [(string) ai_config()['consent_version'], $dee]);
-insights_today($dee, $now);
-check('the chat\'s consent is not the insight consent: still nothing', !insights_phrase_wanted($dee, $date));
-insights_consent_set($dee, true);
-check('with the insight consent: wanted, once', insights_consent_state($dee) === 'accepted' && insights_phrase_wanted($dee, $date));
-
-section('A valid answer (and what was sent)');
-$sent = insights_phrase_items(insights_phrase_rows($dee, $date));
-$items = [];
-foreach ($sent as $key => $item) {
-    /* Keep the numbers, change the words. */
-    $items[] = ['key' => $key, 'claim_id' => $item['claim_id'], 'body' => 'Zo zag je week eruit: ' . lcfirst($item['template'])];
+/* Every sentence Ownify can say, in both languages, without a cause, an
+   order, a diagnosis or a comparison with other people. */
+foreach (['nl', 'en'] as $lang) {
+    i18n_force($lang);
+    $copy  = insights_copy();
+    $texts = [];
+    array_walk_recursive($copy, static function ($v) use (&$texts): void { if (is_string($v)) { $texts[] = $v; } });
+    $bad = [];
+    foreach ($texts as $text) {
+        foreach ((array) insights_config()['forbidden'][$lang] as $word) {
+            if (preg_match('/(?<![\p{L}])' . preg_quote($word, '/') . '/iu', $text)) {
+                $bad[] = $word . ' in "' . mb_substr($text, 0, 60) . '"';
+            }
+        }
+    }
+    check("every template in '$lang' says no cause, order, diagnosis or comparison", $bad === [], implode('; ', array_slice($bad, 0, 3)));
 }
-queue(gemini_text(json_encode(['items' => $items])));
-$before = count(requests());
-$result = insights_phrase($dee, $date);
-$req    = requests()[$before] ?? [];
-check('one request', count(requests()) === $before + 1 && $result['state'] === 'done' && $result['applied'] === count($sent),
-    json_encode($result));
-$bodyJson = json_encode($req['body'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
-check('… structured JSON asked: application/json and a schema, no tools',
-    ($req['body']['generationConfig']['responseMimeType'] ?? null) === 'application/json'
-    && isset($req['body']['generationConfig']['responseJsonSchema']) && !isset($req['body']['tools']));
-check('… only the insights and their claims: no name, no username, no birth date',
-    !preg_match('/(?<!\p{L})dee(?!\p{L})/u', $bodyJson) && !str_contains($bodyJson, (string) db_value('SELECT date_of_birth FROM user_profiles WHERE user_id = ?', [$dee])));
-check('… the key in a header, never in the address', ($req['key'] ?? '') === 'test-key-not-real' && !str_contains((string) ($req['path'] ?? ''), 'key='));
-$shown = insights_render(insights_rows($dee, $date)['sleep']);
-check('the wording is shown, with its strength and research', $shown['phrased'] === true && str_starts_with($shown['body'], 'Zo zag je week eruit')
-    && $shown['strength']['label'] !== '');
-check('tokens counted: the day and the shared daily count', (int) db_value('SELECT input_tokens FROM insight_days WHERE user_id = ? AND local_date = ?', [$dee, $date]) === 812
-    && (int) db_value('SELECT output_tokens FROM insight_days WHERE user_id = ? AND local_date = ?', [$dee, $date]) === 204
-    && (int) db_value('SELECT gemini_calls FROM ai_usage WHERE user_id = ? AND usage_date = ?', [$dee, $date]) === 1
-    && (int) db_value('SELECT messages FROM ai_usage WHERE user_id = ? AND usage_date = ?', [$dee, $date]) === 0);
-i18n_force('en');
-check('in another language the template is shown: Gemini wrote Dutch', insights_render(insights_rows($dee, $date)['sleep'])['phrased'] === false);
 i18n_force('nl');
-$requestBytes = strlen($bodyJson);
 
-section('Once a day (10, 15)');
-$before = count(requests());
-check('a second try the same day asks nothing', !insights_phrase_wanted($dee, $date) && insights_phrase($dee, $date)['state'] === 'none'
-    && count(requests()) === $before);
-foreach (range(1, 20) as $i) {
-    insights_today($dee, $now->modify('+' . (30 + $i) . ' minutes'));
-}
-check('twenty more loads: still one request', count(requests()) === $before);
-
-section('Invalid answers are thrown away (14)');
-$eve = person('eve', $now->modify('-45 years')->format('Y-m-d'));
-health_import_records($eve, 'google_health_connect', week($now));
-insights_today($eve, $now);
-insights_consent_set($eve, true);
-$sent = insights_phrase_items(insights_phrase_rows($eve, $date));
-$bad  = [];
-$k    = array_keys($sent);
-$bad[] = ['key' => $k[0], 'claim_id' => $sent[$k[0]]['claim_id'], 'body' => $sent[$k[0]]['template'] . ' Dat is 20% meer dan vorige week.'];
-$bad[] = ['key' => $k[1], 'claim_id' => $sent[$k[1]]['claim_id'] + 1, 'body' => $sent[$k[1]]['template']];
-$bad[] = ['key' => $k[2], 'claim_id' => $sent[$k[2]]['claim_id'], 'body' => str_replace('.', ', omdat je te weinig beweegt.', $sent[$k[2]]['template'])];
-$bad[] = ['key' => 'invented', 'claim_id' => 1, 'body' => 'Volgens de WHO slaap je te kort.'];
-queue(gemini_text(json_encode(['items' => $bad])));
-$result = insights_phrase($eve, $date);
-check('a new number, a wrong claim, a cause, an invented item: all refused', $result['state'] === 'failed' && $result['note'] === 'invalid'
-    && (int) db_value('SELECT COUNT(*) FROM user_insights WHERE user_id = ? AND phrased_body IS NOT NULL', [$eve]) === 0);
-check('… the templates are shown', insights_render(insights_rows($eve, $date)['sleep'])['phrased'] === false);
-check('the checks one by one: an English text for Dutch, a link, markup',
-    insights_phrase_validate(json_encode(['items' => [['key' => $k[0], 'claim_id' => $sent[$k[0]]['claim_id'], 'body' => 'You slept on average, see the numbers in the template.']]]), $sent, 'nl') === []
-    && insights_phrase_validate(json_encode(['items' => [['key' => $k[0], 'claim_id' => $sent[$k[0]]['claim_id'], 'body' => $sent[$k[0]]['template'] . ' Zie www.example.org']]]), $sent, 'nl') === []
-    && insights_phrase_validate(json_encode(['items' => [['key' => $k[0], 'claim_id' => $sent[$k[0]]['claim_id'], 'body' => '**' . $sent[$k[0]]['template'] . '**']]]), $sent, 'nl') === []);
-check('… and the template itself, as a check of the check, passes',
-    count(insights_phrase_validate(json_encode(['items' => [['key' => $k[0], 'claim_id' => $sent[$k[0]]['claim_id'], 'body' => $sent[$k[0]]['template']]]]), $sent, 'nl')) === 1);
-check('"veranderen" is no comparison with "anderen"', count(insights_phrase_validate(json_encode(['items' => [['key' => $k[0],
-    'claim_id' => $sent[$k[0]]['claim_id'], 'body' => $sent[$k[0]]['template'] . ' Dat kan veranderen.']]]), $sent, 'nl')) === 1);
-check('not JSON at all: nothing kept', insights_phrase_validate('Hier is je tekst!', $sent, 'nl') === []);
-
-section('Quota and failures leave the app working (15)');
-$fay = person('fay', $now->modify('-52 years')->format('Y-m-d'));
-health_import_records($fay, 'google_health_connect', week($now));
-insights_today($fay, $now);
-insights_consent_set($fay, true);
-queue(['status' => 429, 'body' => ['error' => ['code' => 429, 'status' => 'RESOURCE_EXHAUSTED', 'message' => 'Quota exceeded',
-    'details' => [['@type' => 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay' => '40s']]]]]);
-$result = insights_phrase($fay, $date);
-check('Google says the quota is used up: failed, and Ownify stops asking for a while', $result['state'] === 'failed' && $result['note'] === 'quota'
-    && ai_quota_blocked_until() !== null);
-$gus = person('gus', $now->modify('-29 years')->format('Y-m-d'));
-health_import_records($gus, 'google_health_connect', week($now));
-insights_today($gus, $now);
-insights_consent_set($gus, true);
-$before = count(requests());
-$result = insights_phrase($gus, $date);
-check('… the next person is not even sent: skipped, quota', $result['state'] === 'skipped' && $result['note'] === 'quota' && count(requests()) === $before);
-db_run("DELETE FROM ai_service_state WHERE name = 'quota_block'");
-queue(['status' => 200, 'sleep' => 4, 'body' => gemini_text('{}')['body']]);
-$result = insights_phrase($gus, $date);
-check('a Gemini that does not answer in time: failed, timeout', $result['state'] === 'failed' && $result['note'] === 'timeout', json_encode($result));
-$page = app_page_data(['auth' => app_auth_account($gus)] + (require $root . '/config/dashboard.php'), $gus);
-check('… and the page still renders, with the templates', ($page['insights']['items'][0]['state'] ?? null) === 'filled'
-    && ($page['insights']['items'][0]['phrased'] ?? true) === false);
-$hal = person('hal', $now->modify('-33 years')->format('Y-m-d'));
-health_import_records($hal, 'google_health_connect', week($now));
-insights_today($hal, $now);
-insights_consent_set($hal, true);
-queue(['status' => 400, 'body' => ['error' => ['code' => 400, 'status' => 'INVALID_ARGUMENT', 'message' => 'Invalid JSON payload: responseJsonSchema is not supported for this model']]]);
-$result = insights_phrase($hal, $date);
-check('a model that takes no JSON schema: failed today, remembered', $result['state'] === 'failed'
-    && db_value("SELECT value FROM ai_service_state WHERE name = 'insight_schema'") === 'off');
-check('… later requests ask for JSON without the schema', !isset(insights_phrase_request(['sleep' => ['claim_id' => 1, 'template' => 'x', 'statement' => 'y', 'limitations' => []]], 'nl')['generationConfig']['responseJsonSchema']));
-db_run("DELETE FROM ai_service_state WHERE name = 'insight_schema'");
-
-section('Reassessment after wording, and consent withdrawn');
-health_import_records($dee, 'google_health_connect', week($now, ['sleep_hours' => 8.4]));
-/* The import marks the change on the real clock, which lags this test's
-   own before 09:00 (its "now" is then 12:00), so mark it there. */
-insights_note_change($dee, $now->modify('+80 minutes'));
-$before = count(requests());
-insights_today($dee, $now->modify('+90 minutes'));
-check('new numbers: the old wording is dropped, the template shown, nobody asked',
-    db_value("SELECT phrased_body FROM user_insights WHERE user_id = ? AND local_date = ? AND slot = 'sleep'", [$dee, $date]) === null
-    && count(requests()) === $before);
-insights_consent_set($dee, false);
-check('consent withdrawn: every wording removed at once, and nothing wanted',
-    (int) db_value('SELECT COUNT(*) FROM user_insights WHERE user_id = ? AND phrased_body IS NOT NULL', [$dee]) === 0
-    && !insights_phrase_wanted($dee, $date));
-
-section('Efficiency (measured on the stand-in)');
-$calls = (int) db_value('SELECT COALESCE(SUM(gemini_calls), 0) FROM insight_days WHERE local_date = ?', [$date]);
+section('Efficiency');
 $evals = (int) db_value('SELECT COALESCE(SUM(evaluations), 0) FROM insight_days WHERE local_date = ?', [$date]);
-printf("          people today: %d · evaluations: %d · Gemini requests: %d (only for people with the insight consent)\n",
-    (int) db_value('SELECT COUNT(*) FROM insight_days WHERE local_date = ?', [$date]), $evals, $calls);
-printf("          one wording request for %d insights: %d bytes of JSON sent (≈ %d tokens at ~4 bytes a token — an estimate:\n"
-    . "          the stand-in reports the tokens it is told to; the real count needs a real key)\n",
-    count($sent), $requestBytes, (int) round($requestBytes / 4));
-check('Gemini requests today: one per person who allowed it and was asked (dee, eve, fay, gus, hal — gus twice: quota skip, then timeout)',
-    $calls === 5, (string) $calls);
+printf("          people today: %d · evaluations: %d · AI requests: 0\n",
+    (int) db_value('SELECT COUNT(*) FROM insight_days WHERE local_date = ?', [$date]), $evals);
 
 } catch (Throwable $e) {
     check('no exception', false, get_class($e) . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());

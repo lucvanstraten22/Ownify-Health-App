@@ -13,9 +13,9 @@
  *                        the account's data to Google Gemini. The same answer
  *                        as the one given in the assistant (api/ai/consent.php).
  *
- *   ai_insights_consent  "Inzichten", 1 or 0: whether Gemini may reword the
- *                        day's insights (docs/INSIGHTS.md) — a question of its
- *                        own. Off again removes today's wording at once.
+ *   ai_insights_consent  No longer exists (30.1): insights are Ownify's own
+ *                        sentences and nothing about them goes to Gemini. An
+ *                        older app that still sends it is told so (410).
  *
  * The website (session + CSRF) and the app (account token) alike.
  */
@@ -54,27 +54,7 @@ if (array_key_exists('ai_consent', $_POST)) {
 }
 
 if (array_key_exists('ai_insights_consent', $_POST)) {
-    $value = (string) $_POST['ai_insights_consent'];
-
-    if ($value !== '0' && $value !== '1') {
-        api_fail('Kies aan of uit.', 422);
-    }
-
-    require_once dirname(__DIR__, 2) . '/includes/insights.php';
-    $result = insights_consent_set($userId, $value === '1');
-
-    if (!$result['ok']) {
-        api_fail($result['error'], insights_installed() ? 409 : 503);
-    }
-
-    $allowed = insights_consent_state($userId) === 'accepted';
-
-    api_ok([
-        'ai_insights_consent' => $allowed,
-        'message'             => $allowed
-            ? t('Gemini mag je inzichten anders verwoorden.')
-            : t('Je inzichten staan in Ownify\'s eigen woorden. Er gaat niets naar Gemini.'),
-    ]);
+    api_fail(t('Je inzichten schrijft Ownify zelf. Er gaat niets over naar Gemini, dus hier is niets meer aan of uit te zetten.'), 410);
 }
 
 $value = (string) ($_POST['leaderboard_avatar'] ?? '');

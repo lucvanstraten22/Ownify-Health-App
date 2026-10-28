@@ -214,19 +214,11 @@ Four limits, checked on the server in this order before Gemini is asked:
 
 The frontends only display these numbers; the server enforces all four.
 
-**Insights in Gemini's words** (29.0, [INSIGHTS.md](INSIGHTS.md)) share
-the same project and the same limits, and stay inside them: with their own
-consent (`user_profiles.ai_insights_consent`, `consent_version`
-`2026-10-insights-gemini-free` in `config/insights.php` — separate from
-OwnifyAI's, and asked nowhere else than Instellingen › Privacy ›
-*Inzichten*), the day's insights are reworded in at most one request per
-person per day, after the page has gone out; insights may use at most 60 of
-`global_daily_limit`, take a place in the same rolling minute, and stop at
-Google's quota like everything else. They call `ai_gemini_exchange()`
-directly, so `includes/ai/gemini.php` is unchanged. What is sent is the
-template sentences, their numbers and the claims behind them — no name, no
-account, nothing else — and what comes back is checked before it is stored;
-anything that fails the check is dropped and the template shown.
+**Insights are not OwnifyAI's** (30.1, [INSIGHTS.md](INSIGHTS.md)):
+Overzicht's insights and suggestion are Ownify's own sentences and never
+reach Gemini. 29.0's optional Gemini wording of them, with a consent of its
+own, was switched off from the start and removed in 30.1; the shared limits
+above are the chat's alone.
 
 ## Consent and privacy
 

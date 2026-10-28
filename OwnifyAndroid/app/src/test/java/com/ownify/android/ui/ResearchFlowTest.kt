@@ -141,7 +141,7 @@ class ResearchFlowTest {
         assertEquals("filled", insights.state)
         assertEquals(listOf("sleep", "nutrition", "training"), insights.items.map { it.slot })
         assertEquals(listOf("c2-0", "c16-1", "c10-1"), insights.items.map { it.evidence?.research })
-        assertTrue(insights.items.all { it.evidence?.label == "Bekijk onderzoek" && !it.phrased })
+        assertTrue(insights.items.all { it.evidence?.label == "Bekijk onderzoek" })
         assertEquals(setOf("sleep", "nutrition", "training", "body"), insights.context.keys)
         assertEquals("Beperkt onderbouwd", insights.context["body"]?.evidence?.strengthLabel)
         assertEquals(listOf("nutrition.fat", "nutrition.carbs", "nutrition.rating", "sleep.stages", "training.measurement"), insights.references.keys.toList())
