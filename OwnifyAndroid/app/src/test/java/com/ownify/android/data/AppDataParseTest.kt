@@ -130,7 +130,7 @@ class AppDataParseTest {
         val steps = data.goals.measurement("steps")!!
         assertEquals(listOf("milestone", "streak", "accumulate"), steps.types)
         assertEquals("activity", steps.category)
-        assertEquals(1, steps.popular)
+        assertEquals(1, steps.suggested)
         assertEquals(listOf("kg", "lb"), data.goals.measurement("weight")!!.unitCodes)
         assertEquals(0.45359237, data.goals.units.getValue("lb").factor, 1e-9)
         assertTrue(data.goals.custom.custom)

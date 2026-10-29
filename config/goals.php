@@ -118,7 +118,7 @@ return [
      *   daily      the source is a day's total that builds up (steps):
      *              today counts for a Mijlpaal once it beats the last
      *              whole day (includes/goal-progress.php)
-     *   popular    its place among the first measurements the wizard shows
+     *   (Voorgesteld, the first list, is the person's own: includes/goal-suggest.php)
      *   examples   per type, what the type card says for this measurement
      *   names      name suggestions for step two
      *   keywords   what search also finds it by, in both languages
@@ -132,7 +132,6 @@ return [
             'unit_code' => 'min', 'unit_codes' => ['h', 'min'],
             'types' => ['milestone', 'streak'], 'variants' => ['daily'],
             'direction' => 'both', 'default_direction' => 'increase',
-            'popular' => 2,
             'keywords' => ['slapen', 'nacht', 'uren', 'sleep', 'night', 'hours'],
             'names' => ['Elke nacht 8 uur slapen', 'Meer slaap', 'Een nacht van 8 uur'],
             'examples' => [
@@ -163,7 +162,6 @@ return [
             'unit_code' => 'l', 'unit_codes' => ['l', 'ml', 'floz'], 'imperial_unit' => 'floz',
             'types' => ['streak', 'accumulate'], 'variants' => ['daily'],
             'direction' => 'increase', 'default_direction' => 'increase',
-            'popular' => 5,
             'keywords' => ['drinken', 'hydratatie', 'drink', 'hydration'],
             'names' => ['Elke dag 2 liter water', 'Meer water drinken'],
             'examples' => [
@@ -283,7 +281,6 @@ return [
             'types' => ['streak', 'accumulate'], 'variants' => ['period', 'daily'],
             'direction' => 'increase', 'default_direction' => 'increase',
             'count' => 'trainingen',
-            'popular' => 3,
             'keywords' => ['sporten', 'workout', 'trainen', 'sport', 'exercise', 'gym'],
             'names' => ['3 keer per week trainen', '50 trainingen dit jaar'],
             'examples' => [
@@ -315,7 +312,6 @@ return [
             'types' => ['milestone', 'streak', 'accumulate'], 'variants' => ['daily'],
             'direction' => 'increase', 'default_direction' => 'increase',
             'daily' => true,
-            'popular' => 1,
             'keywords' => ['lopen', 'wandelen', 'walk', 'walking', 'steps'],
             'names' => ['10.000 stappen per dag', '15.000 stappen op één dag', '200.000 stappen deze maand'],
             'examples' => [
@@ -380,7 +376,6 @@ return [
             'unit_code' => 'kg', 'unit_codes' => ['kg', 'lb'], 'imperial_unit' => 'lb',
             'types' => ['milestone'], 'variants' => [],
             'direction' => 'both', 'default_direction' => 'decrease',
-            'popular' => 4,
             'keywords' => ['afvallen', 'aankomen', 'wegen', 'kilo', 'weight', 'lose weight'],
             'names' => ['Naar 75 kg', '3 kg afvallen', '5 kg aankomen'],
             'examples' => ['milestone' => 'Van 80 naar 75 kg'],
@@ -427,7 +422,6 @@ return [
             'unit_code' => 'bpm', 'unit_codes' => ['bpm'],
             'types' => ['milestone', 'streak'], 'variants' => ['daily'],
             'direction' => 'decrease', 'default_direction' => 'decrease',
-            'popular' => 6,
             'keywords' => ['hartslag', 'hart', 'heart rate', 'resting heart rate'],
             'names' => ['Rusthartslag naar 55', 'Lagere rusthartslag'],
             'examples' => [
@@ -482,7 +476,8 @@ return [
     ],
 
     /* The measurements the wizard shows before anybody searches or chooses a
-       category: `popular` above, in that order. */
+       category: Voorgesteld, worked out for the person (includes/goal-suggest.php,
+       config/goal-suggestions.php) — never what is popular with others. */
 
     /* ---------------------------------------------------- eigen gewoonte */
     /* Anything else, kept by hand: its category is chosen in step one, its
@@ -643,7 +638,7 @@ return [
         'search_label'   => 'Zoek een meting',
         'search_clear'   => 'Zoekopdracht wissen',
         'categories'     => 'Categorieën',
-        'popular'        => 'Populair',
+        'suggested'      => 'Voorgesteld',
         'results'        => 'Metingen',
         'no_results'     => 'Geen meting gevonden. Je kunt het als eigen gewoonte bijhouden.',
         'auto'           => 'Automatisch',

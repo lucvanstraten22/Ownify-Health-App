@@ -286,10 +286,13 @@
         var codes = Object.keys(copy.measurements);
         var shown;
 
-        if (!query && !draft.category) {
-            shown = codes.filter(function (c) { return copy.measurements[c].popular; })
-                .sort(function (a, b) { return copy.measurements[a].popular - copy.measurements[b].popular; });
-            listLabel.textContent = words.popular;
+        /* Voorgesteld: worked out for this person on the server
+           (includes/goal-suggest.php), in its order. */
+        var suggested = !query && !draft.category;
+        if (suggested) {
+            shown = codes.filter(function (c) { return copy.measurements[c].suggested; })
+                .sort(function (a, b) { return copy.measurements[a].suggested - copy.measurements[b].suggested; });
+            listLabel.textContent = words.suggested;
         } else {
             shown = codes.filter(function (c) {
                 var m = copy.measurements[c];
@@ -299,7 +302,7 @@
         }
 
         list.innerHTML = '';
-        shown.forEach(function (code) { list.appendChild(option(code, measurementOf(code))); });
+        shown.forEach(function (code) { list.appendChild(option(code, measurementOf(code), suggested)); });
 
         var customFits = !query || matches(Object.assign({ label: copy.custom.label, keywords: copy.custom.keywords }, {}), query) || shown.length === 0;
         if (customFits || draft.measurement === 'custom') {
@@ -312,7 +315,7 @@
         clearBtn.hidden = draft.query === '';
     }
 
-    function option(code, m) {
+    function option(code, m, suggested) {
         var chosen = draft.measurement === code;
         var category = m.custom ? (draft.category ? copy.categories[draft.category] : null) : copy.categories[m.category];
         var button = el('button', 'goal-option press');
@@ -328,9 +331,11 @@
 
         var text = el('span', 'goal-option__text');
         text.appendChild(el('span', 'goal-option__label', m.label));
+        /* In Voorgesteld, why: where the person is and what is suggested. */
+        var reason = suggested && m.suggestion && m.suggestion.reason;
         var meta = m.custom
             ? (m.hint || '')
-            : category.label + ' · ' + (isAuto(m) ? words.auto : words.manual);
+            : (reason || category.label + ' · ' + (isAuto(m) ? words.auto : words.manual));
         text.appendChild(el('span', 'goal-option__meta', meta));
 
         button.appendChild(mark);
@@ -460,6 +465,10 @@
             setup.appendChild(numberRow('goal-target', words.target[which], draft.target, 'target', m, true));
         }
 
+        /* What is suggested for this person, and why (includes/goal-suggest.php). */
+        var note = suggestionNote(m);
+        if (note) { setup.appendChild(el('p', 'wizard__hint goal-setup__hint', note)); }
+
         if (needsDirection()) { setup.appendChild(directionRow()); }
 
         if (draft.type === 'milestone') {
@@ -514,6 +523,13 @@
             wrap.appendChild(custom);
         }
         return wrap;
+    }
+
+    /** The sentence under the target for the kind of goal on screen, or ''. */
+    function suggestionNote(m) {
+        var key = draft.variant === 'period' ? 'period' : draft.type;
+        var notes = m.suggestion && m.suggestion.notes;
+        return (notes && notes[key]) || '';
     }
 
     /** The placeholder in the unit on screen: 75 kg is 165 lb. */

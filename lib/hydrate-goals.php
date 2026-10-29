@@ -17,6 +17,7 @@ require_once dirname(__DIR__) . '/includes/goals.php';
 require_once dirname(__DIR__) . '/includes/health-data.php';
 require_once dirname(__DIR__) . '/includes/goal-catalogue.php';
 require_once dirname(__DIR__) . '/includes/goal-progress.php';
+require_once dirname(__DIR__) . '/includes/goal-suggest.php';
 
 if (!function_exists('hydrate_goals')) {
 
@@ -30,7 +31,9 @@ if (!function_exists('hydrate_goals')) {
         $config['user_auto'] = [];
 
         if ($userId === null || !db_available() || !goal_model_available()) {
-            return $config;
+            /* Nobody to suggest for: Voorgesteld is the general order. */
+            return goal_suggest_apply($config, ['entries' => [], 'order' => array_values(array_intersect(
+                (array) goal_suggest_config()['fallback'], array_keys((array) $config['measurements'])))]);
         }
 
         $today = $today ?? goal_today();
@@ -46,7 +49,9 @@ if (!function_exists('hydrate_goals')) {
            one of these is tracked from their data, any other is kept by hand. */
         $config['user_auto'] = goal_user_auto_codes($userId, $today);
 
-        return $config;
+        /* Voorgesteld, and every example, target and name idea in the
+           wizard, for this person (includes/goal-suggest.php). */
+        return goal_suggest_for($config, $userId, $today);
     }
 
     /** One database row in the shape the card, the detail page and the app expect. */

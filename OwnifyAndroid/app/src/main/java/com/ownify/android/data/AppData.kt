@@ -2024,12 +2024,17 @@ data class GoalMeasurement(
     val direction: String,
     val defaultDirection: String,
     val count: String?,
-    val popular: Int?,
+    /** Its place in Voorgesteld (includes/goal-suggest.php), or null. */
+    val suggested: Int?,
     val keywords: List<String>,
     val names: List<String>,
     val examples: Map<String, String>,
     val placeholder: Map<String, Double>,
-    val custom: Boolean
+    val custom: Boolean,
+    /** Why it is suggested, for the list (`suggestion.reason`); empty when it is not. */
+    val suggestionReason: String = "",
+    /** Per kind of goal (streak, period, milestone, accumulate): what is suggested and why, under the target. */
+    val suggestionNotes: Map<String, String> = emptyMap()
 ) {
     companion object {
         fun parse(code: String, o: JSONObject): GoalMeasurement {
@@ -2049,12 +2054,14 @@ data class GoalMeasurement(
                 direction = o.str("direction") ?: "increase",
                 defaultDirection = o.str("default_direction") ?: "increase",
                 count = o.str("count"),
-                popular = o.int("popular"),
+                suggested = o.int("suggested"),
                 keywords = o.arr("keywords").strings(),
                 names = o.arr("names").strings(),
                 examples = o.obj("examples").stringMap(),
                 placeholder = placeholders,
-                custom = code == "custom"
+                custom = code == "custom",
+                suggestionReason = o.obj("suggestion").str("reason").orEmpty(),
+                suggestionNotes = o.obj("suggestion")?.obj("notes").stringMap()
             )
         }
     }

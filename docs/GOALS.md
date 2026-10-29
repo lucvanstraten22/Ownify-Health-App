@@ -12,10 +12,11 @@ replaced the earlier goal model entirely.
 | Where a goal stands: reading data, the three calculations, finishing | `includes/goal-progress.php` |
 | The board's rules: the limit, one primary, pause/resume, delete | `includes/goals.php` |
 | What the pages and the app read | `lib/hydrate-goals.php`, `lib/goals.php`, `lib/goal-chart.php` |
+| Voorgesteld: suggestions and targets for one person (32.0) | `includes/goal-suggest.php`, `config/goal-suggestions.php` |
 | The wizard on the website | `components/goal-wizard.php`, `assets/js/goal-wizard.js`, `assets/css/goals.css` |
 | The wizard in the app | `OwnifyAndroid/…/ui/screens/goals/GoalWizard.kt` |
 | The tables | `database/migrations/025-goals-rebuild.sql`, `database/schema.sql` |
-| Tests | `tools/goal-engine-test.php`, `tools/goals-test.sh`, `GoalWizardFlowTest.kt` |
+| Tests | `tools/goal-engine-test.php`, `tools/goal-suggest-test.php`, `tools/goals-test.sh`, `GoalWizardFlowTest.kt`, `GoalSuggestionFlowTest.kt` |
 
 Nothing is worked out in a browser or on the phone. The server stores where a
 goal stands and both apps show that; the wizards only repeat the date and unit
@@ -29,7 +30,9 @@ a small round glass back button and one glass primary button.
 
 1. **Meting** — a search field, six category bubbles and a short list that
    scrolls on its own (about five rows). Before anything is searched or chosen
-   the list shows the popular measurements (`popular` in the config). A bubble
+   the list is **Voorgesteld**: what Ownify suggests to this person, each row
+   with why ("Nu 5.200 · voorstel 7.000 stappen", "Gaat al goed: gemiddeld
+   7:40"); see *Suggestions* below. A bubble
    filters the list; tapping it again lets it go. Search ignores accents
    ("efficientie" finds Slaapefficiëntie) and searches labels and keywords in
    both languages. Choosing a measurement highlights it and does not move on;
@@ -66,6 +69,63 @@ The surfaces are the floating glass of the sync capsule (`.glass`,
 `components.css`; `Modifier.glass`, `GlassControls.kt`) at the size of the
 Health Connect data chips. A chosen bubble or card is a quiet green tint and
 rim, no checkmark.
+
+## Suggestions (Voorgesteld, 32.0)
+
+Everything the wizard proposes is worked out for the person on the server
+(`includes/goal-suggest.php`) and sent in the catalogue both apps read, so the
+website and the app say the same: the list in step one, the example on each
+type card, the first name idea, the placeholder in the target field, the
+direction, and the sentence under the target in step three ("Voorgesteld:
+elke dag minstens 7.000 stappen. Je zette …"). Ordinary code, no AI. Nothing
+about the goal model changes: the same types, rules, limits and progress.
+
+**What it reads.** The last four weeks, ending yesterday, the way a goal will
+read them (`goal_source_by_day()`: steps, sleep, water, heart, body…); food
+from complete log days only (the insights' rule); workouts as the training
+pages count them, with hard minutes and strength days; the person's age,
+gender, weight and energy target; goals running and finished; their combined
+insights with a pattern (docs/CORRELATIONS.md); the setup's focus. A day
+without a reading is absent, never zero; too few days make no average.
+
+**Where the numbers come from.** Every level is an approved research claim,
+chosen by age with the lists the insights use (`config/insights.php`
+`rules`, `config/goal-suggestions.php` `claims`):
+
+| Measurement | Level | Claim |
+| --- | --- | --- |
+| Slaapduur | the band for the age: 7 h (18–60), 8–10 h (13–17), 7–8 h (65+) | sleep.duration.* |
+| Stappen | ~7.000 (Ding), then the plateau 8.000–10.000 (18–59) / 6.000–8.000 (60+) (Paluch) — 10.000 is never a minimum | activity.steps.* |
+| Trainingen, Trainingsminuten | 150 min a week (WHO 2020 18–64, a hard minute double; 65+: also 3 days balance and strength), 60 min a day (4–17) | activity.* |
+| Water | ≥ 1,4 l, men 1,4–1,8 l, more for who trains (13+) | nutrition.fluid |
+| Eiwit | 0,83 g/kg; 1,4 g/kg for who trains (18–64, said to be limited research); 1,0–1,2 g/kg (65+) | nutrition.protein.* |
+| Vezels | 12,6 g per 1.000 kcal of the person's energy target | nutrition.fibre |
+| Natrium | ≤ 2.400 mg (6 g salt) | nutrition.salt |
+| Verzadigd vet | < 10% of energy | nutrition.saturated_fat |
+| Suiker | < 10% of energy as free sugars — a hint only, never suggested (a log counts all sugars) | nutrition.free_sugars |
+| Rusthartslag | only above 80 bpm, where risk rises | heart.resting.risk |
+
+**What a target is.** Below the level: the level, or — when it is far off —
+a big step towards it (never only "a little more than now": +10% at least).
+Between the level and where benefit flattens: the start of that plateau.
+Within the plateau: its top, said to be ambitious and optional. Beyond it:
+what they already do, to keep. No personal data: the level itself, said to
+be general advice that is not tailored yet. No age: research with an age
+range cannot apply — their own average only, or the wizard's own example.
+Body measurements (weight, waist…) get no target: how much and which way is
+the person's call. Anything without an approved level (HRV, distance…) gets
+targets from their own average, said to come from their own data only.
+
+**Earlier goals.** A goal on the same measurement and kind that they
+reached is never suggested again for less; one they reached for less than
+70% is not suggested again for more.
+
+**The list.** Highest relevance first — how far below a level, plus a
+combined insight with a pattern, plus the setup's focus — at most six, at
+most two per category, one of steps / distance / active energy / floors and
+one of training sessions / minutes, nothing a running goal already covers,
+and something the person already does well when there is one. Little known:
+the general order fills it (Slaapduur, Stappen, Trainingen, Water…).
 
 ## What a goal can be about
 

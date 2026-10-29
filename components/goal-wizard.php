@@ -74,7 +74,7 @@ $steps = $copy['steps'];
                     <?php endforeach; ?>
                 </div>
 
-                <p class="wizard__label goal-list__label" data-wizard-list-label><?= e($copy['popular']) ?></p>
+                <p class="wizard__label goal-list__label" data-wizard-list-label><?= e($copy['suggested']) ?></p>
                 <div class="glass goal-list" data-wizard-list role="radiogroup" aria-label="<?= e($copy['results']) ?>"></div>
                 <p class="wizard__hint goal-list__empty" data-wizard-empty hidden><?= e($copy['no_results']) ?></p>
                 <p class="wizard__hint goal-list__custom" data-wizard-custom-hint aria-live="polite" hidden><?= e($copy['custom_category']) ?></p>

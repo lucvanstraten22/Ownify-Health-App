@@ -470,7 +470,7 @@ return [
     'Zoek een meting' => 'Search for a measurement',
     'Zoekopdracht wissen' => 'Clear search',
     'Categorieën' => 'Categories',
-    'Populair' => 'Popular',
+    'Voorgesteld' => 'Suggested',
     'Geen meting gevonden. Je kunt het als eigen gewoonte bijhouden.' => 'No measurement found. You can track it as your own habit.',
     'Kies hierboven de categorie van je gewoonte.' => 'Choose your habit\'s category above.',
     'Ideeën' => 'Ideas',

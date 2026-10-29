@@ -456,17 +456,21 @@ private fun MeasureStep(draft: Draft, goals: Goals) {
     }
 }
 
-/** The list's label and its measurements: the popular ones, a category's, or what the search finds — and Eigen gewoonte. */
+/**
+ * The list's label and its measurements: Voorgesteld — worked out for this
+ * person on the server (includes/goal-suggest.php), in its order — a
+ * category's, or what the search finds; and Eigen gewoonte.
+ */
 private fun listed(draft: Draft, goals: Goals): Pair<String, List<GoalMeasurement>> {
     val words = goals.wizard
     val query = draft.query.trim()
     val shown = if (query.isEmpty() && draft.category == null) {
-        goals.measurements.filter { it.popular != null }.sortedBy { it.popular }
+        goals.measurements.filter { it.suggested != null }.sortedBy { it.suggested }
     } else {
         goals.measurements.filter { (draft.category == null || it.category == draft.category) && matches(it, query, goals) }
     }
     val label = when {
-        query.isEmpty() && draft.category == null -> words["popular"]
+        query.isEmpty() && draft.category == null -> words["suggested"]
         query.isEmpty() -> goals.category(draft.category)?.label.orEmpty()
         else -> words["results"]
     }
@@ -514,8 +518,10 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
             }
             Column(Modifier.weight(1f)) {
                 T(m.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                // In Voorgesteld, why: where the person is and what is suggested.
+                val reason = m.suggestionReason.takeIf { draft.query.isBlank() && draft.category == null && m.suggested != null && it.isNotEmpty() }
                 T(
-                    if (m.custom) m.hint else category?.label.orEmpty() + " · " + (if (isAuto(m, goals)) words["auto"] else words["manual"]),
+                    if (m.custom) m.hint else reason ?: (category?.label.orEmpty() + " · " + (if (isAuto(m, goals)) words["auto"] else words["manual"])),
                     OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted),
                     maxLines = 1,
                     ellipsis = true
@@ -678,6 +684,11 @@ private fun SetupStep(draft: Draft, goals: Goals) {
                 else -> "daily"
             }
             TargetRow(draft, goals, m, words.target(which))
+        }
+
+        // What is suggested for this person, and why (includes/goal-suggest.php).
+        m.suggestionNotes[if (draft.variant == "period") "period" else draft.type.orEmpty()]?.takeIf { it.isNotEmpty() }?.let {
+            T(it, JStyle.Footnote, Modifier.fillMaxWidth())
         }
 
         if (needsDirection(draft, goals)) DirectionRow(draft, goals)

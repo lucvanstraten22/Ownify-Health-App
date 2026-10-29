@@ -304,6 +304,16 @@ try {
         isset($app['body']['data']['compass']) && ($web['body']['data']['compass'] ?? 1) === ($app['body']['data']['compass'] ?? 2));
     check('the score card opens it, and the page is there to open',
         str_contains($page['raw'], 'data-detail-open="score-compass"') && str_contains($page['raw'], 'data-detail="score-compass"'));
+    /* Voorgesteld (32.0, docs/GOALS.md › Suggestions): one plan, worked out on the server, read by both. */
+    preg_match('#<script type="application/json" data-goals-copy>(.*?)</script>#s', $page['raw'], $copyJson);
+    $webCopy = json_decode(html_entity_decode($copyJson[1] ?? 'null'), true);
+    $pick = static fn (array $measurements): array => array_map(
+        static fn (array $m): array => array_intersect_key($m, array_flip(['suggested', 'suggestion', 'placeholder', 'names', 'examples', 'default_direction'])),
+        $measurements);
+    check('Voorgesteld: the website and the app read the same suggestions, targets and notes',
+        is_array($webCopy) && $pick($webCopy['measurements'] ?? []) === $pick($app['body']['data']['goals']['measurements'] ?? [])
+        && array_filter($app['body']['data']['goals']['measurements'] ?? [], static fn ($m) => array_key_exists('popular', $m)) === []
+        && array_filter(array_column($app['body']['data']['goals']['measurements'] ?? [], 'suggested')) !== []);
     $ring = $app['body']['data']['scores']['overall'] ?? [];
     $held = $app['body']['data']['compass']['score'] ?? [];
     check('its score is the ring\'s (' . var_export($ring['value'] ?? null, true) . ')',
