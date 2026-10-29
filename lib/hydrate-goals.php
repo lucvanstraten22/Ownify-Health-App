@@ -245,7 +245,7 @@ if (!function_exists('hydrate_goals')) {
                 $out['current'] = tf('%1$d van %2$s', $progress['met'], goal_days_text($progress['counted']));
                 $out['target']  = $manual
                     ? tf('Elke dag %s', $amount)
-                    : tf($dir === 'decrease' ? 'Elke dag hoogstens %s' : 'Elke dag minstens %s', $amount);
+                    : tf($dir === 'decrease' ? 'Elke dag maximaal %s' : 'Elke dag minstens %s', $amount);
                 $out['days_chip'] = tf('%1$d van %2$d', $progress['met'], $progress['counted']);
                 $out['days_note'] = $manual
                     ? t('Een dag die je niet afvinkt, telt niet als gehaald. Vandaag telt zodra je hem afvinkt.')
@@ -253,7 +253,7 @@ if (!function_exists('hydrate_goals')) {
                 $out['note'] = $manual
                     ? t('Vink elke dag af die gelukt is. Een gemiste dag is gewoon een gemiste dag: je doel loopt door. Je eindstand is het deel van alle dagen dat gelukt is.')
                     : tf('Elke dag met %s telt. Een gemiste dag is gewoon een gemiste dag: je doel loopt door. Je eindstand is het deel van alle dagen dat gelukt is.',
-                        tf($dir === 'decrease' ? 'hoogstens %s' : 'minstens %s', $amount));
+                        tf($dir === 'decrease' ? 'maximaal %s' : 'minstens %s', $amount));
                 if ($manual) {
                     $out['entry'] = [
                         'kind'  => 'tick',

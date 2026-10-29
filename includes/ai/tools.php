@@ -399,7 +399,7 @@ if (!function_exists('ai_tool_declarations')) {
             $parts[] = tf('%1$d keer per %2$s', (int) $goal['frequency'], (string) $config['periods'][$goal['period_unit']]['label']);
         } elseif ($goal['streak_variant'] === 'daily') {
             $daily   = goal_value_text((float) $goal['target_value'], $unit);
-            $parts[] = $goal['direction'] === 'decrease' ? tf('per dag hoogstens %s', $daily) : tf('per dag minstens %s', $daily);
+            $parts[] = $goal['direction'] === 'decrease' ? tf('per dag maximaal %s', $daily) : tf('per dag minstens %s', $daily);
         } else {
             $parts[] = goal_value_text((float) $goal['target_value'], $unit);
             if ($goal['goal_type'] === 'milestone') {

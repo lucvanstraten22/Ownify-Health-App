@@ -31,8 +31,9 @@ a small round glass back button and one glass primary button.
 1. **Meting** — a search field, six category bubbles and a short list that
    scrolls on its own (about five rows). Before anything is searched or chosen
    the list is **Voorgesteld**: what Ownify suggests to this person, each row
-   with why ("Nu 5.200 · voorstel 7.000 stappen", "Gaat al goed: gemiddeld
-   7:40"); see *Suggestions* below. A bubble
+   with why ("Nu 5.200 · optimaal 7.000 stappen", "Nu 7:40 · optimaal 8:00",
+   "Nu 2.900 mg · maximaal 2.400 mg", "Optimaal 3 keer per week"); see
+   *Suggestions* below. A bubble
    filters the list; tapping it again lets it go. Search ignores accents
    ("efficientie" finds Slaapefficiëntie) and searches labels and keywords in
    both languages. Choosing a measurement highlights it and does not move on;
@@ -108,8 +109,12 @@ chosen by age with the lists the insights use (`config/insights.php`
 **What a target is.** Below the level: the level, or — when it is far off —
 a big step towards it (never only "a little more than now": +10% at least).
 Between the level and where benefit flattens: the start of that plateau.
-Within the plateau: its top, said to be ambitious and optional. Beyond it:
-what they already do, to keep. No personal data: the level itself, said to
+Within the plateau: its top, said to be ambitious and optional. Beyond it,
+or already within the advice: still a proposal, just past their own average
+(steps +5%, sleep +15 minutes within the band, one more session a week…) —
+never "it is going well", which gives no reason to set a goal (32.1). A
+reason says now and *optimaal* (more is better) or *maximaal* (a ceiling,
+never "hoogstens"). No personal data: the level itself, said to
 be general advice that is not tailored yet. No age: research with an age
 range cannot apply — their own average only, or the wizard's own example.
 Body measurements (weight, waist…) get no target: how much and which way is
@@ -125,7 +130,8 @@ combined insight with a pattern, plus the setup's focus — at most six, at
 most two per category, one of steps / distance / active energy / floors and
 one of training sessions / minutes, nothing a running goal already covers,
 and something the person already does well when there is one. Little known:
-the general order fills it (Slaapduur, Stappen, Trainingen, Water…).
+the general order fills it (Slaapduur, Stappen, Trainingen, Water…) — and
+the two-per-category limit holds there too.
 
 ## What a goal can be about
 

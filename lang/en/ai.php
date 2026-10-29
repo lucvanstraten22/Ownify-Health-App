@@ -24,7 +24,7 @@ return [
     'Doel toevoegen' => 'Add goal',
     'Bevestigen' => 'Confirm',
     'Nieuw doel: %s' => 'New goal: %s',
-    'per dag hoogstens %s' => 'at most %s per day',
+    'per dag maximaal %s' => 'at most %s per day',
     'per dag minstens %s' => 'at least %s per day',
     'lager is beter' => 'lower is better',
     'hoger is beter' => 'higher is better',

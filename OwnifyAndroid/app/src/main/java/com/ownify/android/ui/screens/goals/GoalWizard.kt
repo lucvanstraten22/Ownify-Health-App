@@ -1093,7 +1093,7 @@ private fun targetSummary(draft: Draft, goals: Goals): String {
     }
     val text = typedText(draft.target, unitOf(draft.unit, draft, goals))
     if (draft.variant == "daily") {
-        return if (isAuto(m, goals)) (if (draft.direction == "decrease") trf("Elke dag hoogstens %s", text) else trf("Elke dag minstens %s", text))
+        return if (isAuto(m, goals)) (if (draft.direction == "decrease") trf("Elke dag maximaal %s", text) else trf("Elke dag minstens %s", text))
         else trf("Elke dag %s", text)
     }
     return text

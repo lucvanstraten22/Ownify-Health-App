@@ -1019,7 +1019,7 @@
         var text = typedText(draft.target, unitOf(draft.unit));
         if (draft.variant === 'daily') {
             text = isAuto(m)
-                ? (draft.direction === 'decrease' ? T.tf('Elke dag hoogstens %s', text) : T.tf('Elke dag minstens %s', text))
+                ? (draft.direction === 'decrease' ? T.tf('Elke dag maximaal %s', text) : T.tf('Elke dag minstens %s', text))
                 : T.tf('Elke dag %s', text);
         }
         return text;

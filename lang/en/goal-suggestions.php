@@ -9,30 +9,28 @@ return [
     '%s in een maand' => '%s in a month',
     'Een dag van %s' => 'A day of %s',
     'Een nacht van %s' => 'A night of %s',
-    'Elke dag hoogstens %s' => 'Every day at most %s',
     'Elke dag minstens %s' => 'Every day at least %s',
     'Elke nacht minstens %s' => 'Every night at least %s',
     'Naar %s' => 'To %s',
     'Voorgesteld: %s.' => 'Suggested: %s.',
 
     /* ---- the list */
-    'Nu %1$s · voorstel %2$s' => 'Now %1$s · suggested %2$s',
-    'Nu %1$s · voorstel hoogstens %2$s' => 'Now %1$s · suggested at most %2$s',
-    'Nu %1$s per week · voorstel %2$s' => 'Now %1$s a week · suggested %2$s',
-    'Gaat al goed: gemiddeld %s' => 'Going well: %s on average',
-    'Gaat al goed: %s per week' => 'Going well: %s a week',
-    'Algemeen advies: %s' => 'General advice: %s',
-    'Algemeen advies: %s per dag' => 'General advice: %s a day',
-    'Algemeen advies: %s per nacht' => 'General advice: %s a night',
-    'Algemeen advies: %s per week' => 'General advice: %s a week',
-    'Algemeen advies: hoogstens %s' => 'General advice: at most %s',
+    'Nu %1$s · optimaal %2$s' => 'Now %1$s · optimal %2$s',
+    'Nu %1$s · maximaal %2$s' => 'Now %1$s · at most %2$s',
+    'Nu %1$s per week · optimaal %2$s' => 'Now %1$s a week · optimal %2$s',
+    'Optimaal %s' => 'Optimal: %s',
+    'Optimaal %s per dag' => 'Optimal: %s a day',
+    'Optimaal %s per nacht' => 'Optimal: %s a night',
+    'Optimaal %s per week' => 'Optimal: %s a week',
+    'Maximaal %s' => 'At most %s',
+    'Dit voorstel ligt net iets verder dan je gemiddelde.' => 'This suggestion lies just beyond your average.',
 
     /* ---- sleep */
     'Je sliep de afgelopen %1$d nachten gemiddeld %2$s. Voor jouw leeftijd raadt onderzoek minstens %3$s per nacht aan.'
         => 'Over the last %1$d nights you slept %2$s on average. For your age, research recommends at least %3$s a night.',
     'Dit doel is een flinke eerste stap daarheen.' => 'This goal is a big first step towards it.',
-    'Je sliep de afgelopen %1$d nachten gemiddeld %2$s, binnen wat voor jouw leeftijd wordt aangeraden (minstens %3$s). Dit doel houdt dat vast.'
-        => 'Over the last %1$d nights you slept %2$s on average, within what is recommended for your age (at least %3$s). This goal keeps it there.',
+    'Je sliep de afgelopen %1$d nachten gemiddeld %2$s, binnen wat voor jouw leeftijd wordt aangeraden (minstens %3$s). Dit voorstel ligt net iets verder dan je gemiddelde, binnen die grenzen.'
+        => 'Over the last %1$d nights you slept %2$s on average, within what is recommended for your age (at least %3$s). This suggestion lies just beyond your average, within those limits.',
     'Algemeen advies voor jouw leeftijd: minstens %s slaap per nacht. Ownify heeft nog te weinig nachten van je, dus dit is nog niet op jou afgestemd.'
         => 'General advice for your age: at least %s of sleep a night. Ownify has too few of your nights yet, so this is not tailored to you.',
 
@@ -45,8 +43,8 @@ return [
         => 'You walked %1$s steps on average, already above the %2$s where research sees the largest benefit. For your age the benefit levels off between %3$s and %4$s steps; this goal lies at the start of that.',
     'Je zet al gemiddeld %1$s stappen. Tot ongeveer %2$s stappen ziet onderzoek bij jouw leeftijd nog wat winst: een ambitieus doel, geen ondergrens.'
         => 'You already walk %1$s steps on average. Up to about %2$s steps research still sees some benefit at your age: an ambitious goal, not a minimum.',
-    'Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit doel houdt vast wat je al doet.'
-        => 'You walk %s steps on average, more than where research sees any extra benefit at your age. This goal keeps what you already do.',
+    'Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit voorstel ligt net iets verder dan je gemiddelde.'
+        => 'You walk %s steps on average, more than where research sees any extra benefit at your age. This suggestion lies just beyond your average.',
     'Algemeen advies voor volwassenen: onderzoek ziet de grootste gezondheidswinst oplopen tot ongeveer %s stappen per dag. Ownify heeft nog te weinig stappen van je, dus dit is nog niet op jou afgestemd.'
         => 'General advice for adults: research sees the largest health benefit build up to about %s steps a day. Ownify has too few of your steps yet, so this is not tailored to you.',
 
@@ -57,8 +55,7 @@ return [
         => 'The physical activity guideline for your age is at least %1$s minutes a week; with sessions of about %2$s minutes you reach it with %3$s.',
     'Je haalt de richtlijn van %1$s minuten al; tot %2$s minuten per week ziet de WHO nog extra gezondheidswinst. Een ambitieus, optioneel doel.'
         => 'You already reach the guideline of %1$s minutes; up to %2$s minutes a week the WHO sees extra health benefit. An ambitious, optional goal.',
-    'Dat is meer dan de beweegrichtlijn vraagt. Dit doel houdt vast wat je al doet.'
-        => 'That is more than the physical activity guideline asks. This goal keeps what you already do.',
+    'Dat is meer dan de beweegrichtlijn vraagt.' => 'That is more than the physical activity guideline asks.',
     'Algemeen advies voor jouw leeftijd: minstens %1$s minuten matig intensief bewegen per week, bijvoorbeeld %2$s keer %3$s minuten. Ownify heeft nog geen trainingen van je, dus dit is nog niet op jou afgestemd.'
         => 'General advice for your age: at least %1$s minutes of moderate activity a week, for example %2$s times %3$s minutes. Ownify has none of your workouts yet, so this is not tailored to you.',
     'Vanaf 65 raadt de WHO ook op 3 dagen per week oefeningen voor balans en kracht aan.'
@@ -97,10 +94,10 @@ return [
         => 'You have too few fully logged days yet, so this is not tailored to what you eat.',
     'De Gezondheidsraad raadt %1$s tot %2$s g vezels per 1.000 kcal aan; bij jouw energiedoel van %3$s kcal is dat minstens %4$s per dag.'
         => 'The Health Council of the Netherlands recommends %1$s to %2$s g of fibre per 1,000 kcal; with your energy target of %3$s kcal that is at least %4$s a day.',
-    'De Gezondheidsraad raadt hoogstens %1$s g zout per dag aan: ongeveer %2$s natrium.'
+    'De Gezondheidsraad raadt maximaal %1$s g zout per dag aan: ongeveer %2$s natrium.'
         => 'The Health Council of the Netherlands recommends at most %1$s g of salt a day: about %2$s of sodium.',
     'Natrium uit je eetlog is een benadering van je zout.' => 'Sodium from your food log is an approximation of your salt.',
-    'De Gezondheidsraad raadt zo weinig mogelijk verzadigd vet aan, en voorlopig minder dan %1$s%% van je energie: bij jouw energiedoel hoogstens %2$s per dag.'
+    'De Gezondheidsraad raadt zo weinig mogelijk verzadigd vet aan, en voorlopig minder dan %1$s%% van je energie: bij jouw energiedoel maximaal %2$s per dag.'
         => 'The Health Council of the Netherlands recommends as little saturated fat as possible, and for now less than %1$s%% of your energy: with your energy target at most %2$s a day.',
     'De Gezondheidsraad raadt zo weinig mogelijk vrije suikers aan, voorlopig minder dan %1$s%% van je energie: bij jouw energiedoel ongeveer %2$s per dag. Je eetlog telt alle suikers, ook die in fruit en melk, dus dit is een ruwe richting.'
         => 'The Health Council of the Netherlands recommends as few free sugars as possible, for now less than %1$s%% of your energy: with your energy target about %2$s a day. Your food log counts all sugars, also those in fruit and milk, so this is a rough direction.',
@@ -113,7 +110,6 @@ return [
     'Gebaseerd op je eigen gemiddelde van %s. Voor deze meting heeft Ownify geen goedgekeurd onderzoek met een streefwaarde, dus het voorstel komt alleen uit je eigen gegevens.'
         => 'Based on your own average of %s. Ownify has no approved research with a target for this measurement, so the suggestion comes from your own data only.',
 
-    'Dit doel houdt vast wat je al doet.' => 'This goal keeps what you already do.',
 
     /* ---- earlier goals */
     'Je vorige doel van %s haalde je; dit voorstel bouwt daarop voort.' => 'You reached your previous goal of %s; this suggestion builds on it.',

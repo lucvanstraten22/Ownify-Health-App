@@ -171,15 +171,15 @@ class GoalSuggestionFlowTest {
         assertEquals("steps", order.first())
 
         val steps = data.goals.measurement("steps")!!
-        assertEquals("Nu 8.300 · voorstel 10.000 stappen", steps.suggestionReason)
+        assertEquals("Nu 8.300 · optimaal 10.000 stappen", steps.suggestionReason)
         assertEquals(10000.0, steps.placeholder.getValue("streak"), 0.0)
         assertTrue(steps.suggestionNotes.getValue("streak").startsWith("Voorgesteld: elke dag minstens 10.000 stappen."))
         assertTrue("research, said not to be a minimum", steps.suggestionNotes.getValue("streak").contains("geen ondergrens"))
         assertEquals("Elke dag minstens 10.000 stappen", steps.names.first())
 
         val workouts = data.goals.measurement("workouts")!!
-        assertEquals("a streak per week: its own note and count", 4.0, workouts.placeholder.getValue("period"), 0.0)
-        assertTrue(workouts.suggestionNotes.getValue("period").startsWith("Voorgesteld: 4 keer per week."))
+        assertEquals("a streak per week: its own note and count", 5.0, workouts.placeholder.getValue("period"), 0.0)
+        assertTrue(workouts.suggestionNotes.getValue("period").startsWith("Voorgesteld: 5 keer per week."))
 
         assertNull("not suggested: no place in the list", data.goals.measurement("distance")!!.suggested)
         assertEquals("Voorgesteld", data.goals.wizard["suggested"])
@@ -191,13 +191,13 @@ class GoalSuggestionFlowTest {
         dump("step-one")
         assertTrue("the label (an eyebrow, in capitals)", shows("VOORGESTELD"))
         assertFalse("never Populair", shows("Populair") || shows("POPULAIR"))
-        assertTrue("steps' reason", shows("Nu 8.300 · voorstel 10.000 stappen"))
-        assertTrue("sleep's reason", shows("Gaat al goed: gemiddeld 7:40"))
+        assertTrue("steps' reason", shows("Nu 8.300 · optimaal 10.000 stappen"))
+        assertTrue("sleep's reason", shows("Nu 7:40 · optimaal 8:00"))
         assertTrue("steps first, then sleep", top("Stappen") < top("Slaapduur"))
 
         // A category's list is the category, not the suggestion.
         tap("Activiteit")
-        assertFalse("a category: no reasons", shows("Nu 8.300 · voorstel 10.000 stappen"))
+        assertFalse("a category: no reasons", shows("Nu 8.300 · optimaal 10.000 stappen"))
         assertTrue("a category: its own meta", shows("Activiteit · "))
     }
 

@@ -177,8 +177,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'both', 'default_direction' => 'decrease',
             'keywords' => ['kcal', 'energie', 'eten', 'calories', 'energy', 'food'],
-            'names' => ['Elke dag hoogstens 2.200 kcal', 'Bewuster eten'],
-            'examples' => ['streak' => 'Elke dag hoogstens 2.200 kcal'],
+            'names' => ['Elke dag maximaal 2.200 kcal', 'Bewuster eten'],
+            'examples' => ['streak' => 'Elke dag maximaal 2.200 kcal'],
             'placeholder' => ['streak' => 2200],
         ],
         'protein' => [
@@ -199,8 +199,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'both', 'default_direction' => 'decrease',
             'keywords' => ['carbs', 'suikers', 'carbohydrates'],
-            'names' => ['Elke dag hoogstens 200 g koolhydraten'],
-            'examples' => ['streak' => 'Elke dag hoogstens 200 g'],
+            'names' => ['Elke dag maximaal 200 g koolhydraten'],
+            'examples' => ['streak' => 'Elke dag maximaal 200 g'],
             'placeholder' => ['streak' => 200],
         ],
         'fat' => [
@@ -210,8 +210,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'both', 'default_direction' => 'decrease',
             'keywords' => ['vetten', 'fat'],
-            'names' => ['Elke dag hoogstens 70 g vet'],
-            'examples' => ['streak' => 'Elke dag hoogstens 70 g'],
+            'names' => ['Elke dag maximaal 70 g vet'],
+            'examples' => ['streak' => 'Elke dag maximaal 70 g'],
             'placeholder' => ['streak' => 70],
         ],
         'fibre' => [
@@ -232,8 +232,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'decrease', 'default_direction' => 'decrease',
             'keywords' => ['suikers', 'zoet', 'sugar'],
-            'names' => ['Minder suiker', 'Elke dag hoogstens 30 g suiker'],
-            'examples' => ['streak' => 'Elke dag hoogstens 30 g'],
+            'names' => ['Minder suiker', 'Elke dag maximaal 30 g suiker'],
+            'examples' => ['streak' => 'Elke dag maximaal 30 g'],
             'placeholder' => ['streak' => 30],
         ],
         'saturated_fat' => [
@@ -243,8 +243,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'decrease', 'default_direction' => 'decrease',
             'keywords' => ['vet', 'saturated'],
-            'names' => ['Elke dag hoogstens 20 g verzadigd vet'],
-            'examples' => ['streak' => 'Elke dag hoogstens 20 g'],
+            'names' => ['Elke dag maximaal 20 g verzadigd vet'],
+            'examples' => ['streak' => 'Elke dag maximaal 20 g'],
             'placeholder' => ['streak' => 20],
         ],
         'sodium' => [
@@ -254,8 +254,8 @@ return [
             'types' => ['streak'], 'variants' => ['daily'],
             'direction' => 'decrease', 'default_direction' => 'decrease',
             'keywords' => ['zout', 'salt', 'sodium'],
-            'names' => ['Minder zout', 'Elke dag hoogstens 2.000 mg natrium'],
-            'examples' => ['streak' => 'Elke dag hoogstens 2.000 mg'],
+            'names' => ['Minder zout', 'Elke dag maximaal 2.000 mg natrium'],
+            'examples' => ['streak' => 'Elke dag maximaal 2.000 mg'],
             'placeholder' => ['streak' => 2000],
         ],
         'nutrition_rating' => [
@@ -426,7 +426,7 @@ return [
             'names' => ['Rusthartslag naar 55', 'Lagere rusthartslag'],
             'examples' => [
                 'milestone' => 'Van 64 naar 55 bpm',
-                'streak'    => 'Elke dag hoogstens 60 bpm',
+                'streak'    => 'Elke dag maximaal 60 bpm',
             ],
             'placeholder' => ['milestone' => 55, 'streak' => 60],
         ],
@@ -454,7 +454,7 @@ return [
             'names' => ['Rustiger hart in de nacht'],
             'examples' => [
                 'milestone' => 'Van 60 naar 54 bpm',
-                'streak'    => 'Elke nacht hoogstens 58 bpm',
+                'streak'    => 'Elke nacht maximaal 58 bpm',
             ],
             'placeholder' => ['milestone' => 54, 'streak' => 58],
         ],

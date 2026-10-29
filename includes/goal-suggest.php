@@ -407,10 +407,18 @@ if (!function_exists('goal_suggest_plan')) {
         if ($kept === []) {
             foreach ($pool as $e) {
                 if ($e['state'] === 'keep' && !in_array($e['code'], $order, true)) {
-                    if (count($order) >= (int) $cfg['list']) {
+                    $dropped = count($order) >= (int) $cfg['list'] ? $order[count($order) - 1] : null;
+                    $cat = $e['category'];
+                    $left = ($perCategory[$cat] ?? 0) - ($dropped !== null && $entries[$dropped]['category'] === $cat ? 1 : 0);
+                    if ($left >= (int) $cfg['per_category']) {
+                        continue;   // never a third of one category
+                    }
+                    if ($dropped !== null) {
                         array_pop($order);
+                        $perCategory[$entries[$dropped]['category']]--;
                     }
                     $order[] = $e['code'];
+                    $perCategory[$cat] = ($perCategory[$cat] ?? 0) + 1;
                     break;
                 }
             }
@@ -422,11 +430,23 @@ if (!function_exists('goal_suggest_plan')) {
                 break;
             }
             if (!isset($blocked[$code]) && !in_array($code, $order, true) && (!isset($groupOf[$code]) || !isset($groups[$groupOf[$code]]))) {
-                $order[] = $code;
+                $cat = (string) ($entries[$code]['category'] ?? goal_suggest_category_of($code));
+                if (($perCategory[$cat] ?? 0) < (int) $cfg['per_category']) {
+                    $order[] = $code;
+                    $perCategory[$cat] = ($perCategory[$cat] ?? 0) + 1;
+                }
             }
         }
 
         return $order;
+    }
+
+    /** A measurement's category from the catalogue (for the general order). */
+    function goal_suggest_category_of(string $code): string
+    {
+        static $catalogue = null;
+        $catalogue ??= (array) require dirname(__DIR__) . '/config/goals.php';
+        return (string) ($catalogue['measurements'][$code]['category'] ?? '');
     }
 
     /* ----------------------------------------------------- per measurement */
@@ -489,21 +509,21 @@ if (!function_exists('goal_suggest_plan')) {
                 }
                 $score = 80 + (int) min(15, ($min - $a) / 6);
                 return goal_suggest_entry($score, 'grow', 'personal', ['streak' => $t, 'milestone' => $milestone($t)], 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', goal_suggest_clock($a), goal_suggest_text($t, 'h')), $why, $key);
+                    tf('Nu %1$s · optimaal %2$s', goal_suggest_clock($a), goal_suggest_text($t, 'h')), $why, $key);
             }
             if ($max !== null && $a > $max + 30) {
                 return null;   // more than the band: nothing to grow, and nothing to cut on Ownify's say-so
             }
-            $t = max($min, goal_suggest_down($a, 30));
+            $t = max($min, min($max ?? 540.0, goal_suggest_up($a + 15, 15)));
             return goal_suggest_entry(30, 'keep', 'personal', ['streak' => $t, 'milestone' => $milestone($t)], 'streak', 'increase',
-                tf('Gaat al goed: gemiddeld %s', goal_suggest_clock($a)),
-                tf('Je sliep de afgelopen %1$d nachten gemiddeld %2$s, binnen wat voor jouw leeftijd wordt aangeraden (minstens %3$s). Dit doel houdt dat vast.',
+                tf('Nu %1$s · optimaal %2$s', goal_suggest_clock($a), goal_suggest_clock($t)),
+                tf('Je sliep de afgelopen %1$d nachten gemiddeld %2$s, binnen wat voor jouw leeftijd wordt aangeraden (minstens %3$s). Dit voorstel ligt net iets verder dan je gemiddelde, binnen die grenzen.',
                     (int) $own['days'], goal_suggest_clock($a), goal_suggest_text($min, 'h')), $key);
         }
 
         if ($min !== null) {
             return goal_suggest_entry(40, 'general', 'general', ['streak' => $min, 'milestone' => $milestone($min)], 'streak', 'increase',
-                tf('Algemeen advies: %s per nacht', goal_suggest_text($min, 'h')),
+                tf('Optimaal %s per nacht', goal_suggest_text($min, 'h')),
                 tf('Algemeen advies voor jouw leeftijd: minstens %s slaap per nacht. Ownify heeft nog te weinig nachten van je, dus dit is nog niet op jou afgestemd.',
                     goal_suggest_text($min, 'h')), $key);
         }
@@ -541,16 +561,16 @@ if (!function_exists('goal_suggest_plan')) {
             /* Within the plateau for the age (from 60 it starts below
                Ding's reference): its top, or keep. */
             if ($flat !== null && $a >= $flat[0] && $a >= $flat[1]) {
-                $t = goal_suggest_down($a, 500);
+                $t = goal_suggest_up($a * 1.05, 500);
                 return goal_suggest_entry(30, 'keep', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Gaat al goed: gemiddeld %s', $n($a)),
-                    tf('Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit doel houdt vast wat je al doet.', $n($a)),
+                    tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)),
+                    tf('Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit voorstel ligt net iets verder dan je gemiddelde.', $n($a)),
                     $paluch['claim_key']);
             }
             if ($flat !== null && $a >= $flat[0] && $flat[0] < $ref) {
                 $t = $flat[1];
                 return goal_suggest_entry(45, 'stretch', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $n($a), $steps($t)),
+                    tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)),
                     tf('Je zet al gemiddeld %1$s stappen. Tot ongeveer %2$s stappen ziet onderzoek bij jouw leeftijd nog wat winst: een ambitieus doel, geen ondergrens.',
                         $n($a), i18n_number($flat[1])), $paluch['claim_key']);
             }
@@ -561,32 +581,32 @@ if (!function_exists('goal_suggest_plan')) {
                 $why .= ' ' . ($t < $ref ? t('Dit doel is een stevige stap die kant op.') : t('Daar ligt dit doel.'));
                 $score = 75 + (int) min(20, ($ref - $a) / $ref * 40);
                 return goal_suggest_entry($score, 'grow', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $n($a), $steps($t)), $why, $ding['claim_key']);
+                    tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)), $why, $ding['claim_key']);
             }
             if ($flat !== null && $a < $flat[0]) {
                 $t = $flat[0];
                 return goal_suggest_entry(60, 'toward', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $n($a), $steps($t)),
+                    tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)),
                     tf('Je zette gemiddeld %1$s stappen, al boven de %2$s waar onderzoek de grootste winst ziet. Voor jouw leeftijd vlakt de winst af tussen %3$s en %4$s stappen; dit doel ligt aan het begin daarvan.',
                         $n($a), i18n_number($ref), i18n_number($flat[0]), i18n_number($flat[1])), $paluch['claim_key']);
             }
             if ($flat !== null && $a < $flat[1]) {
                 $t = $flat[1];
                 return goal_suggest_entry(45, 'stretch', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $n($a), $steps($t)),
+                    tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)),
                     tf('Je zet al gemiddeld %1$s stappen. Tot ongeveer %2$s stappen ziet onderzoek bij jouw leeftijd nog wat winst: een ambitieus doel, geen ondergrens.',
                         $n($a), i18n_number($flat[1])), $paluch['claim_key']);
             }
-            $t = goal_suggest_down($a, 500);
+            $t = goal_suggest_up($a * 1.05, 500);
             return goal_suggest_entry(30, 'keep', 'personal', $targets($t), 'streak', 'increase',
-                tf('Gaat al goed: gemiddeld %s', $n($a)),
-                tf('Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit doel houdt vast wat je al doet.', $n($a)),
+                tf('Nu %1$s · optimaal %2$s', $n($a), $steps($t)),
+                tf('Je zet gemiddeld %s stappen, meer dan waar onderzoek voor jouw leeftijd nog extra winst ziet. Dit voorstel ligt net iets verder dan je gemiddelde.', $n($a)),
                 ($paluch ?? $ding)['claim_key']);
         }
 
         if ($ref) {
             return goal_suggest_entry(35, 'general', 'general', $targets($ref), 'streak', 'increase',
-                tf('Algemeen advies: %s per dag', $steps($ref)),
+                tf('Optimaal %s per dag', $steps($ref)),
                 tf('Algemeen advies voor volwassenen: onderzoek ziet de grootste gezondheidswinst oplopen tot ongeveer %s stappen per dag. Ownify heeft nog te weinig stappen van je, dus dit is nog niet op jou afgestemd.',
                     i18n_number($ref)), $ding['claim_key']);
         }
@@ -650,25 +670,25 @@ if (!function_exists('goal_suggest_plan')) {
                     i18n_number($guide['low']), i18n_number(goal_suggest_round($len, 5)), i18n_number($n));
                 $score = 75 + (int) min(15, ($guide['low'] - $eff) / $guide['low'] * 30);
                 return goal_suggest_entry($score, 'grow', 'personal', ['period' => $n, 'streak' => 1, 'accumulate' => $n * 4], 'period', 'increase',
-                    tf('Nu %1$s per week · voorstel %2$s', i18n_number_trim($per, 1), $words($n)), $why . goal_suggest_strength_note($f, $guide), $guide['claim_key']);
+                    tf('Nu %1$s per week · optimaal %2$s', i18n_number_trim($per, 1), $words($n)), $why . goal_suggest_strength_note($f, $guide), $guide['claim_key']);
             }
             if ($guide['high'] !== null && $eff < $guide['high']) {
                 $n = (int) min(6, max(1, (int) round($per)) + 1);
                 return goal_suggest_entry(45, 'stretch', 'personal', ['period' => $n, 'streak' => 1, 'accumulate' => $n * 4], 'period', 'increase',
-                    tf('Nu %1$s per week · voorstel %2$s', i18n_number_trim($per, 1), $words($n)),
+                    tf('Nu %1$s per week · optimaal %2$s', i18n_number_trim($per, 1), $words($n)),
                     $base . ' ' . tf('Je haalt de richtlijn van %1$s minuten al; tot %2$s minuten per week ziet de WHO nog extra gezondheidswinst. Een ambitieus, optioneel doel.',
                         i18n_number($guide['low']), i18n_number($guide['high'])), $guide['claim_key']);
             }
-            $n = (int) max(1, min(7, (int) round($per)));
+            $n = (int) max(1, min(7, (int) round($per) + 1));
             return goal_suggest_entry(30, 'keep', 'personal', ['period' => $n, 'streak' => 1, 'accumulate' => $n * 4], 'period', 'increase',
-                tf('Gaat al goed: %s per week', i18n_number_trim($per, 1)),
-                $base . ' ' . t('Dat is meer dan de beweegrichtlijn vraagt. Dit doel houdt vast wat je al doet.'), $guide['claim_key']);
+                tf('Nu %1$s per week · optimaal %2$s', i18n_number_trim($per, 1), $words($n)),
+                $base . ' ' . t('Dat is meer dan de beweegrichtlijn vraagt.') . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $guide['claim_key']);
         }
 
         if ($guide !== null && $guide['day'] === null) {
             $n = 3;
             return goal_suggest_entry(35, 'general', 'general', ['period' => $n, 'streak' => 1, 'accumulate' => $n * 4], 'period', 'increase',
-                tf('Algemeen advies: %s', $words($n)),
+                tf('Optimaal %s', $words($n)),
                 tf('Algemeen advies voor jouw leeftijd: minstens %1$s minuten matig intensief bewegen per week, bijvoorbeeld %2$s keer %3$s minuten. Ownify heeft nog geen trainingen van je, dus dit is nog niet op jou afgestemd.',
                     i18n_number($guide['low']), i18n_number($n), i18n_number(goal_suggest_up($guide['low'] / $n, 5))), $guide['claim_key']);
         }
@@ -719,7 +739,7 @@ if (!function_exists('goal_suggest_plan')) {
 
         return goal_suggest_entry($score, $state, $eff === null ? 'general' : 'personal',
             ['streak' => $daily, 'accumulate' => $month], $guide['day'] !== null ? 'streak' : 'accumulate', 'increase',
-            $eff === null ? tf('Algemeen advies: %s per week', goal_suggest_text($week, 'min')) : tf('Nu %1$s per week · voorstel %2$s', goal_suggest_text((float) $w['minutes_week'], 'min'), goal_suggest_text($week, 'min')),
+            $eff === null ? tf('Optimaal %s per week', goal_suggest_text($week, 'min')) : tf('Nu %1$s per week · optimaal %2$s', goal_suggest_text((float) $w['minutes_week'], 'min'), goal_suggest_text($week, 'min')),
             $why, $guide['claim_key']);
     }
 
@@ -753,17 +773,17 @@ if (!function_exists('goal_suggest_plan')) {
             if ($a < $ref - 0.05) {
                 $t = goal_suggest_towards($a, $ref, 0.6, 0.1);
                 return goal_suggest_entry(55 + (int) min(15, ($ref - $a) * 20), 'grow', 'personal', $targets($t), 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $l($a), $l($t)),
+                    tf('Nu %1$s · optimaal %2$s', $l($a), $l($t)),
                     tf('Je dronk de afgelopen %1$d dagen gemiddeld %2$s.', (int) $own['days'], $l($a)) . ' ' . $advice, $claim['claim_key']);
             }
-            $t = min((float) ($finding['max_l'] ?? 3), goal_suggest_down($a, 0.1));
+            $t = min((float) ($finding['max_l'] ?? 3), goal_suggest_up($a + 0.2, 0.1));
             return goal_suggest_entry(25, 'keep', 'personal', $targets($t), 'streak', 'increase',
-                tf('Gaat al goed: gemiddeld %s', $l($a)),
-                tf('Je dronk de afgelopen %1$d dagen gemiddeld %2$s.', (int) $own['days'], $l($a)) . ' ' . $advice . ' ' . t('Dit doel houdt vast wat je al doet.'), $claim['claim_key']);
+                tf('Nu %1$s · optimaal %2$s', $l($a), $l($t)),
+                tf('Je dronk de afgelopen %1$d dagen gemiddeld %2$s.', (int) $own['days'], $l($a)) . ' ' . $advice . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $claim['claim_key']);
         }
 
         return goal_suggest_entry(30, 'general', 'general', $targets($ref), 'streak', 'increase',
-            tf('Algemeen advies: %s per dag', $l($ref)),
+            tf('Optimaal %s per dag', $l($ref)),
             $advice . ' ' . t('Ownify heeft nog geen water van je, dus dit is nog niet op jou afgestemd.'), $claim['claim_key']);
     }
 
@@ -799,14 +819,15 @@ if (!function_exists('goal_suggest_plan')) {
             if ($a < $ref - 2) {
                 $t = goal_suggest_towards($a, $ref, 25, 5);
                 return goal_suggest_entry(55 + ($trains ? 10 : 0), 'grow', 'personal', ['streak' => $t], 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
+                    tf('Nu %1$s · optimaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
             }
-            return goal_suggest_entry(20, 'keep', 'personal', ['streak' => max($ref, goal_suggest_down($a, 5))], 'streak', 'increase',
-                tf('Gaat al goed: gemiddeld %s', $g($a)), $intro . ' ' . $advice . ' ' . t('Dit doel houdt vast wat je al doet.'), $claim['claim_key']);
+            $t = max($ref, goal_suggest_up($a + 5, 5));
+            return goal_suggest_entry(20, 'keep', 'personal', ['streak' => $t], 'streak', 'increase',
+                tf('Nu %1$s · optimaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $claim['claim_key']);
         }
 
         return goal_suggest_entry(25, 'general', 'general', ['streak' => $ref], 'streak', 'increase',
-            tf('Algemeen advies: %s per dag', $g($ref)),
+            tf('Optimaal %s per dag', $g($ref)),
             $advice . ' ' . t('Je hebt nog te weinig volledig gelogde dagen, dus dit is nog niet op jouw eten afgestemd.'), $claim['claim_key']);
     }
 
@@ -830,14 +851,15 @@ if (!function_exists('goal_suggest_plan')) {
             if ($a < $ref - 1) {
                 $t = goal_suggest_towards($a, $ref, 8, 1);
                 return goal_suggest_entry(50, 'grow', 'personal', ['streak' => $t], 'streak', 'increase',
-                    tf('Nu %1$s · voorstel %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
+                    tf('Nu %1$s · optimaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
             }
-            return goal_suggest_entry(15, 'keep', 'personal', ['streak' => max($ref, goal_suggest_down($a, 1))], 'streak', 'increase',
-                tf('Gaat al goed: gemiddeld %s', $g($a)), $intro . ' ' . $advice, $claim['claim_key']);
+            $t = max($ref, min(round((float) $per[1] * $kcal / 1000), goal_suggest_up($a + 2, 1)));
+            return goal_suggest_entry(15, 'keep', 'personal', ['streak' => $t], 'streak', 'increase',
+                tf('Nu %1$s · optimaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $claim['claim_key']);
         }
 
         return goal_suggest_entry(20, 'general', 'general', ['streak' => $ref], 'streak', 'increase',
-            tf('Algemeen advies: %s per dag', $g($ref)),
+            tf('Optimaal %s per dag', $g($ref)),
             $advice . ' ' . t('Je hebt nog te weinig volledig gelogde dagen, dus dit is nog niet op jouw eten afgestemd.'), $claim['claim_key']);
     }
 
@@ -851,7 +873,7 @@ if (!function_exists('goal_suggest_plan')) {
         $salt   = (float) $claim['finding']['salt_g_day_max'];
         $max    = $salt * 1000 / (float) $claim['finding']['salt_per_sodium'];
         $mg     = static fn (float $v): string => goal_suggest_text($v, 'mg');
-        $advice = tf('De Gezondheidsraad raadt hoogstens %1$s g zout per dag aan: ongeveer %2$s natrium.', i18n_number_trim($salt, 1), $mg($max))
+        $advice = tf('De Gezondheidsraad raadt maximaal %1$s g zout per dag aan: ongeveer %2$s natrium.', i18n_number_trim($salt, 1), $mg($max))
             . ' ' . t('Natrium uit je eetlog is een benadering van je zout.');
         $own = $f['nutrition']['sodium'] ?? null;
         if ($own !== null && $own['days'] >= (int) goal_suggest_config()['min_days']['nutrition']) {
@@ -860,14 +882,15 @@ if (!function_exists('goal_suggest_plan')) {
             if ($a > $max + 50) {
                 $t = max($max, goal_suggest_down(min($a * 0.9, $a - 600), 100));
                 return goal_suggest_entry(50, 'grow', 'personal', ['streak' => $t], 'streak', 'decrease',
-                    tf('Nu %1$s · voorstel hoogstens %2$s', $mg($a), $mg($t)), $intro . ' ' . $advice, $claim['claim_key']);
+                    tf('Nu %1$s · maximaal %2$s', $mg($a), $mg($t)), $intro . ' ' . $advice, $claim['claim_key']);
             }
-            return goal_suggest_entry(12, 'keep', 'personal', ['streak' => $max], 'streak', 'decrease',
-                tf('Gaat al goed: gemiddeld %s', $mg($a)), $intro . ' ' . $advice, $claim['claim_key']);
+            $t = min($max, goal_suggest_down($a - 100, 100));
+            return goal_suggest_entry(12, 'keep', 'personal', ['streak' => $t], 'streak', 'decrease',
+                tf('Nu %1$s · maximaal %2$s', $mg($a), $mg($t)), $intro . ' ' . $advice . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $claim['claim_key']);
         }
 
         return goal_suggest_entry(10, 'general', 'general', ['streak' => $max], 'streak', 'decrease',
-            tf('Algemeen advies: hoogstens %s', $mg($max)), $advice, $claim['claim_key']);
+            tf('Maximaal %s', $mg($max)), $advice, $claim['claim_key']);
     }
 
     /** Saturated fat: below 10% of energy (Gezondheidsraad 2026), in grams for the person's energy target. */
@@ -881,7 +904,7 @@ if (!function_exists('goal_suggest_plan')) {
         $pct    = (float) $claim['finding']['interim_energy_pct_max'];
         $ref    = floor($pct / 100 * $kcal / 9);
         $g      = static fn (float $v): string => goal_suggest_text($v, 'g');
-        $advice = tf('De Gezondheidsraad raadt zo weinig mogelijk verzadigd vet aan, en voorlopig minder dan %1$s%% van je energie: bij jouw energiedoel hoogstens %2$s per dag.',
+        $advice = tf('De Gezondheidsraad raadt zo weinig mogelijk verzadigd vet aan, en voorlopig minder dan %1$s%% van je energie: bij jouw energiedoel maximaal %2$s per dag.',
             i18n_number($pct), $g($ref));
         $own = $f['nutrition']['saturated_fat'] ?? null;
         if ($own !== null && $own['days'] >= (int) goal_suggest_config()['min_days']['nutrition']) {
@@ -890,14 +913,15 @@ if (!function_exists('goal_suggest_plan')) {
             if ($a > $ref + 1) {
                 $t = max($ref, goal_suggest_down(min($a * 0.85, $a - 3), 1));
                 return goal_suggest_entry(45, 'grow', 'personal', ['streak' => $t], 'streak', 'decrease',
-                    tf('Nu %1$s · voorstel hoogstens %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
+                    tf('Nu %1$s · maximaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice, $claim['claim_key']);
             }
-            return goal_suggest_entry(10, 'keep', 'personal', ['streak' => $ref], 'streak', 'decrease',
-                tf('Gaat al goed: gemiddeld %s', $g($a)), $intro . ' ' . $advice, $claim['claim_key']);
+            $t = min($ref, goal_suggest_down($a - 1, 1));
+            return goal_suggest_entry(10, 'keep', 'personal', ['streak' => $t], 'streak', 'decrease',
+                tf('Nu %1$s · maximaal %2$s', $g($a), $g($t)), $intro . ' ' . $advice . ' ' . t('Dit voorstel ligt net iets verder dan je gemiddelde.'), $claim['claim_key']);
         }
 
         return goal_suggest_entry(8, 'general', 'general', ['streak' => $ref], 'streak', 'decrease',
-            tf('Algemeen advies: hoogstens %s', $g($ref)), $advice, $claim['claim_key']);
+            tf('Maximaal %s', $g($ref)), $advice, $claim['claim_key']);
     }
 
     /**
@@ -933,7 +957,7 @@ if (!function_exists('goal_suggest_plan')) {
         $b = static fn (float $v): string => goal_suggest_text($v, 'bpm');
 
         return goal_suggest_entry(30, 'grow', 'personal', ['milestone' => $t, 'streak' => goal_suggest_down($a, 1)], 'milestone', 'decrease',
-            tf('Nu %1$s · voorstel %2$s', $b($a), $b($t)),
+            tf('Nu %1$s · maximaal %2$s', $b($a), $b($t)),
             tf('Je rusthartslag was de afgelopen %1$d dagen gemiddeld %2$s. In onderzoek gaat een rusthartslag boven de 80 samen met een duidelijk hoger risico; regelmatig bewegen kan hem verlagen.',
                 (int) $own['days'], $b($a)), $claim['claim_key']);
     }
@@ -1051,7 +1075,7 @@ if (!function_exists('goal_suggest_plan')) {
 
         return match ($key) {
             'streak' => $direction === 'decrease'
-                ? tf('Elke dag hoogstens %s', $text)
+                ? tf('Elke dag maximaal %s', $text)
                 : ($night ? tf('Elke nacht minstens %s', $text) : tf('Elke dag minstens %s', $text)),
             'milestone'  => $direction === 'decrease'
                 ? tf('Naar %s', $text)

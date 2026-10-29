@@ -16,7 +16,7 @@ window.OWNIFY_LANG = {
     "Dit kon niet worden opgeslagen.": "This could not be saved.",
     "Een percentage kan niet hoger zijn dan 100.": "A percentage cannot be higher than 100.",
     "Elke dag %s": "Every day %s",
-    "Elke dag hoogstens %s": "Every day at most %s",
+    "Elke dag maximaal %s": "At most %s every day",
     "Elke dag minstens %s": "Every day at least %s",
     "Er ging iets mis.": "Something went wrong.",
     "Er ging iets mis. Probeer het nog eens.": "Something went wrong. Please try again.",

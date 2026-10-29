@@ -1310,14 +1310,14 @@
     cursor: pointer;
 }
 
-.goal-option + .goal-option { box-shadow: 0 -1px 0 var(--glass-hairline); }
+/* No hairlines between the rows (32.1): a shadow on a rounded row showed
+   through as a stray line while the list scrolled. The gap separates them,
+   as in the app. */
 
 @media (hover: hover) and (pointer: fine) {
     .goal-option:hover { background: rgba(var(--fill), calc(0.04 * var(--fill-k))); }
 }
 
-.goal-option[aria-checked="true"],
-.goal-option[aria-checked="true"] + .goal-option { box-shadow: none; }
 
 .goal-option[aria-checked="true"] {
     background: var(--health-fill);

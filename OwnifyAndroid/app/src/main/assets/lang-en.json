@@ -80,7 +80,7 @@
     "Elk uur": "Every hour",
     "Elke %d uur": "Every %d hours",
     "Elke dag %s": "Every day %s",
-    "Elke dag hoogstens %s": "Every day at most %s",
+    "Elke dag maximaal %s": "At most %s every day",
     "Elke dag minstens %s": "Every day at least %s",
     "Er ging iets mis bij het synchroniseren. Probeer het opnieuw.": "Something went wrong while syncing. Please try again.",
     "Er ging iets mis bij het verbinden met Ownify. Probeer het opnieuw.": "Something went wrong while connecting to Ownify. Please try again.",

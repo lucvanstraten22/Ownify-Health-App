@@ -89,7 +89,7 @@ $e = entry(person(['daily' => ['steps' => days(5000)]]), 'steps');
 check('5.000 a day at 34: 7.000 (Ding), not 6.000', ($e['targets']['streak'] ?? null) == 7000.0, json_encode($e['targets'] ?? null));
 check('… worked out from their own data and the research', $e['basis'] === 'personal' && $e['claim'] === 'activity.steps.ding');
 check('… its sentence names their average and the research', str_contains($e['why'], '5.000') && str_contains($e['why'], '7.000'), $e['why']);
-check('… and a reason for the list', $e['reason'] === 'Nu 5.000 · voorstel 7.000 stappen', $e['reason']);
+check('… and a reason for the list', $e['reason'] === 'Nu 5.000 · optimaal 7.000 stappen', $e['reason']);
 
 $e = entry(person(['daily' => ['steps' => days(2500)]]), 'steps');
 check('2.500 a day: a big step towards 7.000 (5.500), and said to be a step', $e['targets']['streak'] == 5500.0 && str_contains($e['why'], 'stap die kant op'), json_encode($e['targets']));
@@ -104,7 +104,7 @@ $e = entry(person(['daily' => ['steps' => days(9000)]]), 'steps');
 check('9.000 a day: 10.000, said to be ambitious and no minimum', $e['targets']['streak'] == 10000.0 && $e['state'] === 'stretch' && str_contains($e['why'], 'geen ondergrens'), $e['why']);
 
 $e = entry(person(['daily' => ['steps' => days(12300)]]), 'steps');
-check('12.300 a day: keep what they do (12.000)', $e['targets']['streak'] == 12000.0 && $e['state'] === 'keep');
+check('12.300 a day: already good — still a proposal just above it (13.000), never "Gaat al goed"', $e['targets']['streak'] == 13000.0 && $e['state'] === 'keep' && $e['reason'] === 'Nu 12.300 · optimaal 13.000 stappen', $e['reason']);
 
 $e = entry(person(['age' => 70, 'daily' => ['steps' => days(6500)]]), 'steps');
 check('70 and 6.500 a day: the 60+ plateau tops at 8.000, not 10.000', $e['targets']['streak'] == 8000.0, json_encode($e['targets']));
@@ -138,6 +138,7 @@ check('15 with 7 hours: 8 hours, the band for 13–17', $e['targets']['streak'] 
 
 $e = entry(person(['age' => 70, 'daily' => ['sleep_duration' => days(450)]]), 'sleep_duration');
 check('70 with 7:30: within the band — keep', $e['state'] === 'keep' && $e['targets']['streak'] >= 420.0);
+check('… and still a proposal: now and optimal, above their average', $e['targets']['streak'] > 450.0 && $e['reason'] === 'Nu 7:30 · optimaal 7:45', $e['reason']);
 
 $e = entry(person(['daily' => ['sleep_duration' => days(600)]]), 'sleep_duration');
 check('10 hours a night at 34: nothing to grow, nothing to cut — no suggestion', $e === null || $e['score'] === 0);
@@ -217,6 +218,25 @@ check('A running training goal: nor training minutes', !in_array('workout_minute
 $p = plan(person(['age' => null]));
 check('Nothing known at all: the general order, nothing claimed', $p['order'] === ['sleep_duration', 'steps', 'workouts', 'water'] && $p['entries'] === [], implode(', ', $p['order']) . ' / ' . implode(',', array_keys($p['entries'])));
 
+/* The general order fills up, but never with a third of one category (32.1). */
+$fake = static fn (string $code, string $cat, int $score): array => ['code' => $code, 'category' => $cat, 'score' => $score, 'state' => 'grow'];
+$order = goal_suggest_order(['protein' => $fake('protein', 'nutrition', 50), 'fibre' => $fake('fibre', 'nutrition', 40)], ['goals' => ['active' => []]], goal_suggest_config());
+check('Two food suggestions: the general order adds no water (never 3 of one category)', !in_array('water', $order, true) && count(array_intersect($order, ['protein', 'fibre', 'water'])) === 2, implode(', ', $order));
+
+/* Never "Gaat al goed", never "hoogstens": a proposal, said as now and optimal or at most. */
+$everyone = [$busy, person(['age' => 70, 'daily' => ['sleep_duration' => days(450), 'steps' => days(8500)]]), person(['daily' => ['steps' => days(12300)]])];
+$said = [];
+foreach ($everyone as $who) {
+    $planned = plan($who);
+    foreach ($planned['order'] as $code) {
+        if (isset($planned['entries'][$code])) {
+            $said[] = $code . ': ' . $planned['entries'][$code]['reason'];
+        }
+    }
+}
+check('Every reason is a proposal: optimaal or maximaal, never "Gaat al goed" or "hoogstens"',
+    $said !== [] && array_filter($said, static fn ($r) => !preg_match('/optimaal|maximaal|Optimaal|Maximaal/u', $r) || preg_match('/Gaat al goed|hoogstens/u', $r)) === [], implode(' | ', $said));
+
 $plain = plan(person(['daily' => ['sleep_duration' => days(380)], 'workouts' => ['recorded' => 6, 'per_week' => 1.0, 'minutes_week' => 50.0, 'session_min' => 50.0]]));
 $linked = plan(person(['daily' => ['sleep_duration' => days(380)], 'workouts' => ['recorded' => 6, 'per_week' => 1.0, 'minutes_week' => 50.0, 'session_min' => 50.0], 'patterns' => ['C01' => 'clear']]));
 check('A clear pattern between training and sleep (C01) makes both more relevant',
@@ -245,7 +265,7 @@ $m = $applied['measurements'];
 check('No measurement says popular any more', array_filter($m, static fn ($x) => array_key_exists('popular', $x)) === []);
 check('Voorgesteld ranks 1… in the plan\'s order', $m[plan($busy)['order'][0]]['suggested'] === 1);
 check('Steps\' placeholder is the suggestion (7.000), in steps', $m['steps']['placeholder']['streak'] == 7000.0, json_encode($m['steps']['placeholder']));
-check('Sleep\'s placeholder is in hours, the first unit (7,5 for 7:30 kept)', $m['sleep_duration']['placeholder']['streak'] == 7.5, json_encode($m['sleep_duration']['placeholder']));
+check('Sleep\'s placeholder is in hours, the first unit (8 for 7:45 a night)', $m['sleep_duration']['placeholder']['streak'] == 8.0, json_encode($m['sleep_duration']['placeholder']));
 check('Training per week: its placeholder is a count, its card says so', $m['workouts']['placeholder']['period'] == 4.0 && $m['workouts']['examples']['streak'] === '4 keer per week', json_encode($m['workouts']['examples'], JSON_UNESCAPED_UNICODE));
 check('The first name idea is the suggestion', $m['steps']['names'][0] === 'Elke dag minstens 7.000 stappen', json_encode($m['steps']['names'], JSON_UNESCAPED_UNICODE));
 check('Under the target: what is suggested, and why', str_starts_with($m['steps']['suggestion']['notes']['streak'], 'Voorgesteld: elke dag minstens 7.000 stappen. Je zette'), $m['steps']['suggestion']['notes']['streak']);
@@ -266,7 +286,7 @@ $goals = config_copy('goals');
 $p = plan($busy);
 $en = goal_suggest_apply($goals, $p)['measurements'];
 check('The list label', $goals['wizard']['suggested'] === 'Suggested');
-check('A reason in English', $en['steps']['suggestion']['reason'] === 'Now 4,200 · suggested 7,000 steps', $en['steps']['suggestion']['reason']);
+check('A reason in English', $en['steps']['suggestion']['reason'] === 'Now 4,200 · optimal 7,000 steps', $en['steps']['suggestion']['reason']);
 check('A note in English, with English numbers', str_starts_with($en['steps']['suggestion']['notes']['streak'], 'Suggested: every day at least 7,000 steps.'), $en['steps']['suggestion']['notes']['streak']);
 check('Training per week in English', $en['workouts']['examples']['streak'] === '4 times per week', $en['workouts']['examples']['streak']);
 $dutch = [];
