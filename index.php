@@ -206,6 +206,15 @@ foreach ($data['navigation'] as $position => $item) {
                 <?php endforeach; ?>
             <?php endif; ?>
 
+            <?php /* Inzichten (docs/CORRELATIONS.md): every combined insight, behind
+                     Overzicht's Nuttige inzichten, each on a page of its own over it. */ ?>
+            <?php if (isset($data['correlations']) && is_file(__DIR__ . '/pages/insights.php') && is_file(__DIR__ . '/pages/insight-detail.php')): ?>
+                <?php page('insights', $data); ?>
+                <?php foreach ($data['correlations']['details'] as $insightDetail): ?>
+                    <?php page('insight-detail', ['insight_detail' => $insightDetail] + $data); ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
             <?php foreach ($data['settings']['pages'] as $pageId => $settingsPage): ?>
                 <?php page('settings-detail', $data + [
                     'settings_page'    => $settingsPage,

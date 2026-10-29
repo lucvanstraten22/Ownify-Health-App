@@ -112,4 +112,15 @@ return [
     'Misschien iets voor deze week: eens volkoren kiezen, of peulvruchten, groente of noten aan een maaltijd toevoegen.' => 'Maybe something for this week: choosing whole grain now and then, or adding legumes, vegetables or nuts to a meal.',
     'Misschien iets voor deze week: eens kijken in welke maaltijden je eiwit eet.' => 'Maybe something for this week: having a look at which meals you eat protein in.',
     'Misschien iets voor deze week: eens kijken hoeveel zout er in je vaste producten zit.' => 'Maybe something for this week: having a look at how much salt is in the foods you usually buy.',
+
+    /* ---- 31.0: the age proposal (D9) */
+    'Bij jouw leeftijd' => 'At your age',
+    'Je legde de afgelopen 7 dagen %1$s minuten training vast, met zware minuten dubbel geteld zoals de WHO doet (%3$s minuten waren zwaar). De WHO noemt per week minstens %2$d minuten matig intensief bewegen. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.'
+        => 'You recorded %1$s minutes of training over the last 7 days, with hard minutes counted double as the WHO does (%3$s minutes were hard). The WHO names at least %2$d minutes of moderate-intensity activity a week. Walking and cycling count too, and Ownify does not see all of it.',
+    'Je legde de afgelopen 7 dagen %1$s minuten training vast, met zware minuten dubbel geteld zoals de WHO doet (%3$s minuten waren zwaar): al minstens de %2$d minuten per week die de WHO noemt, en dan telt Ownify alleen je vastgelegde trainingen.'
+        => 'You recorded %1$s minutes of training over the last 7 days, with hard minutes counted double as the WHO does (%3$s minutes were hard): already at least the %2$d minutes a week the WHO names, and Ownify only counts your recorded workouts.',
+    'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast. Vanaf 65 jaar noemt de WHO op minstens %2$d dagen per week activiteiten voor balans en kracht. Balansoefeningen ziet Ownify meestal niet.'
+        => 'You recorded strength training on %1$d days over the last 7 days. From 65 the WHO names activities for balance and strength on at least %2$d days a week. Ownify usually does not see balance exercises.',
+    'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast: minstens de %2$d dagen per week met activiteiten voor balans en kracht die de WHO vanaf 65 jaar noemt.'
+        => 'You recorded strength training on %1$d days over the last 7 days: at least the %2$d days a week with activities for balance and strength that the WHO names from 65.',
 ];

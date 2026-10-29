@@ -363,7 +363,7 @@ private fun CompositionCard(view: NutritionView, index: Int, references: Map<Str
             val rows = @Composable { modifier: Modifier ->
                 Column(modifier, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                     day.macros.forEach { m ->
-                        MacroRow(m, open == m.key, if (open == m.key) fromRing else 0, references["nutrition." + m.key]) { open = if (open == m.key) null else m.key }
+                        MacroRow(m, open == m.key, if (open == m.key) fromRing else 0, references["nutrition." + m.key], references) { open = if (open == m.key) null else m.key }
                     }
                 }
             }
@@ -385,6 +385,8 @@ private fun CompositionCard(view: NutritionView, index: Int, references: Map<Str
         if (day.kcal != null) {
             T(copy.hint, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), Modifier.fillMaxWidth().padding(top = Ownify.Space3))
         }
+        // 31.0 (D9): how the energy target in the ring is estimated (NUT-04).
+        ResearchEvidence(references["nutrition.energy"])
     }
 }
 
@@ -504,7 +506,7 @@ private fun arcPath(c: Offset, r: Float, ri: Float, a0: Float, a1: Float): Path 
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: Evidence?, onToggle: () -> Unit) {
+private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: Evidence?, references: Map<String, Evidence>, onToggle: () -> Unit) {
     val reduced = LocalReducedMotion.current || LocalStillMotion.current
     val shape = RoundedCornerShape(Ownify.RadiusSm)
     val color = macroColor(m.key)
@@ -594,6 +596,8 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
                                             T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1)
                                         }
                                     }
+                                    // 31.0 (D9): why sugar has no verdict (free sugars, NUT-01).
+                                    references["nutrition." + d.key]?.let { ResearchEvidence(it) }
                                 }
                             }
                         }

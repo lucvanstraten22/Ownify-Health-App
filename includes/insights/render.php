@@ -63,9 +63,12 @@ if (!function_exists('insights_render')) {
             ],
             'activity.minutes' => [
                 $outcome . '_' . $f['per'],
-                [$n($f['minutes']), (int) $f['target']],
+                [$n($f['minutes']), (int) $f['target'], $n($f['hard'] ?? 0)],
             ],
-            'activity.strength' => [$outcome, [(int) $f['days'], (int) $f['target']]],
+            'activity.strength' => [
+                $outcome . (($f['per'] ?? null) === 'older' ? '_older' : ''),
+                [(int) $f['days'], (int) $f['target']],
+            ],
             'activity.steps' => [
                 $outcome,
                 [(int) $f['days'], $n($f['steps_avg']), $n($f['reference']),
@@ -182,6 +185,14 @@ if (!function_exists('insights_render')) {
         $data['insights']['state']    = $filled ? 'filled' : 'empty';
         $data['insights']['subtitle'] = (string) ($filled ? $copy['subtitle'] : $copy['subtitle_empty']);
 
+        /* 31.0 (D1): with migration 029 Overzicht shows four combined
+           insights instead, and its head opens the Inzichten page; the
+           insights above stay on their own pages (context, below). */
+        $age  = user_account($userId)['age'] ?? null;
+        if (function_exists('corr_hydrate')) {
+            $data = corr_hydrate($data, $userId, $today['mode'] !== null, $age, $used);
+        }
+
         /* Each page shows its own slot's insight, the same one. */
         $data['insights']['context'] = [
             'sleep'     => $items['sleep'] ?? null,
@@ -194,7 +205,6 @@ if (!function_exists('insights_render')) {
         $data['recommendation'] = insights_recommendation($data['recommendation'] ?? [], $today, $copy, $used);
 
         /* The research next to reference values and the Scorekompas. */
-        $age = user_account($userId)['age'] ?? null;
         $data['insights']['references'] = insights_references($age, $used);
         if (isset($data['compass']['opportunity']) && is_array($data['compass']['opportunity'])) {
             $data['compass']['opportunity']['research'] = insights_compass_research($data['compass']['opportunity'], $age, $used);
@@ -275,7 +285,16 @@ if (!function_exists('insights_render')) {
             'nutrition.rating'     => ['nutrition.pattern', 'direct'],
             'sleep.stages'         => ['sleep.tracking', 'direct'],
             'training.measurement' => ['measurement.wearables', 'direct'],
+            /* 31.0 (D9): the age proposal and the claims that had no place.
+               Protein: from 65 the PROT-AGE advice, before it the Dutch norm. */
+            'nutrition.protein'    => [$age !== null && $age >= 65 ? 'nutrition.protein.older' : 'nutrition.protein', 'proxy'],
+            'nutrition.sugar'      => ['nutrition.free_sugars', 'proxy'],
+            'nutrition.energy'     => ['nutrition.energy_estimate', 'direct'],
+            'training.intensity'   => ['activity.intensity.age', 'direct'],
+            'sleep.age'            => ['sleep.architecture.age', 'direct'],
         ];
+        /* What the chip says where it is about your age, beside another one. */
+        $ageLabel = ['training.intensity' => true, 'sleep.age' => true, 'nutrition.protein' => $age !== null && $age >= 65];
 
         $copy = insights_copy();
         $out  = [];
@@ -296,7 +315,7 @@ if (!function_exists('insights_render')) {
                     'key'   => $strength,
                     'label' => (string) (config_copy('research')['strengths'][$strength]['label'] ?? ''),
                 ],
-                'label'    => (string) $copy['research'],
+                'label'    => (string) (!empty($ageLabel[$anchor]) ? $copy['research_age'] : $copy['research']),
             ];
         }
 

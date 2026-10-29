@@ -20,7 +20,9 @@
  * whichever detail is in front ("Uit onderzoek blijkt", opened from Slaap, the
  * Scorekompas or Instellingen alike). It slides in over it the same way and
  * leaves the same way, back to that detail as it was left — its scroll, its
- * focus. Leaving for another section closes both.
+ * focus. And over that one again: an insight's page stands over Inzichten,
+ * and the research it shows opens over it — back goes one page at a time.
+ * Leaving for another section closes them all.
  */
 
 (function () {
@@ -43,8 +45,7 @@
     var drag = null;          // { from, base, progress } while a finger holds it
     var settleTimer = null;   // the move under way, until it has landed
     var opener = null;        // the card to hand focus back to
-    var parent = null;        // the detail under current, when one opened over it
-    var parentOpener = null;  // what opened that one
+    var parents = [];         // the details under current, the lowest first: { detail, opener }
 
     /* ------------------------------------------------------------ helpers */
 
@@ -98,7 +99,7 @@
 
         drag = null;
         shown = opening;
-        nav.state.detailOpen = opening || !!parent;   // closing over a parent: still a detail in front
+        nav.state.detailOpen = opening || parents.length > 0;   // closing over a parent: still a detail in front
 
         if (detail) { detail.classList.remove('is-dragging'); }
         deck.dataset.detailState = 'moving';
@@ -106,7 +107,8 @@
         nav.refresh();
 
         /* Reduced motion: the detail arriving, or the page it uncovers, fades in. */
-        nav.fadeIn(opening ? detail : (parent || deck.querySelector('.rail')));
+        var beneath = parents.length ? parents[parents.length - 1].detail : null;
+        nav.fadeIn(opening ? detail : (beneath || deck.querySelector('.rail')));
 
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(function () {
@@ -118,15 +120,14 @@
                 current = null;
 
                 /* Back to the detail it opened over, as it was. */
-                if (parent) {
-                    current = parent;
+                if (parents.length) {
+                    var under = parents.pop();
+                    current = under.detail;
                     shown = true;
-                    parent = null;
                     nav.state.detailOpen = true;
                     deck.dataset.detailState = 'open';
                     var back = opener;
-                    opener = parentOpener;
-                    parentOpener = null;
+                    opener = under.opener;
                     nav.refresh();
                     if (moveFocus && back && back.focus) { back.focus({ preventScroll: true }); }
                     return;
@@ -155,11 +156,12 @@
 
         if (current === detail && shown) { return; }   // already open, or opening
 
-        /* Over the detail in front, when it is this one's own. */
-        if (current && current !== detail && shown && !parent && !settleTimer && detail.dataset.detailParent
-            && (detail.dataset.detailParent === '*' || current.dataset.detail === detail.dataset.detailParent)) {
-            parent = current;
-            parentOpener = opener;
+        /* Over the detail in front, when it is this one's own — and not one
+           already standing open under it. */
+        if (current && current !== detail && shown && !settleTimer && detail.dataset.detailParent
+            && (detail.dataset.detailParent === '*' || current.dataset.detail === detail.dataset.detailParent)
+            && !parents.some(function (under) { return under.detail === detail; })) {
+            parents.push({ detail: current, opener: opener });
             current = null;
         }
 
@@ -170,7 +172,8 @@
         if (current && current !== detail && shown && nav.isDesktop() && !drag) {
             window.clearTimeout(settleTimer);
             settleTimer = null;
-            if (parent) { park(parent); parent = null; parentOpener = null; }
+            parents.forEach(function (under) { park(under.detail); });
+            parents = [];
             park(current);
             current = null;
             shown = false;
@@ -269,14 +272,15 @@
         }
 
         // Leaving for another section closes the detail behind you — and
-        // the one it opened over, which goes with it.
+        // the ones it opened over, which go with it.
         if (current && shown && !nav.isDesktop() && event.target.closest('[data-nav]')) {
-            if (parent) {
+            if (parents.length) {
+                var lowest = parents[0];
                 park(current);
-                current = parent;
-                parent = null;
-                opener = parentOpener;
-                parentOpener = null;
+                parents.slice(1).forEach(function (under) { park(under.detail); });
+                parents = [];
+                current = lowest.detail;
+                opener = lowest.opener;
                 nav.refresh();
             }
             close(false);
@@ -302,7 +306,7 @@
         forget: function (detail) {
             var at = details.indexOf(detail);
             if (at !== -1) { details.splice(at, 1); }
-            if (parent === detail) { parent = null; parentOpener = null; }
+            parents = parents.filter(function (under) { return under.detail !== detail; });
 
             if (current === detail) {
                 window.clearTimeout(settleTimer);

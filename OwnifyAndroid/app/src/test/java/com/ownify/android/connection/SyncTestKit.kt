@@ -85,6 +85,12 @@ internal object TestSyncEnvironment : OwnifySyncEnvironment {
     @Volatile
     var reads = 0
 
+    /** What Health Connect would return for the meals before the usual week (31.0), and each time they were asked for. */
+    @Volatile
+    var meals: List<Record> = emptyList()
+
+    val mealReads = CopyOnWriteArrayList<Pair<Instant, Instant>>()
+
     override val status: OwnifySyncStatusStore get() = OwnifySyncStatusPrefs(context)
 
     override suspend fun token(): String? = OwnifyConnection.storedToken(context)
@@ -96,6 +102,11 @@ internal object TestSyncEnvironment : OwnifySyncEnvironment {
     override suspend fun read(from: Instant, to: Instant): HealthConnectSyncReader.Reading {
         reads++
         return HealthConnectSyncReader.Reading(records, emptyList())
+    }
+
+    override suspend fun readMeals(from: Instant, to: Instant): HealthConnectSyncReader.Reading {
+        mealReads += from to to
+        return HealthConnectSyncReader.Reading(meals, emptyList())
     }
 }
 

@@ -367,6 +367,9 @@
     [data-page="overview"] .card--insights .insights__item { padding: 18px; align-items: stretch; }
     [data-page="overview"] .card--insights .insights__body { display: flex; flex-direction: column; gap: 6px; }
     [data-page="overview"] .card--insights .insights__body > .research-evidence { margin-top: auto; padding-top: 6px; }
+    /* Four combined insights (R4): 2 × 2, each sentence a readable width. */
+    [data-page="overview"] .card--insights.card--combined .insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    [data-page="overview"] .card--insights.card--combined .insights__body > .card__meta { margin-top: auto; padding-top: 6px; }
 
     /* Gezondheid — three columns: the three pillars down the first, each its
        name, its score as the figure and its bar; the Verloop across the
@@ -470,7 +473,8 @@
     [data-page="overview"] .card--hero .score-ring { width: 200px; }
     [data-page="overview"] .card--hero .pillar-rings { width: 340px; margin-top: var(--space-4); }
     [data-page="overview"] .card--hero .pillar-ring__dial { width: 48px; height: 48px; }
-    [data-page="overview"] .card--insights .insights { grid-template-columns: minmax(0, 1fr); }
+    [data-page="overview"] .card--insights .insights,
+    [data-page="overview"] .card--insights.card--combined .insights { grid-template-columns: minmax(0, 1fr); }
     [data-page="health"] .app__main > .shell { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     [data-page="health"] .app__main > .shell > .card--trend { grid-column: 2; }
     [data-goals] [data-goal-panel="active"].is-active { display: flex; flex-direction: column; }

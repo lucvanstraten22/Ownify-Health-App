@@ -91,9 +91,13 @@ $count  = count($rows);
 
     <?php if ($staged): ?>
         <?php /* How far a wearable's stages can be trusted (docs/INSIGHTS.md). */
-        $reference = $data['insights']['references']['sleep.stages'] ?? null;
-        if ($reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
-            component('research-evidence', $data + ['evidence' => $reference]);
+        $references = array_values(array_filter([
+            $data['insights']['references']['sleep.stages'] ?? null,
+            /* 31.0 (D9): deep sleep and efficiency change with age (AGE-03). */
+            $data['insights']['references']['sleep.age'] ?? null,
+        ]));
+        if ($references !== [] && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+            component('research-evidence', $data + ['evidences' => $references]);
         } ?>
         <p class="compass-history__hint" id="sleep-night-hint"><?= e($night['hint']) ?></p>
         <p class="sr-only" aria-live="polite" data-night-live></p>

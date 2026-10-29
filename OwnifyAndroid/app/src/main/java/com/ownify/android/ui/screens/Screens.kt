@@ -58,6 +58,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import com.ownify.android.ui.screens.insights.InsightDetailPage
+import com.ownify.android.ui.screens.insights.InsightsPage
 
 /**
  * What the app shows where: every page, detail, sheet and panel of the
@@ -89,6 +91,8 @@ object OwnifyScreens {
                 Detail.Challenges -> ChallengesDetail(data, scroll)
                 is Detail.Challenge -> data.challenges.view(detail.id)?.let { ChallengeDetail(data, it, detail.overList, scroll) }
                 is Detail.Research -> data.research.detail(detail.id)?.let { ResearchDetailPage(data.research, it, scroll) }
+                Detail.Insights -> InsightsPage(data.correlations, scroll)
+                is Detail.InsightPage -> data.correlations.detail(detail.id)?.let { InsightDetailPage(data.correlations, it, scroll) }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },

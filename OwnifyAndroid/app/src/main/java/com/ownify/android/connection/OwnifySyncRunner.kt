@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.NutritionRecord
 import java.time.Duration
 import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
@@ -57,6 +58,13 @@ internal interface OwnifySyncEnvironment {
     suspend fun healthAccess(automatic: Boolean): HealthAccess
 
     suspend fun read(from: Instant, to: Instant): HealthConnectSyncReader.Reading
+
+    /**
+     * Meals only, between [from] and [to]: the one-time history (31.0, R7)
+     * whose caffeine combined insights read. None by default.
+     */
+    suspend fun readMeals(from: Instant, to: Instant): HealthConnectSyncReader.Reading =
+        HealthConnectSyncReader.Reading(emptyList(), emptyList())
 
     fun now(): Instant = Instant.now()
 }
@@ -121,6 +129,12 @@ internal object OwnifySyncRunner {
 
     /** How far back a sync reads, counted from the moment it starts. */
     val RANGE: Duration = Duration.ofDays(7)
+
+    /**
+     * Once, on the first sync after 31.0: meals as far back as this, for
+     * their caffeine (R7). Health Connect gives an app 30 days of history.
+     */
+    val MEAL_HISTORY: Duration = Duration.ofDays(30)
 
     /** Records per request. ingest.php accepts up to 2000. */
     private const val BATCH_SIZE = 500
@@ -197,7 +211,22 @@ internal object OwnifySyncRunner {
             return OwnifySyncOutcome.NoAccess(HealthAccess.NO_PERMISSION)
         }
 
-        val payload = withContext(Dispatchers.Default) { IngestPayload.of(reading.records) }
+        // Once (31.0, R7): the meals before the usual week, for their
+        // caffeine. A failed read is tried again on the next run.
+        val history = if (env.status.read().mealHistorySent) {
+            null
+        } else {
+            try {
+                env.readMeals(to.minus(MEAL_HISTORY), from)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        val records = if (history == null) reading.records else history.records + reading.records
+        val payload = withContext(Dispatchers.Default) { IngestPayload.of(records) }
 
         // Nothing to send is still sent: the server records that the phone
         // synced, and answers "0 written" rather than the app guessing it.
@@ -213,6 +242,11 @@ internal object OwnifySyncRunner {
 
                 is OwnifyResult.Failure -> return OwnifySyncOutcome.SendFailed(result, index, batches.size)
             }
+        }
+
+        // Sent — unless meals may not be read yet: then on a later run.
+        if (history != null && history.notGranted.isEmpty()) {
+            env.status.write(env.status.read().copy(mealHistorySent = true))
         }
 
         return OwnifySyncOutcome.Synced(
@@ -299,6 +333,9 @@ internal class AndroidSyncEnvironment(context: Context) : OwnifySyncEnvironment 
 
     override suspend fun read(from: Instant, to: Instant): HealthConnectSyncReader.Reading =
         HealthConnectSyncReader(HealthConnectClient.getOrCreate(app)).read(IngestPayload.TYPES, from, to)
+
+    override suspend fun readMeals(from: Instant, to: Instant): HealthConnectSyncReader.Reading =
+        HealthConnectSyncReader(HealthConnectClient.getOrCreate(app)).read(listOf(NutritionRecord::class), from, to)
 
     /** Whether Ownify is on screen: Health Connect reads freely for an app in the foreground. */
     private fun inForeground(): Boolean {

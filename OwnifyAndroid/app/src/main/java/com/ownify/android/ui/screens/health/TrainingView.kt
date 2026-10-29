@@ -110,11 +110,11 @@ private const val FLICK_MS = 350L
  */
 /** [heartEvidence]: how accurate a wearable's heart rate is — on Training's own page, not on a session's. */
 @Composable
-fun TrainingViewContent(view: TrainingView, heartEvidence: Evidence? = null) {
+fun TrainingViewContent(view: TrainingView, heartEvidence: Evidence? = null, intensityEvidence: Evidence? = null) {
     val charts = view.charts.associateBy { it.id }
     TrainingTop(view.sessions, charts[view.perDay])
     AreaChartsGrid("training", view.grid.mapNotNull { charts[it] })
-    HeartCard(view.heart, heartEvidence)
+    HeartCard(view.heart, listOf(heartEvidence, intensityEvidence))
     AreaChartsGrid("training", view.lower.mapNotNull { charts[it] })
 }
 
@@ -223,7 +223,7 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
  * of daily averages; the zones named under it.
  */
 @Composable
-private fun HeartCard(heart: HeartChart, evidence: Evidence?) {
+private fun HeartCard(heart: HeartChart, evidence: List<Evidence?>) {
     var selected by rememberSaveable { mutableStateOf(heart.defaultKey) }
     var day by rememberSaveable { mutableIntStateOf(0) }
     val last = heart.days.lastIndex

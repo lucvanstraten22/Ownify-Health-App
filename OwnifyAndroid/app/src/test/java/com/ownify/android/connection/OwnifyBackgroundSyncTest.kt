@@ -64,6 +64,8 @@ class OwnifyBackgroundSyncTest {
         TestSyncEnvironment.access = HealthAccess.AVAILABLE
         TestSyncEnvironment.records = SyncFixtures.day("bg")
         TestSyncEnvironment.reads = 0
+        TestSyncEnvironment.meals = emptyList()
+        TestSyncEnvironment.mealReads.clear()
         OwnifySyncRunner.environment = { TestSyncEnvironment }
 
         MemoryTokenStorage.clear()
@@ -408,6 +410,39 @@ class OwnifyBackgroundSyncTest {
         assertTrue("the next success does", status().lastSuccessAt!!.isAfter(first))
         assertEquals(OwnifySyncOutcomeKind.SYNCED, status().lastOutcome)
         assertEquals("the screen sees the same", status(), OwnifySync.record)
+    }
+
+    // ----------------------------- 11. the meals before the week, once (31.0)
+
+    @Test
+    fun `11 - the first sync also sends the 30 days of meals before the week, once - for their caffeine`() {
+        paired()
+        TestSyncEnvironment.meals = SyncFixtures.day("history").filter { it is androidx.health.connect.client.records.NutritionRecord }
+
+        assertEquals(ListenableWorker.Result.success(), runWorker())
+        val (from, to) = TestSyncEnvironment.mealReads.single()
+        assertEquals("the 30 days up to the usual 7", java.time.Duration.ofDays(23), java.time.Duration.between(from, to))
+        val records = server.ingests.single().body.getJSONArray("records")
+        val ids = (0 until records.length()).map { records.getJSONObject(it).getJSONObject("metadata").getString("id") }
+        assertTrue("the older meal goes along with the week", ids.containsAll(listOf("history-lunch", "bg-lunch")))
+        assertTrue(status().mealHistorySent)
+
+        // Never again: the next sync is the usual week only.
+        assertEquals(ListenableWorker.Result.success(), runWorker())
+        assertEquals(1, TestSyncEnvironment.mealReads.size)
+    }
+
+    @Test
+    fun `11b - a sync that fails to send tries the meals again next time`() {
+        paired()
+        TestSyncEnvironment.api = OwnifyApi("http://127.0.0.1:1/")
+        runWorker()
+        assertFalse(status().mealHistorySent)
+
+        TestSyncEnvironment.api = OwnifyApi(server.url)
+        runWorker()
+        assertEquals(2, TestSyncEnvironment.mealReads.size)
+        assertTrue(status().mealHistorySent)
     }
 
     // ---------------------------------------------- what the worker decides

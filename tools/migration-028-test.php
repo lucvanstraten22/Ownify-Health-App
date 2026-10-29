@@ -10,8 +10,9 @@
  *     the consent columns, and no Apple Health row;
  *   - the rollback takes it back to before 028 (nobody answered the consent),
  *     Apple Health row included;
- *   - 028 over that: every piece 1, 17 sources and 25 claims, and a second
- *     import changes nothing;
+ *   - 028 over that: every piece 1, the registry of config/research.php
+ *     (since 31.0 its seed carries the sources approved later too), and a
+ *     second import changes nothing;
  *   - the Apple Health row stays while a record refers to it, and goes once
  *     nothing does;
  *   - tools/research-registry.php --check agrees with the database, finds a
@@ -83,8 +84,10 @@ try {
     [$code, $out] = import($root . '/database/schema.sql');
     check('schema.sql imports', $code === 0, $out);
     check('a fresh install has the four tables', $tables() === 4);
-    check('… the registry: 17 sources, 25 claims', (int) $val('SELECT COUNT(*) FROM research_sources') === 17
-        && (int) $val('SELECT COUNT(*) FROM research_claims') === 25);
+    $registry = require $root . '/config/research.php';
+    check('… the registry: every source and claim of config/research.php (' . count($registry['sources']) . ', ' . count($registry['claims']) . ')',
+        (int) $val('SELECT COUNT(*) FROM research_sources') === count($registry['sources'])
+        && (int) $val('SELECT COUNT(*) FROM research_claims') === count($registry['claims']));
     check('… the consent columns', (int) $val("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE()
         AND table_name = 'user_profiles' AND column_name LIKE 'ai_insights_consent%'") === 3);
     check('… and no Apple Health', (int) $val("SELECT COUNT(*) FROM data_sources WHERE code = 'apple_health'") === 0);

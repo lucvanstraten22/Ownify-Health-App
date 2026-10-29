@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 30.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 31.0'],
             ],
         ],
     ],
@@ -562,7 +562,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 30.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 31.0'],
                     ],
                 ],
 

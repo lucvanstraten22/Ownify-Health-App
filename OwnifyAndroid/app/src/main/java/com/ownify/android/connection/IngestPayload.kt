@@ -198,6 +198,8 @@ internal object IngestPayload {
             .putGrams("dietaryFiber", r.dietaryFiber)
             .putGrams("sugar", r.sugar)
             .putGrams("sodium", r.sodium)
+            // 31.0: caffeine, for combined insights (C17); the server keeps mg.
+            .putGrams("caffeine", r.caffeine)
 
     /** Water drunk over an interval, in litres (Voeding's Water). */
     private fun hydration(r: HydrationRecord): JSONObject =

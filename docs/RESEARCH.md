@@ -9,7 +9,8 @@ does with the claims is in [INSIGHTS.md](INSIGHTS.md).
 ## The rule
 
 **Every source was approved by the owner, one by one, before it was used**
-(27 October 2026: the seventeen below). A source that is not in the registry,
+(27 October 2026: the seventeen below; 28 October 2026: forty more, for the
+combined insights and the advice by age in 31.0). A source that is not in the registry,
 or not `approved`, supports nothing: no insight, no reference value, no label.
 Adding one is a change to `config/research.php` that the owner approves first.
 Never invent a source, a finding, a link or a number; a claim's numbers are
@@ -21,7 +22,7 @@ the source's own.
 | --- | --- |
 | The reviewed record — sources and claims, in Dutch | `config/research.php` |
 | The English of every Dutch text in it | `lang/en/research.php` |
-| What the engine reads at runtime | `research_sources`, `research_claims` (migration 028) |
+| What the engine reads at runtime | `research_sources`, `research_claims` (migration 028; 029 brings the 31.0 rows) |
 | Ownify's own copies of CC BY PDFs, with their attribution | `assets/research/` (its `README.md`) |
 | Reading, checking, hashing, the detail | `includes/research.php` |
 | Keeping the four in step | `tools/research-registry.php` |
@@ -75,6 +76,57 @@ insights that used it, and supports nothing new.
 | NUT-04 | Frankenfield et al., predictive equations for resting metabolic rate (2005) | systematic review | en | link (subscription) |
 | NUT-05 | Jäger et al., ISSN position stand: protein and exercise (2017) | position stand | en | **hosted** (CC BY 4.0) |
 | BOD-01 | WHO, *Obesity and overweight* fact sheet | official fact sheet | en | link (web page) |
+
+### The forty added for 31.0
+
+For the combined insights ([CORRELATIONS.md](CORRELATIONS.md)) — exercise
+and sleep (XSA), sleep and performance (XSP), sleep and food (XSN), training
+and the heart (XTH), nutrient timing (XNT), training load (TRN), the method
+(MTH) — and for advice by age (AGE). None may be hosted or framed: each opens
+at its publisher (`link`).
+
+| Code | Publication | Kind | Language | PDF |
+| --- | --- | --- | --- | --- |
+| XSA-01 | Kredlow MA et al., *The effects of physical activity on sleep: a meta-analytic review* (2015) | systematic review | en | link |
+| XSA-02 | Kline CE et al., *Physical activity and sleep: An updated umbrella review of the 2018 Physical Activity Guidelines Advisory Committee report* (2021) | umbrella review | en | link |
+| XSA-03 | Atoui S et al., *Daily associations between sleep and physical activity: A systematic review and meta-analysis* (2021) | systematic review | en | link |
+| XSA-04 | Stutz J et al., *Effects of Evening Exercise on Sleep in Healthy Participants: A Systematic Review and Meta-Analysis* (2019) | systematic review | en | link |
+| XSA-05 | Frimpong E et al., *The effects of evening high-intensity exercise on sleep in healthy adults: A systematic review and meta-analysis* (2021) | systematic review | en | link |
+| XSA-06 | Leota J et al., *Dose-response relationship between evening exercise and sleep* (2025) | observational study | en | link |
+| XSA-08 | Kovacevic A et al., *The effect of resistance exercise on sleep: A systematic review of randomized controlled trials* (2018) | systematic review | en | link |
+| XSP-01 | Craven J et al., *Effects of Acute Sleep Loss on Physical Performance: A Systematic and Meta-Analytical Review* (2022) | systematic review | en | link |
+| XSP-03 | Walsh NP et al., *Sleep and the athlete: narrative review and 2021 expert consensus recommendations* (2021) | consensus | en | link |
+| XSN-01 | Al Khatib HK et al., *The effects of partial sleep deprivation on energy balance: a systematic review and meta-analysis* (2017) | systematic review | en | link |
+| XSN-02 | Fenton S et al., *The influence of sleep health on dietary intake: a systematic review and meta-analysis of intervention studies* (2021) | systematic review | en | link |
+| XSN-05 | Gardiner C et al., *The effect of caffeine on subsequent sleep: A systematic review and meta-analysis* (2023) | systematic review | en | link |
+| XTH-01 | Stanley J et al., *Cardiac parasympathetic reactivation following exercise: implications for training prescription* (2013) | review | en | link |
+| XTH-02 | Bellenger CR et al., *Monitoring Athletic Training Status Through Autonomic Heart Rate Regulation: A Systematic Review and Meta-Analysis* (2016) | systematic review | en | link |
+| XTH-03 | Plews DJ et al., *Training adaptation and heart rate variability in elite endurance athletes: opening the door to effective monitoring* (2013) | review | en | link |
+| XTH-04 | Buchheit M, *Monitoring training status with HR measures: do all roads lead to Rome?* (2014) | review | en | link |
+| XTH-05 | Altini M & Plews D, *What Is behind Changes in Resting Heart Rate and Heart Rate Variability? A Large-Scale Analysis of Longitudinal Measurements Acquired in Free-Living* (2021) | observational study | en | link |
+| XNT-01 | Kerksick CM et al., *International society of sports nutrition position stand: nutrient timing* (2017) | position stand | en | link |
+| TRN-01 | Impellizzeri FM et al., *Acute:Chronic Workload Ratio: Conceptual Issues and Fundamental Pitfalls* (2020) | methods | en | link |
+| TRN-02 | Kellmann M et al., *Recovery and Performance in Sport: Consensus Statement* (2018) | consensus | en | link |
+| BOD-02 | Rubino F et al., *Definition and diagnostic criteria of clinical obesity* (2025) | consensus | en | link |
+| BOD-03 | Turicchi J et al., *Weekly, seasonal and holiday body weight fluctuation patterns among individuals engaged in a European multi-centre behavioural weight loss maintenance intervention* (2020) | observational study | en | link |
+| ACT-05 | Bull FC et al., *World Health Organization 2020 guidelines on physical activity and sedentary behaviour* (2020) | guideline | en | link |
+| ACT-07 | RIVM, VZinfo.nl, *Bewegen: Verantwoording, definities* (2026) | definitions | nl | link |
+| NUT-07 | Gezondheidsraad, *Richtlijnen goede voeding: eiwitbronnen en voedingspatronen 2025* (2025) | guideline | nl | link |
+| NUT-08 | Voedingscentrum, *Vocht* (2026) | official health information | nl | link |
+| HRT-01 | Zhang D et al., *Resting heart rate and all-cause and cardiovascular mortality in the general population: a meta-analysis* (2016) | meta-analysis | en | link |
+| HRT-02 | Shaffer F & Ginsberg JP, *An Overview of Heart Rate Variability Metrics and Norms* (2017) | review | en | link |
+| MEA-02 | Stone JD et al., *Assessing the Accuracy of Popular Commercial Technologies That Measure Resting Heart Rate and Heart Rate Variability* (2021) | validation study | en | link |
+| MTH-01 | Benjamini Y & Hochberg Y, *Controlling the false discovery rate: a practical and powerful approach to multiple testing* (1995) | methods | en | link |
+| MTH-02 | Daza EJ, *Causal Analysis of Self-tracked Time Series Data Using a Counterfactual Framework for N-of-1 Trials* (2018) | methods | en | link |
+| MTH-03 | McDonald S et al., *The state of the art and future opportunities for using longitudinal n-of-1 methods in health behaviour research: a systematic literature overview* (2017) | methods | en | link |
+| AGE-01 | Tanaka H et al., *Age-predicted maximal heart rate revisited* (2001) | systematic review | en | link |
+| AGE-02 | Garber CE et al., *American College of Sports Medicine position stand. Quantity and quality of exercise for developing and maintaining cardiorespiratory, musculoskeletal, and neuromotor fitness in apparently healthy adults: guidance for prescribing exercise* (2011) | position stand | en | link |
+| AGE-03 | Ohayon MM et al., *Meta-analysis of quantitative sleep parameters from childhood to old age in healthy individuals: developing normative sleep values across the human lifespan* (2004) | systematic review | en | link |
+| AGE-04 | Bauer J et al., *Evidence-based recommendations for optimal dietary protein intake in older people: a position paper from the PROT-AGE Study Group* (2013) | consensus | en | link |
+| AGE-05 | Deutz NE et al., *Protein intake and exercise for optimal muscle function with aging: recommendations from the ESPEN Expert Group* (2014) | consensus | en | link |
+| AGE-06 | Moore DR et al., *Protein ingestion to stimulate myofibrillar protein synthesis requires greater relative protein intakes in healthy older versus younger men* (2015) | pooled analysis | en | link |
+| AGE-07 | Voss A et al., *Short-term heart rate variability—influence of gender and age in healthy subjects* (2015) | observational study | en | link |
+| AGE-08 | Fernandes JFT et al., *Advancing Age Is Not Associated With Greater Exercise-Induced Muscle Damage: A Systematic Review, Meta-Analysis, and Meta-Regression* (2025) | systematic review | en | link |
 
 ## Claims
 
@@ -203,14 +255,17 @@ A detail's id is the claim version and the steps its label stands lower,
    gets a higher `version`.
 3. Add the English for every new Dutch text to `lang/en/research.php`, then
    `php tools/i18n-build.php` (and `--check`).
-4. `php tools/research-registry.php --write` puts the seed into migration 028
-   and `database/schema.sql`.
+4. `php tools/research-registry.php --write` puts the seed into migrations
+   028 and 029 and `database/schema.sql`.
 5. `php tools/research-registry.php --check` — the file, the English, both
    seeds and (with `DB_NAME`) the database agree, column by column.
 6. On a running server: `php tools/research-registry.php --sync`, in one
    transaction — sources added or updated (withdrawn when no longer in the
    file), claim versions added, other versions retired; a claim changed
-   without a higher version is refused.
+   without a higher version is refused. Importing migration 029 does the
+   same for 31.0's registry (its seed, then older claim versions retired), so
+   that needs no `--sync`.
 
-`tools/migration-028-test.php` builds a throwaway database, applies 028 and
-its rollback, and checks the registry against it.
+`tools/migration-028-test.php` and `tools/migration-029-test.php` build a
+throwaway database, apply the migration and its rollback, and check the
+registry against it.

@@ -77,9 +77,13 @@ $y      = static fn (array $p): string => (string) json_encode((object) ['heart'
 
     <?php /* How accurate a wearable's heart rate is (docs/INSIGHTS.md) — on
              Training's own page, not on a session's, which is a page deeper. */
-    $reference = !empty($data['heart_research']) ? ($data['insights']['references']['training.measurement'] ?? null) : null;
-    if ($filled && $reference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
-        component('research-evidence', $data + ['evidence' => $reference]);
+    $references = !empty($data['heart_research']) ? array_values(array_filter([
+        $data['insights']['references']['training.measurement'] ?? null,
+        /* 31.0 (D9): what "moderate" and "hard" are at your age (AGE-01). */
+        $data['insights']['references']['training.intensity'] ?? null,
+    ])) : [];
+    if ($filled && $references !== [] && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+        component('research-evidence', $data + ['evidences' => $references]);
     } ?>
 
     <?php if ($filled): ?>

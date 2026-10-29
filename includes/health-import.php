@@ -415,8 +415,10 @@ if (!function_exists('health_import_records')) {
         );
 
         if ($entryId !== null) {
+            /* caffeine (mg, 31.0): only once migration 029 has its type —
+               before that health_import_metric() leaves it out. */
             $nutrients = ['water', 'energy', 'protein', 'carbs', 'fat',
-                          'saturated_fat', 'fibre', 'sugar', 'sodium'];
+                          'saturated_fat', 'fibre', 'sugar', 'sodium', 'caffeine'];
 
             foreach ($nutrients as $nutrient) {
                 if (!isset($r[$nutrient]) || $r[$nutrient] === null || $r[$nutrient] === '') {

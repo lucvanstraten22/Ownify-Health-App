@@ -6,7 +6,10 @@ import android.content.Intent
 import android.os.Build
 import android.os.Environment
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -100,6 +103,36 @@ fun ResearchEvidence(evidence: Evidence?, modifier: Modifier = Modifier) {
     }
     Box(modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
         GlassChip(evidence.label, chosen = false, onClick = open)
+    }
+}
+
+/**
+ * Several chips side by side (31.0, `$data['evidences']`): e.g. "Bekijk
+ * onderzoek" and "Bij jouw leeftijd" under one card, 8 apart, wrapping on a
+ * narrow phone. Those without a detail to open are left out.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ResearchEvidence(evidences: List<Evidence?>, modifier: Modifier = Modifier) {
+    val research = LocalResearch.current
+    val shown = evidences.filterNotNull().filter { research.detail(it.research) != null }
+    if (shown.isEmpty()) return
+    if (shown.size == 1) {
+        ResearchEvidence(shown.first(), modifier)
+        return
+    }
+    val shell = LocalShell.current
+    FlowRow(
+        modifier.fillMaxWidth().padding(top = Ownify.Space2),
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
+        verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
+    ) {
+        shown.forEach { evidence ->
+            GlassChip(evidence.label, chosen = false, onClick = {
+                val over = shell.detail?.takeIf { shell.detailShown }
+                shell.openDetail(Detail.Research(evidence.research, over))
+            })
+        }
     }
 }
 

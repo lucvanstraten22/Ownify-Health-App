@@ -73,6 +73,7 @@ return [
         'fibre',
         'sugar',
         'sodium',
+        'caffeine',   // 31.0, for combined insights
     ],
 
     /* App package names, most trusted first. Empty: the rule above decides.

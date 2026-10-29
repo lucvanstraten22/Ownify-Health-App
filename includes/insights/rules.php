@@ -255,6 +255,12 @@ if (!function_exists('insights_candidates')) {
             $week   = $finding['moderate_minutes_week'];
             $target = (int) (is_array($week) ? $week[0] : $week);
             $value  = (float) $a['minutes_7'];
+            /* The WHO's mix (31.0, D9): a hard minute counts as two
+               moderate ones; hard is the person's own, by age. */
+            if (!empty($finding['vigorous_counts_double'])) {
+                $per    = 'week_who';
+                $value += (float) ($a['hard_minutes_7'] ?? 0);
+            }
         } else {
             return null;
         }
@@ -264,7 +270,7 @@ if (!function_exists('insights_candidates')) {
             'minutes'  => (int) round($value),
             'target'   => $target,
             'workouts' => (int) $a['workouts_7'],
-        ], 1.0, $config);
+        ] + ($per === 'week_who' ? ['hard' => (int) round((float) ($a['hard_minutes_7'] ?? 0))] : []), 1.0, $config);
     }
 
     /** Days with recorded strength training against the Beweegrichtlijn. */
@@ -277,7 +283,9 @@ if (!function_exists('insights_candidates')) {
         }
 
         $claim = insights_claim_for($config['rules']['activity.strength']['claims'], $facts['profile']['age'], $claims);
-        $target = $claim['finding']['strength_bone_per_week'] ?? null;
+        /* From 65 (31.0, D9): the WHO's balance and strength on 3 days. */
+        $older  = isset($claim['finding']['balance_strength_days_week']);
+        $target = $older ? $claim['finding']['balance_strength_days_week'] : ($claim['finding']['strength_bone_per_week'] ?? null);
         if ($claim === null || $target === null) {
             return null;
         }
@@ -285,7 +293,7 @@ if (!function_exists('insights_candidates')) {
         return insights_candidate('activity.strength', $a['strength_days_7'] < (int) $target ? 'below' : 'reached', $claim, [
             'days'   => (int) $a['strength_days_7'],
             'target' => (int) $target,
-        ], 1.0, $config);
+        ] + ($older ? ['per' => 'older'] : []), 1.0, $config);
     }
 
     /**

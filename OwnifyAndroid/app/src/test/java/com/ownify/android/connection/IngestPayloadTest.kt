@@ -85,6 +85,15 @@ class IngestPayloadTest {
     }
 
     @Test
+    fun `a meal - its nutrients in grams, caffeine too (31_0)`() {
+        record("p-lunch").let {
+            assertEquals("Nutrition", it.getString("recordType"))
+            assertEquals(0.8, it.getJSONObject("sodium").getDouble("grams"), 1e-9)
+            assertEquals(0.095, it.getJSONObject("caffeine").getDouble("grams"), 1e-9)
+        }
+    }
+
+    @Test
     fun `the five types added in 13_0 - in Health Connect's own names and units`() {
 
         record("p-total").let {

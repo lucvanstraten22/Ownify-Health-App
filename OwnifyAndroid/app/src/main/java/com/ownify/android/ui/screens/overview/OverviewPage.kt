@@ -446,15 +446,36 @@ private val DOT = 7.dp
  */
 @Composable
 internal fun InsightsCard(insights: Insights, slot: String? = null) {
+    // 31.0 (docs/CORRELATIONS.md): on Overzicht, with migration 029, the four
+    // combined insights; the head opens Inzichten, a row still being gathered
+    // (Nog onduidelijk) is as quiet as an empty one.
+    val combined = slot == null && insights.combined
     val items = if (slot == null) insights.items else listOfNotNull(insights.context[slot])
-    if (items.isEmpty()) return
-    val dimmed = items.all { it.state == "empty" }
+    if (items.isEmpty() && !combined) return
+    val dimmed = if (combined) insights.state != "filled" else items.all { it.state == "empty" }
     JCard(Modifier.fillMaxWidth().reveal(), style = if (dimmed) CardStyle.Dimmed else CardStyle.Default, highlight = !dimmed) {
-        CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null }, dimmed = dimmed)
+        if (combined && insights.open != null) {
+            val shell = LocalShell.current
+            val interaction = remember { MutableInteractionSource() }
+            // `.cm-head`: the head is the way in — the whole row, with a chevron.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .press(interaction)
+                    .clickable(interaction, indication = null, role = Role.Button) { shell.openDetail(Detail.Insights) }
+                    .semantics(mergeDescendants = true) { },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.weight(1f)) { CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle, dimmed = dimmed) }
+                JIcon(OwnifyIcons.chevronRight, Modifier.padding(bottom = Ownify.Space4), size = 16.dp, color = Ownify.TextFaint)
+            }
+        } else {
+            CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null }, dimmed = dimmed)
+        }
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             items.forEachIndexed { index, item ->
                 val accent = Accent.of(item.accent).color
-                val empty = item.state == "empty"
+                val empty = if (combined) item.state != "filled" else item.state == "empty"
                 // `.insights__item`: a Row inside the card.
                 val row = if (!dimmed) Modifier
                     .insetRow()
@@ -477,7 +498,12 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
                     Column(Modifier.weight(1f)) {
                         T(item.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
                         T(item.body, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
-                        if (!empty) ResearchEvidence(item.evidence)
+                        if (combined) {
+                            // Its label, and "only your own data" where no research is behind it.
+                            T(listOfNotNull(item.tierLabel.takeIf { it.isNotEmpty() }, item.own).joinToString(" · "), JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+                        } else if (!empty) {
+                            ResearchEvidence(item.evidence)
+                        }
                     }
                 }
             }

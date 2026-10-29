@@ -166,6 +166,11 @@ $bubble = static fn (?string $verdict, ?string $text): string => $verdict === nu
                                                         <?php else: ?>
                                                             <span class="nutrition-row__extra"><?= e($d['verdict_text']) ?></span>
                                                         <?php endif; ?>
+                                                        <?php /* 31.0 (D9): why sugar has no verdict (free sugars, NUT-01). */
+                                                        $detailReference = $data['insights']['references']['nutrition.' . $d['key']] ?? null;
+                                                        if ($detailReference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+                                                            component('research-evidence', $data + ['evidence' => $detailReference]);
+                                                        } ?>
                                                     </li>
                                                 <?php endforeach; ?>
                                             </ul>
@@ -187,6 +192,12 @@ $bubble = static fn (?string $verdict, ?string $text): string => $verdict === nu
             <?php if ($day['kcal'] !== null): ?><p class="nutrition-day__hint"><?= e($comp['hint']) ?></p><?php endif; ?>
         </div>
     <?php endforeach; ?>
+
+    <?php /* 31.0 (D9): how the energy target in the ring is estimated (NUT-04). */
+    $energyReference = $data['insights']['references']['nutrition.energy'] ?? null;
+    if ($energyReference !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+        component('research-evidence', $data + ['evidence' => $energyReference]);
+    } ?>
 
     <?php /* The days for the script: each one's name and cijfer, and the slider's words. */ ?>
     <script type="application/json" data-nutrition-days><?= json_encode([

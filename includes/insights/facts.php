@@ -160,6 +160,17 @@ if (!function_exists('insights_facts')) {
         [$week]   = health_workouts_counted(health_workout_records($userId, $fmt($to - 7 * 86400), $fmt($to)));
         [$month]  = health_workouts_counted(health_workout_records($userId, $fmt($to - 86400 * (int) $d['workout_history_days']), $fmt($to)));
 
+        /* Hard minutes, for the WHO's mix (31.0, D9): hard as the training
+           pages call it, against the maximal heart rate for the person's
+           age (or their own, when higher). */
+        $hrMax = health_hr_max($userId, $month);
+        $hard  = 0.0;
+        foreach ($week as $workout) {
+            if ((health_workout_effort($workout, $hrMax)['class'] ?? null) === 'hard') {
+                $hard += (float) $workout['minutes'];
+            }
+        }
+
         $strengthDays = [];
         foreach ($week as $workout) {
             if (insights_is_strength((string) $workout['type'], (array) $d['strength_types'])) {
@@ -173,6 +184,7 @@ if (!function_exists('insights_facts')) {
             'steps_avg'       => $steps === [] ? null : array_sum($steps) / count($steps),
             'workouts_7'      => count($week),
             'minutes_7'       => (float) array_sum(array_map(static fn ($w) => (float) $w['minutes'], $week)),
+            'hard_minutes_7'  => $hard,
             'strength_days_7' => count($strengthDays),
             'workouts_28'     => count($month),
         ];

@@ -112,10 +112,10 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
             // of the numbers and the bar of stages it shows.
             when (val view = area.view) {
                 is SleepView -> {
-                    SleepNightCard(view.night, references["sleep.stages"])
+                    SleepNightCard(view.night, references["sleep.stages"], references["sleep.age"])
                     AreaChartsGrid(area.id, view.charts)
                 }
-                is TrainingView -> TrainingViewContent(view, references["training.measurement"])
+                is TrainingView -> TrainingViewContent(view, references["training.measurement"], references["training.intensity"])
                 is NutritionView -> NutritionViewContent(view, references)
                 else -> {
                     MetricTiles(area.highlights)

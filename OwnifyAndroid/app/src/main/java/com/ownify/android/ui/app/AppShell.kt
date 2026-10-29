@@ -154,6 +154,8 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             Detail.Challenges -> data.challenges.available
             is Detail.Challenge -> data.challenges.view(detail.id) != null
             is Detail.Research -> data.research.detail(detail.id) != null
+            Detail.Insights -> data.correlations.available
+            is Detail.InsightPage -> data.correlations.detail(detail.id) != null
         }
         if (!exists) shell.closeDetail()
     }
@@ -314,17 +316,19 @@ private fun Rail(shell: ShellState, data: AppData, screens: ShellScreens, modifi
 
 /**
  * The detail layer: above the rail, below the dock; slides in from the
- * right. A detail opened over another ([ShellState.under]: Slaap's charts,
- * over Slaap) slides in over it, which stands open beneath, as it was left.
+ * right. A detail opened over another ([ShellState.beneath]: Slaap's charts,
+ * over Slaap; an insight's research over its page, over Inzichten) slides in
+ * over it, which stands open beneath, as it was left.
  */
 @Composable
 private fun DetailLayer(shell: ShellState, data: AppData, screens: ShellScreens) {
     val detail = shell.detail ?: return
-    // One call site for both, keyed: the detail beneath keeps all it holds while one opens over it.
-    listOfNotNull(shell.under, detail).forEach { d ->
+    val beneath = shell.beneath.toList()
+    // One call site for all, keyed: a detail beneath keeps all it holds while one opens over it.
+    (beneath.map { it.detail } + detail).forEachIndexed { i, d ->
         key(d.key) {
-            if (d == detail) DetailPage(shell, data, screens, d, shell.detailScroll, shell.detailProgress, live = shell.detailShown)
-            else DetailPage(shell, data, screens, d, shell.underScroll, progress = 1f, live = false)
+            if (i == beneath.size) DetailPage(shell, data, screens, d, shell.detailScroll, shell.detailProgress, live = shell.detailShown)
+            else DetailPage(shell, data, screens, d, beneath[i].scroll, progress = 1f, live = false)
         }
     }
 }
@@ -346,6 +350,9 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
         is Detail.Challenge -> Accent.of(data.challenges.view(detail.id)?.accent)
         // `data-accent="health"`, as the website's.
         is Detail.Research -> Accent.HEALTH
+        // pages/insights.php's `data-accent="health"`; an insight's page its area's.
+        Detail.Insights -> Accent.HEALTH
+        is Detail.InsightPage -> Accent.of(data.correlations.detail(detail.id)?.accent)
     }
     val ground = remember(detail.key, accent) { GroundPlacement(if (detail is Detail.HealthArea) Ground.areaDetail(accent) else Ground.detail(accent)) }
     val visibility = remember(detail.key) { Visibility() }

@@ -204,7 +204,7 @@ without eventually duplicating them.
 | `RespiratoryRate` | metric `respiratory_rate` | |
 | `SkinTemperature`, `BodyTemperature` | metric `skin_temp` | |
 | `Hydration` | metric `water` | litres; sent by Ownify for Android since 29.0 |
-| `Nutrition` | a meal + its nutrients | sodium grams → milligrams |
+| `Nutrition` | a meal + its nutrients | sodium and caffeine grams → milligrams (caffeine since 31.0: metric `caffeine`, migration 029; docs/CORRELATIONS.md) |
 | `Weight` | measurement `weight` | kg; sent by Ownify for Android since 29.0 |
 | `Height` | measurement `height` | metres → cm; sent by Ownify for Android since 29.0 |
 | `BodyFat` | measurement `body_fat_pct` | sent by Ownify for Android since 29.0 |
@@ -290,6 +290,9 @@ is one night.
    gets corrected, and re-sending is safe by design (the server upserts on
    `metadata.id` and counts overlapping apps once). A changes token could
    later make each run smaller; it would not change what the server stores.
+   Once, on the first sync after 31.0, the meals of the 30 days before that
+   week go along too, for their caffeine (`mealHistorySent`; a run that fails
+   to send, or may not read meals yet, tries again next time).
 4. Reading while the app is closed needs Health Connect's own
    `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND`, which the user
    grants separately and which exists only where Health Connect reports

@@ -87,7 +87,8 @@ object SyncFixtures {
             protein = Mass.grams(30.0),
             totalCarbohydrate = Mass.grams(40.0),
             totalFat = Mass.grams(15.0),
-            sodium = Mass.grams(0.8)
+            sodium = Mass.grams(0.8),
+            caffeine = Mass.grams(0.095)
         )
     )
 }

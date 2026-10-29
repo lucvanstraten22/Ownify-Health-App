@@ -44,7 +44,7 @@ return [
 
     /* Raise when a rule or a text changes meaning: the next load works the
        day out again instead of reusing what was stored under the old one. */
-    'engine_version' => '1',
+    'engine_version' => '2',   // 2: 31.0, the age proposal (D9) for activity
 
     /* ------------------------------------------------------------ lifecycle */
     'lifecycle' => [
@@ -110,13 +110,16 @@ return [
         ],
         'activity.minutes' => [
             'slot' => 'training', 'applicability' => 'proxy',
-            'claims' => [[4, 17, 'activity.gr.youth'], [18, null, 'activity.gr.adults']],
+            /* 31.0 (D9): 18–64 the WHO amounts, a hard minute counting as
+               two — "hard" measured at the person's own age (AGE-01/02). */
+            'claims' => [[4, 17, 'activity.gr.youth'], [18, 64, 'activity.who.adults'], [65, null, 'activity.gr.adults']],
             'relevance' => ['below' => 3, 'reached' => 1],
             'suggest' => ['below' => 'activity.who.some'],
         ],
         'activity.strength' => [
             'slot' => 'training', 'applicability' => 'proxy',
-            'claims' => [[4, 17, 'activity.gr.youth'], [18, null, 'activity.gr.adults']],
+            /* 31.0 (D9): from 65 the WHO's balance and strength on 3 days. */
+            'claims' => [[4, 17, 'activity.gr.youth'], [18, 64, 'activity.gr.adults'], [65, null, 'activity.who.older']],
             'relevance' => ['below' => 2, 'reached' => 1],
             'suggest' => ['below' => null],
         ],
@@ -177,6 +180,7 @@ return [
         /* The option beside every label chip; the page it opens is titled
            "Uit onderzoek blijkt" (config/research.php). */
         'research'   => 'Bekijk onderzoek',
+        'research_age' => 'Bij jouw leeftijd',   // 31.0: research about the person's age, beside another chip
         'evidence'   => 'Bewijskracht',
         'suggestion_note' => 'Altijd een suggestie, nooit een opdracht.',
         'withdrawn'  => 'Deze suggestie past niet meer bij je nieuwste gegevens.',
@@ -217,6 +221,9 @@ return [
                 /* %1$s minutes recorded (or per day), %2$d the guideline */
                 'below_week'   => 'Je legde de afgelopen 7 dagen %1$s minuten training vast. De Beweegrichtlijn noemt minstens %2$d minuten matig intensief bewegen per week. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.',
                 'reached_week' => 'Je legde de afgelopen 7 dagen %1$s minuten training vast: al minstens de %2$d minuten per week uit de Beweegrichtlijn, en dan telt Ownify alleen je vastgelegde trainingen.',
+                /* 18–64 (31.0): %1$s minutes with a hard minute counted twice, %2$d the WHO's, %3$s the hard ones */
+                'below_week_who'   => 'Je legde de afgelopen 7 dagen %1$s minuten training vast, met zware minuten dubbel geteld zoals de WHO doet (%3$s minuten waren zwaar). De WHO noemt per week minstens %2$d minuten matig intensief bewegen. Ook wandelen en fietsen tellen mee, en die ziet Ownify niet allemaal.',
+                'reached_week_who' => 'Je legde de afgelopen 7 dagen %1$s minuten training vast, met zware minuten dubbel geteld zoals de WHO doet (%3$s minuten waren zwaar): al minstens de %2$d minuten per week die de WHO noemt, en dan telt Ownify alleen je vastgelegde trainingen.',
                 'below_day'    => 'Je legde de afgelopen 7 dagen gemiddeld %1$s minuten training per dag vast. De Beweegrichtlijn noemt voor kinderen en jongeren elke dag minstens %2$d minuten bewegen. Ook buitenspelen en fietsen tellen mee, en die ziet Ownify niet allemaal.',
                 'reached_day'  => 'Je legde de afgelopen 7 dagen gemiddeld %1$s minuten training per dag vast: al minstens de %2$d minuten per dag uit de Beweegrichtlijn.',
             ],
@@ -224,6 +231,9 @@ return [
                 /* %1$d days with strength training, %2$d the guideline */
                 'below'   => 'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast. De Beweegrichtlijn noemt minstens %2$d keer per week spier- en botversterkende activiteiten.',
                 'reached' => 'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast: minstens de %2$d keer per week spier- en botversterkende activiteiten uit de Beweegrichtlijn.',
+                /* 65+ (31.0): the WHO's balance and strength */
+                'below_older'   => 'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast. Vanaf 65 jaar noemt de WHO op minstens %2$d dagen per week activiteiten voor balans en kracht. Balansoefeningen ziet Ownify meestal niet.',
+                'reached_older' => 'Je legde de afgelopen 7 dagen op %1$d dagen krachttraining vast: minstens de %2$d dagen per week met activiteiten voor balans en kracht die de WHO vanaf 65 jaar noemt.',
             ],
             'activity.steps' => [
                 /* %1$d days, %2$s average steps, %3$s reference, %4$s plateau low, %5$s plateau high */

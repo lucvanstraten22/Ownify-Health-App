@@ -382,6 +382,25 @@ class ScreenshotCapture {
 
     @Test fun scoreCompass() = detail("overview", Detail.ScoreCompass, "compass", 700, 1400, 2100)
 
+    // Combined insights (31.0, docs/CORRELATIONS.md): Inzichten, and an insight's page over it.
+    @Test fun insights() = detail("overview", Detail.Insights, "insights", 760, 1520)
+
+    @Test
+    fun insightPage() {
+        val id = data().correlations.groups.flatMap { it.rows }.firstOrNull()?.detail
+        assumeTrue("no combined insights in this state", id != null)
+        app { tab("overview") }
+        compose.runOnUiThread { shell.openDetail(Detail.Insights) }
+        settle()
+        compose.runOnUiThread { shell.openDetail(Detail.InsightPage(id!!)) }
+        settle()
+        shoot("insight")
+        listOf(760, 1520, 2280).forEachIndexed { i, px ->
+            scroll(px, detail = true)
+            shoot("insight-${i + 2}")
+        }
+    }
+
     /** A history card in each of its periods: the card brought into view — down to its hint — then 7 dagen … 1 jaar. */
     private fun periods(name: String, title: String) {
         compose.onNode(hasText(title)).performScrollTo()

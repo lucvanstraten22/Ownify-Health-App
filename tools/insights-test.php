@@ -121,7 +121,8 @@ try {
 section('Rules');
 
 $claims = research_claims();
-check('the registry is there: 25 active claims', count($claims) === 25);
+check('the registry is there: every claim of config/research.php active (' . count(research_config()['claims']) . ')',
+    count($claims) === count(research_config()['claims']));
 
 $cfg  = insights_config();
 $base = [
@@ -430,13 +431,17 @@ $data['auth'] = app_auth_account($ann);
 i18n_force('nl');
 $web = app_page_data($data, $ann);
 $app = app_state_payload(app_page_data($data, $ann));
-check('Overzicht: three rows; sleep, nutrition and training filled', count($web['insights']['items']) === 3
-    && array_column($web['insights']['items'], 'state') === ['filled', 'filled', 'filled']);
+/* 31.0 (D1): with migration 029 Overzicht shows combined insights
+   (tools/correlations-test.php); the area insights stay on their pages. */
+check('Overzicht: combined insights; sleep, nutrition and training each keep their own on their page',
+    ($web['insights']['combined'] ?? false) === true && count($web['insights']['items']) <= 4
+    && isset($web['insights']['context']['sleep'], $web['insights']['context']['nutrition'], $web['insights']['context']['training']));
 check('the app\'s state carries the very same insights, suggestion and research',
     json_encode($app['insights']) === json_encode(app_state_plain($web['insights']))
     && json_encode($app['recommendation']) === json_encode(app_state_plain($web['recommendation']))
     && json_encode($app['research']) === json_encode(app_state_plain($web['research'])));
-check('each page\'s own insight is the Overzicht\'s: the same id', ($web['insights']['context']['sleep']['id'] ?? 0) === $web['insights']['items'][0]['id']);
+check('each page\'s own insight is the stored one: the same id',
+    ($web['insights']['context']['sleep']['id'] ?? 0) === (int) (insights_today($ann, $now)['slots']['sleep']['id'] ?? -1));
 $ids = array_merge(array_column(array_filter($web['insights']['items'], static fn ($i) => $i['state'] === 'filled'), 'research'),
     array_column($web['insights']['references'], 'research'), [$web['insights']['context']['body']['research'] ?? null]);
 check('every "Bekijk onderzoek" opens a detail that is there', array_diff(array_filter($ids), array_keys($web['research']['details'])) === []);
@@ -447,8 +452,8 @@ check('a detail: finding, claim, source, year, strength, population, limitations
 check('no percentage or probability on any label', !preg_match('/\d\s*%/', json_encode(array_column(array_column($web['research']['details'], 'strength'), 'label'))));
 i18n_force('en');
 $en = app_page_data($data, $ann);
-check('in English: the same insights, in English, the numbers the English way', ($en['insights']['items'][0]['title'] ?? '') === 'Sleep duration'
-    && str_contains($en['insights']['items'][0]['body'], 'a night on average'));
+check('in English: the same insights, in English, the numbers the English way', ($en['insights']['context']['sleep']['title'] ?? '') === 'Sleep duration'
+    && str_contains($en['insights']['context']['sleep']['body'] ?? '', 'a night on average'));
 i18n_force('nl');
 
 /* ======================================================================
@@ -458,6 +463,9 @@ section('No AI service writes or rewords an insight (30.1)');
 check('everything above ran with a Gemini key and a stand-in answering — and the stand-in was never asked', requests() === []);
 $insightCode = '';
 foreach (glob($root . '/includes/insights/*.php') ?: [] as $file) {
+    $insightCode .= (string) file_get_contents($file);
+}
+foreach (glob($root . '/includes/correlations/*.php') ?: [] as $file) {
     $insightCode .= (string) file_get_contents($file);
 }
 $insightCode .= (string) file_get_contents($root . '/includes/insights.php');

@@ -82,6 +82,17 @@ sealed interface Detail {
         override val parent: Detail? get() = over
     }
 
+    /** Inzichten (pages/insights.php, 31.0): every combined insight, behind Overzicht's Nuttige inzichten. */
+    data object Insights : Detail {
+        override val key get() = "insights"
+    }
+
+    /** One combined insight on its own page (pages/insight-detail.php), over Inzichten. */
+    data class InsightPage(val id: String) : Detail {
+        override val key get() = "insight:$id"
+        override val parent: Detail get() = Insights
+    }
+
     /** The detail this one opens over, or null: it opens over the rail. */
     val parent: Detail? get() = null
 }
@@ -167,17 +178,22 @@ class ShellState(
     private var detailDrag: Drag? = null
     private var detailJob: Job? = null
 
-    /**
-     * The detail [detail] opened over (its [Detail.parent]), standing open
-     * under it, with the scroll it was left at — or null. Back, a swipe or
-     * the back pill return to it as it was; a tab closes both
-     * (detail-layer.js's `parent`).
-     */
-    var under by mutableStateOf<Detail?>(null)
-        private set
+    /** A detail standing open under the one in front, with the scroll it was left at. */
+    class Beneath(val detail: Detail, val scroll: ScrollState)
 
-    var underScroll by mutableStateOf(ScrollState(0))
-        private set
+    /**
+     * Every detail standing open under [detail], the lowest first: the one it
+     * opened over (its [Detail.parent]), and the one that opened over in
+     * turn — an insight's page over Inzichten, its research over that. Back,
+     * a swipe or the back pill return to the one just under it, as it was
+     * left; a tab closes them all (detail-layer.js's `parents`).
+     */
+    val beneath: List<Beneath> get() = stack
+
+    private val stack = mutableStateListOf<Beneath>()
+
+    /** The detail [detail] opened over, or null. */
+    val under: Detail? get() = stack.lastOrNull()?.detail
 
     // ------------------------------------------------- pull to sync
 
@@ -282,8 +298,8 @@ class ShellState(
             return
         }
         if (detail != null && detailShown) {
-            // The detail it opened over goes with it.
-            under = null
+            // The details it opened over go with it.
+            stack.clear()
             closeDetail()
         }
         goTo(id)
@@ -300,10 +316,9 @@ class ShellState(
         if (detailDrag != null) return
         val current = detail
         if (current == next && detailShown) return
-        // Over the detail in front, when it is this one's own.
-        if (current != null && detailShown && under == null && next.parent == current && detailJob?.isActive != true) {
-            under = current
-            underScroll = detailScroll
+        // Over the detail in front, when it is this one's own — and not one already standing open under it.
+        if (current != null && detailShown && next.parent == current && stack.none { it.detail == next } && detailJob?.isActive != true) {
+            stack.add(Beneath(current, detailScroll))
             detail = next
             detailScroll = ScrollState(0)
             detailProgress = 0f
@@ -386,12 +401,11 @@ class ShellState(
     /** A detail that has gone: back to the one it opened over, or off. */
     private fun landClosed(closing: Detail?) {
         if (detail != closing) return
-        val back = under
+        val back = stack.removeLastOrNull()
         if (back != null) {
             // Back to the detail it opened over, as it was left.
-            under = null
-            detail = back
-            detailScroll = underScroll
+            detail = back.detail
+            detailScroll = back.scroll
             detailProgress = 1f
             detailShown = true
             if (reduceMotion) fadeIn(Layer.Detail)

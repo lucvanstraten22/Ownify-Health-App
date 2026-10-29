@@ -1109,6 +1109,22 @@
     color: var(--text-muted);
 }
 
+/* Combined insights (31.0, docs/CORRELATIONS.md): a row's label line sits at
+   its foot, as the evidence chip does. Chart A on an insight's page is the
+   Scorekompas's rows with the meter in the page's own accent — the meter as
+   it is everywhere else — two groups, two rows. */
+.card--combined .insights__body > .card__meta { margin-top: var(--space-2); }
+/* The head is a button there (Community's way in): its two lines stay two. */
+.cm-head .card__eyebrow,
+.cm-head .card__meta { display: block; }
+/* A row that opens a publication is a link, and reads as the row it is. */
+a.settings-row { color: inherit; text-decoration: none; }
+.insight-chart .compass-rows { margin-bottom: var(--space-2); }
+.insight-chart .compass-row:first-child { padding-top: 0; }
+.insight-chart .compass-row .meter__fill {
+    background: linear-gradient(90deg, var(--accent), var(--accent-light)) right / calc(var(--meter-fill, 0) * 100%) 100% no-repeat, var(--accent);
+}
+
 /* --------------------------------------------------------------------------
    Research (docs/INSIGHTS.md): the evidence beside an insight — "Bekijk
    onderzoek" as the goal wizard's glass chip — and the detail it opens, the
@@ -1119,6 +1135,8 @@
    -------------------------------------------------------------------------- */
 .research-evidence {
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
     margin-top: var(--space-2);
 }
 

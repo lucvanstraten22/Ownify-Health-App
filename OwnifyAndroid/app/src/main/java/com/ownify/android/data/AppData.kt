@@ -37,7 +37,9 @@ data class AppData(
     /** The red dots (lib/notices.php): what waits for the person to do it. */
     val notices: Notices = Notices(),
     /** "Uit onderzoek blijkt" (docs/RESEARCH.md): every detail an evidence chip on these pages opens. */
-    val research: Research = Research.parse(null)
+    val research: Research = Research.parse(null),
+    /** Inzichten (docs/CORRELATIONS.md, 31.0): every combined insight and its page; empty before migration 029. */
+    val correlations: Correlations = Correlations.parse(null)
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -64,7 +66,8 @@ data class AppData(
                 i18n = I18n.parse(data.obj("i18n")),
                 challenges = Challenges.parse(data.obj("challenges")),
                 notices = Notices.parse(data.obj("notices")),
-                research = Research.parse(data.obj("research"))
+                research = Research.parse(data.obj("research")),
+                correlations = Correlations.parse(data.obj("correlations"))
             )
         }
     }
@@ -704,7 +707,15 @@ data class Insights(
     val items: List<Insight>,
     val state: String = "empty",
     val context: Map<String, Insight> = emptyMap(),
-    val references: Map<String, Evidence> = emptyMap()
+    val references: Map<String, Evidence> = emptyMap(),
+    /**
+     * 31.0 (docs/CORRELATIONS.md): with migration 029 [items] are the four
+     * combined insights, and the card's head opens [open] — the Inzichten
+     * page. Before it, the three area rows as above.
+     */
+    val combined: Boolean = false,
+    val open: String? = null,
+    val openLabel: String = ""
 ) {
     companion object {
         fun parse(o: JSONObject?) = Insights(
@@ -712,7 +723,10 @@ data class Insights(
             o.arr("items").map { Insight.parse(it) },
             state = o.str("state") ?: "empty",
             context = o.obj("context").entries { slot, it -> slot to Insight.parse(it, "filled") }.toMap(),
-            references = o.obj("references").entries { key, it -> Evidence.parse(it)?.let { key to it } }.toMap()
+            references = o.obj("references").entries { key, it -> Evidence.parse(it)?.let { key to it } }.toMap(),
+            combined = o.bool("combined"),
+            open = o.obj("open").str("detail"),
+            openLabel = o.obj("open").str("label").orEmpty()
         )
     }
 }
@@ -729,14 +743,25 @@ data class Insight(
     val body: String,
     val state: String,
     val slot: String? = null,
-    val evidence: Evidence? = null
+    val evidence: Evidence? = null,
+    /** A combined insight's (31.0): its pair, its label, "only your own data", and its page. */
+    val code: String? = null,
+    val tier: String? = null,
+    val tierLabel: String = "",
+    val own: String? = null,
+    val detail: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject, state: String? = null) = Insight(
             o.str("icon").orEmpty(), o.str("accent").orEmpty(), o.str("title").orEmpty(),
             o.str("body").orEmpty(), state ?: o.str("state") ?: "empty",
             slot = o.str("slot"),
-            evidence = Evidence.parse(o, label = "research_label")
+            evidence = Evidence.parse(o, label = "research_label"),
+            code = o.str("code"),
+            tier = o.obj("tier").str("key"),
+            tierLabel = o.obj("tier").str("label").orEmpty(),
+            own = o.str("own"),
+            detail = o.str("detail")
         )
     }
 }
@@ -779,6 +804,135 @@ data class Evidence(val research: String, val strengthKey: String, val strengthL
             val strength = o.obj("strength")
             return Evidence(id, strength.str("key").orEmpty(), strength.str("label").orEmpty(), o.str(label).orEmpty())
         }
+    }
+}
+
+/**
+ * Inzichten (pages/insights.php, docs/CORRELATIONS.md, 31.0): every combined
+ * insight on its page, grouped by label strongest first, and each one's own
+ * page ([details], by "insight-C01"). Empty before migration 029.
+ */
+data class Correlations(
+    val title: String,
+    val lede: String,
+    val back: String,
+    val empty: String,
+    val groups: List<CorrelationGroup>,
+    val details: Map<String, CorrelationDetail>,
+    val labels: CorrelationLabels
+) {
+    val available: Boolean get() = details.isNotEmpty()
+
+    fun detail(id: String): CorrelationDetail? = details[id]
+
+    companion object {
+        fun parse(o: JSONObject?): Correlations {
+            val page = o.obj("page")
+            return Correlations(
+                page.str("title").orEmpty(), page.str("lede").orEmpty(), page.str("back").orEmpty(), page.str("empty").orEmpty(),
+                page.arr("groups").map(CorrelationGroup::parse),
+                o.obj("details").entries { id, it -> id to CorrelationDetail.parse(it) }.toMap(),
+                CorrelationLabels.parse(o.obj("labels"))
+            )
+        }
+    }
+}
+
+/** One label's group on the Inzichten page: its name, what it means, its rows. */
+data class CorrelationGroup(val tier: String, val label: String, val means: String, val rows: List<Insight>) {
+    companion object {
+        fun parse(o: JSONObject) = CorrelationGroup(
+            o.str("tier").orEmpty(), o.str("label").orEmpty(), o.str("means").orEmpty(),
+            o.arr("rows").map { Insight.parse(it) }
+        )
+    }
+}
+
+/** The insight page's block names, and its back pill. */
+data class CorrelationLabels(val seen: String, val numbers: String, val research: String, val method: String, val back: String) {
+    companion object {
+        fun parse(o: JSONObject?) = CorrelationLabels(
+            o.str("seen").orEmpty(), o.str("numbers").orEmpty(), o.str("research").orEmpty(), o.str("method").orEmpty(), o.str("back").orEmpty()
+        )
+    }
+}
+
+/**
+ * One combined insight's page (pages/insight-detail.php): the label and
+ * what it means, the sentence, Chart A ([chart]: two rows with the meter),
+ * the numbers, the research at the person's age — or that it is their own
+ * data only — and the method with its sources. Every word is the server's.
+ */
+data class CorrelationDetail(
+    val id: String,
+    val code: String,
+    val title: String,
+    val tier: String,
+    val tierLabel: String,
+    val tierMeans: String,
+    val body: String,
+    val notCause: String?,
+    val chart: CorrelationChart?,
+    val numbers: List<Pair<String, String>>,
+    val concordance: String?,
+    val research: List<CorrelationResearch>,
+    val ownData: String?,
+    val method: List<String>,
+    val sourcesTitle: String,
+    val sources: List<MethodSource>,
+    val icon: String,
+    val accent: String
+) {
+    companion object {
+        fun parse(o: JSONObject): CorrelationDetail {
+            val tier = o.obj("tier")
+            val method = o.obj("method")
+            return CorrelationDetail(
+                o.str("id").orEmpty(), o.str("code").orEmpty(), o.str("title").orEmpty(),
+                tier.str("key").orEmpty(), tier.str("label").orEmpty(), tier.str("means").orEmpty(),
+                o.str("body").orEmpty(), o.str("not_cause"),
+                o.obj("chart")?.let(CorrelationChart::parse),
+                o.arr("numbers").map { it.str("label").orEmpty() to it.str("value").orEmpty() },
+                o.str("concordance"),
+                o.arr("research").map(CorrelationResearch::parse),
+                o.str("own_data"),
+                method.arr("paragraphs").strings(),
+                method.str("sources_title").orEmpty(),
+                method.arr("sources").map(MethodSource::parse),
+                o.str("icon").orEmpty(), o.str("accent").orEmpty()
+            )
+        }
+    }
+}
+
+/** Chart A (D2): the two day groups, each its label, days, value and how full its meter is (0–1, from zero). */
+data class CorrelationChart(val rows: List<CorrelationChartRow>, val note: String) {
+    companion object {
+        fun parse(o: JSONObject) = CorrelationChart(o.arr("rows").map(CorrelationChartRow::parse), o.str("note").orEmpty())
+    }
+}
+
+data class CorrelationChartRow(val label: String, val count: String, val value: String, val fill: Float) {
+    companion object {
+        fun parse(o: JSONObject) = CorrelationChartRow(
+            o.str("label").orEmpty(), o.str("count").orEmpty(), o.str("value").orEmpty(), (o.num("fill") ?: 0.0).toFloat().coerceIn(0f, 1f)
+        )
+    }
+}
+
+/** A claim beside the insight: what Ownify says with it, and its chip. */
+data class CorrelationResearch(val statement: String, val evidence: Evidence) {
+    companion object {
+        fun parse(o: JSONObject): CorrelationResearch? = Evidence.parse(o)?.let { CorrelationResearch(o.str("statement").orEmpty(), it) }
+    }
+}
+
+/** How the statistics are done (MTH-01 … 03): a publication to open, its title as published. */
+data class MethodSource(val title: String, val citation: String, val href: String, val language: String) {
+    companion object {
+        fun parse(o: JSONObject) = MethodSource(
+            o.str("title").orEmpty(), o.str("citation").orEmpty(), o.str("href").orEmpty(), o.str("language") ?: "en"
+        )
     }
 }
 

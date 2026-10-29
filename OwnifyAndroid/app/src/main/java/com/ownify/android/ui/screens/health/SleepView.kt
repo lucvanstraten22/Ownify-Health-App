@@ -107,7 +107,7 @@ private fun stageColor(key: String): Color = when (key) {
  */
 /** [evidence]: how far a wearable's stages can be trusted (docs/INSIGHTS.md), beside a night that has them. */
 @Composable
-fun SleepNightCard(night: SleepNight, evidence: Evidence? = null) {
+fun SleepNightCard(night: SleepNight, evidence: Evidence? = null, ageEvidence: Evidence? = null) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Row(Modifier.fillMaxWidth().padding(bottom = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
@@ -154,7 +154,8 @@ fun SleepNightCard(night: SleepNight, evidence: Evidence? = null) {
             T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
         }
         if (night.staged) {
-            ResearchEvidence(evidence)
+            // How far a wearable's stages can be trusted, and (31.0, D9) that deep sleep and efficiency change with age.
+            ResearchEvidence(listOf(evidence, ageEvidence))
             T(night.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }

@@ -4,20 +4,23 @@ Nuttige inzichten, Eén kleine suggestie and the explanations beside Ownify's
 own reference values: short observations from the person's own data, each
 with the approved research behind it. Not a chatbot, not a diagnosis, not an
 order. The research itself — the registry, the labels and "Uit onderzoek
-blijkt" — is [RESEARCH.md](RESEARCH.md).
+blijkt" — is [RESEARCH.md](RESEARCH.md). Since 31.0, Overzicht's Nuttige
+inzichten shows **combined insights** — patterns across areas — which are
+[CORRELATIONS.md](CORRELATIONS.md); this page is the single-area ones.
 
 ## Where they show (both apps)
 
 | Where | What |
 | --- | --- |
-| Overzicht › **Nuttige inzichten** | the day's insight for Slaap, Voeding and Training — or a quiet placeholder for an area without one |
+| Overzicht › **Nuttige inzichten** | 31.0, with migration 029: four combined insights ([CORRELATIONS.md](CORRELATIONS.md)). Without 029: the day's insight for Slaap, Voeding and Training — or a quiet placeholder for an area without one |
 | Overzicht › **Eén kleine suggestie** | at most one a day, always optional (its line "Altijd een suggestie, nooit een opdracht." is no longer shown, 29.2) |
 | Slaap, Voeding, Training (their own page) | the same stored insight as that area's own card, right under the area's score (29.1); nothing when the area has none |
 | Instellingen › Account | the BMI, under Lichaamsmaten (`settings` block `insight`, slot `body`) |
 | Voeding's cijfer | the research on eating patterns (NUT-03): context for the cijfer, never a score of it |
 | Voeding's fat and carbohydrate rows | the 2026 norm behind fat's range, and that carbohydrates have none |
-| Slaap's night, when it has stages | how far a wearable's stages can be trusted (SLP-06) |
-| Training's heart rate, with data | how accurate a wearable's heart rate is (MEA-01) — on Training's own page, not on a session's |
+| Slaap's night, when it has stages | how far a wearable's stages can be trusted (SLP-06), and beside it **Bij jouw leeftijd**: how sleep changes with age (AGE-03, 31.0) |
+| Training's heart rate, with data | how accurate a wearable's heart rate is (MEA-01) — on Training's own page, not on a session's — and **Bij jouw leeftijd**: the heart-rate bands for the person's age (AGE-01, 31.0) |
+| Voeding's protein, sugar and energy (31.0) | protein's norm (65+: the advice for older adults, "Bij jouw leeftijd"), free sugars' norm under its row, and how the energy target is estimated, after the days |
 | Scorekompas › **Mogelijk aandachtspunt** | the research about the component it names, where there is any: its context, never its reason |
 
 Every one carries "Bekijk onderzoek" as the goal wizard's glass chip, opening
@@ -61,13 +64,13 @@ group, in the source's own boundaries:
 | --- | --- | --- | --- | --- | --- |
 | `sleep.duration` | sleep | direct | youth 6–17, adults 18–60, CDC 61–64, NSF 65+ | below, within, above | below |
 | `sleep.regularity` | sleep | direct | SLP-05 | less steady, steadier, level | less steady, level |
-| `activity.minutes` | training | proxy | Beweegrichtlijnen youth 4–17, adults 18+ | below, reached | below (with WHO's "some is better than none") |
-| `activity.strength` | training | proxy | Beweegrichtlijnen | below, reached | below |
+| `activity.minutes` | training | proxy | Beweegrichtlijnen youth 4–17; WHO 2020 18–64 (hard minutes count double); Beweegrichtlijnen 65+ | below, reached | below (with WHO's "some is better than none") |
+| `activity.strength` | training | proxy | Beweegrichtlijnen 4–64; WHO 65+ (with balance) | below, reached | below |
 | `activity.steps` | training | direct | Ding (below 7,000), Paluch's plateau for the age | below, toward, plateau | below |
 | `nutrition.fat` | nutrition | proxy | NUT-01, 4+ | below, within, above | — |
 | `nutrition.saturated_fat` | nutrition | proxy | NUT-01 | above, within | above |
 | `nutrition.fibre` | nutrition | proxy | NUT-01 (per 1,000 kcal), 2+ | below, within, above | below |
-| `nutrition.protein` | nutrition | proxy | NUT-02, 18+ | below, reached | below |
+| `nutrition.protein` | nutrition | proxy | NUT-02, 18+ (Voeding's chip: AGE-04 at 65+) | below, reached | below |
 | `nutrition.salt` | nutrition | weak | NUT-03, 18+ (from logged sodium) | above, within | above |
 | `body.bmi` | body | weak | BOD-01, 18+ | below, overweight, obesity | — |
 
@@ -168,4 +171,5 @@ takes about 25–40 ms, a stored read under 1 ms. No request leaves the server.
 - `tools/i18n-test.php` — no Dutch in English, the research included.
 - Android: `ui/ResearchFlowTest` — the stored insights and their chips on
   Overzicht, Slaap, the Scorekompas and Instellingen, each detail over the
-  page that showed it and back, and the PDF fetched, cached and refused.
+  page that showed it and back, and the PDF fetched, cached and refused;
+  `ui/CorrelationsFlowTest` — the combined ones (31.0).

@@ -337,6 +337,8 @@ if (!function_exists('health_connect_map')) {
             'dietaryFiber'      => ['fibre', 'grams'],
             'sugar'             => ['sugar', 'grams'],
             'sodium'            => ['sodium', 'grams'],
+            /* 31.0: for combined insights (C17), when it was taken. */
+            'caffeine'          => ['caffeine', 'grams'],
         ];
 
         foreach ($nutrients as $from => [$to, $unit]) {
@@ -352,9 +354,10 @@ if (!function_exists('health_connect_map')) {
                 continue;
             }
 
-            /* The catalogue keeps sodium in milligrams; Health Connect gives
-               grams, and a thousandfold error here would be a silent one. */
-            $entry[$to] = $to === 'sodium' ? $value * 1000 : $value;
+            /* The catalogue keeps sodium and caffeine in milligrams; Health
+               Connect gives grams, and a thousandfold error here would be a
+               silent one. */
+            $entry[$to] = in_array($to, ['sodium', 'caffeine'], true) ? $value * 1000 : $value;
         }
 
         return [$entry];

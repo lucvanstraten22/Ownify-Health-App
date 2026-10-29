@@ -7,8 +7,8 @@
  *     php tools/research-registry.php --check   change nothing; exit 1 when
  *                                               anything below disagrees
  *     php tools/research-registry.php --sql     print the registry seed
- *     php tools/research-registry.php --write   put that seed into migration 028
- *                                               and database/schema.sql
+ *     php tools/research-registry.php --write   put that seed into migrations 028,
+ *                                               029 and database/schema.sql
  *     php tools/research-registry.php --sync    write config/research.php into
  *                                               the database (DB_NAME …), in
  *                                               one transaction
@@ -19,7 +19,7 @@
  *   - the English: every Dutch sentence a person reads has an entry in
  *     lang/en/ (the kinds, strengths, findings, claims, populations and
  *     limitations);
- *   - migration 028 and schema.sql: their seed is exactly what --sql prints;
+ *   - migrations 028 and 029 and schema.sql: their seed is exactly what --sql prints;
  *   - the database, when one is reachable and has the tables: every source
  *     and every claim version as reviewed, nothing active that is not.
  *
@@ -110,6 +110,7 @@ $seed  = registry_seed($sources, $claims);
 /* The two files that carry the seed: the migration and the fresh install. */
 $files = [
     'database/migrations/028-research-insights.sql' => $root . '/database/migrations/028-research-insights.sql',
+    'database/migrations/029-correlations.sql'      => $root . '/database/migrations/029-correlations.sql',
     'database/schema.sql'                           => $root . '/database/schema.sql',
 ];
 
@@ -257,7 +258,7 @@ foreach (array_unique($dutch) as $text) {
     }
 }
 
-/* Migration 028 and schema.sql carry exactly this seed. */
+/* Migrations 028 and 029 and schema.sql carry exactly this seed. */
 foreach ($files as $name => $file) {
     $sql  = (string) @file_get_contents($file);
     $from = strpos($sql, SEED_BEGIN);
@@ -331,5 +332,5 @@ if ($problems !== []) {
     exit(1);
 }
 
-echo 'Research registry: ' . count($sources) . ' sources, ' . count($claims) . " claims — the file, the English, migration 028, schema.sql and $where agree.\n";
+echo 'Research registry: ' . count($sources) . ' sources, ' . count($claims) . " claims — the file, the English, migrations 028 and 029, schema.sql and $where agree.\n";
 exit(0);

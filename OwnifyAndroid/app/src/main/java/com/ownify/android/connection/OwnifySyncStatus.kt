@@ -20,7 +20,13 @@ data class OwnifySyncRecord(
     /** Whether the last run was automatic, or asked for in the app. */
     val lastWasAutomatic: Boolean = false,
     /** Records the server stored in the last successful sync — a count, nothing more. */
-    val lastWritten: Int? = null
+    val lastWritten: Int? = null,
+    /**
+     * Whether the one-time read of 30 days of meals has been sent (31.0, R7):
+     * their caffeine, so combined insights do not start from zero. A flag,
+     * nothing more.
+     */
+    val mealHistorySent: Boolean = false
 )
 
 /**
@@ -62,7 +68,8 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
             lastOutcome = prefs.getString(KEY_OUTCOME, null)
                 ?.let { name -> OwnifySyncOutcomeKind.entries.firstOrNull { it.name == name } },
             lastWasAutomatic = prefs.getBoolean(KEY_AUTOMATIC, false),
-            lastWritten = if (prefs.contains(KEY_WRITTEN)) prefs.getInt(KEY_WRITTEN, 0) else null
+            lastWritten = if (prefs.contains(KEY_WRITTEN)) prefs.getInt(KEY_WRITTEN, 0) else null,
+            mealHistorySent = prefs.getBoolean(KEY_MEAL_HISTORY, false)
         )
 
     override fun write(record: OwnifySyncRecord) {
@@ -72,6 +79,7 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
             if (record.lastOutcome == null) remove(KEY_OUTCOME) else putString(KEY_OUTCOME, record.lastOutcome.name)
             putBoolean(KEY_AUTOMATIC, record.lastWasAutomatic)
             if (record.lastWritten == null) remove(KEY_WRITTEN) else putInt(KEY_WRITTEN, record.lastWritten)
+            putBoolean(KEY_MEAL_HISTORY, record.mealHistorySent)
         }
     }
 
@@ -94,5 +102,6 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
         const val KEY_OUTCOME = "last_outcome"
         const val KEY_AUTOMATIC = "last_was_automatic"
         const val KEY_WRITTEN = "last_written"
+        const val KEY_MEAL_HISTORY = "meal_history_sent"
     }
 }

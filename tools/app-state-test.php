@@ -347,7 +347,8 @@ try {
         && array_column(array_filter($prefs['preferences']['blocks'] ?? [], static fn ($b) => $b['type'] === 'choice'), 'name') === ['units', 'week']
         && !isset($prefs['units']) && !isset($prefs['week']) && !isset($prefs['accessibility']));
     $webGroups = [];
-    preg_match_all('~<section class="settings-group[^"]*"[^>]*>\s*<h2 class="settings-eyebrow"[^>]*>([^<]*)</h2>(.*?)</section>~s',
+    // Instellingen' own groups only: Inzichten (31.0) uses the same group for its labels.
+    preg_match_all('~<section class="settings-group[^"]*"(?=[^>]*aria-labelledby="settings-group-)[^>]*>\s*<h2 class="settings-eyebrow"[^>]*>([^<]*)</h2>(.*?)</section>~s',
         $page['raw'], $found, PREG_SET_ORDER);
     foreach ($found as [, $label, $body]) {
         preg_match_all('~data-detail-open="settings-([a-z_]+)"~', $body, $ids);
