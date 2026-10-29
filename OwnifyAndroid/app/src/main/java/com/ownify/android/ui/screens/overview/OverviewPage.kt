@@ -437,9 +437,8 @@ private val DOT = 7.dp
 /**
  * `components/insights.php`: one row per area — Slaap, Voeding, Training —
  * each the day's stored insight with its evidence, or a quiet placeholder.
- * With nothing in it yet it stays, quieter (`.card--insights.is-empty`): a
- * well instead of glass, its rows divided by hairlines; a real insight gets
- * the full card back.
+ * With nothing in it yet it is still the full card, as the goal card is
+ * (31.1); only a row with nothing in it reads in the second tier.
  *
  * With a [slot] it is that area's own card, on that area's page: the same
  * stored insight, the same row, and nothing at all when the area has none.
@@ -447,42 +446,36 @@ private val DOT = 7.dp
 @Composable
 internal fun InsightsCard(insights: Insights, slot: String? = null) {
     // 31.0 (docs/CORRELATIONS.md): on Overzicht, with migration 029, the four
-    // combined insights; the head opens Inzichten, a row still being gathered
-    // (Nog onduidelijk) is as quiet as an empty one.
+    // combined insights; a row still being gathered (Nog onduidelijk) reads
+    // as quiet as an empty one. 31.1: the whole card opens Inzichten, pressed
+    // as the goal card is (`.card--opens`), and it is the full card always.
     val combined = slot == null && insights.combined
     val items = if (slot == null) insights.items else listOfNotNull(insights.context[slot])
     if (items.isEmpty() && !combined) return
-    val dimmed = if (combined) insights.state != "filled" else items.all { it.state == "empty" }
-    JCard(Modifier.fillMaxWidth().reveal(), style = if (dimmed) CardStyle.Dimmed else CardStyle.Default, highlight = !dimmed) {
-        if (combined && insights.open != null) {
-            val shell = LocalShell.current
-            val interaction = remember { MutableInteractionSource() }
-            // `.cm-head`: the head is the way in — the whole row, with a chevron.
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .press(interaction)
-                    .clickable(interaction, indication = null, role = Role.Button) { shell.openDetail(Detail.Insights) }
-                    .semantics(mergeDescendants = true) { },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(Modifier.weight(1f)) { CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle, dimmed = dimmed) }
+    val opens = combined && insights.open != null
+    val shell = LocalShell.current
+    val interaction = remember { MutableInteractionSource() }
+    val way = if (!opens) Modifier else Modifier
+        .press(interaction)
+        .clickable(interaction, indication = null, role = Role.Button, onClickLabel = insights.openLabel.takeIf { it.isNotEmpty() }) { shell.openDetail(Detail.Insights) }
+    JCard(Modifier.fillMaxWidth().reveal().then(way)) {
+        if (opens) {
+            // `.cm-head`: the card's name with a chevron, saying where it goes.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle) }
                 JIcon(OwnifyIcons.chevronRight, Modifier.padding(bottom = Ownify.Space4), size = 16.dp, color = Ownify.TextFaint)
             }
         } else {
-            CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null }, dimmed = dimmed)
+            CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null })
         }
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            items.forEachIndexed { index, item ->
+            items.forEach { item ->
                 val accent = Accent.of(item.accent).color
                 val empty = if (combined) item.state != "filled" else item.state == "empty"
                 // `.insights__item`: a Row inside the card.
-                val row = if (!dimmed) Modifier
+                val row = Modifier
                     .insetRow()
                     .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
-                else Modifier
-                    .drawBehind { if (index > 0) drawRect(Ownify.GlassHairline, size = size.copy(height = 1.dp.toPx())) }
-                    .cssPadding(PaddingValues(vertical = Ownify.Space3), border = 1.dp)
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -514,15 +507,14 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
 /**
  * `components/recommendation.php`: the day's one at most — from the
  * person's own data and approved research, always optional — with its
- * evidence. Without one it is the quiet empty card
- * (`.card--recommendation.is-empty`) saying so; a suggestion that no longer
- * fits newer data says that instead.
+ * evidence. Without one it is the same full card (31.1, as the goal card)
+ * saying so; a suggestion that no longer fits newer data says that instead.
  */
 @Composable
 private fun RecommendationCard(rec: Recommendation) {
     val filled = rec.filled
-    JCard(Modifier.fillMaxWidth().reveal(), style = if (filled) CardStyle.Default else CardStyle.Dimmed, highlight = filled) {
-        CompactHead(OwnifyIcons.solidSparkle, rec.title, dimmed = !filled)
+    JCard(Modifier.fillMaxWidth().reveal()) {
+        CompactHead(OwnifyIcons.solidSparkle, rec.title)
         T(rec.headline, JStyle.Subtitle, Modifier.padding(bottom = Ownify.Space1))
         T(rec.description, JStyle.Meta)
         if (filled) ResearchEvidence(rec.evidence)

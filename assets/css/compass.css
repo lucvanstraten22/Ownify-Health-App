@@ -56,6 +56,26 @@
 
 .card--opens:has(.card__open:active) .card__open-chevron { transform: translateX(1px); }
 
+/* Nuttige inzichten (31.1): its head is the button, and the whole card the
+   way in — pressed, ringed and lifted as the goal card is. */
+.card--opens > .cm-head::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+}
+
+.card--opens > .cm-head:focus-visible { outline: none; }
+.card--opens:has(> .cm-head:active) { transform: scale(0.97); }
+.card--opens:has(> .cm-head:focus-visible) {
+    outline: 2px solid rgba(var(--ink), 0.55);
+    outline-offset: 3px;
+}
+
+.card--opens > .cm-head .cm-head__chev { transition: transform var(--press-out) var(--ease-out-strong); }
+.card--opens:has(> .cm-head:active) .cm-head__chev { transform: translateX(1px); }
+
 /* --------------------------------------------------------------------------
    Direction — Stijgend, Stabiel, Dalend: one arrow, turned
    -------------------------------------------------------------------------- */

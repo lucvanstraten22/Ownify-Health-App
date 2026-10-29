@@ -1077,31 +1077,10 @@
 
 .insights__item.is-empty .insights__title { color: var(--text-secondary); }
 
-/* What is not there yet stays quiet: an insights or recommendation card with
-   nothing in it keeps its shape but steps down from glass to a well — a faint
-   fill, a hairline, no shadow, no top light — its name in the second tier,
-   its rows divided by hairlines instead of wells. Content, when it arrives,
-   gets the full card back. OverviewPage.kt does the same. */
-.card--insights.is-empty,
-.card--recommendation.is-empty {
-    border-color: var(--glass-hairline);
-    background: rgba(var(--fill), calc(0.03 * var(--fill-k)));
-    box-shadow: none;
-}
-
-.card--insights.is-empty::before,
-.card--recommendation.is-empty::before { display: none; }
-
-.card--insights.is-empty .card__eyebrow,
-.card--recommendation.is-empty .card__eyebrow { color: var(--text-secondary); }
-
-.card--insights.is-empty .insights__item {
-    padding-inline: 0;
-    border-radius: 0;
-    background: none;
-}
-
-.card--insights.is-empty .insights__item + .insights__item { border-top-color: var(--glass-hairline); }
+/* 31.1: an insights or recommendation card with nothing in it yet is the
+   same card as the primary goal's — full glass, its rows in their wells —
+   only what is not there yet reads in the second tier, as an unset goal's
+   name does. OverviewPage.kt does the same. */
 
 .insights__text {
     margin-top: var(--space-1);

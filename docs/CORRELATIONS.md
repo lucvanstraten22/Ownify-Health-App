@@ -15,7 +15,7 @@ kind; this page is what 31.0 adds.
 
 | Where | What |
 | --- | --- |
-| Overzicht › **Nuttige inzichten** | four combined insights (2×2 on a desktop), each with its label; the card's head opens Inzichten. A link still being gathered fills an empty place as a quiet row ("Nog 2 gemeten nachten nodig.") |
+| Overzicht › **Nuttige inzichten** | four combined insights (2×2 on a desktop), each with its label; the whole card opens Inzichten, pressed and lifted as the goal card is (31.1). A link still being gathered fills an empty place as a quiet row ("Nog 2 gemeten nachten nodig.") |
 | **Inzichten** (`pages/insights.php`, Android `InsightsPage`) | all 17 links, grouped by label, strongest first; each row opens its own page. **Mogelijk patroon** is only shown here, with how likely chance is |
 | An insight's page (`pages/insight-detail.php`, `InsightDetailPage`) | Wat Ownify zag (the label, what it means, "a pattern, not a cause", Chart A), In cijfers, Uit onderzoek blijkt (the research at the person's age, each with "Bekijk onderzoek", or that it is their own data only), Hoe Ownify dit berekent (the method and its three sources) |
 | Slaap, Voeding, Training | their own single-area insight, as before (R5) |

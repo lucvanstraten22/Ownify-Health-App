@@ -232,12 +232,16 @@
    which is touch-first (PARITY.md).
    -------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) {
-    .card:is([data-detail-open], .card--opens, :has(.area-chart__open)):not(.card--hero) {
+    /* Overzicht's suggestion and insights lift as its goal card does (31.1),
+       with or without something in them. */
+    .card:is([data-detail-open], .card--opens, :has(.area-chart__open)):not(.card--hero),
+    [data-page="overview"] .card:is(.card--insights, .card--recommendation) {
         transition: transform var(--transition-fast), border-color var(--transition-fast),
             box-shadow var(--transition-fast);
     }
 
-    .card:is([data-detail-open], .card--opens, :has(.area-chart__open)):not(.card--hero):hover {
+    .card:is([data-detail-open], .card--opens, :has(.area-chart__open)):not(.card--hero):hover,
+    [data-page="overview"] .card:is(.card--insights, .card--recommendation):hover {
         transform: translateY(-2px);
         border-color: var(--glass-border);
         box-shadow: var(--shadow-inset), 0 18px 40px rgba(var(--shade), calc(0.22 * var(--shade-k)));

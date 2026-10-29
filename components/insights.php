@@ -31,16 +31,17 @@ if ($slot !== null) {
     $items = $insights['items'];
 }
 
-/* Nothing to show yet: the card stays, quieter (components.css .is-empty). */
+/* Nothing to show yet: the card stays, the same card as the goal's (31.1); only its empty rows read quieter. */
 $allEmpty = $combined
     ? ($insights['state'] ?? 'empty') !== 'filled'
     : array_filter($items, static fn ($item) => ($item['state'] ?? 'empty') !== 'empty') === [];
 $titleId  = 'insights-title' . ($slot === null ? '' : '-' . $slot);
 ?>
-<section class="card card--insights reveal<?= $allEmpty ? ' is-empty' : '' ?><?= $combined ? ' card--combined' : '' ?>" aria-labelledby="<?= e($titleId) ?>">
+<section class="card card--insights reveal<?= $allEmpty ? ' is-empty' : '' ?><?= $combined ? ' card--combined card--opens' : '' ?>" aria-labelledby="<?= e($titleId) ?>">
 
     <?php if ($combined): ?>
-        <button type="button" class="cm-head card__head--compact press" data-detail-open="<?= e($insights['open']['detail']) ?>"
+        <?php /* The whole card opens Inzichten, as the goal card opens its goal (the button's ::after covers it). */ ?>
+        <button type="button" class="cm-head card__head--compact" data-detail-open="<?= e($insights['open']['detail']) ?>"
                 aria-label="<?= e($insights['title'] . '. ' . $insights['open']['label']) ?>">
             <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>
             <span class="card__headings">
