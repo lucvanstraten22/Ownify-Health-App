@@ -63,7 +63,7 @@ $copy = goals_script_copy($goals);
                 <div class="goals-view is-active" data-goal-panel="active">
 
                     <div class="card goals-empty is-empty reveal" data-goals-empty <?= $hasAny ? 'hidden' : '' ?>>
-                        <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
+                        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
                         <h2 class="goals-empty__title"><?= e($goals['empty']['active']['title']) ?></h2>
                         <p class="goals-empty__body"><?= e($goals['empty']['active']['body']) ?></p>
                         <button type="button" class="btn press goals-empty__cta" data-goal-add>
@@ -101,7 +101,7 @@ $copy = goals_script_copy($goals);
                     <?php if ($goals['completed'] === []): ?>
 
                         <div class="card goals-empty is-empty reveal">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('award') ?></span>
+                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('award') ?></span>
                             <h2 class="goals-empty__title"><?= e($goals['empty']['completed']['title']) ?></h2>
                             <p class="goals-empty__body"><?= e($goals['empty']['completed']['body']) ?></p>
                         </div>

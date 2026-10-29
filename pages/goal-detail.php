@@ -66,7 +66,7 @@ $height = 96.0;
                          aria-labelledby="goal-title-<?= e($id) ?>">
 
                     <div class="goal-hero__head">
-                        <span class="icon-tile" aria-hidden="true"><?= icon($goal['icon']) ?></span>
+                        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($goal['icon']) ?></span>
                         <div class="goal-hero__heads">
                             <p class="goal-hero__category"><?= e($goal['measurement_label']) ?> · <?= e($goal['kind_label']) ?></p>
                             <?php /* A long name (over 40 characters, the wizard allows 120) steps down
@@ -149,7 +149,7 @@ $height = 96.0;
                     <section class="card card--check reveal" data-goal-manual="<?= e($id) ?>"
                              aria-labelledby="goal-check-<?= e($id) ?>">
                         <div class="card__head card__head--compact">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('check') ?><?= notice_dot('goal:' . $id) ?></span>
+                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('check') ?><?= notice_dot('goal:' . $id) ?></span>
                             <h2 class="card__eyebrow" id="goal-check-<?= e($id) ?>"><?= e($copy['manual']) ?></h2>
                         </div>
 
@@ -203,7 +203,7 @@ $height = 96.0;
 
                     <div class="card__head">
                         <div class="card__head-group">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('chart') ?></span>
+                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
                             <h2 class="card__eyebrow" id="goal-history-<?= e($id) ?>"><?= e($copy['history']) ?></h2>
                         </div>
                         <?php if ($goal['has_history'] && $chart['target'] !== null): ?>
@@ -392,7 +392,7 @@ $height = 96.0;
                     <section class="card reveal" aria-labelledby="goal-days-<?= e($id) ?>">
                         <div class="card__head">
                             <div class="card__head-group">
-                                <span class="icon-tile" aria-hidden="true"><?= icon('check') ?></span>
+                                <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('check') ?></span>
                                 <h2 class="card__eyebrow" id="goal-days-<?= e($id) ?>"><?= e($copy['days'] ?? t('Per dag')) ?></h2>
                             </div>
                             <span class="chip chip--muted">
@@ -448,7 +448,7 @@ $height = 96.0;
                     <section class="card reveal" aria-labelledby="goal-periods-<?= e($id) ?>">
                         <div class="card__head">
                             <div class="card__head-group">
-                                <span class="icon-tile" aria-hidden="true"><?= icon('calendar') ?></span>
+                                <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('calendar') ?></span>
                                 <h2 class="card__eyebrow" id="goal-periods-<?= e($id) ?>"><?= e($copy['periods'] ?? t('Per periode')) ?></h2>
                             </div>
                             <span class="chip chip--muted"><?= e((string) $goal['periods_chip']) ?></span>
@@ -482,7 +482,7 @@ $height = 96.0;
                 <?php if (!$goal['is_completed']): ?>
                     <section class="card card--manage reveal" aria-labelledby="goal-manage-<?= e($id) ?>">
                         <div class="card__head card__head--compact">
-                            <span class="icon-tile" aria-hidden="true"><?= icon('sliders') ?></span>
+                            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('sliders') ?></span>
                             <h2 class="card__eyebrow" id="goal-manage-<?= e($id) ?>"><?= e($copy['manage']) ?></h2>
                         </div>
 

@@ -16,8 +16,8 @@ android {
         targetSdk = 37
 
         // Automatically increased by GitHub Actions for release builds.
-        versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 77
-        versionName = System.getenv("OWNIFY_VERSION_NAME") ?: "31.2"
+        versionCode = System.getenv("OWNIFY_VERSION_CODE")?.toIntOrNull() ?: 78
+        versionName = System.getenv("OWNIFY_VERSION_NAME") ?: "31.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

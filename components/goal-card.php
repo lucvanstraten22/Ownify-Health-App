@@ -37,7 +37,7 @@ $reading = has_value($goal['percent'])
         aria-label="<?= e(sprintf($labels['open_aria'], $goal['name'])) ?> — <?= e($reading) ?>">
 
     <span class="goal-card__top">
-        <span class="icon-tile" aria-hidden="true"><?= icon($goal['icon']) ?><?= notice_dot('goal:' . $goal['id']) ?></span>
+        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($goal['icon']) ?><?= notice_dot('goal:' . $goal['id']) ?></span>
 
         <span class="goal-card__heads">
             <span class="goal-card__category"><?= e($goal['category_label']) ?> · <?= e($goal['type_label']) ?></span>

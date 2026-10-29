@@ -148,7 +148,7 @@ private fun Hero(data: AppData, goal: Goal) {
     JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
         // .goal-hero__head
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            OwnifyIcons.named(goal.icon)?.let { IconTile(it, color = accent) }
+            OwnifyIcons.solid(goal.icon)?.let { IconTile(it, color = androidx.compose.ui.graphics.Color.White, background = accent, border = accent) }
             Column(Modifier.weight(1f)) {
                 T("${goal.measurementLabel} · ${goal.kindLabel}", JStyle.Caption, uppercase = true)
                 // A long name steps down to Title 3 with balanced lines (`.goal-hero__name.is-long`).
@@ -301,7 +301,7 @@ private fun CompactHead(icon: ImageVector, title: String, notice: String? = null
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon, notice = notice)
+        IconTile(icon, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral, notice = notice)
         T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
     }
 }
@@ -316,7 +316,7 @@ private fun Days(goal: Goal, copy: Map<String, String>) {
         // .card__head: the eyebrow, and how many days made it.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.check)
+                IconTile(OwnifyIcons.solid("check")!!, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral)
                 T(copy["days"] ?: tr("Per dag"), JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             Chip(goal.daysChip ?: trf("%1\$d van %2\$d", goal.daysMet, goal.daysTotal), muted = true)
@@ -474,7 +474,7 @@ private fun Periods(goal: Goal, copy: Map<String, String>) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.calendar)
+                IconTile(OwnifyIcons.solid("calendar")!!, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral)
                 T(copy["periods"] ?: tr("Per periode"), JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             goal.periodsChip?.let { Chip(it, muted = true) }

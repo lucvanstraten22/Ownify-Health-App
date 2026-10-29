@@ -112,7 +112,7 @@
     gap: var(--space-3);
 }
 
-.goal-card .icon-tile { color: var(--accent); }
+.goal-card .icon-tile:not(.icon-tile--solid) { color: var(--accent); }
 
 .goal-card__heads { min-width: 0; }
 
@@ -356,7 +356,7 @@
     gap: var(--space-3);
 }
 
-.card--goal-hero .icon-tile { color: var(--accent); }
+.card--goal-hero .icon-tile:not(.icon-tile--solid) { color: var(--accent); }
 
 .goal-hero__heads { min-width: 0; }
 

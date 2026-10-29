@@ -149,7 +149,7 @@ private fun ActiveView(data: AppData, board: Board, onAdd: () -> Unit) {
 
     // Every slot is in the column whether or not it holds a card, as on the website.
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        if (!any) EmptyCard(goals.emptyActive, OwnifyIcons.chart, if (board.canAdd) onAdd else null)
+        if (!any) EmptyCard(goals.emptyActive, OwnifyIcons.solidChart, if (board.canAdd) onAdd else null)
         if (any) Eyebrow(labels["primary"].orEmpty())
 
         Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -232,7 +232,7 @@ private fun SlotNote(text: String) {
 private fun EmptyCard(copy: GoalsEmpty, icon: androidx.compose.ui.graphics.vector.ImageVector, onAdd: (() -> Unit)?) {
     JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(horizontal = Ownify.Space5, vertical = Ownify.Space6)) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            IconTile(icon)
+            IconTile(icon, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral)
             T(copy.title, JStyle.Section, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
             T(
                 copy.body,
@@ -410,9 +410,10 @@ fun GoalCard(
                 Column(verticalArrangement = Arrangement.spacedBy(if (primary) Ownify.Space3 else Ownify.Space2)) {
                     // .goal-card__top
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                        OwnifyIcons.named(model.icon)?.let {
-                            if (primary) IconTile(it, color = accent.color, notice = model.notice)
-                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = accent.color, notice = model.notice)
+                        // Solid, as Gezondheid's and Overzicht's tiles (31.3): the area's colour, the icon white.
+                        OwnifyIcons.solid(model.icon)?.let {
+                            if (primary) IconTile(it, color = androidx.compose.ui.graphics.Color.White, background = accent.color, border = accent.color, notice = model.notice)
+                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = androidx.compose.ui.graphics.Color.White, background = accent.color, border = accent.color, notice = model.notice)
                         }
                         Column(Modifier.weight(1f)) {
                             T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)
