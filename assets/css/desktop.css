@@ -290,8 +290,15 @@
 
 :root[data-layout="desktop"] .rail-window { transition: right var(--second-in); }
 
+/* 31.2: the page's window reaches into the gap beside the sidebar, its
+   content kept where it was by the same padding, so a glow at the page's
+   left edge (the Gezondheidsscore's ring) fades out instead of being cut
+   off in a straight line. */
+:root[data-layout="desktop"] .rail-window { left: calc(var(--page-left) - var(--nav-gap) * var(--ui-scale)); }
+
 :root[data-layout="desktop"] .rail-window .app__main {
     zoom: var(--ui-scale);
+    padding-left: var(--nav-gap);
     padding-top: calc(var(--frame-y) / var(--ui-scale));
     padding-bottom: calc(var(--frame-y) / var(--ui-scale));
 }
@@ -355,7 +362,8 @@
         font-size: var(--fs-body);
         text-align: left;
     }
-    [data-page="overview"] .card--hero .pillar-rings { grid-area: pillars; width: 100%; margin: 0; }
+    /* The same 8 above as the ring, so Slaap, Voeding and Training sit on its centre line. */
+    [data-page="overview"] .card--hero .pillar-rings { grid-area: pillars; width: 100%; margin: var(--space-2) 0 0; }
     [data-page="overview"] .card--hero .pillar-ring__dial { width: 64px; height: 64px; }
     [data-page="overview"] .card--hero .pillar-ring__value { font-size: var(--fs-headline); }
     [data-page="overview"] .card--hero .pillar-ring__label { font-size: var(--fs-label); }
