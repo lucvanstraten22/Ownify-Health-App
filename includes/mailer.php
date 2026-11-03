@@ -48,7 +48,7 @@ if (!defined('MAIL_LEASE_MINUTES')) {
 
 if (!function_exists('mail_settings')) {
 
-    /** config/mail.php, read once. Never printed: it holds the App Password. */
+    /** config/mail.php (with mail.local.php / the environment), read once. Never printed: it holds the App Password. */
     function mail_settings(): array
     {
         static $settings = null;
@@ -64,10 +64,12 @@ if (!function_exists('mail_settings')) {
     {
         $s = mail_settings();
 
-        foreach (['host', 'username', 'password', 'from', 'public_url'] as $key) {
-            if (trim((string) ($s[$key] ?? '')) === '') {
-                return "config/mail.php: '$key' is not set";
-            }
+        if (($reason = mail_transport_reason()) !== null) {
+            return $reason;
+        }
+
+        if (trim((string) ($s['public_url'] ?? '')) === '') {
+            return "config/mail.php: 'public_url' is not set";
         }
 
         if (!str_starts_with((string) $s['public_url'], 'https://')) {
@@ -243,54 +245,229 @@ if (!function_exists('mail_settings')) {
     }
 
     /**
-     * One message through Gmail's SMTP with PHPMailer (includes/vendor/
-     * phpmailer, v7.1.1, D5). Null when SMTP accepted it; otherwise only the
-     * reply code. Certificate checks stay on; SMTPDebug stays 0.
+     * Why no message can be sent from here right now, or null when it can:
+     * the four settings a direct send needs (the outbox also needs
+     * public_url, the app key and its table — mail_unavailable_reason()).
+     * Says which setting, never its value.
      */
-    function mail_smtp_send(array $job, array $payload): ?string
+    function mail_transport_reason(): ?string
+    {
+        $s = mail_settings();
+
+        foreach (['host', 'username', 'password', 'from'] as $key) {
+            if (trim((string) ($s[$key] ?? '')) === '') {
+                return "config/mail.php: '$key' is not set" . ($key === 'password' ? ' (see config/mail.local.php.example)' : '');
+            }
+        }
+
+        if (account_email_canonical((string) $s['from']) === null) {
+            return "config/mail.php: 'from' is not an address";
+        }
+
+        return null;
+    }
+
+    /**
+     * PHPMailer, set up once for every message Ownify sends: Gmail's SMTP
+     * with STARTTLS on 587 (or implicit TLS on 465), authentication on,
+     * certificate checks on, no debug output, UTF-8, and Ownify as the
+     * sender. The vendored copy (includes/vendor/phpmailer, v7.1.1, D5) is
+     * loaded here and nowhere else.
+     */
+    function mail_phpmailer(): \PHPMailer\PHPMailer\PHPMailer
     {
         require_once __DIR__ . '/vendor/phpmailer/Exception.php';
         require_once __DIR__ . '/vendor/phpmailer/PHPMailer.php';
         require_once __DIR__ . '/vendor/phpmailer/SMTP.php';
 
-        $s = mail_settings();
-        @set_time_limit(MAIL_SEND_SECONDS + 15);
+        $s    = mail_settings();
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);   // exceptions, not echoes
 
-        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host        = (string) $s['host'];
+        $mail->Port        = (int) $s['port'];
+        $mail->SMTPAuth    = true;
+        $mail->Username    = (string) $s['username'];
+        $mail->Password    = (string) $s['password'];
+        $mail->SMTPSecure  = ($s['encryption'] ?? 'starttls') === 'smtps'
+            ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+            : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPAutoTLS = true;
+        /* Gmail's reply code is wanted when it refuses (a 535 at the login,
+           say), and PHPMailer forgets it once it hangs up. Its debug channel
+           is the only place it passes by, so it is opened at the server
+           level — and goes only into this closure, which keeps the reply's
+           3-digit code and enhanced status from the SERVER's lines and
+           nothing else. Every client line, the login included, is dropped
+           unread; nothing is printed or logged here. */
+        $codes = mail_reply_codes();
+        $mail->SMTPDebug   = \PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;
+        $mail->Debugoutput = static function ($line) use ($codes, $mail): void {
+            if (is_string($line) && preg_match('/^SERVER -> CLIENT: ([45][0-9]{2})(?:[ -]([45]\.[0-9]{1,3}\.[0-9]{1,3}))?/', $line, $m)) {
+                $codes[$mail] = trim($m[1] . ' ' . ($m[2] ?? ''));
+            }
+        };
+        $mail->Timeout     = MAIL_SEND_SECONDS;
+        $mail->CharSet     = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+        $mail->Encoding    = \PHPMailer\PHPMailer\PHPMailer::ENCODING_QUOTED_PRINTABLE;
+        $mail->XMailer     = ' ';                                    // no "X-Mailer: PHPMailer …" header
+        $mail->setFrom((string) $s['from'], (string) ($s['from_name'] ?? 'Ownify'), false);
+
+        return $mail;
+    }
+
+    /** The last refusal code each PHPMailer heard (mail_phpmailer()), by instance. */
+    function mail_reply_codes(): \WeakMap
+    {
+        static $codes = null;
+
+        return $codes ??= new \WeakMap();
+    }
+
+    /**
+     * What went wrong with an SMTP attempt, in words that are safe to log
+     * and to show: the step, and Gmail's reply code when it gave one. Never
+     * the message's text, an address, a link or the password.
+     *
+     * @return array{stage: string, code: string}
+     */
+    function mail_failure(\PHPMailer\PHPMailer\PHPMailer $mail, \Throwable $e): array
+    {
+        $smtp  = $mail->getSMTPInstance();
+        $error = $smtp !== null ? $smtp->getError() : [];
+        $heard = mail_reply_codes()[$mail] ?? '';
+        $code  = $heard !== '' ? $heard : trim(preg_replace('/[^0-9. ]/', '', (string) ($error['smtp_code'] ?? '') . ' ' . (string) ($error['smtp_code_ex'] ?? '')));
+        $text  = $e->getMessage() . ' ' . $mail->ErrorInfo;
+
+        $stage = match (true) {
+            str_contains($text, 'Could not authenticate')                         => 'auth',
+            str_contains($text, 'Could not connect') || str_contains($text, 'Connection failed') => 'connect',
+            stripos($text, 'TLS') !== false || stripos($text, 'crypto') !== false => 'tls',
+            str_contains($text, 'recipients failed') || str_contains($text, 'Invalid address') => 'recipient',
+            str_contains($text, 'From address failed') || str_contains($text, 'MAIL FROM') => 'sender',
+            str_contains($text, 'data not accepted')                               => 'data',
+            default                                                                => 'send',
+        };
+
+        return ['stage' => $stage, 'code' => $code !== '' ? $code : 'no-reply'];
+    }
+
+    /**
+     * Sends one message now — Ownify's one mail service. Everything that
+     * mails goes through here: the outbox (mail_outbox_run(), for account
+     * mail with a single-use link, which must survive a failed attempt) and
+     * anything that must go at once (tools/mail-test.php).
+     *
+     * $text is always sent (it is the whole message, or the plain part next
+     * to $html). Recipients are checked with the account address rule
+     * (account_email_canonical()) before anything connects; a header in an
+     * address or a subject goes nowhere. Failures are logged with the kind,
+     * the step and the SMTP code only.
+     *
+     * @param string|list<string> $to
+     * @param array{kind?: string, message_id?: string, reply_to?: string} $options
+     * @return array{ok: bool, stage: ?string, code: ?string}
+     */
+    function mail_send(string|array $to, string $subject, string $text, ?string $html = null, array $options = []): array
+    {
+        $kind = preg_replace('/[^a-z0-9_-]/', '', (string) ($options['kind'] ?? 'direct')) ?: 'direct';
+        $fail = static function (string $stage, string $code) use ($kind): array {
+            error_log('[ownify] mail: a ' . $kind . ' message was not sent (' . $stage . ', ' . $code . ')');
+            return ['ok' => false, 'stage' => $stage, 'code' => $code];
+        };
+
+        if (mail_transport_reason() !== null) {
+            return $fail('config', 'not-configured');
+        }
+
+        $recipients = [];
+        foreach ((array) $to as $address) {
+            $canonical = account_email_canonical((string) $address);
+            if ($canonical === null) {
+                return $fail('recipient', 'invalid');
+            }
+            $recipients[] = $canonical;
+        }
+
+        if ($recipients === [] || preg_match('/[\r\n]/', $subject)) {
+            return $fail($recipients === [] ? 'recipient' : 'subject', 'invalid');
+        }
+
+        @set_time_limit(MAIL_SEND_SECONDS + 15);
+        $mail = mail_phpmailer();
 
         try {
-            $mail->isSMTP();
-            $mail->Host       = (string) $s['host'];
-            $mail->Port       = (int) $s['port'];
-            $mail->SMTPAuth   = true;
-            $mail->Username   = (string) $s['username'];
-            $mail->Password   = (string) $s['password'];
-            $mail->SMTPSecure = ($s['encryption'] ?? 'smtps') === 'starttls'
-                ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS
-                : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-            $mail->SMTPDebug  = 0;
-            $mail->Timeout    = MAIL_SEND_SECONDS;
-            $mail->CharSet    = 'UTF-8';
-            $mail->MessageID  = (string) $job['message_id'];
-            $mail->setFrom((string) $s['from'], (string) ($s['from_name'] ?? 'Ownify'));
-            $mail->addAddress((string) $job['recipient']);
-            $mail->Subject    = (string) ($payload['subject'] ?? 'Ownify');
-            if (isset($payload['html'])) {
+            foreach ($recipients as $address) {
+                $mail->addAddress($address);
+            }
+            if (isset($options['reply_to']) && ($reply = account_email_canonical((string) $options['reply_to'])) !== null) {
+                $mail->addReplyTo($reply);
+            }
+            if (isset($options['message_id']) && $options['message_id'] !== '') {
+                $mail->MessageID = (string) $options['message_id'];
+            }
+
+            $mail->Subject = $subject;
+            if ($html !== null) {
                 $mail->isHTML(true);
-                $mail->Body    = (string) $payload['html'];
-                $mail->AltBody = (string) ($payload['text'] ?? '');
+                $mail->Body    = $html;
+                $mail->AltBody = $text;
             } else {
-                $mail->Body = (string) ($payload['text'] ?? '');
+                $mail->isHTML(false);
+                $mail->Body = $text;
             }
 
             $mail->send();
 
-            return null;
+            return ['ok' => true, 'stage' => null, 'code' => null];
         } catch (\Throwable $e) {
-            $smtp = $mail->getSMTPInstance();
-            $code = $smtp !== null ? ($smtp->getError()['smtp_code'] ?? '') : '';
-
-            return $code !== '' ? (string) $code : 'no-reply';
+            $why = mail_failure($mail, $e);
+            return $fail($why['stage'], $why['code']);
+        } finally {
+            $mail->smtpClose();
         }
+    }
+
+    /**
+     * Connects to Gmail and logs in, and sends nothing — the first two steps
+     * of tools/mail-test.php, so it can say which one failed.
+     *
+     * @return array{ok: bool, stage: ?string, code: ?string}
+     */
+    function mail_smtp_check(): array
+    {
+        if (mail_transport_reason() !== null) {
+            return ['ok' => false, 'stage' => 'config', 'code' => 'not-configured'];
+        }
+
+        $mail = mail_phpmailer();
+
+        try {
+            if (!$mail->smtpConnect()) {
+                return ['ok' => false, 'stage' => 'connect', 'code' => 'no-reply'];
+            }
+            return ['ok' => true, 'stage' => null, 'code' => null];
+        } catch (\Throwable $e) {
+            return ['ok' => false] + mail_failure($mail, $e);
+        } finally {
+            $mail->smtpClose();
+        }
+    }
+
+    /**
+     * One outbox job through mail_send(). Null when SMTP accepted it;
+     * otherwise only the reply code (mail_outbox_run() hands it back).
+     */
+    function mail_smtp_send(array $job, array $payload): ?string
+    {
+        $sent = mail_send(
+            (string) $job['recipient'],
+            (string) ($payload['subject'] ?? 'Ownify'),
+            (string) ($payload['text'] ?? ''),
+            isset($payload['html']) ? (string) $payload['html'] : null,
+            ['kind' => (string) ($job['kind'] ?? 'outbox'), 'message_id' => (string) ($job['message_id'] ?? '')]
+        );
+
+        return $sent['ok'] ? null : (string) $sent['code'];
     }
 }

@@ -1,19 +1,33 @@
 <?php
 /**
- * Copy to config/mail.local.php ON THE SERVER and fill in the App Password.
- * Git-ignored and not deployed. Never commit it, never paste the password
- * anywhere else. Check with:  php tools/check-config.php
+ * The Gmail App Password for Ownify's mail (config/mail.php, docs/MAIL.md).
  *
- * The App Password: Google Account of ownify.noreply@gmail.com
+ * ON THE SERVER, copy this file to ONE of these and fill in the password:
+ *
+ *   <web root>/../private/mail.local.php    recommended: outside the web root
+ *                                           (on Hestia: /home/<user>/web/<domain>/private/)
+ *   config/mail.local.php                   beside config/mail.php
+ *
+ * Both are outside Git (the first is not in the repository at all, the second
+ * is git-ignored) and the deploy never uploads or removes them. Never commit
+ * this file filled in, never paste the password anywhere else, and never use
+ * the account's normal password.
+ *
+ * The App Password: Google Account of noreply.ownify@gmail.com
  *   → Security → 2-Step Verification (on) → App passwords → "Ownify server".
- * NEVER the account's normal password.
+ *
+ * Then:   chmod 600 <the file>
+ *         php tools/mail-test.php you@example.com
  */
 declare(strict_types=1);
 
+/* Opened in a browser instead of read by config/mail.php: nothing. */
+if (PHP_SAPI !== 'cli' && realpath((string) ($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
+    http_response_code(404);
+    exit;
+}
+
 return [
-    'username'   => 'ownify.noreply@gmail.com',
-    'password'   => 'xxxx xxxx xxxx xxxx',
-    'from'       => 'ownify.noreply@gmail.com',
-    'public_url' => 'https://ownify.acits.nl',
-    // 'email_registration' => true,   // only after the test message arrived
+    'password' => 'xxxx xxxx xxxx xxxx',
+    // 'email_registration' => true,   // only after the test message arrived and Release B is approved
 ];

@@ -158,10 +158,12 @@ with a fixed Message-ID); `mail_outbox_run()` is the one way out, with a
 5-minute lease, at most 5 attempts (waits of 1, 5, 15, 60 minutes), decoys
 that send nothing, and only the SMTP code logged. In Release A nothing
 enqueues, and nothing is sent while `config/mail.php` is not configured
-(the App Password goes only in the git-ignored `config/mail.local.php` on the
-server — see `config/mail.local.php.example`). `php tools/mail-outbox.php` is
-the cron command for Release B. `php tools/check-config.php --send-test=<you>`
-sends one message directly, for the Gmail test.
+(the App Password goes only on the server, outside Git — see docs/MAIL.md).
+`php tools/mail-outbox.php` is the cron command for Release B. Since 34.1
+every message, the outbox's included, goes through one service,
+`mail_send()` (Gmail SMTP on 587 with STARTTLS, as
+noreply.ownify@gmail.com), and `php tools/mail-test.php <you>` is the real
+delivery test — docs/MAIL.md.
 
 ## 10. Migration 027
 
@@ -194,5 +196,6 @@ is the code only, keeping the schema.
 | `DB_USER=root php tools/canonical-check.php` | The address rule in PHP and in the database, read from the migration file, both sql_modes |
 | `DB_USER=root php tools/migration-027-test.php` | Import, re-import, an older draft, the backfill's hard cases, the rollback's refusals |
 | `DB_NAME=… php tools/mail-outbox-test.php` | The outbox's lease, attempts, waits, decoys and expiry, with a stand-in for SMTP |
+| `php tools/mail-service-test.php` | The mail service end to end against a local stand-in for Gmail (STARTTLS, login, UTF-8, HTML, nothing logged that should not be) |
 | `OWNIFY_TEST_EMAIL_REGISTRATION=1 DB_NAME=… php tools/app-auth-test.php` | The existing sign-in suite, deletion now with the password |
 | Android `OwnifyAppFlowTest` | Registration closed, the repeat field, Inloggen and the password editor, deletion with the password and with Google |

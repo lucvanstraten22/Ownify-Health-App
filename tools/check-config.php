@@ -177,7 +177,7 @@ if (in_array('--check-schema-rules', $argvFlags, true)) {
 }
 
 /* One message, sent at once (not through the outbox), to check Gmail works
-   from this server: when the App Password is in config/mail.local.php.
+   from this server: when the App Password is set (config/mail.php says where).
    Prints "verstuurd" or the SMTP reply code — never the settings. */
 foreach ($argvFlags as $flag) {
     if (str_starts_with($flag, '--send-test=')) {
@@ -188,17 +188,14 @@ foreach ($argvFlags as $flag) {
             echo "Not an address.\n";
             exit(1);
         }
-        foreach (['host', 'username', 'password', 'from'] as $key) {
-            if (trim((string) (mail_settings()[$key] ?? '')) === '') {
-                echo "config/mail.php: '$key' is not set (config/mail.local.php on this server).\n";
-                exit(1);
-            }
+        if (($reason = mail_transport_reason()) !== null) {
+            echo $reason . "\n";
+            exit(1);
         }
 
-        $code = mail_smtp_send(
-            ['recipient' => $to, 'message_id' => '<' . bin2hex(random_bytes(16)) . '@' . (parse_url((string) (mail_settings()['public_url'] ?? ''), PHP_URL_HOST) ?: 'ownify.invalid') . '>'],
-            ['subject' => 'Ownify: testbericht', 'text' => "Dit is een testbericht van Ownify. Je hoeft er niets mee te doen.\n"]
-        );
+        /* The same service as everything else (includes/mailer.php); tools/mail-test.php says more. */
+        $sent = mail_send($to, 'Ownify: testbericht', "Dit is een testbericht van Ownify. Je hoeft er niets mee te doen.\n", null, ['kind' => 'test']);
+        $code = $sent['ok'] ? null : $sent['stage'] . ' ' . $sent['code'];
 
         echo $code === null ? "verstuurd\n" : "niet verstuurd (SMTP $code)\n";
         exit($code === null ? 0 : 1);
@@ -701,7 +698,7 @@ if ($sums === []) {
 /* Mail: off is fine in Release A. Never the password. */
 $mailReason = mail_unavailable_reason();
 line($mailReason === null ? 'ok' : 'warn', 'mail', $mailReason === null
-    ? 'configured (' . (mail_settings()['host'] ?? '') . ':' . (mail_settings()['port'] ?? '') . ', from ' . (mail_settings()['from'] ?? '') . ')'
+    ? 'configured (' . (mail_settings()['host'] ?? '') . ':' . (mail_settings()['port'] ?? '') . ', from ' . (mail_settings()['from'] ?? '') . ', password from ' . count(mail_settings()['_sources'] ?? []) . ' source(s))'
     : 'not configured — nothing is sent (' . $mailReason . ')');
 line('ok', 'e-mail registration', account_email_registration_open() ? 'OPEN (test server only)' : 'closed (Release A)');
 
