@@ -33,8 +33,8 @@
     function settle(axis) {
         var box = axis.getBoundingClientRect();
         if (!box.width) { return; }
-        // Measured on the screen, set in the axis's own pixels: on the
-        // desktop they differ by the frame's scale (CSS zoom).
+        // Measured on the screen, set in the axis's own pixels (the same
+        // unless the axis is drawn scaled).
         var k = axis.offsetWidth ? box.width / axis.offsetWidth : 1;
 
         Array.prototype.forEach.call(centred(axis), function (tick) {

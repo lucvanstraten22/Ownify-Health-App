@@ -445,7 +445,7 @@
 
     /* Under the sheet or a detail page the capsule, and its button, are out of reach too. */
     nav.onRefresh(function () {
-        var covered = !nav.sideBySide() && (nav.state.aiOpen || nav.state.detailOpen);
+        var covered = nav.state.aiOpen || nav.state.detailOpen;
         root.inert = covered;
         if (covered) { root.setAttribute('aria-hidden', 'true'); } else { root.removeAttribute('aria-hidden'); }
     });

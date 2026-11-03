@@ -1,30 +1,30 @@
-# The desktop layout (web only)
+# A wide screen (web only)
 
-The website has a layout for desktop and tablet screens next to
-the phone's. The Android app has none (it is a phone app); what the desktop
-changes on the phone too — the challenge card in the green Note — is in
-docs/CHALLENGES.md.
+The website has one interface: the phone's. On a screen 768px or wider it
+is shown inside an iPhone in the middle of the window; there is no separate
+desktop layout (it was removed in 36.0). The Android app is a phone app and
+has nothing of this.
 
 ## Which layout
 
 `<html data-layout>` is set by the first script in `<head>`
-(`components/document-head.php`), before anything is painted:
+(`components/document-head.php`), before anything is painted, and again
+whenever the window crosses 768px:
 
-| Screen | Layout | The switch |
-| --- | --- | --- |
-| narrower than 768px | `phone` — the phone's own | not shown |
-| 768px and wider | `desktop` — unless this browser chose Telefoon | shown |
-| 768px and wider, Telefoon chosen | `phone-frame` — the phone's website in an iPhone (below) | shown |
+| Screen | Layout |
+| --- | --- |
+| narrower than 768px | `phone` — the phone's own |
+| 768px and wider | `phone-frame` — the phone's website in an iPhone (below) |
+| inside the iPhone (`data-frame="phone"`) | `phone` — the phone's own |
 
-The choice is kept in this browser (`localStorage`, `ownify_view`); a phone
-never sees a switch. Switching changes only the layout — no reload, no
-navigation: the page, an open second page and every scroll position stay.
+Every page has the iPhone: the app (`index.php`), the welcome screen
+(`pages/welcome.php`) and the first-run setup (`pages/setup.php`).
 
-## Telefoon: the iPhone (34.0)
+## The iPhone (34.0)
 
-Telefoon on a wide screen shows the website as a phone shows it, in an
-iPhone 15 / 16 Pro (`components/phone-simulator.php`,
-`assets/css/phone-sim.css`, `assets/js/phone-sim.js`):
+A wide screen shows the website as a phone shows it, in an iPhone 15 / 16
+Pro (`components/phone-simulator.php`, `assets/css/phone-sim.css`,
+`assets/js/phone-sim.js`):
 
 - **The screen is the website itself**: a same-origin `<iframe>` of the page,
   393 × 852. In there the head's script sees the frame (`data-frame="phone"`)
@@ -41,98 +41,14 @@ iPhone 15 / 16 Pro (`components/phone-simulator.php`,
 - **Around it** the page is always the light Randlicht ground, whatever the
   theme: while this layout is shown the head paints this document light
   (`ownifyTheme.paint`); the account's theme is untouched and comes back
-  with Desktop. The app around the phone is hidden and inert.
+  when the window narrows. The page around the phone is hidden and inert.
 - **Fitted to the window**: centred, never larger than itself, scaled down
   (`--sim-k`) so the whole device always shows with 24–64px around it.
-- **Loaded only while shown**: the screen loads when Telefoon is chosen and
-  is let go when it is left. If anything was done in the phone, Desktop
-  reloads, so it never shows what the phone has since changed.
+- **Loaded only while shown**: the screen loads when the window is wide and
+  is let go when it narrows. If anything was done in the phone, the page
+  then reloads, so it never shows what the phone has since changed.
+- **Account e-mail links** (`?account-link#token`, `?wachtwoord-vergeten`)
+  go into the phone whole; the token leaves the window's address bar at once
+  (`assets/js/account.js`).
 - A mouse is still a mouse in there: hover is the desktop browser's, not a
   finger's.
-
-## Desktop
-
-- **The frame (30.0).** The sidebar and the page are one group, centred on
-  the screen, at most 1760 × 1060 design pixels, with a quiet margin above
-  and below (3.2% of the screen's height, 20–56px). The head's script sets
-  `--frame-x/-y/-w/-h` and `--ui-scale` before anything is painted. The
-  group is drawn at one scale (CSS `zoom` on the sidebar, the page and the
-  second page): ×1 at 1920 × 1080, ×1.2 at 2560 × 1440, never more than
-  ×1.25 and never less than ×1 — so on a larger, denser screen type keeps
-  its size instead of shrinking. Nothing is stretched to the screen's
-  height: every block keeps its own height.
-  - Zoom and measuring: `getBoundingClientRect()` answers in screen pixels,
-    `offsetWidth`/`offsetTop` in the element's own; scripts that place
-    things from a rect divide by `k = rect.width / offsetWidth`
-    (`page-navigation.js`, `chart-axis.js`, `nutrition.js`, and
-    `hero-ring.js` draws its canvas at the zoomed density).
-- **The sidebar** is the dock, standing up (`components/app-dock.php`,
-  `assets/css/desktop.css`): the name, then one list of eight rows — the
-  five tabs (the same chosen glass moving down them, `page-navigation.js`),
-  OwnifyAI, Apparaten and the account — every row 40px, every icon in one
-  24px column, every label on one edge; under them, in the middle, the view
-  switch (`components/view-switch.php`; like the tabs, no glass of its own,
-  the sidebar's inset fill instead). Pressed again, the last three close
-  what they opened. The red dots (docs/NOTICES.md) sit beside its icons.
-  - **It grows with the page (30.0).** Its bottom is where the page's last
-    block ends (`desktop.js` sets `--nav-h`, measured without a block's
-    slide-in): never shorter than its own rows, never taller than the
-    frame, so a page that scrolls gets the frame's height. When there is
-    room, OwnifyAI, Apparaten and the account stand at its foot; at its
-    shortest they follow the tabs. Switching pages it eases to the new
-    length (360ms, the strong ease-out; none with reduced motion).
-- **No header.** Everything in it is in the sidebar, so it is not drawn and
-  every page's title starts on the sidebar's top edge (29.2).
-- **The page** fills the frame beside the sidebar (20px between them), in
-  columns where they help — measured on the page's own width (container
-  queries), so it re-flows when a second page opens. From 1100px:
-  - Overzicht, in bands: the score as one band (the ring | what it is, its
-    direction and lede | the three pillar rings); Primair doel | Eén kleine
-    suggestie; Nuttige inzichten with its three insights side by side.
-  - Gezondheid, three columns: Slaap, Voeding and Training under each other
-    in the first (icon, name, the big score, its bar), the Verloop across
-    the other two, as tall as the three.
-  - Doelen, three columns: the primary goal beside the four others two by
-    two, every card at its own height. Afgerond: three columns.
-  - Community, three columns: the Ranglijst across two — Vrienden and
-    Nederland side by side, each the six rows around your place (two above
-    you and three below, five below when you lead; when you are not in its
-    top, its top five and you), with "#2 van 5" (`hydrate_community_windows()`
-    in `lib/hydrate-community.php`, the board's own rows) and "deze maand";
-    Uitdagingen in the third, its buttons at the bottom. Narrower, and on a
-    phone, the Ranglijst keeps its podium.
-  - Between 760 and 1100px each page falls back to two columns or one.
-  - Instellingen: one column (760px).
-- **The second page.** A detail page (a goal, Slaap, Voeding, Training, a
-  chart, a training, a settings page, the Ranglijst, Uitdagingen, a
-  challenge, the Scorekompas, research), OwnifyAI, Nieuw doel, the account
-  and Apparaten all open in one column at the frame's right (544px, at the
-  frame's scale), sliding in from the right — one at a time
-  (`assets/js/desktop.js` closes the one in front). Closed, they wait past
-  the screen's edge by the frame's margin too (`nav.PARK_GAP`), so no sliver
-  shows. Their rows are as wide as the column (`--content-width`), never the
-  phone's width.
-  - From 1200px it stands **beside** the page, which makes room for it and
-    stays usable; below that it **covers** the page (not the sidebar).
-  - What opened it stays marked in the page (the chosen card's inset ring;
-    not on Overzicht's score band, which has no card edge for it).
-  - Opening another item swaps it with a short slide; a deeper page (a
-    chart of Slaap) opens over it with a back pill; Escape and its own
-    button close it. Leaving for another tab keeps it open.
-  - Both pages show the same at all times: what the second page saves
-    refreshes the page in place (`goals.js`, `settings.js`, `pull-sync.js`),
-    as it always has.
-  - The panels lose their scrim and are not modal beside the page.
-
-## Phone-frame
-
-Telefoon on a wide screen: the whole app — header, pages, tab bar, detail
-pages, OwnifyAI — in a 430px column in the middle, exactly as on a phone; the
-switch floats at the window's top right (the header's copy of
-`view-switch.php`), the way back to Desktop.
-
-## Not changed
-
-The phone layout, the Android app, the panels that confirm or edit
-(`settings-confirm`, `settings-editor`, `settings-pairing`, the challenge
-sheet: still dialogs in the middle), and every component's look.

@@ -136,10 +136,7 @@ return [
     '%d vraag' => '%d question',
     '%d vragen' => '%d questions',
 
-    /* The desktop layout (docs/DESKTOP.md): the view switch and the sidebar. */
-    'Weergave' => 'View',
-    'Telefoon' => 'Phone',
+    /* The iPhone a wide screen shows the website in (docs/DESKTOP.md). */
     'Ownify op een telefoon' => 'Ownify on a phone',
-    'Desktop' => 'Desktop',
     'OwnifyAI' => 'OwnifyAI',
 ];

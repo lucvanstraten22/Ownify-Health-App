@@ -109,9 +109,7 @@ or the empty target; then Nieuwe uitdaging and Code invoeren
 as two glass tiles side by side, each with the same solid neutral mark (a
 plus, a hash) since 29.2. The cards' marks are solid white on the neutral
 grey, as Overzicht's: the podium bars for Ranglijst, an archery target for
-Uitdagingen. On the desktop (docs/DESKTOP.md) the Ranglijst card shows
-Vrienden and Nederland side by side, each the six rows around your place
-with "#2 van 5", instead of the podium.
+Uitdagingen.
 
 **Ranglijst** — the leaderboard, unchanged: Vrienden / Nederland, Maand / Jaar
 / All-time, your sticky row.

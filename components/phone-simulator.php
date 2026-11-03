@@ -1,7 +1,7 @@
 <?php
 /**
- * Telefoon on a wide screen (docs/DESKTOP.md): the website as a phone shows
- * it, in an iPhone. The screen is a same-origin <iframe> of this very page at
+ * A wide screen (docs/DESKTOP.md): the website as a phone shows it, in an
+ * iPhone — the only way the website is shown on a screen 768px or wider. The screen is a same-origin <iframe> of this very page at
  * an iPhone's size (393 × 852, iPhone 15 / 16 Pro), so what is in it is the
  * phone's own website — its breakpoints, its viewport, its scripts — never a
  * copy. In there the head's script (document-head.php) sees the frame and
@@ -17,8 +17,6 @@
 declare(strict_types=1);
 ?>
 <div class="phone-sim" data-phone-sim>
-    <?php component('view-switch', ['view_switch_place' => 'header']); ?>
-
     <div class="phone-sim__stage">
         <div class="phone-sim__device" data-phone-sim-device>
             <span class="phone-sim__button phone-sim__button--action" aria-hidden="true"></span>

@@ -1,5 +1,5 @@
 /**
- * phone-sim.js — Telefoon on a wide screen: the website in an iPhone
+ * phone-sim.js — a wide screen: the website in an iPhone
  * (components/phone-simulator.php, assets/css/phone-sim.css, docs/DESKTOP.md).
  *
  * While <html data-layout="phone-frame"> (document-head.php):
@@ -11,8 +11,8 @@
  *   - the status bar shows the time and the ink the page in the phone asks
  *     for, following it when the theme changes in there.
  *
- * Leaving it, the page around it is reloaded if anything was done in the
- * phone, so Desktop never shows what the phone has since changed.
+ * Leaving it (the window narrowed), the page is reloaded if anything was
+ * done in the phone, so it never shows what the phone has since changed.
  */
 (function () {
     'use strict';

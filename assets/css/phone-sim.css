@@ -1,5 +1,5 @@
 /* ==========================================================================
-   phone-sim.css — Telefoon on a wide screen: the website in an iPhone
+   phone-sim.css — a wide screen: the website in an iPhone
    (components/phone-simulator.php, assets/js/phone-sim.js, docs/DESKTOP.md).
 
    Two halves:
@@ -49,7 +49,7 @@
 }
 
 /* The app around it is there but out of sight and out of reach (phone-sim.js
-   also makes it inert); it comes back as it was when Desktop is chosen. */
+   also makes it inert); it comes back as it was when the window narrows. */
 /* (opacity too: a backdrop-filter under visibility: hidden can still be composited.) */
 :root[data-layout="phone-frame"] body.app > :not(.app__backdrop, .phone-sim, script, svg) { visibility: hidden; opacity: 0; }
 
@@ -215,5 +215,3 @@
     pointer-events: none;
 }
 
-/* The way back to Desktop, where it stands in Telefoon (desktop.css). */
-:root[data-layout="phone-frame"] .phone-sim .view-switch { z-index: 3; }

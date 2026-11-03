@@ -452,7 +452,7 @@
                corner, peeking a little past the edge, cut out of it by a
                ring of the page's ground. The ring is a spread shadow, so it
                is always exactly concentric with the dot.
-     --beside  beside a bare line icon (the tab bar, the sidebar), where a
+     --beside  beside a bare line icon (the tab bar), where a
                dot in the corner would cover the icon: a little smaller,
                with a soft halo of its own colour instead of a ring.
 
@@ -489,8 +489,7 @@
 .icon-tile,
 .settings-row__mark,
 .tab__icon,
-.pill__avatar,
-.sidebar__icon { position: relative; }
+.pill__avatar { position: relative; }
 
 /* A picture clips what is inside it, so its dot sits on a frame around it. */
 .notice-frame {

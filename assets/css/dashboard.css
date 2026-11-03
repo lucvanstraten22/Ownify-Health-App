@@ -203,28 +203,6 @@
 }
 
 /* --------------------------------------------------------------------------
-   Desktop — the mobile dashboard is centred in whitespace, never re-flowed
-   into a desktop layout. The tab bar stays a phone-width control.
-   -------------------------------------------------------------------------- */
-@media (min-width: 900px) {
-    :root { --shell-w: min(70vw, 38rem); }
-
-    .app-dock { padding-bottom: var(--space-5); }
-
-    .tabbar {
-        width: var(--shell-w);
-        max-width: var(--page-max);
-        padding-inline: var(--space-2);
-    }
-
-    .fab { bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-4)); }
-
-    .app__main {
-        padding-bottom: calc(var(--dock-clearance) + var(--space-6) + var(--space-6) + var(--space-5));
-    }
-}
-
-/* --------------------------------------------------------------------------
    Pointer-capable devices only — hover says "you can click this", and only
    there. A card that opens something lifts a little; a row or a button takes
    a soft fill; nothing grows (a scaled row pushed its icon and chevron out of

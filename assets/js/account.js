@@ -536,8 +536,8 @@
     (function () {
         var query = window.location.search || '';
 
-        /* The desktop's Telefoon layout: the phone on screen opens it
-           (phone-sim.js hands it the whole address), not this page behind it. */
+        /* A wide screen: the iPhone on screen opens it (phone-sim.js hands
+           it the whole address), not this page behind it. */
         if (document.documentElement.getAttribute('data-layout') === 'phone-frame' && document.querySelector('[data-phone-screen]')) { return; }
 
         if (/[?&]account-link(?:[=&]|$)/.test(query)) {

@@ -1131,15 +1131,6 @@
 :root[data-motion="reduce"] .ai-island__chev { transition: none; }
 
 /* --------------------------------------------------------------------------
-   Larger screens — the layer stays a phone-sized sheet, centred like the
-   dashboard, never stretched into a desktop panel.
-   -------------------------------------------------------------------------- */
-@media (min-width: 900px) {
-    .ai-top { padding-top: var(--space-5); }
-    .ai-composer { padding-bottom: var(--space-5); }
-}
-
-/* --------------------------------------------------------------------------
    The minute is full — the question waits (ai-chat.js)
 
    OwnifyAI asks Gemini a few times a minute, for everybody together. A

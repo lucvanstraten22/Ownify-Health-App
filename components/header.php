@@ -49,9 +49,5 @@ $account = $data['header']['account'];
             <?= notice_dot('account') ?>
         </button>
 
-        <?php /* Telefoon or Desktop, in Telefoon on a wide screen; in the
-                 desktop layout it is at the sidebar's foot (view-switch.php). */ ?>
-        <?php component('view-switch', $data); ?>
-
     </div>
 </header>

@@ -125,40 +125,6 @@
 .cm-fan__fig { font-size: var(--fs-small); color: var(--text-secondary); }
 .cm-fan__fig b { color: var(--text-primary); font-weight: 600; }
 
-/* The desktop's Ranglijst card (desktop.css turns it on): Vrienden and
-   Nederland side by side, each the rows around your place, in the board's
-   own rows. Not drawn on a phone, which keeps the podium. */
-.cm-boards { display: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.cm-board { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.cm-board__title {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-3);
-    margin: 0;
-    padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
-    font-weight: 600;
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-.cm-board__place {
-    font-size: var(--fs-footnote);
-    font-weight: 500;
-    letter-spacing: normal;
-    text-transform: none;
-    font-variant-numeric: tabular-nums;
-}
-.cm-board .cm-board__list {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0;
-    gap: 6px;
-    list-style: none;
-}
-
 /* Nothing yet: the empty target. */
 .cm-none { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-3) 0 var(--space-1); }
 .cm-none__title { margin: 0; font-size: var(--fs-label); font-weight: 600; }

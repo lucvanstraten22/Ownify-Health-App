@@ -93,7 +93,7 @@ foreach ($data['navigation'] as $position => $item) {
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community', 'challenges',
-        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training', 'nutrition', 'desktop', 'phone-sim',
+        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training', 'nutrition', 'phone-sim',
     ]]); ?>
 </head>
 <body class="app">
@@ -140,9 +140,8 @@ foreach ($data['navigation'] as $position => $item) {
 
         <!-- Parked on the starting page server-side, so the rail never has to
              animate into place on load — and lands right without JavaScript. -->
-        <?php /* The window the rail is seen through: the whole screen on a
-                 phone; on desktop the room beside the sidebar (desktop.css),
-                 so the pages either side of the one shown stay out of sight. */ ?>
+        <?php /* The window the rail is seen through: the whole screen, so the
+                 pages either side of the one shown stay out of sight. */ ?>
         <div class="rail-window">
         <div class="rail" data-rail
              style="transform: translate3d(<?= e((string) (-100 * $startIndex)) ?>%, 0, 0);">
@@ -261,7 +260,7 @@ foreach ($data['navigation'] as $position => $item) {
     }
     ?>
 
-    <?php /* Telefoon on a wide screen: this page as a phone shows it, in an iPhone. */ ?>
+    <?php /* A wide screen: this page as a phone shows it, in an iPhone. */ ?>
     <?php component('phone-simulator', $data); ?>
 
     <?php /* The red dots' summary (lib/notices.php), for notices.js. */ ?>
@@ -294,7 +293,6 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/devices.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/pull-sync.js')) ?>" defer></script>
-    <script src="<?= e(asset('assets/js/desktop.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>
 </body>
 </html>

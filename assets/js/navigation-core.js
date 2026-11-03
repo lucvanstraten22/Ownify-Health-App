@@ -73,30 +73,6 @@ window.AppNav = (function () {
             el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
         },
 
-        /**
-         * The layout (document-head.php, desktop.js): 'phone', 'phone-frame'
-         * (the phone's, chosen on a wide screen) or 'desktop'. In the desktop
-         * layout a detail, OwnifyAI and the panels open as a second page on
-         * the right; from 1200px wide it stands BESIDE the page, which stays
-         * live, and narrower it covers the page as on a phone.
-         */
-        layout: function () {
-            return document.documentElement.getAttribute('data-layout') || 'phone';
-        },
-        isDesktop: function () { return api.layout() === 'desktop'; },
-        sideBySide: function () {
-            return api.isDesktop() && window.matchMedia('(min-width: 1200px)').matches;
-        },
-        /** How far right a second page is parked: its own width and the gap
-            beside it — past the frame's margin too (desktop.css), in the
-            panel's own (zoomed) pixels, so no sliver of a closed one shows. */
-        get PARK_GAP() {
-            var style = window.getComputedStyle(document.documentElement);
-            var margin = parseFloat(style.getPropertyValue('--frame-x')) || 0;
-            var scale = parseFloat(style.getPropertyValue('--ui-scale')) || 1;
-            return 32 + margin / scale;
-        },
-
         /** Shared, so every controller can read what the others are doing. */
         state: { aiOpen: false, detailOpen: false },
 

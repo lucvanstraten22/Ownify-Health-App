@@ -35,7 +35,7 @@ $source  = $connect['source'];
 <html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
-        'theme', 'components', 'goals', 'setup',
+        'theme', 'components', 'goals', 'setup', 'phone-sim',
     ]]); ?>
 </head>
 <body class="app app--setup">
@@ -235,7 +235,11 @@ $source  = $connect['source'];
     ?></script>
     <?php component('goal-wizard', $data); ?>
 
+    <?php /* A wide screen: this page as a phone shows it, in an iPhone. */ ?>
+    <?php component('phone-simulator', $data); ?>
+
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/setup.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>
 </body>
 </html>

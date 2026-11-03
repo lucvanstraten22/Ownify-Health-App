@@ -29,7 +29,7 @@ to the action only:
 | --- | --- | --- | --- |
 | Voeding | tab Gezondheid | the Voeding tile's icon | the check icon of "Hoe at je vandaag?" |
 | Doel | tab Doelen | the goal card's icon | the check icon of "Zelf bijhouden" |
-| Vriendverzoek | the account button (the sidebar's account on desktop) | — | the requester's picture under Vriendverzoeken |
+| Vriendverzoek | the account button | — | the requester's picture under Vriendverzoeken |
 | Uitnodiging | tab Community | — | the invitation's picture (or tile) |
 | Bron | tab Instellingen | the Apparaten & Gezondheid row's icon | the source's icon |
 
@@ -49,9 +49,9 @@ One dot, `--notice` (Granaat: `#D4564E` Dark, `#B9382F` White;
   the web, one circle behind the other in the app). On a tile it sits 0.5 in;
   on a circle 14.64 % of the diameter in, less 3.3 — where the circle's own
   edge is — so every size of picture shows the same small peek.
-- **beside a bare line icon** (the tab bar, the desktop sidebar), where a dot
+- **beside a bare line icon** (the tab bar), where a dot
   in the corner would cover the icon: 7 across, 3 above and 6 past the
-  icon's corner (4 in the sidebar), with a 2.5 halo of its own colour at 18 %.
+  icon's corner, with a 2.5 halo of its own colour at 18 %.
 
 It grows out of its own centre as it arrives (220 ms) and back as it goes
 (160 ms), ease-out; with less motion it simply is there or not. On the tab

@@ -108,8 +108,8 @@
         var canvas = state.canvas, ctx = state.ctx;
         var s = canvas.clientWidth;
         if (!s) { return; }
-        /* Drawn at the screen's own density: on the desktop the ring is
-           shown at the frame's scale (CSS zoom), which its pixels follow. */
+        /* Drawn at the screen's own density, and at the scale the ring is
+           shown at, which its pixels follow. */
         var zoom = canvas.getBoundingClientRect().width / s || 1;
         var dpr = Math.min(3, window.devicePixelRatio || 1) * zoom;
         if (canvas.width !== Math.round(s * dpr)) { canvas.width = canvas.height = Math.round(s * dpr); }

@@ -22,7 +22,7 @@ $welcome = $data['welcome'];
 <html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
-        'theme', 'components', 'account', 'welcome',
+        'theme', 'components', 'account', 'welcome', 'phone-sim',
     ]]); ?>
 </head>
 <body class="app app--welcome">
@@ -57,6 +57,10 @@ $welcome = $data['welcome'];
 
     <?php component('account-modal', $data); ?>
 
+    <?php /* A wide screen: this page as a phone shows it, in an iPhone. */ ?>
+    <?php component('phone-simulator', $data); ?>
+
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>
 </body>
 </html>
