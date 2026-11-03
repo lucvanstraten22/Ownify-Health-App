@@ -23,7 +23,58 @@ later winning:
 Spaces in the App Password (Google shows it as four groups of four) are
 removed when it is read.
 
-### Entering the App Password on the server
+### Provisioning — the deploy puts it there (34.2)
+
+The way it is meant to be done, with no SSH or SFTP client by hand:
+
+1. **GitHub → the repository → Settings → Secrets and variables → Actions →
+   New repository secret.** Name `OWNIFY_MAIL_APP_PASSWORD`, value the App
+   Password (with or without its spaces).
+2. **Actions → Deploy Ownify → Run workflow** (branch `main`), with your own
+   address in *Send a test e-mail to this address* and *private* as the
+   location. Every push to `main` deploys too; only a run by hand sends a
+   test message.
+
+What the deploy then does (`.github/workflows/deploy.yml`,
+`.github/scripts/mail-provision.sh` and `mail-test.sh`; `.github/` is never
+uploaded):
+
+- **Put the mail password on the server** — over the deploy's own SFTP
+  login (`SFTP_*` secrets). It checks before writing anything: the password
+  has the shape of an App Password (16 letters), `SFTP_REMOTE_PATH` ends in
+  `public_html` and holds Ownify's `config/mail.php`, and the folder above it
+  can be listed and holds `public_html`. Then `private/` is created with 700,
+  the file is uploaded as `mail.local.php.new`, set to 600 and renamed into
+  place, and both permissions are read back. Any of these failing stops the
+  deploy with the reason; **it never falls back to `config/` on its own**.
+  The password, the key and the paths are masked in the log. Skipped with a
+  notice while the secret is not set.
+- **Send a test e-mail from the website** (by hand, with an address): the
+  SFTP login has no shell, so `tools/mail-test.php` cannot be run there.
+  Instead a one-time PHP file with a random name is put in the web root. It
+  answers only to a random token in a request header (anything else gets
+  404), deletes itself before doing anything, can send only the test message
+  to the one address written into it, and is removed over SFTP afterwards
+  whatever happened. Called once over HTTPS, it reads the settings exactly as
+  the website does — PHP-FPM, `open_basedir` and all — connects to Gmail,
+  logs in and sends. The log says where the password was read from, whether
+  the login worked and whether Gmail accepted the message.
+
+**If the folder above `public_html` cannot be written** (the deploy says
+so), there are two choices, and the deploy will not pick one for you:
+ask the host to let the SFTP account create `private/` beside `public_html`
+(recommended), or run the workflow by hand with location *config*. The file
+then goes to `config/mail.local.php` (600, git-ignored, never uploaded or
+removed by the deploy) and the deploy checks that
+`https://ownify.acits.nl/config/mail.local.php` gives a 404 and nothing else.
+
+**If the test says the website found no password** while the file is in
+`private/`: PHP on the server is not allowed into that folder
+(`open_basedir`); use location *config*, or have the host add `private/`.
+
+Changing the App Password: update the secret and deploy again.
+
+### Entering the App Password on the server by hand
 
 Over SSH (or the same steps in Hestia's File Manager):
 

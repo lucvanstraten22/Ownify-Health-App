@@ -4,6 +4,23 @@ on:
   push:
     branches:
       - main
+  # Run by hand from the Actions tab (Deploy Ownify → Run workflow): the same
+  # deploy, and, when an address is given, one real test e-mail sent from
+  # the website after the mail password is in place (docs/MAIL.md).
+  workflow_dispatch:
+    inputs:
+      mail_test_to:
+        description: 'Send a test e-mail to this address after deploying (empty: no test)'
+        required: false
+        default: ''
+      mail_location:
+        description: 'Where the mail password goes: private (outside the web root, recommended) or config (only if private/ cannot be used)'
+        required: true
+        default: private
+        type: choice
+        options:
+          - private
+          - config
 
 concurrency:
   group: ownify-production
@@ -13,6 +30,9 @@ jobs:
   deploy:
     name: Deploy to Hestia
     runs-on: ubuntu-latest
+    env:
+      # Only whether it is set — a secret's value cannot be used in `if:`.
+      HAS_MAIL_PASSWORD: ${{ secrets.OWNIFY_MAIL_APP_PASSWORD != '' }}
 
     steps:
       - name: Checkout repository
@@ -57,3 +77,37 @@ jobs:
           local_path: './*'
           remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
           sftp_only: true
+
+      # The Gmail App Password (docs/MAIL.md), from the GitHub Actions secret
+      # OWNIFY_MAIL_APP_PASSWORD, over the same SFTP login: written to
+      # private/mail.local.php beside public_html (the folder 700, the file
+      # 600), checked afterwards, never printed. It is never in the checkout,
+      # so the upload above can neither carry nor overwrite it, and nothing
+      # here deletes it. Without the secret this is skipped.
+      - name: Put the mail password on the server
+        if: env.HAS_MAIL_PASSWORD == 'true'
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+          OWNIFY_MAIL_APP_PASSWORD: ${{ secrets.OWNIFY_MAIL_APP_PASSWORD }}
+          MAIL_LOCATION: ${{ inputs.mail_location || 'private' }}
+        run: bash .github/scripts/mail-provision.sh
+
+      - name: No mail password yet
+        if: env.HAS_MAIL_PASSWORD != 'true'
+        run: echo "::notice title=Mail::The secret OWNIFY_MAIL_APP_PASSWORD is not set, so no mail password was put on the server (docs/MAIL.md)."
+
+      # Run by hand with an address: one real message, sent by the website
+      # itself through a one-time file that removes itself (the SFTP login
+      # has no shell for tools/mail-test.php).
+      - name: Send a test e-mail from the website
+        if: github.event_name == 'workflow_dispatch' && inputs.mail_test_to != ''
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+          MAIL_TEST_TO: ${{ inputs.mail_test_to }}
+        run: bash .github/scripts/mail-test.sh

@@ -72,15 +72,7 @@ if (!$check['ok']) {
 }
 $step('connect+login', 'ok (TLS, authenticated)');
 
-$when = (new DateTimeImmutable())->format('Y-m-d H:i:s T');
-$text = "Dit is een testbericht van Ownify, verstuurd op $when.\nJe hoeft er niets mee te doen.\n\n"
-      . "This is a test message from Ownify, sent on $when.\nThere is nothing you need to do.\n";
-$html = '<!doctype html><html><body style="font-family: -apple-system, Segoe UI, sans-serif; line-height: 1.5;">'
-      . '<p>Dit is een testbericht van <strong>Ownify</strong>, verstuurd op ' . htmlspecialchars($when) . '.<br>Je hoeft er niets mee te doen.</p>'
-      . '<p>This is a test message from <strong>Ownify</strong>, sent on ' . htmlspecialchars($when) . '.<br>There is nothing you need to do.</p>'
-      . '</body></html>';
-
-$sent = mail_send($recipient, 'Ownify: testbericht / test message', $text, $html, ['kind' => 'test']);
+$sent = mail_send_test($recipient);
 if (!$sent['ok']) {
     $step('send', 'FAILED at ' . $sent['stage'] . ' (' . $sent['code'] . '): ' . ($messages[$sent['stage']] ?? 'see the stage'));
     exit(1);
