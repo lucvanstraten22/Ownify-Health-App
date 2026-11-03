@@ -41,6 +41,7 @@ window.OWNIFY_LANG = {
     "Onverwacht antwoord van de server.": "Unexpected response from the server.",
     "Opgeslagen. Je nieuwe voortgang verschijnt zodra de pagina ververst.": "Saved. Your new progress appears once the page refreshes.",
     "Opnieuw proberen": "Try again",
+    "Opslaan": "Save",
     "Opslaan is niet gelukt.": "Saving did not work.",
     "Ownify is niet bereikbaar, dus er is niets verwijderd. Controleer je internetverbinding en probeer het opnieuw.": "Ownify cannot be reached, so nothing was deleted. Check your internet connection and try again.",
     "Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.": "Ownify cannot be reached. Check your internet connection and try again.",

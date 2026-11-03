@@ -288,6 +288,7 @@ if (!function_exists('app_page_data')) {
             'identities'     => $user === null ? [] : auth_identities_for_user($userId),
             'signin'         => $user === null ? null : account_signin_state($userId),
             'email_registration' => account_email_registration_open(),
+            'account_mail'   => account_mail_open(),
             'flash'          => null,
         ];
     }

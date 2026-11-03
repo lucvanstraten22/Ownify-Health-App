@@ -53,6 +53,7 @@
     function close() {
         panel.classList.remove('is-open');
         showError(null);
+        leaveLink();
 
         var flash = panel.querySelector('[data-account-flash]');
         if (flash) { flash.hidden = true; }
@@ -188,24 +189,6 @@
         });
     });
 
-    /* Settings > Account: linking Google to the account that is signed in. */
-    document.addEventListener('click', function (event) {
-        var button = event.target.closest('[data-google-link]');
-        if (!button || button.disabled) { return; }
-
-        event.preventDefault();
-
-        var block = button.closest('[data-signin]');
-        var slot  = block ? block.querySelector('[data-signin-error]') : null;
-        if (slot) { slot.hidden = true; }
-
-        startProvider('google', 'link', button, function (message) {
-            if (!slot) { return; }
-            slot.textContent = message;
-            slot.hidden = false;
-        });
-    });
-
     /* -------------------------------------------------------- the picture */
 
     /* The field shows the chosen file's name, as the app does. */
@@ -236,6 +219,22 @@
 
         if (kind === 'email') {
             url = mode === 'register' ? 'api/auth/register.php' : 'api/auth/login.php';
+        } else if (kind === 'verify-check' || kind === 'verify-resend' || kind === 'verify-cancel') {
+            verifyAction(kind.slice(7), form);
+            return;
+        } else if (kind === 'forgot') {
+            forgot(form, body);
+            return;
+        } else if (kind === 'forgot-back') {
+            busy(form, false);
+            showStep('form');
+            return;
+        } else if (kind === 'link') {
+            useLink(form, body);
+            return;
+        } else if (kind === 'link-done') {
+            window.location.assign(window.location.pathname);
+            return;
         } else if (kind === 'google-username') {
             url = 'api/auth/google-username.php';
         } else if (kind === 'google-cancel') {
@@ -269,6 +268,13 @@
                 return;
             }
 
+            /* Release B: a registration (or a sign-in to one) that waits
+               for its link — the verification screen, nothing signed in. */
+            if (kind === 'email' && result.pending) {
+                showVerify(result.pending);
+                return;
+            }
+
             // A change of who is signed in changes the whole app.
             if (kind === 'email' || kind === 'logout' || kind === 'google-username' || kind === 'google-cancel') {
                 window.location.reload();
@@ -288,6 +294,271 @@
             }
         });
     });
+
+    /* ------------------------------------------- Release B: the steps */
+
+    /**
+     * Signed out, the panel shows one step at a time: the form, the
+     * verification screen, Wachtwoord vergeten — or, signed in or not, the
+     * page a link opened. The others are hidden; the link page puts back what
+     * it hid when the panel closes.
+     */
+    var hiddenForLink = [];
+
+    function showStep(name) {
+        Array.prototype.forEach.call(panel.querySelectorAll('[data-account-step]'), function (step) {
+            step.hidden = step.getAttribute('data-account-step') !== name;
+        });
+
+        showError(null);
+        var flash = panel.querySelector('[data-account-flash]');
+        if (flash) { flash.hidden = true; }
+
+        var target = panel.querySelector('[data-account-step="' + name + '"]');
+        var first = target ? Array.prototype.filter.call(target.querySelectorAll('input, button'), function (control) {
+            return control.getClientRects().length > 0;
+        })[0] : null;
+        if (first && !panel.hidden) { first.focus({ preventScroll: true }); }
+    }
+
+    function status(selector, message) {
+        var line = panel.querySelector(selector);
+        if (!line) { return; }
+        line.textContent = message || '';
+        line.hidden = !message;
+    }
+
+    /* ----------------------------------------- the verification screen */
+
+    var resendTimer = null;
+
+    /** The resend button waits as long as the server said, then is back. */
+    function waitResend(seconds) {
+        var button = panel.querySelector('[data-account-form="verify-resend"] button');
+        if (!button || !seconds) { return; }
+
+        button.disabled = true;
+        window.clearTimeout(resendTimer);
+        resendTimer = window.setTimeout(function () { button.disabled = false; }, seconds * 1000);
+    }
+
+    function showVerify(pending) {
+        var line = panel.querySelector('[data-verify-line]');
+        if (line && pending.email_masked) {
+            line.textContent = (line.getAttribute('data-template') || '%s').replace('%s', pending.email_masked);
+        }
+
+        status('[data-verify-status]', null);
+        showStep('verify');
+        waitResend(pending.resend_after || 0);
+    }
+
+    function verifyAction(action, form) {
+        var body = new FormData();
+        body.append('action', action === 'check' ? 'status' : action);
+        status('[data-verify-status]', null);
+
+        send('api/auth/pending.php', body).then(function (result) {
+            busy(form, false);
+
+            if (action === 'cancel' || result.state === 'gone') {
+                /* Back to the form, which still has what was typed. */
+                setMode('register');
+                showStep('form');
+                if (result.state === 'gone' && action !== 'cancel') { showError(result.error || ''); }
+                var email = panel.querySelector('#account-email');
+                if (email) { email.focus({ preventScroll: true }); }
+                return;
+            }
+
+            if (result.state === 'active') {
+                window.location.reload();
+                return;
+            }
+
+            if (action === 'resend') {
+                if (result.resend_after) { waitResend(result.resend_after); }
+                if (!result.ok && !result.resend_after) { showError(result.error || T.t('Er ging iets mis.')); return; }
+            }
+
+            status('[data-verify-status]', result.ok ? (result.message || '') : (result.error || T.t('Er ging iets mis.')));
+        });
+    }
+
+    /* ------------------------------------------------ Wachtwoord vergeten */
+
+    /** The answer takes the line's place; the form steps aside. */
+    function forgot(form, body) {
+        send('api/auth/forgot.php', body).then(function (result) {
+            busy(form, false);
+
+            if (!result.ok) {
+                showError(result.error || T.t('Er ging iets mis.'));
+                return;
+            }
+
+            panel.querySelector('[data-forgot-line]').textContent = result.message || '';
+            form.hidden = true;
+        });
+    }
+
+    function showForgot() {
+        var line = panel.querySelector('[data-forgot-line]');
+        var form = panel.querySelector('[data-account-form="forgot"]');
+        if (line) { line.textContent = line.getAttribute('data-ask') || ''; }
+        if (form) { form.hidden = false; }
+        showStep('forgot');
+    }
+
+    panel.addEventListener('click', function (event) {
+        var link = event.target.closest('[data-account-forgot]');
+        if (!link) { return; }
+
+        event.preventDefault();
+        var typed = panel.querySelector('#account-username');
+        var email = panel.querySelector('#account-forgot-email');
+        if (typed && email && typed.value.indexOf('@') > 0) { email.value = typed.value.trim(); }
+        showForgot();
+    });
+
+    /* ------------------------------------------------------- a link page */
+
+    var linkToken = '';
+    var linkWords = {};
+
+    try { linkWords = JSON.parse((panel.querySelector('[data-account-step="link"]') || panel).getAttribute('data-link-words') || '{}'); } catch (e) { linkWords = {}; }
+
+    function fill(template, view) {
+        return (template || '')
+            .replace('%1$s', view.email || '')
+            .replace('%2$s', view.username || '')
+            .replace('%3$s', view.old_email || '')
+            .replace('%4$s', view.changed_at || '');
+    }
+
+    function leaveLink() {
+        var eyebrow = panel.querySelector('[data-account-title]');
+        if (eyebrow && hiddenForLink !== null) { eyebrow.textContent = eyebrow.getAttribute('data-title-' + mode) || eyebrow.textContent; }
+        hiddenForLink.forEach(function (element) { element.hidden = false; });
+        hiddenForLink = [];
+        var step = panel.querySelector('[data-account-step="link"]');
+        if (step && !step.hidden) {
+            step.hidden = true;
+            var form = panel.querySelector('[data-account-step="form"]');
+            var verify = panel.querySelector('[data-account-step="verify"]');
+            if (form && (!verify || verify.hidden)) { form.hidden = false; }
+        }
+    }
+
+    function showLink(purpose, view, message) {
+        var words = linkWords[purpose] || linkWords.gone || ['', '', ''];
+        var step  = panel.querySelector('[data-account-step="link"]');
+        if (!step) { return; }
+
+        /* Signed in, the account and the Vrienden page make way for it. */
+        Array.prototype.forEach.call(panel.querySelectorAll('[data-account-view]'), function (view) {
+            if (!view.hidden) { view.hidden = true; hiddenForLink.push(view); }
+        });
+
+        /* Not Inloggen or Registreren: a link is about the account. */
+        var eyebrow = panel.querySelector('#account-title');
+        if (eyebrow) { eyebrow.textContent = 'Account'; }
+
+        step.querySelector('[data-link-title]').textContent = words[0];
+        step.querySelector('[data-link-line]').textContent = message || fill(words[1], view || {});
+
+        var form = step.querySelector('[data-account-form="link"]');
+        var done = step.querySelector('[data-account-form="link-done"]');
+        var passwords = step.querySelector('[data-link-passwords]');
+
+        form.hidden = purpose === 'gone';
+        done.hidden = purpose !== 'gone';
+        passwords.hidden = !(view && view.needs === 'password');
+        Array.prototype.forEach.call(passwords.querySelectorAll('input'), function (input) {
+            input.required = !passwords.hidden;
+            input.value = '';
+        });
+        step.querySelector('[data-link-submit]').textContent = words[2];
+
+        showStep('link');
+    }
+
+    function openLink(token) {
+        linkToken = token;
+        open(null);
+
+        var body = new FormData();
+        body.append('action', 'info');
+        body.append('token', token);
+
+        send('api/auth/link.php', body).then(function (result) {
+            if (!result.ok) {
+                showLink('gone', null, result.error);
+                return;
+            }
+
+            showLink(result.link.purpose, result.link, null);
+        });
+    }
+
+    function useLink(form, body) {
+        body.append('action', 'use');
+        body.append('token', linkToken);
+
+        send('api/auth/link.php', body).then(function (result) {
+            busy(form, false);
+
+            if (!result.ok) {
+                if (result.gone) {
+                    showLink('gone', null, result.error);
+                } else {
+                    showError(result.error || T.t('Er ging iets mis.'));
+                }
+                return;
+            }
+
+            /* Done: what happened, and one way on. A registration confirmed
+               in the browser that started it is signed in: straight in. */
+            if (result.signed_in) {
+                window.location.assign(window.location.pathname);
+                return;
+            }
+
+            /* The message takes the line's place: one thing said, one way on. */
+            form.hidden = true;
+            panel.querySelector('[data-account-form="link-done"]').hidden = false;
+            panel.querySelector('[data-link-line]').textContent = result.message || '';
+        });
+    }
+
+    /* Opened from an e-mail: the token is taken out of the address bar at
+       once, so it is in no history entry and no screenshot of the page. */
+    (function () {
+        var query = window.location.search || '';
+
+        /* The desktop's Telefoon layout: the phone on screen opens it
+           (phone-sim.js hands it the whole address), not this page behind it. */
+        if (document.documentElement.getAttribute('data-layout') === 'phone-frame' && document.querySelector('[data-phone-screen]')) { return; }
+
+        if (/[?&]account-link(?:[=&]|$)/.test(query)) {
+            var token = (window.location.hash || '').replace(/^#/, '');
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+            if (token) { openLink(token); } else { open(null); showLink('gone', null, null); }
+            return;
+        }
+
+        if (/[?&]wachtwoord-vergeten(?:[=&]|$)/.test(query)) {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+            if (panel.querySelector('[data-account-step="forgot"]') && panel.getAttribute('data-account-session') === 'signed-out') {
+                open(null);
+                showForgot();
+            }
+        }
+    }());
 
     /* ---------------------------------------------------- back from Google */
 

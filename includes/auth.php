@@ -250,11 +250,26 @@ if (!function_exists('auth_provider_available')) {
            can never stand in front of it. */
         $matches = auth_password_matches($identity === null ? null : $identity['password_hash'], $password);
 
-        /* The rest of the fixed work. Release B checks the identifier's
-           pending registrations here (at most 3); until then the same number
-           of comparisons against the dummy. */
+        /* Step 2 (Release B, docs/ACCOUNT-SECURITY.md §3a): the identifier's
+           pending registrations — the one with that username, or every one
+           naming that address, real or placeholder; never more than 3. Always
+           checked, padded with the dummy to the fixed number of comparisons,
+           so the time says nothing about which branch was taken. */
+        $pending = auth_login_pending_rows($identifier);
+        $waiting = null;
+
         for ($i = 1; $i < AUTH_SIGNIN_PASSWORD_CHECKS; $i++) {
-            auth_password_matches(null, $password);
+            $row = $pending[$i - 1] ?? null;
+
+            if (auth_password_matches($row === null ? null : (string) $row['password_hash'], $password) && $waiting === null) {
+                $waiting = (int) $row['user_id'];
+            }
+        }
+
+        /* A registration waiting for its link: the verification screen, not
+           the app, and not counted as a wrong guess (it gives nothing). */
+        if (!$matches && $waiting !== null) {
+            return ['ok' => false, 'error' => t('Bevestig eerst je e-mailadres.'), 'pending' => $waiting];
         }
 
         /* `credentials` marks the one failure that is a wrong guess, so the
@@ -280,6 +295,60 @@ if (!function_exists('auth_provider_available')) {
     }
 
     /** Sign-in methods on an account, for the account panel. Never the hashes. */
+    /**
+     * Sign-in step 2's rows (docs/ACCOUNT-SECURITY.md §3a): the pending
+     * registrations an identifier names, at most AUTH_SIGNIN_PASSWORD_CHECKS
+     * − 1 (the cap of 3 per address keeps it there). None before migration 027.
+     *
+     * @return list<array{user_id: int|string, password_hash: string}>
+     */
+    function auth_login_pending_rows(string $identifier): array
+    {
+        if ($identifier === '' || !function_exists('account_security_schema') || !account_security_schema()['pending']) {
+            return [];
+        }
+
+        $limit = AUTH_SIGNIN_PASSWORD_CHECKS - 1;
+
+        if (str_contains($identifier, '@')) {
+            $address = account_email_canonical($identifier);
+
+            return $address === null ? [] : db_all(
+                "SELECT p.user_id, p.password_hash
+                   FROM pending_registrations p JOIN users u ON u.id = p.user_id
+                  WHERE p.email = ? AND u.status = 'pending' AND p.expires_at > NOW()
+                  ORDER BY p.created_at, p.user_id LIMIT $limit",
+                [$address]
+            );
+        }
+
+        return db_all(
+            "SELECT p.user_id, p.password_hash
+               FROM pending_registrations p JOIN users u ON u.id = p.user_id
+              WHERE u.username = ? AND u.status = 'pending' AND p.expires_at > NOW()
+              LIMIT $limit",
+            [$identifier]
+        );
+    }
+
+    /**
+     * A registration this browser started (or signed in to) that still
+     * waits for its link — the verification screen's facts — or null. Loads
+     * the Release B flows only when the session holds one.
+     */
+    function auth_registration_waiting(): ?array
+    {
+        session_boot();
+
+        if (!isset($_SESSION['pending_registration'])) {
+            return null;
+        }
+
+        require_once __DIR__ . '/account-flows.php';
+
+        return account_pending_screen();
+    }
+
     function auth_identities_for_user(int $userId): array
     {
         return db_all(

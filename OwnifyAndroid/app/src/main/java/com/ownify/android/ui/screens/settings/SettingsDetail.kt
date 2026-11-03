@@ -62,6 +62,7 @@ import androidx.core.net.toUri
 import com.ownify.android.data.AppData
 import com.ownify.android.data.Integration
 import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.OwnifyPreferences
 import com.ownify.android.data.Outcome
 import com.ownify.android.data.OwnifyActions
@@ -192,7 +193,7 @@ private fun FieldsBlock(data: AppData, block: SettingsBlock.Fields) {
  * is fixed, nothing for a value worked out from another.
  */
 @Composable
-private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) {
+private fun FieldRow(field: ProfileField, divided: Boolean, status: Pair<String, StatusTone>? = null, onEdit: () -> Unit) {
     // A live field is a <button> (letter-spacing: normal); a locked or derived one is a <div>.
     CompositionLocalProvider(LocalTracking provides if (field.live) 0.sp else LocalTracking.current) {
         val narrow = LocalScreen.current.narrow
@@ -221,6 +222,7 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
                 Column {
                     T(field.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
                     if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
+                    if (status != null) StatusBadge(status.first, status.second, Modifier.padding(top = 2.dp))
                 }
             },
             value = {
@@ -243,6 +245,129 @@ private fun FieldRow(field: ProfileField, divided: Boolean, onEdit: () -> Unit) 
                 }
             }
         )
+    }
+}
+
+/**
+ * Inloggen with the account e-mails on (Release B, 35.0) — the website's
+ * components/settings-signin.php, row for row: the same rows, and one editor
+ * panel ([Overlay.SigninEdit]) for everything that asks something. Where the
+ * website goes to Google first, the app asks Google on the phone when the
+ * editor is saved (Credential Manager). A row that cannot act yet says what
+ * is missing.
+ */
+@Composable
+private fun SigninRowsB(googleOn: Boolean, signin: com.ownify.android.data.Signin) {
+    val shell = LocalShell.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val email = signin.email
+    val verified = if (email != null) signin.emailVerified else signin.googleEmail != null
+    val address = email ?: signin.googleEmail
+    fun editable(key: String, label: String, note: String?, value: String) =
+        ProfileField(key, label, note, null, null, null, "editable", value, value, null)
+    val status = when {
+        signin.pendingEmail != null -> null
+        address == null -> null
+        verified -> (if (email != null) tr("Bevestigd") else tr("Bevestigd door Google")) to StatusTone.On
+        else -> tr("Niet bevestigd") to StatusTone.Warn
+    }
+    val waiting = signin.pendingEmail?.let { trf("%s wacht op bevestiging", it) }
+
+    // E-mailadres
+    if (email != null && signin.canChangeEmail) {
+        FieldRow(editable("email", tr("E-mailadres"), waiting, email), divided = false, status = status) { shell.open(Overlay.SigninEdit("email")) }
+    } else {
+        StaticField(
+            tr("E-mailadres"),
+            if (address == null) tr("Je logt in met Google") else null,
+            address ?: tr("Niet ingesteld"),
+            filled = address != null,
+            status = status
+        )
+    }
+
+    // A Google account adds an address.
+    if (signin.canAddEmail) {
+        FieldRow(
+            editable("email-add", tr("Inloggen met e-mail"), waiting ?: tr("Voeg een adres toe om ook met een wachtwoord in te loggen"), tr("Toevoegen")),
+            divided = true
+        ) { shell.open(Overlay.SigninEdit("email-add")) }
+    }
+
+    // Bevestiging
+    var verifyNote by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
+    var verifyBusy by remember { mutableStateOf(false) }
+    if (signin.canVerify) {
+        FieldRow(
+            editable("verify", tr("Bevestiging"), verifyNote ?: tr("Stuur een link naar je adres om het te bevestigen"), tr("Stuur bevestiging")),
+            divided = true
+        ) {
+            if (verifyBusy) return@FieldRow
+            verifyBusy = true
+            scope.launch {
+                when (val outcome = com.ownify.android.data.OwnifyActions.form(context, "api/account/verify.php", emptyMap(), tr("Dit kon niet worden gedaan."), reload = false)) {
+                    is com.ownify.android.data.Outcome.Done -> verifyNote = outcome.body.optString("message").ifEmpty { null }
+                    is com.ownify.android.data.Outcome.Refused -> com.ownify.android.ui.app.OwnifyToast.show(outcome.message)
+                    com.ownify.android.data.Outcome.SignedOut -> Unit
+                }
+                verifyBusy = false
+            }
+        }
+    } else if (signin.emailTaken) {
+        StaticField(tr("Bevestiging"), tr("Dit adres hoort al bij een ander Ownify-account. Kies een ander adres via E-mailadres."), "—", filled = false, divided = true)
+    }
+
+    // Wachtwoord
+    when {
+        signin.canChangePassword -> FieldRow(
+            ProfileField("password", tr("Wachtwoord"), tr("Inloggen met je gebruikersnaam of e-mailadres"), null, null, null, "editable", tr("Wijzigen"), tr("Wijzigen"), null),
+            divided = true
+        ) { shell.open(Overlay.ChangePassword) }
+
+        signin.canSetPassword -> FieldRow(
+            editable("password", tr("Wachtwoord"), tr("Niet ingesteld"), tr("Instellen")),
+            divided = true
+        ) { shell.open(Overlay.SigninEdit("password-set")) }
+
+        else -> StaticField(
+            tr("Wachtwoord"),
+            when {
+                signin.password -> tr("Dit kan even niet. Probeer het later opnieuw.")
+                email == null -> tr("Voeg eerst een e-mailadres toe.")
+                else -> tr("Bevestig eerst je e-mailadres.")
+            },
+            if (signin.password) tr("Ingesteld") else tr("Niet ingesteld"),
+            filled = signin.password,
+            divided = true
+        )
+    }
+
+    // Google
+    when {
+        signin.google && signin.canRemoveGoogle -> FieldRow(
+            editable("google", "Google", tr("Gekoppeld — je kunt ook met Google inloggen"), signin.googleEmail ?: tr("Gekoppeld")),
+            divided = true
+        ) { shell.open(Overlay.SigninEdit("google-remove")) }
+
+        signin.google -> StaticField(
+            "Google",
+            when {
+                !signin.password -> tr("Gekoppeld. Loskoppelen kan zodra je een wachtwoord hebt.")
+                !verified -> tr("Gekoppeld. Loskoppelen kan zodra je e-mailadres bevestigd is.")
+                else -> tr("Gekoppeld — je kunt ook met Google inloggen")
+            },
+            signin.googleEmail ?: tr("Gekoppeld"), filled = true, check = true, divided = true
+        )
+
+        googleOn && signin.canLinkGoogle -> FieldRow(
+            editable("google", "Google", tr("Koppel Google om daarmee in te loggen"), tr("Koppel Google")),
+            divided = true
+        ) { shell.open(Overlay.SigninEdit("google-link")) }
+
+        googleOn -> StaticField("Google", tr("Bevestig eerst je e-mailadres."), tr("Niet gekoppeld"), filled = false, divided = true)
+
+        else -> StaticField("Google", null, tr("Nog niet beschikbaar"), filled = false, divided = true)
     }
 }
 
@@ -304,6 +429,8 @@ private fun SigninBlock(data: AppData, block: SettingsBlock.Signin) {
         SettingsCard {
             when {
                 !auth.signedIn -> StaticField(tr("Niet ingelogd"), null, "—", filled = false)
+
+                signin != null && signin.mail -> SigninRowsB(auth.googleAvailable, signin)
 
                 signin != null -> {
                     val address = signin.email ?: signin.googleEmail

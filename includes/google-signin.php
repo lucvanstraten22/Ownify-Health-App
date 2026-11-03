@@ -561,7 +561,9 @@ if (!function_exists('google_signin_config')) {
             'mode'         => $mode,
             'user_id'      => in_array($mode, ['link', 'reauth'], true) ? $userId : null,
             'sub'          => $mode === 'revoke' ? $sub : null,
-            'purpose'      => $mode === 'reauth' ? (string) $purpose : null,
+            /* reauth: the action it confirms; revoke: 'unlink' after Google
+               was removed from an account that stays (Release B). */
+            'purpose'      => in_array($mode, ['reauth', 'revoke'], true) ? (string) $purpose : null,
             'redirect_uri' => $config['redirect_uri'],
             'started'      => time(),
         ];
@@ -680,14 +682,17 @@ if (!function_exists('google_signin_config')) {
         $flow = $_SESSION['google_signin_flow'] ?? null;
         unset($_SESSION['google_signin_flow']);        // single use, whatever happens next
 
-        $mode = is_array($flow) && in_array($flow['mode'] ?? null, ['link', 'revoke', 'reauth'], true) ? $flow['mode'] : 'login';
-        $out  = static fn (string $outcome, ?string $message = null): array
-            => ['outcome' => $outcome, 'mode' => $mode, 'message' => $message];
+        $mode    = is_array($flow) && in_array($flow['mode'] ?? null, ['link', 'revoke', 'reauth'], true) ? $flow['mode'] : 'login';
+        $purpose = is_array($flow) && is_string($flow['purpose'] ?? null) ? $flow['purpose'] : null;
+        $out     = static fn (string $outcome, ?string $message = null): array
+            => ['outcome' => $outcome, 'mode' => $mode, 'purpose' => $purpose, 'message' => $message];
+
+        $notRevoked = google_signin_not_revoked($purpose);
 
         $failed = match ($mode) {
             'link'   => t('Google koppelen is niet gelukt. Probeer het opnieuw.'),
             'reauth' => t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.'),
-            'revoke' => GOOGLE_SIGNIN_NOT_REVOKED,
+            'revoke' => $notRevoked,
             default  => t('Inloggen met Google is niet gelukt. Probeer het opnieuw.'),
         };
 
@@ -709,7 +714,7 @@ if (!function_exists('google_signin_config')) {
            a silent revoke means Google wanted to ask something first. */
         if (isset($query['error'])) {
             return match ($mode) {
-                'revoke' => $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED),
+                'revoke' => $out('not_revoked', $notRevoked),
                 'link'   => $out('cancelled', t('Google koppelen is geannuleerd.')),
                 'reauth' => $out('cancelled', t('Bevestigen met Google is geannuleerd.')),
                 default  => $out('cancelled', t('Inloggen met Google is geannuleerd.')),
@@ -726,7 +731,7 @@ if (!function_exists('google_signin_config')) {
 
         if ($tokens === null || $keys === null) {
             return $mode === 'revoke'
-                ? $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED)
+                ? $out('not_revoked', $notRevoked)
                 : $out('error', t('Google kon je aanmelding niet bevestigen. Probeer het opnieuw.'));
         }
 
@@ -734,7 +739,7 @@ if (!function_exists('google_signin_config')) {
 
         if (!$verified['ok']) {
             error_log('[google-signin] ID token refused: ' . $verified['error']);
-            return $mode === 'revoke' ? $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED) : $out('error', $failed);
+            return $mode === 'revoke' ? $out('not_revoked', $notRevoked) : $out('error', $failed);
         }
 
         $sub   = (string) $verified['claims']['sub'];
@@ -777,18 +782,30 @@ if (!function_exists('google_signin_config')) {
             return $out('error', t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.'));
         }
 
-        account_reauth_grant($userId, (string) ($flow['purpose'] ?? 'delete'));
+        $purpose = (string) ($flow['purpose'] ?? 'delete');
+        account_reauth_grant($userId, $purpose);
 
-        return $out('confirmed', t('Bevestigd met Google. Je kunt je account nu binnen 5 minuten verwijderen.'));
+        return $out('confirmed', match ($purpose) {
+            'set_password' => t('Bevestigd met Google. Stel je wachtwoord binnen 5 minuten in.'),
+            'add_email', 'change_email' => t('Bevestigd met Google. Vul je e-mailadres binnen 5 minuten in.'),
+            default        => t('Bevestigd met Google. Je kunt je account nu binnen 5 minuten verwijderen.'),
+        });
     }
 
-    /** @param callable(string, ?string): array $out */
+    /**
+     * Back from Google to link it (§7): started from Settings after the
+     * current password (api/auth/oauth.php, mode link), for the account that
+     * is still signed in. account_google_link() decides, under the account
+     * lock — the same as the app's native link.
+     *
+     * @param callable(string, ?string): array $out
+     */
     function google_signin_link(string $sub, ?string $email, array $flow, callable $out): array
     {
+        require_once __DIR__ . '/account-flows.php';
+
         $userId = current_user_id();
 
-        /* Not before Release B: linking needs the account's own address to
-           be verified, which needs mail (docs/ACCOUNT-SECURITY.md §8). */
         if (!account_google_link_open()) {
             return $out('error', t('Bevestig eerst je e-mailadres. Dat kan binnenkort.'));
         }
@@ -798,38 +815,17 @@ if (!function_exists('google_signin_config')) {
             return $out('error', t('Log eerst in om Google aan je account te koppelen.'));
         }
 
-        $owner = db_value(
-            'SELECT user_id FROM user_auth_identities WHERE provider = ? AND provider_subject = ?',
-            ['google', $sub]
-        );
+        $result = account_google_link($userId, $sub, $email);
 
-        if ($owner !== null) {
-            return (int) $owner === $userId
-                ? $out('linked', t('Dit Google-account was al aan je account gekoppeld.'))
-                : $out('error', t('Dit Google-account hoort al bij een ander Ownify-account.'));
-        }
+        return $out($result['ok'] ? 'linked' : 'error', $result['message']);
+    }
 
-        $existing = db_value(
-            'SELECT provider_subject FROM user_auth_identities WHERE user_id = ? AND provider = ?',
-            [$userId, 'google']
-        );
-
-        if ($existing !== null) {
-            return $out('error', t('Je account is al aan een ander Google-account gekoppeld.'));
-        }
-
-        try {
-            db_run(
-                'INSERT INTO user_auth_identities (user_id, provider, provider_subject, email, email_verified_at)
-                      VALUES (?, ?, ?, ?, ?)',
-                [$userId, 'google', $sub, $email, $email === null ? null : date('Y-m-d H:i:s')]
-            );
-        } catch (PDOException $e) {
-            /* Lost a race on the unique key to somebody linking the same account. */
-            return $out('error', t('Dit Google-account hoort al bij een ander Ownify-account.'));
-        }
-
-        return $out('linked', t('Google is gekoppeld. Je kunt voortaan ook met Google inloggen.'));
+    /** What the page says when Ownify could not withdraw itself at Google: after a deletion, or after unlinking (purpose 'unlink'). */
+    function google_signin_not_revoked(?string $purpose): string
+    {
+        return $purpose === 'unlink'
+            ? t('Google is losgekoppeld. Ownify kon zichzelf niet automatisch uit je Google-account halen; dat doe je in je Google-account bij apps met toegang.')
+            : GOOGLE_SIGNIN_NOT_REVOKED;
     }
 
     /**
@@ -845,20 +841,27 @@ if (!function_exists('google_signin_config')) {
      */
     function google_signin_forget(string $sub, ?string $accessToken, array $flow, callable $out): array
     {
+        $unlink     = ($flow['purpose'] ?? null) === 'unlink';
+        $notRevoked = google_signin_not_revoked($flow['purpose'] ?? null);
+
         if ($accessToken === null) {
-            return $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
+            return $out('not_revoked', $notRevoked);
         }
 
         $revoked = google_signin_revoke($accessToken);
 
         if (!hash_equals((string) ($flow['sub'] ?? ''), $sub)) {
             error_log('[google-signin] revoke came back for a different Google account');
-            return $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
+            return $out('not_revoked', $notRevoked);
         }
 
-        return $revoked
-            ? $out('revoked', t('Je account is verwijderd, en Ownify is ook uit je Google-account gehaald.'))
-            : $out('not_revoked', GOOGLE_SIGNIN_NOT_REVOKED);
+        if (!$revoked) {
+            return $out('not_revoked', $notRevoked);
+        }
+
+        return $out('revoked', $unlink
+            ? t('Google is losgekoppeld, en Ownify is ook uit je Google-account gehaald.')
+            : t('Je account is verwijderd, en Ownify is ook uit je Google-account gehaald.'));
     }
 
     /** @param callable(string, ?string): array $out */

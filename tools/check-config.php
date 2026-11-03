@@ -700,7 +700,9 @@ $mailReason = mail_unavailable_reason();
 line($mailReason === null ? 'ok' : 'warn', 'mail', $mailReason === null
     ? 'configured (' . (mail_settings()['host'] ?? '') . ':' . (mail_settings()['port'] ?? '') . ', from ' . (mail_settings()['from'] ?? '') . ', password from ' . count(mail_settings()['_sources'] ?? []) . ' source(s))'
     : 'not configured — nothing is sent (' . $mailReason . ')');
-line('ok', 'e-mail registration', account_email_registration_open() ? 'OPEN (test server only)' : 'closed (Release A)');
+line('ok', 'account e-mails', account_mail_open() ? 'ON (Release B)' : 'off (config/mail.php account_mail' . (!empty(mail_settings()['account_mail']) ? ' is on, but mail or migration 027 is not ready)' : ')'));
+line('ok', 'e-mail registration', account_email_registration_pending() ? 'OPEN, with the verification screen (Release B)'
+    : (account_email_registration_open() ? 'OPEN (test server only)' : 'closed'));
 
 /* ------------------------------------------------------------- version */
 

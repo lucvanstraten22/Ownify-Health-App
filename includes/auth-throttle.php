@@ -76,10 +76,15 @@ if (!function_exists('auth_throttle_available')) {
         ) === 1;
     }
 
-    /** The key for one name from one address. The name as the lookup treats it: case and spaces do not count. */
-    function auth_throttle_key(string $action, string $identifier): string
+    /**
+     * The key for one name from one address. The name as the lookup treats
+     * it: case and spaces do not count. $network false: the name alone, from
+     * every address together — the per-recipient limits of the account
+     * e-mails (docs/ACCOUNT-SECURITY.md §12).
+     */
+    function auth_throttle_key(string $action, string $identifier, bool $network = true): string
     {
-        $address = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $address = $network ? (string) ($_SERVER['REMOTE_ADDR'] ?? '') : '*';
 
         return hash('sha256', $action . "\n" . mb_strtolower(trim($identifier)) . "\n" . $address);
     }
@@ -90,7 +95,7 @@ if (!function_exists('auth_throttle_available')) {
      * a limit says otherwise (Google 20 per quarter hour, registration 20 per
      * hour from one address — docs/ACCOUNT-SECURITY.md §12).
      */
-    function auth_throttle_wait(string $action, string $identifier, int $limit = AUTH_THROTTLE_LIMIT, int $window = AUTH_THROTTLE_WINDOW): ?int
+    function auth_throttle_wait(string $action, string $identifier, int $limit = AUTH_THROTTLE_LIMIT, int $window = AUTH_THROTTLE_WINDOW, bool $network = true): ?int
     {
         if (!auth_throttle_available()) {
             return null;
@@ -104,14 +109,14 @@ if (!function_exists('auth_throttle_available')) {
               WHERE action = ? AND key_hash = ? AND attempted_at > NOW() - INTERVAL ? SECOND
               ORDER BY attempted_at DESC, id DESC
               LIMIT 1 OFFSET ' . max(0, $limit - 1),
-            [$window, $action, auth_throttle_key($action, $identifier), $window]
+            [$window, $action, auth_throttle_key($action, $identifier, $network), $window]
         );
 
         return $wait === null ? null : max(1, (int) $wait);
     }
 
     /** Counts one failure. */
-    function auth_throttle_fail(string $action, string $identifier): void
+    function auth_throttle_fail(string $action, string $identifier, bool $network = true): void
     {
         if (!auth_throttle_available()) {
             return;
@@ -119,7 +124,7 @@ if (!function_exists('auth_throttle_available')) {
 
         db_run(
             'INSERT INTO auth_attempts (action, key_hash) VALUES (?, ?)',
-            [$action, auth_throttle_key($action, $identifier)]
+            [$action, auth_throttle_key($action, $identifier, $network)]
         );
 
         /* Housekeeping on the one occasion somebody is already writing here,
@@ -132,12 +137,12 @@ if (!function_exists('auth_throttle_available')) {
      * is counted and null comes back; otherwise the seconds to wait. Keyed on
      * the network address alone when $identifier is ''.
      */
-    function auth_throttle_attempt(string $action, string $identifier, int $limit, int $window): ?int
+    function auth_throttle_attempt(string $action, string $identifier, int $limit, int $window, bool $network = true): ?int
     {
-        $wait = auth_throttle_wait($action, $identifier, $limit, $window);
+        $wait = auth_throttle_wait($action, $identifier, $limit, $window, $network);
 
         if ($wait === null) {
-            auth_throttle_fail($action, $identifier);
+            auth_throttle_fail($action, $identifier, $network);
         }
 
         return $wait;

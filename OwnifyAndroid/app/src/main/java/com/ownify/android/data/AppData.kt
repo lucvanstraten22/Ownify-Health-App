@@ -2751,7 +2751,10 @@ data class Auth(
 /**
  * The account's ways in, as Settings shows them (28.0): the sign-in address
  * and whether it is confirmed, whether there is a password and it may be
- * changed now, and Google. Linking Google waits for Release B.
+ * changed now, and Google. Release B (35.0), with the account e-mails on
+ * ([mail]): what Inloggen may offer now — confirming, changing or adding the
+ * address, setting a password, linking or removing Google — and an address
+ * waiting for its link ([pendingEmail]). An older server sends none of it.
  */
 data class Signin(
     val email: String?,
@@ -2760,12 +2763,22 @@ data class Signin(
     val google: Boolean,
     val googleEmail: String?,
     val canChangePassword: Boolean,
-    val canLinkGoogle: Boolean
+    val canLinkGoogle: Boolean,
+    val mail: Boolean = false,
+    val emailTaken: Boolean = false,
+    val canVerify: Boolean = false,
+    val canChangeEmail: Boolean = false,
+    val canAddEmail: Boolean = false,
+    val canSetPassword: Boolean = false,
+    val canRemoveGoogle: Boolean = false,
+    val pendingEmail: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject): Signin = Signin(
             o.str("email"), o.bool("email_verified"), o.bool("password"), o.bool("google"),
-            o.str("google_email"), o.bool("can_change_password"), o.bool("can_link_google")
+            o.str("google_email"), o.bool("can_change_password"), o.bool("can_link_google"),
+            o.bool("mail"), o.bool("email_taken"), o.bool("can_verify"), o.bool("can_change_email"),
+            o.bool("can_add_email"), o.bool("can_set_password"), o.bool("can_remove_google"), o.str("pending_email")
         )
     }
 }

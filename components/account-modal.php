@@ -18,6 +18,14 @@
  * tijdelijk niet beschikbaar.", and Google stays (docs/ACCOUNT-SECURITY.md).
  * When it is open, registering asks for the password twice.
  *
+ * Release B (35.0), with the account e-mails on, adds three steps in the
+ * same pattern as "Kies je gebruikersnaam" — no new components:
+ *   verify  "Bevestig je e-mailadres": a registration waiting for its link
+ *           (Stuur opnieuw, Ik heb bevestigd, Ander adres gebruiken)
+ *   forgot  Wachtwoord vergeten (also ?wachtwoord-vergeten)
+ *   link    the page a link in an account e-mail opens
+ *           (?account-link#token): a tap, or a new password
+ *
  * Signing in takes a username and a password. Google is a small mark under
  * the form rather than a full-width button above it — it is secondary. It
  * works once it is configured (includes/google-signin.php); until then it
@@ -38,7 +46,10 @@ $pending   = $signedIn ? null : ($auth['google_pending'] ?? null);
 /* A message left by the Google callback, if it is this panel's to show. */
 $flash     = $auth['flash'] ?? null;
 $flash     = ($flash !== null && $flash['target'] === 'account') ? $flash : null;
-$autoOpen  = $flash !== null || $pending !== null;
+/* Release B: a registration this browser started, still waiting for its link. */
+$accountMail  = !empty($auth['account_mail']);
+$registration = $signedIn || $pending !== null ? null : ($auth['registration'] ?? null);
+$autoOpen  = $flash !== null || $pending !== null || $registration !== null;
 
 /* The two flows, and what the panel is called in each. */
 $flows     = !$signedIn && $pending === null;
@@ -66,7 +77,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                      account. Otherwise it names the one flow it is on. */ ?>
             <h2 class="card__eyebrow" id="account-title"
                 <?php if ($flows): ?>data-account-title data-title-login="<?= e($titles['login']) ?>" data-title-register="<?= e($titles['register']) ?>"<?php endif; ?>>
-                <?= e($flows ? $titles['login'] : 'Account') ?>
+                <?= e($flows ? ($registration !== null ? $titles['register'] : $titles['login']) : 'Account') ?>
             </h2>
             <button type="button" class="account__close press" data-account-close aria-label="<?= e(t('Sluiten')) ?>">
                 <?= icon('chevron-down') ?>
@@ -201,6 +212,8 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
 
         <?php else: ?>
 
+            <div data-account-step="form" <?= $registration !== null ? 'hidden' : '' ?>>
+
             <?php if (!$canRegister): ?>
                 <p class="account__hint account__hint--centred" data-account-only="register" hidden>
                     <?= e(t('Registreren met e-mail is tijdelijk niet beschikbaar.')) ?>
@@ -228,6 +241,11 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                     <label class="account__label" for="account-password"><?= e(t('Wachtwoord')) ?></label>
                     <input class="account__input" type="password" id="account-password" name="password"
                            minlength="8" autocomplete="current-password" required>
+                    <?php if ($accountMail): ?>
+                        <p class="account__hint" data-account-only="login">
+                            <a class="account__link" href="?wachtwoord-vergeten" data-account-forgot><?= e(t('Wachtwoord vergeten?')) ?></a>
+                        </p>
+                    <?php endif; ?>
                 </div>
 
                 <?php if ($canRegister): ?>
@@ -261,7 +279,97 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <p class="account__hint account__hint--centred"><?= e(t('Google is nog niet gekoppeld.')) ?></p>
             <?php endif; ?>
 
+            </div>
+
+            <?php if ($accountMail): ?>
+
+                <?php /* A registration waiting for its link (docs/ACCOUNT-SECURITY.md
+                         §3). A taken address shows exactly the same. Nothing is
+                         signed in until the link is used. */ ?>
+                <div class="account__step" data-account-step="verify" <?= $registration === null ? 'hidden' : '' ?>>
+                    <p class="account__username"><?= e(t('Bevestig je e-mailadres')) ?></p>
+                    <p class="account__meta" data-verify-line
+                       data-template="<?= e(t('We hebben een link gestuurd naar %s. Open die link om je account af te maken.')) ?>">
+                        <?= $registration !== null ? e(tf('We hebben een link gestuurd naar %s. Open die link om je account af te maken.', (string) $registration['email_masked'])) : '' ?>
+                    </p>
+
+                    <form class="account__form" data-account-form="verify-check">
+                        <button type="submit" class="btn account__submit press"><?= e(t('Ik heb bevestigd')) ?></button>
+                    </form>
+                    <form class="account__form" data-account-form="verify-resend">
+                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Stuur opnieuw')) ?></button>
+                    </form>
+                    <form class="account__form" data-account-form="verify-cancel">
+                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Ander adres gebruiken')) ?></button>
+                    </form>
+
+                    <p class="account__hint account__hint--centred" data-verify-status role="status" hidden></p>
+                    <p class="account__hint account__hint--centred">
+                        <?= e(t('Geen e-mail gekregen? Kijk ook in je spam. De link werkt 24 uur.')) ?>
+                    </p>
+                </div>
+
+                <?php /* Wachtwoord vergeten (§7B): one answer, whatever the address. */ ?>
+                <div class="account__step" data-account-step="forgot" hidden>
+                    <p class="account__username"><?= e(t('Wachtwoord vergeten')) ?></p>
+                    <p class="account__meta" data-forgot-line role="status"
+                       data-ask="<?= e(t('Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen.')) ?>"><?= e(t('Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen.')) ?></p>
+
+                    <form class="account__form" data-account-form="forgot" novalidate>
+                        <div class="account__field">
+                            <label class="account__label" for="account-forgot-email"><?= e(t('E-mailadres')) ?></label>
+                            <input class="account__input" type="email" id="account-forgot-email" name="email"
+                                   autocomplete="email" spellcheck="false" autocapitalize="none" required>
+                        </div>
+                        <button type="submit" class="btn account__submit press"><?= e(t('Stuur link')) ?></button>
+                    </form>
+                    <form class="account__form" data-account-form="forgot-back">
+                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Terug naar inloggen')) ?></button>
+                    </form>
+                </div>
+
+            <?php endif; ?>
+
         <?php endif; ?>
+
+        <?php /* The page a link in an account e-mail opens (§7): opening only
+                 reads; the tap — or the new password — uses it. Signed in or
+                 not. The words per kind of link come with the page. */
+        $linkWords = [
+            'verify_signup'  => [t('Bevestig je e-mailadres'), t('Bevestig dat %1$s van jou is, %2$s.'), t('Bevestigen')],
+            'verify_link'    => [t('Koppel dit e-mailadres'), t('Koppel %1$s aan je Ownify-account %2$s.'), t('Koppelen')],
+            'verify_change'  => [t('Bevestig je nieuwe e-mailadres'), t('Daarna log je met %1$s in op je Ownify-account %2$s.'), t('Bevestigen')],
+            'password_reset' => [t('Kies een nieuw wachtwoord'), t('Voor je Ownify-account %2$s. Daarna word je overal uitgelogd.'), t('Wachtwoord opslaan')],
+            'revert_email'   => [t('Zet je oude adres terug'), t('Het e-mailadres van %2$s is gewijzigd op %4$s. Hiermee komt %3$s terug en kies je een nieuw wachtwoord. Daarna word je overal uitgelogd.'), t('Zet mijn oude adres terug')],
+            'gone'           => [t('Deze link werkt niet meer'), t('Deze link is verlopen of al gebruikt.'), ''],
+        ];
+        ?>
+        <div class="account__step" data-account-step="link" hidden
+             data-link-words="<?= e(json_encode($linkWords, JSON_UNESCAPED_UNICODE)) ?>">
+            <p class="account__username" data-link-title></p>
+            <p class="account__meta" data-link-line role="status"></p>
+
+            <form class="account__form" data-account-form="link" novalidate hidden>
+                <div data-link-passwords hidden>
+                    <div class="account__field">
+                        <label class="account__label" for="account-link-password"><?= e(t('Nieuw wachtwoord')) ?></label>
+                        <input class="account__input" type="password" id="account-link-password" name="password"
+                               minlength="8" maxlength="200" autocomplete="new-password">
+                    </div>
+                    <div class="account__field">
+                        <label class="account__label" for="account-link-password-confirm"><?= e(t('Herhaal nieuw wachtwoord')) ?></label>
+                        <input class="account__input" type="password" id="account-link-password-confirm" name="password_confirm"
+                               minlength="8" maxlength="200" autocomplete="new-password">
+                    </div>
+                    <p class="account__hint"><?= e(t('Minimaal 8 tekens.')) ?></p>
+                </div>
+                <button type="submit" class="btn account__submit press" data-link-submit></button>
+            </form>
+
+            <form class="account__form" data-account-form="link-done" hidden>
+                <button type="submit" class="btn account__submit press"><?= e(t('Doorgaan')) ?></button>
+            </form>
+        </div>
 
     </div>
 </div>

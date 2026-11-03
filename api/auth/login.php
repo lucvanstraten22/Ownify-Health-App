@@ -24,6 +24,15 @@ $result = function_exists('auth_login_attempt')
     ? auth_login_attempt($identifier, $password)
     : auth_login_password($identifier, $password);
 
+/* A registration that still waits for its link (Release B, §3a): the
+   verification screen, held by this browser — nothing is signed in. */
+if (!$result['ok'] && isset($result['pending'])) {
+    require_once dirname(__DIR__, 2) . '/includes/account-flows.php';
+
+    account_pending_hold((int) $result['pending']);
+    api_ok(['pending' => account_pending_view((int) $result['pending']) ?? []]);
+}
+
 if (!$result['ok']) {
     if (isset($result['retry_after'])) {
         header('Retry-After: ' . $result['retry_after']);

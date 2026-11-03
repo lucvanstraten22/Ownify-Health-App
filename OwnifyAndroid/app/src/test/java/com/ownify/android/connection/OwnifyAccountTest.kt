@@ -251,6 +251,94 @@ class OwnifyAccountTest {
         assertTrue(OwnifyConnection.state is OwnifyState.NotConnected)
     }
 
+    // ------------------------------------------------- Release B (35.0)
+
+    @Test
+    fun `registration with the account e-mails on - the verification screen, nothing stored, then signed in once the link was used`() {
+        openApp()
+        server.registerPending = true
+
+        OwnifyConnection.register(context, "nieuw", "nieuw@example.invalid", "geheim-wachtwoord", "geheim-wachtwoord")
+        waitUntil("the verification screen") { OwnifyConnection.pendingStep != null }
+
+        assertEquals("n••••@e••••••.invalid", OwnifyConnection.pendingStep!!.emailMasked)
+        assertNull(stored())
+        assertTrue(OwnifyConnection.state is OwnifyState.NotConnected)
+
+        // "Ik heb bevestigd" before the link: still waiting, and said so.
+        OwnifyConnection.checkPending(context)
+        waitUntil("asked") { OwnifyConnection.pendingStep?.message != null }
+        assertEquals("Nog niet bevestigd. Open de link in de e-mail die we je stuurden.", OwnifyConnection.pendingStep!!.message)
+        assertNull(stored())
+
+        // The same conversation: the session cookie the registration set goes along.
+        assertTrue(server.requestsTo("app-pending.php").all { it.headers["cookie"]?.contains("ownify_session=pending1") == true })
+
+        // "Stuur opnieuw" too soon: the server's wait, said, and the button waits.
+        val before = OwnifyConnection.pendingStep!!.resendAt
+        OwnifyConnection.resendPending(context)
+        waitUntil("refused") { OwnifyConnection.auth is OwnifyAuthState.Failed }
+        assertEquals("Je kunt over 40 seconden opnieuw een e-mail laten sturen.", (OwnifyConnection.auth as OwnifyAuthState.Failed).message)
+        val left = OwnifyConnection.pendingStep!!.resendAt - android.os.SystemClock.elapsedRealtime()
+        assertTrue("the server's 40 seconds, not the first 60 (was $before)", left in 30_000L..40_000L)
+
+        // The link was used (in the phone's browser): back in the app, signed in.
+        server.pendingConfirmed = true
+        OwnifyConnection.checkPending(context, quietly = true)
+        waitUntil("signed in") { connected?.scope == OwnifyScope.ACCOUNT }
+        assertNull(OwnifyConnection.pendingStep)
+        assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), stored())
+    }
+
+    @Test
+    fun `registration with the account e-mails on - Ander adres gebruiken cancels it on the server and brings the form back`() {
+        openApp()
+        server.registerPending = true
+
+        OwnifyConnection.register(context, "nieuw", "nieuw@example.invalid", "geheim-wachtwoord", "geheim-wachtwoord")
+        waitUntil("the verification screen") { OwnifyConnection.pendingStep != null }
+
+        OwnifyConnection.cancelPending(context)
+        waitUntil("cancelled") { OwnifyConnection.pendingStep == null }
+
+        assertEquals("cancel", server.requestsTo("app-pending.php").last().body.getString("action"))
+        assertNull(stored())
+        assertEquals(OwnifyAuthState.Idle, OwnifyConnection.auth)
+    }
+
+    @Test
+    fun `Wachtwoord vergeten - the server's one answer, and nothing else changes`() {
+        openApp()
+
+        OwnifyConnection.forgotPassword("  iemand@example.invalid ")
+        waitUntil("answered") { OwnifyConnection.forgotAnswer != null }
+
+        assertEquals("iemand@example.invalid", server.requestsTo("app-forgot.php").single().body.getString("email"))
+        assertTrue(OwnifyConnection.forgotAnswer!!.contains("Doorgaan met Google"))
+        assertNull(stored())
+
+        OwnifyConnection.forgetForgotAnswer()
+        assertNull(OwnifyConnection.forgotAnswer)
+    }
+
+    @Test
+    fun `Settings - Release B's sign-in state is read, and an older server's is not`() {
+        val b = com.ownify.android.data.Signin.parse(org.json.JSONObject(
+            """{"email":"sanne@example.invalid","email_verified":false,"password":true,"google":false,"google_email":null,
+               "can_change_password":true,"can_link_google":false,"mail":true,"email_taken":false,"can_verify":true,
+               "can_change_email":true,"can_add_email":false,"can_set_password":false,"can_remove_google":false,
+               "pending_email":"nieuw@example.invalid"}"""
+        ))
+        assertTrue(b.mail && b.canVerify && b.canChangeEmail && !b.canRemoveGoogle)
+        assertEquals("nieuw@example.invalid", b.pendingEmail)
+
+        val a = com.ownify.android.data.Signin.parse(org.json.JSONObject(
+            """{"email":"sanne@example.invalid","email_verified":false,"password":true,"google":false,"can_change_password":true,"can_link_google":false}"""
+        ))
+        assertFalse(a.mail || a.canVerify || a.canChangeEmail)
+        assertNull(a.pendingEmail)
+    }
+
     // ------------------------------------------------------------ logout
 
     @Test

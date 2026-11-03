@@ -120,23 +120,29 @@ response.
 | `DB_NAME=… php tools/mail-outbox-test.php` | The outbox's lease, attempts and decoys. |
 | `php tools/check-config.php` | Says whether mail is configured, and from how many sources. |
 
-## The account mail it is for (Release B)
+## The account mail (Release B, 35.0)
 
-Registration verification, Wachtwoord vergeten, changing an address (and its
-revert link) and the account notices all use this service the same way,
-without mail code of their own. Migration 027 already has their tables
-(`auth_email_tokens` with `verify_signup`, `verify_change`, `password_reset`,
-`revert_email`; `pending_registrations`; `email_changes`):
+Registration verification, Wachtwoord vergeten, changing or adding an
+address (and its revert link), Google linking and removal and the security
+notices are built (`includes/account-flows.php`, docs/ACCOUNT-SECURITY.md
+§12) and **on** since the e-mails were approved (35.0): `config/mail.php`
+has `account_mail` and `email_registration` set to `true`. Setting
+`account_mail` to `false` stops every account e-mail at once.
 
-1. the flow, in its own transaction, creates the token row and calls
-   `mail_outbox_enqueue($kind, $address, ['subject' => …, 'text' => …,
-   'html' => …], $validMinutes)` — the link built from `public_url`, never
-   from the request;
-2. after the response is finished, `mail_outbox_run()` sends it (and
-   `php tools/mail-outbox.php` from cron every minute catches the rest);
-3. a notice without a link that may simply be lost can call `mail_send()`
-   directly.
+- The seven e-mails (and their variants) are `includes/mail-templates.php`,
+  in Dutch and English through `t()` (`lang/en/account.php`), rendered in
+  the recipient's language when they are queued. The approval preview is
+  rendered from this code.
+- A flow, in its own transaction, makes the token row and queues the
+  rendered message (`account_mail_enqueue()` → `mail_outbox_enqueue()`,
+  encrypted with the app key) — or a decoy that sends nothing, so the
+  privacy-sensitive branches do the same work. Every link is built from
+  `public_url`, never from the request.
+- It is sent after the response: under PHP-FPM (Hestia) the request
+  finishes the response and then sends its own jobs; a page request sends
+  what is due after its output; `php tools/mail-outbox.php` from cron every
+  minute sends the rest and deletes registrations past their 7 days.
+  **Recommended on the server once it is switched on**: that cron line.
 
-What each message says (Dutch and English, through `t()`) belongs with each
-flow when Release B is built; e-mail registration stays closed until then
-(`account_email_registration_open()`).
+`php tools/check-config.php` says whether the account e-mails are on
+(and, when the switch is on but they are not, why).

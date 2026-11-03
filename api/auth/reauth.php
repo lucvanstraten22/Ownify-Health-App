@@ -1,10 +1,13 @@
 <?php
 /**
- * Confirming the signed-in account with Google before an action that cannot
- * be undone — deleting the account — for an account without a password.
- * (An account with a password sends it with the action itself.)
+ * Confirming the signed-in account with Google, for an account without a
+ * password, before deleting it — or, Release B, before adding an address
+ * (add_email), changing an address it has no password for (change_email) or
+ * setting its first password (set_password). (An account with a password
+ * sends it with the action itself.)
  *
- *   The website   POST action=google, csrf, purpose=delete
+ *   The website   POST action=google, csrf, purpose=delete | add_email |
+ *                 change_email | set_password
  *                 -> { ok, redirect }   to Google, which asks for the password
  *                 again (prompt=login, max_age=0). Back in
  *                 api/auth/google-callback.php the account's own Google id and
@@ -72,7 +75,13 @@ if ($action === 'google') {
         api_fail('Inloggen met Google is nog niet gekoppeld.', 501);
     }
 
-    $url = google_signin_begin('reauth', $userId, null, 'delete');
+    $purpose = is_string($input['purpose'] ?? null) ? $input['purpose'] : 'delete';
+
+    if (!in_array($purpose, ['delete', 'add_email', 'change_email', 'set_password'], true)) {
+        api_fail('Onbekende actie.', 400);
+    }
+
+    $url = google_signin_begin('reauth', $userId, null, $purpose);
 
     if ($url === null) {
         api_fail('Bevestigen met Google kon niet worden gestart.', 500);

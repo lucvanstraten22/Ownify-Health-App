@@ -2,29 +2,31 @@
 /**
  * The Ownify app creates an account: e-mail address, username, password.
  *
- * Closed in Release A (28.0), as on the website (api/auth/register.php):
- * 403 "Registreren met e-mail is tijdelijk niet beschikbaar." The app offers
- * Google instead. `password_confirm` is the repeat of the password.
+ * Release B (35.0), as on the website (api/auth/register.php): the account
+ * waits for the link in e-mail 1. The answer is then
  *
- *   POST  { "email": "…", "username": "…", "password": "…",
+ *   200   { ok, pending: { email_masked, username, resend_after } }
+ *
+ * for a free address and a taken one alike, and this conversation (the
+ * app's cookie jar) holds the registration: api/auth/app-pending.php asks
+ * whether the link was used, sends the mail again, or cancels — and gives the
+ * app its token once the account is real. At a limit 429 with "Dit kan even
+ * niet. Probeer het later opnieuw.", the same for both.
+ *
+ * Off (Release A): 403 "Registreren met e-mail is tijdelijk niet beschikbaar."
+ * The app offers Google instead.
+ *
+ *   POST  { "email": "…", "username": "…", "password": "…", "password_confirm": "…",
  *           "label": "Pixel 10", "platform": "android", "app_version": "1.0" }
  *
  *   200   { ok, token, scope: "account", provider: "password", account: {…} }
- *   422   the website's own validation message: an invalid or taken address,
- *         an invalid or taken username, a password that is too short or long
- *   429   too many tries with an address or username that was taken, for
- *         this address from here; the Retry-After header says how long
+ *         — only on a local test server with the immediate registration
+ *   422   the website's own validation message
+ *   429   a limit; Retry-After says how long where it may be said
  *   503   not available on this server yet (migration 013)
  *
- * The account is made by auth_register_email() — the function the website's
- * registration uses — so the rules, the password hash and the messages are
- * the same ones. Nobody is signed in in a browser: the app gets an account
- * token, exactly as after app-login.php.
- *
- * "Taken" answers are counted per e-mail address and network address, under
- * their own name, with the sign-in limit (includes/auth-throttle.php): trying
- * to learn which addresses or usernames have an account is slowed down the
- * way password guessing is. A field that is simply invalid is not counted.
+ * The account is made by the function the website's registration uses, so
+ * the rules, the password hash and the messages are the same ones.
  */
 declare(strict_types=1);
 
@@ -48,6 +50,34 @@ $input    = api_json_body();
 $email    = is_string($input['email'] ?? null) ? $input['email'] : '';
 $username = is_string($input['username'] ?? null) ? trim($input['username']) : '';
 $password = is_string($input['password'] ?? null) ? $input['password'] : '';
+
+if (account_email_registration_pending()) {
+    require_once dirname(__DIR__, 2) . '/includes/account-flows.php';
+
+    /* The website's limits (§12): per network address, and per address from it. */
+    $wait = auth_throttle_attempt('register_ip', '', 20, 3600)
+        ?? auth_throttle_attempt('register_try', $email, 5, 900);
+
+    if ($wait !== null) {
+        header('Retry-After: ' . $wait);
+        api_fail(auth_throttle_message($wait), 429);
+    }
+
+    $result = account_pending_register(
+        $email,
+        $password,
+        $username,
+        is_string($input['password_confirm'] ?? null) ? $input['password_confirm'] : ''
+    );
+
+    if (!$result['ok']) {
+        api_fail((string) $result['error'], (int) ($result['status'] ?? 422));
+    }
+
+    account_pending_hold((int) $result['user_id']);
+
+    api_ok(['pending' => (account_pending_view((int) $result['user_id']) ?? []) + ['resend_after' => (int) $result['resend_after']]]);
+}
 
 $wait = auth_throttle_wait('register', $email);
 

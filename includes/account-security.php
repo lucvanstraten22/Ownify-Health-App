@@ -337,6 +337,10 @@ if (!function_exists('account_email_canonical')) {
      */
     function account_end_other_sessions(int $userId, ?string $keepSelector, ?int $keepDeviceId): int
     {
+        /* Always loaded here: a request that never touched an app token (a
+           reset or revert link) must still revoke them all. */
+        require_once __DIR__ . '/devices.php';
+
         db_run('UPDATE users SET session_generation = session_generation + 1 WHERE id = ?', [$userId]);
         $generation = (int) db_value('SELECT session_generation FROM users WHERE id = ?', [$userId]);
 
@@ -370,9 +374,15 @@ if (!function_exists('account_email_canonical')) {
     /**
      * The account's ways in, as Settings shows them. Never a hash.
      *
+     * The can_* flags say what Settings › Inloggen offers; Release B's
+     * (verify, change or add the address, set a password, link or remove
+     * Google) are false while account_mail_open() is.
+     *
      * @return array{username: string, email: ?string, email_verified: bool, password: bool,
      *               google: bool, google_email: ?string, can_change_password: bool,
-     *               can_link_google: bool}
+     *               can_link_google: bool, mail: bool, email_taken: bool, can_verify: bool,
+     *               can_change_email: bool, can_add_email: bool, can_set_password: bool,
+     *               can_remove_google: bool, pending_email: ?string}
      */
     function account_signin_state(int $userId): array
     {
@@ -388,21 +398,57 @@ if (!function_exists('account_email_canonical')) {
         );
 
         $hasPassword = $email !== null && (string) ($email['password_hash'] ?? '') !== '';
+        $verified    = $email !== null && $email['email_verified_at'] !== null;
+        $sessions    = account_security_schema()['session_generation'];
+        $mail        = account_mail_open();
+
+        /* An unconfirmed sign-in address another account has confirmed, or
+           that is contested, can never be confirmed for this one (§5a): the
+           row says so and offers Wijzigen instead of "Stuur bevestiging". */
+        $taken = $mail && $email !== null && !$verified && (
+            db_value('SELECT user_id FROM account_emails WHERE email = ? AND user_id <> ?', [(string) $email['provider_subject'], $userId]) !== null
+            || db_value('SELECT email FROM account_email_conflicts WHERE email = ? AND resolved_at IS NULL', [(string) $email['provider_subject']]) !== null
+        );
 
         return [
             'username'            => $username,
             'email'               => $email !== null ? (string) $email['provider_subject'] : null,
-            'email_verified'      => $email !== null && $email['email_verified_at'] !== null,
+            'email_verified'      => $verified,
             'password'            => $hasPassword,
             'google'              => $google !== null,
             'google_email'        => $google !== null && $google['email'] !== null ? (string) $google['email'] : null,
             /* Without the session number other browsers could not be signed
                out, so the change is not offered at all. */
-            'can_change_password' => $hasPassword && account_security_schema()['session_generation'],
-            /* Linking needs the account's own address verified, which needs
-               mail: not before Release B (docs/ACCOUNT-SECURITY.md §8). */
-            'can_link_google'     => false,
+            'can_change_password' => $hasPassword && $sessions,
+            /* Release B (35.0): everything below needs mail, and is off
+               while config/mail.php's account_mail is (account_mail_open()). */
+            'mail'                => $mail,
+            'email_taken'         => $taken,
+            'can_verify'          => $mail && $email !== null && !$verified && !$taken,
+            'can_change_email'    => $mail && $email !== null,
+            'can_add_email'       => $mail && $email === null,
+            'can_set_password'    => $mail && $email !== null && $verified && !$hasPassword,
+            /* Linking needs a password and the account's own address
+               confirmed (§7); an account has one Google account at most. */
+            'can_link_google'     => $mail && $google === null && $hasPassword && $verified,
+            'can_remove_google'   => $mail && $google !== null && $hasPassword && $verified && $sessions,
+            /* An address this account asked to change to, or to add, whose
+               link has not been used yet: its own, so shown in full. */
+            'pending_email'       => $mail ? account_pending_email($userId) : null,
         ];
+    }
+
+    /** The address of the account's own open change or addition (its link still good), or null. */
+    function account_pending_email(int $userId): ?string
+    {
+        $address = db_value(
+            "SELECT email FROM auth_email_tokens
+              WHERE user_id = ? AND purpose IN ('verify_change', 'verify_link') AND used_at IS NULL AND expires_at > NOW()
+              ORDER BY id DESC LIMIT 1",
+            [$userId]
+        );
+
+        return is_string($address) ? $address : null;
     }
 
     /** Every address the account has, lower-case: sign-in, Google and verified. */
@@ -501,13 +547,20 @@ if (!function_exists('account_email_canonical')) {
 
             $generation = account_end_other_sessions($userId, $keepSelector, $deviceId);
 
+            /* Release B: e-mail 5 to the confirmed address, in the same
+               transaction (docs/ACCOUNT-SECURITY.md §13). */
+            if (account_mail_open()) {
+                require_once __DIR__ . '/account-flows.php';
+                account_notice_password_changed($userId, $deviceId);
+            }
+
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
-            error_log('[ownify] password change failed: ' . $e->getMessage());
+            error_log('[ownify] password change failed: ' . get_class($e));
 
             return ['ok' => false, 'error' => t('Je wachtwoord kon niet worden gewijzigd. Probeer het opnieuw.'), 'status' => 500];
         }
@@ -726,9 +779,10 @@ if (!function_exists('account_email_canonical')) {
     /**
      * Whether a new account can be made with an e-mail address and password.
      *
-     * Release A: no. New e-mail registrations wait on a verification screen
-     * until their link is used, which needs mail — Release B. config/mail.php's
-     * `email_registration` switch is read by Release B and ignored here.
+     * Release B (35.0): yes when config/mail.php's `account_mail` and
+     * `email_registration` are both on (account_email_registration_pending()):
+     * the new account then waits on the verification screen until its link is
+     * used. Otherwise no.
      *
      * OWNIFY_TEST_EMAIL_REGISTRATION=1 in the environment of a LOCAL test
      * server (tools/*-test.php) opens today's immediate registration so the
@@ -737,12 +791,50 @@ if (!function_exists('account_email_canonical')) {
      */
     function account_email_registration_open(): bool
     {
-        return getenv('OWNIFY_TEST_EMAIL_REGISTRATION') === '1';
+        return getenv('OWNIFY_TEST_EMAIL_REGISTRATION') === '1' || account_email_registration_pending();
     }
 
-    /** Google linking is not offered before Release B (docs/ACCOUNT-SECURITY.md §8). */
+    /**
+     * Release B (35.0): registering with an address goes through the
+     * verification screen (includes/account-flows.php). Needs the account
+     * mail (account_mail_open()) and config/mail.php's own
+     * `email_registration` switch; never on a test server that opened the
+     * immediate registration above.
+     */
+    function account_email_registration_pending(): bool
+    {
+        if (getenv('OWNIFY_TEST_EMAIL_REGISTRATION') === '1' || !account_mail_open()) {
+            return false;
+        }
+
+        return (bool) (mail_settings()['email_registration'] ?? false);
+    }
+
+    /**
+     * Whether Release B's account e-mails are on (docs/ACCOUNT-SECURITY.md):
+     * config/mail.php's `account_mail` switch, mail that can be sent
+     * (mail_configured(): SMTP, a https public_url, the app key, the outbox)
+     * and all of migration 027. Off: every flow as Release A left it, and
+     * nothing is ever sent to anybody.
+     */
+    function account_mail_open(): bool
+    {
+        static $open = null;
+
+        if ($open !== null) {
+            return $open;
+        }
+
+        require_once __DIR__ . '/mailer.php';
+
+        return $open = (bool) (mail_settings()['account_mail'] ?? false)
+            && account_security_schema()['complete']
+            && mail_configured();
+    }
+
+    /** Google linking needs a confirmed address, so mail: Release B (§7, §8). */
     function account_google_link_open(): bool
     {
-        return false;
+        return account_mail_open();
     }
 }

@@ -30,10 +30,18 @@ $settings = [
     'from'       => 'noreply.ownify@gmail.com',   // Gmail sends only as the account itself
     'from_name'  => 'Ownify',
     'public_url' => 'https://ownify.acits.nl',    // every link in a mail is built from this, never from the request
-    /* Reopened by hand, only after a real delivery test and the Release B
-       tests. Release A (28.0) ignores it: registering with e-mail stays
-       closed whatever it says (account_email_registration_open()). */
-    'email_registration' => false,
+    /* The account e-mails of Release B (35.0, docs/ACCOUNT-SECURITY.md):
+       confirming an address, Wachtwoord vergeten, adding or changing an
+       address and its revert, setting a password on a Google account,
+       linking and removing Google, and the security notices. On since the
+       e-mails were approved (35.0). False puts every one of those flows back
+       as Release A left them, and nothing is sent to anybody. Works only
+       where mail is configured and migration 027 is complete. */
+    'account_mail' => true,
+    /* Registering with an e-mail address, through the verification screen.
+       Only with account_mail on; false closes registering with e-mail again
+       (Google stays). */
+    'email_registration' => true,
 ];
 
 /* Where the settings were read from, by name only — never their values
@@ -58,6 +66,14 @@ foreach (['OWNIFY_SMTP_HOST' => 'host', 'OWNIFY_SMTP_PORT' => 'port',
     if ($value !== false && $value !== '') {
         $settings[$key] = $key === 'port' ? (int) $value : $value;
         $sources[] = '$' . $variable;
+    }
+}
+
+/* The two switches, for a test server: '1' on, '0' off. */
+foreach (['OWNIFY_ACCOUNT_MAIL' => 'account_mail', 'OWNIFY_EMAIL_REGISTRATION' => 'email_registration'] as $variable => $key) {
+    $value = getenv($variable);
+    if ($value === '1' || $value === '0') {
+        $settings[$key] = $value === '1';
     }
 }
 

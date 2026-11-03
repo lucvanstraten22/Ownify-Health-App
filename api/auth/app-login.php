@@ -6,6 +6,9 @@
  *           "label": "Pixel 10", "platform": "android", "app_version": "1.0" }
  *
  *   200   { ok, token, scope: "account", provider: "password", account: {…} }
+ *   200   { ok, pending: { email_masked, username } } — a registration that
+ *         still waits for its link (Release B): the verification screen, held
+ *         by this conversation (api/auth/app-pending.php); no token
  *   401   wrong name or password — one message for both, whether or not the
  *         name has an account
  *   422   a field left empty
@@ -46,6 +49,13 @@ if ($identifier === '' || $password === '') {
 }
 
 $result = auth_login_attempt($identifier, $password);
+
+if (!$result['ok'] && isset($result['pending'])) {
+    require_once dirname(__DIR__, 2) . '/includes/account-flows.php';
+
+    account_pending_hold((int) $result['pending']);
+    api_ok(['pending' => account_pending_view((int) $result['pending']) ?? []]);
+}
 
 if (!$result['ok']) {
     if (isset($result['retry_after'])) {

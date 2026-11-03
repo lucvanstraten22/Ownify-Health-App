@@ -576,6 +576,52 @@
                 };
             }
 
+            /* Release B (35.0): several fields at once, each with the
+               account panel's own label — an address and the current
+               password, a new password twice, or none at all (the "Google
+               first" step). Read back as the fields the endpoint takes. */
+            if (spec.type === 'fields') {
+                var inputs = {};
+                (spec.inputs || []).forEach(function (part) {
+                    var field = document.createElement('div');
+                    field.className = 'account__field';
+                    var label = document.createElement('label');
+                    label.className = 'account__label';
+                    label.htmlFor = 'editor-' + part.name;
+                    label.textContent = part.label;
+                    var box = document.createElement('input');
+                    box.className = 'field-editor__input';
+                    box.type = part.type || 'text';
+                    box.id = 'editor-' + part.name;
+                    box.autocomplete = part.autocomplete || 'off';
+                    box.maxLength = part.type === 'email' ? 191 : 200;
+                    if (part.min) { box.minLength = part.min; }
+                    if (part.type === 'email') { box.spellcheck = false; box.autocapitalize = 'none'; }
+                    field.appendChild(label);
+                    field.appendChild(box);
+                    control.appendChild(field);
+                    inputs[part.name] = box;
+                });
+
+                if (spec.note) {
+                    var said = document.createElement('p');
+                    said.className = 'field-editor__note';
+                    said.textContent = spec.note;
+                    control.appendChild(said);
+                }
+
+                return function () {
+                    var out = {};
+                    var names = Object.keys(inputs);
+                    for (var i = 0; i < names.length; i++) {
+                        var typed = inputs[names[i]].type === 'password' ? inputs[names[i]].value : inputs[names[i]].value.trim();
+                        if (typed === '') { return ''; }
+                        out[names[i]] = typed;
+                    }
+                    return out;
+                };
+            }
+
             if (spec.type === 'choice') {
                 var chosen = spec.value;
                 var wrap = document.createElement('div');
@@ -697,10 +743,17 @@
                    answer (a phone's own name back). */
                 fields: spec.fields || {},
                 empty: !!spec.empty,
+                /* "Google first": which row to open again on the way back. */
+                next: spec.next || '',
                 read: renderControl(spec)
             };
 
             titleEl.textContent = trigger.getAttribute('data-field-label') || '';
+            /* What the button says — Opslaan, unless the row says otherwise —
+               and the caution tone for what takes something away. */
+            saveBtn.textContent = spec.save || T.t('Opslaan');
+            saveBtn.classList.toggle('btn--caution', spec.tone === 'caution');
+            saveBtn.classList.toggle('btn--primary', spec.tone !== 'caution');
             onceEl.hidden = !current.once;
             setError('');
             saveBtn.disabled = false;
@@ -758,8 +811,27 @@
                 .then(function (result) {
                     saveBtn.disabled = false;
 
+                    /* The Google step ran out meanwhile: the page shows the
+                       row that starts it again. */
+                    if (result && !result.ok && result.reauth === 'google') {
+                        window.location.reload();
+                        return;
+                    }
+
                     if (!result || !result.ok) {
                         setError((result && result.error) || T.t('Opslaan is niet gelukt.'));
+                        return;
+                    }
+
+                    /* Off to Google (linking it, confirming first, or — after
+                       removing it — so Google can forget Ownify), back to
+                       Settings › Account. */
+                    if (result.redirect) {
+                        try {
+                            sessionStorage.setItem('ownify-reopen', 'settings-account');
+                            if (current.next) { sessionStorage.setItem('ownify-signin-next', current.next); }
+                        } catch (e) { /* private mode */ }
+                        window.location.assign(result.redirect);
                         return;
                     }
 
@@ -803,6 +875,63 @@
             }
         });
     }
+
+    /* ------------------------------------------- Release B: Inloggen */
+
+    /**
+     * "Stuur bevestiging": one tap sends e-mail 1 to the account's own
+     * address; the row then says so, and waits as long as the server says
+     * before it can be sent again. A refusal goes to the block's error line.
+     */
+    document.addEventListener('click', function (event) {
+        var row = event.target.closest('[data-signin-verify]');
+        if (!row || row.disabled) { return; }
+
+        var panel = document.querySelector('[data-account]');
+        var block = row.closest('[data-signin]');
+        var slot  = block ? block.querySelector('[data-signin-error]') : null;
+        var note  = row.querySelector('[data-signin-verify-note]');
+        var body  = new FormData();
+        body.append('csrf', panel ? (panel.getAttribute('data-csrf') || '') : '');
+
+        if (slot) { slot.hidden = true; }
+        row.disabled = true;
+
+        fetch('api/account/verify.php', { method: 'POST', body: body, credentials: 'same-origin' })
+            .then(function (response) { return response.json().catch(function () { return { ok: false }; }); })
+            .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
+            .then(function (result) {
+                var wait = (result && result.resend_after) || 0;
+                window.setTimeout(function () { row.disabled = false; }, wait * 1000);
+
+                if (result && result.ok) {
+                    if (note) { note.textContent = result.message || ''; }
+                    return;
+                }
+
+                if (slot) {
+                    slot.textContent = (result && result.error) || T.t('Dit kon niet worden gedaan.');
+                    slot.hidden = false;
+                }
+            });
+    });
+
+    /* Back from confirming with Google: the row it was for opens by itself,
+       now with its fields (the Inloggen block has already said it worked). */
+    (function () {
+        var next = null;
+        try {
+            next = sessionStorage.getItem('ownify-signin-next');
+            sessionStorage.removeItem('ownify-signin-next');
+        } catch (e) { /* private mode */ }
+
+        var keys = { set_password: 'password', add_email: 'email-add', change_email: 'email' };
+        var row  = next && keys[next] ? document.querySelector('[data-signin-ready][data-field-edit="' + keys[next] + '"]') : null;
+
+        if (row) {
+            window.setTimeout(function () { row.click(); }, ((window.AppNav && window.AppNav.duration) || 280) + 420);
+        }
+    }());
 
     /* ------------------------------------------------------------- delete */
 

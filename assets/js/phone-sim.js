@@ -93,7 +93,14 @@
         ink();
         clock = window.setInterval(tick, 15000);
         screen.addEventListener('load', watch);
-        screen.src = window.location.href.split('#')[0];
+        /* A link from an account e-mail (?account-link#token) or
+           ?wachtwoord-vergeten is the phone's to open: it goes in whole, and
+           the token leaves this address bar at once (account.js). */
+        var account = /[?&](account-link|wachtwoord-vergeten)(?:[=&]|$)/.test(window.location.search);
+        screen.src = account ? window.location.href : window.location.href.split('#')[0];
+        if (account && window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
     }
 
     function hide() {

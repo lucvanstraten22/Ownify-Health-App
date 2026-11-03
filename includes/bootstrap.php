@@ -221,7 +221,17 @@ if (!function_exists('app_auth')) {
             'signin'         => $user === null ? null : account_signin_state((int) $user['id']),
             /* Back from confirming with Google: deleting may follow now. */
             'reauth_ready'   => $user !== null && account_reauth_waiting((int) $user['id'], 'delete'),
+            /* …or, Release B, adding an address or setting a password. */
+            'reauth_for'     => $user === null ? [] : array_values(array_filter(
+                ['set_password', 'add_email', 'change_email'],
+                static fn (string $purpose): bool => account_reauth_waiting((int) $user['id'], $purpose)
+            )),
             'email_registration' => account_email_registration_open(),
+            /* Release B's account e-mails are on (Wachtwoord vergeten, the links). */
+            'account_mail'   => account_mail_open(),
+            /* A registration this browser started, still waiting for its link:
+               the account panel opens on the verification screen (Release B). */
+            'registration'   => $user === null ? auth_registration_waiting() : null,
             'flash'          => auth_flash_take(),
         ];
 

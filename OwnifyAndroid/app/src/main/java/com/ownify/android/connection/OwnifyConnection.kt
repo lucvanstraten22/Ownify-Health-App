@@ -57,6 +57,14 @@ data class OwnifyLink(val href: String, val label: String)
  */
 data class GoogleUsernameStep(val email: String, val minutes: Int)
 
+/**
+ * A registration waiting for its link (Release B, docs/ACCOUNT-SECURITY.md
+ * §3): the website's verification screen. [emailMasked] is the address as
+ * the screen shows it; [resendAt] when "Stuur opnieuw" may be pressed again
+ * (elapsed-realtime milliseconds); [message] the last thing to say about it.
+ */
+data class PendingStep(val emailMasked: String, val resendAt: Long, val message: String? = null)
+
 /** Signing in, registering or signing out: what is going on, or why the last attempt did not work. */
 sealed interface OwnifyAuthState {
 
@@ -142,6 +150,28 @@ object OwnifyConnection {
     /** Somebody new after Google, choosing their username; null otherwise. */
     var googleStep: GoogleUsernameStep? by mutableStateOf(null)
         private set
+
+    /**
+     * Release B's account e-mails are on on this server (Wachtwoord vergeten,
+     * the verification screen). Null until asked ([checkGoogle]).
+     */
+    var accountMail: Boolean? by mutableStateOf(null)
+        private set
+
+    /** A registration waiting for its link: the verification screen. Null otherwise. */
+    var pendingStep: PendingStep? by mutableStateOf(null)
+        private set
+
+    /** Wachtwoord vergeten's answer, once it came; null before. */
+    var forgotAnswer: String? by mutableStateOf(null)
+        private set
+
+    /**
+     * The sign-in conversation's cookies: the server session that holds a
+     * waiting registration for this app (api/auth/app-pending.php). A new
+     * one for every sign-in or registration; kept only while it waits.
+     */
+    private var accountJar: MutableMap<String, String>? = null
 
     /** Whether signing in or registering is on offer: not signed in as an account yet, nothing else going on. */
     val canSignIn: Boolean
@@ -269,10 +299,14 @@ object OwnifyConnection {
             return
         }
 
-        signIn(context, tr("Inloggen...")) { current -> api.login(name, password, deviceLabel(), current) }
+        signIn(context, tr("Inloggen...")) { current, jar -> api.login(name, password, deviceLabel(), current, jar) }
     }
 
-    /** Creates a Ownify account (app-register.php) and signs in as it, like [login]. */
+    /**
+     * Creates a Ownify account (app-register.php). Release B: it waits for
+     * the link in e-mail 1 — the verification screen ([pendingStep]); before
+     * that, or on a test server, it signs in at once, like [login].
+     */
     fun register(context: Context, username: String, email: String, password: String, repeat: String? = null) {
         val name = username.trim()
         val address = email.trim()
@@ -282,8 +316,118 @@ object OwnifyConnection {
             return
         }
 
-        signIn(context, tr("Account aanmaken...")) { current -> api.register(address, name, password, deviceLabel(), current, repeat) }
+        signIn(context, tr("Account aanmaken...")) { current, jar -> api.register(address, name, password, deviceLabel(), current, repeat, jar) }
     }
+
+    /**
+     * The verification screen's three actions and its quiet check
+     * (api/auth/app-pending.php), in the conversation that holds the
+     * registration:
+     *
+     *   check    "Ik heb bevestigd" — and, [quietly], on coming back to the
+     *            app: once the link was used (in the phone's browser), the
+     *            app is signed in; until then the screen says so
+     *   resend   "Stuur opnieuw": a new link, or the wait the server names
+     *   cancel   "Ander adres gebruiken" (D2): the registration is deleted and
+     *            the form is back, with what was typed
+     */
+    fun checkPending(context: Context, quietly: Boolean = false) = pendingAction(context, "status", quietly)
+
+    fun resendPending(context: Context) = pendingAction(context, "resend", false)
+
+    fun cancelPending(context: Context) = pendingAction(context, "cancel", false)
+
+    private fun pendingAction(context: Context, action: String, quietly: Boolean) {
+        val jar = accountJar
+        val step = pendingStep
+
+        if (busy || jar == null || step == null) {
+            return
+        }
+
+        val store = store(context)
+
+        job = scope.launch {
+            if (!quietly) auth = OwnifyAuthState.Working(if (action == "resend") tr("Versturen...") else tr("Even kijken..."))
+
+            val current = withContext(Dispatchers.IO) { store.load() }
+
+            when (val result = api.pending(action, deviceLabel(), current?.token, jar)) {
+                is OwnifyResult.Success -> when (val answer = result.value) {
+                    is PendingAnswer.Active -> {
+                        pendingStep = null
+                        accountJar = null
+                        signedIn(context, store, answer.session)
+                    }
+                    PendingAnswer.Gone -> {
+                        pendingStep = null
+                        accountJar = null
+                        auth = OwnifyAuthState.Idle
+                    }
+                    is PendingAnswer.Waiting -> {
+                        // A quiet check changes nothing on screen while nothing changed.
+                        if (!quietly) {
+                            pendingStep = step.copy(
+                                message = answer.message,
+                                resendAt = if (answer.resendAfter > 0) now() + answer.resendAfter * 1000L else step.resendAt
+                            )
+                        }
+                        auth = OwnifyAuthState.Idle
+                    }
+                }
+
+                is OwnifyResult.HttpError -> {
+                    if (result.status == 410) {
+                        pendingStep = null
+                        accountJar = null
+                        auth = if (quietly) OwnifyAuthState.Idle else OwnifyAuthState.Failed(result.message ?: tr("Deze registratie bestaat niet meer. Begin opnieuw."))
+                    } else {
+                        val wait = result.body?.optInt("resend_after", 0) ?: 0
+                        if (wait > 0) pendingStep = step.copy(resendAt = now() + wait * 1000L)
+                        auth = if (quietly) OwnifyAuthState.Idle else OwnifyAuthState.Failed(describeSignIn(result))
+                    }
+                }
+
+                is OwnifyResult.Failure -> auth = if (quietly) OwnifyAuthState.Idle else OwnifyAuthState.Failed(describeSignIn(result))
+            }
+        }
+    }
+
+    /**
+     * Wachtwoord vergeten (api/auth/app-forgot.php): the server answers the
+     * same whatever the address, and the link in the e-mail opens the website.
+     */
+    fun forgotPassword(email: String) {
+        val address = email.trim()
+
+        if (busy) {
+            return
+        }
+
+        if (address.isEmpty()) {
+            auth = OwnifyAuthState.Failed(tr("Vul een geldig e-mailadres in."))
+            return
+        }
+
+        job = scope.launch {
+            auth = OwnifyAuthState.Working(tr("Versturen..."))
+
+            when (val result = api.forgot(address)) {
+                is OwnifyResult.Success -> {
+                    forgotAnswer = result.value
+                    auth = OwnifyAuthState.Idle
+                }
+                is OwnifyResult.Failure -> auth = OwnifyAuthState.Failed(describeSignIn(result))
+            }
+        }
+    }
+
+    /** Wachtwoord vergeten opened again: the form, not the last answer. */
+    fun forgetForgotAnswer() {
+        forgotAnswer = null
+    }
+
+    private fun now(): Long = android.os.SystemClock.elapsedRealtime()
 
     /**
      * Asks the server whether it offers Google sign-in to the app, for the
@@ -295,6 +439,7 @@ object OwnifyConnection {
             if (result is OwnifyResult.Success) {
                 googleAvailable = result.value.google
                 emailRegistration = result.value.emailRegistration
+                accountMail = result.value.accountMail
             }
         }
     }
@@ -554,25 +699,45 @@ object OwnifyConnection {
         googleStep = null
         googleAvailable = null
         emailRegistration = null
+        accountMail = null
+        pendingStep = null
+        forgotAnswer = null
+        accountJar = null
         state = OwnifyState.Checking
         auth = OwnifyAuthState.Idle
     }
 
-    /** Signing in or registering: the call, then — only on success — the new ACCOUNT credential. */
-    private fun signIn(context: Context, working: String, call: suspend (current: String?) -> OwnifyResult<OwnifySession>) {
+    /**
+     * Signing in or registering: the call, in a new conversation, then — only
+     * on success — the new ACCOUNT credential. A registration that waits for
+     * its link opens the verification screen instead, its conversation kept.
+     */
+    private fun signIn(context: Context, working: String, call: suspend (current: String?, jar: MutableMap<String, String>) -> OwnifyResult<SignInAnswer>) {
         if (!canSignIn) {
             return
         }
 
         val store = store(context)
+        val jar = LinkedHashMap<String, String>()
 
         job = scope.launch {
             auth = OwnifyAuthState.Working(working)
 
             val current = withContext(Dispatchers.IO) { store.load() }
 
-            when (val result = call(current?.token)) {
-                is OwnifyResult.Success -> signedIn(context, store, result.value)
+            when (val result = call(current?.token, jar)) {
+                is OwnifyResult.Success -> when (val answer = result.value) {
+                    is SignInAnswer.Session -> {
+                        accountJar = null
+                        pendingStep = null
+                        signedIn(context, store, answer.session)
+                    }
+                    is SignInAnswer.Waiting -> {
+                        accountJar = jar
+                        pendingStep = PendingStep(answer.emailMasked, now() + answer.resendAfter * 1000L)
+                        auth = OwnifyAuthState.Idle
+                    }
+                }
                 is OwnifyResult.Failure -> auth = OwnifyAuthState.Failed(describeSignIn(result))
             }
         }

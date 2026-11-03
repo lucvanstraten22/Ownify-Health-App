@@ -26,6 +26,13 @@ $data = config_copy('dashboard');
    first now: who is asking decides what every page below is filled with. */
 $data['auth'] = app_auth();
 
+/* Release B's account e-mails (docs/MAIL.md): what is due in the outbox goes
+   out after this page's output — after the response itself under PHP-FPM. */
+if (account_mail_open()) {
+    require_once __DIR__ . '/includes/account-flows.php';
+    account_mail_after_response(true);
+}
+
 /* The page is only right for the session it was rendered for, so no cache —
    the browser's or its back/forward cache — may hand it out again later: not
    the app to somebody who has since logged out, and not the opening screen to

@@ -33,13 +33,14 @@ if (!db_available() || !google_signin_configured()) {
 
 $result = google_signin_finish($_GET);
 
-/* After deleting an account that had Google: say how that went, and — when
-   Google could not be told automatically — where to finish it by hand. */
+/* After deleting an account that had Google, or removing Google from one
+   (Release B): say how that went, and — when Google could not be told
+   automatically — where to finish it by hand. */
 if ($result['mode'] === 'revoke') {
     auth_flash(
         (string) $result['message'],
         $result['outcome'] === 'revoked' ? 'ok' : 'info',
-        'account',
+        ($result['purpose'] ?? null) === 'unlink' ? 'settings-account' : 'account',
         $result['outcome'] === 'revoked' ? null : [
             'href'  => GOOGLE_ACCOUNT_CONNECTIONS_URL,
             'label' => t('Apps met toegang tot je Google-account'),

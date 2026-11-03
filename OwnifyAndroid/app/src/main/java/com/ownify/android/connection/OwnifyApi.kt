@@ -53,26 +53,36 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
      * account row instead of adding a second one; the server leaves a token
      * of another account alone. A 401 here means the name or password was
      * wrong — never that [current] is.
+     *
+     * Release B (35.0): the answer can also be a registration that still
+     * waits for its link ([SignInAnswer.Waiting]) — then [jar], the sign-in
+     * conversation's cookies, holds it on the server for the verification
+     * screen ([pending]).
      */
-    suspend fun login(identifier: String, password: String, label: String, current: String?): OwnifyResult<OwnifySession> {
+    suspend fun login(identifier: String, password: String, label: String, current: String?, jar: MutableMap<String, String>? = null): OwnifyResult<SignInAnswer> {
         val body = JSONObject()
             .put("identifier", identifier)
             .put("password", password)
             .put("label", label)
             .put("platform", "android")
 
-        return post("api/auth/app-login.php", body, current) { json -> readSession(json) }
+        return post("api/auth/app-login.php", body, current, jar = jar) { json -> readAnswer(json) }
     }
 
-    /** Creates an account and signs in as it, exactly as [login] does afterwards. */
+    /**
+     * Creates an account. Before Release B, or on a test server, it is signed
+     * in at once, as [login] is; with the account e-mails on it waits for the
+     * link in e-mail 1 ([SignInAnswer.Waiting]), held in [jar].
+     */
     suspend fun register(
         email: String,
         username: String,
         password: String,
         label: String,
         current: String?,
-        repeat: String? = null
-    ): OwnifyResult<OwnifySession> {
+        repeat: String? = null,
+        jar: MutableMap<String, String>? = null
+    ): OwnifyResult<SignInAnswer> {
         val body = JSONObject()
             .put("email", email)
             .put("username", username)
@@ -83,8 +93,35 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
             .put("label", label)
             .put("platform", "android")
 
-        return post("api/auth/app-register.php", body, current) { json -> readSession(json) }
+        return post("api/auth/app-register.php", body, current, jar = jar) { json -> readAnswer(json) }
     }
+
+    /**
+     * The verification screen (api/auth/app-pending.php), in the sign-in
+     * conversation [jar] that holds the registration: `status` ("Ik heb
+     * bevestigd", and on coming back to the app), `resend` ("Stuur
+     * opnieuw") or `cancel` ("Ander adres gebruiken"). Once the link was
+     * used, `status` brings the account token.
+     */
+    suspend fun pending(action: String, label: String, current: String?, jar: MutableMap<String, String>): OwnifyResult<PendingAnswer> {
+        val body = JSONObject()
+            .put("action", action)
+            .put("label", label)
+            .put("platform", "android")
+
+        return post("api/auth/app-pending.php", body, current, jar = jar) { json ->
+            when (json.opt("state")) {
+                "active" -> readSession(json)?.let { PendingAnswer.Active(it) }
+                "gone" -> PendingAnswer.Gone
+                "pending" -> PendingAnswer.Waiting(json.text("message"), json.number("resend_after")?.roundToInt() ?: 0)
+                else -> null
+            }
+        }
+    }
+
+    /** Wachtwoord vergeten (api/auth/app-forgot.php): the server's one answer, whatever the address. */
+    suspend fun forgot(email: String): OwnifyResult<String> =
+        post("api/auth/app-forgot.php", JSONObject().put("email", email), token = null) { json -> json.text("message") }
 
     /**
      * Which ways in this server offers the app (app-google.php, `status`):
@@ -95,7 +132,9 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
      */
     suspend fun googleAvailable(): OwnifyResult<ServerWays> =
         post(GOOGLE_PATH, JSONObject().put("action", "status"), token = null) { json ->
-            (json.opt("available") as? Boolean)?.let { ServerWays(it, json.opt("email_registration") as? Boolean ?: true) }
+            (json.opt("available") as? Boolean)?.let {
+                ServerWays(it, json.opt("email_registration") as? Boolean ?: true, json.opt("account_mail") as? Boolean ?: false)
+            }
         }
 
     /**
@@ -122,6 +161,30 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
         /** A form post in this conversation: the deletion with its `id_token`. */
         suspend fun form(path: String, fields: Map<String, String>, token: String): OwnifyResult<JSONObject> =
             this@OwnifyApi.form(path, fields, token, cookies)
+    }
+
+    /**
+     * Linking Google to the signed-in account (Release B, api/account/google.php):
+     * the current password, then a nonce for Credential Manager, then the ID
+     * token Google gave — in one conversation's session, with the account token.
+     */
+    fun linkGoogle(): LinkConversation = LinkConversation()
+
+    inner class LinkConversation internal constructor() {
+
+        private val cookies = LinkedHashMap<String, String>()
+
+        /** The password first; then the nonce and the Web client to ask Google for a token for. */
+        suspend fun start(token: String, password: String): OwnifyResult<GoogleStart> =
+            post("api/account/google.php", JSONObject().put("action", "nonce").put("password", password), token, jar = cookies) { json ->
+                val nonce = json.text("nonce")
+                val client = json.text("client_id")
+                if (nonce == null || client == null) null else GoogleStart(nonce, client)
+            }
+
+        /** The ID token Google gave for that nonce. */
+        suspend fun link(token: String, idToken: String): OwnifyResult<JSONObject> =
+            post("api/account/google.php", JSONObject().put("action", "link").put("id_token", idToken), token, jar = cookies) { it }
     }
 
     /** One sign-in with Google, from the nonce to the account token. */
@@ -536,7 +599,27 @@ private val TOKEN_FORMAT = Regex("[0-9a-f]{64}")
  * dashes are dropped and letters upper-cased, so "abcd-2345" works too.
  */
 /** What [OwnifyApi.googleAvailable] answers: Google in the app, and registering with e-mail. */
-data class ServerWays(val google: Boolean, val emailRegistration: Boolean)
+data class ServerWays(val google: Boolean, val emailRegistration: Boolean, val accountMail: Boolean = false)
+
+/**
+ * What a sign-in or a registration came to: signed in, or (Release B) a
+ * registration that waits for its link — the verification screen, with the
+ * address masked and how long "Stuur opnieuw" waits.
+ */
+sealed interface SignInAnswer {
+    data class Session(val session: OwnifySession) : SignInAnswer
+    data class Waiting(val emailMasked: String, val resendAfter: Int) : SignInAnswer
+}
+
+/** The verification screen's answers (api/auth/app-pending.php). */
+sealed interface PendingAnswer {
+    /** Still waiting: [message] says so (or "Verstuurd"); [resendAfter] how long "Stuur opnieuw" waits. */
+    data class Waiting(val message: String?, val resendAfter: Int) : PendingAnswer
+    /** The link was used: the app is signed in with this. */
+    data class Active(val session: OwnifySession) : PendingAnswer
+    /** Cancelled, expired, or no longer this registration. */
+    data object Gone : PendingAnswer
+}
 
 fun normalizePairingCode(input: String): String? =
     input.filterNot { it.isWhitespace() || it == '-' }
@@ -599,6 +682,15 @@ private fun readSession(json: JSONObject): OwnifySession? {
     }
 
     return OwnifySession(token, json.optJSONObject("account")?.text("username"))
+}
+
+/** A sign-in answer: a session ([readSession]), or a registration waiting for its link. */
+private fun readAnswer(json: JSONObject): SignInAnswer? {
+    json.optJSONObject("pending")?.let { pending ->
+        return SignInAnswer.Waiting(pending.text("email_masked") ?: "", pending.number("resend_after")?.roundToInt() ?: 0)
+    }
+
+    return readSession(json)?.let { SignInAnswer.Session(it) }
 }
 
 /** Where a sign-in with Google starts: the server's nonce, and its Web client's id for Google. */

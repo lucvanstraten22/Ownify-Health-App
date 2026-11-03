@@ -102,7 +102,9 @@ foreach ($page['blocks'] as $block) {
 
                     <?php elseif ($block['type'] === 'signin'):
                         /* The ways into this account, in the shape of the profile
-                           fields (docs/ACCOUNT-SECURITY.md, Release A):
+                           fields (docs/ACCOUNT-SECURITY.md, Release A; with the
+                           account e-mails on, Release B's rows come from
+                           components/settings-signin.php):
                              E-mailadres  the address and whether it is confirmed
                              Wachtwoord   "Wijzigen" opens the editor (current, new, repeat)
                              Google       linked, or why it cannot be linked yet */
@@ -120,7 +122,8 @@ foreach ($page['blocks'] as $block) {
                                 <p class="settings-note settings-note--flash" data-signin-flash
                                    role="<?= $flash['tone'] === 'error' ? 'alert' : 'status' ?>">
                                     <?= icon($flash['tone'] === 'ok' ? 'check' : 'info', 'settings-note__icon') ?>
-                                    <span><?= e($flash['message']) ?></span>
+                                    <span><?= e($flash['message']) ?><?php if (!empty($flash['link'])): ?>
+                                        <a class="account__link" href="<?= e($flash['link']['href']) ?>" target="_blank" rel="noopener noreferrer"><?= e($flash['link']['label']) ?></a><?php endif; ?></span>
                                 </p>
                             <?php endif; ?>
 
@@ -135,6 +138,11 @@ foreach ($page['blocks'] as $block) {
                                         </span>
                                         <span class="settings-field__value">—</span>
                                     </div>
+
+                                <?php elseif (!empty($signin['mail'])): ?>
+
+                                    <?php /* Release B (35.0): the account e-mails are on. */
+                                    component('settings-signin', $data + ['signin' => $signin, 'googleOn' => $googleOn]); ?>
 
                                 <?php else:
                                     $address  = $signin['email'] ?? $signin['google_email'];

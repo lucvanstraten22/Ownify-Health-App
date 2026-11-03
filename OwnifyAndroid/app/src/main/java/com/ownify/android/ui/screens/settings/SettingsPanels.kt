@@ -410,6 +410,139 @@ fun PasswordEditor(overlay: Overlay) {
     }
 }
 
+/**
+ * Release B's Inloggen actions (Instellingen › Account › Inloggen, 35.0), in
+ * the field editor's panel — the website's one editor with its fields, line
+ * and button per action (components/settings-signin.php):
+ *
+ *   email          new address + current password (or Google, without one)
+ *   email-add      a Google account adds an address (Google confirms)
+ *   password-set   a Google account sets its first password (Google confirms)
+ *   google-link    the current password, then Google's chooser (§7, native)
+ *   google-remove  the current password; Loskoppelen in the caution gold
+ *
+ * Where the website goes to Google first and comes back, the app asks
+ * Google on the phone when the panel is saved. The server decides
+ * everything; what it says is shown, in a toast when done.
+ */
+@Composable
+fun SigninEditor(overlay: Overlay.SigninEdit, data: AppData) {
+    val shell = LocalShell.current
+    val context = LocalContext.current
+    val focus = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+    val signin = data.auth.signin
+    val hasPassword = signin?.password == true
+    // Only in these fields while the panel is open: never saved, never logged.
+    var address by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val kind = overlay.kind
+    val title = when (kind) {
+        "email" -> tr("E-mailadres wijzigen")
+        "email-add" -> tr("E-mailadres toevoegen")
+        "password-set" -> tr("Wachtwoord instellen")
+        "google-link" -> tr("Google koppelen")
+        else -> tr("Google loskoppelen")
+    }
+    val note = when (kind) {
+        "email" -> if (hasPassword) tr("We sturen een link naar het nieuwe adres. Tot je die opent, blijft alles zoals het is.")
+            else tr("Je bevestigt dit eerst met Google. Daarna sturen we een link naar het nieuwe adres.")
+        "email-add" -> tr("Je bevestigt dit eerst met Google. Daarna sturen we een link naar dit adres.")
+        "password-set" -> tr("Minimaal 8 tekens. Je bevestigt dit eerst met Google; daarna kun je ook met je e-mailadres en wachtwoord inloggen.")
+        "google-link" -> tr("Daarna kies je je Google-account. Je kunt dan ook met Google inloggen.")
+        else -> tr("Je logt daarna in met je gebruikersnaam of e-mailadres en je wachtwoord. Je andere apparaten worden uitgelogd.")
+    }
+    val save = when (kind) {
+        "email", "email-add" -> tr("Stuur link")
+        "password-set" -> tr("Instellen")
+        "google-link" -> tr("Naar Google")
+        else -> tr("Loskoppelen")
+    }
+    // Which fields: (label, value, setter, password?, email?)
+    data class Part(val label: String, val value: String, val set: (String) -> Unit, val secret: Boolean, val email: Boolean = false)
+    val parts = buildList {
+        if (kind == "email" || kind == "email-add") add(Part(if (kind == "email") tr("Nieuw e-mailadres") else tr("E-mailadres"), address, { v: String -> address = v }, false, email = true))
+        if ((kind == "email" && hasPassword) || kind == "google-link" || kind == "google-remove") add(Part(tr("Huidig wachtwoord"), password, { v: String -> password = v }, true))
+        if (kind == "password-set") {
+            add(Part(tr("Nieuw wachtwoord"), password, { v: String -> password = v }, true))
+            add(Part(tr("Herhaal nieuw wachtwoord"), repeat, { v: String -> repeat = v }, true))
+        }
+    }
+
+    fun save() {
+        if (parts.any { it.value.isEmpty() }) {
+            error = tr("Vul eerst een waarde in.")
+            return
+        }
+        focus.clearFocus()
+        error = null
+        saving = true
+        val activity = context.findActivity() ?: context
+        val fallback = tr("Dit kon niet worden gedaan.")
+        scope.launch {
+            val outcome = when (kind) {
+                "email" -> if (hasPassword) OwnifyActions.form(context, "api/account/email.php", mapOf("email" to address.trim(), "password" to password), fallback)
+                    else OwnifyActions.formWithGoogle(activity, "api/account/email.php", mapOf("email" to address.trim()), fallback)
+                "email-add" -> OwnifyActions.formWithGoogle(activity, "api/account/email.php", mapOf("email" to address.trim()), fallback)
+                "password-set" -> OwnifyActions.formWithGoogle(activity, "api/account/set-password.php", mapOf("password" to password, "password_confirm" to repeat), fallback)
+                "google-link" -> OwnifyActions.linkGoogle(activity, password, fallback)
+                else -> OwnifyActions.form(context, "api/account/google.php", mapOf("action" to "remove", "password" to password), fallback)
+            }
+            when (outcome) {
+                is Outcome.Done -> {
+                    OwnifyToast.show(outcome.body.optString("message").ifEmpty { null })
+                    shell.close(overlay)
+                }
+                // Google's chooser closed: nothing to say.
+                is Outcome.Refused -> error = outcome.message.ifEmpty { null }
+                Outcome.SignedOut -> Unit
+            }
+            saving = false
+        }
+    }
+
+    ConfirmFrame(overlay, title = title, start = true) {
+        ConfirmTitle(title, align = TextAlign.Start)
+        val first = rememberFocusOnOpen()
+        Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            parts.forEachIndexed { i, part ->
+                Column {
+                    FieldLabel(part.label)
+                    JInput(
+                        part.value, { part.set(it.take(if (part.email) 191 else PASSWORD_MAX)) },
+                        modifier = if (i == 0) Modifier.focusRequester(first) else Modifier,
+                        password = part.secret,
+                        label = part.label,
+                        keyboard = KeyboardOptions(
+                            autoCorrectEnabled = false,
+                            keyboardType = if (part.secret) KeyboardType.Password else KeyboardType.Email,
+                            imeAction = if (i < parts.size - 1) ImeAction.Next else ImeAction.Done
+                        ),
+                        actions = KeyboardActions(onDone = { if (!saving) save() })
+                    )
+                }
+            }
+        }
+        // `.field-editor__note`: what saving does.
+        T(
+            note,
+            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            Modifier.fillMaxWidth().padding(top = Ownify.Space2)
+        )
+
+        error?.let { EditorError(it) }
+
+        ConfirmRow(
+            { Btn(tr("Annuleren"), onClick = { shell.close(overlay) }, modifier = it) },
+            { Btn(save, onClick = ::save, enabled = !saving, look = if (kind == "google-remove") BtnLook.Caution else YesLook, modifier = it) }
+        )
+    }
+}
+
 /** The longest password: includes/account-security.php's ACCOUNT_PASSWORD_MAX. */
 private const val PASSWORD_MAX = 200
 

@@ -4,8 +4,10 @@
  * browser to; the browser goes there itself.
  *
  *   provider=google  mode=login   from the account panel, signed out
- *   provider=google  mode=link    from Settings > Account, signed in — not
- *                                 before Release B (docs/ACCOUNT-SECURITY.md §8)
+ *   provider=google  mode=link    from Settings > Account, signed in, with
+ *                                 the current password (Release B,
+ *                                 docs/ACCOUNT-SECURITY.md §7): only an account
+ *                                 with a password and its own address confirmed
  *
  * At most 20 starts per quarter of an hour from one network address.
  *
@@ -44,6 +46,27 @@ if ($mode === 'link') {
 
     if (!account_google_link_open()) {
         api_fail('Bevestig eerst je e-mailadres. Dat kan binnenkort.', 409);
+    }
+
+    require_once dirname(__DIR__, 2) . '/includes/account-flows.php';
+
+    if (account_google_sub($userId) !== null) {
+        api_fail('Je account is al aan Google gekoppeld.', 409);
+    }
+
+    if (!account_google_link_allowed($userId)) {
+        api_fail('Bevestig eerst je e-mailadres.', 409);
+    }
+
+    /* The current password first, then Google (§7). */
+    $refused = account_require_proof($userId, 'link_google', ['password' => (string) ($_POST['password'] ?? '')], null);
+
+    if ($refused !== null) {
+        if (isset($refused['retry_after'])) {
+            header('Retry-After: ' . $refused['retry_after']);
+        }
+
+        api_fail($refused['error'], $refused['status']);
     }
 } elseif ($mode === 'login') {
     if ($userId !== null) {

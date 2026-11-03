@@ -7,11 +7,13 @@ app, one backend. The approved plan (Phase 2, version 9) has two releases:
 | | What | Status |
 |---|---|---|
 | **Release A — 28.0** | Works without mail: e-mail registration closed, the address rule, one password check, password rules and the repeat field, changing the password, ending other sessions, reauthentication before deleting the account (native Google on Android), verification status in Settings, Google linking paused, rate limits, PHPMailer and the outbox present but inert. | **Built** |
-| Release B — 28.1 | Verification screen and links, Wachtwoord vergeten, adding/changing an address and the revert link, setting a password on a Google account, Google linking (web and native), removing Google, notices and e-mail 7, the registration switch. | Waits for a real Gmail test and your approval |
+| **Release B — 35.0** | Verification screen and links, Wachtwoord vergeten, adding/changing an address and the revert link, setting a password on a Google account, Google linking (web and native), removing Google, notices and e-mail 7, the registration switch. | **Built; on** — the e-mails were approved; `config/mail.php` `account_mail` and `email_registration` are `true` (§12) |
 
 Code: `includes/account-security.php` (everything below unless named
 otherwise), `includes/auth.php`, `includes/google-signin.php`,
-`includes/mailer.php`. Schema: `database/migrations/027-account-security.sql`.
+`includes/mailer.php`; Release B in `includes/account-flows.php` and the
+e-mails in `includes/mail-templates.php`. Schema:
+`database/migrations/027-account-security.sql`.
 
 ---
 
@@ -20,7 +22,8 @@ otherwise), `includes/auth.php`, `includes/google-signin.php`,
 - **Google, e-mail + password, or both**, with the same or different
   addresses. Accounts are never merged; identities never move between
   accounts.
-- **Registering with e-mail is closed** in Release A
+- **Registering with e-mail** goes through the verification screen (Release
+  B, §12). With `email_registration` off it is closed
   (`account_email_registration_open()` is false). A new e-mail account has to
   wait on a verification screen until its link is used, and that needs mail.
   The website's and the app's Registreren show one line, *"Registreren met
@@ -129,13 +132,14 @@ the account to prove it is itself again (`account_require_proof()`):
     account's own Google id.
 - Without the proof: `403` with `reauth: password|google`; nothing deleted.
 
-## 7. Google linking — paused until Release B
+## 7. Google linking
 
-Linking needs the account's own address verified, which needs mail. So
-Release A offers no linking: the Google row in Settings says *"Bevestig eerst
-je e-mailadres. Dat kan binnenkort."* on both apps (Android no longer opens
-the website for it), and `oauth.php mode=link` answers `409` with the same
-words. Accounts that already have Google keep signing in with it.
+Linking needs the account's own address verified, which needs mail. With
+`account_mail` off (Release A behaviour) no account can link: the Google row
+in Settings says *"Bevestig eerst je e-mailadres. Dat kan binnenkort."* on
+both apps, and `oauth.php mode=link` answers `409` with the same words.
+Accounts that already have Google keep signing in with it. With it on, see
+§12.
 
 ## 8. Limits
 
@@ -143,7 +147,11 @@ words. Accounts that already have Google keep signing in with it.
 |---|---|
 | Sign-in, the current password, the deletion password | 5 failures / 15 min per name + network address (existing) |
 | Google: website start, app nonce, reauth | 20 / 15 min per network address (`google`) |
-| Website registration (when open) | 5 / 15 min per address + network address; 20 / hour per network address |
+| Website and app registration (when open) | 5 / 15 min per address + network address; 20 / hour per network address |
+| Release B — per recipient, from every network address | Registration and "Stuur opnieuw": 3 / hour, 6 / day per address (`reg_to_h`, `reg_to_d`) → the neutral *"Dit kan even niet. Probeer het later opnieuw."*; e-mail 7 at most 1 / day per address (`already_d`), otherwise a decoy |
+| Release B — Wachtwoord vergeten | 3 / 15 min per address + network address, 10 / hour per network address (a wait is said); 3 / hour, 5 / day per address from everywhere → a decoy, the same answer |
+| Release B — mail an account asks for itself | "Stuur opnieuw", "Stuur bevestiging", adding or changing the address: 1 / minute, 3 / hour, 10 / day per account or waiting registration (`acct_mail_*`, the wait is said); per inbox 3 / hour, 6 / day (`inbox_*`) → a decoy |
+| Release B — link pages | 30 / 15 min per network address (`link_ip`) |
 
 ## 9. Mail — present, inert
 
@@ -199,3 +207,56 @@ is the code only, keeping the schema.
 | `php tools/mail-service-test.php` | The mail service end to end against a local stand-in for Gmail (STARTTLS, login, UTF-8, HTML, nothing logged that should not be) |
 | `OWNIFY_TEST_EMAIL_REGISTRATION=1 DB_NAME=… php tools/app-auth-test.php` | The existing sign-in suite, deletion now with the password |
 | Android `OwnifyAppFlowTest` | Registration closed, the repeat field, Inloggen and the password editor, deletion with the password and with Google |
+| `DB_NAME=… php tools/account-mail-test.php` | Release B end to end (134 checks): the switch, registration free and taken (the same answer, placeholder, e-mail 7, decoys), the cap of 3, the per-recipient limit, sign-in precedence with 4 password checks, the app's verification screen and token, links (read vs. use, once, expired, voided), Wachtwoord vergeten and what it signs out, "Stuur bevestiging" and the conflict rule, change + 6a + revert with D4, adding an address and a password on a Google account, linking Google on the website and natively, removing it (6b), e-mail 5 — real SMTP to `tools/fake-smtp.py` |
+| Android `OwnifyAccountTest` (Release B cases) | The verification screen in the app's conversation, "Stuur opnieuw" and its wait, "Ander adres gebruiken", the token after the link, Wachtwoord vergeten, Release B's sign-in state |
+
+## 12. Release B (35.0)
+
+Built in full, both apps, and **on** since the e-mails were approved
+(`config/mail.php`; either switch back to `false` undoes it without a
+migration):
+
+| Switch | Off | On (35.0) |
+|---|---|---|
+| `account_mail` | Every flow as Release A left it; nothing is ever put in the outbox | The flows below, once mail is configured and 027 complete (`account_mail_open()`) |
+| `email_registration` | Registering with e-mail stays closed | Registering waits on the verification screen. Only with `account_mail` on |
+
+`OWNIFY_ACCOUNT_MAIL` / `OWNIFY_EMAIL_REGISTRATION` (`1`/`0`) override them
+for a test server. Both need mail configured and migration 027 complete;
+without either, everything stays as Release A left it.
+
+**The flows** (`includes/account-flows.php`, one transaction each, one
+outbox row or a decoy each):
+
+- *Registration* (`api/auth/register.php`, `app-register.php`): a pending
+  account, or — a taken address — a placeholder and e-mail 7 to the owner,
+  under a per-address lock (`GET_LOCK`, always released), at most 3 waiting
+  per address, deleted after 7 days. The verification screen
+  (`api/auth/pending.php`, `app-pending.php`: status, resend, cancel) is held
+  by the browser or the app conversation that registered or signed in to it.
+- *Sign-in step 2* (`auth_login_password()`): a waiting registration's
+  password gives the verification screen, never the app; always 4 checks.
+- *Links* (`api/auth/link.php`, the page `?account-link#token` in the account
+  panel): 256-bit, SHA-256 stored, read without using (`info`), used once
+  (`use`), voided by a newer one of the same purpose.
+- *Wachtwoord vergeten* (`api/auth/forgot.php`, `app-forgot.php`): one
+  answer; the reset only for a password account whose address is not
+  another's; completing it sets the password, confirms the address and
+  signs out everywhere (this browser too).
+- *Settings › Inloggen* (`components/settings-signin.php`; Android
+  `SigninRowsB` + `SigninEditor`): "Stuur bevestiging" (`api/account/verify.php`),
+  changing or adding the address (`api/account/email.php`, e-mail 3 or 2;
+  6a with the 72-hour revert link to a confirmed old address), setting a
+  password on a Google account (`api/account/set-password.php`, Google
+  first), linking Google (website: `oauth.php mode=link` with the password;
+  app: `api/account/google.php` nonce with the password, then Credential
+  Manager), removing Google (`api/account/google.php` remove: the password,
+  others signed out, 6b; the website then lets Google forget Ownify).
+- *Notices*: e-mail 5 after a password change, a reset, a revert or a first
+  password; never to an unconfirmed address.
+
+**Sending**: after the response (PHP-FPM's `fastcgi_finish_request()` on
+Hestia); a page request sends what is due after its output; `php
+tools/mail-outbox.php` from cron catches the rest and deletes expired
+registrations. The e-mails are rendered at enqueue in the recipient's
+language and stored encrypted.

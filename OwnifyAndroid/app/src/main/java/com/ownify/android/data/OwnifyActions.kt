@@ -103,6 +103,49 @@ object OwnifyActions {
         }
     }
 
+    /**
+     * Release B: an Inloggen action for an account without a password —
+     * adding or changing its address, setting its first password. Google
+     * confirms it first on this phone, as for deleting (a nonce from
+     * api/auth/reauth.php, Credential Manager), and the action goes with the
+     * ID token, in that one conversation. Closing Google's chooser comes back
+     * as Refused with an empty message.
+     */
+    suspend fun formWithGoogle(activity: Context, path: String, fields: Map<String, String>, fallback: String): Outcome {
+        val conversation = OwnifyConnection.api.reauth()
+        return run(activity, fallback, reload = true) { token ->
+            val start = when (val result = conversation.start(token)) {
+                is OwnifyResult.Success -> result.value
+                is OwnifyResult.Failure -> return@run result
+            }
+            when (val google = OwnifyConnection.google.request(activity, start.serverClientId, start.nonce)) {
+                is com.ownify.android.connection.GoogleIdResult.Token -> conversation.form(path, fields + ("id_token" to google.idToken), token)
+                com.ownify.android.connection.GoogleIdResult.Cancelled -> OwnifyResult.HttpError(0, "")
+                else -> OwnifyResult.HttpError(0, com.ownify.android.i18n.tr("Bevestigen met Google is niet gelukt. Probeer het opnieuw."))
+            }
+        }
+    }
+
+    /**
+     * Release B: linking Google to this account, natively (§7) — the current
+     * [password] first (api/account/google.php, nonce), then Google's chooser
+     * with that nonce, then the ID token. The website is not opened.
+     */
+    suspend fun linkGoogle(activity: Context, password: String, fallback: String): Outcome {
+        val conversation = OwnifyConnection.api.linkGoogle()
+        return run(activity, fallback, reload = true) { token ->
+            val start = when (val result = conversation.start(token, password)) {
+                is OwnifyResult.Success -> result.value
+                is OwnifyResult.Failure -> return@run result
+            }
+            when (val google = OwnifyConnection.google.request(activity, start.serverClientId, start.nonce)) {
+                is com.ownify.android.connection.GoogleIdResult.Token -> conversation.link(token, google.idToken)
+                com.ownify.android.connection.GoogleIdResult.Cancelled -> OwnifyResult.HttpError(0, "")
+                else -> OwnifyResult.HttpError(0, com.ownify.android.i18n.tr("Google koppelen is niet gelukt. Probeer het opnieuw."))
+            }
+        }
+    }
+
     private suspend fun deleted(context: Context, fallback: String, call: suspend (token: String) -> OwnifyResult<JSONObject>): Outcome =
         run(context, fallback, reload = false, after = { token, body ->
             val link = body.optJSONObject("link")?.let { l ->

@@ -108,6 +108,11 @@ sealed interface Overlay {
     data class RenameDevice(val device: Int) : Overlay
     /** Wachtwoord wijzigen (Instellingen › Account › Inloggen), in the field editor's panel. */
     data object ChangePassword : Overlay
+    /**
+     * Release B's Inloggen actions, in the same panel ([kind]): "email" (change),
+     * "email-add", "password-set", "google-link", "google-remove".
+     */
+    data class SigninEdit(val kind: String) : Overlay
     data class Pairing(val provider: String) : Overlay
 
     /** Uitdagingen's one bottom sheet, in its five uses (components/challenge-sheet.php). */

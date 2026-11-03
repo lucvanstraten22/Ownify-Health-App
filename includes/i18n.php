@@ -493,6 +493,9 @@ if (!function_exists('i18n_locale')) {
             'day_mon'           => $en ? i18n_month($month, true) . ' ' . $day : $day . ' ' . i18n_month($month, true),
             'weekday_day_month' => $en ? i18n_weekday($weekday) . ', ' . i18n_month($month) . ' ' . $day
                                        : i18n_weekday($weekday) . ' ' . $day . ' ' . i18n_month($month),
+            /* "donderdag 22 oktober 2026" / "Thursday, October 22, 2026": the account e-mails. */
+            'weekday_day_month_year' => $en ? i18n_weekday($weekday) . ', ' . i18n_month($month) . ' ' . $day . ', ' . $year
+                                       : i18n_weekday($weekday) . ' ' . $day . ' ' . i18n_month($month) . ' ' . $year,
             'day_month_year'    => $en ? i18n_month($month) . ' ' . $day . ', ' . $year : $day . ' ' . i18n_month($month) . ' ' . $year,
             'day_mon_year'      => $en ? i18n_month($month, true) . ' ' . $day . ', ' . $year : $day . ' ' . i18n_month($month, true) . ' ' . $year,
             'month_year'        => i18n_month($month) . ' ' . $year,

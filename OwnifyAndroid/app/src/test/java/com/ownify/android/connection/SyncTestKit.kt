@@ -290,6 +290,14 @@ class FakeOwnifyServer {
     @Volatile
     var googleOffered: Boolean? = null
 
+    /**
+     * Release B (35.0): app-register.php answers with the verification
+     * screen, the registration held in a session of its own; app-pending.php
+     * answers for it — active once [pendingConfirmed] (the link was used).
+     */
+    var registerPending = false
+    var pendingConfirmed = false
+
     /** What app-google.php's status says about registering with e-mail; Release A says false. */
     @Volatile
     var emailRegistration = true
@@ -478,6 +486,24 @@ class FakeOwnifyServer {
             path.endsWith("/app-google.php") -> answerGoogle(exchange, JSONObject(body.ifEmpty { "{}" }), bearer, headers["cookie"])
             path.endsWith("/app-register.php") && JSONObject(body).optString("username") == "bezet" ->
                 reply(exchange, 422, """{"ok":false,"error":"Deze gebruikersnaam is al bezet."}""")
+            path.endsWith("/app-register.php") && registerPending -> {
+                accountUsername = JSONObject(body).optString("username")
+                exchange.responseHeaders.add("Set-Cookie", "ownify_session=pending1; path=/; secure; HttpOnly; SameSite=Lax")
+                reply(exchange, 200, """{"ok":true,"pending":{"email_masked":"n••••@e••••••.invalid","username":"$accountUsername","resend_after":60}}""")
+            }
+            path.endsWith("/app-pending.php") -> {
+                val held = headers["cookie"]?.contains("ownify_session=pending1") == true
+                when {
+                    !held -> reply(exchange, 410, """{"ok":false,"state":"gone","error":"Deze registratie bestaat niet meer. Begin opnieuw."}""")
+                    JSONObject(body).optString("action") == "cancel" -> reply(exchange, 200, """{"ok":true,"state":"gone"}""")
+                    pendingConfirmed -> signedIn(exchange, bearer, accountUsername, extra = "\"state\":\"active\",")
+                    JSONObject(body).optString("action") == "resend" ->
+                        reply(exchange, 429, """{"ok":false,"state":"pending","error":"Je kunt over 40 seconden opnieuw een e-mail laten sturen.","resend_after":40}""")
+                    else -> reply(exchange, 200, """{"ok":true,"state":"pending","message":"Nog niet bevestigd. Open de link in de e-mail die we je stuurden."}""")
+                }
+            }
+            path.endsWith("/app-forgot.php") ->
+                reply(exchange, 200, """{"ok":true,"message":"Als dit adres bij een Ownify-account met een wachtwoord hoort, krijg je binnen een paar minuten een e-mail met een link. Log je in met Google? Kies dan Doorgaan met Google."}""")
             // A new account: a token of the one before is somebody else's, and left alone.
             path.endsWith("/app-register.php") -> signedIn(exchange, bearer = null, JSONObject(body).optString("username"))
             path.endsWith("/app-logout.php") -> {

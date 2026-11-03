@@ -33,7 +33,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +65,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.delay
 import com.ownify.android.connection.GoogleUsernameStep
+import com.ownify.android.connection.PendingStep
 import com.ownify.android.connection.OwnifyAuthState
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.connection.OwnifyLink
@@ -104,14 +111,24 @@ private const val MAX_CODE = 16
  * Somebody new after Google has one step left, choosing a username, and the
  * panel is that step until it is done or cancelled — tr("Account"), as on the
  * website.
+ *
+ * Release B (35.0): a registration waiting for its link is the verification
+ * screen ("Bevestig je e-mailadres") until it is confirmed or cancelled, and
+ * Wachtwoord vergeten is one more flow ("forgot") — the website's steps.
  */
 @Composable
 fun SignedOutPanel(overlay: Overlay.Account, notice: String?, link: OwnifyLink? = null) {
     val shell = LocalShell.current
     var flow by rememberSaveable { mutableStateOf(overlay.view) }
+    // Kept here, above the steps: "Ander adres gebruiken" comes back to the
+    // form with the username and address it had.
+    var username by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
     val googleStep = OwnifyConnection.googleStep
+    val pendingStep = OwnifyConnection.pendingStep
     val title = when {
         googleStep != null -> tr("Account")
+        pendingStep != null -> tr("Registreren")
         flow == "register" -> tr("Registreren")
         flow == "pair" -> tr("Koppelen")
         else -> tr("Inloggen")
@@ -121,12 +138,17 @@ fun SignedOutPanel(overlay: Overlay.Account, notice: String?, link: OwnifyLink? 
         PanelColumn(panelModifier) {
             PanelHead(title, onClose = { shell.close(overlay) })
 
-            if (notice != null && googleStep == null) Notice(notice, link)
+            if (notice != null && googleStep == null && pendingStep == null) Notice(notice, link)
 
             when {
                 googleStep != null -> GoogleUsernameForm(googleStep)
+                pendingStep != null -> VerifyStep(pendingStep, onCancelled = { flow = "register" })
+                flow == "forgot" -> ForgotForm(onBack = { flow = "login" })
                 flow == "pair" -> PairingForm(onBack = { flow = "login" })
-                else -> EmailForm(register = flow == "register", onPair = { flow = "pair" })
+                else -> EmailForm(
+                    register = flow == "register", onPair = { flow = "pair" }, onForgot = { flow = "forgot" },
+                    username = username, onUsername = { username = it }, email = email, onEmail = { email = it }
+                )
             }
         }
     }
@@ -149,22 +171,26 @@ fun Notice(text: String, link: OwnifyLink? = null) {
     ) {
         T(text, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
         if (link != null) {
-            T(
-                link.label,
-                OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold).copy(textDecoration = TextDecoration.Underline),
-                Modifier
-                    .padding(top = Ownify.Space1)
-                    .clickable(role = Role.Button) {
-                        runCatching {
-                            context.startActivity(
-                                android.content.Intent(android.content.Intent.ACTION_VIEW, link.href.toUri())
-                                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                        }
-                    }
-            )
+            AccountLink(link.label, Modifier.padding(top = Ownify.Space1)) {
+                runCatching {
+                    context.startActivity(
+                        android.content.Intent(android.content.Intent.ACTION_VIEW, link.href.toUri())
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }
+            }
         }
     }
+}
+
+/** `.account__link`: a way onward in the panel — semibold, underlined. */
+@Composable
+fun AccountLink(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    T(
+        text,
+        OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold).copy(textDecoration = TextDecoration.Underline),
+        modifier.clickable(role = Role.Button, onClick = onClick)
+    )
 }
 
 /** `.account__error`: what went wrong, in the attention gold the website uses for caution. */
@@ -199,13 +225,19 @@ fun FieldHint(text: String, modifier: Modifier = Modifier, centred: Boolean = fa
 }
 
 @Composable
-private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
+private fun ColumnScope.EmailForm(
+    register: Boolean,
+    onPair: () -> Unit,
+    onForgot: () -> Unit,
+    username: String,
+    onUsername: (String) -> Unit,
+    email: String,
+    onEmail: (String) -> Unit
+) {
     val context = LocalContext.current
     val focus = LocalFocusManager.current
     val auth = OwnifyConnection.auth
     val working = auth is OwnifyAuthState.Working
-    var username by rememberSaveable { mutableStateOf("") }
-    var email by rememberSaveable { mutableStateOf("") }
     // The password lives only in this field while it is on screen: never saved, never logged.
     var password by remember { mutableStateOf("") }
     var repeat by remember { mutableStateOf("") }
@@ -234,7 +266,7 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
         Column {
             FieldLabel(tr("Gebruikersnaam"))
             JInput(
-                username, { username = it.take(MAX_FIELD) },
+                username, { onUsername(it.take(MAX_FIELD)) },
                 modifier = Modifier.focusRequester(focusFirst),
                 enabled = !working,
                 label = tr("Gebruikersnaam"),
@@ -248,7 +280,7 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
             Column {
                 FieldLabel("E-mailadres")
                 JInput(
-                    email, { email = it.take(MAX_FIELD) },
+                    email, { onEmail(it.take(MAX_FIELD)) },
                     enabled = !working,
                     label = "E-mailadres",
                     keyboard = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
@@ -265,6 +297,15 @@ private fun ColumnScope.EmailForm(register: Boolean, onPair: () -> Unit) {
                 keyboard = KeyboardOptions(imeAction = if (register) ImeAction.Next else ImeAction.Done),
                 actions = KeyboardActions(onDone = { submit() })
             )
+            // Release B: Wachtwoord vergeten, under the password, as on the website.
+            if (!register && OwnifyConnection.accountMail == true) {
+                AccountLink(tr("Wachtwoord vergeten?"), Modifier.padding(top = Ownify.Space2)) {
+                    focus.clearFocus()
+                    OwnifyConnection.dismissAuthMessage()
+                    OwnifyConnection.forgetForgotAnswer()
+                    onForgot()
+                }
+            }
         }
         if (register) {
             Column {
@@ -422,6 +463,131 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
         trn(step.minutes, "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuut.",
             "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuten."),
         centred = true
+    )
+}
+
+/**
+ * The verification screen (the website's `data-account-step="verify"`): a
+ * registration waiting for its link — a taken address looks exactly the
+ * same. "Ik heb bevestigd" asks; coming back to the app (from the browser the
+ * link opened in) asks too, quietly. "Stuur opnieuw" waits as long as the
+ * server said. "Ander adres gebruiken" deletes the registration and brings
+ * the form back.
+ */
+@Composable
+private fun ColumnScope.VerifyStep(step: PendingStep, onCancelled: () -> Unit) {
+    val context = LocalContext.current
+    val auth = OwnifyConnection.auth
+    val working = auth is OwnifyAuthState.Working
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    // When "Stuur opnieuw" may be pressed again.
+    var now by remember { mutableLongStateOf(android.os.SystemClock.elapsedRealtime()) }
+    LaunchedEffect(step.resendAt) {
+        val wait = step.resendAt - android.os.SystemClock.elapsedRealtime()
+        if (wait > 0) delay(wait)
+        now = android.os.SystemClock.elapsedRealtime()
+    }
+
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) OwnifyConnection.checkPending(context, quietly = true)
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    // .account__username, .account__meta
+    T(tr("Bevestig je e-mailadres"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(
+        trf("We hebben een link gestuurd naar %s. Open die link om je account af te maken.", step.emailMasked),
+        JStyle.Tiny,
+        Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4)
+    )
+
+    if (auth is OwnifyAuthState.Failed) ErrorBox(auth.message, Modifier.padding(bottom = Ownify.Space4))
+
+    Btn(
+        tr("Ik heb bevestigd"),
+        onClick = { OwnifyConnection.checkPending(context) },
+        enabled = !working,
+        modifier = Modifier.fillMaxWidth()
+    )
+    Btn(
+        tr("Stuur opnieuw"),
+        onClick = { OwnifyConnection.resendPending(context) },
+        enabled = !working && now >= step.resendAt,
+        modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
+    )
+    Btn(
+        tr("Ander adres gebruiken"),
+        onClick = {
+            OwnifyConnection.cancelPending(context)
+            onCancelled()
+        },
+        enabled = !working,
+        modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
+    )
+
+    step.message?.let { FieldHint(it, centred = true, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+    FieldHint(tr("Geen e-mail gekregen? Kijk ook in je spam. De link werkt 24 uur."), centred = true)
+}
+
+/**
+ * Wachtwoord vergeten (the website's `data-account-step="forgot"`): the
+ * address, then the server's one answer in the line's place. The link in the
+ * e-mail opens the website, where the new password is chosen.
+ */
+@Composable
+private fun ColumnScope.ForgotForm(onBack: () -> Unit) {
+    val focus = LocalFocusManager.current
+    val auth = OwnifyConnection.auth
+    val working = auth is OwnifyAuthState.Working
+    val answer = OwnifyConnection.forgotAnswer
+    var email by rememberSaveable { mutableStateOf("") }
+    val focusFirst = rememberFocusOnOpen()
+
+    fun submit() {
+        focus.clearFocus()
+        OwnifyConnection.forgotPassword(email)
+    }
+
+    T(tr("Wachtwoord vergeten"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(
+        answer ?: tr("Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen."),
+        JStyle.Tiny,
+        Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4).semantics { liveRegion = LiveRegionMode.Polite }
+    )
+
+    if (auth is OwnifyAuthState.Failed) ErrorBox(auth.message, Modifier.padding(bottom = Ownify.Space4))
+
+    if (answer == null) {
+        FieldLabel(tr("E-mailadres"))
+        JInput(
+            email, { email = it.take(MAX_FIELD) },
+            modifier = Modifier.focusRequester(focusFirst),
+            enabled = !working,
+            label = tr("E-mailadres"),
+            keyboard = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
+            actions = KeyboardActions(onDone = { submit() })
+        )
+        Btn(
+            tr("Stuur link"),
+            onClick = { submit() },
+            enabled = !working,
+            modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
+        )
+    }
+
+    Btn(
+        tr("Terug naar inloggen"),
+        onClick = {
+            OwnifyConnection.dismissAuthMessage()
+            OwnifyConnection.forgetForgotAnswer()
+            onBack()
+        },
+        enabled = !working,
+        modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 }
 

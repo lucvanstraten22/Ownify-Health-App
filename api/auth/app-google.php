@@ -75,6 +75,9 @@ if ($action === 'status') {
         /* And whether an account can be made with e-mail and a password:
            not in Release A (account_email_registration_open()). */
         'email_registration' => account_email_registration_open(),
+        /* Release B: the account e-mails are on — Wachtwoord vergeten, and
+           registering goes through the verification screen. */
+        'account_mail'       => account_mail_open(),
     ]);
 }
 
