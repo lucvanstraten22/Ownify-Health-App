@@ -20,8 +20,102 @@
 /* A hero has no card to press: its ring and its name settle instead. */
 .card--hero.card--opens { transition: none; }
 .card--hero.card--opens:has(.card__open:active) { transform: none; }
-.card--hero.card--opens :is(.score-ring, .score-ring__label) { transition: transform var(--press-out) var(--ease-out-strong); }
-.card--hero.card--opens:has(.card__open:active) :is(.score-ring, .score-ring__label) { transform: scale(0.97); }
+/* Never the label's h2 or the button: a transform there would make it the
+   containing block of the cover (::after below), which then shrinks to the
+   word while it is held and the release on the ring opens nothing (32.2). */
+.card--hero.card--opens :is(.score-ring, .score-trend__pill, .card__open-face) { transition: transform var(--press-out) var(--ease-out-strong); }
+.card--hero.card--opens:has(.card__open:active) :is(.score-ring, .score-trend__pill, .card__open-face) { transform: scale(0.97); }
+
+.card__open-face {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
+/* Slaap, Voeding, Training: each its own page, above the card's cover. */
+.card--hero .pillar-ring { position: relative; }
+
+.pillar-ring__open {
+    position: absolute;
+    inset: -6px -4px;
+    z-index: 2;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.pillar-ring__open:focus-visible { outline: 2px solid rgba(var(--ink), 0.55); outline-offset: 0; }
+
+.pillar-ring :is(.pillar-ring__dial, .pillar-ring__label) { transition: transform var(--press-out) var(--ease-out-strong); }
+.pillar-ring:has(.pillar-ring__open:active) :is(.pillar-ring__dial, .pillar-ring__label) { transform: scale(0.94); }
+
+/* --------------------------------------------------------------------------
+   The trend bubble on Overzicht (32.2): the sync capsule's glass
+   (.pull-sync__pill: 36 tall, a 34 cell for its glyph, the label in small
+   500 secondary), saying the Scorekompas's direction. Its arrow comes in
+   from the way the score goes, twice, once the card is in view; the same
+   still with reduced motion. No colour: a direction is not a judgement.
+   -------------------------------------------------------------------------- */
+.score-trend {
+    display: flex;
+    justify-content: center;
+    /* Into the ring's own space below, so it sits midway to the name. */
+    margin: calc(var(--space-2) * -1) 0 var(--space-3);
+}
+
+.score-trend__pill {
+    display: inline-flex;
+    align-items: center;
+    height: 36px;
+    padding-right: var(--space-4);
+    border-radius: var(--radius-pill);
+}
+
+.score-trend__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: var(--text-secondary);
+}
+
+.score-trend__glyph {
+    width: 13px;
+    height: 13px;
+    stroke-width: 2.4;
+}
+
+.score-trend__label {
+    font-size: var(--fs-small);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--tracking-small);
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+@keyframes score-trend-up {
+    0%   { transform: translateY(4px); opacity: 0; }
+    45%  { opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes score-trend-down {
+    0%   { transform: translateY(-4px); opacity: 0; }
+    45%  { opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.reveal.is-visible .score-trend[data-direction="up"] .score-trend__glyph { animation: score-trend-up 900ms var(--ease-out-strong) 1200ms 2 backwards; }
+.reveal.is-visible .score-trend[data-direction="down"] .score-trend__glyph { animation: score-trend-down 900ms var(--ease-out-strong) 1200ms 2 backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+    .score-trend__glyph { animation: none !important; }
+}
 
 .card__open {
     display: inline-flex;

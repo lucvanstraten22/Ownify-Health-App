@@ -64,25 +64,42 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
         </div>
     </div>
 
+    <?php /* Where the score is heading (32.2): the Scorekompas's own direction
+             (includes/score-compass.php — the first and the last week of 30
+             days, 2 points apart), in the sync capsule's glass, between the
+             ring and its name. Too little history: no direction, no bubble. */ ?>
+    <?php if ($direction !== null): ?>
+        <p class="score-trend" data-direction="<?= e($direction['key']) ?>">
+            <span class="glass score-trend__pill">
+                <span class="score-trend__icon" aria-hidden="true">
+                    <?= icon(['up' => 'arrow-up', 'down' => 'arrow-down'][$direction['key']] ?? 'dash', 'score-trend__glyph') ?>
+                </span>
+                <span class="score-trend__label"><?= e($direction['label']) ?></span>
+            </span>
+        </p>
+    <?php endif; ?>
+
     <h2 class="score-ring__label">
         <?php if ($compass !== null): ?>
+            <?php /* Its ::after covers the whole card: the ring, the bubble, the
+                     name — one way into the Scorekompas. What presses in is
+                     the face inside, never the button, so the cover stays the
+                     card's size while it is held. */ ?>
             <button type="button" class="card__open" data-detail-open="score-compass" aria-label="<?= e($openLabel) ?>">
-                <?= e($overall['label']) ?><?= icon('chevron-right', 'card__open-chevron') ?>
+                <span class="card__open-face"><?= e($overall['label']) ?><?= icon('chevron-right', 'card__open-chevron') ?></span>
             </button>
         <?php else: ?>
             <?= e($overall['label']) ?>
         <?php endif; ?>
     </h2>
-    <?php if ($direction !== null): ?>
-        <?php component('score-direction', ['direction' => $direction]); ?>
-    <?php endif; ?>
     <p class="card__lede"><?= e($overall['description']) ?></p>
 
     <?php /* The three pillars the score averages, each with its own score as a
              small ring drawn like the big one: the arc in the score's colour
              (data-score, decided on the server), not the pillar's category
              colour; no score, no arc. hero-ring.js draws them a moment after
-             the big one starts. */ ?>
+             the big one starts. Each opens its own page (32.2), over the
+             Scorekompas's cover. */ ?>
     <ul class="pillar-rings" role="list">
         <?php foreach ($contributors as $item): ?>
             <li class="pillar-ring <?= state_class($item['value']) ?>" data-score="<?= e((string) ($item['score_band'] ?? '')) ?>">
@@ -94,6 +111,10 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
                 </span>
                 <span class="pillar-ring__value"><?= e(score_text($item['value'])) ?></span>
                 <span class="pillar-ring__label"><?= e($item['label']) ?></span>
+                <?php if (in_array($item['area'] ?? '', ['sleep', 'nutrition', 'training'], true)): ?>
+                    <button type="button" class="pillar-ring__open" data-detail-open="<?= e($item['area']) ?>"
+                            aria-label="<?= e($item['label'] . ': ' . score_text($item['value'])) ?>"></button>
+                <?php endif; ?>
             </li>
         <?php endforeach; ?>
     </ul>

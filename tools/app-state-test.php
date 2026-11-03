@@ -614,8 +614,8 @@ try {
         $s = $read($new);
         check('a restart opens past it, with the answer kept', ($s['setup']['resume'] ?? null) === 'connect'
             && array_column(array_filter($s['setup']['steps'][0]['options'] ?? [], static fn ($o) => $o['chosen']), 'key') === ['fitness']);
-        check('the focus puts its category first in the legend', array_column($s['scores']['contributors'] ?? [], 'area') === ['training', 'sleep', 'nutrition']);
-        check('and in the Scorekompas, which follows the legend', array_column($s['compass']['composition']['categories'] ?? [], 'id') === ['training', 'sleep', 'nutrition']);
+        check('the legend keeps its order whatever the focus: Slaap, Voeding, Training', array_column($s['scores']['contributors'] ?? [], 'area') === ['sleep', 'nutrition', 'training']);
+        check('and in the Scorekompas, which follows the legend', array_column($s['compass']['composition']['categories'] ?? [], 'id') === ['sleep', 'nutrition', 'training']);
         check('the chip says it', ($s['focus_labels'][$s['focus'] ?? ''] ?? null) === 'Fitheid');
 
         $profile = http('/api/profile/update.php', ['bearer' => $new['token'], 'form' => ['weight' => '82,4']]);

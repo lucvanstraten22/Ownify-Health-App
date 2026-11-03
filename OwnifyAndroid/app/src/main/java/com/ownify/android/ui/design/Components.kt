@@ -65,6 +65,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -750,7 +751,7 @@ fun ScoreRing(
  * `pillars`); still, they are simply there.
  */
 @Composable
-fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Modifier, after: Int = 0) {
+fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Modifier, after: Int = 0, open: ((Int) -> Unit)? = null) {
     val still = LocalStillMotion.current || LocalReducedMotion.current
     Row(modifier.widthIn(max = 300.dp).fillMaxWidth()) {
         items.forEachIndexed { i, item ->
@@ -760,8 +761,20 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
                 if (still) drawn.snapTo(target)
                 else if (play) drawn.animateTo(target, tween(1500, delayMillis = after + i * 90, easing = Ownify.EaseOutStrong))
             }
+            // Each its own page when [open] is given (Overzicht, 32.2): the
+            // tap is the pillar's, never the score's behind it; it settles
+            // under the finger as the website's does (scale .94).
+            val interaction = remember { MutableInteractionSource() }
+            val tap = if (open == null) Modifier else Modifier
+                .clickable(interaction, indication = null, role = Role.Button) { open(i) }
             Column(
-                Modifier.weight(1f).clearAndSetSemantics { contentDescription = item.label + ": " + (item.value?.toString() ?: "—") },
+                Modifier.weight(1f).then(tap).clearAndSetSemantics {
+                    contentDescription = item.label + ": " + (item.value?.toString() ?: "—")
+                    if (open != null) {
+                        role = Role.Button
+                        onClick { open(i); true }
+                    }
+                }.press(interaction, scale = 0.94f, enabled = open != null),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {

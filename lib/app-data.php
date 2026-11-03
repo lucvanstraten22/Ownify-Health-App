@@ -102,11 +102,8 @@ if (!function_exists('app_page_data')) {
             $data['health']
         );
 
-        /* The focus's category first in the legend — and so in the
-           Scorekompas, which names the categories in the legend's order. */
-        if ($firstDays) {
-            $data['scores']['contributors'] = setup_order_rows($data['scores']['contributors'], $data['focus']);
-        }
+        /* The legend is always Slaap, Voeding, Training (config/dashboard.php),
+           whatever the focus (32.2): the three pillars keep their places. */
 
         /* Some data in, but not yet enough for a score: the ring says so, in
            the same sentence Gezondheid's intro uses, instead of "Nog geen

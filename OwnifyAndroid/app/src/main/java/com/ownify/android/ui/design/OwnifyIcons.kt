@@ -248,6 +248,13 @@ object OwnifyIcons {
     }
 
     /** `arrow-down` */
+    /** The same as before — the Health Score's trend, unchanged (32.2). */
+    val dash: ImageVector by lazy {
+        icon("dash", null,
+            "M6.4 12h11.2"
+        )
+    }
+
     val arrowDown: ImageVector by lazy {
         icon("arrow-down", null,
             "M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"

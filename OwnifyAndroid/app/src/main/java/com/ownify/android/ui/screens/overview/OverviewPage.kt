@@ -195,9 +195,16 @@ private fun HealthScoreCard(data: AppData) {
             glow = true,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = Ownify.Space6, bottom = Ownify.Space5)
+                .padding(top = Ownify.Space6, bottom = if (compass.direction != null) Ownify.Space3 else Ownify.Space5)
                 .then(settles)
         )
+
+        // Where the score is heading (32.2), between the ring and its name:
+        // the Scorekompas's direction in the sync capsule's glass. Too little
+        // history: no direction, no bubble.
+        compass.direction?.let {
+            TrendBubble(it, play, Modifier.align(Alignment.CenterHorizontally).padding(bottom = Ownify.Space3).then(settles))
+        }
 
         // The label, with the way in beside it (`.card__open-chevron`): the button,
         // still reading as its word, described as the website's button is.
@@ -214,7 +221,6 @@ private fun HealthScoreCard(data: AppData) {
                 JIcon(OwnifyIcons.chevronRight, Modifier.padding(start = 1.dp).offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextMuted)
             }
         }
-        compass.direction?.let { DirectionChip(it, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space2)) }
         T(
             overall.description,
             JStyle.Lede,
@@ -226,13 +232,70 @@ private fun HealthScoreCard(data: AppData) {
         )
 
         // The pillars wait until the score ring has wholly arrived (none moves without a score).
+        // Slaap, Voeding, Training: each opens its own page (32.2).
+        val contributors = data.overview.contributors
         PillarRings(
-            overviewLegend(data.overview.contributors), play,
+            overviewLegend(contributors), play,
             Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space5),
-            after = if (empty) 0 else HeroArrivalMs
+            after = if (empty) 0 else HeroArrivalMs,
+            open = { i ->
+                val area = contributors.getOrNull(i)?.area
+                if (area != null && data.health.area(area) != null) shell.openDetail(Detail.HealthArea(area))
+            }
         )
 
         if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * `.score-trend` (components/health-score.php): the Scorekompas's direction
+ * in the sync capsule's glass ([com.ownify.android.ui.app.PullSyncIndicator]:
+ * 36 tall, a 34 cell for the glyph, the label small, medium, secondary). The
+ * arrow comes in from the way the score goes — 4 dp and faded, over 900 ms,
+ * twice, 1.2 s after the hero is in sight; a dash for unchanged, still. Still
+ * with reduced motion.
+ */
+@Composable
+private fun TrendBubble(direction: com.ownify.android.data.CompassDirection, play: Boolean, modifier: Modifier = Modifier) {
+    val still = LocalStillMotion.current || com.ownify.android.ui.design.LocalReducedMotion.current
+    val sign = when (direction.key) { "up" -> 1f; "down" -> -1f; else -> 0f }
+    val travel = remember(direction.key) { androidx.compose.animation.core.Animatable(1f) }
+    androidx.compose.runtime.LaunchedEffect(play, direction.key, still) {
+        if (still || sign == 0f) { travel.snapTo(1f); return@LaunchedEffect }
+        if (!play) return@LaunchedEffect
+        delay(1200)
+        repeat(2) {
+            travel.snapTo(0f)
+            travel.animateTo(1f, tween(900, easing = Ownify.EaseOutStrong))
+        }
+    }
+    com.ownify.android.ui.design.Pane(
+        modifier.height(36.dp).semantics { contentDescription = direction.label },
+        style = Panes.HeaderButton,
+        shape = RoundedCornerShape(50),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(Modifier.padding(horizontal = 1.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+                JIcon(
+                    when (direction.key) { "up" -> OwnifyIcons.arrowUp; "down" -> OwnifyIcons.arrowDown; else -> OwnifyIcons.dash },
+                    Modifier.graphicsLayer {
+                        val t = travel.value
+                        translationY = sign * (1f - t) * 4.dp.toPx()
+                        alpha = (t / 0.45f).coerceIn(0f, 1f)
+                    },
+                    size = 13.dp,
+                    color = Ownify.TextSecondary
+                )
+            }
+            T(
+                direction.label,
+                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.em),
+                Modifier.padding(end = Ownify.Space4),
+                maxLines = 1
+            )
+        }
     }
 }
 

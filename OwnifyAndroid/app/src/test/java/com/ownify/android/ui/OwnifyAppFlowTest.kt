@@ -757,6 +757,38 @@ class OwnifyAppFlowTest {
     }
 
     @Test
+    fun `Overzicht - the trend bubble, the whole score opens the Scorekompas, each pillar its own page`() {
+        withCompass()
+        MemoryTokenStorage.signedIn()
+        show()
+        waitForPages()
+
+        // The bubble sits between the ring and the name, and is part of the way in.
+        val bubble = compose.onNode(hasText("Dalend")).fetchSemanticsNode().boundsInRoot
+        val name = compose.onAllNodes(hasText("Gezondheidsscore")).onFirst().fetchSemanticsNode().boundsInRoot
+        assertTrue("the bubble above the name", bubble.bottom <= name.top)
+        compose.onNode(hasText("Dalend")).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        backToOverview()
+
+        // Slaap, Voeding, Training, left to right, whatever the focus.
+        val x = listOf("Slaap", "Voeding", "Training").map { label ->
+            compose.onNode(hasContentDescription("$label:", substring = true) and hasClickAction()).fetchSemanticsNode().boundsInRoot.left
+        }
+        assertTrue("Slaap, Voeding, Training: $x", x[0] < x[1] && x[1] < x[2])
+
+        // Each opens its own page, never the Scorekompas behind it.
+        for (label in listOf("Slaap", "Voeding", "Training")) {
+            compose.onNode(hasContentDescription("$label:", substring = true) and hasClickAction()).performScrollTo().performClick()
+            compose.waitUntil(5_000) { compose.onAllNodes(hasText(label) and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+            compose.onAllNodes(hasText("Scorekompas") and isHeading()).assertCountEquals(0)
+            compose.onAllNodes(hasContentDescription("Terug", substring = true) and hasClickAction()).onFirst().performClick()
+            compose.waitUntil(5_000) { compose.onAllNodes(hasText("Vandaag") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+            compose.waitForIdle()
+        }
+    }
+
+    @Test
     fun `Scorekompas - a server without it leaves the score card a card`() {
         MemoryTokenStorage.signedIn()
         show()

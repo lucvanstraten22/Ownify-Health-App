@@ -1,9 +1,10 @@
 <?php
 /**
  * Where the Health Score is heading — Stijgend, Stabiel or Dalend — as the
- * Scorekompas worked it out (includes/score-compass.php). Under the score on
- * Overzicht and on the Scorekompas itself. In the text colour, never a
- * score's or a category's: a direction is not a judgement.
+ * Scorekompas worked it out (includes/score-compass.php), on the Scorekompas
+ * itself. Overzicht says it in its trend bubble (components/health-score.php).
+ * In the text colour, never a score's or a category's: a direction is not a
+ * judgement.
  */
 declare(strict_types=1);
 

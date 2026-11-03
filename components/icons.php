@@ -111,6 +111,9 @@ if (!function_exists('icon')) {
                 // sending a message — an arrow up, the stroke the rest share
                 'arrow-up' => '<path d="M12 19.2V5.2M6.4 10.8 12 5.2l5.6 5.6"/>',
 
+                // the same as before — the Health Score's trend, unchanged
+                'dash'     => '<path d="M6.4 12h11.2"/>',
+
                 // lower is better / at most — the goal wizard's direction
                 'arrow-down' => '<path d="M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"/>',
 
