@@ -323,7 +323,9 @@ function page_texts(string $html): array
                                  'width', 'height', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'r', 'offset', 'stop-color', 'points',
                                  'data-points', 'data-x', 'data-y', 'data-csrf', 'data-detail', 'data-detail-open', 'data-icon',
                                  'pattern', 'accept', 'stroke-width', 'fill', 'stroke', 'transform', 'aria-controls',
-                                 'aria-labelledby', 'aria-describedby', 'data-field-input'], true)) {
+                                 'aria-labelledby', 'aria-describedby', 'data-field-input',
+                                 /* What a button posts (confirm=wissen): words for the server. */
+                                 'data-fields'], true)) {
                 continue;
             }
             $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5);
@@ -355,6 +357,8 @@ function state_texts(mixed $node, string $key = ''): array
                     'line', 'area_path', 'path', 'd', 'x', 'y', 'theme_color', 'theme_color_light', 'tagline_app', 'unit_key',
                     'target_unit', 'post_unit', 'value_key', 'goal', 'user', 'identities', 'question_id', 'grid', 'lower',
                     'layout', 'edit', 'step', 'min', 'max',
+                    /* What a button posts (confirm=wissen): words for the server, never shown. */
+                    'fields',
                     /* A measurement's search words hold both languages on purpose: "slapen" finds Slaapduur in either. */
                     'keywords', 'unit_codes', 'unit_code', 'imperial_unit', 'canonical', 'default_direction', 'user_auto',
                     'units_system', 'week_start', 'measurement', 'variant', 'period_unit', 'outcome', 'tracking'];

@@ -49,6 +49,10 @@ object OwnifyActions {
     suspend fun assistant(context: Context, path: String, fields: Map<String, String>, fallback: String): Outcome =
         run(context, fallback, reload = false) { token -> OwnifyConnection.api.assistant(path, fields, token) }
 
+    /** Gegevens downloaden: the account's whole export (its `export` and `filename`). Nothing changes, so nothing is read again. */
+    suspend fun export(context: Context, fallback: String): Outcome =
+        run(context, fallback, reload = false) { token -> OwnifyConnection.api.export(token) }
+
     /** A JSON post, for `api/goals/update.php`. */
     suspend fun json(context: Context, path: String, body: JSONObject, fallback: String, reload: Boolean = true): Outcome =
         run(context, fallback, reload) { token -> OwnifyConnection.api.json(path, body, token) }

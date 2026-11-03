@@ -89,7 +89,11 @@ The website clears a dot the moment its action succeeds
 fetches (`OwnifyNotices.read()`). The app reads its state again after every
 change, as it always does.
 
-## Meldingen › Stip bij Voeding vanaf
+## Meldingen › Melding bij Voeding vanaf
+
+In what a person reads (Instellingen, both apps) a dot is a *melding*:
+"Meldingen in de app", "Melding bij Voeding vanaf" (36.1). The code keeps
+its own words (`notice_dot`, `NoticeDot`, `rating_notice`).
 
 The hour the Voeding dot appears: 16:00, 18:00, 19:00, 20:00 (the default),
 21:00 or 22:00. Kept on the account (`user_profiles.rating_notice_hour`,

@@ -245,7 +245,7 @@ The attributes are put on `<html>` before anything is painted
 `prefers-reduced-motion` or `prefers-contrast` block adds its
 `[data-motion]` / `[data-contrast]` twin beside it.
 
-**Status.** What is the case — Voorkeuren's Nu actief, a source's
+**Status.** What is the case — a source's
 connection, the header's quick look — is drawn as `.status` (components.css;
 Android `StatusBadge`): a 6 px dot and a word in the secondary ink, no border
 and no fill, so it is never taken for a button or a choice. The colour is

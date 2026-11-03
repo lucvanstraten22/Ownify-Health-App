@@ -334,6 +334,14 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
         return request(path, FORM_TYPE, body.toByteArray(Charsets.UTF_8), token, ASSISTANT_TIMEOUT_MS, MAX_ASSISTANT_BYTES) { it }
     }
 
+    /**
+     * Gegevens downloaden (api/profile/export.php): everything the account
+     * has, which can be far larger than any other answer and take longer to
+     * read — so its own limits.
+     */
+    suspend fun export(token: String): OwnifyResult<JSONObject> =
+        request("api/profile/export.php", FORM_TYPE, ByteArray(0), token, EXPORT_TIMEOUT_MS, MAX_EXPORT_BYTES) { it }
+
     /** A JSON body to a write endpoint that reads one (api/goals/update.php). */
     suspend fun json(path: String, body: JSONObject, token: String): OwnifyResult<JSONObject> =
         post(path, body, token) { it }
@@ -568,6 +576,9 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
 
         /** Ownify AI: the server waits up to 55 s for Gemini, a little longer for the rest. */
         private const val ASSISTANT_TIMEOUT_MS = 90_000
+        /** Gegevens downloaden: a whole history, read in one go. */
+        private const val EXPORT_TIMEOUT_MS = 120_000
+        private const val MAX_EXPORT_BYTES = 96 * 1024 * 1024
 
         /** A conversation of up to 200 messages, each with its blocks. */
         private const val MAX_ASSISTANT_BYTES = 2 * 1024 * 1024

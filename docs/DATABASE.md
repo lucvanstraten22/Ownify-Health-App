@@ -995,3 +995,26 @@ Honest list, so nobody goes looking for wiring that is not there.
   complete and tested, but the app has no UI that posts to them yet —
   building those screens is design work, not wiring. Nutrition has one: the
   day's 1-10 rating on the Voeding page.
+
+## Je gegevens: downloaden en wissen (36.1)
+
+Instellingen › Privacy › Je gegevens, on the website and in the app
+(`includes/data-export.php`, `tools/data-export-test.php`):
+
+- **Gegevens downloaden** — `api/profile/export.php` answers
+  `{ ok, filename, export }`: every row of the account's, section by section
+  (`data_export_sections()`), streamed in pages so a long heart-rate history
+  never sits in memory at once. Never in it: password hashes, Google
+  subjects, token hashes, connection keys, anybody else's rows (a friend is
+  their username only). The website saves it as `ownify-gegevens-<date>.json`;
+  the app asks where through the system's save dialog.
+- **Gegevens wissen** — `api/profile/wipe.php`, only with `confirm=wissen`,
+  which only the confirmation's yes sends. In one transaction it deletes the
+  health data and what was worked out from it (`data_wipe_tables()`:
+  measurements, sleep, heart rate, nutrition, workouts, metrics and day
+  totals, scores, points and board totals, insights, correlations, goals —
+  stages, zones and goal entries cascade); the board periods are re-ranked.
+  The account, sign-in, profile, preferences, friends, challenges,
+  connections, phones and OwnifyAI conversations stay; the conversations
+  have their own button directly below (`api/ai/delete.php`).
+

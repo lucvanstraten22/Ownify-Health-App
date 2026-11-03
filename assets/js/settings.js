@@ -66,7 +66,12 @@
             nav.pages.goToId('settings');
             nav.details.open(reopen);
         }
-        /* A source whose phone was renamed: open as it was left. */
+        /* After Gegevens wissen: the line that says it is done. */
+        var said = null;
+        try { said = JSON.parse(sessionStorage.getItem('ownify-action-said') || 'null'); sessionStorage.removeItem('ownify-action-said'); } catch (e) { said = null; }
+        var saidRow = said ? document.querySelector('[data-setting-action="' + said.key + '"] [data-setting-action-note]') : null;
+        if (saidRow) { saidRow.textContent = said.message; }
+                /* A source whose phone was renamed: open as it was left. */
         var head = source ? document.querySelector('[data-integration-toggle][aria-controls="' + source + '"]') : null;
         var body = source ? document.getElementById(source) : null;
         if (head && body) { head.setAttribute('aria-expanded', 'true'); body.hidden = false; }
@@ -200,10 +205,9 @@
                 if (key === 'leaderboard_avatar' && window.AppBoards) { window.AppBoards.refresh(); }
 
                 /* Toegankelijkheid: in force at once (the head's script puts it
-                   on <html>), and "Nu actief" says so. */
+                   on <html>). */
                 if ('text_large' in answer && window.ownifyAccess) {
                     window.ownifyAccess.apply(answer);
-                    showStatus(key, !!answer[key]);
                 }
 
                 /* Told to whoever shows the same setting elsewhere — the
@@ -211,18 +215,6 @@
                 document.dispatchEvent(new CustomEvent('ownify:setting', { detail: { key: key, on: !!answer[key] } }));
             });
     });
-
-    /** "Nu actief": a status that follows a switch — its word, its note and its dot. */
-    function showStatus(key, on) {
-        Array.prototype.forEach.call(document.querySelectorAll('[data-status="' + key + '"]'), function (row) {
-            var value = row.querySelector('[data-status-value]');
-            var note  = row.querySelector('[data-status-note]');
-            var badge = row.querySelector('.status');
-            if (value) { value.textContent = row.getAttribute(on ? 'data-value-on' : 'data-value-off') || value.textContent; }
-            if (note)  { note.textContent = row.getAttribute(on ? 'data-note-on' : 'data-note-off') || note.textContent; }
-            if (badge) { badge.setAttribute('data-tone', on ? 'on' : 'neutral'); }
-        });
-    }
 
     /** The same switch, moved from elsewhere (the Ownify AI sheet): no save, it already was. */
     window.AppSettings = {
@@ -247,8 +239,9 @@
         var confirmBox = row.querySelector('[data-setting-action-confirm]');
         var go         = row.querySelector('[data-setting-action-go]');
         var note       = row.querySelector('[data-setting-action-note]');
+        var direct     = row.hasAttribute('data-setting-action-direct');
 
-        if (event.target.closest('[data-setting-action-go]')) {
+        if (event.target.closest('[data-setting-action-go]') && !direct) {
             confirmBox.hidden = false;
             go.hidden = true;
             var yes = row.querySelector('[data-setting-action-yes]');
@@ -263,7 +256,9 @@
             return;
         }
 
-        var yesButton = event.target.closest('[data-setting-action-yes]');
+        /* What sends it: the confirmation's yes — or, for a `direct` row
+           (Gegevens downloaden), its own button. */
+        var yesButton = direct ? event.target.closest('[data-setting-action-go]') : event.target.closest('[data-setting-action-yes]');
         if (!yesButton || yesButton.disabled) { return; }
 
         var panel  = document.querySelector('[data-account]');
@@ -283,8 +278,14 @@
             .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
             .then(function (answer) {
                 yesButton.disabled = false;
-                confirmBox.hidden = true;
+                if (confirmBox) { confirmBox.hidden = true; }
                 go.hidden = false;
+
+                /* Gegevens downloaden: what came back, saved as its file. */
+                if (answer && answer.ok && row.hasAttribute('data-setting-action-download')) {
+                    save(answer.export, answer.filename || 'ownify.json');
+                    answer.message = row.getAttribute('data-done') || '';
+                }
 
                 if (note) {
                     note.textContent = answer && answer.ok
@@ -296,8 +297,32 @@
                 if (answer && answer.ok) {
                     document.dispatchEvent(new CustomEvent('ownify:setting-action', { detail: { key: row.getAttribute('data-setting-action') } }));
                 }
+
+                /* Gegevens wissen: every page shows what is left, so the page
+                   is read again — Privacy open, saying it is done. */
+                if (answer && answer.ok && row.getAttribute('data-setting-action') === 'data_wipe') {
+                    try {
+                        sessionStorage.setItem('ownify-reopen', 'settings-privacy');
+                        sessionStorage.setItem('ownify-action-said', JSON.stringify({ key: 'data_wipe', message: answer.message || '' }));
+                    } catch (e) { /* private mode */ }
+                    window.location.reload();
+                }
             });
     });
+
+    /** A JSON file, saved by the browser under [name]. */
+    function save(content, name) {
+        var blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+        var url  = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        link.hidden = true;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    }
 
     /* ------------------------------------------------------- integrations */
 
@@ -594,8 +619,11 @@
                     box.type = part.type || 'text';
                     box.id = 'editor-' + part.name;
                     box.autocomplete = part.autocomplete || 'off';
-                    box.maxLength = part.type === 'email' ? 191 : 200;
+                    box.maxLength = part.max || (part.type === 'email' ? 191 : 200);
                     if (part.min) { box.minLength = part.min; }
+                    /* Voor- en achternaam: it starts from what is stored. */
+                    if (part.value) { box.value = part.value; }
+                    if (part.optional) { box.setAttribute('data-optional', ''); }
                     if (part.type === 'email') { box.spellcheck = false; box.autocapitalize = 'none'; }
                     field.appendChild(label);
                     field.appendChild(box);
@@ -615,7 +643,8 @@
                     var names = Object.keys(inputs);
                     for (var i = 0; i < names.length; i++) {
                         var typed = inputs[names[i]].type === 'password' ? inputs[names[i]].value : inputs[names[i]].value.trim();
-                        if (typed === '') { return ''; }
+                        // A part that may be empty (a last name) is sent empty.
+                        if (typed === '' && !inputs[names[i]].hasAttribute('data-optional')) { return ''; }
                         out[names[i]] = typed;
                     }
                     return out;

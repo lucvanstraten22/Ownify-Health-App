@@ -42,7 +42,7 @@ class AppDataParseTest {
                 preferences.filterIsInstance<SettingsBlock.Section>().map { it.title }
             )
             assertEquals(listOf("units", "week"), preferences.filterIsInstance<SettingsBlock.Choice>().map { it.name })
-            assertTrue(preferences.any { it is SettingsBlock.States } && preferences.any { it is SettingsBlock.Toggles })
+            assertTrue(preferences.none { it is SettingsBlock.States } && preferences.any { it is SettingsBlock.Toggles })
             for (gone in listOf("units", "week", "accessibility")) assertNull(gone, settings.page(gone))
 
             val about = settings.page("about")!!.blocks
@@ -181,7 +181,14 @@ class AppDataParseTest {
         val fields = data.settings.page("account")!!.blocks.filterIsInstance<SettingsBlock.Fields>().flatMap { it.fields }
         assertEquals("locked", fields.single { it.key == "gender" }.state)
         assertEquals("Vrouw", fields.single { it.key == "gender" }.value)
-        assertEquals("editable", fields.single { it.key == "first_name" }.state)
+        // Voor- en achternaam: one row, one editor with both names, saved together.
+        val name = fields.single { it.key == "name" }
+        assertEquals("editable", name.state)
+        assertEquals("Voor- en achternaam wijzigen", name.label)
+        assertEquals("fields", name.input!!.type)
+        assertEquals(listOf("first_name", "last_name"), name.input!!.inputs.map { it.name })
+        assertEquals(listOf(false, true), name.input!!.inputs.map { it.optional })
+        assertFalse(fields.any { it.key == "first_name" || it.key == "last_name" })
         assertEquals("api/profile/update.php", fields.single { it.key == "height" }.input!!.endpoint)
         assertNull(fields.single { it.key == "gender" }.input)
         // Privacy's switches that save, as the account has them; the rest wait, disabled.
@@ -200,16 +207,26 @@ class AppDataParseTest {
         assertFalse(gemini.on)
         assertEquals("OwnifyAI werkt niet, en er gaat niets naar Gemini.", gemini.note)
         assertEquals(2, switches.count { it.key == null })
-        // …the conversations can be wiped, asked first, through the server's own endpoint.
-        val wipe = privacy.blocks.filterIsInstance<SettingsBlock.Actions>().single().items.single()
+        // Je gegevens: download at once; wipe the data, then the conversations, each asked first.
+        val actions = privacy.blocks.filterIsInstance<SettingsBlock.Actions>().single()
+        assertEquals("Je gegevens", actions.title)
+        assertEquals(listOf("data_export", "data_wipe", "ai_clear_history"), actions.items.map { it.key })
+        val export = actions.items[0]
+        assertTrue(export.direct && export.download)
+        assertEquals("api/profile/export.php", export.endpoint)
+        val dataWipe = actions.items[1]
+        assertFalse(dataWipe.direct)
+        assertEquals("api/profile/wipe.php", dataWipe.endpoint)
+        assertEquals(mapOf("confirm" to "wissen"), dataWipe.fields)
+        assertTrue(dataWipe.danger)
+        val wipe = actions.items[2]
         assertEquals("ai_clear_history", wipe.key)
         assertEquals("api/ai/delete.php", wipe.endpoint)
         assertEquals(mapOf("all" to "1"), wipe.fields)
         assertTrue(wipe.danger)
         assertEquals("Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.", wipe.question)
-        // …and the facts at the top say where the assistant stands.
-        val facts = privacy.blocks.filterIsInstance<SettingsBlock.States>().single().items
-        assertEquals("Uit", facts.single { it.label == "OwnifyAI" }.value)
+        // No status block repeating the switches.
+        assertTrue(privacy.blocks.none { it is SettingsBlock.States })
 
         // Ownify AI's words and the account's answer, before anything is fetched.
         assertEquals("OwnifyAI", data.ai.title)
@@ -624,20 +641,16 @@ class AppDataParseTest {
     }
 
     @Test
-    fun `Voorkeuren - Nu actief is a status that follows its switches, which save to preferences, and the week saves too`() {
+    fun `Voorkeuren - Toegankelijkheid is its switches alone, which save to preferences, and the week saves too`() {
         for (name in listOf("state-demo.json", "state-new-account.json")) {
             val data = fixture(name)
             val blocks = data.settings.page("preferences")!!.blocks
 
-            val now = blocks.filterIsInstance<SettingsBlock.States>().single()
-            assertTrue(name, now.status)
-            assertEquals(listOf("motion_off", "text_large", "contrast_more"), now.items.map { it.key })
-            assertTrue(now.items.all { it.tone == "neutral" && it.valueOn != null && it.noteOn != null && it.valueOff == it.value })
-            // The phone's own words, also once a switch is off again (settings_for_app).
-            assertEquals("De app schaalt mee met de lettergrootte van je telefoon", now.items[1].noteOff)
-
+            // No Nu actief: the switches sit straight under the Toegankelijkheid heading.
+            assertTrue(name, blocks.none { it is SettingsBlock.States })
             val switches = blocks.filterIsInstance<SettingsBlock.Toggles>().single()
-            assertEquals("Eigen instellingen", switches.title)
+            assertEquals("", switches.title)
+            assertTrue(blocks[blocks.indexOf(switches) - 1].let { it is SettingsBlock.Section && it.title == "Toegankelijkheid" })
             assertEquals(listOf("text_large", "contrast_more", "motion_off"), switches.items.map { it.key })
             assertTrue(switches.items.all { it.endpoint == "api/profile/preferences.php" && !it.on })
 

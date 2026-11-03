@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -170,6 +171,8 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     var value by remember(overlay.key) { mutableStateOf(input?.value.orEmpty()) }
     var feet by remember(overlay.key) { mutableStateOf(input?.feet.orEmpty()) }
     var inches by remember(overlay.key) { mutableStateOf(input?.inches.orEmpty()) }
+    // Voor- en achternaam: each box's text, by the name it is posted under.
+    var parts by remember(overlay.key) { mutableStateOf(input?.inputs.orEmpty().associate { it.name to it.value }) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -177,6 +180,26 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
     if (field == null || input == null) return
 
     fun save() {
+        // Several boxes saved together: each under its own name; a needed one may not be empty.
+        if (input.type == "fields") {
+            val sent = input.inputs.associate { it.name to parts[it.name].orEmpty().trim() }
+            if (input.inputs.any { !it.optional && sent[it.name].isNullOrEmpty() }) {
+                error = tr("Vul eerst een waarde in.")
+                return
+            }
+            focus.clearFocus()
+            error = null
+            saving = true
+            scope.launch {
+                when (val outcome = OwnifyActions.form(context, input.endpoint, sent, tr("Opslaan is niet gelukt."))) {
+                    is Outcome.Done -> shell.close(overlay)
+                    is Outcome.Refused -> error = outcome.message
+                    Outcome.SignedOut -> Unit
+                }
+                saving = false
+            }
+            return
+        }
         // Imperial height is sent as inches, with height_unit=in (lib/settings.php).
         val sent = if (input.type == "feet_inches") {
             if (feet.isBlank() && inches.isBlank()) "" else ((feet.trim().toIntOrNull() ?: 0) * 12 + (inches.trim().toIntOrNull() ?: 0)).toString()
@@ -211,6 +234,25 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
             when (input.type) {
                 "choice" -> ChoiceControl(input, value) { value = it }
+                "fields" -> {
+                    // One box under the other, each with its own label, as the website's editor.
+                    val first = rememberFocusOnOpen()
+                    Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+                        input.inputs.forEachIndexed { i, part ->
+                            val last = i == input.inputs.lastIndex
+                            JInput(
+                                parts[part.name].orEmpty(), { typed -> parts = parts + (part.name to typed.take(part.maxLength ?: 120)) },
+                                modifier = Modifier.fillMaxWidth().let { if (i == 0) it.focusRequester(first) else it },
+                                label = part.label,
+                                keyboard = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Words,
+                                    imeAction = if (last) ImeAction.Done else ImeAction.Next
+                                ),
+                                actions = KeyboardActions(onDone = { if (!saving) save() })
+                            )
+                        }
+                    }
+                }
                 "date" -> DateControl(input, value, field.label) { value = it }
                 "feet_inches" -> {
                     // Feet and inches side by side, as the website's editor.

@@ -1028,6 +1028,19 @@ class OwnifyAppFlowTest {
         waitFor("Je OwnifyAI-gesprekken zijn gewist.")
         assertEquals(mapOf("all" to "1"), form(server.requestsTo("delete.php").single()))
 
+        // Gegevens wissen: its own button, right above the conversations', asked first, and the pages read again.
+        compose.onNode(hasText("Gegevens wissen")).assertExists()
+        val reads = server.requestsTo("state.php").size
+        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onFirst().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Al je gezondheidsgegevens wissen?")
+        assertTrue(server.requestsTo("wipe.php").isEmpty())
+        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        waitFor("Je gegevens zijn gewist. Je account staat er nog.")
+        assertEquals(mapOf("confirm" to "wissen"), form(server.requestsTo("wipe.php").single()))
+        compose.waitUntil(10_000) { server.requestsTo("state.php").size > reads }
+        // …and the conversations were not touched by it.
+        assertEquals(1, server.requestsTo("delete.php").size)
+
         val toggle = compose.onNode(hasText("Gegevens verwerken met Google Gemini", substring = true) and hasClickAction())
         toggle.assertIsOn()
         toggle.performSemanticsAction(SemanticsActions.OnClick)
@@ -1459,15 +1472,15 @@ class OwnifyAppFlowTest {
         compose.onNode(hasContentDescription("Thema & uiterlijk — $expect.", substring = true) and hasClickAction())
             .performScrollTo()
             .performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Hetzelfde glas, in het licht", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Een heldere weergave met lichte achtergronden.", substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }
 
     /** One of the theme's three options, by its name and its line. */
     private fun option(label: String) = compose.onNode(
         hasText(label) and hasClickAction() and hasText(
             when (label) {
-                "Licht" -> "Hetzelfde glas, in het licht"
-                "Donker" -> "Het oorspronkelijke ontwerp"
+                "Licht" -> "Een heldere weergave met lichte achtergronden."
+                "Donker" -> "Een rustige weergave met donkere achtergronden."
                 else -> "Volgt je apparaat"
             }
         )

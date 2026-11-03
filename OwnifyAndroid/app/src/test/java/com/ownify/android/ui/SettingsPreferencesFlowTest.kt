@@ -58,8 +58,7 @@ import org.robolectric.annotation.Config
  * Instellingen's Voorkeuren and Apparaten & Gezondheid as of 19.0, against a
  * server on localhost: the switches that used to be "Later instelbaar" save
  * to the account and act on the whole app at once, and are kept for the next
- * start; the week's first day is saved; Nu actief is a status that follows
- * them; a paired phone can be given a name of its own; and what was taken
+ * start; the week's first day is saved; a paired phone can be given a name of its own; and what was taken
  * away — Nu synchroniseren, Smartwatch, Slaapring — is gone.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -142,7 +141,7 @@ class SettingsPreferencesFlowTest {
     }
 
     @Test
-    fun `Grotere tekst - saved on the account, all text larger at once, Nu actief says so, kept for the next start, and off again`() {
+    fun `Grotere tekst - saved on the account, all text larger at once, kept for the next start, and off again`() {
         MemoryTokenStorage.signedIn()
         show()
         open("Voorkeuren", "Grotere tekst")
@@ -152,8 +151,8 @@ class SettingsPreferencesFlowTest {
         val before = heading.fetchSemanticsNode().size.height
         assertTrue(before > 0)
         switch("Grotere tekst").performScrollTo().assertIsOff()
-        // Nu actief: the phone decides.
-        assertTrue(compose.onAllNodesWithText("Volgt je systeem").fetchSemanticsNodes().size >= 2)
+        // No Nu actief status repeating the switches.
+        assertTrue(compose.onAllNodesWithText("Nu actief").fetchSemanticsNodes().isEmpty())
 
         switch("Grotere tekst").performSemanticsAction(SemanticsActions.OnClick)
         saved("text_large=1")
@@ -162,9 +161,6 @@ class SettingsPreferencesFlowTest {
         compose.waitForIdle()
         switch("Grotere tekst").assertIsOn()
         waitFor("Alle tekst is groter, op elk apparaat.")
-        // Nu actief follows: Groter, with what turned it on.
-        waitFor("Groter")
-        waitFor("Grotere tekst staat hieronder aan")
         val after = heading.fetchSemanticsNode().size.height
         assertTrue("the text grew: $before → $after", after > before * 1.08f)
 
@@ -193,14 +189,10 @@ class SettingsPreferencesFlowTest {
         switch("Extra contrast").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
         saved("contrast_more=1")
         compose.waitUntil(10_000) { Ownify.moreContrast }
-        waitFor("Extra contrast staat hieronder aan")
 
         switch("Animaties uit").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
         saved("motion_off=1")
         compose.waitUntil(10_000) { OwnifyPreferences.motionOff }
-        // Minder beweging: Altijd, whatever the phone says.
-        waitFor("Altijd")
-        waitFor("Animaties uit staat hieronder aan")
 
         // Read back in the pages: still on.
         compose.waitUntil(15_000) { server.requestsTo("state.php").size >= 3 }

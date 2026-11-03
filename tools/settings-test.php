@@ -15,8 +15,9 @@
  *     named, only the owner's, at most 40 characters, empty gives its own
  *     name back, and signing in on it again keeps the owner's name
  *   - the Settings tree: no Leeftijd, no Smartwatch or Slaapring, no
- *     "Nu synchroniseren", the Toegankelijkheid switches live and "Nu actief"
- *     a status that follows them
+ *     "Nu synchroniseren", the Toegankelijkheid switches live straight under
+ *     their heading, no status blocks, one Voor- en achternaam row, the
+ *     Privacy buttons in their order and no "stip" left
  *
  * Accounts are named `st_…` and removed at the end, with everything hanging
  * off them. Never point it at a live database.
@@ -327,11 +328,40 @@ try {
     check('Toegankelijkheid: three live switches, to preferences.php', count(array_filter($toggles, static fn ($t) => ($t['endpoint'] ?? '') === 'api/profile/preferences.php')) === 3);
     check('each as the account has it', ($byKey['motion_off']['on'] ?? null) === true && ($byKey['text_large']['on'] ?? null) === false);
 
-    $status = array_values(array_filter($blocks, static fn ($b) => $b['type'] === 'states' && !empty($b['status'])))[0] ?? [];
-    $items  = array_column($status['items'] ?? [], null, 'key');
-    check('"Nu actief" is a status block', ($status['title'] ?? null) === 'Nu actief');
-    check('Minder beweging: Altijd, on', ($items['motion_off']['value'] ?? null) === 'Altijd' && ($items['motion_off']['tone'] ?? null) === 'on');
-    check('Tekstgrootte: the device decides, neutral', ($items['text_large']['value'] ?? null) === 'Volgt je systeem' && ($items['text_large']['tone'] ?? null) === 'neutral');
+    /* 36.1: only settings, no status blocks repeating them. */
+    $states = [];
+    foreach ($settings['pages'] as $pageId => $page) {
+        foreach ($page['blocks'] as $block) {
+            if ($block['type'] === 'states') {
+                $states[] = $pageId . ': ' . ($block['title'] ?? '');
+            }
+        }
+    }
+    check('no Synchronisatie, Hoe het nu werkt or Nu actief: no status blocks left', $states === [], json_encode($states));
+    $at = array_search('Toegankelijkheid', array_column($blocks, 'title'), true);
+    check('the switches straight under Toegankelijkheid, without a heading of their own',
+        $at !== false && ($blocks[$at + 1]['type'] ?? null) === 'toggles' && ($blocks[$at + 1]['title'] ?? null) === '');
+
+    $profile = array_values(array_filter($settings['pages']['account']['blocks'], static fn ($b) => ($b['title'] ?? '') === 'Profiel'))[0]['fields'];
+    $keys    = array_column($profile, 'key');
+    check('Voor- en achternaam: one row, no separate Voornaam and Achternaam', in_array('name', $keys, true)
+        && !in_array('first_name', $keys, true) && !in_array('last_name', $keys, true), json_encode($keys));
+    $input = settings_field_input(['key' => 'name'], ['raw' => ['first_name' => 'Sanne', 'last_name' => null]]);
+    check('its editor: both names, the last one may stay empty', $input['type'] === 'fields'
+        && array_column($input['inputs'], 'name') === ['first_name', 'last_name']
+        && empty($input['inputs'][0]['optional']) && !empty($input['inputs'][1]['optional'])
+        && $input['inputs'][0]['value'] === 'Sanne' && $input['endpoint'] === 'api/profile/update.php', json_encode($input));
+
+    $privacy = array_values(array_filter($settings['pages']['privacy']['blocks'], static fn ($b) => $b['type'] === 'actions'));
+    check('Je gegevens: download, then Gegevens wissen directly above OwnifyAI-gesprekken wissen',
+        count($privacy) === 1 && array_column($privacy[0]['items'], 'key') === ['data_export', 'data_wipe', 'ai_clear_history']);
+    check('Gegevens wissen asks first and sends confirm=wissen', !empty($privacy[0]['items'][1]['question'])
+        && ($privacy[0]['items'][1]['fields'] ?? null) === ['confirm' => 'wissen']);
+
+    $themes = array_column(array_values(array_filter($settings['pages']['theme']['blocks'], static fn ($b) => $b['type'] === 'choice'))[0]['options'], 'note', 'key');
+    check('Donker and Licht: equal lines, neither "the original"', $themes['dark'] === 'Een rustige weergave met donkere achtergronden.'
+        && $themes['light'] === 'Een heldere weergave met lichte achtergronden.');
+    check('no "stip" left in Settings\' words', !preg_match('/\bstip(pen)?\b/iu', json_encode($settings, JSON_UNESCAPED_UNICODE)));
 
     $week = array_values(array_filter($blocks, static fn ($b) => ($b['name'] ?? '') === 'week'))[0] ?? [];
     check('the week\'s choice is kept, no longer "not saved"', !empty($week['saves']));

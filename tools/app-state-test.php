@@ -333,11 +333,9 @@ try {
     check('Over de app in the app\'s words: Ownify, and what it uses',
         ($appSays['Naam'][0] ?? null) === 'Ownify'
         && ($appSays['Licenties'][0] ?? null) === 'AndroidX, Kotlin en Google Play-services', json_encode($appSays['Licenties'] ?? null));
-    check('…its text follows the phone, not a browser, and no variant is left for the app to choose',
-        ($appSays['Tekstgrootte'][1] ?? null) === 'De app schaalt mee met de lettergrootte van je telefoon' && !$variant);
-    check('the website keeps its own: no external packages, the browser\'s text size',
-        str_contains($page['raw'], 'Geen externe pakketten')
-        && str_contains($page['raw'], 'tekstgrootte van je browser') && !str_contains($page['raw'], 'Google Play-services'));
+    check('…and no variant is left for the app to choose', !$variant);
+    check('the website keeps its own: no external packages', str_contains($page['raw'], 'Geen externe pakketten')
+        && !str_contains($page['raw'], 'Google Play-services'));
 
     /* Instellingen's groups, the same on both: Meldingen, Thema & uiterlijk,
        Taal and Voorkeuren under App — Voorkeuren one row, its three settings

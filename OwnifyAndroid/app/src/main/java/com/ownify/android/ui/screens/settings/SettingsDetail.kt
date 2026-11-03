@@ -1,4 +1,9 @@
 package com.ownify.android.ui.screens.settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import com.ownify.android.ui.design.well
 import androidx.compose.ui.semantics.heading
 import android.content.Intent
@@ -159,7 +164,8 @@ private fun IdentityHero(data: AppData) {
 /** A block's eyebrow and, when it has one, its lede (`.settings-block__lede`: 4 closer, 12 above the card). */
 @Composable
 private fun BlockHead(title: String, lede: String?) {
-    SettingsEyebrow(title)
+    // Without a title it sits straight under the section heading above it.
+    if (title.isNotEmpty()) SettingsEyebrow(title)
     if (!lede.isNullOrEmpty()) {
         T(
             lede,
@@ -1070,6 +1076,65 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
     var failed by remember { mutableStateOf(false) }
     val look = if (item.danger) BtnLook.Final else BtnLook()
 
+    /* Gegevens downloaden: the export, once fetched, waits here while the
+       person picks where it goes (the system's own save dialog). */
+    var pending by remember { mutableStateOf<JSONObject?>(null) }
+    val saveAs = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val export = pending
+        pending = null
+        if (uri == null || export == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val written = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { out ->
+                        out.write(export.toString(2).toByteArray(Charsets.UTF_8))
+                    } ?: error("no stream")
+                }.isSuccess
+            }
+            failed = !written
+            said = if (written) item.done else tr("Het bestand kon niet worden bewaard.")
+        }
+    }
+
+    /** What the row does once it is asked (or, a direct one, at once). */
+    fun go() {
+        busy = true
+        scope.launch {
+            val outcome = if (item.download) {
+                OwnifyActions.export(context, tr("Dit kon niet worden gedaan."))
+            } else {
+                // A wipe changes what every page shows: they are read again.
+                OwnifyActions.form(context, item.endpoint, item.fields, tr("Dit kon niet worden gedaan."), reload = item.key == "data_wipe")
+            }
+            busy = false
+            asking = false
+            when (outcome) {
+                is Outcome.Done -> {
+                    failed = false
+                    if (item.download) {
+                        val export = outcome.body.optJSONObject("export")
+                        if (export == null) {
+                            failed = true
+                            said = tr("Dit kon niet worden gedaan.")
+                        } else {
+                            pending = export
+                            saveAs.launch(outcome.body.optString("filename").ifEmpty { "ownify.json" })
+                        }
+                    } else {
+                        said = outcome.body.optString("message").ifEmpty { null }
+                        // The assistant's own list follows: none of them are left.
+                        if (item.key == "ai_clear_history") OwnifyAssistant.cleared()
+                    }
+                }
+                is Outcome.Refused -> {
+                    said = outcome.message
+                    failed = true
+                }
+                Outcome.SignedOut -> Unit
+            }
+        }
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -1088,7 +1153,7 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
                     )
                 }
             }
-            if (!asking) Btn(item.confirm, onClick = { asking = true }, look = look)
+            if (!asking) Btn(item.confirm, onClick = { if (item.direct) go() else asking = true }, enabled = !busy, look = look)
         }
 
         if (asking) {
@@ -1100,27 +1165,7 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End)
                 ) {
                     Btn(item.cancel, onClick = { asking = false }, enabled = !busy)
-                    Btn(item.confirm, enabled = !busy, look = look, onClick = {
-                        busy = true
-                        scope.launch {
-                            val outcome = OwnifyActions.form(context, item.endpoint, item.fields, tr("Dit kon niet worden gedaan."), reload = false)
-                            busy = false
-                            asking = false
-                            when (outcome) {
-                                is Outcome.Done -> {
-                                    said = outcome.body.optString("message").ifEmpty { null }
-                                    failed = false
-                                    // The assistant's own list follows: none of them are left.
-                                    if (item.key == "ai_clear_history") OwnifyAssistant.cleared()
-                                }
-                                is Outcome.Refused -> {
-                                    said = outcome.message
-                                    failed = true
-                                }
-                                Outcome.SignedOut -> Unit
-                            }
-                        }
-                    })
+                    Btn(item.confirm, enabled = !busy, look = look, onClick = { go() })
                 }
             }
         }

@@ -822,7 +822,7 @@ try {
     forget_sent();
     check('and from then on nothing is sent', chat($sanne, 'Hallo', $conversation)['status'] === 403 && sent() === []);
     $page = json_encode(http('/api/app/state.php', ['bearer' => $sanne['token']])['body']['data']['settings']['pages']['privacy'] ?? []);
-    check('Privacy shows it off, and "OwnifyAI: Uit"', str_contains($page, '"key":"ai_consent"') && str_contains($page, '"label":"OwnifyAI","value":"Uit"'));
+    check('Privacy shows the switch off', preg_match('/"key":"ai_consent"[^}]*"on":false/', $page) === 1, $page);
     check('the switch back on: the same yes as in the sheet', http('/api/profile/privacy.php', ['bearer' => $sanne['token'], 'form' => ['ai_consent' => '1']])['status'] === 200
         && ai_consent_state_for($sanne['id']) === 'accepted');
     check('the website\'s switch needs its CSRF token', http('/api/profile/privacy.php', ['jar' => $jar, 'form' => ['ai_consent' => '1']])['status'] === 419);

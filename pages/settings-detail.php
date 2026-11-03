@@ -327,8 +327,11 @@ foreach ($page['blocks'] as $block) {
 
                     <?php elseif ($block['type'] === 'toggles'): ?>
 
-                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
-                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+                        <?php /* Without a title it sits straight under the section heading above it. */ ?>
+                        <section class="settings-block reveal"<?= ($block['title'] ?? '') !== '' ? ' aria-labelledby="' . e($blockId) . '"' : '' ?>>
+                            <?php if (($block['title'] ?? '') !== ''): ?>
+                                <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+                            <?php endif; ?>
                             <?php if (!empty($block['lede'])): ?>
                                 <p class="settings-block__lede"><?= e($block['lede']) ?></p>
                             <?php endif; ?>
@@ -374,7 +377,8 @@ foreach ($page['blocks'] as $block) {
 
                     <?php elseif ($block['type'] === 'actions'): ?>
 
-                        <?php /* One thing to do, asked about first, in place (settings.js). */ ?>
+                        <?php /* One thing to do, asked about first, in place (settings.js) —
+                                 or, a `direct` one, done at once (Gegevens downloaden). */ ?>
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
                             <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
 
@@ -382,7 +386,10 @@ foreach ($page['blocks'] as $block) {
                                 <?php foreach ($block['items'] as $item): ?>
                                     <div class="settings-action" data-setting-action="<?= e($item['key']) ?>"
                                          data-endpoint="<?= e($item['endpoint']) ?>"
-                                         data-fields="<?= e(json_encode($item['fields'] ?? new stdClass())) ?>">
+                                         data-fields="<?= e(json_encode($item['fields'] ?? new stdClass())) ?>"
+                                         <?= !empty($item['direct']) ? 'data-setting-action-direct' : '' ?>
+                                         <?= !empty($item['download']) ? 'data-setting-action-download' : '' ?>
+                                         data-done="<?= e($item['done'] ?? '') ?>">
                                         <div class="settings-action__row">
                                             <span class="settings-toggle__text">
                                                 <span class="settings-toggle__label"><?= e($item['label']) ?></span>
@@ -391,6 +398,7 @@ foreach ($page['blocks'] as $block) {
                                             <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' btn--caution' : '' ?>"
                                                     data-setting-action-go><?= e($item['confirm']) ?></button>
                                         </div>
+                                        <?php if (empty($item['direct'])): ?>
                                         <div class="settings-action__confirm" data-setting-action-confirm hidden>
                                             <p class="settings-action__question"><?= e($item['question']) ?></p>
                                             <div class="settings-action__buttons">
@@ -398,6 +406,7 @@ foreach ($page['blocks'] as $block) {
                                                 <button type="button" class="btn btn--caution press settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
                                             </div>
                                         </div>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>

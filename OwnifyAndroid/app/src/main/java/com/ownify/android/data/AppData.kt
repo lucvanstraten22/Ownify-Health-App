@@ -2560,7 +2560,13 @@ data class ActionItem(
     val cancel: String,
     val endpoint: String,
     val fields: Map<String, String>,
-    val danger: Boolean
+    val danger: Boolean,
+    /** Done at once, without asking first (Gegevens downloaden). */
+    val direct: Boolean = false,
+    /** What comes back (`export`) is saved as a file the person picks (Gegevens downloaden). */
+    val download: Boolean = false,
+    /** What the row says once a download is saved. */
+    val done: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject): ActionItem? {
@@ -2570,7 +2576,8 @@ data class ActionItem(
             return ActionItem(
                 o.str("key").orEmpty(), o.str("label").orEmpty(), o.str("note"),
                 o.str("question").orEmpty(), o.str("confirm").orEmpty(), o.str("cancel").orEmpty(),
-                endpoint, o.obj("fields").stringMap(), o.bool("danger")
+                endpoint, o.obj("fields").stringMap(), o.bool("danger"),
+                o.bool("direct"), o.bool("download"), o.str("done")
             )
         }
     }
@@ -2655,14 +2662,26 @@ data class FieldInput(
     val postUnit: String = "",
     /** Imperial height (`feet_inches`): the two numbers it starts from. */
     val feet: String = "",
-    val inches: String = ""
+    val inches: String = "",
+    /** Several boxes saved together (`fields`: Voor- en achternaam), each posted under its own name. */
+    val inputs: List<FieldPart> = emptyList()
 ) {
     companion object {
         fun parse(o: JSONObject) = FieldInput(
             o.str("type") ?: "text", o.text("value").orEmpty(), o.str("unit").orEmpty(), o.str("endpoint").orEmpty(),
             o.int("maxlength"), o.text("min"), o.text("max"),
             o.obj("options").stringMap().entries.map { it.key to it.value },
-            o.str("post_unit").orEmpty(), o.text("feet").orEmpty(), o.text("inches").orEmpty()
+            o.str("post_unit").orEmpty(), o.text("feet").orEmpty(), o.text("inches").orEmpty(),
+            o.arr("inputs").map(FieldPart::parse)
+        )
+    }
+}
+
+/** One box of a `fields` editor: posted as [name]; an [optional] one may be sent empty. */
+data class FieldPart(val name: String, val label: String, val value: String, val maxLength: Int?, val optional: Boolean) {
+    companion object {
+        fun parse(o: JSONObject) = FieldPart(
+            o.str("name").orEmpty(), o.str("label").orEmpty(), o.text("value").orEmpty(), o.int("max"), o.bool("optional")
         )
     }
 }

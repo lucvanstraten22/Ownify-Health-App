@@ -638,7 +638,7 @@ class ScreenshotCapture {
     }
 
     // The website edits a field from its row in Instellingen › Account.
-    @Test fun editorFirstName() = panel(Overlay.EditField("first_name"), "editor-first_name", "settings", Detail.SettingsPage("account"))
+    @Test fun editorFirstName() = panel(Overlay.EditField("name"), "editor-name", "settings", Detail.SettingsPage("account"))
     @Test fun editorHeight() = panel(Overlay.EditField("height"), "editor-height", "settings", Detail.SettingsPage("account"), down = 760)
     @Test fun deleteConfirm() = panel(Overlay.DeleteAccount, "delete-1", page = "settings", down = 10_000)
 

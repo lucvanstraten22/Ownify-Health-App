@@ -545,6 +545,20 @@ class FakeOwnifyServer {
                     else -> reply(exchange, 200, currentState())
                 }
             }
+            // Je gegevens (Instellingen › Privacy): the export, and the wipe that asks for confirm=wissen.
+            path.endsWith("/profile/export.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                if (works) reply(exchange, 200, """{"ok":true,"filename":"ownify-gegevens-2026-11-03.json","export":{"format":"ownify-export","version":1,"account":[{"username":"sanne"}]}}""")
+                else reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+            }
+            path.endsWith("/profile/wipe.php") -> {
+                val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
+                when {
+                    !works -> reply(exchange, 401, """{"ok":false,"error":"Log opnieuw in."}""")
+                    "confirm=wissen" !in body -> reply(exchange, 422, """{"ok":false,"error":"Bevestig eerst dat je je gegevens wilt wissen."}""")
+                    else -> reply(exchange, 200, """{"ok":true,"deleted":42,"message":"Je gegevens zijn gewist. Je account staat er nog."}""")
+                }
+            }
             // The setup's own writes (pages/setup.php): each to the endpoint that always saves it.
             path.endsWith("/profile/update.php") || path.endsWith("/profile/onboarding.php") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN

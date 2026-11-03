@@ -111,14 +111,6 @@ if (!function_exists('settings_prepare')) {
            shows, rather than stating it a second time. */
         $settings = settings_set_row_value($settings, 'devices', settings_device_summary($connected));
 
-        /* The synchronisation block reports the newest sync across sources. */
-        $settings = settings_set_state_value(
-            $settings,
-            'devices',
-            t('Laatste sync'),          // the config's label, as config_copy() has it
-            settings_last_sync_across($live)
-        );
-
         /* The Privacy switches that save: each as this account has it. */
         require_once dirname(__DIR__) . '/includes/leaderboard.php';
         $settings = settings_set_toggle(
@@ -128,8 +120,7 @@ if (!function_exists('settings_prepare')) {
             $userId === null || !db_available() || leaderboard_avatar_shown($userId)
         );
 
-        /* Ownify AI: the switch, and the two facts at the top of Privacy
-           that are only true while it is off. */
+        /* Ownify AI: the switch, and the main page's Privacy row. */
         require_once dirname(__DIR__) . '/includes/ai/config.php';
         $aiOn     = $userId !== null && db_available() && ai_consented($userId);
         $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
@@ -138,9 +129,7 @@ if (!function_exists('settings_prepare')) {
            goes to Gemini, so Privacy has no switch for them. */
 
         if ($aiOn) {
-            $settings = settings_use_ai_state($settings, 'privacy', ['Gezondheidsgegevens', 'OwnifyAI']);
-
-            /* The Privacy row on the main page says the same. */
+            /* The Privacy row on the main page says so. */
             foreach ($settings['groups'] as $group) {
                 foreach ($group['rows'] as $row) {
                     if ($row['id'] === 'privacy' && isset($row['value_ai'])) {
@@ -271,9 +260,7 @@ if (!function_exists('settings_use_language_units')) {
 
 if (!function_exists('settings_use_accessibility')) {
     /**
-     * Toegankelijkheid as the account has it: its three switches, and "Nu
-     * actief" saying what is in force — the account's choice (tone on) or
-     * the device's (neutral).
+     * Toegankelijkheid as the account has it: its three switches.
      *
      * @param array{text_large: bool, contrast_more: bool, motion_off: bool} $choices
      */
@@ -281,33 +268,6 @@ if (!function_exists('settings_use_accessibility')) {
     {
         foreach ($choices as $key => $on) {
             $settings = settings_set_toggle($settings, 'preferences', $key, $on);
-        }
-
-        foreach ($settings['pages']['preferences']['blocks'] ?? [] as $b => $block) {
-            if (($block['type'] ?? null) !== 'states' || empty($block['status'])) {
-                continue;
-            }
-            foreach ($block['items'] as $i => $item) {
-                $key = $item['key'] ?? null;
-                /* What it says while the device decides, for settings.js to
-                   put back when the switch goes off again. */
-                $settings['pages']['preferences']['blocks'][$b]['items'][$i]['value_off'] = $item['value'] ?? null;
-                $settings['pages']['preferences']['blocks'][$b]['items'][$i]['note_off']  = $item['note'] ?? null;
-                /* The app's own words for it, which settings_for_app() puts
-                   in place for the app (`note_app` goes once the choice wins). */
-                foreach (['value', 'note'] as $field) {
-                    if (array_key_exists($field . '_app', $item)) {
-                        $settings['pages']['preferences']['blocks'][$b]['items'][$i][$field . '_off_app'] = $item[$field . '_app'];
-                    }
-                }
-                if ($key !== null && !empty($choices[$key])) {
-                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['value'] = $item['value_on'] ?? $item['value'];
-                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['note']  = $item['note_on'] ?? $item['note'] ?? null;
-                    $settings['pages']['preferences']['blocks'][$b]['items'][$i]['tone']  = 'on';
-                    /* The app's own note is about the device; the choice wins. */
-                    unset($settings['pages']['preferences']['blocks'][$b]['items'][$i]['note_app']);
-                }
-            }
         }
 
         return $settings;
@@ -365,7 +325,7 @@ if (!function_exists('settings_profile')) {
     function settings_profile(array $auth): array
     {
         $empty = [
-            'avatar' => null, 'username' => null, 'first_name' => null, 'last_name' => null,
+            'avatar' => null, 'username' => null, 'first_name' => null, 'last_name' => null, 'name' => null,
             'date_of_birth' => null, 'gender' => null,
             'height' => null, 'weight' => null, 'activity_level' => null, 'member_since' => null,
 
@@ -386,6 +346,8 @@ if (!function_exists('settings_profile')) {
             'username'      => $user['username'] ?? null,
             'first_name'    => $user['first_name'] ?? null,
             'last_name'     => $user['last_name'] ?? null,
+            /* Voor- en achternaam: the two, as one row and one editor. */
+            'name'          => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: null,
             'date_of_birth' => settings_date($user['date_of_birth'] ?? null),
             'gender'        => settings_gender($user['gender'] ?? null),
             'height'        => settings_measurement($user['height'] ?? null),
@@ -571,6 +533,17 @@ if (!function_exists('settings_field_input')) {
 
         $input = match ($key) {
             'first_name', 'last_name' => ['type' => 'text', 'maxlength' => 60],
+            /* Voor- en achternaam: both in one editor, saved together
+               (api/profile/update.php takes the two at once). The first
+               name is needed; a last name may stay empty. */
+            'name'                    => ['type' => 'fields', 'inputs' => [
+                                             ['name' => 'first_name', 'label' => t('Voornaam'), 'type' => 'text',
+                                              'autocomplete' => 'given-name', 'max' => 60,
+                                              'value' => (string) ($profile['raw']['first_name'] ?? '')],
+                                             ['name' => 'last_name', 'label' => t('Achternaam'), 'type' => 'text',
+                                              'autocomplete' => 'family-name', 'max' => 60, 'optional' => true,
+                                              'value' => (string) ($profile['raw']['last_name'] ?? '')],
+                                          ]],
             'date_of_birth'           => ['type' => 'date', 'max' => date('Y-m-d'),
                                           'min' => date('Y-m-d', strtotime('-120 years'))],
             'gender'                  => ['type' => 'choice', 'options' => [
@@ -651,24 +624,6 @@ if (!function_exists('settings_sync_label')) {
     }
 }
 
-if (!function_exists('settings_last_sync_across')) {
-    /** The most recent sync of any source, for the summary row. */
-    function settings_last_sync_across(array $live): ?string
-    {
-        $newest = null;
-
-        foreach ($live as $state) {
-            $at = $state['last_sync_at'] ?? null;
-
-            if ($at !== null && ($newest === null || $at > $newest)) {
-                $newest = $at;
-            }
-        }
-
-        return settings_sync_label($newest);
-    }
-}
-
 if (!function_exists('settings_set_toggle')) {
     /**
      * Sets one saving switch (a `toggles` item with a `key`) of one detail
@@ -736,42 +691,12 @@ if (!function_exists('settings_drop_toggle')) {
     }
 }
 
-if (!function_exists('settings_use_ai_state')) {
-    /**
-     * With Ownify AI on, the `states` items named in $labels say so: their
-     * `value_ai` / `note_ai` replace the value and note they have while it
-     * is off.
-     */
-    function settings_use_ai_state(array $settings, string $pageId, array $labels): array
-    {
-        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
-            if (($block['type'] ?? null) !== 'states') {
-                continue;
-            }
-
-            foreach ($block['items'] as $i => $item) {
-                if (!in_array($item['label'] ?? null, $labels, true)) {
-                    continue;
-                }
-                foreach (['value', 'note'] as $field) {
-                    if (isset($item[$field . '_ai'])) {
-                        $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_ai'];
-                    }
-                }
-            }
-        }
-
-        return $settings;
-    }
-}
-
 if (!function_exists('settings_for_app')) {
     /**
      * The Ownify app's own words: every item with a `value_app` or `note_app`
      * (config/settings.php) shows that instead of the website's `value` or
      * `note`, which would not be true on a phone — what it uses, what its
-     * text follows; `value_off_app` / `note_off_app` likewise for what a
-     * Nu actief row says once its switch is off again. For the app's state only.
+     * text follows. For the app's state only.
      */
     function settings_for_app(array $settings): array
     {
@@ -795,22 +720,3 @@ if (!function_exists('settings_for_app')) {
     }
 }
 
-if (!function_exists('settings_set_state_value')) {
-    /** Writes a computed value onto one `states` item of one detail page. */
-    function settings_set_state_value(array $settings, string $pageId, string $label, ?string $value): array
-    {
-        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
-            if (($block['type'] ?? null) !== 'states') {
-                continue;
-            }
-
-            foreach ($block['items'] as $i => $item) {
-                if (($item['label'] ?? null) === $label) {
-                    $settings['pages'][$pageId]['blocks'][$b]['items'][$i]['value'] = $value;
-                }
-            }
-        }
-
-        return $settings;
-    }
-}

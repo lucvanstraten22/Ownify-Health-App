@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 36.0'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 36.1'],
             ],
         ],
     ],
@@ -174,8 +174,8 @@ return [
                            dead next to fields that have nowhere to save to. */
                         ['key' => 'avatar',     'label' => 'Profielfoto',     'edit' => true, 'kind' => 'image', 'opens' => 'account'],
                         ['key' => 'username',   'label' => 'Gebruikersnaam',  'edit' => true, 'opens' => 'account'],
-                        ['key' => 'first_name', 'label' => 'Voornaam',        'edit' => true],
-                        ['key' => 'last_name',  'label' => 'Achternaam',      'edit' => true],
+                        /* Both names, in one editor (settings_field_input()). */
+                        ['key' => 'name',       'label' => 'Voor- en achternaam wijzigen', 'edit' => true],
                         /* Chosen in the setup a new account starts with; what
                            Overzicht puts first (docs/FIRST-DAYS.md). Left out
                            until migration 016 can keep it. */
@@ -224,17 +224,6 @@ return [
             'blocks' => [
                 ['type' => 'integrations', 'title' => 'Koppelingen'],
 
-                /* Facts, not settings: how syncing works now. */
-                [
-                    'type'  => 'states',
-                    'title' => 'Synchronisatie',
-                    'items' => [
-                        ['label' => 'Frequentie',   'value' => 'Automatisch', 'note' => 'Zodra een bron gegevens levert'],
-                        ['label' => 'Alleen wifi',  'value' => 'Uit',         'note' => 'Synchroniseren kan straks ook op mobiel data'],
-                        ['label' => 'Laatste sync', 'value' => null,          'note' => 'Nog niets gesynchroniseerd'],
-                    ],
-                ],
-
                 ['type' => 'note', 'icon' => 'lock',
                  'text' => 'Een koppeling leest alleen de categorieën die je goedkeurt, en alleen voor jouw account. Je kunt hem hier altijd weer verbreken; daarna wordt er niets meer opgehaald.'],
             ],
@@ -246,27 +235,6 @@ return [
             'icon'  => 'shield',
             'lede'  => 'Wie wat van je ziet. Standaard: zo weinig mogelijk.',
             'blocks' => [
-                [
-                    'type'  => 'states',
-                    'title' => 'Hoe het nu werkt',
-                    'items' => [
-                        /* Both notes are the account's own, written by
-                           settings_prepare(): with Ownify AI on, data does
-                           leave the account — for Gemini, per question. */
-                        ['label' => 'Gezondheidsgegevens', 'value' => 'Privé',
-                         'note' => 'Slaap, voeding, training en metingen verlaten je account niet',
-                         'note_ai' => 'Als je OwnifyAI iets vraagt, gaan je profiel, scores, doelen en recente gegevens naar Google Gemini'],
-                        ['label' => 'Vrienden zien',       'value' => 'Naam en foto',
-                         'note' => 'Verder niets — geen scores, geen metingen'],
-                        ['label' => 'Ranglijst toont',     'value' => 'Punten en positie',
-                         'note' => 'En je profielfoto, tenzij je die hieronder uitzet — nooit onderliggende gegevens'],
-                        ['label' => 'OwnifyAI',           'value' => 'Uit',
-                         'note' => 'Er gaat niets naar Google Gemini',
-                         'value_ai' => 'Aan',
-                         'note_ai' => 'Leest je gegevens om je vragen te beantwoorden, via Google Gemini'],
-                    ],
-                ],
-
                 /* A switch with a `key` really saves (api/profile/privacy.php);
                    `on` and `note` are the account's own, filled in by
                    settings_prepare(). */
@@ -299,23 +267,6 @@ return [
                 ['type' => 'note', 'icon' => 'info',
                  'text' => 'Ownify gebruikt de gratis Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gesprekken worden in je Ownify-account bewaard, tot je ze wist.'],
 
-                /* A button that does one thing once it is confirmed: see
-                   pages/settings-detail.php (`actions`) and settings.js. */
-                [
-                    'type'  => 'actions',
-                    'title' => 'OwnifyAI-gesprekken',
-                    'items' => [
-                        ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
-                         'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
-                         'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
-                         'confirm'  => 'Alles wissen',
-                         'cancel'   => 'Annuleren',
-                         'endpoint' => 'api/ai/delete.php',
-                         'fields'   => ['all' => '1'],
-                         'danger'   => true],
-                    ],
-                ],
-
                 [
                     'type'  => 'toggles',
                     'title' => 'Later instelbaar',
@@ -326,12 +277,40 @@ return [
                     ],
                 ],
 
+                /* Buttons that each do one thing (pages/settings-detail.php
+                   `actions`, settings.js; SettingsDetail.kt on Android). A
+                   `direct` one acts at once and `download` saves what comes
+                   back as a file; the others ask first, in place, and only
+                   their yes sends what the endpoint insists on. Wiping the
+                   data and wiping the OwnifyAI conversations are two
+                   buttons, one under the other: neither takes the other. */
                 [
-                    'type'  => 'rows',
+                    'type'  => 'actions',
                     'title' => 'Je gegevens',
                     'items' => [
-                        ['label' => 'Gegevens downloaden', 'value' => 'Binnenkort'],
-                        ['label' => 'Gegevens wissen',     'value' => 'Binnenkort'],
+                        ['key' => 'data_export', 'label' => 'Gegevens downloaden',
+                         'note'     => 'Alles wat Ownify over je bewaart, als één JSON-bestand.',
+                         'confirm'  => 'Downloaden',
+                         'endpoint' => 'api/profile/export.php',
+                         'direct'   => true,
+                         'download' => true,
+                         'done'     => 'Je gegevens zijn gedownload.'],
+                        ['key' => 'data_wipe', 'label' => 'Gegevens wissen',
+                         'note'     => 'Wist je metingen, slaap, hartslag, voeding, trainingen, scores, punten, inzichten en doelen. Je account blijft bestaan.',
+                         'question' => 'Al je gezondheidsgegevens wissen? Weg zijn dan: je lengte, gewicht en andere metingen, slaap, hartslag, voeding, trainingen, scores, punten, inzichten en doelen. Je account, profiel, vrienden, uitdagingen, koppelingen en OwnifyAI-gesprekken blijven staan; een gekoppelde bron kan daarna weer nieuwe gegevens sturen. Dit kun je niet ongedaan maken.',
+                         'confirm'  => 'Wissen',
+                         'cancel'   => 'Annuleren',
+                         'endpoint' => 'api/profile/wipe.php',
+                         'fields'   => ['confirm' => 'wissen'],
+                         'danger'   => true],
+                        ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
+                         'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
+                         'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
+                         'confirm'  => 'Alles wissen',
+                         'cancel'   => 'Annuleren',
+                         'endpoint' => 'api/ai/delete.php',
+                         'fields'   => ['all' => '1'],
+                         'danger'   => true],
                     ],
                 ],
 
@@ -344,18 +323,18 @@ return [
         'notifications' => [
             'title' => 'Meldingen',
             'icon'  => 'bell',
-            'lede'  => 'Een rode stip in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.',
+            'lede'  => 'Een melding in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.',
             'blocks' => [
                 /* The red dots (lib/notices.php, docs/NOTICES.md): on what
                    waits for you, gone once it is done. */
-                ['type' => 'section', 'title' => 'Stippen in de app', 'icon' => 'bell',
-                 'lede' => 'Een stip staat op wat je zelf nog moet doen: je cijfer bij Voeding, een doel dat je zelf afvinkt, een vriendverzoek, een uitnodiging of een bron die niet werkt. Hij verdwijnt zodra het gedaan is.'],
+                ['type' => 'section', 'title' => 'Meldingen in de app', 'icon' => 'bell',
+                 'lede' => 'Een melding staat op wat je zelf nog moet doen: je cijfer bij Voeding, een doel dat je zelf afvinkt, een vriendverzoek, een uitnodiging of een bron die niet werkt. Hij verdwijnt zodra het gedaan is.'],
 
                 /* Saved on the account (api/profile/preferences.php,
                    migration 026), so the website and the app agree. */
                 [
                     'type'     => 'choice',
-                    'title'    => 'Stip bij Voeding vanaf',
+                    'title'    => 'Melding bij Voeding vanaf',
                     'name'     => 'rating_notice',
                     'saves'    => true,
                     'selected' => '20',
@@ -408,8 +387,8 @@ return [
                     'saves'    => true,
                     'options'  => [
                         ['key' => 'system', 'label' => 'Systeem', 'note' => 'Volgt je apparaat'],
-                        ['key' => 'dark',   'label' => 'Donker',  'note' => 'Het oorspronkelijke ontwerp'],
-                        ['key' => 'light',  'label' => 'Licht',   'note' => 'Hetzelfde glas, in het licht'],
+                        ['key' => 'dark',   'label' => 'Donker',  'note' => 'Een rustige weergave met donkere achtergronden.'],
+                        ['key' => 'light',  'label' => 'Licht',   'note' => 'Een heldere weergave met lichte achtergronden.'],
                     ],
                 ],
 
@@ -505,34 +484,12 @@ return [
                 /* Toegankelijkheid: as it was on a screen of its own. */
                 ['type' => 'section', 'title' => 'Toegankelijkheid', 'icon' => 'accessibility', 'lede' => 'De app volgt je systeeminstellingen waar dat kan.'],
 
-                /* What is in force, as a status (`status`): each item's value is
-                   the account's own, written by settings_prepare() from the
-                   switches below; `tone` on is a choice of the account's,
-                   neutral is the device deciding. */
-                [
-                    'type'   => 'states',
-                    'title'  => 'Nu actief',
-                    'status' => true,
-                    'items'  => [
-                        ['key' => 'motion_off', 'label' => 'Minder beweging', 'value' => 'Volgt je systeem', 'tone' => 'neutral',
-                         'note' => 'Staat dit aan op je toestel, dan vervallen alle animaties',
-                         'value_on' => 'Altijd', 'note_on' => 'Animaties uit staat hieronder aan'],
-                        ['key' => 'text_large', 'label' => 'Tekstgrootte',    'value' => 'Volgt je systeem', 'tone' => 'neutral',
-                         'note' => 'De app schaalt mee met de tekstgrootte van je browser',
-                         'note_app' => 'De app schaalt mee met de lettergrootte van je telefoon',
-                         'value_on' => 'Groter', 'note_on' => 'Grotere tekst staat hieronder aan'],
-                        ['key' => 'contrast_more', 'label' => 'Contrast',     'value' => 'Verhoogd', 'tone' => 'neutral',
-                         'note' => 'Elke tekstkleur haalt minimaal WCAG AA op zijn eigen ondergrond',
-                         'value_on' => 'Extra', 'note_on' => 'Extra contrast staat hieronder aan'],
-                    ],
-                ],
-
                 /* Kept on the account (api/profile/preferences.php), so they
-                   hold on every device, whatever the device says. */
+                   hold on every device, whatever the device says. Straight
+                   under the Toegankelijkheid heading: no heading of their own. */
                 [
                     'type'  => 'toggles',
-                    'title' => 'Eigen instellingen',
-                    'lede'  => 'Gelden op al je apparaten, los van je systeem.',
+                    'title' => '',
                     'items' => [
                         ['key' => 'text_large', 'endpoint' => 'api/profile/preferences.php', 'label' => 'Grotere tekst',
                          'note_on'  => 'Alle tekst is groter, op elk apparaat.',
@@ -562,7 +519,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 36.0'],
+                        ['label' => 'Versie',  'value' => 'Beta 36.1'],
                     ],
                 ],
 
