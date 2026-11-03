@@ -86,7 +86,7 @@ foreach ($data['navigation'] as $position => $item) {
 <head>
     <?php component('document-head', $data + ['styles' => [
         'theme', 'components', 'dashboard', 'ai', 'health', 'compass', 'community', 'challenges',
-        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training', 'nutrition', 'desktop',
+        'goals', 'settings', 'account', 'devices', 'area-charts', 'sleep', 'training', 'nutrition', 'desktop', 'phone-sim',
     ]]); ?>
 </head>
 <body class="app">
@@ -254,6 +254,9 @@ foreach ($data['navigation'] as $position => $item) {
     }
     ?>
 
+    <?php /* Telefoon on a wide screen: this page as a phone shows it, in an iPhone. */ ?>
+    <?php component('phone-simulator', $data); ?>
+
     <?php /* The red dots' summary (lib/notices.php), for notices.js. */ ?>
     <script type="application/json" data-notices><?= json_encode($data['notices'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?></script>
     <script src="<?= e(asset('assets/js/notices.js')) ?>" defer></script>
@@ -285,5 +288,6 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/devices.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/pull-sync.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/desktop.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>
 </body>
 </html>

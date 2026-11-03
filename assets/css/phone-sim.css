@@ -1,0 +1,219 @@
+/* ==========================================================================
+   phone-sim.css — Telefoon on a wide screen: the website in an iPhone
+   (components/phone-simulator.php, assets/js/phone-sim.js, docs/DESKTOP.md).
+
+   Two halves:
+     - the page in the phone (:root[data-frame="phone"]): the iPhone's safe
+       areas and no visible scrollbars — scrolling stays;
+     - the page around it (:root[data-layout="phone-frame"]): the light
+       ground, whatever the theme in the phone (document-head.php paints this
+       document light while this layout is shown), and the device in its
+       middle.
+
+   The device's own colours — its glass, its titanium, its black — are a
+   phone's, not Ownify's, so they are named here once (--device-*) and used
+   nowhere else.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   In the phone: an iPhone 15 / 16 Pro as a home-screen web app
+   (viewport-fit=cover, the status bar translucent): 59 above for the status
+   bar and the island, 34 below for the home indicator.
+   -------------------------------------------------------------------------- */
+:root[data-frame="phone"] {
+    --safe-top: 59px;
+    --safe-bottom: 34px;
+    scrollbar-width: none;
+}
+
+:root[data-frame="phone"] * { scrollbar-width: none; }
+:root[data-frame="phone"] ::-webkit-scrollbar { display: none; }
+
+/* --------------------------------------------------------------------------
+   Around it
+   -------------------------------------------------------------------------- */
+.phone-sim { display: none; }
+
+:root[data-layout="phone-frame"] .phone-sim {
+    --device-edge-hi: #A9A6A2;          /* titanium, lit */
+    --device-edge-lo: #4B4946;          /* titanium, in shade */
+    --device-black: #050505;            /* bezel, island, buttons' shade */
+    --device-ink-on-dark: #FFFFFF;      /* status bar over a dark page */
+    --device-ink-on-light: #000000;     /* status bar over a light page */
+    --sim-k: 1;                         /* the device's scale, phone-sim.js */
+
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: block;
+}
+
+/* The app around it is there but out of sight and out of reach (phone-sim.js
+   also makes it inert); it comes back as it was when Desktop is chosen. */
+/* (opacity too: a backdrop-filter under visibility: hidden can still be composited.) */
+:root[data-layout="phone-frame"] body.app > :not(.app__backdrop, .phone-sim, script, svg) { visibility: hidden; opacity: 0; }
+
+.phone-sim__stage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+/* 393 × 852 of screen in a 12px bezel and a 4px band of titanium. */
+.phone-sim__device {
+    width: 425px;
+    height: 884px;
+    padding: 4px;
+    border-radius: 71px;
+    background: linear-gradient(135deg, var(--device-edge-hi) 0%, var(--device-edge-lo) 38%, var(--device-edge-hi) 62%, var(--device-edge-lo) 100%);
+    box-shadow:
+        0 1px 0 1px rgba(var(--shade), 0.06),
+        0 30px 60px -12px rgba(var(--shade), 0.28),
+        0 18px 36px -18px rgba(var(--shade), 0.3);
+    /* In the middle of the window at any scale (a grid would align a device
+       taller than the window to its top). */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(var(--sim-k));
+    transform-origin: center;
+}
+
+.phone-sim__bezel {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    border-radius: 67px;
+    background: var(--device-black);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.phone-sim__screen {
+    position: relative;
+    width: 393px;
+    height: 852px;
+    overflow: hidden;
+    border-radius: 55px;
+    background: var(--device-black);
+    isolation: isolate;
+}
+
+.phone-sim__frame {
+    display: block;
+    width: 393px;
+    height: 852px;
+    border: 0;
+    background: var(--device-black);
+}
+
+/* The buttons: the action button and the volume on the left, the side
+   button on the right — a millimetre proud of the band. */
+.phone-sim__button {
+    position: absolute;
+    width: 4px;
+    background: linear-gradient(90deg, var(--device-edge-lo), var(--device-edge-hi));
+}
+
+.phone-sim__button--action,
+.phone-sim__button--volume-up,
+.phone-sim__button--volume-down { left: -3px; border-radius: 2px 0 0 2px; }
+
+.phone-sim__button--action      { top: 168px; height: 32px; }
+.phone-sim__button--volume-up   { top: 232px; height: 62px; }
+.phone-sim__button--volume-down { top: 310px; height: 62px; }
+.phone-sim__button--side        { right: -3px; top: 262px; height: 100px; border-radius: 0 2px 2px 0;
+                                  background: linear-gradient(90deg, var(--device-edge-hi), var(--device-edge-lo)); }
+
+/* The status bar: the time in the left ear, the island in the middle, the
+   signal, Wi-Fi and battery in the right ear — in the ink the page in the
+   phone asks for (its apple-mobile-web-app-status-bar-style). */
+.phone-sim__status {
+    --ink: var(--device-ink-on-dark);
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 126px 1fr;
+    align-items: center;
+    height: 59px;
+    padding-top: 1px;
+    color: var(--ink);
+    pointer-events: none;
+}
+
+.phone-sim[data-ink="dark"] .phone-sim__status,
+.phone-sim[data-ink="dark"] .phone-sim__home { --ink: var(--device-ink-on-light); }
+
+.phone-sim__time {
+    justify-self: center;
+    padding-left: 14px;
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.phone-sim__island {
+    width: 126px;
+    height: 37px;
+    border-radius: 19px;
+    background: var(--device-black);
+}
+
+.phone-sim__icons {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 10px;
+}
+
+.phone-sim__signal { width: 18px; height: 12px; fill: var(--ink); }
+.phone-sim__wifi   { width: 16px; height: 12px; fill: var(--ink); }
+
+.phone-sim__battery {
+    position: relative;
+    width: 25px;
+    height: 12px;
+    padding: 1.5px;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 38%, transparent);
+}
+
+.phone-sim__battery::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: -3px;
+    width: 1.5px;
+    height: 4px;
+    border-radius: 0 1px 1px 0;
+    background: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.phone-sim__battery-level {
+    display: block;
+    width: 78%;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--ink);
+}
+
+/* The home indicator, over the page as on the phone. */
+.phone-sim__home {
+    --ink: var(--device-ink-on-dark);
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    z-index: 2;
+    width: 134px;
+    height: 5px;
+    margin-left: -67px;
+    border-radius: 3px;
+    background: var(--ink);
+    pointer-events: none;
+}
+
+/* The way back to Desktop, where it stands in Telefoon (desktop.css). */
+:root[data-layout="phone-frame"] .phone-sim .view-switch { z-index: 3; }

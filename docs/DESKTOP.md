@@ -14,11 +14,41 @@ docs/CHALLENGES.md.
 | --- | --- | --- |
 | narrower than 768px | `phone` — the phone's own | not shown |
 | 768px and wider | `desktop` — unless this browser chose Telefoon | shown |
-| 768px and wider, Telefoon chosen | `phone-frame` — the phone's layout in a 430px column | shown |
+| 768px and wider, Telefoon chosen | `phone-frame` — the phone's website in an iPhone (below) | shown |
 
 The choice is kept in this browser (`localStorage`, `ownify_view`); a phone
 never sees a switch. Switching changes only the layout — no reload, no
 navigation: the page, an open second page and every scroll position stay.
+
+## Telefoon: the iPhone (34.0)
+
+Telefoon on a wide screen shows the website as a phone shows it, in an
+iPhone 15 / 16 Pro (`components/phone-simulator.php`,
+`assets/css/phone-sim.css`, `assets/js/phone-sim.js`):
+
+- **The screen is the website itself**: a same-origin `<iframe>` of the page,
+  393 × 852. In there the head's script sees the frame (`data-frame="phone"`)
+  and the layout is the phone's own, so every breakpoint, viewport unit,
+  script and animation is the phone's — nothing is copied. All it changes in
+  there: the iPhone's safe areas as a home-screen web app (`--safe-top` 59,
+  `--safe-bottom` 34) and no visible scrollbars (scrolling stays). The theme
+  in the phone is the account's own.
+- **The device** is drawn around and over it and does nothing: titanium
+  band, bezel, the buttons, the Dynamic Island, the status bar (the time;
+  signal, Wi-Fi, battery; in the ink the page asks for — its
+  `apple-mobile-web-app-status-bar-style`) and the home indicator. Its
+  colours are a phone's, named once in phone-sim.css (`--device-*`).
+- **Around it** the page is always the light Randlicht ground, whatever the
+  theme: while this layout is shown the head paints this document light
+  (`ownifyTheme.paint`); the account's theme is untouched and comes back
+  with Desktop. The app around the phone is hidden and inert.
+- **Fitted to the window**: centred, never larger than itself, scaled down
+  (`--sim-k`) so the whole device always shows with 24–64px around it.
+- **Loaded only while shown**: the screen loads when Telefoon is chosen and
+  is let go when it is left. If anything was done in the phone, Desktop
+  reloads, so it never shows what the phone has since changed.
+- A mouse is still a mouse in there: hover is the desktop browser's, not a
+  finger's.
 
 ## Desktop
 

@@ -50,12 +50,31 @@ $theme  = app_theme_head($app);     // lib/theme.php
         var device = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
         root.classList.add('js');
 
+        /* In the iPhone of Telefoon on a wide screen (phone-simulator.php):
+           this page is the phone's website, with the iPhone's safe areas and
+           no visible scrollbars (phone-sim.css). */
+        try {
+            if (window.frameElement && window.frameElement.hasAttribute('data-phone-screen')) {
+                root.setAttribute('data-frame', 'phone');
+            }
+        } catch (error) { /* not ours to look into */ }
+
+        /* The theme the account sees; around the iPhone the page is always
+           light (paint), the phone itself keeps this one. */
+        var own = root.getAttribute('data-theme') || 'dark';
+
         function chosen() {
             var word = /(?:^|;\s*)ownify_theme=(dark|light)(?:;|$)/.exec(document.cookie);
             return word ? word[1] : null;
         }
 
         function apply(theme) {
+            own = theme;
+            paint();
+        }
+
+        function paint() {
+            var theme = root.getAttribute('data-layout') === 'phone-frame' ? 'light' : own;
             root.setAttribute('data-theme', theme);
             var bar = document.querySelector('meta[name="theme-color"]');
             if (bar) { bar.setAttribute('content', bar.getAttribute(theme === 'light' ? 'data-theme-light' : 'data-theme-dark')); }
@@ -73,7 +92,7 @@ $theme  = app_theme_head($app);     // lib/theme.php
         if (device && device.addEventListener) { device.addEventListener('change', follow); }
         else if (device && device.addListener) { device.addListener(follow); }
 
-        window.ownifyTheme = { apply: apply, follow: follow };
+        window.ownifyTheme = { apply: apply, follow: follow, paint: paint, own: function () { return own; } };
 
         /* Voorkeuren › Toegankelijkheid, as the account chose it
            (includes/i18n.php, migration 024): on <html> before anything is
@@ -125,7 +144,15 @@ $theme  = app_theme_head($app);     // lib/theme.php
         function layout() {
             var chosen = null;
             try { chosen = window.localStorage.getItem('ownify_view'); } catch (error) { chosen = null; }
-            root.setAttribute('data-layout', wide && wide.matches ? (chosen === 'phone' ? 'phone-frame' : 'desktop') : 'phone');
+            var framed = root.getAttribute('data-frame') === 'phone';
+            var was = root.getAttribute('data-layout');
+            root.setAttribute('data-layout', wide && wide.matches && !framed ? (chosen === 'phone' ? 'phone-frame' : 'desktop') : 'phone');
+            /* Back from the iPhone: the theme may have been changed in it. */
+            if (was === 'phone-frame' && root.getAttribute('data-layout') !== 'phone-frame') {
+                var word = /(?:^|;\s*)ownify_theme=(dark|light)(?:;|$)/.exec(document.cookie);
+                if (word) { own = word[1]; } else if (device) { own = device.matches ? 'light' : 'dark'; }
+            }
+            if (window.ownifyTheme) { window.ownifyTheme.paint(); }
         }
         layout();
         if (wide && wide.addEventListener) { wide.addEventListener('change', layout); }

@@ -139,6 +139,7 @@ return [
     /* The desktop layout (docs/DESKTOP.md): the view switch and the sidebar. */
     'Weergave' => 'View',
     'Telefoon' => 'Phone',
+    'Ownify op een telefoon' => 'Ownify on a phone',
     'Desktop' => 'Desktop',
     'OwnifyAI' => 'OwnifyAI',
 ];

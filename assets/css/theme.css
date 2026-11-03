@@ -756,7 +756,9 @@ button {
     position: absolute;
     top: calc(var(--safe-top) + var(--space-2));
     left: 50%;
-    transform: translate(-50%, -200%);
+    /* Wholly above the screen until focused, whatever the safe area (an
+       iPhone's 59px left part of it showing at -200%). */
+    transform: translate(-50%, calc(-100% - var(--safe-top) - var(--space-2) - 8px));
     z-index: 50;
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-pill);
