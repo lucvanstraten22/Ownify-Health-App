@@ -1021,10 +1021,10 @@ class OwnifyAppFlowTest {
 
         // Wiping asks first.
         compose.onNode(hasText("OwnifyAI-gesprekken wissen", substring = true)).assertExists()
-        compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Al je OwnifyAI-gesprekken wissen?")
         assertTrue(server.requestsTo("delete.php").isEmpty())
-        compose.onAllNodes(hasText("Alles wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Je OwnifyAI-gesprekken zijn gewist.")
         assertEquals(mapOf("all" to "1"), form(server.requestsTo("delete.php").single()))
 

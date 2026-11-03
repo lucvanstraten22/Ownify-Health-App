@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 36.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 36.2'],
             ],
         ],
     ],
@@ -306,7 +306,7 @@ return [
                         ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
                          'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
                          'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
-                         'confirm'  => 'Alles wissen',
+                         'confirm'  => 'Wissen',
                          'cancel'   => 'Annuleren',
                          'endpoint' => 'api/ai/delete.php',
                          'fields'   => ['all' => '1'],
@@ -519,7 +519,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 36.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 36.2'],
                     ],
                 ],
 
