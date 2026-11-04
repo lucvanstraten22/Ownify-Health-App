@@ -595,24 +595,9 @@
 }
 
 /* --------------------------------------------------------------------------
-   4 — Where the most room is
-   -------------------------------------------------------------------------- */
-.compass-chance__head {
-    padding: var(--space-3);
-    border: 1px solid var(--glass-hairline);
-    border-radius: var(--radius-md);
-    background: var(--inset-fill);
-}
-
-.compass-chance .compass-text { margin-top: var(--space-4); }
-
-.compass-chance .compass-text p:first-child { color: var(--text-primary); }
-
-/* --------------------------------------------------------------------------
    Very small phones
    -------------------------------------------------------------------------- */
 @media (max-width: 359px) {
     .compass-cat { padding: var(--space-3) var(--space-2); }
     .compass-day { padding: var(--space-3) var(--space-2); }
-    .compass-chance__head { padding: var(--space-3) var(--space-2); }
 }

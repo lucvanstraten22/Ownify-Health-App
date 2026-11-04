@@ -760,15 +760,17 @@ of them uses is in `config/scoring.php` or `config/points.php` and nowhere else.
 - **Missing parts.** A component the person's device does not measure is left
   out and the other components' weights are scaled up (`health_weighted()`),
   rather than it counting as a zero.
+- **Recent days count more** (38.0): within the window a day weighs
+  0.5 ^ (days ago / 4) — today 1, four days ago ½.
 - **No steps.** Every measurement becomes 0-100 on a smooth curve through the
   points in the config (`health_curve()`, monotone cubic), so 7:59 and 8:00 of
   sleep score almost the same.
 
 | Category | Formula |
 | --- | --- |
-| Sleep | 45% duration + 30% regularity + 25% quality. **Duration**: each night's main sleep on the duration curve (95 at 7:30, 100 at 8:00, 96 at 8:30, 84 at 7:00, 62 at 6:00), averaged over the nights. **Regularity**: the night-to-night standard deviation of bedtime and wake time (40% each, measured on the clock, so 23:50 and 00:10 are 20 minutes apart) and of the duration (20%), each on its curve (15 min or less is 100, an hour 56 for the times). **Quality**: each night's efficiency, time awake, deep and REM share on their curves — only what the device measured — averaged over at least 3 such nights. |
-| Nutrition | The day's rating × 10 (several on one day count as their average), averaged over the rated days. |
-| Training | 20% volume + 20% intensity + 25% progression + 35% balance, over the weeks since the first workout in the window. **Volume**: minutes a week, flattening out (54 at 90 min, 85 at 225, 100 at 540) and dipping beyond. **Intensity**: the share of hard sessions — perceived effort, else heart-rate zones, else average heart rate against the maximum — best around 30%, so all-hard is not better. **Progression**: the relative change, recent half against earlier half of the window, in pace per kind of activity and the person's own strength and performance goal results; holding steady is 60 — in 168 hours there are often too few results for it, and then it is left out and the others weigh more. **Balance**: training days a week (counts double; 4-5 is best), the longest run without a rest day, weekly load spikes (more than 1.5× the four weeks before — which a 7-day window does not hold, so they are not scored), heavy days back to back, and sleep in the nights after training. |
+| Sleep | Eight factors (38.0, docs/SCORE-COMPASS.md "The method"), weighed by their grades: duration 34.5%, regularity 34.5%, social jetlag 17.3%, HRV 4.3%, efficiency and time awake 2.5% each, deep and REM 2.2% each. **Duration**: each night on the AHA Life's Essential 8 points (7-9 h 100, 6:30 70, 5:30 40, 9:30 90). **Regularity**: the night-to-night standard deviation of bedtime and of wake time (on the clock, so 23:50 and 00:10 are 20 minutes apart), each on its curve (30 min or less 100, an hour 81, 2 hours 30), averaged. **Social jetlag**: the midpoint of sleep on free days against work days (1 h 100, 2 h 60, 3 h 20). **HRV**: the window's mean ln(rMSSD) against the person's own 60 days before it, as a z-score. Efficiency, time awake, deep and REM share: on their curves, where the device measured them on at least 3 nights. |
+| Nutrition | Ten factors: fibre 31.1% and sodium 15.5% (per 1,000 kcal), saturated fat 9.7%, sugar, protein (per kg), water, caffeine timing 7.8% each, fat share 4.9%, energy balance and the daily rating 3.9% each. What was eaten counts on days logged to at least half the energy target; without any such day the rating (× 10) is the whole score. |
+| Training | Eight factors: steps 26.5% (Paluch's curve, its own from 60), strength minutes and resting heart rate 19.8% each, aerobic minutes (vigorous ×2, Arem's curve) and active days 9.9% each, intensity (the vigorous share) 6.6%, recovery after heavy days 5.0%, progression 2.5%. Steps count on completed days; without a workout in the window the workout factors are not measured rather than zero. |
 | Overall | The average of the categories that have a score (`score_combine()`). None of them: no score, never a 0. |
 
 What counts as one night or one workout is decided once, in
@@ -779,7 +781,9 @@ one workout (the longer). A workout counts from 10 minutes to 8 hours.
 
 Scores are calculated from the records whenever they are read, and every
 calculation is written to `daily_scores` — the score, `data_days`, the
-components as JSON in `inputs` and `valid_until`, the last day it holds
+components as JSON in `inputs` (since 38.0 `{"components", "range",
+"coverage"}`: the uncertainty range and coverage beside them; older rows hold
+the components alone) and `valid_until`, the last day it holds
 without new input — one row per category and one for the overall score per
 day, rewritten only when something changed, and **only for today**: a day
 that has passed keeps what it recorded. That is the history the Gezondheid

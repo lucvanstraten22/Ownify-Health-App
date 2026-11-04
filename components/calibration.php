@@ -94,8 +94,8 @@ $phase = (string) $cal['phase'];
     <?php endif; ?>
 
     <?php if ($cal['open'] !== null && !empty($data['compass'])): ?>
-        <button type="button" class="calibration__open press" data-detail-open="score-compass">
-            <?= e($cal['open']) ?><?= icon('chevron-right', 'calibration__open-icon') ?>
+        <button type="button" class="text-link calibration__open press" data-detail-open="score-compass">
+            <?= e($cal['open']) ?><?= icon('chevron-right', 'text-link__icon') ?>
         </button>
     <?php endif; ?>
 

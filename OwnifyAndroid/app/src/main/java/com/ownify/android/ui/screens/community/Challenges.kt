@@ -102,6 +102,7 @@ import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.PageIntro
 import com.ownify.android.ui.design.T
+import com.ownify.android.ui.design.TextLink
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.theme.Accent
@@ -605,7 +606,8 @@ internal fun InviteBanner(invite: ChallengeInvite, see: String, onReview: () -> 
         else NeutralTile(OwnifyIcons.solidTarget, modifier = Modifier.notice(dot))
         val text = if (who != null) "${who.name} ${invite.inviteText}" else invite.inviteText
         T(text, JStyle.Lede, Modifier.weight(1f))
-        Btn(see, onClick = onReview)
+        // Bekijken: the text link (38.0, a button before).
+        TextLink(see, onClick = onReview)
     }
 }
 

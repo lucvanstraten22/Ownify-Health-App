@@ -5,6 +5,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Environment
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Row
+import com.ownify.android.ui.design.TextLink
+import com.ownify.android.ui.design.LocalReducedMotion
+import com.ownify.android.ui.design.LocalStillMotion
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +24,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -70,13 +81,15 @@ import com.ownify.android.ui.theme.OwnifyType
  * "Uit onderzoek blijkt" (docs/INSIGHTS.md, docs/RESEARCH.md) on the phone,
  * as the website has it:
  *
- *   ResearchEvidence    components/research-evidence.php: the label as the
- *                       goal wizard's glass chip, "Bekijk onderzoek" as
- *                       the quiet link; both open the claim's detail over
- *                       whatever shows them
- *   ResearchDetailPage  pages/research-detail.php: what Ownify says with it
- *                       and how strong that is, then what the research found,
- *                       for whom, its limits, and the source with its PDF
+ *   ResearchEvidence    components/research-evidence.php: "Bekijk
+ *                       onderzoek" as the text link (38.0; a glass chip
+ *                       before), opening the claim's detail over whatever
+ *                       shows it
+ *   ResearchDetailPage  pages/research-detail.php, since 38.0: Samenvatting
+ *                       onderzoek (the findings as points), Bron (the
+ *                       publication, Beperkingen opened in place beside it,
+ *                       the PDF), Bewijskracht last. No "Voor wie": research
+ *                       is only shown to the people it holds for.
  *
  * Every word is the server's (`research` in the state); the app only lays
  * them out, with Instellingen' own pieces — no new kind of page.
@@ -87,9 +100,9 @@ val LocalResearch = staticCompositionLocalOf { Research.parse(null) }
 
 /**
  * The evidence beside an insight or a reference value: nothing when there
- * is no detail to open. "Bekijk onderzoek" as the goal wizard's glass chip,
- * 8 above it (`.research-evidence`); how strong the research is, is said in
- * the detail it opens, not here.
+ * is no detail to open. "Bekijk onderzoek" as the text link
+ * (`.research-evidence`, its words 13 under the sentence as the chip's
+ * were); how strong the research is, is said in the detail it opens.
  */
 @Composable
 fun ResearchEvidence(evidence: Evidence?, modifier: Modifier = Modifier) {
@@ -101,15 +114,15 @@ fun ResearchEvidence(evidence: Evidence?, modifier: Modifier = Modifier) {
         val over = shell.detail?.takeIf { shell.detailShown }
         shell.openDetail(Detail.Research(evidence.research, over))
     }
-    Box(modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
-        GlassChip(evidence.label, chosen = false, onClick = open)
+    Box(modifier.fillMaxWidth()) {
+        TextLink(evidence.label, onClick = open)
     }
 }
 
 /**
- * Several chips side by side (31.0, `$data['evidences']`): e.g. "Bekijk
- * onderzoek" and "Bij jouw leeftijd" under one card, 8 apart, wrapping on a
- * narrow phone. Those without a detail to open are left out.
+ * Several links side by side (31.0, `$data['evidences']`): e.g. "Bekijk
+ * onderzoek" and "Bij jouw leeftijd" under one card, 16 apart, wrapping on
+ * a narrow phone. Those without a detail to open are left out.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -123,12 +136,11 @@ fun ResearchEvidence(evidences: List<Evidence?>, modifier: Modifier = Modifier) 
     }
     val shell = LocalShell.current
     FlowRow(
-        modifier.fillMaxWidth().padding(top = Ownify.Space2),
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
-        verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)
     ) {
         shown.forEach { evidence ->
-            GlassChip(evidence.label, chosen = false, onClick = {
+            TextLink(evidence.label, onClick = {
                 val over = shell.detail?.takeIf { shell.detailShown }
                 shell.openDetail(Detail.Research(evidence.research, over))
             })
@@ -137,10 +149,9 @@ fun ResearchEvidence(evidences: List<Evidence?>, modifier: Modifier = Modifier) 
 }
 
 /**
- * One claim as Ownify uses it (pages/research-detail.php): short first —
- * what Ownify says with it and how strong that is — then what the research
- * found, for whom, its limits, and the source itself with its PDF where
- * that may be read.
+ * One claim as Ownify uses it (pages/research-detail.php), since 38.0 in
+ * this order: Samenvatting onderzoek — the findings as points; Bron — the
+ * publication, Beperkingen beside it, the PDF; Bewijskracht last.
  */
 @Composable
 fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: ScrollState) {
@@ -149,7 +160,13 @@ fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: Scrol
     DetailColumn(scroll, back = tr("Terug"), backAria = tr("Terug")) {
         PageIntro(copy.title, detail.statement, Modifier.reveal())
 
-        // How strong: the chip as a status, never pressed, and what it means.
+        // 1. Samenvatting onderzoek: one point a sentence, in the approved words.
+        Block(copy.found) { StateRow(divided = false) { Points(source.summary) } }
+
+        // 2. Bron, with Beperkingen beside the publication.
+        SourceBlock(copy, detail)
+
+        // 3. Bewijskracht, last: the chip as a status, never pressed, and what it means.
         Block(copy.evidence) {
             StateRow(divided = false) {
                 GlassChip(detail.strength.label, chosen = false, onClick = null, description = "${copy.evidence}: ${detail.strength.label}")
@@ -158,14 +175,22 @@ fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: Scrol
                 Note(detail.strength.note)
             }
         }
+    }
+}
 
-        Block(copy.found) { StateRow(divided = false) { Note(source.findings) } }
-        Block(copy.population) { StateRow(divided = false) { Note(detail.population) } }
-        Block(copy.limitations) {
-            detail.limitations.forEachIndexed { i, limitation -> StateRow(divided = i > 0) { Note(limitation) } }
+/**
+ * `.research-detail__points`: points as OwnifyAI's answers have them — a
+ * muted disc, the footnote's type, 8 between.
+ */
+@Composable
+private fun Points(points: List<String>, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        points.forEach { point ->
+            Row(Modifier.fillMaxWidth()) {
+                T("•", JStyle.Footnote.copy(color = Ownify.TextMuted), Modifier.width(18.dp).clearAndSetSemantics { })
+                T(point, JStyle.Footnote, Modifier.weight(1f))
+            }
         }
-
-        SourceBlock(copy, detail)
     }
 }
 
@@ -226,6 +251,8 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
     val byline = listOfNotNull(source.authors ?: source.organisation, source.year.takeIf { it.isNotEmpty() }).joinToString(" · ")
 
     var reading by remember(detail.id) { mutableStateOf(false) }
+    var limits by remember(detail.id) { mutableStateOf(false) }
+    val reduced = LocalReducedMotion.current || LocalStillMotion.current
     var offline by remember(detail.id) { mutableStateOf(false) }
     var attempt by remember(detail.id) { mutableIntStateOf(0) }
     val frame = remember { BringIntoViewRequester() }
@@ -239,6 +266,17 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
                 if (source.authors != null && source.organisation != null) Note(source.organisation)
                 Note(source.citation)
                 source.languageNote?.let { Note(it) }
+                // Beperkingen beside the source, opened in place as Voeding opens a row.
+                if (detail.limitations.isNotEmpty()) {
+                    TextLink(copy.limitations, onClick = { limits = !limits }, expanded = limits)
+                    AnimatedVisibility(
+                        visible = limits,
+                        enter = expandVertically(tween(if (reduced) 0 else 280, easing = Ownify.EaseOutStrong)) + fadeIn(tween(if (reduced) 0 else Ownify.FastMs)),
+                        exit = shrinkVertically(tween(if (reduced) 0 else 280, easing = Ownify.EaseOutStrong)) + fadeOut(tween(if (reduced) 0 else Ownify.FastMs))
+                    ) {
+                        Points(detail.limitations, Modifier.padding(bottom = Ownify.Space1))
+                    }
+                }
             }
             StateRow(divided = true) {
                 Label(copy.kindLabel)
@@ -247,15 +285,18 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
             }
         }
 
-        BasisRow(basis = 160.dp, gap = Ownify.Space2, modifier = Modifier.padding(vertical = Ownify.Space3)) {
-            if (pdf.readable && address != null) {
+        if (pdf.readable && address != null) {
+            BasisRow(basis = 160.dp, gap = Ownify.Space2, modifier = Modifier.padding(top = Ownify.Space3)) {
                 Btn(copy.readPdf, onClick = {
                     reading = true
                     attempt++
                 }, look = BtnLook.Primary)
                 if (pdf.hosted) Btn(copy.downloadPdf, onClick = { download(context, address, source.code + ".pdf") })
             }
-            source.href?.let { href -> Btn(copy.openSource, onClick = { view(context, href) }) }
+        }
+        // "Bekijk de publicatie": the text link (38.0, a button before), its words in line with the eyebrow's.
+        source.href?.let { href ->
+            TextLink(copy.openSource, onClick = { view(context, href) }, modifier = Modifier.padding(start = Ownify.Space2, bottom = Ownify.Space1))
         }
 
         SettingsNote("info", pdf.note)

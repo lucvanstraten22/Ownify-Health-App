@@ -1116,18 +1116,119 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 /* --------------------------------------------------------------------------
-   Research (docs/INSIGHTS.md): the evidence beside an insight — "Bekijk
-   onderzoek" as the goal wizard's glass chip — and the detail it opens, the
-   one place that says how strong the research is. Layout only: every look here is an existing one
-   (.glass--chip, .btn--link, .btn, the settings card's states and notes, the
-   Well's radius, fill and hairline). OverviewPage.kt and ResearchDetail.kt
-   draw the same.
+   The text link (38.0): a way onward that is only its words — Subhead,
+   semibold, in the primary ink, with a quiet chevron — and a full 44 px
+   target. First the Scorekompas's "Bekijk de opbouw" on Overzicht; since
+   38.0 every "Bekijk …" in Ownify, which were glass chips and buttons
+   before. Android: TextLink (GlassControls.kt).
+   -------------------------------------------------------------------------- */
+.text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: var(--fs-subhead);
+    font-weight: 600;
+    letter-spacing: var(--tracking-small);
+    text-decoration: none;
+    text-align: left;
+}
+
+.text-link__icon {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    color: var(--text-muted);
+    transition: transform 280ms var(--ease-out-strong);
+}
+
+/* One that opens something in place turns its chevron down while open,
+   as Voeding's rows do. */
+.text-link[aria-expanded="true"] .text-link__icon { transform: rotate(90deg); }
+
+.text-link:focus-visible {
+    outline: 2px solid rgba(var(--ink), 0.55);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .text-link__icon { transition: none; }
+}
+:root[data-motion="reduce"] .text-link__icon { transition: none; }
+
+/* --------------------------------------------------------------------------
+   Research (docs/INSIGHTS.md, docs/RESEARCH.md): the evidence beside an
+   insight — "Bekijk onderzoek" as the text link — and the detail it opens,
+   the one place that says how strong the research is. Layout only: every
+   look here is an existing one (.text-link, .glass--chip as a status, .btn,
+   the settings card's states and notes, OwnifyAI's points, Voeding's way of
+   opening a row in place, the Well). Research.kt draws the same.
    -------------------------------------------------------------------------- */
 .research-evidence {
     display: flex;
     flex-wrap: wrap;
+    column-gap: var(--space-4);
+    /* The link's 44 px target, its text 13 under the sentence above, as the
+       chip's was; pulled back below so the card's padding stays the same. */
+    margin-bottom: calc(-1 * var(--space-2));
+}
+
+/* Samenvatting onderzoek and Beperkingen: points, as OwnifyAI's answers
+   have them — a muted disc, the footnote's type. */
+.research-detail__points {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-2);
-    margin-top: var(--space-2);
+    margin: 0;
+    padding-left: 1.2em;
+    list-style: disc;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
+    letter-spacing: var(--tracking-small);
+    color: var(--text-secondary);
+}
+
+.research-detail__points li::marker { color: var(--text-muted); }
+
+/* Beperkingen: beside the source, opened in place the way Voeding opens a
+   macronutrient's row — the same 280 ms strong ease-out, the chevron turned.
+   Closed it is out of the way of the keyboard and a screen reader too. */
+.research-detail__limits-link { margin-bottom: calc(-1 * var(--space-2)); }
+
+.research-detail__more {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition: grid-template-rows 280ms var(--ease-out-strong), opacity var(--transition-fast), visibility 0s linear 280ms;
+}
+
+.research-detail__more > div { overflow: hidden; min-height: 0; }
+
+.research-detail__more > div > .research-detail__points { padding-top: var(--space-2); }
+
+.is-open > .research-detail__more {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition: grid-template-rows 280ms var(--ease-out-strong), opacity var(--transition-fast), visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .research-detail__more { transition: none; }
+}
+:root[data-motion="reduce"] .research-detail__more { transition: none; }
+
+/* The publication at its publisher: the text link under the card (and the
+   buttons), its words in line with the eyebrow's. */
+.research-detail__source-link {
+    margin-block: calc(var(--space-3) - 13px) var(--space-1);
+    margin-inline-start: var(--space-2);
 }
 
 /* The label in the detail: the same chip as a status, as Voeding's bubbles —
@@ -1167,6 +1268,36 @@ a.settings-row { color: inherit; text-decoration: none; }
     width: 100%;
     height: min(78vh, 900px);
     border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   A combined insight still gathering (38.0, components/insight-progress.php):
+   only the meter, in the insight's accent; what is still needed is the goal
+   bar's reading (.goal__tip below), which may wrap, being a sentence. The
+   track sits over the card's way in (z-index 2), so a pointer and a resting
+   finger reach it; a tap on it still opens the card (dashboard.js).
+   -------------------------------------------------------------------------- */
+.insight-lock {
+    display: block;
+    z-index: 2;
+    margin-top: var(--space-1);
+    padding-block: var(--space-2);
+}
+
+.insight-lock__meter { display: block; margin-top: 0; }
+
+.insight-lock__tip {
+    width: max-content;
+    max-width: min(260px, 100%);
+    white-space: normal;
+    line-height: var(--lh-small);
+    text-align: left;
+}
+
+/* In a row that is a button, the row's focus shows it. */
+.settings-row:focus-visible .insight-lock__tip {
+    opacity: 1;
+    transform: translate(calc(var(--p, 0) * -1%), calc(-100% - 4px));
 }
 
 /* --------------------------------------------------------------------------

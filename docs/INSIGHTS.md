@@ -21,17 +21,15 @@ inzichten shows **combined insights** — patterns across areas — which are
 | Slaap's night, when it has stages | how far a wearable's stages can be trusted (SLP-06), and beside it **Bij jouw leeftijd**: how sleep changes with age (AGE-03, 31.0) |
 | Training's heart rate, with data | how accurate a wearable's heart rate is (MEA-01) — on Training's own page, not on a session's — and **Bij jouw leeftijd**: the heart-rate bands for the person's age (AGE-01, 31.0) |
 | Voeding's protein, sugar and energy (31.0) | protein's norm (65+: the advice for older adults, "Bij jouw leeftijd"), free sugars' norm under its row, and how the energy target is estimated, after the days |
-| Scorekompas › **Mogelijk aandachtspunt** | the research about the component it names, where there is any: its context, never its reason |
 
-Every one carries "Bekijk onderzoek" as the goal wizard's glass chip, opening
+Every one carries "Bekijk onderzoek" as the text link (38.0; the glass chip before), opening
 the detail ("Uit onderzoek blijkt"), which is the one place that says how
 strong the research is (29.1: the label is no longer beside the insight). No new card,
 chip or button: the insights card, the suggestion card and Instellingen'
 blocks are the ones that were there.
 
-The Scorekompas's fourth section is called **Mogelijk aandachtspunt** (it
-was "Grootste kans"): a wording change only — the same calculation, the same
-component, now said as what it is, a possible point of attention.
+The Scorekompas's fourth section, **Mogelijk aandachtspunt** ("Grootste
+kans" before 29.0), and the research shown under it were removed in 38.0.
 
 ## How an insight comes about
 

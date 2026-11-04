@@ -304,7 +304,7 @@ if (!function_exists('setup_stored')) {
                 return [
                     'phase' => 'first_score',
                     'title' => sprintf($c['first']['title'], $c['first']['names'][$id] ?? $id),
-                    'first' => $category,
+                    'first' => calibration_first_parts($category),
                     'note'  => calibration_overall_note($in, $c, $order, $scored),
                     'open'  => $c['first']['open'],
                 ] + $base;
@@ -354,7 +354,7 @@ if (!function_exists('setup_stored')) {
     {
         for ($d = 1; $d <= $day; $d++) {
             $asOf = $start->setTime(0, 0)->modify('+' . ($d - 1) . ' days')->setTime(23, 59, 59);
-            $at   = health_score_at($read, $asOf > $now ? $now : $asOf);
+            $at   = health_score_at($read, $asOf > $now ? $now : $asOf, false);
 
             if ($at['sleep']['score'] !== null || $at['nutrition']['score'] !== null || $at['training']['score'] !== null) {
                 return $d;
@@ -362,6 +362,19 @@ if (!function_exists('setup_stored')) {
         }
 
         return null;
+    }
+
+    /**
+     * The first score's own parts: only those that count (38.0 — a category
+     * has up to ten; the Scorekompas lists them all). A single counting
+     * part is no list: its summary, or the score itself, says it.
+     */
+    function calibration_first_parts(array $category): array
+    {
+        $parts = array_values(array_filter((array) ($category['parts'] ?? []), static fn ($p) => !empty($p['counted'])));
+        $category['parts'] = count($parts) < 2 ? [] : $parts;
+
+        return $category;
     }
 
     /** The records the engine counts now: those inside its window at $now. */
@@ -593,8 +606,9 @@ if (!function_exists('setup_stored')) {
             'nutrition' => isset($facts['rating'])
                 ? sprintf($f['nutrition'], setup_decimal((float) $facts['rating']))
                 : null,
-            'training' => isset($facts['balance']['frequency']['value'])
-                ? sprintf($f['training'], setup_decimal((float) $facts['balance']['frequency']['value']))
+            /* The window is a week: its training days are the days a week. */
+            'training' => !empty($facts['training_days'])
+                ? sprintf($f['training'], setup_decimal((float) $facts['training_days']))
                 : null,
             default => null,
         };

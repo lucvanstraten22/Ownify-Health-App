@@ -61,7 +61,7 @@ require_once __DIR__ . '/health-signals.php';
 require_once __DIR__ . '/scoring.php';
 
 if (!defined('HEALTH_SCORE_VERSION')) {
-    define('HEALTH_SCORE_VERSION', 'rolling168-v1');
+    define('HEALTH_SCORE_VERSION', 'factors-v2');
 }
 
 if (!function_exists('health_score_now')) {
@@ -221,17 +221,25 @@ if (!function_exists('health_score_now')) {
 
             $days[$date] ??= health_score_blank_day($date, 'stored');
 
+            $inputs = $rich && $row['inputs'] !== null ? json_decode((string) $row['inputs'], true) : null;
+            $inputs = is_array($inputs) ? $inputs : [];
+            /* Since 38.0 the components sit beside the range and coverage;
+               before, the inputs were the components themselves. */
+            $components = array_key_exists('components', $inputs) || array_key_exists('coverage', $inputs)
+                ? (array) ($inputs['components'] ?? [])
+                : $inputs;
+
             if ($domain === 'overall') {
                 $days[$date]['overall']['score'] = $score;
                 continue;
             }
 
-            $components = $rich && $row['inputs'] !== null ? json_decode((string) $row['inputs'], true) : null;
-
             $days[$date][$domain] = [
                 'score'       => $score,
                 'days'        => $rich && $row['data_days'] !== null ? (int) $row['data_days'] : 0,
-                'components'  => is_array($components) ? $components : [],
+                'components'  => $components,
+                'range'       => $inputs['range'] ?? null,
+                'coverage'    => $inputs['coverage'] ?? null,
                 'facts'       => [],
                 'expired'     => false,
                 'valid_until' => $until && $row['valid_until'] !== null ? (string) $row['valid_until'] : null,
@@ -332,6 +340,69 @@ if (!function_exists('health_score_now')) {
             'ratings'  => $ratings,
             'workouts' => $workouts,
             'goals'    => health_score_goal_results($userId, $from, $to),
+        ] + health_score_day_records($userId, $from, $to);
+    }
+
+    /**
+     * The day-by-day records the 38.0 factors read: what was eaten and
+     * drunk, caffeine with its times, steps, resting heart rate, HRV (with
+     * the baseline days before the window), and the profile the curves
+     * need — sex, age, weight and the energy target.
+     *
+     * @return array{food: array, caffeine: array, steps: array, resting_hr: array, hrv: array, profile: array}
+     */
+    function health_score_day_records(int $userId, DateTimeImmutable $from, DateTimeImmutable $to): array
+    {
+        $fromDate = $from->format('Y-m-d');
+        $toDate   = $to->format('Y-m-d');
+        $baseline = (int) health_scoring_config()['sleep']['hrv']['baseline_days'];
+
+        $food = [];
+        foreach (['energy', 'protein', 'carbs', 'fat', 'fibre', 'sugar', 'saturated_fat', 'sodium', 'water'] as $code) {
+            foreach (health_daily_metric_days($userId, $code, $fromDate, $toDate) as $date => $value) {
+                $food[$date][$code] = (float) $value;
+            }
+        }
+
+        $caffeine = [];
+        $caffeineType = health_metric_type_id('caffeine');
+        if ($caffeineType !== null) {
+            foreach (db_all(
+                'SELECT value, recorded_at, recorded_on FROM health_metrics
+                  WHERE user_id = ? AND metric_type_id = ? AND recorded_on BETWEEN ? AND ? AND value > 0',
+                [$userId, $caffeineType, $fromDate, $toDate]
+            ) as $row) {
+                $at = strtotime((string) $row['recorded_at']);
+                if ($at !== false) {
+                    $caffeine[] = ['at' => $at, 'date' => (string) $row['recorded_on'], 'mg' => (float) $row['value']];
+                }
+            }
+        }
+
+        $profile = ['sex' => null, 'age' => null, 'weight_kg' => null, 'energy_target' => null];
+        $account = user_account($userId);
+        if ($account !== null) {
+            $weight = $account['weight'] ?? null;
+            $profile['sex']       = in_array($account['gender'] ?? null, ['female', 'male'], true) ? (string) $account['gender'] : null;
+            $profile['age']       = $account['age'] ?? null;
+            $profile['weight_kg'] = $weight !== null && ($weight['unit'] ?? null) === 'kg' ? (float) $weight['value'] : null;
+        }
+        try {
+            require_once __DIR__ . '/nutrition-targets.php';
+            $target = nutrition_targets_for_user($userId)['targets']['calorie_target_kcal'] ?? null;
+            $profile['energy_target'] = $target !== null && (float) $target > 0 ? (float) $target : null;
+        } catch (Throwable $e) {
+            $profile['energy_target'] = null;
+        }
+
+        return [
+            'food'       => $food,
+            'caffeine'   => $caffeine,
+            'steps'      => health_metric_totals($userId, 'steps', $fromDate, $toDate),
+            'resting_hr' => health_daily_metric_days($userId, 'resting_hr', $fromDate, $toDate),
+            'hrv'        => health_daily_metric_days($userId, 'hrv',
+                                $from->modify('-' . $baseline . ' days')->format('Y-m-d'), $toDate),
+            'profile'    => $profile,
         ];
     }
 
@@ -384,8 +455,12 @@ if (!function_exists('health_score_now')) {
        SCORING ONE MOMENT
        ================================================================== */
 
-    /** The scores as of $asOf, from records loaded by health_score_data(). */
-    function health_score_at(array $data, DateTimeImmutable $asOf): array
+    /**
+     * The scores as of $asOf, from records loaded by health_score_data().
+     * Without $withRange the uncertainty range is not drawn: for a caller
+     * that only asks whether there is a score.
+     */
+    function health_score_at(array $data, DateTimeImmutable $asOf, bool $withRange = true): array
     {
         $to    = $asOf->getTimestamp();
         $start = health_score_window_start($asOf);
@@ -405,15 +480,37 @@ if (!function_exists('health_score_now')) {
             }
         }
 
-        $today     = $asOf->format('Y-m-d');
-        $sleep     = health_score_validity(health_score_sleep($nights), 'sleep', array_column($nights, 'date'), $today);
-        $nutrition = health_score_validity(health_score_nutrition($ratings), 'nutrition', array_column($ratings, 'date'), $today);
-        $training  = health_score_validity(
-            health_score_training($workouts, $nights, $goals, $to),
-            'training',
-            array_map(static fn ($w) => date('Y-m-d', $w['start']), $workouts),
-            $today
+        $today = $asOf->format('Y-m-d');
+        $days  = static fn (array $byDate, int $first = 0): array => array_filter(
+            $byDate,
+            static fn ($date) => ($ago = health_score_day_gap((string) $date, $today)) >= $first && $ago < health_score_window_days(),
+            ARRAY_FILTER_USE_KEY
         );
+
+        $food     = $days($data['food'] ?? []);
+        $caffeine = array_values(array_filter($data['caffeine'] ?? [], static fn ($c) => isset($food[$c['date']])));
+        $steps    = $days($data['steps'] ?? []);
+        $profile  = ($data['profile'] ?? []) + ['sex' => null, 'age' => null, 'weight_kg' => null, 'energy_target' => null];
+
+        $sleepResult = health_score_sleep($nights, $today, $data['hrv'] ?? []);
+        $nutritionResult = health_score_nutrition($ratings, $today, $food, $caffeine, $nights, $profile);
+
+        $sleep     = health_score_validity($sleepResult, 'sleep', array_column($nights, 'date'), $today);
+        $nutrition = health_score_validity($nutritionResult, 'nutrition', $nutritionResult['dates'] ?? array_column($ratings, 'date'), $today);
+        unset($nutrition['dates']);
+        $training  = health_score_training($workouts, $nights, $goals, $to, $today, $steps, $days($data['resting_hr'] ?? []), $profile);
+        $training  = health_score_validity($training, 'training', $training['dates'], $today);
+        unset($training['dates']);
+
+        /* The uncertainty range and coverage (D5): stored with every
+           score, not shown. */
+        $range = $withRange
+            ? health_score_uncertainty(['sleep' => $sleep, 'nutrition' => $nutrition, 'training' => $training])
+            : array_fill_keys(['sleep', 'nutrition', 'training', 'overall'], ['range' => null, 'coverage' => null]);
+        foreach (['sleep', 'nutrition', 'training'] as $category) {
+            ${$category}['range']    = $range[$category]['range'];
+            ${$category}['coverage'] = $range[$category]['coverage'];
+        }
 
         $until = array_filter([$sleep['valid_until'], $nutrition['valid_until'], $training['valid_until']]);
 
@@ -429,6 +526,8 @@ if (!function_exists('health_score_now')) {
                 ]),
                 /* It holds as long as any category in it does. */
                 'valid_until' => $until === [] ? null : max($until),
+                'range'       => $range['overall']['range'],
+                'coverage'    => $range['overall']['coverage'],
             ],
             'as_of'        => $asOf->format('Y-m-d H:i:s'),
             'window_start' => $start->format('Y-m-d H:i:s'),
@@ -516,174 +615,503 @@ if (!function_exists('health_score_now')) {
 
     /* ------------------------------------------------------------ sleep */
 
-    /**
-     * Sleep: duration 45%, regularity 30%, quality 25%.
-     *
-     *   duration    each night on the duration curve, averaged
-     *   regularity  how much bedtime, wake time and duration vary from night
-     *               to night (standard deviation) on their curves
-     *   quality     each night's measured quality (efficiency, time awake,
-     *               deep and REM sleep) where the device measured it
-     */
-    function health_score_sleep(array $nights): array
+    /** How much a record of $date counts on $today (config `recency`). */
+    function health_score_day_weight(string $date, string $today): float
     {
-        $cfg  = health_scoring_config();
-        $s    = $cfg['sleep'];
-        $days = count($nights);
-        $none = ['duration' => null, 'regularity' => null, 'quality' => null];
+        return health_recency((float) health_score_day_gap($date, $today));
+    }
+
+    /**
+     * Sleep (38.0): eight factors, weighed by config/scoring.php.
+     *
+     *   duration       each night on the LE8 duration curve, averaged
+     *   regularity     how much bedtime and wake time vary (standard
+     *                  deviation), each on its curve, the two averaged
+     *   social_jetlag  the midpoint of sleep on free days against work days
+     *   efficiency, awake, deep, rem
+     *                  each night's measurement where the device took it,
+     *                  once `quality.min_nights` nights have it
+     *   hrv            the window's HRV against the person's own baseline
+     *
+     * Every average counts recent nights more (health_recency()).
+     *
+     * @param array<string,float> $hrv date => ms, the window and the baseline before it
+     */
+    function health_score_sleep(array $nights, ?string $today = null, array $hrv = []): array
+    {
+        $cfg   = health_scoring_config();
+        $s     = $cfg['sleep'];
+        $days  = count($nights);
+        $today ??= date('Y-m-d');
+        $none  = array_fill_keys(array_keys($s['factors']), null);
 
         if ($days < (int) $cfg['min_days']) {
             return health_score_result(null, $days, $none);
         }
 
-        $duration = health_mean(array_map(
+        $weights = array_map(static fn ($n) => health_score_day_weight($n['date'], $today), $nights);
+
+        /* Duration. */
+        $duration = health_weighted_mean(array_map(
             static fn ($n) => health_curve($s['duration_curve'], $n['minutes'] / 60),
             $nights
-        ));
+        ), $weights);
 
-        $bedSd  = health_clock_sd(array_map(static fn ($n) => health_clock_minutes($n['start']), $nights));
-        $wakeSd = health_clock_sd(array_map(static fn ($n) => health_clock_minutes($n['end']), $nights));
-        $durSd  = health_sd(array_map(static fn ($n) => $n['minutes'], $nights));
-
-        $r = $s['regularity'];
+        /* Regularity: bedtime and wake time. */
+        $bedSd  = health_clock_sd(array_map(static fn ($n) => health_clock_minutes($n['start']), $nights), $weights);
+        $wakeSd = health_clock_sd(array_map(static fn ($n) => health_clock_minutes($n['end']), $nights), $weights);
+        $timing = $s['regularity']['timing_curve'];
         $regularityParts = [
-            'bedtime'   => $bedSd === null ? null : health_curve($r['timing_curve'], $bedSd),
-            'wake_time' => $wakeSd === null ? null : health_curve($r['timing_curve'], $wakeSd),
-            'duration'  => $durSd === null ? null : health_curve($r['duration_curve'], $durSd),
+            'bedtime'   => $bedSd === null ? null : health_curve($timing, $bedSd),
+            'wake_time' => $wakeSd === null ? null : health_curve($timing, $wakeSd),
         ];
-        $regularity = health_weighted($regularityParts, $r['weights']);
+        $regularity = health_mean(array_values(array_filter($regularityParts, static fn ($v) => $v !== null)));
 
-        $qualities = array_values(array_filter(
-            array_map('health_night_quality', $nights),
-            static fn ($q) => $q !== null
-        ));
-        $quality = count($qualities) >= (int) $s['quality']['min_nights'] ? health_mean($qualities) : null;
+        /* Social jetlag: free days are the nights into Saturday and Sunday. */
+        $mid = ['free' => [[], []], 'work' => [[], []]];
+        foreach ($nights as $i => $night) {
+            $group = (int) date('N', (int) strtotime($night['date'] . ' 12:00:00')) >= 6 ? 'free' : 'work';
+            $mid[$group][0][] = health_clock_minutes(intdiv($night['start'] + $night['end'], 2));
+            $mid[$group][1][] = $weights[$i];
+        }
+        $jetlag = null;
+        if ($mid['free'][0] !== [] && $mid['work'][0] !== []) {
+            $jetlag = health_clock_distance(
+                (float) health_clock_mean($mid['free'][0], $mid['free'][1]),
+                (float) health_clock_mean($mid['work'][0], $mid['work'][1])
+            ) / 60;
+        }
 
-        $components = ['duration' => $duration, 'regularity' => $regularity, 'quality' => $quality];
-
-        /* What the components were worked out from: each night's length, the
-           three spreads and their scores, and each quality measurement on
-           average over the nights that had it. */
+        /* What the device measured about each night. */
         $measured = array_map('health_night_quality_parts', $nights);
+        $quality  = [];
         $qualityFacts = [];
-        foreach (array_keys($s['quality']['weights']) as $part) {
-            $readings = array_values(array_filter(array_column($measured, $part)));
-            $qualityFacts[$part] = $readings === [] ? null : [
-                'value'  => health_mean(array_column($readings, 'value')),
-                'score'  => health_mean(array_column($readings, 'score')),
-                'nights' => count($readings),
+        foreach (['efficiency', 'awake', 'deep', 'rem'] as $part) {
+            $scores = [];
+            $values = [];
+            $w      = [];
+            foreach ($measured as $i => $parts) {
+                if ($parts[$part] !== null) {
+                    $scores[] = $parts[$part]['score'];
+                    $values[] = $parts[$part]['value'];
+                    $w[]      = $weights[$i];
+                }
+            }
+            $enough = count($scores) >= (int) $s['quality']['min_nights'];
+            $quality[$part] = $enough ? health_weighted_mean($scores, $w) : null;
+            $qualityFacts[$part] = $scores === [] ? null : [
+                'value'  => health_weighted_mean($values, $w),
+                'score'  => health_weighted_mean($scores, $w),
+                'nights' => count($scores),
             ];
         }
 
+        /* HRV against the person's own baseline. */
+        [$hrvScore, $hrvFacts] = health_score_hrv($hrv, $today);
+
+        $components = [
+            'duration'      => $duration,
+            'regularity'    => $regularity,
+            'social_jetlag' => $jetlag === null ? null : health_curve($s['social_jetlag']['curve'], $jetlag),
+            'efficiency'    => $quality['efficiency'],
+            'awake'         => $quality['awake'],
+            'deep'          => $quality['deep'],
+            'rem'           => $quality['rem'],
+            'hrv'           => $hrvScore,
+        ];
+
         $facts = [
             'minutes'        => array_map(static fn ($n) => (float) $n['minutes'], $nights),
+            'average'        => health_weighted_mean(array_map(static fn ($n) => (float) $n['minutes'], $nights), $weights),
             'bedtime_sd'     => $bedSd,
             'wake_sd'        => $wakeSd,
-            'duration_sd'    => $durSd,
             'regularity'     => $regularityParts,
-            'quality_nights' => count($qualities),
+            'social_jetlag'  => $jetlag,
+            'quality_nights' => max(0, ...array_values(array_map(static fn ($q) => $q['nights'] ?? 0, $qualityFacts))),
             'quality'        => $qualityFacts,
+            'hrv'            => $hrvFacts,
         ];
 
         return health_score_result(health_weighted($components, $s['weights']), $days, $components, $facts);
     }
 
+    /**
+     * HRV against the person's own baseline: the z-score of the window's
+     * mean ln(rMSSD) — recent days counting more — against the mean and
+     * spread of the `baseline_days` before the window. Null without
+     * `min_days` days in the window or `min_baseline` before it.
+     *
+     * @param array<string,float> $hrv date => ms
+     * @return array{0: ?float, 1: ?array}
+     */
+    function health_score_hrv(array $hrv, string $today): array
+    {
+        $h      = health_scoring_config()['sleep']['hrv'];
+        $window = health_score_window_days();
+        $now    = [];
+        $nowW   = [];
+        $base   = [];
+
+        foreach ($hrv as $date => $ms) {
+            if ($ms <= 0) {
+                continue;
+            }
+            $ago = health_score_day_gap((string) $date, $today);
+            if ($ago >= 0 && $ago < $window) {
+                $now[]  = log((float) $ms);
+                $nowW[] = health_recency((float) $ago);
+            } elseif ($ago >= $window && $ago < $window + (int) $h['baseline_days']) {
+                $base[] = log((float) $ms);
+            }
+        }
+
+        if (count($now) < (int) $h['min_days'] || count($base) < (int) $h['min_baseline']) {
+            return [null, null];
+        }
+
+        $mean = (float) health_mean($base);
+        $sd   = max((float) $h['min_sd'], (float) health_sd($base));
+        $cur  = (float) health_weighted_mean($now, $nowW);
+        $z    = ($cur - $mean) / $sd;
+
+        return [health_curve($h['curve'], $z), ['z' => $z, 'ms' => exp($cur), 'baseline_ms' => exp($mean)]];
+    }
+
     /* -------------------------------------------------------- nutrition */
 
     /**
-     * Nutrition: the daily self-assessment. Each day is the average of that
-     * day's ratings, scaled onto 0-100 (7 -> 70), and the score is the average
-     * over the days that were rated.
+     * Nutrition (38.0): ten factors, weighed by config/scoring.php.
+     *
+     * What was eaten counts on days whose log reaches `food_day_share` of
+     * the energy target: fibre and sodium per 1,000 kcal, saturated fat,
+     * sugar and fat as a share of energy, protein per kg, energy against
+     * the target — each the recency-weighted average over those days, on
+     * its curve. Water on the days it was recorded; caffeine timing on the
+     * food days, for somebody who records caffeine at all. The daily
+     * rating as before. Without a single food day, the rating is the whole
+     * score.
+     *
+     * @param array<string,array<string,float>> $food date => metric => day total, in the window
      */
-    function health_score_nutrition(array $ratings): array
+    function health_score_nutrition(array $ratings, ?string $today = null, array $food = [], array $caffeine = [],
+                                    array $nights = [], array $profile = []): array
     {
-        $cfg = health_scoring_config();
+        $cfg   = health_scoring_config();
+        $n     = $cfg['nutrition'];
+        $today ??= date('Y-m-d');
+        $none  = array_fill_keys(array_keys($n['factors']), null);
 
         $byDay = [];
         foreach ($ratings as $rating) {
             $byDay[$rating['date']][] = $rating['value'];
         }
 
-        $days = count($byDay);
-
-        if ($days < (int) $cfg['min_days']) {
-            return health_score_result(null, $days, ['rating' => null]);
+        /* The days whose log is complete enough. */
+        $target    = isset($profile['energy_target']) && $profile['energy_target'] > 0 ? (float) $profile['energy_target'] : null;
+        $threshold = $target !== null ? $target * (float) $n['food_day_share'] : (float) $n['food_day_fallback_kcal'];
+        $kcal      = [];
+        foreach ($food as $date => $day) {
+            $energy = $day['energy'] ?? (isset($day['carbs'], $day['protein'], $day['fat'])
+                ? $day['carbs'] * 4 + $day['protein'] * 4 + $day['fat'] * 9
+                : null);
+            if ($energy !== null && $energy >= $threshold && $energy > 0) {
+                $kcal[(string) $date] = (float) $energy;
+            }
         }
 
-        $scale = (float) $cfg['nutrition']['rating_scale'];
-        $daily = array_map(static fn ($values) => health_mean($values) * $scale, $byDay);
-        $mean  = health_mean(array_values($daily));
+        $dates = array_values(array_unique(array_merge(array_map('strval', array_keys($byDay)), array_keys($kcal))));
+        $days  = count($dates);
 
-        /* The average cijfer itself, on its own 1-10 scale. */
-        return health_score_result($mean, $days, ['rating' => $mean], ['rating' => $scale > 0 ? $mean / $scale : null]);
+        if ($days < (int) $cfg['min_days']) {
+            return health_score_result(null, $days, $none) + ['dates' => $dates];
+        }
+
+        $scale = (float) $n['rating_scale'];
+        $rated = [];
+        $ratedW = [];
+        foreach ($byDay as $date => $values) {
+            $rated[]  = health_mean($values) * $scale;
+            $ratedW[] = health_score_day_weight((string) $date, $today);
+        }
+        $rating = $rated === [] ? null : health_weighted_mean($rated, $ratedW);
+
+        $components = $none;
+        $components['rating'] = $rating;
+        $facts = ['rating' => $rating === null || $scale <= 0 ? null : $rating / $scale, 'food_days' => count($kcal)];
+
+        if ($kcal !== []) {
+            /* A food-day average of one value per day, where the day has it. */
+            $average = static function (callable $value) use ($kcal, $food, $today): ?float {
+                $values = [];
+                $w      = [];
+                foreach ($kcal as $date => $energy) {
+                    $v = $value($food[$date], $energy);
+                    if ($v !== null) {
+                        $values[] = $v;
+                        $w[]      = health_score_day_weight($date, $today);
+                    }
+                }
+                return $values === [] ? null : health_weighted_mean($values, $w);
+            };
+
+            $values = [
+                'fibre'         => $average(static fn ($d, $e) => isset($d['fibre']) ? $d['fibre'] / ($e / 1000) : null),
+                'sodium'        => $average(static fn ($d, $e) => isset($d['sodium']) ? $d['sodium'] / 1000 / ($e / 1000) : null),
+                'saturated_fat' => $average(static fn ($d, $e) => isset($d['saturated_fat']) ? $d['saturated_fat'] * 9 / $e * 100 : null),
+                'sugar'         => $average(static fn ($d, $e) => isset($d['sugar']) ? $d['sugar'] * 4 / $e * 100 : null),
+                'fat_share'     => $average(static fn ($d, $e) => isset($d['fat']) ? $d['fat'] * 9 / $e * 100 : null),
+                'protein'       => !empty($profile['weight_kg'])
+                    ? $average(static fn ($d, $e) => isset($d['protein']) ? $d['protein'] / (float) $profile['weight_kg'] : null)
+                    : null,
+                'energy'        => $target !== null ? $average(static fn ($d, $e) => abs($e - $target) / $target) : null,
+            ];
+
+            foreach ($values as $key => $value) {
+                $components[$key] = $value === null ? null : health_curve($n[$key . '_curve'], $value);
+            }
+
+            /* Water: litres a day, on the days it was recorded, against the
+               person's norm. */
+            $norm  = (float) ($n['water_norm_l'][$profile['sex'] ?? 'unknown'] ?? $n['water_norm_l']['unknown']);
+            $water = [];
+            $waterW = [];
+            foreach ($food as $date => $day) {
+                if (($day['water'] ?? 0) > 0) {
+                    $water[]  = $day['water'] / $norm;
+                    $waterW[] = health_score_day_weight((string) $date, $today);
+                }
+            }
+            $waterShare = $water === [] ? null : health_weighted_mean($water, $waterW);
+            $components['water'] = $waterShare === null ? null : health_curve($n['water_curve'], $waterShare);
+            $values['water']     = $waterShare === null ? null : $waterShare * $norm;
+
+            /* Caffeine: hours from the day's last caffeine to the usual
+               bedtime. A food day without any is a day without caffeine —
+               for somebody who records it at all. */
+            $bedtime = $nights === [] ? null : health_clock_mean(
+                array_map(static fn ($night) => health_clock_minutes($night['start']), $nights),
+                array_map(static fn ($night) => health_score_day_weight($night['date'], $today), $nights)
+            );
+            $hours = null;
+            if ($caffeine !== [] && $bedtime !== null) {
+                $last = [];
+                foreach ($caffeine as $c) {
+                    $last[$c['date']] = max($last[$c['date']] ?? 0, $c['at']);
+                }
+                $scores = [];
+                $gaps   = [];
+                $w      = [];
+                foreach (array_keys($kcal) as $date) {
+                    /* The usual bedtime that evening: after midnight is the next day. */
+                    $bed = (int) strtotime($date . ' 00:00:00') + (int) round(60 * $bedtime) + ($bedtime < 720 ? 86400 : 0);
+                    $gap = isset($last[$date]) ? max(0.0, ($bed - $last[$date]) / 3600) : null;
+                    $scores[] = $gap === null ? 100.0 : health_curve($n['caffeine_curve'], $gap);
+                    if ($gap !== null) {
+                        $gaps[] = $gap;
+                    }
+                    $w[] = health_score_day_weight($date, $today);
+                }
+                $components['caffeine'] = health_weighted_mean($scores, $w);
+                $hours = $gaps === [] ? null : health_mean($gaps);
+            }
+            $values['caffeine'] = $hours;
+
+            $facts['values'] = $values;
+        }
+
+        return health_score_result(health_weighted($components, $n['weights']), $days, $components, $facts) + ['dates' => $dates];
     }
 
     /* --------------------------------------------------------- training */
 
-    /**
-     * Training: volume 20%, intensity 20%, progression 25%, balance 35%.
-     *
-     * Weeks are counted from the first workout in the window, so somebody who
-     * started tracking three weeks ago is measured over three weeks, not
-     * thirteen.
-     */
-    function health_score_training(array $workouts, array $nights, array $goals, int $to): array
+    /** Whether a workout is strength training (config `strength_types`). */
+    function health_score_is_strength(array $workout): bool
     {
-        $cfg   = health_scoring_config();
-        $t     = $cfg['training'];
-        $dates = [];
+        return in_array($workout['type'] ?? '', (array) health_scoring_config()['training']['strength_types'], true);
+    }
 
+    /**
+     * Training (38.0): eight factors, weighed by config/scoring.php.
+     *
+     *   steps        steps a day on completed days, recent days counting
+     *                more, on Paluch's curve (from 60 its own)
+     *   aerobic      aerobic minutes per week, vigorous counting double
+     *   strength     strength minutes per week
+     *   intensity    the share of aerobic minutes that were vigorous
+     *   active_days  days with 20 aerobic minutes or 7,000 steps, per week
+     *   resting_hr   the average resting heart rate
+     *   recovery     the share of heavy days followed by a rest or easy day
+     *   progression  their own results, recent against earlier
+     *
+     * Per week is the window's recency-weighted total, scaled so an even
+     * week counts exactly its own total. Without a workout in the window
+     * the workout factors are not measured — left out, not zero.
+     *
+     * @param array<string,float> $steps     date => steps, in the window
+     * @param array<string,float> $restingHr date => bpm, in the window
+     */
+    function health_score_training(array $workouts, array $nights, array $goals, int $to, ?string $today = null,
+                                   array $steps = [], array $restingHr = [], array $profile = []): array
+    {
+        $cfg    = health_scoring_config();
+        $t      = $cfg['training'];
+        $today ??= date('Y-m-d', $to);
+        $none   = array_fill_keys(array_keys($t['factors']), null);
+        $window = health_score_window_days();
+
+        /* Steps count on completed days; today is still going. */
+        $complete = array_filter($steps, static fn ($date) => (string) $date < $today, ARRAY_FILTER_USE_KEY);
+
+        $workoutDays = [];
         foreach ($workouts as $workout) {
-            $dates[date('Y-m-d', $workout['start'])] = true;
+            $workoutDays[date('Y-m-d', $workout['start'])] = true;
         }
-
+        $dates = array_values(array_unique(array_merge(array_keys($workoutDays), array_map('strval', array_keys($complete)))));
+        sort($dates);
         $days = count($dates);
-        $none = ['volume' => null, 'intensity' => null, 'progression' => null, 'balance' => null];
 
         if ($days < (int) $cfg['min_days']) {
-            return health_score_result(null, $days, $none);
+            return health_score_result(null, $days, $none) + ['dates' => $dates];
         }
 
-        $first = min(array_column($workouts, 'start'));
-        $weeks = max(7.0, ($to - $first) / 86400) / 7;
-
-        /* Volume: minutes a week, with diminishing returns. */
-        $minutes = array_sum(array_column($workouts, 'minutes'));
-        $volume  = health_curve($t['volume_curve'], $minutes / $weeks);
-
-        /* Intensity: the share of hard sessions among those measured. */
-        $known = array_values(array_filter($workouts, static fn ($w) => $w['effort']['class'] !== null));
-        $intensity = null;
-        $hard = null;
-
-        if (count($known) >= (int) $t['intensity']['min_workouts']) {
-            $hard = count(array_filter($known, static fn ($w) => $w['effort']['class'] === 'hard'));
-            $intensity = health_curve($t['intensity']['hard_share_curve'], $hard / count($known));
+        $weightOf = static fn (string $date): float => health_score_day_weight($date, $today);
+        /* An even week: every one of the window's days at its weight. */
+        $evenWeek = 0.0;
+        for ($ago = 0; $ago < $window; $ago++) {
+            $evenWeek += health_recency((float) $ago);
         }
+        $perWeek = static fn (float $weighted): float => $evenWeek > 0 ? $weighted / $evenWeek * 7 : 0.0;
 
+        /* Steps. */
+        $stepsMean = $complete === [] ? null : health_weighted_mean(
+            array_values($complete),
+            array_map($weightOf, array_map('strval', array_keys($complete)))
+        );
+        $older     = ($profile['age'] ?? null) !== null && (int) $profile['age'] >= (int) $t['older_from_age'];
+        $stepScore = $stepsMean === null ? null : health_curve($older ? $t['steps_curve_older'] : $t['steps_curve'], $stepsMean);
+
+        /* Workouts: aerobic and strength minutes, intensity, recovery. */
+        $aerobic = $strength = $intensity = $recovery = $progression = null;
+        $aerobicWeek = $strengthWeek = $vigorousShare = null;
+        $known = 0;
+        $recoveryFacts = null;
         $progressionFacts = [];
-        $balanceFacts     = [];
-        $progression = health_score_progression($workouts, $goals, $progressionFacts);
-        $balance     = health_score_balance($workouts, $nights, array_keys($dates), $first, $to, $weeks, $balanceFacts);
+        $dayMinutes = [];
+
+        if ($workouts !== []) {
+            $aerobicSum = $strengthSum = $vigorous = $classified = 0.0;
+
+            foreach ($workouts as $workout) {
+                $date    = date('Y-m-d', $workout['start']);
+                $w       = $weightOf($date);
+                $minutes = (float) ($workout['minutes'] ?? 0);
+
+                if (health_score_is_strength($workout)) {
+                    $strengthSum += $w * $minutes;
+                    continue;
+                }
+
+                $hard = ($workout['effort']['class'] ?? null) === 'hard';
+                $aerobicSum += $w * $minutes * ($hard ? 2 : 1);
+                $dayMinutes[$date] = ($dayMinutes[$date] ?? 0) + $minutes;
+
+                if (($workout['effort']['class'] ?? null) !== null) {
+                    $known++;
+                    $classified += $w * $minutes;
+                    $vigorous   += $hard ? $w * $minutes : 0;
+                }
+            }
+
+            $aerobicWeek  = $perWeek($aerobicSum);
+            $strengthWeek = $perWeek($strengthSum);
+            $aerobic      = health_curve($t['aerobic_curve'], $aerobicWeek);
+            $strength     = health_curve($t['strength_curve'], $strengthWeek);
+
+            if ($known >= (int) $t['intensity']['min_workouts'] && $classified > 0) {
+                $vigorousShare = $vigorous / $classified;
+                $intensity     = health_curve($t['intensity_curve'], $vigorousShare);
+            }
+
+            /* Recovery: a heavy day is judged once the day after it is
+               over — or sooner, when today is already heavy too. */
+            $heavy = [];
+            foreach ($workouts as $workout) {
+                if ($workout['heavy']) {
+                    $heavy[date('Y-m-d', $workout['start'])] = true;
+                }
+            }
+            $judged = $ok = 0.0;
+            $count  = $okCount = 0;
+            foreach (array_keys($heavy) as $date) {
+                $next = health_score_add_days((string) $date, 1);
+                if ($next >= $today && !isset($heavy[$today])) {
+                    continue;
+                }
+                if ($next > $today) {
+                    continue;
+                }
+                $w = $weightOf((string) $date);
+                $judged += $w;
+                $count++;
+                if (!isset($heavy[$next])) {
+                    $ok += $w;
+                    $okCount++;
+                }
+            }
+            if ($count >= (int) $t['recovery_min'] && $judged > 0) {
+                $recovery      = health_curve($t['recovery_curve'], $ok / $judged);
+                $recoveryFacts = ['value' => $okCount, 'of' => $count];
+            }
+
+            $progression = health_score_progression($workouts, $goals, $progressionFacts);
+        }
+
+        /* Active days: 20 aerobic minutes or 7,000 steps. */
+        $active = 0.0;
+        $activeCount = 0;
+        for ($ago = 0; $ago < $window; $ago++) {
+            $date = health_score_add_days($today, -$ago);
+            if (($dayMinutes[$date] ?? 0) >= (float) $t['active_day_minutes']
+                || ($steps[$date] ?? 0) >= (float) $t['active_day_steps']) {
+                $active += health_recency((float) $ago);
+                $activeCount++;
+            }
+        }
+        $activeWeek = $perWeek($active);
+
+        /* Resting heart rate. */
+        $rhr = $restingHr === [] ? null : health_weighted_mean(
+            array_values($restingHr),
+            array_map($weightOf, array_map('strval', array_keys($restingHr)))
+        );
 
         $components = [
-            'volume'      => $volume,
+            'steps'       => $stepScore,
+            'aerobic'     => $aerobic,
+            'strength'    => $strength,
             'intensity'   => $intensity,
+            'active_days' => health_curve($t['active_days_curve'], $activeWeek),
+            'resting_hr'  => $rhr === null ? null : health_curve($t['resting_hr_curve'], $rhr),
+            'recovery'    => $recovery,
             'progression' => $progression,
-            'balance'     => $balance,
         ];
 
-        /* What the components were worked out from. */
         $facts = [
-            'workouts'         => count($workouts),
-            'minutes_per_week' => $minutes / $weeks,
-            'known'            => count($known),
-            'hard'             => $hard,
-            'progression'      => $progressionFacts,
-            'balance'          => $balanceFacts,
+            'workouts'          => count($workouts),
+            'training_days'     => count($workoutDays),
+            'steps'             => $stepsMean,
+            'aerobic_per_week'  => $aerobicWeek,
+            'strength_per_week' => $strengthWeek,
+            'vigorous_share'    => $vigorousShare,
+            'known'             => $known,
+            'active_days'       => $activeWeek,
+            'active_count'      => $activeCount,
+            'resting_hr'        => $rhr,
+            'recovery'          => $recoveryFacts,
+            'progression'       => $progressionFacts,
         ];
 
-        return health_score_result(health_weighted($components, $t['weights']), $days, $components, $facts);
+        return health_score_result(health_weighted($components, $t['weights']), $days, $components, $facts) + ['dates' => $dates];
     }
 
     /**
@@ -755,122 +1183,126 @@ if (!function_exists('health_score_now')) {
         return health_curve($p['change_curve'], health_mean($changes));
     }
 
+    /* ------------------------------------------------------ uncertainty */
+
     /**
-     * Training and recovery in balance: how often, how many days in a row,
-     * whether the load jumps, whether hard days come back to back, and how
-     * the nights after training went. Each part only where there is data for
-     * it; frequency and rest always are.
+     * How sure each score is (38.0, D5) — stored with it, not shown.
      *
-     * $facts, when given, receives each part as the score used it: what
-     * was measured, and its score — null for a part without the data.
+     *   range     the 5th to 95th percentile of the score when the method
+     *             itself is varied: every factor's evidence and measurement
+     *             grade moves one step down or up with a chance of 1/3 each,
+     *             and every overlap is scaled by a factor between 0.4 and
+     *             1.3, `draws` times over (config `uncertainty`). The
+     *             overall range varies the three categories together.
+     *   coverage  the share of the category's weight whose factors had
+     *             data (0-1); overall, the three categories' average, a
+     *             category without a score counting as 0.
      *
-     * @param string[] $dates training days, any order
+     * The draws come from a fixed seed, so the same factors always give
+     * the same range and a stored row only changes when the data does.
+     *
+     * @param array<string,array> $results category => result
+     * @return array<string,array{range: ?array{0: float, 1: float}, coverage: float}>
      */
-    function health_score_balance(array $workouts, array $nights, array $dates, int $first, int $to, float $weeks, ?array &$facts = null): ?float
+    function health_score_uncertainty(array $results): array
     {
-        $b = health_scoring_config()['training']['balance'];
-        $s = health_scoring_config()['sleep'];
+        static $memo = [];
 
-        $dayNumber = static fn (string $date): int => intdiv((int) strtotime($date . ' 12:00:00'), 86400);
-        $numbers   = array_map($dayNumber, $dates);
-        sort($numbers);
+        $cfg = health_scoring_config();
+        $u   = $cfg['uncertainty'];
+        $out = [];
+        $components = [];
 
-        /* Frequency: training days a week. */
-        $frequency = health_curve($b['frequency_curve'], count($numbers) / $weeks);
+        foreach (['sleep', 'nutrition', 'training'] as $category) {
+            $result = $results[$category] ?? null;
+            $parts  = ($result !== null && $result['score'] !== null) ? array_filter(
+                (array) $result['components'],
+                static fn ($v) => $v !== null
+            ) : [];
 
-        /* Rest: the longest run of training days without a rest day. */
-        $longest = 1;
-        $run     = 1;
-        for ($i = 1; $i < count($numbers); $i++) {
-            $run = $numbers[$i] === $numbers[$i - 1] + 1 ? $run + 1 : 1;
-            $longest = max($longest, $run);
-        }
-        $rest = health_curve($b['streak_curve'], $longest);
-
-        /* Load spikes: 7-day blocks back from now, each against the four
-           before it — only where all four lie after the first workout, so
-           the weeks before somebody started tracking are not read as rest. */
-        $week   = 7 * 86400;
-        $blocks = intdiv((int) health_scoring_config()['window_hours'], 168);
-        $loads  = array_fill(0, $blocks, 0.0);
-
-        foreach ($workouts as $workout) {
-            $k = intdiv($to - $workout['start'], $week);
-            if ($k >= 0 && $k < $blocks) {
-                $loads[$k] += $workout['minutes'];
-            }
-        }
-
-        $firstDay  = (int) strtotime(date('Y-m-d', $first) . ' 00:00:00');
-        $evaluated = 0;
-        $spikes    = 0;
-
-        for ($k = 0; $k + 4 < $blocks; $k++) {
-            if ($to - ($k + 5) * $week < $firstDay) {
-                break;
+            $weights  = (array) $cfg[$category]['weights'];
+            $coverage = 0.0;
+            foreach ($parts as $key => $value) {
+                $coverage += (float) ($weights[$key] ?? 0);
             }
 
-            $before = ($loads[$k + 1] + $loads[$k + 2] + $loads[$k + 3] + $loads[$k + 4]) / 4;
-
-            if ($before > 0) {
-                $evaluated++;
-                if ($loads[$k] > $b['spike_ratio'] * $before) {
-                    $spikes++;
-                }
+            if ($parts !== []) {
+                $components[$category] = $parts;
             }
+            $out[$category] = ['range' => null, 'coverage' => round($coverage, 3)];
         }
 
-        $spikeScore = $evaluated >= (int) $b['spike_min_weeks'] ? health_curve($b['spike_curve'], $spikes / $evaluated) : null;
-
-        /* Heavy days back to back. */
-        $heavy = [];
-        foreach ($workouts as $workout) {
-            if ($workout['heavy']) {
-                $heavy[$dayNumber(date('Y-m-d', $workout['start']))] = true;
-            }
-        }
-
-        $hardDays = null;
-        if (count($heavy) >= (int) $b['hard_days_min']) {
-            $following = 0;
-            foreach (array_keys($heavy) as $day) {
-                if (isset($heavy[$day - 1])) {
-                    $following++;
-                }
-            }
-            $hardDays = health_curve($b['hard_days_curve'], $following / count($heavy));
-        }
-
-        /* The nights after training days: a night is filed under the morning
-           it ends, so the night after a workout on day D is night D + 1. */
-        $trained = array_flip($numbers);
-        $after   = [];
-        $afterMinutes = [];
-
-        foreach ($nights as $night) {
-            if (isset($trained[$dayNumber($night['date']) - 1])) {
-                $after[] = health_curve($s['duration_curve'], $night['minutes'] / 60);
-                $afterMinutes[] = (float) $night['minutes'];
-            }
-        }
-
-        $sleep = count($after) >= (int) $b['sleep_min_nights'] ? health_mean($after) : null;
-
-        $facts = [
-            'frequency' => ['value' => count($numbers) / $weeks, 'score' => $frequency],
-            'rest'      => ['value' => $longest, 'score' => $rest],
-            'spikes'    => $spikeScore === null ? null : ['value' => $spikes, 'of' => $evaluated, 'score' => $spikeScore],
-            'hard_days' => $hardDays === null ? null : ['value' => $following, 'of' => count($heavy), 'score' => $hardDays],
-            'sleep'     => $sleep === null ? null : ['value' => health_mean($afterMinutes), 'of' => count($after), 'score' => $sleep],
+        $out['overall'] = [
+            'range'    => null,
+            'coverage' => round((($out['sleep']['coverage'] + $out['nutrition']['coverage'] + $out['training']['coverage']) / 3), 3),
         ];
 
-        return health_weighted([
-            'frequency' => $frequency,
-            'rest'      => $rest,
-            'spikes'    => $spikeScore,
-            'hard_days' => $hardDays,
-            'sleep'     => $sleep,
-        ], $b['weights']);
+        if ($components === []) {
+            return $out;
+        }
+
+        $key = md5(json_encode($components));
+        if (isset($memo[$key])) {
+            return array_replace_recursive($out, $memo[$key]);
+        }
+
+        $steps = [0.25, 0.5, 1.0];
+        $state = (int) $u['seed'];
+        /* A small generator of its own (a 32-bit LCG), so nothing else's
+           random numbers are touched. */
+        $random = static function () use (&$state): float {
+            $state = ($state * 1664525 + 1013904223) & 0xFFFFFFFF;
+            return $state / 4294967296;
+        };
+        $jitter = static function (float $grade) use ($steps, $random, $u): float {
+            $i = array_search($grade, $steps, true);
+            if ($i === false) {
+                return $grade;
+            }
+            $r = $random();
+            if ($r < (float) $u['step_chance'] && $i > 0) {
+                return $steps[$i - 1];
+            }
+            if ($r > 1 - (float) $u['step_chance'] && $i < 2) {
+                return $steps[$i + 1];
+            }
+            return $grade;
+        };
+
+        [$lo, $hi] = $u['overlap'];
+        $draws = [];
+        for ($d = 0; $d < (int) $u['draws']; $d++) {
+            $sum = 0.0;
+            foreach ($components as $category => $parts) {
+                $grades = [];
+                foreach ($cfg[$category]['factors'] as $factor => $grade) {
+                    $grades[$factor] = [
+                        'evidence'    => $jitter((float) $grade['evidence']),
+                        'measurement' => $jitter((float) $grade['measurement']),
+                    ];
+                }
+                $scale = $lo + ($hi - $lo) * $random();
+                $score = (float) health_weighted($parts, health_score_weights($category, $grades, $scale));
+                $draws[$category][] = $score;
+                $sum += $score;
+            }
+            $draws['overall'][] = $sum / count($components);
+        }
+
+        $found = [];
+        [$pLo, $pHi] = $u['percentiles'];
+        foreach ($draws as $category => $scores) {
+            sort($scores);
+            $n = count($scores);
+            $found[$category]['range'] = [
+                round($scores[(int) floor($pLo / 100 * $n)], 1),
+                round($scores[min($n - 1, (int) floor($pHi / 100 * $n))], 1),
+            ];
+        }
+
+        $memo[$key] = $found;
+
+        return array_replace_recursive($out, $found);
     }
 
     /* ==================================================================
@@ -903,7 +1335,8 @@ if (!function_exists('health_score_now')) {
             'nutrition' => $scores['nutrition'],
             'training'  => $scores['training'],
             'overall'   => ['score' => $scores['overall']['score'], 'days' => null, 'components' => [],
-                            'valid_until' => $scores['overall']['valid_until'] ?? null],
+                            'valid_until' => $scores['overall']['valid_until'] ?? null,
+                            'range' => $scores['overall']['range'] ?? null, 'coverage' => $scores['overall']['coverage'] ?? null],
         ];
 
         $stored = [];
@@ -917,7 +1350,14 @@ if (!function_exists('health_score_now')) {
 
         try {
             foreach ($rows as $domain => $result) {
-                $inputs = $result['components'] === [] ? null : json_encode($result['components']);
+                /* The components, and since 38.0 the range and coverage
+                   (D5) beside them. */
+                $inputs = $result['components'] === [] && ($result['range'] ?? null) === null ? null : json_encode(
+                    $domain === 'overall'
+                        ? ['range' => $result['range'] ?? null, 'coverage' => $result['coverage'] ?? null]
+                        : ['components' => $result['components'], 'range' => $result['range'] ?? null,
+                           'coverage' => $result['coverage'] ?? null]
+                );
                 $holds  = $result['valid_until'] ?? null;
                 $old    = $stored[$domain] ?? null;
 

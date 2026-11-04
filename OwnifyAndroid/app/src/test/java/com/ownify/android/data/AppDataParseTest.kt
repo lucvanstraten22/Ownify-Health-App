@@ -355,13 +355,6 @@ class AppDataParseTest {
         assertEquals(listOf(73, 69, 69, 70), c.comparison.rows.map { it.value })
         assertEquals("Over de afgelopen 7 dagen", c.comparison.rows.first().note)
         assertEquals("−1 ten opzichte van de 30 dagen daarvoor", c.comparison.delta)
-
-        // 4 — the biggest opportunity.
-        val o = c.opportunity
-        assertTrue(o.filled)
-        assertEquals("Dagcijfer voor voeding", o.name)
-        assertEquals("nutrition", o.accent)
-        assertEquals("Je gemiddelde dagcijfer voor voeding is 7,3, over 3 dagen.", o.fact)
     }
 
     @Test
@@ -406,8 +399,6 @@ class AppDataParseTest {
         assertTrue(c.trend.days.isEmpty())
         assertTrue(c.comparison.rows.all { it.value == null && it.note == "Nog niet genoeg gegevens" })
         assertNull(c.comparison.delta)
-        assertFalse(c.opportunity.filled)
-        assertEquals("Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.", c.opportunity.empty)
         // What the score will be made of, before there is one: the weights it will have.
         assertEquals(listOf(45, 30, 25), c.composition.categories.first().parts.map { it.weight })
         assertTrue(c.composition.categories.flatMap { it.parts }.all { it.value == null })
@@ -419,7 +410,6 @@ class AppDataParseTest {
 
         assertFalse(data.compass.available)
         assertNull(data.compass.direction)
-        assertFalse(data.compass.opportunity.filled)
     }
 
     @Test

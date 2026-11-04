@@ -170,6 +170,30 @@ written with (`user_insights.claim_id`).
 A claim with an age bound is used only when the person's age is known and
 inside it. Without a birth date, a rule whose claim is age-bound says nothing.
 
+### Voor wie (38.0)
+
+Research is shown only to a person who belongs to the population it holds
+for — on Overzicht, on every page, in the Inzichten and in the details, and
+in the goal suggestions — so no page needs to explain "Voor wie".
+`research_eligible()` checks the claim's own age bounds and every criterion
+`config/research-eligibility.php` gives it: the ages the source studied
+where narrower, one sex, a training status, a health characteristic. Only
+criteria the source actually sets count — in its scope ("for healthy
+individuals not suffering from a sleep disorder"), as an exclusion ("not
+with severe kidney disease") or as the inclusion criterion its title names
+("in healthy participants") — not a description of who happened to be in the
+study, and never for a study about a measurement or a method.
+
+What Ownify knows is what the person told it: the age from the birth date,
+the sex from Geslacht (man or vrouw), the training status from
+Activiteitsniveau. It records no health conditions. A criterion it cannot
+establish is not met, so that claim is not shown — nothing is guessed. Where
+another approved claim says the same for the person (CDC's 7–8 hours from
+65 for NSF's; the Dutch protein norm for PROT-AGE's), that one is shown.
+
+The table lives outside the reviewed registry: changing it needs no new
+claim version. `tools/research-eligibility-test.php` checks it.
+
 **Not placed.** `nutrition.energy_estimate` (NUT-04) belongs beside
 Voeding's energy target, which shows on the Energie chart's own page — a
 page over Voeding. A research detail opens one level over the page that
@@ -202,7 +226,7 @@ Below Beperkt onderbouwd there is no insight at all.
 ## "Uit onderzoek blijkt"
 
 The evidence beside an insight or a reference value is "Bekijk onderzoek" as
-the goal wizard's glass chip (`.glass--chip`; Android `GlassChip`). It opens
+the text link (38.0, `.text-link`; Android `TextLink`). It opens
 the claim's detail, titled "Uit onderzoek blijkt" — the one place the label
 (Zeer betrouwbaar, …) is shown, since 29.1 — over whatever page showed
 it (`data-detail-parent="*"`; Android `Detail.Research(id, over)`), one
@@ -210,21 +234,28 @@ level deep; back returns there.
 
 The detail (`pages/research-detail.php`, Android `ResearchDetailPage`) is
 built from Instellingen' own pieces — page intro, eyebrows, the settings
-card's rows, notes, `.btn` — so it is no new kind of page:
+card's rows, notes, `.btn`, the text link — so it is no new kind of page.
+Since 38.0, short and in this order:
 
 1. **Uit onderzoek blijkt** and the claim as Ownify uses it
-2. **Bewijskracht** — the label as a status (the same chip, never pressed),
-   what it means, why it is lower here when it is, and that it is no chance
-   or percentage
-3. **Wat het onderzoek vond** — the source's findings
-4. **Voor wie** — the population
-5. **Beperkingen**
-6. **Bron** — the title as published (marked with its own language for screen
-   readers, `lang`; with "De publicatie is in het Engels/Nederlands." when that
-   is not the app's), authors or organisation and year, citation, kind of
-   research, when it was last checked; then **Lees de pdf** / **Download de
-   pdf** / **Bekijk de publicatie**, what the PDF is (its licence), and the
-   offline line.
+2. **Samenvatting onderzoek** — the source's findings as points, one per
+   sentence (`research_points()`): the approved words, split, nothing
+   rephrased or left out
+3. **Bron** — the title as published (marked with its own language for
+   screen readers, `lang`; with "De publicatie is in het Engels/Nederlands."
+   when that is not the app's), authors or organisation and year, citation;
+   beside it **Beperkingen**, a text link that opens the limitations in
+   place as points (the way Voeding opens a macronutrient's row: 280 ms, the
+   chevron turned, `aria-expanded`); the kind of research and when it was
+   last checked; then **Lees de pdf** / **Download de pdf** where there is
+   one, **Bekijk de publicatie** as a text link, what the PDF is (its
+   licence), and the offline line
+4. **Bewijskracht**, last — the label as a status (the same chip, never
+   pressed), what it means, why it is lower here when it is, and that it is
+   no chance or percentage
+
+There is no "Voor wie": research is only shown to the people it holds for
+(Claims › Voor wie).
 
 A detail's id is the claim version and the steps its label stands lower,
 `c12-1`: digits, so it is never read as a word in either language.

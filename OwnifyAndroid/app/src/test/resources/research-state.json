@@ -208,10 +208,9 @@
  "research": {
   "copy": {
    "title": "Uit onderzoek blijkt",
-   "found": "Wat het onderzoek vond",
+   "found": "Samenvatting onderzoek",
    "claim": "Wat Ownify ermee zegt",
    "evidence": "Bewijskracht",
-   "population": "Voor wie",
    "limitations": "Beperkingen",
    "source": "Bron",
    "kind_label": "Soort onderzoek",
@@ -242,7 +241,6 @@
     "version": 1,
     "retired": false,
     "statement": "Volwassenen van 18 tot 60 jaar: regelmatig minstens 7 uur slaap per nacht. Korter slapen hangt samen met meer gezondheidsrisico's.",
-    "population": "Gezonde volwassenen van 18 tot 60 jaar.",
     "limitations": [
      "Gebaseerd op verbanden, niet op bewezen oorzaken.",
      "Gaat alleen over duur, niet over kwaliteit of tijdstip.",
@@ -270,7 +268,12 @@
      "href": "https://doi.org/10.5665/sleep.4716",
      "doi": "10.5665/sleep.4716",
      "pmid": "26039963",
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Volwassenen horen regelmatig 7 uur of meer per nacht te slapen.",
+      "Regelmatig korter dan 7 uur slapen hangt samen met onder meer gewichtstoename, diabetes, hoge bloeddruk, hart- en vaatziekten, depressie en een hoger sterfterisico.",
+      "Meer dan 9 uur kan passend zijn voor jonge volwassenen, bij het inhalen van slaaptekort of bij ziekte; voor anderen is onzeker of dat een risico geeft."
+     ]
     },
     "pdf": {
      "mode": "link",
@@ -287,7 +290,6 @@
     "version": 1,
     "retired": false,
     "statement": "Verzadigd vet: zo laag mogelijk, met 10% van je energie als tussenstap.",
-    "population": "Iedereen.",
     "limitations": [
      "Ownify ziet wat je logt, niet alles wat je eet."
     ],
@@ -313,7 +315,13 @@
      "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+      "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+      "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+      "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+     ]
     },
     "pdf": {
      "mode": "official_pdf",
@@ -330,7 +338,6 @@
     "version": 1,
     "retired": false,
     "statement": "Minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, en minstens twee keer per week spier- en botversterkende activiteiten.",
-    "population": "Volwassenen en ouderen (ouderen ook balansoefeningen).",
     "limitations": [
      "Alle beweging telt mee, ook wandelen en fietsen.",
      "Ownify ziet alleen de trainingen die je vastlegt."
@@ -357,7 +364,12 @@
      "href": "https://www.gezondheidsraad.nl/documenten/adviezen/2017/08/22/beweegrichtlijnen-2017",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Bewegen is goed, meer bewegen is beter.",
+      "Volwassenen en ouderen: minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, minstens twee keer per week spier- en botversterkende activiteiten (ouderen met balansoefeningen) en voorkom veel stilzitten.",
+      "Kinderen van 4 tot 18 jaar: elke dag minstens een uur matig intensief bewegen en minstens drie keer per week spier- en botversterkende activiteiten."
+     ]
     },
     "pdf": {
      "mode": "official_pdf",
@@ -374,7 +386,6 @@
     "version": 1,
     "retired": false,
     "statement": "De WHO noemt bij volwassenen een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas.",
-    "population": "Volwassenen vanaf 18 jaar.",
     "limitations": [
      "BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.",
      "Een indeling voor groepen, geen oordeel over één persoon."
@@ -401,7 +412,12 @@
      "href": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Bij volwassenen (18+) noemt de WHO een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas.",
+      "Voor 5–19 jaar gelden groeicurves.",
+      "Ook buikomvang kan worden gebruikt."
+     ]
     },
     "pdf": {
      "mode": "link",
@@ -418,7 +434,6 @@
     "version": 1,
     "retired": false,
     "statement": "Totaal vet: 20–40% van je energie. De kwaliteit van wat je eet telt meer dan de hoeveelheid vet.",
-    "population": "Iedereen vanaf 4 jaar.",
     "limitations": [
      "Ownify ziet wat je logt, niet alles wat je eet."
     ],
@@ -444,7 +459,13 @@
      "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+      "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+      "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+      "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+     ]
     },
     "pdf": {
      "mode": "official_pdf",
@@ -461,7 +482,6 @@
     "version": 1,
     "retired": false,
     "statement": "Koolhydraten hebben geen percentagenorm: het gaat om de bron, vooral volkoren, groente, fruit, peulvruchten en zuivel.",
-    "population": "Iedereen.",
     "limitations": [
      "Ownify ziet niet uit welke producten je koolhydraten komen."
     ],
@@ -487,7 +507,13 @@
      "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+      "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+      "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+      "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+     ]
     },
     "pdf": {
      "mode": "official_pdf",
@@ -504,7 +530,6 @@
     "version": 1,
     "retired": false,
     "statement": "Gezond eten is meer plantaardig en minder dierlijk: veel groente, fruit, volkoren, peulvruchten en noten, en weinig rood en bewerkt vlees en suikerhoudende dranken.",
-    "population": "De algemene bevolking.",
     "limitations": [
      "Deels bijgewerkt: in 2025 kwam een nieuw advies over eiwitbronnen; groente, fruit en granen volgen.",
      "Ownify ziet niet welke producten je eet."
@@ -531,7 +556,11 @@
      "href": "https://www.gezondheidsraad.nl/documenten/adviezen/2015/11/04/richtlijnen-goede-voeding-2015",
      "doi": null,
      "pmid": null,
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Eet meer plantaardig en minder dierlijk: dagelijks minstens 200 gram groente en 200 gram fruit, minstens 90 gram volkoren, wekelijks peulvruchten, 15 gram ongezouten noten, enkele porties zuivel en wekelijks vis.",
+      "Beperk rood en vooral bewerkt vlees, drink zo min mogelijk suikerhoudende dranken, geen of hooguit één glas alcohol per dag, en maximaal 6 gram zout per dag."
+     ]
     },
     "pdf": {
      "mode": "official_pdf",
@@ -548,7 +577,6 @@
     "version": 1,
     "retired": false,
     "statement": "Wearables herkennen slaap goed, maar wakker liggen en slaapfasen zoals diep en REM veel minder betrouwbaar.",
-    "population": "Gezonde jonge volwassenen, apparaten uit 2019.",
     "limitations": [
      "Eén kleine studie.",
      "Oudere apparaten dan die van nu."
@@ -575,7 +603,11 @@
      "href": "https://doi.org/10.1093/sleep/zsaa291",
      "doi": "10.1093/sleep/zsaa291",
      "pmid": "33378539",
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "In een slaaplaboratorium (34 gezonde jonge volwassenen, 3 nachten) herkenden zeven consumentenapparaten slaap goed, maar wakker zijn veel minder goed.",
+      "Slaapfasen kwamen wisselend overeen en op onrustige nachten werkten de apparaten slechter."
+     ]
     },
     "pdf": {
      "mode": "link",
@@ -592,7 +624,6 @@
     "version": 1,
     "retired": false,
     "statement": "Wearables meten hartslag en stappen redelijk nauwkeurig, maar energieverbruik en slaaptijd veel minder: calorieën kunnen ruim 20% afwijken en slaaptijd wordt meestal overschat.",
-    "population": "Consumentenwearables, vooral bij gezonde volwassenen.",
     "limitations": [
      "Studies gebruiken verschillende methoden.",
      "Apparaten veranderen sneller dan het onderzoek."
@@ -619,7 +650,11 @@
      "href": "https://doi.org/10.1007/s40279-024-02077-2",
      "doi": "10.1007/s40279-024-02077-2",
      "pmid": "39080098",
-     "verified": "Gecontroleerd op 27 oktober 2026"
+     "verified": "Gecontroleerd op 27 oktober 2026",
+     "summary": [
+      "Een overzicht van 24 systematische reviews (249 validatiestudies): hartslag wijkt gemiddeld ongeveer 3% af, stappen worden meestal iets ondergeschat (−9% tot 12%), energieverbruik kan flink afwijken (−21% tot +15%), zuurstofsaturatie tot 2 procentpunt, en slaaptijd wordt meestal overschat, vaak met meer dan 10%.",
+      "Ongeveer 11% van de apparaten is voor minstens één meting gevalideerd."
+     ]
     },
     "pdf": {
      "mode": "hosted",

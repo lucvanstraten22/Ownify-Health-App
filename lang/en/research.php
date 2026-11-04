@@ -29,10 +29,9 @@ return [
 
     /* ---- the detail view */
     'Uit onderzoek blijkt' => 'Research shows',
-    'Wat het onderzoek vond' => 'What the research found',
+    'Samenvatting onderzoek' => 'Research summary',
     'Wat Ownify ermee zegt' => 'What Ownify says with it',
     'Bewijskracht' => 'Strength of evidence',
-    'Voor wie' => 'Who it applies to',
     'Beperkingen' => 'Limitations',
     'Bron' => 'Source',
     'Soort onderzoek' => 'Type of research',

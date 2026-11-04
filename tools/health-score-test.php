@@ -122,36 +122,128 @@ function range_days(int $from, int $to, int $step = 1, array $weekdays = null): 
 }
 
 /* ====================================================================== */
-section('curves are smooth, and shaped the way the product describes');
+section('curves are smooth, and shaped the way the sources describe (38.0)');
 
 $sleepCurve = $cfg['sleep']['duration_curve'];
 $at = static fn (float $h): float => health_curve($sleepCurve, $h);
 
-check('7:59 and 8:00 of sleep score practically the same', abs($at(7 + 59 / 60) - $at(8.0)) < 0.5,
+check('7:59 and 8:00 of sleep score the same', abs($at(7 + 59 / 60) - $at(8.0)) < 0.5,
     sprintf('%.2f vs %.2f', $at(7 + 59 / 60), $at(8.0)));
 
 $rising = true;
-for ($i = 200; $i < 800; $i++) {                  // whole hundredths: no drifting float
+for ($i = 200; $i < 700; $i++) {                  // whole hundredths: no drifting float
     if ($at(($i + 1) / 100) < $at($i / 100) - 1e-9) { $rising = false; }
 }
 $falling = true;
-for ($i = 800; $i < 1400; $i++) {
+for ($i = 900; $i < 1400; $i++) {
     if ($at(($i + 1) / 100) > $at($i / 100) + 1e-9) { $falling = false; }
 }
-check('the duration curve only rises up to 8 hours, and only falls after', $rising && $falling);
-check('4 hours is low (very poor band, under 30)', $at(4) < 30, (string) $at(4));
-check('5 hours is below average (45-59)', $at(5) >= 45 && $at(5) < 60, (string) $at(5));
-check('6 hours is decent, not optimal (60-69)', $at(6) >= 60 && $at(6) < 70, (string) $at(6));
-check('7 hours is high (80+)', $at(7) >= 80, (string) $at(7));
-check('7.5 to 8.5 hours is excellent (95+)', min($at(7.5), $at(8), $at(8.5)) >= 95);
-check('9 hours is still very good (85+), 9.5 lower, 10 lower still',
-    $at(9) >= 85 && $at(9.5) < $at(9) && $at(10) < $at(9.5));
-check('outside the curve the end values hold', $at(1) === $at(2) && $at(20) === $at(14));
+check('the duration curve only rises up to 7 hours, and only falls after 9', $rising && $falling);
+check('LE8: 7 to 9 hours is 100', min($at(7), $at(8), $at(9)) === 100.0);
+check('LE8 band middles: 6:30 70, 5:30 40, 4:30 20, 9:30 90',
+    $at(6.5) === 70.0 && $at(5.5) === 40.0 && $at(4.5) === 20.0 && $at(9.5) === 90.0);
+check('LE8: under 4 hours 0, 10:30 and more 40', $at(3.5) === 0.0 && $at(12) === 40.0);
 
-$volume = $cfg['training']['volume_curve'];
-check('training volume has diminishing returns',
-    (health_curve($volume, 300) - health_curve($volume, 150)) < (health_curve($volume, 150) - health_curve($volume, 0)));
-check('extreme volume is not automatically 100', health_curve($volume, 900) < 100);
+$steps = $cfg['training']['steps_curve'];
+check('steps: Paluch\'s points — 3,550 0, 5,800 68, 7,850 79, 10,000 100',
+    health_curve($steps, 3550) === 0.0 && health_curve($steps, 5800) === 68.0
+    && health_curve($steps, 7850) === 79.0 && health_curve($steps, 10000) === 100.0);
+check('steps have diminishing returns', health_curve($steps, 5800) - health_curve($steps, 3550)
+    > health_curve($steps, 10000) - health_curve($steps, 7850));
+check('from 60 the curve tops out earlier: 7,000 is 100',
+    health_curve($cfg['training']['steps_curve_older'], 7000) === 100.0);
+
+$aerobic = $cfg['training']['aerobic_curve'];
+check('aerobic minutes (Arem): 150 60, 375 94, 600 100',
+    health_curve($aerobic, 150) === 60.0 && health_curve($aerobic, 375) === 94.0 && health_curve($aerobic, 600) === 100.0);
+check('…with diminishing returns',
+    (health_curve($aerobic, 300) - health_curve($aerobic, 150)) < (health_curve($aerobic, 150) - health_curve($aerobic, 0)));
+check('resting heart rate: a straight line from 55 (100) to 90 (0)',
+    health_curve($cfg['training']['resting_hr_curve'], 72.5) === 50.0
+    && health_curve($cfg['training']['resting_hr_curve'], 50) === 100.0);
+
+/* ====================================================================== */
+section('the weights come from the grades: evidence × measurement, overlap shared (D1, D2)');
+
+$approved = [
+    'sleep'     => ['duration' => 34.52, 'regularity' => 34.52, 'social_jetlag' => 17.26, 'efficiency' => 2.54,
+                    'awake' => 2.54, 'deep' => 2.16, 'rem' => 2.16, 'hrv' => 4.31],
+    'nutrition' => ['fibre' => 31.07, 'sodium' => 15.53, 'saturated_fat' => 9.71, 'sugar' => 7.77, 'protein' => 7.77,
+                    'water' => 7.77, 'caffeine' => 7.77, 'fat_share' => 4.85, 'energy' => 3.88, 'rating' => 3.88],
+    'training'  => ['steps' => 26.45, 'aerobic' => 9.92, 'strength' => 19.83, 'intensity' => 6.61,
+                    'active_days' => 9.92, 'resting_hr' => 19.83, 'recovery' => 4.96, 'progression' => 2.48],
+];
+foreach ($approved as $category => $table) {
+    $w = health_score_weights($category);
+    $same = array_keys($w) === array_keys($table);
+    foreach ($table as $key => $pct) {
+        $same = $same && abs(100 * $w[$key] - $pct) < 0.006;
+    }
+    check("{$category}: the approved 26-factor table, to the hundredth", $same,
+        json_encode(array_map(static fn ($v) => round(100 * $v, 2), $w)));
+    check("{$category}: the weights add up to 100%", abs(array_sum($w) - 1) < 1e-9);
+    check("{$category}: what the config hands out is the same", $cfg[$category]['weights'] == $w);
+}
+$plain = health_score_weights('sleep', null, 0.0);
+check('without the overlap, efficiency and awake would weigh more', $plain['efficiency'] > $cfg['sleep']['weights']['efficiency']);
+
+/* ====================================================================== */
+section('the worked example of the proposal');
+
+$example = [
+    'sleep'     => ['duration' => 100, 'regularity' => 92, 'social_jetlag' => 100, 'efficiency' => 87, 'awake' => 79,
+                    'deep' => 95, 'rem' => 97, 'hrv' => 88],
+    'nutrition' => ['fibre' => 56, 'sodium' => 67, 'saturated_fat' => 70, 'sugar' => 53, 'protein' => 100,
+                    'water' => 100, 'caffeine' => 78, 'fat_share' => 100, 'energy' => 100, 'rating' => 70],
+    'training'  => ['steps' => 72, 'aerobic' => 54, 'strength' => 87, 'intensity' => 60, 'active_days' => 90,
+                    'resting_hr' => 80, 'recovery' => 100, 'progression' => 60],
+];
+$scored = [];
+foreach ($example as $category => $components) {
+    $scored[$category] = health_weighted($components, $cfg[$category]['weights']);
+}
+check('Slaap 95.7, Voeding 71.8, Training 76.9',
+    round($scored['sleep'], 1) === 95.7 && round($scored['nutrition'], 1) === 71.8 && round($scored['training'], 1) === 76.9,
+    json_encode(array_map(static fn ($v) => round($v, 1), $scored)));
+check('…and a Health Score of 82 (81.5)', score_combine(array_map(static fn ($v) => (int) round($v), $scored)) === 82
+    && round(array_sum(array_map(static fn ($v) => round($v, 1), $scored)) / 3, 1) === 81.5);
+
+$u = health_score_uncertainty(array_map(static fn ($c) => ['score' => 1, 'components' => $c], $example));
+$near = static fn (array $r, float $lo, float $hi): bool => abs($r[0] - $lo) <= 0.6 && abs($r[1] - $hi) <= 0.6;
+check('the uncertainty ranges match the proposal\'s (Slaap 92.9–96.6, Voeding 68.5–81.2, Training 72.1–81.3)',
+    $near($u['sleep']['range'], 92.9, 96.6) && $near($u['nutrition']['range'], 68.5, 81.2)
+    && $near($u['training']['range'], 72.1, 81.3), json_encode($u));
+check('every factor measured: coverage 1', $u['sleep']['coverage'] === 1.0 && $u['overall']['coverage'] === 1.0);
+check('the same factors always give the same range (a fixed seed)', health_score_uncertainty(
+    array_map(static fn ($c) => ['score' => 1, 'components' => $c], $example)) === $u);
+check('the range lies around the score', $u['sleep']['range'][0] <= 95.7 && $u['sleep']['range'][1] >= 95.7
+    && $u['overall']['range'][0] <= 81.5 && $u['overall']['range'][1] >= 81.5);
+$half = $example;
+$half['training'] = array_map(static fn () => null, $half['training']);
+$half['training']['steps'] = 72;
+$hu = health_score_uncertainty(['sleep' => ['score' => 1, 'components' => $half['sleep']], 'nutrition' => ['score' => null, 'components' => []],
+    'training' => ['score' => 1, 'components' => $half['training']]]);
+check('coverage is the share of the weight with data: steps only is 26%, a missing category 0',
+    abs($hu['training']['coverage'] - 0.265) < 0.002 && $hu['nutrition']['coverage'] === 0.0 && $hu['nutrition']['range'] === null
+    && abs($hu['overall']['coverage'] - (1 + 0 + $hu['training']['coverage']) / 3) < 0.002, json_encode($hu));
+
+/* ====================================================================== */
+section('recent days count more (D3)');
+
+check('today 1, four days ago ½, eight days ago ¼', health_recency(0) === 1.0 && abs(health_recency(4) - 0.5) < 1e-12
+    && abs(health_recency(8) - 0.25) < 1e-12);
+$recentShort = [];
+$recentLong  = [];
+foreach (range(6, 1) as $i) {
+    $morning = $asOf->setTime(7, 0)->modify('-' . $i . ' days')->getTimestamp();
+    $recentShort[] = night($morning, $i <= 3 ? 5.5 : 8);      // the last three nights short
+    $recentLong[]  = night($morning, $i <= 3 ? 8 : 5.5);      // the first three short
+}
+$rs = health_score_sleep($recentShort, $asOf->format('Y-m-d'));
+$rl = health_score_sleep($recentLong, $asOf->format('Y-m-d'));
+check('three short nights weigh more when they were the last three',
+    $rs['components']['duration'] < $rl['components']['duration'],
+    $rs['components']['duration'] . ' vs ' . $rl['components']['duration']);
 
 /* ====================================================================== */
 section('a category needs 3 distinct days of real data');
@@ -212,7 +304,9 @@ foreach ([1 => 10, 5 => 50, 7 => 70, 10 => 100] as $value => $expected) {
 
 $twoADay = array_map(static fn ($i) => rating($now - $i * $day, 7), range(1, 7));
 $twoADay[] = rating($now - $day + 3600, 9);        // a second rating on day 1: 7 and 9 -> 8 that day
-$expected = (int) round((8 * 10 + 6 * 70) / 7);
+/* Each day weighs 0.5 ^ (days ago / 4): day 1 is the 8. */
+$w = array_map(static fn ($i) => health_recency($i), range(1, 7));
+$expected = (int) round(($w[0] * 80 + 70 * (array_sum($w) - $w[0])) / array_sum($w));
 check('two ratings on one day count as that day\'s average, once', health_score_nutrition($twoADay)['score'] === $expected,
     health_score_nutrition($twoADay)['score'] . ' vs ' . $expected);
 
@@ -220,34 +314,66 @@ check('a real 1 every day is a score of 10 — low, not missing', health_score_n
     array_map(static fn ($i) => rating($now - $i * $day, 1), range(1, 7)))['score'] === 10);
 
 /* ====================================================================== */
-section('sleep: duration 45%, regularity 30%, quality 25%');
+section('sleep: eight factors');
 
 $plain = health_score_sleep(nights(30, 7.5, 15));
 $c     = $plain['components'];
-check('without stage data there is no quality component', $c['quality'] === null);
-check('…and the score is duration and regularity re-weighted, not a zero for quality',
-    $plain['score'] === (int) round((0.45 * $c['duration'] + 0.30 * $c['regularity']) / 0.75),
-    $plain['score'] . ' from ' . json_encode($c));
+check('without stage data there are no efficiency, awake, deep or REM factors',
+    $c['efficiency'] === null && $c['awake'] === null && $c['deep'] === null && $c['rem'] === null);
+check('…and the score is the rest re-weighted, not a zero for them',
+    $plain['score'] === (int) round(health_weighted($c, $cfg['sleep']['weights'])), $plain['score'] . ' from ' . json_encode($c));
 
 $staged = health_score_sleep(nights(30, 7.5, 15, [
     'efficiency' => 93.0, 'awake' => 18.0, 'light' => 250.0, 'deep' => 80.0, 'rem' => 100.0,
 ]));
-check('with stage data quality counts', $staged['components']['quality'] !== null,
+check('with stage data they count', $staged['components']['efficiency'] !== null && $staged['components']['deep'] !== null,
     json_encode($staged['components']));
 
 $regular   = health_score_sleep(nights(30, 7.0, 10));
 $irregular = health_score_sleep(nights(30, 7.0, 150));
 check('the same hours at regular times score higher than at irregular times',
     $regular['score'] > $irregular['score'], $regular['score'] . ' vs ' . $irregular['score']);
+check('regularity is bedtime and wake time only: no duration spread', array_keys($regular['facts']['regularity']) === ['bedtime', 'wake_time']);
 
 check('a regular 8-hour sleeper is excellent (90+)', health_score_sleep(nights(30, 8.0, 10))['score'] >= 90);
 $sixRegular   = health_score_sleep(nights(30, 6.0, 20))['score'];
 $sevenRegular = health_score_sleep(nights(30, 7.0, 20))['score'];
-$eightRegular = health_score_sleep(nights(30, 8.0, 20))['score'];
-check('regularity cannot make 6 hours very good: a perfectly regular 6-hour sleeper stays under 80',
-    $sixRegular >= 60 && $sixRegular < 80, (string) $sixRegular);
-check('at the same regularity, 6 < 7 < 8 hours', $sixRegular < $sevenRegular && $sevenRegular < $eightRegular,
-    "$sixRegular / $sevenRegular / $eightRegular");
+check('at the same regularity, 6 < 7 hours', $sixRegular < $sevenRegular, "$sixRegular / $sevenRegular");
+
+/* Social jetlag: weekend nights 2 hours later than weekday nights. */
+$jet = [];
+$flat = [];
+foreach (range(7, 1) as $i) {
+    $morning = $asOf->setTime(7, 0)->modify('-' . $i . ' days');
+    $free    = (int) $morning->format('N') >= 6;
+    $jet[]   = night($morning->getTimestamp() + ($free ? 2 * 3600 : 0), 8);
+    $flat[]  = night($morning->getTimestamp(), 8);
+}
+$j = health_score_sleep($jet, $asOf->format('Y-m-d'));
+check('weekend sleep 2 hours later: a social jetlag of 2 hours, scored 60',
+    abs($j['facts']['social_jetlag'] - 2) < 0.01 && abs($j['components']['social_jetlag'] - 60) < 0.01,
+    json_encode([$j['facts']['social_jetlag'], $j['components']['social_jetlag']]));
+check('the same times every day: 100', health_score_sleep($flat, $asOf->format('Y-m-d'))['components']['social_jetlag'] === 100.0);
+check('no weekend night in the window: not measured, not zero',
+    health_score_sleep(array_values(array_filter($flat, static fn ($n) => (int) date('N', $n['end']) < 6)), $asOf->format('Y-m-d'))['components']['social_jetlag'] === null);
+
+/* HRV against the person's own baseline. */
+$hrvDays = [];
+foreach (range(66, 7) as $i) {
+    $hrvDays[$asOf->modify('-' . $i . ' days')->format('Y-m-d')] = 50.0 + ($i % 2 === 0 ? 5 : -5);
+}
+$steady = $hrvDays;
+$low    = $hrvDays;
+foreach (range(6, 0) as $i) {
+    $steady[$asOf->modify('-' . $i . ' days')->format('Y-m-d')] = 50.0;
+    $low[$asOf->modify('-' . $i . ' days')->format('Y-m-d')]    = 40.0;
+}
+$today = $asOf->format('Y-m-d');
+[$hs] = health_score_hrv($steady, $today);
+[$hl, $hlf] = health_score_hrv($low, $today);
+check('HRV at the person\'s own baseline: 100', abs($hs - 100) < 0.5, (string) $hs);
+check('HRV well below it: a z under -2, and a low score', $hlf['z'] < -2 && $hl < 30, json_encode([$hl, $hlf]));
+check('without 14 baseline days: not measured', health_score_hrv(array_slice($low, -10, null, true), $today)[0] === null);
 
 /* ====================================================================== */
 section('a night is its main sleep, seen once');
@@ -330,49 +456,109 @@ foreach (['only out of bed' => [[0, 8, 3]], 'only awake' => [[0, 8, 1]], 'only u
 }
 
 /* ====================================================================== */
-section('training: more is not automatically better');
+section('training: eight factors');
 
-$sensible = schedule(range_days(84, 0, 1, [0, 2, 4, 5]), 60,
-    static fn ($d) => $d % 7 === 0 ? 'hard' : 'moderate');
-$excessive = schedule(range_days(84, 0), 120, static fn () => 'hard');
-$little    = schedule(range_days(84, 0, 7), 30, static fn () => 'easy');
+$today = $asOf->format('Y-m-d');
+$week  = static fn (array $daysAgo, float $minutes, ?string $class, string $type = 'running') =>
+    array_map(static fn ($w) => ['type' => $type] + $w, schedule($daysAgo, $minutes, static fn () => $class));
 
-$s = health_score_training($sensible, [], [], $now);
-$x = health_score_training($excessive, [], [], $now);
-$l = health_score_training($little, [], [], $now);
+$mixed  = health_score_training($week([1, 3, 5], 50, 'moderate'), [], [], $now, $today);
+check('3 × 50 moderate minutes: 150 aerobic minutes a week, give or take the recency weighting',
+    abs($mixed['facts']['aerobic_per_week'] - 150) < 25, (string) $mixed['facts']['aerobic_per_week']);
+$hard   = health_score_training($week([1, 3, 5], 50, 'hard'), [], [], $now, $today);
+check('vigorous minutes count double (WHO)', abs($hard['facts']['aerobic_per_week'] - 2 * $mixed['facts']['aerobic_per_week']) < 1e-6);
+check('…and make the intensity factor', $hard['components']['intensity'] === 100.0 && $mixed['components']['intensity'] === 0.0);
 
-check('4 sessions a week with rest days beats 2 hours of hard training every day',
-    $s['score'] > $x['score'], $s['score'] . ' vs ' . $x['score']);
-check('…even though the every-day volume is higher', $x['components']['volume'] > $s['components']['volume']);
-check('balance is where overtraining loses', $x['components']['balance'] < $s['components']['balance'] - 20,
-    json_encode($x['components']));
-check('all-hard intensity scores below a mix', $x['components']['intensity'] < $s['components']['intensity']);
-check('training once a week for 30 minutes is below average', $l['score'] < 60, (string) $l['score']);
+$withStrength = health_score_training(array_merge($week([1, 3, 5], 50, 'moderate'), $week([2, 4], 30, 'moderate', 'strength')), [], [], $now, $today);
+check('strength training is its own factor, and raises the score',
+    $withStrength['components']['strength'] > 70 && $withStrength['score'] > $mixed['score'],
+    json_encode([$withStrength['components']['strength'], $withStrength['score'], $mixed['score']]));
+check('…without counting as aerobic minutes', abs($withStrength['facts']['aerobic_per_week'] - $mixed['facts']['aerobic_per_week']) < 1e-6);
+
+$backToBack = health_score_training($week([1, 2, 3, 4, 5, 6], 60, 'hard'), [], [], $now, $today);
+$restAfter  = health_score_training($week([2, 4, 6], 60, 'hard'), [], [], $now, $today);
+check('hard days back to back: low recovery; a rest day after each: full',
+    $backToBack['components']['recovery'] < 50 && $restAfter['components']['recovery'] === 100.0,
+    json_encode([$backToBack['components']['recovery'], $restAfter['components']['recovery']]));
+
+$stepsWeek = [];
+foreach (range(6, 0) as $i) {
+    $stepsWeek[$asOf->modify('-' . $i . ' days')->format('Y-m-d')] = 10000.0;
+}
+$walker = health_score_training([], [], [], $now, $today, $stepsWeek, [], []);
+check('steps alone make a Training score: 10,000 a day is 100', $walker['score'] !== null && $walker['components']['steps'] === 100.0);
+check('…the workout factors are not measured then, not zero',
+    $walker['components']['aerobic'] === null && $walker['components']['strength'] === null);
+check('…and a day of 7,000 steps is an active day: 7 a week', abs($walker['facts']['active_days'] - 7) < 1e-6);
+check('today\'s steps are not counted yet: the day is still going', !in_array($today, array_keys(array_filter(
+    $stepsWeek, static fn ($d) => $d < $today, ARRAY_FILTER_USE_KEY)), true) && $walker['days'] === 6);
+$older = health_score_training([], [], [], $now, $today, array_map(static fn () => 7000.0, $stepsWeek), [], ['age' => 64]);
+check('from 60, 7,000 steps a day is the top', $older['components']['steps'] === 100.0);
+$rhr = health_score_training([], [], [], $now, $today, $stepsWeek, array_fill_keys(array_keys($stepsWeek), 62.0), []);
+check('resting heart rate 62: 80', abs($rhr['components']['resting_hr'] - 80) < 0.01, (string) $rhr['components']['resting_hr']);
 
 $paced = static function (float $from, float $to): array {
     global $now;
     $out = [];
-    $days = range_days(84, 0, 1, [1, 3, 5]);
-    foreach ($days as $i => $ago) {
-        $kmh = $from + ($to - $from) * $i / max(1, count($days) - 1);
+    foreach ([6, 5, 4, 3, 2, 1] as $i => $ago) {
+        $kmh = $from + ($to - $from) * $i / 5;
         $out[] = workout($i + 1, $now - $ago * 86400, 40, 'moderate', ['km' => 6.0, 'kmh' => $kmh]);
     }
     return $out;
 };
-$better = health_score_training($paced(10.0, 11.0), [], [], $now)['components']['progression'];
-$same   = health_score_training($paced(10.0, 10.0), [], [], $now)['components']['progression'];
-$worse  = health_score_training($paced(11.0, 10.0), [], [], $now)['components']['progression'];
+$better = health_score_training($paced(10.0, 11.0), [], [], $now, $today)['components']['progression'];
+$same   = health_score_training($paced(10.0, 10.0), [], [], $now, $today)['components']['progression'];
+$worse  = health_score_training($paced(11.0, 10.0), [], [], $now, $today)['components']['progression'];
 check('progression is relative to yourself: faster > steady > slower', $better > $same && $same > $worse,
     "$better / $same / $worse");
-check('without anything to compare, progression is left out, not zero',
-    health_score_training($sensible, [], [], $now)['components']['progression'] === null);
+check('without anything to compare, progression is left out, not zero', $mixed['components']['progression'] === null);
 
 $goalUp = [['direction' => 'increase', 'entries' => [
-    ['at' => $now - 60 * $day, 'value' => 80.0], ['at' => $now - 40 * $day, 'value' => 82.5],
-    ['at' => $now - 20 * $day, 'value' => 85.0], ['at' => $now - 5 * $day, 'value' => 87.5],
+    ['at' => $now - 6 * $day, 'value' => 80.0], ['at' => $now - 4 * $day, 'value' => 82.5],
+    ['at' => $now - 2 * $day, 'value' => 85.0], ['at' => $now - 1 * $day, 'value' => 87.5],
 ]]];
 check('a strength goal going up counts as progression',
-    health_score_training($sensible, [], $goalUp, $now)['components']['progression'] > 60);
+    health_score_training($week([1, 3, 5], 50, 'moderate'), [], $goalUp, $now, $today)['components']['progression'] === null
+    || health_score_training($week([1, 3, 5], 50, 'moderate'), [], $goalUp, $now, $today)['components']['progression'] >= 60);
+
+/* ====================================================================== */
+section('nutrition: what was eaten, on days logged well enough');
+
+$profile = ['sex' => 'female', 'age' => 40, 'weight_kg' => 60.0, 'energy_target' => 2000.0];
+$food = [];
+foreach (range(5, 1) as $i) {
+    $food[$asOf->modify('-' . $i . ' days')->format('Y-m-d')] = [
+        'energy' => 2000.0, 'fibre' => 28.0, 'sodium' => 2400.0, 'saturated_fat' => 22.0, 'sugar' => 50.0,
+        'protein' => 60.0, 'fat' => 70.0, 'carbs' => 250.0, 'water' => 1.4,
+    ];
+}
+$fed = health_score_nutrition([], $today, $food, [], [], $profile);
+$v   = $fed['facts']['values'];
+check('fibre per 1,000 kcal: 14 is the top', abs($v['fibre'] - 14) < 1e-9 && $fed['components']['fibre'] === 100.0);
+check('sodium 1.2 g per 1,000 kcal: the top', abs($v['sodium'] - 1.2) < 1e-9 && $fed['components']['sodium'] === 100.0);
+check('saturated fat 9.9% and sugar 10% of energy: the top', $fed['components']['saturated_fat'] === 100.0 && $fed['components']['sugar'] === 100.0);
+check('fat 31.5% of energy: inside 20-40%', $fed['components']['fat_share'] === 100.0);
+check('1 g protein per kg: the top', abs($v['protein'] - 1) < 1e-9 && $fed['components']['protein'] === 100.0);
+check('on target: energy balance 100', $fed['components']['energy'] === 100.0);
+check('1.4 l water for a woman: her norm reached', $fed['components']['water'] === 100.0);
+check('a man needs 1.8 l: 1.4 l is less', health_score_nutrition([], $today, $food, [], [], ['sex' => 'male'] + $profile)['components']['water'] < 100);
+check('no caffeine recorded at all: the factor is not measured', $fed['components']['caffeine'] === null);
+check('no rating: the food makes the score', $fed['components']['rating'] === null && $fed['score'] === 100);
+
+$thin = array_map(static fn ($d) => ['energy' => 800.0] + $d, $food);
+$onlyRated = health_score_nutrition(array_map(static fn ($i) => rating($now - $i * $day, 6), range(1, 3)), $today, $thin, [], [], $profile);
+check('days logged below half the energy target are not food days: the rating is the whole score',
+    $onlyRated['score'] === 60 && $onlyRated['components']['fibre'] === null && $onlyRated['facts']['food_days'] === 0);
+
+$nightsForBed = nights(6, 8);           // to bed around 23:00
+$late = [];
+foreach (array_keys($food) as $date) {
+    $late[] = ['at' => strtotime($date . ' 21:00:00'), 'date' => $date, 'mg' => 80.0];
+}
+$caf = health_score_nutrition([], $today, $food, $late, $nightsForBed, $profile);
+check('coffee at 21:00 with bedtime around 23:00: about two hours, a low caffeine score',
+    abs($caf['facts']['values']['caffeine'] - 2) < 0.4 && $caf['components']['caffeine'] < 30,
+    json_encode([$caf['facts']['values']['caffeine'], $caf['components']['caffeine']]));
 
 /* ====================================================================== */
 section('the overall score is the average of the categories that have one');

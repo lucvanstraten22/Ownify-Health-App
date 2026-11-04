@@ -42,6 +42,7 @@ import com.ownify.android.ui.design.JIcon
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.T
+import com.ownify.android.ui.design.TextLink
 import com.ownify.android.ui.design.blurring
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.rememberPlayOnSight
@@ -152,23 +153,8 @@ private fun StartRow(row: CalibrationStart) {
     }
 }
 
-/** `.calibration__open`: the way into the Scorekompas, where the score is explained in full. */
+/** `.calibration__open`: the way into the Scorekompas — the text link, 8 under the note. */
 @Composable
 private fun OpenCompass(cal: Calibration, onOpen: () -> Unit) {
-    InButton {
-        val interaction = remember { MutableInteractionSource() }
-        Row(
-            Modifier
-                .padding(top = Ownify.Space2)
-                .heightIn(min = 44.dp)
-                .press(interaction)
-                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onOpen))
-                .semantics { contentDescription = cal.open.orEmpty() },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            T(cal.open.orEmpty(), OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
-            JIcon(OwnifyIcons.chevronRight, size = 15.dp, color = Ownify.TextMuted)
-        }
-    }
+    TextLink(cal.open.orEmpty(), onClick = onOpen, modifier = Modifier.padding(top = Ownify.Space2), description = cal.open.orEmpty())
 }

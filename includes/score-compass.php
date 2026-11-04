@@ -12,8 +12,9 @@
  *                                     and day by day with its categories
  *   3  How does it compare with me?   the score now, and the average of the
  *                                     daily score over earlier periods
- *   4  Where is the most room?        the component with the most points on
- *                                     the Health Score still to gain
+ *
+ * (Until 38.0 a fourth part, Mogelijk aandachtspunt, named the component
+ * with the most room; it was removed.)
  *
  * ---------------------------------------------------------------------------
  * IT NEVER SCORES
@@ -75,7 +76,6 @@ if (!function_exists('score_compass')) {
             'composition' => score_compass_composition($now, $copy, $areas, $cfg),
             'trend'       => $trend,
             'comparison'  => score_compass_comparison($history, $copy, $cfg),
-            'opportunity' => score_compass_opportunity($now, $copy, $areas, $cfg),
         ];
     }
 
@@ -114,6 +114,7 @@ if (!function_exists('score_compass')) {
                     default => score_compass_collecting($area, $days, (int) $cfg['min_days']),
                 },
                 'summary' => $score !== null && $id === 'nutrition' && isset($result['facts']['rating'])
+                        && (int) ($result['facts']['food_days'] ?? 0) === 0
                     ? sprintf($c['rating'], score_compass_decimal((float) $result['facts']['rating']))
                     : null,
                 'parts'   => score_compass_parts($id, $result, $c, $cfg),
@@ -184,10 +185,12 @@ if (!function_exists('score_compass')) {
         return $rows;
     }
 
-    /** One line of what a component was worked out from, or null. */
+    /** One line of what a factor was worked out from, or null. */
     function score_compass_fact(string $category, string $key, array $facts, array $c): ?string
     {
-        $f = $c['facts'];
+        $f      = $c['facts'];
+        $values = $facts['values'] ?? [];
+        $int    = static fn ($v): int => (int) round((float) $v);
 
         switch ($category . '.' . $key) {
             case 'sleep.duration':
@@ -198,29 +201,71 @@ if (!function_exists('score_compass')) {
                 if (!isset($facts['bedtime_sd'], $facts['wake_sd'])) {
                     return null;
                 }
-                return sprintf($f['regularity'], (int) round($facts['bedtime_sd']), (int) round($facts['wake_sd']));
+                return sprintf($f['regularity'], $int($facts['bedtime_sd']), $int($facts['wake_sd']));
 
-            case 'sleep.quality':
-                $nights = (int) ($facts['quality_nights'] ?? 0);
-                return $nights === 0 ? null : sprintf(score_compass_plural($f['quality'], $nights), $nights);
+            case 'sleep.social_jetlag':
+                return isset($facts['social_jetlag']) ? sprintf($f['social_jetlag'], score_compass_hours($facts['social_jetlag'] * 60)) : null;
 
-            case 'training.volume':
-                return isset($facts['minutes_per_week'])
-                    ? sprintf($f['volume'], (int) round($facts['minutes_per_week']))
+            case 'sleep.efficiency':
+            case 'sleep.awake':
+            case 'sleep.deep':
+            case 'sleep.rem':
+                $value = $facts['quality'][$key]['value'] ?? null;
+                return $value === null ? null : sprintf($f[in_array($key, ['deep', 'rem'], true) ? 'stage' : $key], $int($value));
+
+            case 'sleep.hrv':
+                return isset($facts['hrv']['ms'], $facts['hrv']['baseline_ms'])
+                    ? sprintf($f['hrv'], $int($facts['hrv']['ms']), $int($facts['hrv']['baseline_ms']))
                     : null;
+
+            case 'nutrition.fibre':
+            case 'nutrition.sodium':
+                return isset($values[$key]) ? sprintf($f['per_kcal'], score_compass_decimal((float) $values[$key])) : null;
+
+            case 'nutrition.saturated_fat':
+            case 'nutrition.sugar':
+            case 'nutrition.fat_share':
+                return isset($values[$key]) ? sprintf($f['energy_share'], $int($values[$key])) : null;
+
+            case 'nutrition.protein':
+                return isset($values['protein']) ? sprintf($f['protein'], score_compass_decimal((float) $values['protein'])) : null;
+
+            case 'nutrition.water':
+                return isset($values['water']) ? sprintf($f['water'], (string) units_format((float) $values['water'], 'l', 1)) : null;
+
+            case 'nutrition.caffeine':
+                return isset($values['caffeine']) ? sprintf($f['caffeine'], score_compass_hours($values['caffeine'] * 60)) : null;
+
+            case 'nutrition.energy':
+                return isset($values['energy']) ? sprintf($f['energy'], $int($values['energy'] * 100)) : null;
+
+            case 'nutrition.rating':
+                return isset($facts['rating']) ? sprintf($f['rating'], score_compass_decimal((float) $facts['rating'])) : null;
+
+            case 'training.steps':
+                return isset($facts['steps']) ? sprintf($f['steps'], i18n_number((float) $facts['steps'])) : null;
+
+            case 'training.aerobic':
+                return isset($facts['aerobic_per_week']) ? sprintf($f['aerobic'], $int($facts['aerobic_per_week'])) : null;
+
+            case 'training.strength':
+                return isset($facts['strength_per_week']) ? sprintf($f['strength'], $int($facts['strength_per_week'])) : null;
 
             case 'training.intensity':
-                return isset($facts['hard'], $facts['known'])
-                    ? sprintf($f['intensity'], (int) $facts['hard'], (int) $facts['known'])
-                    : null;
+                return isset($facts['vigorous_share']) ? sprintf($f['intensity'], $int($facts['vigorous_share'] * 100)) : null;
+
+            case 'training.active_days':
+                return isset($facts['active_days']) ? sprintf($f['active_days'], score_compass_decimal((float) $facts['active_days'])) : null;
+
+            case 'training.resting_hr':
+                return isset($facts['resting_hr']) ? sprintf($f['resting_hr'], $int($facts['resting_hr'])) : null;
+
+            case 'training.recovery':
+                return isset($facts['recovery']) ? sprintf($f['recovery'], (int) $facts['recovery']['value'], (int) $facts['recovery']['of']) : null;
 
             case 'training.progression':
                 $what = score_compass_signals($facts['progression']['signals'] ?? [], $c['signals']);
                 return $what === null ? null : sprintf($f['progression'], score_compass_ucfirst($what));
-
-            case 'training.balance':
-                $frequency = $facts['balance']['frequency']['value'] ?? null;
-                return $frequency === null ? null : sprintf($f['balance'], score_compass_decimal((float) $frequency));
         }
 
         return null;
@@ -580,6 +625,9 @@ if (!function_exists('score_compass')) {
     function score_compass_part_line(string $category, array $components, array $copy): ?string
     {
         $defs  = $copy['composition']['parts'][$category] ?? [];
+        foreach ($copy['composition']['earlier_parts'][$category] ?? [] as $key => $label) {
+            $defs[$key] ??= ['label' => $label];
+        }
         $items = [];
 
         foreach ($defs as $key => $def) {
@@ -588,7 +636,7 @@ if (!function_exists('score_compass')) {
                 continue;
             }
 
-            $items[] = $def['label'] . ' ' . (count($defs) < 2
+            $items[] = $def['label'] . ' ' . ($key === 'rating'
                 ? score_compass_decimal((float) $value / 10)
                 : (string) (int) round((float) $value));
         }
@@ -784,7 +832,14 @@ if (!function_exists('score_compass')) {
         $days    = array_values($window);
         $best    = null;
 
-        if (count($defs) < 2) {
+        /* Parts with any data in the period: with one at most (Voeding on
+           its daily rating alone), the category is named itself, on its own
+           scale. */
+        $measured = array_filter(array_keys($defs), static fn ($key) => array_filter(
+            $days, static fn ($at) => ($at[$category]['components'][$key] ?? null) !== null
+        ) !== []);
+
+        if (count($defs) < 2 || count($measured) < 2) {
             $defs    = ['score' => ['title' => $label]];
             $weights = ['score' => 1.0];
         } else {
@@ -895,299 +950,6 @@ if (!function_exists('score_compass')) {
     /* ==================================================================
        4  THE BIGGEST OPPORTUNITY
        ================================================================== */
-
-    /**
-     * The component with the most room on the Health Score: what it lacks of
-     * 100, times the share of the Health Score it decides — its weight among
-     * its category's components that count, over the categories that count.
-     * Only in a category with `opportunity_min_days` of data, and only when
-     * that room is at least `opportunity_min_points`.
-     */
-    function score_compass_opportunity(?array $now, array $copy, array $areas, array $cfg): array
-    {
-        $r = $copy['rules'];
-        $o = $copy['opportunity'];
-
-        $out = [
-            'title'    => $o['title'],
-            'state'    => 'empty',
-            'empty'    => $o['empty'],
-            'category' => null,
-            'label'    => null,
-            'accent'   => null,
-            'icon'     => null,
-            'part'     => null,
-            'name'     => null,
-            'value'    => null,
-            'band'     => null,
-            'fact'     => null,
-            'relation' => null,
-            'gain'     => null,
-            'gain_text' => null,
-        ];
-
-        $scored = array_filter(array_keys($areas), static fn ($id) => ($now[$id]['score'] ?? null) !== null);
-        if ($scored === []) {
-            return $out;
-        }
-
-        $best = null;
-        foreach ($scored as $id) {
-            if ((int) $now[$id]['days'] < (int) $r['opportunity_min_days']) {
-                continue;
-            }
-
-            foreach (score_compass_shares($id, $now[$id]['components'], $cfg) as $key => $share) {
-                $gain = $share / count($scored) * (100 - (float) $now[$id]['components'][$key]);
-                if ($best === null || $gain > $best['gain']) {
-                    $best = ['id' => $id, 'key' => $key, 'gain' => $gain];
-                }
-            }
-        }
-
-        if ($best === null) {
-            return $out;
-        }
-
-        if ((int) round($best['gain']) < (int) $r['opportunity_min_points']) {
-            $out['empty'] = $o['none'];
-            return $out;
-        }
-
-        $id    = $best['id'];
-        $key   = $best['key'];
-        $value = (int) round((float) $now[$id]['components'][$key]);
-        $title = $copy['composition']['parts'][$id][$key]['title'] ?? $key;
-        [$fact, $relation] = score_compass_explain($id, $key, $now[$id], $title, $copy, $cfg);
-
-        return [
-            'title'     => $o['title'],
-            'state'     => 'filled',
-            'empty'     => null,
-            'category'  => $id,
-            'label'     => $areas[$id]['label'],
-            'accent'    => $areas[$id]['accent'],
-            'icon'      => $areas[$id]['icon'],
-            'part'      => $key,
-            'name'      => $title,
-            'value'     => $value,
-            'band'      => score_colour_band($value),
-            'fact'      => $fact,
-            'relation'  => $relation,
-            'gain'      => (int) round($best['gain']),
-            'gain_text' => sprintf($o['gain'], (int) round($best['gain'])),
-        ];
-    }
-
-    /**
-     * Each counted component's share of its category score: its weight over
-     * the weights of the components that have data (health_weighted()).
-     *
-     * @return array<string,float>
-     */
-    function score_compass_shares(string $category, array $components, array $cfg): array
-    {
-        $weights = $cfg[$category]['weights'] ?? array_fill_keys(array_keys($components), 1.0);
-
-        $available = 0.0;
-        foreach ($components as $key => $value) {
-            if ($value !== null && (float) ($weights[$key] ?? 0) > 0) {
-                $available += (float) $weights[$key];
-            }
-        }
-
-        $shares = [];
-        foreach ($components as $key => $value) {
-            if ($value !== null && $available > 0 && (float) ($weights[$key] ?? 0) > 0) {
-                $shares[$key] = (float) $weights[$key] / $available;
-            }
-        }
-
-        return $shares;
-    }
-
-    /**
-     * What was measured, and what a higher score would go together with —
-     * from the facts the component was worked out from.
-     *
-     * @return array{0: string, 1: string}
-     */
-    function score_compass_explain(string $category, string $key, array $result, string $title, array $copy, array $cfg): array
-    {
-        $texts = $copy['opportunity']['texts'];
-        $top   = (float) $copy['rules']['top_score'];
-        $facts = $result['facts'] ?? [];
-        $pair  = static fn (string $name, array $args) => [
-            vsprintf($texts[$name]['fact'], $args),
-            vsprintf($texts[$name]['relation'], $args),
-        ];
-
-        switch ($category . '.' . $key) {
-            case 'sleep.duration':
-                $curve = $cfg['sleep']['duration_curve'];
-                [$lo, $hi] = score_compass_top($curve, $top);
-                $nights = $facts['minutes'] ?? [];
-                $short = $long = 0;
-                $lostShort = $lostLong = 0.0;
-                foreach ($nights as $minutes) {
-                    $hours = $minutes / 60;
-                    if ($hours < $lo) {
-                        $short++;
-                        $lostShort += 100 - health_curve($curve, $hours);
-                    } elseif ($hours > $hi) {
-                        $long++;
-                        $lostLong += 100 - health_curve($curve, $hours);
-                    }
-                }
-                if ($short + $long > 0) {
-                    $side = $lostShort >= $lostLong ? 'short' : 'long';
-                    return $pair('sleep.duration.' . $side, [
-                        $side === 'short' ? $short : $long, count($nights),
-                        score_compass_hours($lo * 60), score_compass_hours($hi * 60),
-                    ]);
-                }
-                break;
-
-            case 'sleep.regularity':
-                $weights = $cfg['sleep']['regularity']['weights'];
-                $spread  = ['bedtime' => 'bedtime_sd', 'wake_time' => 'wake_sd', 'duration' => 'duration_sd'];
-                $part    = score_compass_weakest($facts['regularity'] ?? [], $weights);
-                if ($part !== null && isset($facts[$spread[$part]])) {
-                    return $pair('sleep.regularity.' . $part, [(int) round($facts[$spread[$part]])]);
-                }
-                break;
-
-            case 'sleep.quality':
-                $q     = $cfg['sleep']['quality'];
-                $parts = array_map(static fn ($p) => $p === null ? null : $p['score'], $facts['quality'] ?? []);
-                $part  = score_compass_weakest($parts, $q['weights']);
-                if ($part !== null) {
-                    $value = (float) $facts['quality'][$part]['value'];
-                    if ($part === 'deep' || $part === 'rem') {
-                        /* On average inside the top range, a direction would be a guess. */
-                        [$lo, $hi] = score_compass_top($q[$part . '_curve'], $top);
-                        if ($value >= $lo && $value <= $hi) {
-                            break;
-                        }
-                        return $pair('sleep.quality.' . $part . ($value < $lo ? '.more' : '.less'), [(int) round($value)]);
-                    }
-                    return $pair('sleep.quality.' . $part, [(int) round($value)]);
-                }
-                break;
-
-            case 'nutrition.rating':
-                if (isset($facts['rating'])) {
-                    return $pair('nutrition.rating', [score_compass_decimal((float) $facts['rating']), (int) $result['days']]);
-                }
-                break;
-
-            case 'training.volume':
-                if (isset($facts['minutes_per_week'])) {
-                    [, $hi] = score_compass_top($cfg['training']['volume_curve'], $top);
-                    $more = $facts['minutes_per_week'] < $hi;
-                    return $pair('training.volume.' . ($more ? 'more' : 'less'), [(int) round($facts['minutes_per_week'])]);
-                }
-                break;
-
-            case 'training.intensity':
-                if (isset($facts['hard'], $facts['known']) && $facts['known'] > 0) {
-                    [$lo] = score_compass_top($cfg['training']['intensity']['hard_share_curve'], $top);
-                    $more = $facts['hard'] / $facts['known'] < $lo;
-                    return $pair('training.intensity.' . ($more ? 'more' : 'less'), [(int) $facts['hard'], (int) $facts['known']]);
-                }
-                break;
-
-            case 'training.progression':
-                $what   = score_compass_signals($facts['progression']['signals'] ?? [], $copy['composition']['signals']);
-                $change = $facts['progression']['change'] ?? null;
-                if ($what !== null && $change !== null) {
-                    $text    = $texts['training.progression'];
-                    $percent = (int) round(abs($change) * 100);
-                    $fact    = $percent === 0
-                        ? sprintf($text['same'], $what)
-                        : sprintf($text['fact'], $what, tf($change > 0 ? '%d%% beter' : '%d%% minder goed', $percent));
-                    return [$fact, $text['relation']];
-                }
-                break;
-
-            case 'training.balance':
-                $b     = $cfg['training']['balance'];
-                $parts = array_map(static fn ($p) => $p === null ? null : $p['score'], $facts['balance'] ?? []);
-                $part  = score_compass_weakest($parts, $b['weights']);
-                $fact  = $part === null ? null : $facts['balance'][$part];
-                switch ($part) {
-                    case 'frequency':
-                        [$lo] = score_compass_top($b['frequency_curve'], $top);
-                        return $pair('training.balance.frequency.' . ($fact['value'] < $lo ? 'more' : 'less'), [score_compass_decimal((float) $fact['value'])]);
-                    case 'rest':
-                        return $pair('training.balance.rest', [(int) $fact['value']]);
-                    case 'spikes':
-                    case 'hard_days':
-                        return $pair('training.balance.' . $part, [(int) $fact['value'], (int) $fact['of']]);
-                    case 'sleep':
-                        [$lo] = score_compass_top($cfg['sleep']['duration_curve'], $top);
-                        return $pair('training.balance.sleep.' . ($fact['value'] / 60 < $lo ? 'short' : 'long'), [score_compass_hours((float) $fact['value'])]);
-                }
-                break;
-        }
-
-        /* No sentence of its own, or no facts to fill one: what it scores. */
-        $name = score_compass_lcfirst($title);
-
-        return [
-            sprintf($texts['default']['fact'], $name, (int) round((float) $result['components'][$key])),
-            sprintf($texts['default']['relation'], $name),
-        ];
-    }
-
-    /**
-     * Of the parts with a score, the one with the most room: weight times
-     * what it lacks of 100.
-     */
-    function score_compass_weakest(array $parts, array $weights): ?string
-    {
-        $weakest = null;
-        $room    = 0.0;
-
-        foreach ($parts as $key => $score) {
-            if ($score === null) {
-                continue;
-            }
-
-            $lack = (float) ($weights[$key] ?? 0) * (100 - (float) $score);
-            if ($weakest === null || $lack > $room) {
-                $weakest = $key;
-                $room    = $lack;
-            }
-        }
-
-        return $weakest;
-    }
-
-    /**
-     * Where a scoring curve is at its top: the lowest and highest input
-     * among its points that score at least $top — the range its sentences
-     * name ("tussen 7:30 en 8:30").
-     *
-     * @param array<array{0: float|int, 1: float|int}> $curve
-     * @return array{0: float, 1: float}
-     */
-    function score_compass_top(array $curve, float $top): array
-    {
-        $inputs = [];
-        foreach ($curve as [$x, $y]) {
-            if ((float) $y >= $top) {
-                $inputs[] = (float) $x;
-            }
-        }
-
-        if ($inputs === []) {
-            $best   = max(array_column($curve, 1));
-            $inputs = array_map(static fn ($p) => (float) $p[0], array_filter($curve, static fn ($p) => $p[1] == $best));
-        }
-
-        return [min($inputs), max($inputs)];
-    }
 
     /* ==================================================================
        WORDS AND NUMBERS

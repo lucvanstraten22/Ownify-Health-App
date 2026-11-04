@@ -423,7 +423,9 @@ foreach ([1, 2, 3] as $back) {
 }
 check('7 · the Voeding score is the cijfer, as before: 70', health_score_now($cleo, $now)['nutrition']['score'] === 70);
 check('6 · complete logged food (Ann) gives food insights from the source data …', isset($first['slots']['nutrition']));
-check('… and never replaces the cijfer: without one, no Voeding score at all', health_score_now($ann, $now)['nutrition']['score'] === null);
+$annScore = health_score_now($ann, $now)['nutrition'];
+check('… and since 38.0 counts in the Voeding score too: without a cijfer, the food itself, the rating left out',
+    is_int($annScore['score']) && $annScore['components']['rating'] === null && $annScore['facts']['food_days'] > 0, json_encode($annScore['components']));
 
 section('Both apps read the same stored result (17, 18)');
 $data = require $root . '/config/dashboard.php';

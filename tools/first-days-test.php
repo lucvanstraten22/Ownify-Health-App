@@ -222,8 +222,9 @@ $engine = health_score_at(['nights' => array_slice($nights, 0, 3), 'ratings' => 
     (new DateTimeImmutable(SETUP_DAY))->modify('+3 days')->setTime(21, 0));
 check('day 4: the score is the engine\'s own, unchanged', $s4['first']['value'] === $engine['sleep']['score'] && $engine['sleep']['score'] !== null,
     json_encode([$s4['first']['value'], $engine['sleep']['score']]));
-check('day 4: with its real components and weights', count($s4['first']['parts']) === 3
-    && array_column($s4['first']['parts'], 'id') === ['duration', 'regularity', 'quality']
+check('day 4: with its real factors and weights — the ones that count', count($s4['first']['parts']) >= 2
+    && array_slice(array_column($s4['first']['parts'], 'id'), 0, 2) === ['duration', 'regularity']
+    && array_filter($s4['first']['parts'], static fn ($p) => !$p['counted']) === []
     && $s4['first']['parts'][0]['value'] !== null);
 check('day 4: the overall score rests on sleep alone — and says so', $s4['note'] === 'Je gezondheidsscore rust voorlopig alleen op slaap. Voeding en training tellen mee zodra er 3 dagen van zijn.', (string) $s4['note']);
 check('day 4: the way to the Scorekompas', $s4['open'] === $cal['first']['open']);

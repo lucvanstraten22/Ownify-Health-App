@@ -72,15 +72,22 @@ $titleId  = 'insights-title' . ($slot === null ? '' : '-' . $slot);
                 <span class="insights__marker" aria-hidden="true"><?= icon_solid($item['icon']) ?></span>
                 <div class="insights__body">
                     <p class="insights__title"><?= e($item['title']) ?></p>
-                    <p class="insights__text"><?= e($item['body']) ?></p>
-                    <?php if ($combined): ?>
+                    <?php if ($combined && isset($item['progress'])): ?>
+                        <?php /* Still gathering (38.0): only the bar — no label, no line;
+                                 what is still needed is its tooltip. */
+                        component('insight-progress', $data + ['progress' => ['share' => $item['progress'], 'text' => $item['body'], 'id' => 'card-' . $item['code']]]); ?>
+                    <?php elseif ($combined): ?>
+                        <p class="insights__text"><?= e($item['body']) ?></p>
                         <p class="card__meta card__meta--small"><?= e(implode(' · ', array_filter([$item['tier']['label'], $item['own'] ?? null]))) ?></p>
-                    <?php elseif (!$empty && isset($item['research'])): ?>
+                    <?php else: ?>
+                        <p class="insights__text"><?= e($item['body']) ?></p>
+                        <?php if (!$empty && isset($item['research'])): ?>
                         <?php component('research-evidence', $data + ['evidence' => [
                             'research' => $item['research'],
                             'strength' => $item['strength'],
                             'label'    => $item['research_label'],
                         ]]); ?>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </li>

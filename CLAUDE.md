@@ -80,7 +80,7 @@ and `--fs-*` / `Ownify.Fs*`; use only its steps.
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 37.0**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 38.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher.
@@ -94,4 +94,4 @@ by 10.0):
 
 Every commit title starts with the new version number, then the
 description: `10.1 Show the version in commit titles`.
-The next version is 37.1 for a small update, or 38.0 for a big one.
+The next version is 38.1 for a small update, or 39.0 for a big one.

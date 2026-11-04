@@ -9,8 +9,8 @@
  * results — the shape health_score_history() returns — and checks what it
  * says: the direction and its sentences, recovery and weeks in a row, a
  * category starting or stopping to count, the averages and when they are
- * withheld, the biggest opportunity (weight times room, not the lowest
- * category), empty states, and that no sentence it can produce says why or
+ * withheld, that the Mogelijk aandachtspunt is gone (38.0), empty states,
+ * and that no sentence it can produce says why or
  * what to do. It also checks that the facts the engine now hands along are
  * the very numbers its components were calculated from.
  *
@@ -122,8 +122,6 @@ check('every comparison is withheld, none is a zero',
     array_column($c['comparison']['rows'], 'value') === [null, null, null, null]
     && count(array_filter(array_column($c['comparison']['rows'], 'note'), static fn ($n) => $n === 'Nog niet genoeg gegevens')) === 4
     && $c['comparison']['delta'] === null);
-check('no opportunity, and it says why', $c['opportunity']['state'] === 'empty'
-    && $c['opportunity']['empty'] === 'Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.');
 check('a category without days says what to connect', $c['composition']['categories'][0]['meta'] === $areas['sleep']['empty']);
 
 section('A few days: collecting');
@@ -234,9 +232,9 @@ check('Training stopping to count is told with its date',
 section('What moved with it');
 
 $sleepParts = static fn (float $duration): array => result(
-    (int) round(0.45 * $duration + 0.30 * 90 + 0.25 * 90),
+    (int) round(health_weighted(['duration' => $duration, 'regularity' => 90.0, 'social_jetlag' => 90.0], $cfg['sleep']['weights'])),
     40,
-    ['duration' => $duration, 'regularity' => 90.0, 'quality' => 90.0]
+    ['duration' => $duration, 'regularity' => 90.0, 'social_jetlag' => 90.0]
 );
 $c = $compass(history(30, static fn ($i) => [$sleepParts($i < 15 ? 90.0 : 60.0), result(80), result(80)]));
 $collect($c);
@@ -283,114 +281,16 @@ check('…and 3 days in the last 7 is too few for an average',
     $compass($gaps)['comparison']['rows'][1]['value'] === null);
 
 /* ======================================================================
-   The biggest opportunity
+   No point of attention (38.0)
    ====================================================================== */
-section('The biggest opportunity');
+section('No Mogelijk aandachtspunt');
 
-/* Training is the lowest category (65), but Slaap's duration has the most room:
-   0.45 of Slaap x 60 points / 3 categories = 9 against Training's best, balance:
-   0.35 x 35 / 3 = 4.1. */
-$c = $compass(history(1, static fn () => [
-    result(73, 40, ['duration' => 40.0, 'regularity' => 100.0, 'quality' => 100.0],
-        ['minutes' => array_fill(0, 40, 300.0), 'bedtime_sd' => 10.0, 'wake_sd' => 10.0, 'duration_sd' => 10.0,
-         'regularity' => ['bedtime' => 100.0, 'wake_time' => 100.0, 'duration' => 100.0], 'quality_nights' => 40, 'quality' => []]),
-    result(80, 20, ['rating' => 80.0], ['rating' => 8.0]),
-    result(65, 30, ['volume' => 65.0, 'intensity' => 65.0, 'progression' => 65.0, 'balance' => 65.0]),
-]));
-$collect($c);
-check('not simply the lowest category: Slaapduur, not Training', $c['opportunity']['category'] === 'sleep' && $c['opportunity']['part'] === 'duration',
-    json_encode([$c['opportunity']['category'], $c['opportunity']['part']]));
-check('…its room on the Health Score: 9 points', $c['opportunity']['gain'] === 9 && $c['opportunity']['gain_text'] === 'Op 100 zou dit onderdeel je Gezondheidsscore met zo\'n 9 punten verhogen.');
-check('…what was measured, in the person\'s own nights', $c['opportunity']['fact'] === '40 van je 40 nachten duurden korter dan 7:30.', $c['opportunity']['fact']);
-check('…and what a higher score would go together with, from the curve\'s top in config/scoring.php',
-    $c['opportunity']['relation'] === 'Meer nachten tussen 7:30 en 8:30 zouden samengaan met een hogere duurscore.', $c['opportunity']['relation']);
-check('…in the category\'s colour, with the component\'s score band', $c['opportunity']['accent'] === 'sleep' && $c['opportunity']['band'] === 'low');
-
-$c = $compass(history(1, static fn () => [
-    result(73, 2, ['duration' => 40.0, 'regularity' => 100.0, 'quality' => 100.0]),
-    result(95, 7, ['rating' => 95.0], ['rating' => 9.5]),
-    result(65, 4, ['volume' => 65.0, 'intensity' => 65.0, 'progression' => 65.0, 'balance' => 65.0]),
-]));
-check('a category with fewer than 3 days is not pointed at, however much room', $c['opportunity']['category'] === 'training',
-    json_encode($c['opportunity']['category']));
-check('…Training\'s balance instead, with 4 of its 7 days: the most weight', $c['opportunity']['part'] === 'balance');
-check('the minimum is the score\'s own: 3 days of its 7', (int) $copy['rules']['opportunity_min_days'] === 3);
-
-$c = $compass(history(1, static fn () => [
-    result(98, 40, ['duration' => 98.0, 'regularity' => 98.0, 'quality' => 98.0]),
-    result(97, 20, ['rating' => 97.0], ['rating' => 9.7]),
-    result(98, 30, ['volume' => 98.0, 'intensity' => null, 'progression' => null, 'balance' => 98.0]),
-]));
-check('little room anywhere: no opportunity, and it says so', $c['opportunity']['state'] === 'empty'
-    && $c['opportunity']['empty'] === 'Geen onderdeel springt eruit: overal zit weinig ruimte.');
-
-$c = $compass(history(1, static fn () => [
-    result(null, 2), result(null, 0),
-    result(70, 20, ['volume' => 50.0, 'intensity' => null, 'progression' => null, 'balance' => 80.0],
-        ['minutes_per_week' => 60.0, 'balance' => ['frequency' => ['value' => 2.0, 'score' => 70.0], 'rest' => ['value' => 2, 'score' => 100.0],
-         'spikes' => null, 'hard_days' => null, 'sleep' => null]]),
-]));
-$collect($c);
-check('one category counting: all of the score is its, a component without data takes no share',
-    $c['opportunity']['part'] === 'volume' && $c['opportunity']['gain'] === (int) round(0.20 / 0.55 * 50),
-    json_encode([$c['opportunity']['part'], $c['opportunity']['gain']]));
-check('…minutes a week, and "more" below the curve\'s top', $c['opportunity']['fact'] === 'Je traint gemiddeld 60 minuten per week.'
-    && $c['opportunity']['relation'] === 'Meer trainingsminuten per week zouden samengaan met een hogere volumescore.');
-check('…and the note says only Training counts', str_starts_with($c['composition']['note'], 'Je Gezondheidsscore is nu je score voor Training'),
-    $c['composition']['note']);
-
-section('Each explanation, from the facts');
-
-$explain = static fn (string $cat, string $key, array $result) => score_compass_explain($cat, $key, $result, $copy['composition']['parts'][$cat][$key]['title'], $copy, $cfg);
-
-[$f, $r] = $explain('sleep', 'regularity', result(80, 30, ['regularity' => 60.0],
-    ['bedtime_sd' => 52.4, 'wake_sd' => 20.0, 'duration_sd' => 25.0, 'regularity' => ['bedtime' => 61.0, 'wake_time' => 95.0, 'duration' => 94.0]]));
-check('regularity: the bedtime, said as the user would (the brief\'s own example)',
-    $f === 'Je bedtijd wisselt doorgaans zo\'n 52 minuten.' && $r === 'Een regelmatiger bedtijd zou samengaan met een hogere regelmaatscore.', "$f / $r");
-
-[$f, $r] = $explain('sleep', 'duration', result(80, 30, ['duration' => 80.0], ['minutes' => [600.0, 610.0, 620.0, 470.0]]));
-check('duration: long nights are named as long', $f === '3 van je 4 nachten duurden langer dan 8:30.', $f);
-
-[$f, $r] = $explain('sleep', 'quality', result(80, 30, ['quality' => 70.0], ['quality' => [
-    'efficiency' => ['value' => 91.0, 'score' => 93.0, 'nights' => 20], 'awake' => ['value' => 48.0, 'score' => 66.0, 'nights' => 20],
-    'deep' => ['value' => 18.0, 'score' => 100.0, 'nights' => 20], 'rem' => ['value' => 22.0, 'score' => 100.0, 'nights' => 20]]]));
-check('quality: the weakest measurement', $f === 'Je bent gemiddeld 48 minuten per nacht wakker.' && $r === 'Minder tijd wakker zou samengaan met een hogere kwaliteitsscore.', "$f / $r");
-
-[$f, $r] = $explain('sleep', 'quality', result(80, 30, ['quality' => 70.0], ['quality' => [
-    'efficiency' => null, 'awake' => null, 'deep' => ['value' => 7.0, 'score' => 55.0, 'nights' => 20], 'rem' => ['value' => 22.0, 'score' => 100.0, 'nights' => 20]]]));
-check('quality: too little deep sleep is "groter aandeel"', $r === 'Een groter aandeel diepe slaap zou samengaan met een hogere kwaliteitsscore.', $r);
-
-[$f, $r] = $explain('nutrition', 'rating', result(74, 7, ['rating' => 74.3], ['rating' => 7.43]));
-check('nutrition: the average cijfer with a comma', $f === 'Je gemiddelde dagcijfer voor voeding is 7,4, over 7 dagen.', $f);
-
-[$f, $r] = $explain('training', 'intensity', result(70, 20, ['intensity' => 68.0], ['hard' => 14, 'known' => 20]));
-check('intensity: mostly hard is "kleiner aandeel"', $f === '14 van je 20 trainingen met gemeten inspanning waren zwaar.'
-    && $r === 'Een kleiner aandeel zware trainingen zou samengaan met een hogere intensiteitsscore.', "$f / $r");
-
-[$f, $r] = $explain('training', 'intensity', result(70, 20, ['intensity' => 60.0], ['hard' => 1, 'known' => 20]));
-check('intensity: all easy is "groter aandeel"', $r === 'Een groter aandeel zware trainingen zou samengaan met een hogere intensiteitsscore.', $r);
-
-[$f, $r] = $explain('training', 'progression', result(70, 20, ['progression' => 52.0],
-    ['progression' => ['signals' => ['pace' => 1, 'goals' => 1], 'change' => -0.021]]));
-check('progression: what was compared and how it went', $f === 'Je recente resultaten voor tempo en doelresultaten zijn gemiddeld 2% minder goed dan je eerdere.', $f);
-
-$balance = static fn (array $parts) => $explain('training', 'balance', result(70, 20, ['balance' => 60.0], ['balance' => $parts + [
-    'frequency' => ['value' => 4.0, 'score' => 100.0], 'rest' => ['value' => 2, 'score' => 100.0],
-    'spikes' => null, 'hard_days' => null, 'sleep' => null]]));
-[$f] = $balance(['frequency' => ['value' => 1.4, 'score' => 50.0]]);
-check('balance: few training days', $f === 'Je traint gemiddeld op 1,4 dagen per week.', $f);
-[$f, $r] = $balance(['rest' => ['value' => 9, 'score' => 50.0]]);
-check('balance: a long run without rest', $f === 'Je langste reeks trainingsdagen zonder rustdag was 9 dagen.', $f);
-[$f] = $balance(['spikes' => ['value' => 3, 'of' => 8, 'score' => 50.0]]);
-check('balance: load spikes', $f === 'In 3 van 8 weken lag je trainingstijd veel hoger dan in de weken ervoor.', $f);
-[$f] = $balance(['hard_days' => ['value' => 4, 'of' => 10, 'score' => 50.0]]);
-check('balance: hard days back to back', $f === '4 van je 10 zware trainingsdagen volgden direct op een andere zware dag.', $f);
-[$f, $r] = $balance(['sleep' => ['value' => 380.0, 'of' => 12, 'score' => 50.0]]);
-check('balance: short nights after training', $f === 'Na trainingsdagen sliep je gemiddeld 6:20.'
-    && $r === 'Langere nachten na trainingsdagen zouden samengaan met een hogere balansscore.', "$f / $r");
-
-[$f, $r] = $explain('training', 'progression', result(70, 20, ['progression' => 52.0], []));
-check('without facts: what it scores, never a made-up number', $f === 'Je score voor progressie staat op 52 van 100.', $f);
+$c = $compass(history(1, static fn () => [result(76, 40, ['duration' => 40.0, 'regularity' => 100.0]), result(80, 20, ['rating' => 80.0]), result(65, 30, ['steps' => 65.0])]));
+check('the Scorekompas has no point of attention any more', !array_key_exists('opportunity', $c));
+check('…nor its words or rules', !isset($copy['opportunity']) && !isset($copy['rules']['opportunity_min_days']) && !function_exists('score_compass_opportunity'));
+check('every factor in config/scoring.php has its words', array_keys($copy['composition']['parts']['sleep']) === array_keys($cfg['sleep']['factors'])
+    && array_keys($copy['composition']['parts']['nutrition']) === array_keys($cfg['nutrition']['factors'])
+    && array_keys($copy['composition']['parts']['training']) === array_keys($cfg['training']['factors']));
 
 /* ======================================================================
    What makes up the score
@@ -398,34 +298,37 @@ check('without facts: what it scores, never a made-up number', $f === 'Je score 
 section('What the score is made of');
 
 $c = $compass(history(1, static fn () => [
-    result(84, 36, ['duration' => 76.0, 'regularity' => 92.5, 'quality' => 88.6],
-        ['minutes' => [399.0], 'bedtime_sd' => 14.6, 'wake_sd' => 31.1, 'quality_nights' => 36]),
-    result(74, 7, ['rating' => 74.3], ['rating' => 7.43]),
-    result(86, 18, ['volume' => 75.8, 'intensity' => null, 'progression' => null, 'balance' => 91.6],
-        ['minutes_per_week' => 168.6, 'balance' => ['frequency' => ['value' => 3.25, 'score' => 95.0]]]),
+    result(84, 6, ['duration' => 76.0, 'regularity' => 92.5, 'social_jetlag' => 100.0],
+        ['minutes' => [399.0], 'bedtime_sd' => 14.6, 'wake_sd' => 31.1, 'social_jetlag' => 0.4, 'quality_nights' => 0]),
+    result(74, 7, ['rating' => 74.3], ['rating' => 7.43, 'food_days' => 0]),
+    result(86, 6, ['steps' => 80.0, 'aerobic' => 75.8], ['steps' => 7120.0, 'aerobic_per_week' => 168.6]),
 ]));
 $collect($c);
 [$sleep, $food, $sport] = $c['composition']['categories'];
 check('three categories, each counting equally, over the configured window',
     $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Training over de afgelopen 7 dagen. Elk telt even zwaar.',
     $c['composition']['note']);
-check('Slaap: its three components with the weights config/scoring.php gives them',
-    array_column($sleep['parts'], 'weight', 'id') === ['duration' => 45, 'regularity' => 30, 'quality' => 25]);
-check('…their values as whole numbers, and their score bands', array_column($sleep['parts'], 'value') === [76, 93, 89]
-    && array_column($sleep['parts'], 'band') === ['mid', 'high', 'high']);
+check('Slaap: its eight factors, those with data sharing the weight (34.5 : 34.5 : 17.3)',
+    array_column($sleep['parts'], 'weight', 'id') === ['duration' => 40, 'regularity' => 40, 'social_jetlag' => 20, 'efficiency' => null,
+        'awake' => null, 'deep' => null, 'rem' => null, 'hrv' => null], json_encode(array_column($sleep['parts'], 'weight', 'id')));
+check('…their values as whole numbers, and their score bands', array_slice(array_column($sleep['parts'], 'value'), 0, 3) === [76, 93, 100]
+    && array_slice(array_column($sleep['parts'], 'band'), 0, 3) === ['mid', 'high', 'high']);
 check('…each with what it was worked out from', $sleep['parts'][0]['note'] === 'Gemiddeld 6:39 per nacht'
-    && $sleep['parts'][1]['note'] === 'Bedtijd wisselt ±15 min, opstaan ±31 min' && $sleep['parts'][2]['note'] === 'Gemeten in 36 nachten');
-check('Voeding: one part, so a sentence instead of a list', $food['parts'] === [] && $food['summary'] === 'Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.');
-check('Training: missing components do not count, the others share their weight (20:35 of 55)',
-    array_column($sport['parts'], 'weight', 'id') === ['volume' => 36, 'intensity' => null, 'progression' => null, 'balance' => 64],
+    && $sleep['parts'][1]['note'] === 'Bedtijd wisselt ±15 min, opstaan ±31 min' && $sleep['parts'][2]['note'] === 'Midden van je slaap verschuift 0:24 op vrije dagen',
+    json_encode(array_column($sleep['parts'], 'note')));
+check('…and the ones without data say why they do not count', str_starts_with((string) $sleep['parts'][7]['note'], 'Telt nu niet mee'));
+check('Voeding on its rating alone: the sentence, and the rating carrying all of it',
+    $food['summary'] === 'Je voedingsscore is je gemiddelde dagcijfer (7,4) keer tien.'
+    && array_column($food['parts'], 'weight', 'id')['rating'] === 100, json_encode($food['summary']));
+check('Training: steps and aerobic minutes share their weight (26.5 : 9.9)',
+    array_filter(array_column($sport['parts'], 'weight', 'id')) === ['steps' => 73, 'aerobic' => 27],
     json_encode(array_column($sport['parts'], 'weight', 'id')));
-check('…and say why they do not count', str_starts_with((string) $sport['parts'][1]['note'], 'Telt nu niet mee'));
 check('a category\'s colour is its identity, its band its score', $sleep['accent'] === 'sleep' && $sleep['band'] === 'high' && $food['band'] === 'mid');
 
 $c = $compass(history(1, static fn () => [result(null, 2), result(null, 0), result(null, 0)]));
-check('no score yet: the components with the weights they will have, no values',
-    array_column($c['composition']['categories'][0]['parts'], 'weight') === [45, 30, 25]
-    && array_column($c['composition']['categories'][0]['parts'], 'value') === [null, null, null]);
+check('no score yet: the factors with the weights they will have, no values',
+    array_column($c['composition']['categories'][0]['parts'], 'weight') === [35, 35, 17, 3, 3, 2, 2, 4]
+    && array_filter(array_column($c['composition']['categories'][0]['parts'], 'value')) === []);
 
 /* ======================================================================
    The facts are the engine's own numbers
@@ -433,6 +336,7 @@ check('no score yet: the components with the weights they will have, no values',
 section('The engine\'s facts');
 
 $asOf = new DateTimeImmutable('2026-09-25 15:00:00');
+$today = $asOf->format('Y-m-d');
 $nights = [];
 for ($i = 20; $i >= 1; $i--) {
     $end = $asOf->setTime(7, 0)->modify('-' . $i . ' days')->getTimestamp() + (($i * 37) % 61 - 30) * 60;
@@ -443,24 +347,25 @@ for ($i = 20; $i >= 1; $i--) {
         'light' => 200, 'deep' => 60 + $i, 'rem' => 90,
     ];
 }
-$s = health_score_sleep($nights);
+$s = health_score_sleep($nights, $today);
 $r = $cfg['sleep']['regularity'];
+$w = array_map(static fn ($n) => health_score_day_weight($n['date'], $today), $nights);
 check('facts list every night', count($s['facts']['minutes']) === 20);
-check('the regularity facts weigh up to the component', round(health_weighted($s['facts']['regularity'], $r['weights']), 1) === $s['components']['regularity'],
+check('the regularity facts average to the component', round(($s['facts']['regularity']['bedtime'] + $s['facts']['regularity']['wake_time']) / 2, 1) === $s['components']['regularity'],
     json_encode([$s['facts']['regularity'], $s['components']['regularity']]));
 check('…and are the curves of the spreads', abs($s['facts']['regularity']['bedtime'] - health_curve($r['timing_curve'], $s['facts']['bedtime_sd'])) < 1e-9);
-check('the duration facts give the component back', round(health_mean(array_map(
-    static fn ($m) => health_curve($cfg['sleep']['duration_curve'], $m / 60), $s['facts']['minutes'])), 1) === $s['components']['duration']);
+check('the duration facts give the component back, recent nights counting more', round(health_weighted_mean(array_map(
+    static fn ($m) => health_curve($cfg['sleep']['duration_curve'], $m / 60), $s['facts']['minutes']), $w), 1) === $s['components']['duration']);
 check('quality facts per measurement, over the nights that had it',
     $s['facts']['quality']['awake']['nights'] === 20 && $s['facts']['quality']['deep'] !== null && $s['facts']['quality_nights'] === 20);
-check('a night\'s quality is still its parts\' weighted average', abs(health_night_quality($nights[0]) - health_weighted(
+check('a night\'s quality is still its parts\' weighted average (the points read it)', abs(health_night_quality($nights[0]) - health_weighted(
     array_map(static fn ($p) => $p['score'] ?? null, health_night_quality_parts($nights[0])), $cfg['sleep']['quality']['weights'])) < 1e-9);
 
-$n = health_score_nutrition([['at' => 1, 'date' => '2026-09-01', 'value' => 7.0], ['at' => 2, 'date' => '2026-09-02', 'value' => 8.0],
-    ['at' => 3, 'date' => '2026-09-03', 'value' => 6.0]]);
+$n = health_score_nutrition([['at' => 1, 'date' => '2026-09-01', 'value' => 7.0], ['at' => 2, 'date' => '2026-09-02', 'value' => 7.0],
+    ['at' => 3, 'date' => '2026-09-03', 'value' => 7.0]], '2026-09-03');
 check('nutrition facts: the average cijfer', $n['facts']['rating'] === 7.0 && $n['components']['rating'] === 70.0);
 
-check('facts are never stored: health_score_store writes components only',
+check('facts are never stored: health_score_store writes components, range and coverage only',
     !str_contains((string) file_get_contents(dirname(__DIR__) . '/includes/health-score.php'), "json_encode(\$result['facts']"));
 
 /* ======================================================================
@@ -486,8 +391,6 @@ foreach (['je moet', 'moet je', 'ga om', 'probeer', 'zorg dat', 'zorg voor', 'ad
 foreach (['anderen', 'andere gebruikers', 'vrienden', 'nederland', 'gemiddelde nederlander', 'leeftijdsgenoten', 'ranglijst'] as $word) {
     check("never compares with others: no \"{$word}\"", !str_contains($text, $word));
 }
-check('the opportunity sentences say what would go together, every one of them',
-    array_filter($copy['opportunity']['texts'], static fn ($t) => isset($t['relation']) && !str_contains($t['relation'], 'zou') && !str_contains($t['relation'], 'zouden')) === []);
 check('no window is written into the words: it is filled in from config/scoring.php',
     !preg_match('/afgelopen \d+ dagen/', implode("\n", array_filter(array_map(
         static fn ($v) => is_string($v) ? $v : null,

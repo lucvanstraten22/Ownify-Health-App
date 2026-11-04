@@ -97,10 +97,11 @@ return [
     /* "Uit onderzoek blijkt": the detail view's words, on both apps. */
     'detail' => [
         'title'        => 'Uit onderzoek blijkt',
-        'found'        => 'Wat het onderzoek vond',
+        /* 38.0: the findings as points, first; no "Voor wie" — research is
+           only shown to the people it holds for (research-eligibility.php). */
+        'found'        => 'Samenvatting onderzoek',
         'claim'        => 'Wat Ownify ermee zegt',
         'evidence'     => 'Bewijskracht',
-        'population'   => 'Voor wie',
         'limitations'  => 'Beperkingen',
         'source'       => 'Bron',
         'kind_label'   => 'Soort onderzoek',

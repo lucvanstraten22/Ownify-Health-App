@@ -1,6 +1,10 @@
 /**
- * research.js — "Uit onderzoek blijkt": reading a publication's PDF
- * (pages/research-detail.php, docs/RESEARCH.md).
+ * research.js — "Uit onderzoek blijkt" (pages/research-detail.php,
+ * docs/RESEARCH.md): Beperkingen opened in place beside the source, and
+ * reading a publication's PDF.
+ *
+ * Beperkingen (38.0) opens as Voeding opens a macronutrient's row: in
+ * place, 280 ms (the CSS), the chevron turned, aria-expanded saying so.
  *
  * "Lees de pdf" is a plain link the browser can always follow, to Ownify's
  * own CC BY copy or to the publisher's PDF. Where this browser can show a PDF
@@ -33,6 +37,17 @@
         var note = detail.querySelector('[data-research-offline]');
         if (note) { note.hidden = !on; }
     }
+
+    /* Beperkingen: open or close the limitations beside the source. */
+    document.addEventListener('click', function (event) {
+        var toggle = event.target.closest('[data-research-limits-toggle]');
+        if (!toggle) { return; }
+        var box = toggle.closest('[data-research-limits]');
+        if (!box) { return; }
+        var open = !box.classList.contains('is-open');
+        box.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
 
     document.addEventListener('click', function (event) {
         var link = event.target.closest('[data-research-read]');

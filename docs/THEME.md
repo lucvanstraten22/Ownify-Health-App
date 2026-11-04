@@ -174,15 +174,31 @@ verdicts) is the same glass chip, never pressed: the chosen green glass
 inside a range, the gold glass with `--attention` text above it, plain
 otherwise.
 
+**The text link** (38.0): a way onward that is only its words — Subhead,
+semibold, the primary ink, a muted 15 px chevron, a 44 px target
+(`.text-link` + `.text-link__icon`, Android `TextLink`). It was the
+Scorekompas's "Bekijk de opbouw" on Overzicht; since 38.0 every "Bekijk …"
+in Ownify is one — Bekijk onderzoek (and Bij jouw leeftijd beside it),
+Bekijk de publicatie, Community's Bekijken — where they were glass chips and
+buttons. One that opens something in place (Beperkingen) turns its chevron
+down while open, 280 ms strong ease-out, as Voeding's rows do.
+
 **Research evidence** (29.0, docs/RESEARCH.md) is made of what is here, no
-new style: beside an insight, "Bekijk onderzoek" is the plain glass chip
-(`.glass--chip`, Android `GlassChip`) that opens the detail; the label (Zeer
-betrouwbaar, Betrouwbaar, Beperkt onderbouwd) is said only in that detail,
-as the same chip used as a status (29.1). The detail is Instellingen'
-page: the page intro, eyebrows, the settings card's rows and notes, `.btn`
-(the green glass for Lees de pdf); a PDF read inside it sits in a Well. The
-paper of a PDF's pages is the document's own white, in either theme — it is
-the publication, not Ownify's surface.
+new style: beside an insight, "Bekijk onderzoek" is the text link that
+opens the detail; the label (Zeer betrouwbaar, Betrouwbaar, Beperkt
+onderbouwd) is said only in that detail, as the glass chip used as a status
+(29.1). The detail is Instellingen' page: the page intro, eyebrows, the
+settings card's rows and notes, OwnifyAI's points (a muted disc, 38.0),
+`.btn` (the green glass for Lees de pdf); a PDF read inside it sits in a
+Well. The paper of a PDF's pages is the document's own white, in either
+theme — it is the publication, not Ownify's surface.
+
+**A bar's reading** (`.goal__tip`, Android `ReadingBubble`): the goal bar's
+small glass pill over the fill's end, shown while a pointer is over the bar
+or a finger rests on it (280 ms), or while it has focus; gone when that
+ends. Since 38.0 also a combined insight's bar while it is still gathering
+(`components/insight-progress.php`, `ReadingBar`): the meter alone, and
+what is still needed as its reading — a sentence, so it may wrap.
 
 **The slider** (27.0, Voeding's cijfer): the pill's rail (8 tall,
 `--fill` at .08, a hairline), `--health-edge` → `--health` up to a 28 round

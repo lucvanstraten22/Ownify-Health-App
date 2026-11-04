@@ -401,6 +401,23 @@ class ScreenshotCapture {
         }
     }
 
+    /** "Uit onderzoek blijkt" (38.0): the summary, the source with Beperkingen opened, Bewijskracht last. */
+    @Test
+    fun researchDetail() {
+        val id = System.getProperty("ownify.research") ?: data().research.details.keys.firstOrNull()
+        assumeTrue("no research in this state", id != null)
+        app { tab("overview") }
+        compose.runOnUiThread { shell.openDetail(Detail.Research(id!!)) }
+        settle()
+        shoot("research")
+        compose.onAllNodes(hasText("Beperkingen") and hasClickAction()).onLast().performClick()
+        settle()
+        scroll(420, detail = true)
+        shoot("research-2")
+        scroll(1400, detail = true)
+        shoot("research-3")
+    }
+
     /** A history card in each of its periods: the card brought into view — down to its hint — then 7 dagen … 1 jaar. */
     private fun periods(name: String, title: String) {
         compose.onNode(hasText(title)).performScrollTo()

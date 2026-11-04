@@ -1,8 +1,8 @@
 <?php
 /**
  * The Scorekompas — the Health Score explained: what it is made of, what is
- * changing, how it compares with the person's own past, and where it has the
- * most room.
+ * changing and how it compares with the person's own past. (38.0: the
+ * "Mogelijk aandachtspunt" section is gone.)
  *
  * ---------------------------------------------------------------------------
  * IT READS THE SCORE, IT NEVER SCORES
@@ -19,8 +19,7 @@
  * ---------------------------------------------------------------------------
  *   - why: it says what happened when ("sinds", "in dezelfde periode"), never
  *     that one thing caused another;
- *   - what to do: an opportunity says what a higher score would go together
- *     with, never an instruction, a time or a target;
+ *   - what to do: never an instruction, a time or a target;
  *   - anything about anybody else: the only comparison is with the person's
  *     own earlier scores;
  *   - anything without the data for it: too little data is an empty state,
@@ -32,7 +31,7 @@ declare(strict_types=1);
 return [
 
     'title'    => 'Scorekompas',
-    'lede'     => 'Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.',
+    'lede'     => 'Hoe je Gezondheidsscore is opgebouwd en wat er verandert.',
     'back'     => 'Overzicht',
     /* The Overzicht card opens the compass; this ends its spoken label. */
     'open'     => 'Open het Scorekompas',
@@ -73,16 +72,6 @@ return [
         'period_days'      => 30,
         'period_min'       => 15,
 
-        /* An opportunity: a category with at least this many days of data,
-           and at least this many points of room on the Health Score. Days in
-           the score's own 7-day window: as many as a category needs to have
-           a score at all (min_days, config/scoring.php). */
-        'opportunity_min_days'   => 3,
-        'opportunity_min_points' => 2,
-
-        /* Where a scoring curve counts as at its top (config/scoring.php):
-           the inputs that score at least this. */
-        'top_score'        => 95,
     ],
 
     /* ------------------------------------------------------------------
@@ -102,35 +91,76 @@ return [
         /* Voeding has one part: a sentence instead of a list. %s the average cijfer. */
         'rating'      => 'Je voedingsscore is je gemiddelde dagcijfer (%s) keer tien.',
 
-        /* The components of each category, as config/scoring.php weighs
-           them: `label` in its category's list, `title` on its own (Grootste
-           kans), `missing` when it has no data and does not count. */
+        /* The factors of each category, as config/scoring.php weighs them
+           (38.0): `label` in its category's list, `title` on its own (in a
+           sentence about what moved), `missing` when it has no data and
+           does not count. */
         'parts' => [
             'sleep' => [
-                'duration'   => ['label' => 'Slaapduur',   'title' => 'Slaapduur',      'missing' => 'Nog geen nachten'],
-                'regularity' => ['label' => 'Regelmaat',   'title' => 'Slaapregelmaat', 'missing' => 'Nog te weinig nachten'],
-                'quality'    => ['label' => 'Kwaliteit',   'title' => 'Slaapkwaliteit', 'missing' => 'Nog te weinig nachten met slaapfasen of tijd wakker'],
+                'duration'      => ['label' => 'Slaapduur',          'title' => 'Slaapduur',               'missing' => 'Nog geen nachten'],
+                'regularity'    => ['label' => 'Regelmaat',          'title' => 'Slaapregelmaat',          'missing' => 'Nog te weinig nachten'],
+                'social_jetlag' => ['label' => 'Sociale jetlag',     'title' => 'Sociale jetlag',          'missing' => 'Nog geen nacht op een vrije dag én op een werkdag'],
+                'efficiency'    => ['label' => 'Efficiëntie',        'title' => 'Slaapefficiëntie',        'missing' => 'Nog te weinig nachten met tijd in bed'],
+                'awake'         => ['label' => 'Wakker in de nacht', 'title' => 'Tijd wakker in de nacht', 'missing' => 'Nog te weinig nachten met tijd wakker'],
+                'deep'          => ['label' => 'Diepe slaap',        'title' => 'Diepe slaap',             'missing' => 'Nog te weinig nachten met slaapfasen'],
+                'rem'           => ['label' => 'REM-slaap',          'title' => 'REM-slaap',               'missing' => 'Nog te weinig nachten met slaapfasen'],
+                'hrv'           => ['label' => 'HRV',                'title' => 'HRV tegenover je eigen basis', 'missing' => 'Nog te weinig HRV-metingen voor een eigen basis'],
             ],
             'nutrition' => [
-                'rating'     => ['label' => 'Dagcijfer',   'title' => 'Dagcijfer voor voeding', 'missing' => 'Nog geen dagcijfers'],
+                'fibre'         => ['label' => 'Vezels',             'title' => 'Vezels',                  'missing' => 'Nog geen volledige dagen met vezels'],
+                'sodium'        => ['label' => 'Natrium',            'title' => 'Natrium',                 'missing' => 'Nog geen volledige dagen met natrium'],
+                'saturated_fat' => ['label' => 'Verzadigd vet',      'title' => 'Verzadigd vet',           'missing' => 'Nog geen volledige dagen met verzadigd vet'],
+                'sugar'         => ['label' => 'Suikers',            'title' => 'Suikers',                 'missing' => 'Nog geen volledige dagen met suikers'],
+                'protein'       => ['label' => 'Eiwit',              'title' => 'Eiwit',                   'missing' => 'Nog geen gewicht of volledige dagen met eiwit'],
+                'water'         => ['label' => 'Water',              'title' => 'Water',                   'missing' => 'Nog geen water vastgelegd'],
+                'caffeine'      => ['label' => 'Cafeïne',            'title' => 'Cafeïne voor het slapen', 'missing' => 'Nog geen cafeïne of nachten vastgelegd'],
+                'fat_share'     => ['label' => 'Aandeel vet',        'title' => 'Aandeel vet',             'missing' => 'Nog geen volledige dagen met vet'],
+                'energy'        => ['label' => 'Energiebalans',      'title' => 'Energiebalans',           'missing' => 'Nog geen energiedoel of volledige dagen'],
+                'rating'        => ['label' => 'Dagcijfer',          'title' => 'Dagcijfer voor voeding',  'missing' => 'Nog geen dagcijfers'],
             ],
             'training' => [
-                'volume'      => ['label' => 'Volume',      'title' => 'Trainingsvolume',      'missing' => 'Nog geen trainingen'],
-                'intensity'   => ['label' => 'Intensiteit', 'title' => 'Trainingsintensiteit', 'missing' => 'Nog te weinig trainingen met hartslag of ervaren inspanning'],
-                'progression' => ['label' => 'Progressie',  'title' => 'Progressie',           'missing' => 'Nog niets om mee te vergelijken'],
-                'balance'     => ['label' => 'Balans',      'title' => 'Trainingsbalans',      'missing' => 'Nog geen trainingen'],
+                'steps'         => ['label' => 'Stappen',            'title' => 'Stappen per dag',         'missing' => 'Nog geen volledige dagen met stappen'],
+                'aerobic'       => ['label' => 'Duurbeweging',       'title' => 'Minuten duurbeweging',    'missing' => 'Nog geen trainingen'],
+                'strength'      => ['label' => 'Kracht',             'title' => 'Krachttraining',          'missing' => 'Nog geen trainingen'],
+                'intensity'     => ['label' => 'Intensiteit',        'title' => 'Trainingsintensiteit',    'missing' => 'Nog te weinig trainingen met hartslag of ervaren inspanning'],
+                'active_days'   => ['label' => 'Actieve dagen',      'title' => 'Actieve dagen',           'missing' => 'Nog geen gegevens'],
+                'resting_hr'    => ['label' => 'Rusthartslag',       'title' => 'Rusthartslag',            'missing' => 'Nog geen rusthartslag'],
+                'recovery'      => ['label' => 'Herstel',            'title' => 'Herstel na zware dagen',  'missing' => 'Nog te weinig zware trainingsdagen'],
+                'progression'   => ['label' => 'Progressie',         'title' => 'Progressie',              'missing' => 'Nog niets om mee te vergelijken'],
             ],
         ],
 
-        /* One line of what each component was worked out from. */
+        /* Parts a day recorded before 38.0 can still carry, for reading
+           that day back in the history: their labels as they were. */
+        'earlier_parts' => [
+            'sleep'    => ['quality' => 'Kwaliteit'],
+            'training' => ['volume' => 'Volume', 'balance' => 'Balans'],
+        ],
+
+        /* One line of what each factor was worked out from. */
         'facts' => [
-            'duration'    => 'Gemiddeld %s per nacht',
-            'regularity'  => 'Bedtijd wisselt ±%1$d min, opstaan ±%2$d min',
-            'quality'     => ['Gemeten in %d nacht', 'Gemeten in %d nachten'],
-            'volume'      => 'Gemiddeld %d min per week',
-            'intensity'   => '%1$d van %2$d trainingen zwaar',
-            'progression' => '%s, recent tegenover eerder',
-            'balance'     => 'Gemiddeld %s trainingsdagen per week',
+            'duration'      => 'Gemiddeld %s per nacht',
+            'regularity'    => 'Bedtijd wisselt ±%1$d min, opstaan ±%2$d min',
+            'social_jetlag' => 'Midden van je slaap verschuift %s op vrije dagen',
+            'efficiency'    => 'Gemiddeld %d%% van de tijd in bed geslapen',
+            'awake'         => 'Gemiddeld %d min wakker per nacht',
+            'stage'         => 'Gemiddeld %d%% van je slaap',
+            'hrv'           => 'Gemiddeld %1$d ms, je eigen basis %2$d ms',
+            'per_kcal'      => '%s g per 1.000 kcal',
+            'energy_share'  => '%d%% van je energie',
+            'protein'       => '%s g per kg lichaamsgewicht',
+            'water'         => 'Gemiddeld %s per dag',
+            'caffeine'      => 'Gemiddeld %s tussen je laatste cafeïne en je bedtijd',
+            'energy'        => 'Gemiddeld %d%% naast je energiedoel',
+            'rating'        => 'Gemiddeld dagcijfer %s',
+            'steps'         => 'Gemiddeld %s stappen per dag',
+            'aerobic'       => '%d min per week, zwaar telt dubbel',
+            'strength'      => '%d min per week',
+            'intensity'     => '%d%% van je duurminuten zwaar',
+            'active_days'   => '%s actieve dagen per week',
+            'resting_hr'    => 'Gemiddeld %d slagen per minuut',
+            'recovery'      => '%1$d van %2$d zware dagen gevolgd door een rustige dag',
+            'progression'   => '%s, recent tegenover eerder',
         ],
         /* What progression compared, in the order it lists them. */
         'signals' => ['pace' => 'tempo', 'goals' => 'doelresultaten'],
@@ -227,130 +257,6 @@ return [
             'up'   => '+%d ten opzichte van de 30 dagen daarvoor',
             'down' => '−%d ten opzichte van de 30 dagen daarvoor',
             'same' => 'Gelijk aan de 30 dagen daarvoor',
-        ],
-    ],
-
-    /* ------------------------------------------------------------------
-       4  MOGELIJK AANDACHTSPUNT (29.0; "Grootste kans" before)
-       The component where the Health Score has the most room: its weight in
-       the score times what it lacks of 100. Each pair says what was measured
-       and what a higher score would go together with — never what to do. A
-       possible point of attention for the score, not the person's greatest
-       possible health improvement: the calculation is unchanged, only the
-       name. Where approved research is about that component, its evidence
-       stands under it (docs/INSIGHTS.md).
-       ------------------------------------------------------------------ */
-    'opportunity' => [
-        'title' => 'Mogelijk aandachtspunt',
-        'empty' => 'Nog niet genoeg gegevens om een aandachtspunt aan te wijzen.',
-        'none'  => 'Geen onderdeel springt eruit: overal zit weinig ruimte.',
-        'gain'  => 'Op 100 zou dit onderdeel je Gezondheidsscore met zo\'n %d punten verhogen.',
-
-        'texts' => [
-            'sleep.duration.short' => [
-                'fact'     => '%1$d van je %2$d nachten duurden korter dan %3$s.',
-                'relation' => 'Meer nachten tussen %3$s en %4$s zouden samengaan met een hogere duurscore.',
-            ],
-            'sleep.duration.long' => [
-                'fact'     => '%1$d van je %2$d nachten duurden langer dan %4$s.',
-                'relation' => 'Meer nachten tussen %3$s en %4$s zouden samengaan met een hogere duurscore.',
-            ],
-            'sleep.regularity.bedtime' => [
-                'fact'     => 'Je bedtijd wisselt doorgaans zo\'n %d minuten.',
-                'relation' => 'Een regelmatiger bedtijd zou samengaan met een hogere regelmaatscore.',
-            ],
-            'sleep.regularity.wake_time' => [
-                'fact'     => 'Je opstaantijd wisselt doorgaans zo\'n %d minuten.',
-                'relation' => 'Een regelmatiger opstaantijd zou samengaan met een hogere regelmaatscore.',
-            ],
-            'sleep.regularity.duration' => [
-                'fact'     => 'De lengte van je nachten wisselt doorgaans zo\'n %d minuten.',
-                'relation' => 'Nachten van een regelmatiger lengte zouden samengaan met een hogere regelmaatscore.',
-            ],
-            'sleep.quality.efficiency' => [
-                'fact'     => 'Je slaapt gemiddeld %d%% van de tijd dat je in bed ligt.',
-                'relation' => 'Een hogere slaapefficiëntie zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'sleep.quality.awake' => [
-                'fact'     => 'Je bent gemiddeld %d minuten per nacht wakker.',
-                'relation' => 'Minder tijd wakker zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'sleep.quality.deep.more' => [
-                'fact'     => 'Diepe slaap is gemiddeld %d%% van je slaap.',
-                'relation' => 'Een groter aandeel diepe slaap zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'sleep.quality.deep.less' => [
-                'fact'     => 'Diepe slaap is gemiddeld %d%% van je slaap.',
-                'relation' => 'Een kleiner aandeel diepe slaap zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'sleep.quality.rem.more' => [
-                'fact'     => 'REM-slaap is gemiddeld %d%% van je slaap.',
-                'relation' => 'Een groter aandeel REM-slaap zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'sleep.quality.rem.less' => [
-                'fact'     => 'REM-slaap is gemiddeld %d%% van je slaap.',
-                'relation' => 'Een kleiner aandeel REM-slaap zou samengaan met een hogere kwaliteitsscore.',
-            ],
-            'nutrition.rating' => [
-                'fact'     => 'Je gemiddelde dagcijfer voor voeding is %1$s, over %2$d dagen.',
-                'relation' => 'Hogere dagcijfers zouden samengaan met een hogere voedingsscore.',
-            ],
-            'training.volume.more' => [
-                'fact'     => 'Je traint gemiddeld %d minuten per week.',
-                'relation' => 'Meer trainingsminuten per week zouden samengaan met een hogere volumescore.',
-            ],
-            'training.volume.less' => [
-                'fact'     => 'Je traint gemiddeld %d minuten per week.',
-                'relation' => 'Minder trainingsminuten per week zouden samengaan met een hogere volumescore.',
-            ],
-            'training.intensity.more' => [
-                'fact'     => '%1$d van je %2$d trainingen met gemeten inspanning waren zwaar.',
-                'relation' => 'Een groter aandeel zware trainingen zou samengaan met een hogere intensiteitsscore.',
-            ],
-            'training.intensity.less' => [
-                'fact'     => '%1$d van je %2$d trainingen met gemeten inspanning waren zwaar.',
-                'relation' => 'Een kleiner aandeel zware trainingen zou samengaan met een hogere intensiteitsscore.',
-            ],
-            'training.progression' => [
-                /* %1$s what was compared, %2$s the change: "2% beter". */
-                'fact'     => 'Je recente resultaten voor %1$s zijn gemiddeld %2$s dan je eerdere.',
-                'same'     => 'Je recente resultaten voor %1$s zijn gemiddeld gelijk aan je eerdere.',
-                'relation' => 'Betere resultaten dan eerder zouden samengaan met een hogere progressiescore.',
-            ],
-            'training.balance.frequency.more' => [
-                'fact'     => 'Je traint gemiddeld op %s dagen per week.',
-                'relation' => 'Meer trainingsdagen per week zouden samengaan met een hogere balansscore.',
-            ],
-            'training.balance.frequency.less' => [
-                'fact'     => 'Je traint gemiddeld op %s dagen per week.',
-                'relation' => 'Meer rustdagen per week zouden samengaan met een hogere balansscore.',
-            ],
-            'training.balance.rest' => [
-                'fact'     => 'Je langste reeks trainingsdagen zonder rustdag was %d dagen.',
-                'relation' => 'Kortere reeksen zonder rustdag zouden samengaan met een hogere balansscore.',
-            ],
-            'training.balance.spikes' => [
-                'fact'     => 'In %1$d van %2$d weken lag je trainingstijd veel hoger dan in de weken ervoor.',
-                'relation' => 'Een geleidelijker opbouw zou samengaan met een hogere balansscore.',
-            ],
-            'training.balance.hard_days' => [
-                'fact'     => '%1$d van je %2$d zware trainingsdagen volgden direct op een andere zware dag.',
-                'relation' => 'Minder zware dagen direct na elkaar zouden samengaan met een hogere balansscore.',
-            ],
-            'training.balance.sleep.short' => [
-                'fact'     => 'Na trainingsdagen sliep je gemiddeld %s.',
-                'relation' => 'Langere nachten na trainingsdagen zouden samengaan met een hogere balansscore.',
-            ],
-            'training.balance.sleep.long' => [
-                'fact'     => 'Na trainingsdagen sliep je gemiddeld %s.',
-                'relation' => 'Kortere nachten na trainingsdagen zouden samengaan met een hogere balansscore.',
-            ],
-            /* Any component without a sentence of its own, or without the
-               facts to fill one. */
-            'default' => [
-                'fact'     => 'Je score voor %1$s staat op %2$d van 100.',
-                'relation' => 'Een hogere score voor %1$s zou samengaan met een hogere Gezondheidsscore.',
-            ],
         ],
     ],
 ];

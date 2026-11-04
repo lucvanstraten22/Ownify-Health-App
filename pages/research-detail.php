@@ -2,9 +2,17 @@
 /**
  * "Uit onderzoek blijkt" (docs/INSIGHTS.md, docs/RESEARCH.md): one approved
  * claim as Ownify uses it, opened over whatever page showed it
- * (data-detail-parent="*"). Short first — what Ownify says with it and how
- * strong that is — and then what the research found, for whom, its limits,
- * and the source itself with its PDF where that may be read.
+ * (data-detail-parent="*"). Since 38.0, short and in this order:
+ *
+ *   Samenvatting onderzoek  the findings as points, one per sentence
+ *   Bron                    the publication; "Beperkingen" beside it opens
+ *                           the limitations in place (as Voeding's rows
+ *                           open); the PDF where it may be read, and
+ *                           "Bekijk de publicatie" as a text link
+ *   Bewijskracht            the label and what it means, last
+ *
+ * No "Voor wie": research is only shown to the people it holds for
+ * (config/research-eligibility.php), so there is nothing to explain.
  *
  * Built from Instellingen' own pieces (page-intro, settings-block, the card
  * with its states, the note, .btn), so it is no new kind of page.
@@ -48,56 +56,26 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                     <p class="page-intro__lede"><?= e($detail['statement']) ?></p>
                 </header>
 
-                <?php /* How strong: the chip as a status bubble, never pressed, and what it means. */ ?>
-                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-evidence">
-                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-evidence"><?= e($copy['evidence']) ?></h2>
-                    <div class="card settings-card">
-                        <div class="settings-state">
-                            <span class="settings-state__head">
-                                <span class="glass glass--chip research-detail__strength"><?= e($detail['strength']['label']) ?></span>
-                            </span>
-                            <span class="settings-state__note"><?= e($detail['strength']['means']) ?></span>
-                            <?php if (!empty($detail['strength']['why'])): ?>
-                                <span class="settings-state__note"><?= e($detail['strength']['why']) ?></span>
-                            <?php endif; ?>
-                            <span class="settings-state__note"><?= e($detail['strength']['note']) ?></span>
-                        </div>
-                    </div>
-                </section>
-
+                <?php /* 1. Samenvatting onderzoek: what the research found, as points. */ ?>
                 <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-found">
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-found"><?= e($copy['found']) ?></h2>
                     <div class="card settings-card">
                         <div class="settings-state">
-                            <span class="settings-state__note"><?= e($source['findings']) ?></span>
+                            <ul class="research-detail__points">
+                                <?php foreach ($source['summary'] as $point): ?>
+                                    <li><?= e($point) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                     </div>
                 </section>
 
-                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-who">
-                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-who"><?= e($copy['population']) ?></h2>
-                    <div class="card settings-card">
-                        <div class="settings-state">
-                            <span class="settings-state__note"><?= e($detail['population']) ?></span>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-limits">
-                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-limits"><?= e($copy['limitations']) ?></h2>
-                    <div class="card settings-card">
-                        <?php foreach ($detail['limitations'] as $limitation): ?>
-                            <div class="settings-state">
-                                <span class="settings-state__note"><?= e($limitation) ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-
+                <?php /* 2. Bron: the publication, its limitations beside it (opened in
+                         place, as Voeding opens a row), and reading it. */ ?>
                 <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-source">
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-source"><?= e($copy['source']) ?></h2>
                     <div class="card settings-card">
-                        <div class="settings-state">
+                        <div class="settings-state" data-research-limits>
                             <span class="settings-state__head">
                                 <?php /* As published, in its own language. */ ?>
                                 <span class="settings-state__label" lang="<?= e($source['language']) ?>" data-research-title><?= e($source['title']) ?></span>
@@ -112,6 +90,19 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                             <?php if (!empty($source['language_note'])): ?>
                                 <span class="settings-state__note"><?= e($source['language_note']) ?></span>
                             <?php endif; ?>
+                            <?php if ($detail['limitations'] !== []): ?>
+                                <button type="button" class="text-link press research-detail__limits-link" data-research-limits-toggle
+                                        aria-expanded="false" aria-controls="<?= e($id) ?>-limits"><?= e($copy['limitations']) ?><?= icon('chevron-right', 'text-link__icon') ?></button>
+                                <div class="research-detail__more" id="<?= e($id) ?>-limits">
+                                    <div>
+                                        <ul class="research-detail__points">
+                                            <?php foreach ($detail['limitations'] as $limitation): ?>
+                                                <li><?= e($limitation) ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="settings-state">
                             <span class="settings-state__head">
@@ -122,8 +113,8 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                         </div>
                     </div>
 
-                    <div class="research-detail__actions" data-research-pdf="<?= e($pdf['mode']) ?>">
-                        <?php if ($pdf['mode'] !== 'link' && $pdf['href']): ?>
+                    <?php if ($pdf['mode'] !== 'link' && $pdf['href']): ?>
+                        <div class="research-detail__actions" data-research-pdf="<?= e($pdf['mode']) ?>">
                             <?php /* A link the browser can always follow; research.js reads it
                                      inside the page instead, where that works. */ ?>
                             <a class="btn btn--primary press" href="<?= e($pdf['href']) ?>" target="_blank" rel="noopener noreferrer"
@@ -132,9 +123,10 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                             <?php if ($pdf['mode'] === 'hosted'): ?>
                                 <a class="btn press" href="<?= e($pdf['href']) ?>" download><?= e($copy['download_pdf']) ?></a>
                             <?php endif; ?>
-                        <?php endif; ?>
-                        <a class="btn press" href="<?= e($source['href']) ?>" target="_blank" rel="noopener noreferrer"><?= e($copy['open_source']) ?></a>
-                    </div>
+                        </div>
+                    <?php endif; ?>
+                    <?php /* "Bekijk de publicatie": the text link (38.0, a button before). */ ?>
+                    <a class="text-link press research-detail__source-link" href="<?= e($source['href']) ?>" target="_blank" rel="noopener noreferrer"><?= e($copy['open_source']) ?><?= icon('chevron-right', 'text-link__icon') ?></a>
 
                     <p class="settings-note" data-research-note>
                         <?= icon('info', 'settings-note__icon') ?>
@@ -156,6 +148,24 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                             <span><?= e($copy['retired']) ?></span>
                         </p>
                     <?php endif; ?>
+                </section>
+
+                <?php /* 3. Bewijskracht, last: the chip as a status bubble, never
+                         pressed, and what it means. */ ?>
+                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-evidence">
+                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-evidence"><?= e($copy['evidence']) ?></h2>
+                    <div class="card settings-card">
+                        <div class="settings-state">
+                            <span class="settings-state__head">
+                                <span class="glass glass--chip research-detail__strength"><?= e($detail['strength']['label']) ?></span>
+                            </span>
+                            <span class="settings-state__note"><?= e($detail['strength']['means']) ?></span>
+                            <?php if (!empty($detail['strength']['why'])): ?>
+                                <span class="settings-state__note"><?= e($detail['strength']['why']) ?></span>
+                            <?php endif; ?>
+                            <span class="settings-state__note"><?= e($detail['strength']['note']) ?></span>
+                        </div>
+                    </div>
                 </section>
 
             </div>

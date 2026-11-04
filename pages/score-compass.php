@@ -4,11 +4,10 @@
  * Overzicht. A detail page like a health area's: the same layer, the same
  * way in and out.
  *
- * Four questions, in the order they are asked:
- *   1  what the score is made of     the categories and their components
+ * Three questions, in the order they are asked:
+ *   1  what the score is made of     the categories and their factors
  *   2  what is changing              its history: 7 days, 30, 90 or a year
  *   3  how it compares with you      the score now and its earlier averages
- *   4  where the most room is        one component, and what goes with it
  *
  * Every number and sentence is the server's (includes/score-compass.php);
  * this only lays them out, exactly as the app does.
@@ -23,7 +22,6 @@ $ratio   = score_ratio($score['value'], $score['max']);
 $parts       = $compass['composition'];
 $trend       = $compass['trend'];
 $comparison  = $compass['comparison'];
-$opportunity = $compass['opportunity'];
 ?>
 <article class="detail detail--compass" data-detail="score-compass" data-accent="health"
          aria-label="<?= e($compass['title']) ?>" aria-hidden="true" inert>
@@ -119,39 +117,6 @@ $opportunity = $compass['opportunity'];
 
                     <?php if ($comparison['delta'] !== null): ?>
                         <p class="compass-delta"><?= e($comparison['delta']['text']) ?></p>
-                    <?php endif; ?>
-                </section>
-
-                <?php /* 4 — Where the most room is: a possible point of attention for
-                         the score, with the research about it where there is any. */ ?>
-                <section class="card reveal compass-card compass-chance <?= $opportunity['state'] === 'filled' ? 'is-filled' : 'is-empty' ?>"
-                         aria-labelledby="compass-chance-title">
-                    <div class="card__head card__head--compact">
-                        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('sparkle') ?></span>
-                        <h2 class="card__eyebrow" id="compass-chance-title"><?= e($opportunity['title']) ?></h2>
-                    </div>
-
-                    <?php if ($opportunity['state'] === 'filled'): ?>
-                        <div class="compass-cat__head compass-chance__head" data-accent="<?= e($opportunity['accent']) ?>">
-                            <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($opportunity['icon']) ?></span>
-                            <span class="compass-cat__text">
-                                <span class="compass-cat__label"><?= e($opportunity['name']) ?></span>
-                                <span class="compass-cat__meta"><?= e($opportunity['label']) ?></span>
-                            </span>
-                            <span class="compass-score" data-score="<?= e((string) ($opportunity['band'] ?? '')) ?>">
-                                <span class="compass-score__dot" aria-hidden="true"></span><?= e(score_text($opportunity['value'])) ?>
-                            </span>
-                        </div>
-                        <div class="compass-text">
-                            <p><?= e($opportunity['fact']) ?></p>
-                            <p><?= e($opportunity['relation']) ?></p>
-                        </div>
-                        <?php if (!empty($opportunity['research']) && is_file(dirname(__DIR__) . '/components/research-evidence.php')): ?>
-                            <?php component('research-evidence', $data + ['evidence' => $opportunity['research']]); ?>
-                        <?php endif; ?>
-                        <p class="card__hint card__hint--plain"><?= e($opportunity['gain_text']) ?></p>
-                    <?php else: ?>
-                        <p class="compass-empty"><?= e($opportunity['empty']) ?></p>
                     <?php endif; ?>
                 </section>
 

@@ -1168,7 +1168,8 @@ if (!function_exists('goal_suggest_plan')) {
     {
         try {
             $facts = goal_suggest_facts($userId, $today);
-            $plan  = goal_suggest_plan($facts, goal_suggest_measurements($goals), research_claims());
+            /* Only research whose population the person belongs to. */
+            $plan  = goal_suggest_plan($facts, goal_suggest_measurements($goals), research_claims_for(user_account($userId)));
 
             return goal_suggest_apply($goals, $plan, (bool) $facts['imperial']);
         } catch (Throwable $e) {

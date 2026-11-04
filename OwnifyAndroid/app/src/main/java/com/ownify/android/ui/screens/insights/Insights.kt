@@ -62,6 +62,7 @@ import com.ownify.android.ui.design.chWidth
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.design.rememberPlayOnSight
+import com.ownify.android.ui.design.ReadingBar
 import com.ownify.android.ui.screens.research.ResearchEvidence
 import com.ownify.android.ui.screens.settings.SettingsCard
 import com.ownify.android.ui.screens.settings.SettingsEyebrow
@@ -110,10 +111,14 @@ fun InsightsPage(correlations: Correlations, scroll: ScrollState) {
     }
 }
 
-/** `.settings-row` with an area's mark: the insight's name, its sentence under it, a chevron. */
+/**
+ * `.settings-row` with an area's mark: the insight's name, its sentence
+ * under it, a chevron — or, still gathering (38.0), only its bar, what is
+ * still needed being the bar's reading (and what TalkBack hears).
+ */
 @Composable
 private fun InsightRow(row: Insight, divided: Boolean, onClick: () -> Unit) {
-    NavRow(markOf(row.accent), row.title, row.body, divided, description = row.title + " — " + row.body, onClick = onClick)
+    NavRow(markOf(row.accent), row.title, row.body, divided, description = row.title + " — " + row.body, progress = row.progress, onClick = onClick)
 }
 
 /** The outline mark of the area an insight is about (heart belongs to Training). */
@@ -128,7 +133,7 @@ private fun markOf(accent: String): ImageVector = when (accent) {
  * its value under it, a chevron that moves 2 dp on a press.
  */
 @Composable
-private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Boolean, description: String, onClick: () -> Unit) {
+private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Boolean, description: String, progress: Float? = null, onClick: () -> Unit) {
     InButton {
         val narrow = LocalScreen.current.narrow
         val interaction = remember { MutableInteractionSource() }
@@ -156,7 +161,10 @@ private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Bo
             ) { JIcon(icon, size = 16.dp, color = Ownify.TextSecondary) }
             Column(Modifier.weight(1f)) {
                 T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
-                if (!value.isNullOrEmpty()) T(value, JStyle.Meta, Modifier.padding(top = 2.dp))
+                if (progress != null) {
+                    val (play, sight) = rememberPlayOnSight()
+                    ReadingBar(progress, value.orEmpty(), play, Modifier.then(sight), onTap = onClick)
+                } else if (!value.isNullOrEmpty()) T(value, JStyle.Meta, Modifier.padding(top = 2.dp))
             }
             JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextFaint)
         }
@@ -177,8 +185,15 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
 
         Block(labels.seen) {
             StateRow(divided = false) {
-                GlassChip(detail.tierLabel, chosen = false, onClick = null, description = "${labels.seen}: ${detail.tierLabel}")
-                Note(detail.tierMeans)
+                val progress = detail.progress
+                if (progress != null) {
+                    // Still gathering (38.0): only the bar instead of the label; what is still needed is the lede and its reading.
+                    val (play, sight) = rememberPlayOnSight()
+                    ReadingBar(progress, detail.body, play, Modifier.then(sight), accent = Accent.of(detail.accent).color)
+                } else {
+                    GlassChip(detail.tierLabel, chosen = false, onClick = null, description = "${labels.seen}: ${detail.tierLabel}")
+                    Note(detail.tierMeans)
+                }
                 detail.notCause?.let { Note(it) }
             }
             detail.chart?.let { chart -> StateRow(divided = true) { ChartA(chart, Accent.of(detail.accent).color) } }

@@ -36,7 +36,19 @@ if (!function_exists('health_scoring_config')) {
     {
         static $config = null;
 
-        return $config ??= (array) require dirname(__DIR__) . '/config/scoring.php';
+        if ($config === null) {
+            $config = (array) require dirname(__DIR__) . '/config/scoring.php';
+
+            /* Each category's weights, worked out from its factors' grades
+               — so whatever reads `weights` reads the ones the score uses. */
+            foreach (['sleep', 'nutrition', 'training'] as $category) {
+                if (isset($config[$category]['factors'])) {
+                    $config[$category]['weights'] = health_score_weights_of($config[$category]);
+                }
+            }
+        }
+
+        return $config;
     }
 
     /* ==================================================================
@@ -144,9 +156,76 @@ if (!function_exists('health_scoring_config')) {
         return $div > 0 ? $sum / $div : null;
     }
 
+    /**
+     * A category's factor weights (38.0, config/scoring.php "How a category
+     * is weighed"): evidence × measurement, divided by 1 + the sum of the
+     * factor's overlaps, as a share of the category's total.
+     *
+     * $grades replaces factors' grades and $overlapScale multiplies every
+     * overlap — what the uncertainty range varies; by default the config's.
+     *
+     * @return array<string,float> factor => weight, summing to 1
+     */
+    function health_score_weights(string $category, ?array $grades = null, float $overlapScale = 1.0): array
+    {
+        return health_score_weights_of(health_scoring_config()[$category] ?? [], $grades, $overlapScale);
+    }
+
+    /** health_score_weights() for a category's config itself. */
+    function health_score_weights_of(array $cfg, ?array $grades = null, float $overlapScale = 1.0): array
+    {
+        $factors = $grades ?? (array) ($cfg['factors'] ?? []);
+
+        $rho = array_fill_keys(array_keys($factors), 0.0);
+        foreach ((array) ($cfg['overlap'] ?? []) as [$a, $b, $r]) {
+            if (isset($rho[$a], $rho[$b])) {
+                $rho[$a] += $overlapScale * (float) $r;
+                $rho[$b] += $overlapScale * (float) $r;
+            }
+        }
+
+        $q = [];
+        foreach ($factors as $key => $grade) {
+            $q[$key] = (float) $grade['evidence'] * (float) $grade['measurement'] / (1 + $rho[$key]);
+        }
+
+        $total = array_sum($q);
+
+        return array_map(static fn (float $v): float => $total > 0 ? $v / $total : 0.0, $q);
+    }
+
+    /** How much a day counts, $daysAgo days before today: 0.5 ^ (days ago / half-life). */
+    function health_recency(float $daysAgo): float
+    {
+        $half = (float) (health_scoring_config()['recency']['half_life_days'] ?? 4);
+
+        return $half > 0 ? 0.5 ** (max(0.0, $daysAgo) / $half) : 1.0;
+    }
+
     /* ==================================================================
        SMALL STATISTICS
        ================================================================== */
+
+    /**
+     * Weighted mean of the values that exist. @param float[] $values
+     * @param float[] $weights the same keys
+     */
+    function health_weighted_mean(array $values, array $weights): ?float
+    {
+        $sum = 0.0;
+        $div = 0.0;
+
+        foreach ($values as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            $w    = (float) ($weights[$key] ?? 0);
+            $sum += $w * $value;
+            $div += $w;
+        }
+
+        return $div > 0 ? $sum / $div : null;
+    }
 
     /** @param float[] $values */
     function health_mean(array $values): ?float
@@ -195,30 +274,36 @@ if (!function_exists('health_scoring_config')) {
      * @param float[] $minutes
      * @return array{0:float,1:float} [mean x, mean y] of the unit vectors
      */
-    function health_clock_vector(array $minutes): array
+    function health_clock_vector(array $minutes, ?array $weights = null): array
     {
         $x = 0.0;
         $y = 0.0;
+        $n = 0.0;
 
-        foreach ($minutes as $minute) {
-            $angle = 2 * M_PI * $minute / 1440;
-            $x += cos($angle);
-            $y += sin($angle);
+        foreach (array_values($minutes) as $i => $minute) {
+            $w      = $weights === null ? 1.0 : (float) array_values($weights)[$i];
+            $angle  = 2 * M_PI * $minute / 1440;
+            $x     += $w * cos($angle);
+            $y     += $w * sin($angle);
+            $n     += $w;
         }
 
-        $n = max(1, count($minutes));
+        $n = $n > 0 ? $n : 1.0;
 
         return [$x / $n, $y / $n];
     }
 
-    /** Circular standard deviation of clock times, in minutes. */
-    function health_clock_sd(array $minutes): ?float
+    /**
+     * Circular standard deviation of clock times, in minutes; with
+     * $weights, each time counts that much (the recency weighting).
+     */
+    function health_clock_sd(array $minutes, ?array $weights = null): ?float
     {
         if (count($minutes) < 2) {
             return null;
         }
 
-        [$x, $y] = health_clock_vector($minutes);
+        [$x, $y] = health_clock_vector($minutes, $weights);
         $r = min(1.0, sqrt($x * $x + $y * $y));
 
         if ($r <= 1e-9) {
@@ -229,13 +314,13 @@ if (!function_exists('health_scoring_config')) {
     }
 
     /** Circular mean of clock times, in minutes after midnight. */
-    function health_clock_mean(array $minutes): ?float
+    function health_clock_mean(array $minutes, ?array $weights = null): ?float
     {
         if ($minutes === []) {
             return null;
         }
 
-        [$x, $y] = health_clock_vector($minutes);
+        [$x, $y] = health_clock_vector($minutes, $weights);
         $minute = atan2($y, $x) * 1440 / (2 * M_PI);
 
         return $minute < 0 ? $minute + 1440 : $minute;
@@ -384,7 +469,7 @@ if (!function_exists('health_scoring_config')) {
     {
         $sleep   = health_scoring_config()['sleep'];
         $staged  = static fn (array $s): bool => $s['deep'] !== null && $s['rem'] !== null;
-        $overlap = (float) $sleep['overlap'];
+        $overlap = (float) ($sleep['overlap_nights'] ?? 0.5);
         /* A default only for the moment a deploy has uploaded this file but
            not yet config/scoring.php; the value lives in the config. */
         $gap     = 60 * (int) ($sleep['merge_gap_minutes'] ?? 60);

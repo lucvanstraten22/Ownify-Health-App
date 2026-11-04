@@ -360,6 +360,103 @@ if (!function_exists('research_config')) {
             && ($claim['age_max'] === null || $age <= $claim['age_max']);
     }
 
+    /* ===================================================== eligibility */
+
+    /** config/research-eligibility.php: who each claim may be shown to. */
+    function research_eligibility(): array
+    {
+        static $config = null;
+
+        return $config ??= (array) require dirname(__DIR__) . '/config/research-eligibility.php';
+    }
+
+    /**
+     * What Ownify knows about a person that a study's population can be
+     * checked against — only what the person told it: the age from the birth
+     * date, the sex from Geslacht (man or vrouw; anything else is unknown),
+     * the training status from Activiteitsniveau. Health conditions: none is
+     * recorded, so none is known. Never guessed from anything else.
+     *
+     * $who: user_account()'s row, an age alone, or null for nobody known.
+     *
+     * @return array{age: ?int, sex: ?string, training: ?string, health: array<string, bool>}
+     */
+    function research_person(array|int|null $who): array
+    {
+        if (!is_array($who)) {
+            return ['age' => $who, 'sex' => null, 'training' => null, 'health' => []];
+        }
+        if (array_key_exists('health', $who) && array_key_exists('training', $who)) {
+            return $who;                                    // already a person
+        }
+
+        $gender = $who['gender'] ?? null;
+        $level  = $who['activity_level'] ?? null;
+
+        return [
+            'age'      => isset($who['age']) && $who['age'] !== null ? (int) $who['age'] : null,
+            'sex'      => in_array($gender, ['female', 'male'], true) ? $gender : null,
+            'training' => in_array($level, ['sedentary', 'light', 'moderate', 'active', 'athlete'], true) ? $level : null,
+            'health'   => [],
+        ];
+    }
+
+    /**
+     * Whether a claim may be shown to this person: its own age bounds and
+     * every criterion config/research-eligibility.php gives it. A criterion
+     * that cannot be established for the person (no birth date, no sex, no
+     * Activiteitsniveau, any health characteristic) is not met.
+     */
+    function research_eligible(array $claim, array|int|null $who): bool
+    {
+        $person = research_person($who);
+
+        if (!research_age_fits($claim, $person['age'])) {
+            return false;
+        }
+
+        $config = research_eligibility();
+        $rule   = (array) ($config['claims'][(string) ($claim['claim_key'] ?? '')] ?? []);
+
+        if (isset($rule['ages'])) {
+            $age = $person['age'];
+            $in  = $age !== null && array_filter((array) $rule['ages'], static fn (array $r) =>
+                ($r[0] === null || $age >= $r[0]) && ($r[1] === null || $age <= $r[1])) !== [];
+            if (!$in) {
+                return false;
+            }
+        }
+        if (isset($rule['sex']) && ($person['sex'] === null || !in_array($person['sex'], (array) $rule['sex'], true))) {
+            return false;
+        }
+        if (isset($rule['training'])) {
+            $levels = (array) ($config['levels'][$rule['training']] ?? []);
+            if ($person['training'] === null || !in_array($person['training'], $levels, true)) {
+                return false;
+            }
+        }
+        foreach ((array) ($rule['health'] ?? []) as $condition) {
+            if (($person['health'][$condition] ?? false) !== true) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The active claims this person may be shown, keyed by claim_key — what
+     * every rule, reference and suggestion chooses from.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    function research_claims_for(array|int|null $who): array
+    {
+        $person = research_person($who);
+
+        return array_filter(research_claims(), static fn (array $claim): bool => research_eligible($claim, $person));
+    }
+
     /**
      * The values of the band an age falls in — the source's own age
      * boundaries, never ones Ownify made up — or null.
@@ -509,6 +606,8 @@ if (!function_exists('research_config')) {
                 'year'         => substr((string) $source['published'], 0, 4),
                 'citation'     => $text['citation'],
                 'findings'     => $text['findings'],
+                /* Samenvatting onderzoek: the findings, one point a sentence. */
+                'summary'      => research_points((string) $text['findings']),
                 'href'         => (string) $source['url'],
                 'doi'          => $source['doi'],
                 'pmid'         => $source['pmid'],
@@ -516,6 +615,21 @@ if (!function_exists('research_config')) {
             ],
             'pdf'          => $pdf,
         ];
+    }
+
+    /**
+     * "Samenvatting onderzoek" (38.0): the source's findings as points — one
+     * per sentence, in the approved words, so nothing is rephrased or left
+     * out. A sentence ends at . ! or ? followed by a capital, a digit or an
+     * opening bracket; the findings use no abbreviations with a full stop.
+     *
+     * @return list<string>
+     */
+    function research_points(string $text): array
+    {
+        $parts = preg_split('/(?<=[.!?])\s+(?=[\p{Lu}\d("“‘])/u', trim($text)) ?: [];
+
+        return array_values(array_filter(array_map('trim', $parts), static fn (string $p): bool => $p !== ''));
     }
 
     /** The detail view's own words, for both apps. */

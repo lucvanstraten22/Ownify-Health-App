@@ -50,10 +50,16 @@ $id     = $d['id'];
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-seen"><?= e($labels['seen']) ?></h2>
                     <div class="card settings-card">
                         <div class="settings-state">
+                            <?php if (isset($d['progress'])): ?>
+                                <?php /* Still gathering (38.0): only the bar; what is still
+                                         needed is the lede above and the bar's tooltip. */
+                                component('insight-progress', $data + ['progress' => ['share' => $d['progress'], 'text' => $d['body'], 'id' => 'detail-' . $d['code']]]); ?>
+                            <?php else: ?>
                             <span class="settings-state__head">
                                 <span class="glass glass--chip research-detail__strength"><?= e($d['tier']['label']) ?></span>
                             </span>
                             <span class="settings-state__note"><?= e($d['tier']['means']) ?></span>
+                            <?php endif; ?>
                             <?php if ($d['not_cause'] !== null): ?>
                                 <span class="settings-state__note"><?= e($d['not_cause']) ?></span>
                             <?php endif; ?>

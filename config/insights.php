@@ -97,8 +97,11 @@ return [
     'rules' => [
         'sleep.duration' => [
             'slot' => 'sleep', 'applicability' => 'direct',
+            /* 38.0: the first the person may be shown. NSF holds only without
+               a sleep disorder, which Ownify cannot know (config/research-
+               eligibility.php); from 65 CDC says the same 7–8 hours by age. */
             'claims' => [[6, 17, 'sleep.duration.youth'], [18, 60, 'sleep.duration.adults'],
-                         [61, 64, 'sleep.duration.cdc'], [65, null, 'sleep.duration.nsf']],
+                         [61, 64, 'sleep.duration.cdc'], [65, null, 'sleep.duration.nsf'], [65, null, 'sleep.duration.cdc']],
             'relevance' => ['below' => 3, 'above' => 2, 'within' => 1],
             'suggest' => ['below' => null],
         ],

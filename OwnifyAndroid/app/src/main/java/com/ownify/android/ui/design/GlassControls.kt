@@ -1,5 +1,6 @@
 package com.ownify.android.ui.design
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import com.ownify.android.i18n.tr
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.Ownify
 import com.ownify.android.ui.theme.OwnifyType
@@ -139,6 +141,44 @@ fun GlassChip(
                     .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
                 maxLines = 1
             )
+        }
+    }
+}
+
+/**
+ * `.text-link` (38.0): a way onward that is only its words — Subhead,
+ * semibold, the primary ink — with a quiet chevron and a 44 dp target.
+ * First the Scorekompas's "Bekijk de opbouw" on Overzicht; since 38.0 every
+ * "Bekijk …" in Ownify (a glass chip or a button before). One that opens
+ * something in place ([expanded] not null) turns its chevron down while
+ * open, as Voeding's rows do, and says so to TalkBack.
+ */
+@Composable
+fun TextLink(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean? = null,
+    description: String? = null
+) {
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val reduced = LocalReducedMotion.current
+        val turn by animateFloatAsState(if (expanded == true) 90f else 0f, tween(if (reduced) 0 else 280, easing = Ownify.EaseOutStrong), label = "text-link")
+        Row(
+            modifier
+                .heightIn(min = 44.dp)
+                .press(interaction)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
+                .semantics(mergeDescendants = true) {
+                    if (description != null) contentDescription = description
+                    if (expanded != null) stateDescription = if (expanded) tr("Uitgeklapt") else tr("Ingeklapt")
+                },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
+            JIcon(OwnifyIcons.chevronRight, Modifier.rotate(turn), size = 15.dp, color = Ownify.TextMuted)
         }
     }
 }

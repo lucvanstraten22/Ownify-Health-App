@@ -55,15 +55,12 @@ import com.ownify.android.data.CompassComparison
 import com.ownify.android.data.CompassComposition
 import com.ownify.android.data.CompassDay
 import com.ownify.android.data.CompassDirection
-import com.ownify.android.data.CompassOpportunity
-import com.ownify.android.ui.screens.research.ResearchEvidence
 import com.ownify.android.data.CompassPart
 import com.ownify.android.data.CompassPeriod
 import com.ownify.android.data.CompassReadout
 import com.ownify.android.data.CompassRow
 import com.ownify.android.data.CompassTrend
 import com.ownify.android.ui.app.DetailColumn
-import com.ownify.android.ui.design.CardHint
 import com.ownify.android.ui.design.Chip
 import com.ownify.android.ui.design.Disclaimer
 import com.ownify.android.ui.design.IconTile
@@ -97,8 +94,8 @@ import com.ownify.android.ui.app.heroName
 /**
  * The Scorekompas (pages/score-compass.php): the Health Score explained,
  * opened from its card on Overzicht. Four questions in the order they are
- * asked — what it is made of, what is changing, how it compares with the
- * person's own past, where the most room is — and every number and sentence
+ * asked — what it is made of, what is changing and how it compares with the
+ * person's own past — and every number and sentence
  * the server's (includes/score-compass.php). A detail page like a health
  * area's, on the health green's ground.
  */
@@ -111,7 +108,6 @@ fun ScoreCompassDetail(data: AppData, scroll: ScrollState) {
             CompositionCard(compass.composition)
             TrendCard(compass.trend)
             ComparisonCard(compass.comparison)
-            OpportunityCard(compass.opportunity)
             Disclaimer(compass.footnote, Modifier.reveal())
         }
     }
@@ -583,35 +579,6 @@ private fun CompareRow(row: CompassRow, first: Boolean) {
                 T(row.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
             }
             ScoreValue(row.value, row.band)
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 4  Where the most room is
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun OpportunityCard(opportunity: CompassOpportunity) {
-    JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.solidSparkle, opportunity.title)
-
-        if (opportunity.filled) {
-            Box(Modifier.fillMaxWidth().quietBox()) {
-                CategoryHead(
-                    opportunity.name.orEmpty(), opportunity.label.orEmpty(), opportunity.icon, opportunity.accent,
-                    opportunity.value, opportunity.band
-                )
-            }
-            Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                opportunity.fact?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextPrimary)) }
-                opportunity.relation?.let { T(it, JStyle.Lede) }
-            }
-            // The research about the component it names, where there is any: its context, not its reason.
-            ResearchEvidence(opportunity.research)
-            opportunity.gainText?.let { CardHint(it, icon = null, plain = true) }
-        } else {
-            T(opportunity.empty.orEmpty(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted))
         }
     }
 }

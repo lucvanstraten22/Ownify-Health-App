@@ -223,10 +223,9 @@
     "research": {
         "copy": {
             "title": "Uit onderzoek blijkt",
-            "found": "Wat het onderzoek vond",
+            "found": "Samenvatting onderzoek",
             "claim": "Wat Ownify ermee zegt",
             "evidence": "Bewijskracht",
-            "population": "Voor wie",
             "limitations": "Beperkingen",
             "source": "Bron",
             "kind_label": "Soort onderzoek",
@@ -257,7 +256,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Volwassenen van 18 tot 60 jaar: regelmatig minstens 7 uur slaap per nacht. Korter slapen hangt samen met meer gezondheidsrisico's.",
-                "population": "Gezonde volwassenen van 18 tot 60 jaar.",
                 "limitations": [
                     "Gebaseerd op verbanden, niet op bewezen oorzaken.",
                     "Gaat alleen over duur, niet over kwaliteit of tijdstip.",
@@ -285,7 +283,12 @@
                     "href": "https://doi.org/10.5665/sleep.4716",
                     "doi": "10.5665/sleep.4716",
                     "pmid": "26039963",
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Volwassenen horen regelmatig 7 uur of meer per nacht te slapen.",
+                        "Regelmatig korter dan 7 uur slapen hangt samen met onder meer gewichtstoename, diabetes, hoge bloeddruk, hart- en vaatziekten, depressie en een hoger sterfterisico.",
+                        "Meer dan 9 uur kan passend zijn voor jonge volwassenen, bij het inhalen van slaaptekort of bij ziekte; voor anderen is onzeker of dat een risico geeft."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -302,7 +305,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Volwassenen: aanbevolen 0,83 gram eiwit per kilogram lichaamsgewicht per dag.",
-                "population": "Volwassenen, ook ouderen.",
                 "limitations": [
                     "Ownify ziet wat je logt, niet alles wat je eet.",
                     "Je eiwitdoel in Ownify hangt af van je activiteit en kan hoger liggen."
@@ -329,7 +331,11 @@
                     "href": "https://www.gezondheidsraad.nl/documenten/2021/03/02/voedingsnormen-voor-eiwitten",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Volwassenen hebben gemiddeld 0,66 gram eiwit per kilogram lichaamsgewicht per dag nodig; de aanbevolen hoeveelheid is 0,83 gram per kilogram per dag.",
+                        "Er is geen overtuigend bewijs dat alle ouderen meer nodig hebben; sommige groepen, zoals kwetsbare ouderen, mogelijk wel."
+                    ]
                 },
                 "pdf": {
                     "mode": "official_pdf",
@@ -346,7 +352,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, en minstens twee keer per week spier- en botversterkende activiteiten.",
-                "population": "Volwassenen en ouderen (ouderen ook balansoefeningen).",
                 "limitations": [
                     "Alle beweging telt mee, ook wandelen en fietsen.",
                     "Ownify ziet alleen de trainingen die je vastlegt."
@@ -373,7 +378,12 @@
                     "href": "https://www.gezondheidsraad.nl/documenten/adviezen/2017/08/22/beweegrichtlijnen-2017",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Bewegen is goed, meer bewegen is beter.",
+                        "Volwassenen en ouderen: minstens 150 minuten per week matig intensief bewegen, verspreid over diverse dagen, minstens twee keer per week spier- en botversterkende activiteiten (ouderen met balansoefeningen) en voorkom veel stilzitten.",
+                        "Kinderen van 4 tot 18 jaar: elke dag minstens een uur matig intensief bewegen en minstens drie keer per week spier- en botversterkende activiteiten."
+                    ]
                 },
                 "pdf": {
                     "mode": "official_pdf",
@@ -390,7 +400,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "De WHO noemt bij volwassenen een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas.",
-                "population": "Volwassenen vanaf 18 jaar.",
                 "limitations": [
                     "BMI zegt niets over je lichaamssamenstelling, zoals spiermassa.",
                     "Een indeling voor groepen, geen oordeel over één persoon."
@@ -417,7 +426,12 @@
                     "href": "https://www.who.int/news-room/fact-sheets/detail/obesity-and-overweight",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Bij volwassenen (18+) noemt de WHO een BMI van 25 of hoger overgewicht en van 30 of hoger obesitas.",
+                        "Voor 5–19 jaar gelden groeicurves.",
+                        "Ook buikomvang kan worden gebruikt."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -434,7 +448,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Bewegen, één keer of regelmatig, gaat gemiddeld samen met beter slapen; langere sessies helpen meer.",
-                "population": "Volwassenen van alle leeftijden, ook met slapeloosheidsklachten of slaapapneu.",
                 "limitations": [
                     "Gebaseerd op reviews van wisselende kwaliteit.",
                     "Gemiddelden over groepen, geen voorspelling voor één persoon.",
@@ -462,7 +475,11 @@
                     "href": "https://doi.org/10.1016/j.smrv.2021.101489",
                     "doi": "10.1016/j.smrv.2021.101489",
                     "pmid": "33934046",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Sterk bewijs dat zowel één keer bewegen als regelmatig bewegen de slaap verbetert.",
+                        "Matig bewijs dat langere sessies meer helpen, dat het effect geldt voor volwassenen van alle leeftijden en beide geslachten, en dat bewegen de slaap verbetert bij volwassenen met slapeloosheidsklachten of obstructieve slaapapneu."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -479,7 +496,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Eén keer bewegen gaat gemiddeld samen met iets langer en efficiënter slapen, regelmatig bewegen ook met een betere slaapkwaliteit. De effecten zijn klein tot matig.",
-                "population": "Gemengde groepen, ook mensen met slapeloosheid.",
                 "limitations": [
                     "Studies tot 2013, vooral klein en in een laboratorium.",
                     "Gemiddelden over groepen, geen voorspelling voor één persoon."
@@ -506,7 +522,12 @@
                     "href": "https://doi.org/10.1007/s10865-015-9617-6",
                     "doi": "10.1007/s10865-015-9617-6",
                     "pmid": "25596964",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 66 studies had één keer bewegen een klein gunstig effect op totale slaaptijd, inslaaptijd, slaapefficiëntie en diepe slaap, en een matig effect op wakker liggen na het inslapen.",
+                        "Regelmatig bewegen had kleine gunstige effecten op slaaptijd en efficiëntie, klein tot matig op inslaaptijd en matig op slaapkwaliteit.",
+                        "De effecten hingen af van geslacht, leeftijd, fitheid, soort beweging, tijdstip, duur en volhouden, niet van de intensiteit."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -523,7 +544,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Van dag tot dag hangen slapen en bewegen maar weinig samen: de verbanden zijn klein en verschillen per persoon en per richting.",
-                "population": "Volwassenen.",
                 "limitations": [
                     "Observationeel onderzoek: een verband, geen bewezen oorzaak.",
                     "Weinig studies keken binnen één persoon."
@@ -550,7 +570,12 @@
                     "href": "https://doi.org/10.1016/j.smrv.2021.101426",
                     "doi": "10.1016/j.smrv.2021.101426",
                     "pmid": "33571893",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 33 studies bij volwassenen was er geen steun voor een verband in twee richtingen van dag tot dag.",
+                        "Slaapkwaliteit, slaapefficiëntie en wakker liggen in de nacht hingen samen met bewegen de dag erna, maar die verbanden waren klein en verschilden in richting en niveau (tussen mensen of binnen één persoon).",
+                        "Tussen mensen ging meer bewegen overdag samen met iets korter slapen de nacht erna (een klein effect)."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -567,7 +592,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Regelmatige krachttraining verbetert de slaap, vooral de slaapkwaliteit; over één losse training is weinig bekend.",
-                "population": "Volwassenen in gerandomiseerde studies.",
                 "limitations": [
                     "Geen samengevoegde getallen.",
                     "Gemengde groepen deelnemers."
@@ -594,7 +618,11 @@
                     "href": "https://doi.org/10.1016/j.smrv.2017.07.002",
                     "doi": "10.1016/j.smrv.2017.07.002",
                     "pmid": "28919335",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 13 gerandomiseerde studies verbeterde regelmatige krachttraining alle aspecten van slaap, vooral de slaapkwaliteit; samen met duurtraining was het voordeel kleiner.",
+                        "Het effect van één krachttraining is weinig onderzocht en wisselend."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -611,7 +639,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Later en zwaarder trainen ging samen met later inslapen, korter slapen, een hogere hartslag en een lagere HRV in de nacht; training die minstens 4 uur voor het inslapen eindigde, niet.",
-                "population": "Volwassen dragers van één merk wearable, vooral actieve mensen.",
                 "limitations": [
                     "Observationeel onderzoek: een verband, geen bewezen oorzaak.",
                     "Eén studie, met gebruikers van één merk.",
@@ -639,7 +666,13 @@
                     "href": "https://doi.org/10.1038/s41467-025-58271-x",
                     "doi": "10.1038/s41467-025-58271-x",
                     "pmid": "40234380",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij 14.689 dragers van een wearable (ruim 4 miljoen nachten in een jaar) ging later en zwaarder trainen samen met later inslapen, korter en minder goed slapen, een hogere hartslag in de nacht en een lagere HRV.",
+                        "Training die minstens 4 uur voor het inslapen eindigde, ging niet samen met een andere slaap, hoe zwaar ook.",
+                        "Voorbeeld: maximale in plaats van lichte inspanning die 2 uur voor de gewone inslaaptijd eindigde, ging samen met 36 minuten later inslapen.",
+                        "De gewone inslaaptijd werd per persoon per maand bepaald, doordeweeks en in het weekend apart."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -656,7 +689,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Bewegen in de avond maakt de slaap gemiddeld niet slechter; alleen zware inspanning die een uur of minder voor bedtijd eindigt, kan het inslapen vertragen.",
-                "population": "Gezonde, vooral jonge volwassenen.",
                 "limitations": [
                     "Losse sessies in een laboratorium.",
                     "De effecten van tijdstip en zwaarte waren niet stevig."
@@ -683,7 +715,11 @@
                     "href": "https://doi.org/10.1007/s40279-018-1015-0",
                     "doi": "10.1007/s40279-018-1015-0",
                     "pmid": "30374942",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 23 studies maakte bewegen in de avond de slaap niet slechter, eerder het omgekeerde: de REM-slaap begon 7,7 minuten later, diepe slaap nam 1,3 procentpunt toe en de lichtste slaap 0,9 procentpunt af.",
+                        "Zware inspanning die een uur of minder voor bedtijd eindigde, kan het inslapen verlengen en de slaaptijd en efficiëntie verlagen."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -700,7 +736,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Zware training 2 tot 4 uur voor bedtijd verstoorde de slaap van gezonde volwassenen niet; dichter op bedtijd verminderde ze de REM-slaap licht.",
-                "population": "Gezonde volwassenen van 18 tot 50 jaar die goed slapen.",
                 "limitations": [
                     "Kleine studies.",
                     "Alleen goede slapers."
@@ -727,7 +762,11 @@
                     "href": "https://doi.org/10.1016/j.smrv.2021.101535",
                     "doi": "10.1016/j.smrv.2021.101535",
                     "pmid": "34416428",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 15 studies (194 deelnemers) verminderde zware inspanning die 0,5 tot 4 uur voor bedtijd eindigde de REM-slaap licht (−2,34%); andere slaapmaten veranderden niet.",
+                        "Regelmatig zwaar trainen in de avond verstoorde de slaap niet, en inspanning 2 tot 4 uur voor bedtijd verstoorde de slaap van gezonde volwassenen van 18 tot 50 jaar niet."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -744,7 +783,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Na zware training was de HRV de volgende ochtend gemiddeld ongeveer 3% lager, na lichte training ongeveer 1,6% hoger. Ook alcohol en ziekte verlagen de HRV, dus een lage HRV zegt niet waardoor.",
-                "population": "Volwassen gebruikers van een HRV-app.",
                 "limitations": [
                     "Observationeel onderzoek: een verband, geen bewezen oorzaak.",
                     "Een meting van 1 minuut bij het wakker worden; Ownify gebruikt de waarden uit de nacht.",
@@ -772,7 +810,14 @@
                     "href": "https://doi.org/10.3390/s21237932",
                     "doi": "10.3390/s21237932",
                     "pmid": "34883936",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij 28.175 mensen (9 miljoen ochtendmetingen in 5 jaar) was de HRV (rMSSD) na zware training 3% lager en de hartslag 0,7% hoger; na lichte training was de HRV 1,6% hoger.",
+                        "Na veel alcohol: HRV 12% lager, hartslag 6% hoger.",
+                        "Bij ziekte: HRV 10% lager, hartslag 6% hoger.",
+                        "De HRV daalde met de leeftijd (r = −0,35).",
+                        "HRV is gevoelig maar niet specifiek: veel dingen verlagen haar."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -789,7 +834,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Een hogere HRV in rust kan bij goede aanpassing aan training horen, maar bij overbelasting verandert de HRV nauwelijks: één HRV-waarde zegt niet of training goed of slecht uitpakt.",
-                "population": "Duursporters.",
                 "limitations": [
                     "Vooral getrainde duursporters.",
                     "Veel kleine studies."
@@ -816,7 +860,11 @@
                     "href": "https://doi.org/10.1007/s40279-016-0484-2",
                     "doi": "10.1007/s40279-016-0484-2",
                     "pmid": "26888648",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Als training tot een betere prestatie leidde, steeg de HRV in rust licht (gestandaardiseerd verschil 0,58), net als het herstel van de hartslag na inspanning.",
+                        "Bij overbelasting veranderde de HRV in rust nauwelijks, dus HRV alleen kan goede en slechte aanpassing niet van elkaar onderscheiden."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -833,7 +881,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "HRV is gemiddeld lager naarmate je ouder bent, en verschillen tussen mannen en vrouwen verdwijnen rond je 55e. Daarom vergelijkt Ownify je HRV alleen met je eigen waarden.",
-                "population": "Gezonde volwassenen van 25 tot 74 jaar.",
                 "limitations": [
                     "Korte metingen overdag, geen waarden uit de nacht.",
                     "Eén Duitse groep."
@@ -860,7 +907,11 @@
                     "href": "https://doi.org/10.1371/journal.pone.0118308",
                     "doi": "10.1371/journal.pone.0118308",
                     "pmid": "25822720",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij 1.906 gezonde volwassenen (metingen van 5 minuten) veranderde de HRV in vrijwel al haar maten duidelijk met de leeftijd, over de decennia 25–34, 35–44, 45–54, 55–64 en 65–74.",
+                        "Verschillen tussen mannen en vrouwen verdwenen in de laatste twee decennia, en de leeftijdseffecten in het laatste."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -877,7 +928,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "HRV hangt sterk af van hoe lang er gemeten wordt, van leeftijd en van geslacht, dus vergelijk je HRV het best met je eigen waarden.",
-                "population": "Iedereen.",
                 "limitations": [
                     "Een verhalend overzichtsartikel."
                 ],
@@ -903,7 +953,11 @@
                     "href": "https://doi.org/10.3389/fpubh.2017.00258",
                     "doi": "10.3389/fpubh.2017.00258",
                     "pmid": "29034226",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "HRV hangt sterk af van hoe lang er gemeten wordt, van leeftijd en van geslacht; waarden over 24 uur, over enkele minuten en over minder dan een minuut zijn niet uitwisselbaar.",
+                        "Gepubliceerde normen moeten worden aangevuld met waarden uit de eigen groep."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -920,7 +974,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Wearables meten de rusthartslag nauwkeurig, maar hoe goed ze HRV meten verschilt sterk per apparaat.",
-                "population": "Volwassenen, met apparaten van 2020.",
                 "limitations": [
                     "Een heel kleine studie.",
                     "Oudere apparaten dan die van nu."
@@ -947,7 +1000,11 @@
                     "href": "https://doi.org/10.3389/fspor.2021.585870",
                     "doi": "10.3389/fspor.2021.585870",
                     "pmid": "33733234",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij 5 volwassenen (148 metingen tegen een ecg) maten alle zeven apparaten de gemiddelde rusthartslag nauwkeurig.",
+                        "Voor HRV (rMSSD) liep de nauwkeurigheid sterk uiteen: een gemiddelde afwijking van 4,1% bij het beste apparaat en 112% bij een camera-app."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -964,7 +1021,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Matig intensief is vanaf ongeveer 64% van je maximale hartslag, zwaar vanaf 77%.",
-                "population": "Gezonde volwassenen van alle leeftijden.",
                 "limitations": [
                     "Het standpunt van een vereniging.",
                     "De grenzen zijn een afspraak, geen gemeten omslagpunt."
@@ -991,7 +1047,11 @@
                     "href": "https://doi.org/10.1249/MSS.0b013e318213fefb",
                     "doi": "10.1249/MSS.0b013e318213fefb",
                     "pmid": "21694556",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Voor de meeste volwassenen: matige duurinspanning minstens 30 minuten op minstens 5 dagen (150 minuten of meer per week), of zware minstens 20 minuten op minstens 3 dagen (75 minuten of meer), of een combinatie; krachtoefeningen voor elke grote spiergroep op 2 tot 3 dagen; oefeningen voor balans, behendigheid en coördinatie op 2 tot 3 dagen.",
+                        "De indeling naar intensiteit legt matig bij 64–76% en zwaar bij 77–95% van de maximale hartslag."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1008,7 +1068,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Na zware training was de hartslag in rust de volgende ochtend gemiddeld ongeveer 0,7% hoger. Ook alcohol en ziekte verhogen hem, dus een hogere hartslag zegt niet waardoor.",
-                "population": "Volwassen gebruikers van een HRV-app.",
                 "limitations": [
                     "Observationeel onderzoek: een verband, geen bewezen oorzaak.",
                     "Een meting van 1 minuut bij het wakker worden; Ownify gebruikt de waarden uit de nacht."
@@ -1035,7 +1094,14 @@
                     "href": "https://doi.org/10.3390/s21237932",
                     "doi": "10.3390/s21237932",
                     "pmid": "34883936",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij 28.175 mensen (9 miljoen ochtendmetingen in 5 jaar) was de HRV (rMSSD) na zware training 3% lager en de hartslag 0,7% hoger; na lichte training was de HRV 1,6% hoger.",
+                        "Na veel alcohol: HRV 12% lager, hartslag 6% hoger.",
+                        "Bij ziekte: HRV 10% lager, hartslag 6% hoger.",
+                        "De HRV daalde met de leeftijd (r = −0,35).",
+                        "HRV is gevoelig maar niet specifiek: veel dingen verlagen haar."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1052,7 +1118,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "In bevolkingsonderzoek ging elke 10 slagen per minuut hogere rusthartslag samen met 9% meer risico op overlijden en 8% meer op overlijden door hart- en vaatziekten; boven 80 slagen per minuut was dat 45% en 33% meer dan in de laagste groep. Ownify volgt je rusthartslag alleen tegen je eigen basis.",
-                "population": "De algemene volwassen bevolking.",
                 "limitations": [
                     "Een risico voor groepen, geen voorspelling voor één persoon.",
                     "De studies verschilden sterk, en er is kans op publicatiebias.",
@@ -1080,7 +1145,11 @@
                     "href": "https://doi.org/10.1503/cmaj.150535",
                     "doi": "10.1503/cmaj.150535",
                     "pmid": "26598376",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 46 cohortstudies ging elke 10 slagen per minuut hogere rusthartslag samen met een relatief risico van 1,09 op overlijden door alle oorzaken en 1,08 door hart- en vaatziekten.",
+                        "Boven 80 slagen per minuut was dat 1,45 en 1,33, vergeleken met de laagste groep."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1097,7 +1166,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Het hart herstelt na lichte duurtraining binnen ongeveer 24 uur, na training rond de drempel in 24 tot 48 uur en na zware training in minstens 48 uur. Fittere mensen herstellen sneller.",
-                "population": "Volwassenen na duurtraining.",
                 "limitations": [
                     "Vooral duurtraining; over krachttraining is weinig bekend.",
                     "Verschilt sterk per persoon."
@@ -1124,7 +1192,11 @@
                     "href": "https://doi.org/10.1007/s40279-013-0083-4",
                     "doi": "10.1007/s40279-013-0083-4",
                     "pmid": "23912805",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Volledig herstel van het autonome zenuwstelsel van het hart na één duurtraining duurt tot 24 uur na lichte inspanning, 24 tot 48 uur na inspanning rond de drempel en minstens 48 uur na zware inspanning.",
+                        "Fittere mensen herstellen sneller, en het verschilt sterk per persoon."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1141,7 +1213,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Oudere volwassenen kregen na inspanning niet meer spierschade dan jongere: hun spierfunctie na 24 en 72 uur was hetzelfde. Ownify gebruikt daarom bij elke leeftijd dezelfde hersteltijden.",
-                "population": "Oudere en jongere volwassenen.",
                 "limitations": [
                     "Inspanning in een laboratorium.",
                     "Gaat niet over het herstel van de hartslag."
@@ -1168,7 +1239,12 @@
                     "href": "https://doi.org/10.1123/japa.2024-0165",
                     "doi": "10.1123/japa.2024-0165",
                     "pmid": "40174882",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 36 studies die oudere met jongere volwassenen vergeleken, was de daling van de spierfunctie 24 en 72 uur na inspanning, en de piek ervan, bij ouderen niet anders dan bij jongeren.",
+                        "Spierpijn en creatinekinase waren bij jongeren juist hoger.",
+                        "Conclusie: een hogere leeftijd gaat niet samen met meer spierschade door inspanning."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1185,7 +1261,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Herstel na belasting verschilt tussen mensen en bij één persoon van moment tot moment; je volgt het daarom het best bij jezelf.",
-                "population": "Sporters.",
                 "limitations": [
                     "Een consensus over begrippen, met weinig getallen."
                 ],
@@ -1211,7 +1286,11 @@
                     "href": "https://doi.org/10.1123/ijspp.2017-0759",
                     "doi": "10.1123/ijspp.2017-0759",
                     "pmid": "29345524",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Een balans tussen belasting (training, wedstrijden en wat het leven verder vraagt) en herstel is essentieel.",
+                        "Hoe iemand reageert verschilt tussen mensen en bij één persoon van moment tot moment, dus herstel volg je het best per persoon."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1228,7 +1307,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Volg HRV met gemiddelden over meerdere dagen, niet met losse metingen: zowel een stijging als een daling kan bij slechte aanpassing horen.",
-                "population": "Topsporters in duursport.",
                 "limitations": [
                     "Een overzichtsartikel over topsporters."
                 ],
@@ -1254,7 +1332,11 @@
                     "href": "https://doi.org/10.1007/s40279-013-0071-8",
                     "doi": "10.1007/s40279-013-0071-8",
                     "pmid": "23852425",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Bij topsporters zijn zowel een stijging als een daling van de HRV in verband gebracht met slechte aanpassing aan training.",
+                        "Volg HRV van dag tot dag met gemiddelden (lopende gemiddelden van logaritmisch omgerekende waarden), niet met losse metingen."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1271,7 +1353,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Lees een verandering in je HRV of hartslag tegen de meetfout en de kleinste verandering die ertoe doet, en in de context van je training.",
-                "population": "Sporters.",
                 "limitations": [
                     "Een overzichtsartikel met een mening."
                 ],
@@ -1297,7 +1378,11 @@
                     "href": "https://doi.org/10.3389/fphys.2014.00073",
                     "doi": "10.3389/fphys.2014.00073",
                     "pmid": "24578692",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "De meeste tegenstrijdige uitkomsten komen door verschillen in methode en verkeerd lezen.",
+                        "Bij één persoon moet je een verandering in een hartslagmaat lezen tegen de meetfout en de kleinste verandering die ertoe doet, en in de context van de training."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1314,7 +1399,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Van dag tot dag hangen slapen en bewegen maar weinig samen: de verbanden zijn klein en verschillen per persoon en per richting.",
-                "population": "Volwassenen.",
                 "limitations": [
                     "Observationeel onderzoek: een verband, geen bewezen oorzaak.",
                     "Weinig studies keken binnen één persoon."
@@ -1341,7 +1425,12 @@
                     "href": "https://doi.org/10.1016/j.smrv.2021.101426",
                     "doi": "10.1016/j.smrv.2021.101426",
                     "pmid": "33571893",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 33 studies bij volwassenen was er geen steun voor een verband in twee richtingen van dag tot dag.",
+                        "Slaapkwaliteit, slaapefficiëntie en wakker liggen in de nacht hingen samen met bewegen de dag erna, maar die verbanden waren klein en verschilden in richting en niveau (tussen mensen of binnen één persoon).",
+                        "Tussen mensen ging meer bewegen overdag samen met iets korter slapen de nacht erna (een klein effect)."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1358,7 +1447,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Bewegen, één keer of regelmatig, gaat gemiddeld samen met beter slapen; langere sessies helpen meer.",
-                "population": "Volwassenen van alle leeftijden, ook met slapeloosheidsklachten of slaapapneu.",
                 "limitations": [
                     "Gebaseerd op reviews van wisselende kwaliteit.",
                     "Gemiddelden over groepen, geen voorspelling voor één persoon.",
@@ -1386,7 +1474,11 @@
                     "href": "https://doi.org/10.1016/j.smrv.2021.101489",
                     "doi": "10.1016/j.smrv.2021.101489",
                     "pmid": "33934046",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Sterk bewijs dat zowel één keer bewegen als regelmatig bewegen de slaap verbetert.",
+                        "Matig bewijs dat langere sessies meer helpen, dat het effect geldt voor volwassenen van alle leeftijden en beide geslachten, en dat bewegen de slaap verbetert bij volwassenen met slapeloosheidsklachten of obstructieve slaapapneu."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1403,7 +1495,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Na korter slapen aten mensen in studies gemiddeld 385 kcal per dag meer, zonder meer te verbruiken.",
-                "population": "Volwassenen in korte laboratoriumstudies.",
                 "limitations": [
                     "Korte studies, met vrij toegang tot eten.",
                     "Kleine groepen."
@@ -1430,7 +1521,10 @@
                     "href": "https://doi.org/10.1038/ejcn.2016.201",
                     "doi": "10.1038/ejcn.2016.201",
                     "pmid": "27804960",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Gedeeltelijk slaaptekort verhoogde de energie-inname met 385 kcal per dag (95%-interval 252 tot 517), zonder effect op het totale energieverbruik: per saldo meer energie binnen dan eruit."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1447,7 +1541,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Slapen tot 5,5 uur of minder per nacht verhoogde in studies de energie-inname, en ook de inname van vet, eiwit en koolhydraten.",
-                "population": "Volwassenen in interventiestudies.",
                 "limitations": [
                     "Korte interventies.",
                     "Weinig studies naar langer slapen."
@@ -1474,7 +1567,10 @@
                     "href": "https://doi.org/10.1111/jhn.12813",
                     "doi": "10.1111/jhn.12813",
                     "pmid": "33001515",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Gedeeltelijk slaaptekort tot 5,5 uur of minder per nacht verhoogde de energie-inname per dag (gestandaardiseerd verschil 0,37, 95%-interval 0,21 tot 0,52), en ook de inname van vet, eiwit en koolhydraten."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1491,7 +1587,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Na een nacht van 6 uur of minder was de sportprestatie gemiddeld ongeveer 7,6% lager, bij elke soort inspanning.",
-                "population": "Volwassenen, vaak sporters.",
                 "limitations": [
                     "Gaat over prestatie, niet over of iemand traint.",
                     "Vooral korte laboratoriumstudies."
@@ -1518,7 +1613,11 @@
                     "href": "https://doi.org/10.1007/s40279-022-01706-y",
                     "doi": "10.1007/s40279-022-01706-y",
                     "pmid": "35708888",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 69 publicaties verminderde slaaptekort (6 uur of minder in 24 uur) de sportprestatie gemiddeld met 7,56% (95%-interval −11,9 tot −3,13), in elke soort inspanning.",
+                        "Het effect was er na een nacht zonder slaap en na eerder opstaan dan gewoonlijk."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1535,7 +1634,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Hoeveel slaap iemand nodig heeft verschilt; deskundigen raden sporters een persoonlijke aanpak aan in plaats van één advies van 7–9 uur.",
-                "population": "Sporters.",
                 "limitations": [
                     "Gaat over topsporters.",
                     "Een verhalend overzicht met een consensus."
@@ -1562,7 +1660,13 @@
                     "href": "https://doi.org/10.1136/bjsports-2020-102025",
                     "doi": "10.1136/bjsports-2020-102025",
                     "pmid": "33144349",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Sporters slapen vaak korter dan 7 uur.",
+                        "Een nacht of meer zonder slaap vermindert de prestatie; het effect van 1 tot 3 nachten gedeeltelijk slaaptekort is onduidelijk.",
+                        "In de bredere bevolking maakt gewoonlijk korter dan 7 uur slapen vatbaarder voor luchtweginfecties.",
+                        "Eén advies van 7–9 uur voor iedereen is waarschijnlijk niet ideaal; de deskundigen raden een persoonlijke aanpak aan."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1579,7 +1683,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Vanaf 13 jaar: drink minstens 1,4 liter per dag (mannen en jongens 1,4 tot 1,8 liter), en meer als je flink sport en zweet.",
-                "population": "Iedereen vanaf 13 jaar.",
                 "limitations": [
                     "Een algemeen advies.",
                     "Ownify ziet alleen wat je logt."
@@ -1606,7 +1709,13 @@
                     "href": "https://www.voedingscentrum.nl/encyclopedie/vocht.aspx",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Vrouwen en meisjes vanaf 13 jaar: drink minstens 1,4 liter per dag; mannen en jongens vanaf 13 jaar: minstens 1,4 tot 1,8 liter.",
+                        "Alle dranken tellen mee.",
+                        "Bij flink sporten en zweten meer drinken (per uur sporten kun je 1 tot 2 liter verliezen).",
+                        "Op een heel warme dag minstens 2 liter, en niet meer dan 3 liter per dag."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1623,7 +1732,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Regelmatige tijden van inslapen en opstaan zijn belangrijk voor gezondheid, veiligheid en prestaties.",
-                "population": "Volwassenen en jongeren.",
                 "limitations": [
                     "Vooral observationeel onderzoek.",
                     "Er is geen aanbevolen aantal minuten speling.",
@@ -1651,7 +1759,11 @@
                     "href": "https://doi.org/10.1016/j.sleh.2023.07.016",
                     "doi": "10.1016/j.sleh.2023.07.016",
                     "pmid": "37684151",
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Na een literatuuronderzoek concludeerde een panel van slaap- en ritmedeskundigen dat regelmatige tijden van inslapen en opstaan belangrijk zijn voor gezondheid, veiligheid en prestaties.",
+                        "Wie doordeweeks te weinig slaapt, kan baat hebben bij inhalen op vrije dagen."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1668,7 +1780,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Cafeïne verkortte de slaap in studies gemiddeld met 45 minuten. Om dat te voorkomen zou koffie minstens 8,8 uur voor bedtijd gedronken moeten worden.",
-                "population": "Volwassenen in laboratoriumstudies.",
                 "limitations": [
                     "Laboratoriumstudies met vaste doses.",
                     "Ownify ziet alleen cafeïne die je logt."
@@ -1695,7 +1806,11 @@
                     "href": "https://doi.org/10.1016/j.smrv.2023.101764",
                     "doi": "10.1016/j.smrv.2023.101764",
                     "pmid": "36870101",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 24 studies verkortte cafeïne de totale slaap met 45 minuten en de slaapefficiëntie met 7%, en verlengde het inslapen met 9 minuten en het wakker liggen met 12 minuten.",
+                        "Om niet korter te slapen zou koffie (107 mg per 250 ml) minstens 8,8 uur voor bedtijd moeten worden gedronken, en een gangbaar pre-workoutsupplement (217,5 mg) minstens 13,2 uur ervoor."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1712,7 +1827,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Totaal vet: 20–40% van je energie. De kwaliteit van wat je eet telt meer dan de hoeveelheid vet.",
-                "population": "Iedereen vanaf 4 jaar.",
                 "limitations": [
                     "Ownify ziet wat je logt, niet alles wat je eet."
                 ],
@@ -1738,7 +1852,13 @@
                     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+                        "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+                        "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+                        "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+                    ]
                 },
                 "pdf": {
                     "mode": "official_pdf",
@@ -1755,7 +1875,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Koolhydraten hebben geen percentagenorm: het gaat om de bron, vooral volkoren, groente, fruit, peulvruchten en zuivel.",
-                "population": "Iedereen.",
                 "limitations": [
                     "Ownify ziet niet uit welke producten je koolhydraten komen."
                 ],
@@ -1781,7 +1900,13 @@
                     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+                        "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+                        "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+                        "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+                    ]
                 },
                 "pdf": {
                     "mode": "official_pdf",
@@ -1798,7 +1923,6 @@
                 "version": 2,
                 "retired": false,
                 "statement": "Gezond eten is meer plantaardig en minder dierlijk. Het advies van 2025 over eiwitbronnen noemt per week ongeveer 250 gram peulvruchten en hooguit ongeveer 200 gram rood vlees; voor groente, fruit en granen gelden de richtlijnen van 2015.",
-                "population": "De algemene bevolking.",
                 "limitations": [
                     "Groente, fruit en granen krijgen een nieuw advies; tot dan gelden de richtlijnen van 2015.",
                     "Ownify ziet niet welke producten je eet."
@@ -1825,7 +1949,11 @@
                     "href": "https://zoek.officielebekendmakingen.nl/blg-1226497.pdf",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "Werkt een deel van de Richtlijnen goede voeding 2015 bij, voor eiwitbronnen (peulvruchten, noten, zuivel, vis, vlees, eieren en vervangers): een meer plantaardig en minder dierlijk voedingspatroon, met hooguit ongeveer 200 gram rood vlees per week en ongeveer 250 gram (bereide) peulvruchten per week.",
+                        "Groente, fruit en granen volgen in een later advies; tot dan gelden daarvoor de richtlijnen van 2015."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1842,7 +1970,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Wearables herkennen slaap goed, maar wakker liggen en slaapfasen zoals diep en REM veel minder betrouwbaar.",
-                "population": "Gezonde jonge volwassenen, apparaten uit 2019.",
                 "limitations": [
                     "Eén kleine studie.",
                     "Oudere apparaten dan die van nu."
@@ -1869,7 +1996,11 @@
                     "href": "https://doi.org/10.1093/sleep/zsaa291",
                     "doi": "10.1093/sleep/zsaa291",
                     "pmid": "33378539",
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "In een slaaplaboratorium (34 gezonde jonge volwassenen, 3 nachten) herkenden zeven consumentenapparaten slaap goed, maar wakker zijn veel minder goed.",
+                        "Slaapfasen kwamen wisselend overeen en op onrustige nachten werkten de apparaten slechter."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -1886,7 +2017,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Wearables meten hartslag en stappen redelijk nauwkeurig, maar energieverbruik en slaaptijd veel minder: calorieën kunnen ruim 20% afwijken en slaaptijd wordt meestal overschat.",
-                "population": "Consumentenwearables, vooral bij gezonde volwassenen.",
                 "limitations": [
                     "Studies gebruiken verschillende methoden.",
                     "Apparaten veranderen sneller dan het onderzoek."
@@ -1913,7 +2043,11 @@
                     "href": "https://doi.org/10.1007/s40279-024-02077-2",
                     "doi": "10.1007/s40279-024-02077-2",
                     "pmid": "39080098",
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Een overzicht van 24 systematische reviews (249 validatiestudies): hartslag wijkt gemiddeld ongeveer 3% af, stappen worden meestal iets ondergeschat (−9% tot 12%), energieverbruik kan flink afwijken (−21% tot +15%), zuurstofsaturatie tot 2 procentpunt, en slaaptijd wordt meestal overschat, vaak met meer dan 10%.",
+                        "Ongeveer 11% van de apparaten is voor minstens één meting gevalideerd."
+                    ]
                 },
                 "pdf": {
                     "mode": "hosted",
@@ -1930,7 +2064,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Vrije suikers: zo laag mogelijk, met 10% van je energie als tussenstap.",
-                "population": "Iedereen.",
                 "limitations": [
                     "Je apps loggen alle suikers samen, ook die in fruit en melk; vrije suikers zijn daaruit niet af te lezen."
                 ],
@@ -1956,7 +2089,13 @@
                     "href": "https://www.gezondheidsraad.nl/documenten/2026/07/07/advies-voedingsnormen-voor-vetten-vetzuren-verteerbare-koolhydraten-en-voedingsvezels",
                     "doi": null,
                     "pmid": null,
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Totaal vet: 20–40% van de energie (vanaf 4 jaar); de kwaliteit van het voedingspatroon telt meer dan de hoeveelheid vet.",
+                        "Verzadigd vet en vrije suikers: zo laag mogelijk, met 10% van de energie als tussenstap.",
+                        "Koolhydraten: geen percentage, wel vooral uit volkoren, groente, fruit, peulvruchten en zuivel.",
+                        "Vezels: 3,0–3,5 gram per megajoule, ofwel 12,6–14,6 gram per 1.000 kcal."
+                    ]
                 },
                 "pdf": {
                     "mode": "official_pdf",
@@ -1973,7 +2112,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Je energiedoel is een schatting met de Mifflin-St Jeor-formule. Die zit bij de meeste mensen binnen 10% van het gemeten rustverbruik, maar kan per persoon meer afwijken.",
-                "population": "Gezonde volwassenen, met en zonder obesitas.",
                 "limitations": [
                     "Gaat over rustverbruik; de factor voor je activiteit is een tweede schatting.",
                     "Onderzoek uit 2005."
@@ -2000,7 +2138,11 @@
                     "href": "https://doi.org/10.1016/j.jada.2005.02.005",
                     "doi": "10.1016/j.jada.2005.02.005",
                     "pmid": "15883556",
-                    "verified": "Gecontroleerd op 27 oktober 2026"
+                    "verified": "Gecontroleerd op 27 oktober 2026",
+                    "summary": [
+                        "Van de vier meest gebruikte formules voorspelde Mifflin-St Jeor het rustmetabolisme het vaakst binnen 10% van de gemeten waarde, bij mensen met en zonder obesitas.",
+                        "Voor individuen blijven er opvallende afwijkingen."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -2017,7 +2159,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Je maximale hartslag is ongeveer 208 − 0,7 × je leeftijd. Ownify gebruikt je eigen hoogst gemeten hartslag als die hoger is.",
-                "population": "Gezonde volwassenen, mannen en vrouwen.",
                 "limitations": [
                     "Een formule voor groepen: de echte maximale hartslag van één persoon kan ervan afwijken."
                 ],
@@ -2043,7 +2184,12 @@
                     "href": "https://doi.org/10.1016/s0735-1097(00)01054-8",
                     "doi": "10.1016/s0735-1097(00)01054-8",
                     "pmid": "11153730",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 351 studies (18.712 mensen) en een eigen laboratoriumonderzoek (514 mensen) was de maximale hartslag te voorspellen met 208 − 0,7 × leeftijd (r = −0,90 met de leeftijd); het laboratorium gaf vrijwel hetzelfde: 209 − 0,7 × leeftijd.",
+                        "Er was geen verschil tussen mannen en vrouwen of naar hoeveel iemand bewoog.",
+                        "De bekende 220 − leeftijd schat de maximale hartslag van ouderen te laag."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -2060,7 +2206,6 @@
                 "version": 1,
                 "retired": false,
                 "statement": "Met de jaren nemen slaapefficiëntie en diepe slaap af; na je 60e daalt vooral de efficiëntie nog. Een lagere waarde dan op je 25e is op latere leeftijd gewoon.",
-                "population": "Gezonde mensen van 5 tot 102 jaar.",
                 "limitations": [
                     "Onderzoek uit 1960–2003, in een slaaplaboratorium.",
                     "Weinig deelnemers van middelbare leeftijd."
@@ -2087,7 +2232,12 @@
                     "href": "https://doi.org/10.1093/sleep/27.7.1255",
                     "doi": "10.1093/sleep/27.7.1255",
                     "pmid": "15586779",
-                    "verified": "Gecontroleerd op 28 oktober 2026"
+                    "verified": "Gecontroleerd op 28 oktober 2026",
+                    "summary": [
+                        "In 65 studies (3.577 gezonde mensen van 5 tot 102 jaar) namen bij volwassenen de totale slaaptijd, de slaapefficiëntie, het aandeel diepe slaap, het aandeel REM-slaap en de tijd tot de eerste REM-slaap af met de leeftijd, terwijl de inslaaptijd, het aandeel lichte slaap en het wakker liggen in de nacht toenamen.",
+                        "Na je 60e bleef alleen de slaapefficiëntie verder dalen.",
+                        "Hoe sterk de veranderingen leken, hing sterk af van hoe zorgvuldig de deelnemers waren geselecteerd."
+                    ]
                 },
                 "pdf": {
                     "mode": "link",
@@ -2348,7 +2498,8 @@
                             "state": "waiting",
                             "detail": "insight-C10",
                             "icon": "pulse",
-                            "accent": "sleep"
+                            "accent": "sleep",
+                            "progress": 0.0
                         },
                         {
                             "code": "C16",
@@ -2378,7 +2529,8 @@
                             "state": "waiting",
                             "detail": "insight-C17",
                             "icon": "pulse",
-                            "accent": "sleep"
+                            "accent": "sleep",
+                            "progress": 0.0
                         }
                     ]
                 }
@@ -3427,7 +3579,8 @@
                     ]
                 },
                 "icon": "pulse",
-                "accent": "sleep"
+                "accent": "sleep",
+                "progress": 0.0
             },
             "insight-C11": {
                 "id": "insight-C11",
@@ -4068,7 +4221,8 @@
                     ]
                 },
                 "icon": "pulse",
-                "accent": "sleep"
+                "accent": "sleep",
+                "progress": 0.0
             }
         },
         "labels": {

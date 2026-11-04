@@ -85,6 +85,8 @@ if (!function_exists('insights_facts')) {
         return [
             'age'            => isset($account['age']) && $account['age'] !== null ? (int) $account['age'] : null,
             'activity_level' => $account['activity_level'] ?? null,
+            /* Geslacht, for research about one sex only (research_person()). */
+            'sex'            => in_array($account['gender'] ?? null, ['female', 'male'], true) ? $account['gender'] : null,
             /* Stored in cm and kg; anything else is not converted by guesswork. */
             'height_cm'      => is_array($height) && ($height['unit'] ?? null) === 'cm' && (float) $height['value'] > 0 ? (float) $height['value'] : null,
             'weight_kg'      => is_array($weight) && ($weight['unit'] ?? null) === 'kg' && (float) $weight['value'] > 0 ? (float) $weight['value'] : null,

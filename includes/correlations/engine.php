@@ -12,6 +12,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/stats.php';
+require_once dirname(__DIR__) . '/research.php';
 
 if (!function_exists('corr_evaluate')) {
 
@@ -302,11 +303,23 @@ if (!function_exists('corr_evaluate')) {
      *
      * @return list<string> claim keys
      */
-    function corr_pair_claims(array $pair, ?int $age): array
+    function corr_pair_claims(array $pair, array|int|null $who): array
     {
+        /* Only research whose population the person belongs to
+           (research_eligible(), config/research-eligibility.php): an
+           age-bound entry needs a known age. */
+        $person = research_person($who);
+        $age    = $person['age'];
         $keys = [];
         foreach ((array) ($pair['claims'] ?? []) as [$min, $max, $key]) {
+            if (($min !== null || $max !== null) && $age === null) {
+                continue;
+            }
             if ($age !== null && (($min !== null && $age < $min) || ($max !== null && $age > $max))) {
+                continue;
+            }
+            $claim = function_exists('research_claim') ? research_claim((string) $key) : null;
+            if ($claim !== null && !research_eligible($claim, $person)) {
                 continue;
             }
             $keys[] = (string) $key;
@@ -323,7 +336,7 @@ if (!function_exists('corr_evaluate')) {
      * @param array<string, array> $pairs  corr_evaluate()['pairs'] (or stored)
      * @return list<string> pair codes
      */
-    function corr_overview(array $pairs, array $cfg, ?int $age): array
+    function corr_overview(array $pairs, array $cfg, array|int|null $age): array
     {
         $count = (int) $cfg['overview_count'];
         $rank  = ['clear' => 0, 'pattern' => 1];

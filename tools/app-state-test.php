@@ -267,10 +267,10 @@ try {
         && array_key_exists('direction', $compass) && $compass['direction'] === null
         && ($compass['trend']['state'] ?? null) === 'empty' && ($compass['trend']['chart']['has_data'] ?? true) === false
         && array_column($compass['comparison']['rows'] ?? [], 'value') === [null, null, null, null]
-        && ($compass['opportunity']['state'] ?? null) === 'empty');
-    check('…and what the score will be made of: three categories, Slaap\'s components weighed 45 / 30 / 25',
+        && !array_key_exists('opportunity', $compass));
+    check('…and what the score will be made of: three categories, Slaap\'s eight factors weighed as config/scoring.php grades them',
         array_column($compass['composition']['categories'] ?? [], 'id') === ['sleep', 'nutrition', 'training']
-        && array_column($compass['composition']['categories'][0]['parts'] ?? [], 'weight') === [45, 30, 25]);
+        && array_column($compass['composition']['categories'][0]['parts'] ?? [], 'weight') === [35, 35, 17, 3, 3, 2, 2, 4]);
     check('dates are text', !str_contains($state['raw'], '"timezone_type"'));
     check('not cached', stripos(http('/api/app/state.php', ['bearer' => $sanne['token']])['raw'], '"ok":true') !== false);
 
@@ -665,7 +665,8 @@ try {
             && ($s['calibration']['title'] ?? null) === 'Je eerste slaapscore', json_encode($s['calibration']['phase'] ?? null));
         check('its number is the ring\'s own category score (' . var_export($sleep, true) . ')', $sleep !== null
             && ($s['calibration']['first']['value'] ?? null) === $sleep);
-        check('with the Scorekompas\'s own components', array_column($s['calibration']['first']['parts'] ?? [], 'id') === ['duration', 'regularity', 'quality']);
+        check('with the Scorekompas\'s own factors — those that count', array_slice(array_column($s['calibration']['first']['parts'] ?? [], 'id'), 0, 2) === ['duration', 'regularity']
+            && array_filter($s['calibration']['first']['parts'] ?? [], static fn ($p) => empty($p['counted'])) === []);
         check('and the overall score says it rests on slaap alone',
             str_starts_with((string) ($s['calibration']['note'] ?? ''), 'Je gezondheidsscore rust voorlopig alleen op slaap.'));
 

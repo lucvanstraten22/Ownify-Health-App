@@ -237,7 +237,8 @@
 }
 
 .ch-invite__text b { color: var(--text-primary); font-weight: 600; }
-.ch-invite__btn { min-height: 38px; padding-inline: var(--space-3); }
+/* Bekijken: the text link (38.0), its 44 px target within the banner's padding. */
+.ch-invite__btn { margin-block: calc(-1 * var(--space-2)); }
 
 /* "SAMEN · TRAININGEN": the line above a challenge's name. */
 .ch-kind {

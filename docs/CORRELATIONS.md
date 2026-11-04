@@ -127,6 +127,17 @@ What is still needed is counted against **Patroon**'s minimum (30 paired
 days, 8 per group; for a weekly link 8 weeks and 3 per group): "Nog 2
 gemeten nachten nodig."
 
+**Still gathering** (38.0): a pair that still needs days shows only a bar —
+on Overzicht, on Inzichten and on its own page (there instead of the label
+chip) — no percentage, no "Nog onduidelijk", no line beside it. How full:
+the smaller of days / Patroon's days and smaller group / Patroon's group
+(`corr_progress()`), so it never runs ahead of what is missing. What is
+still needed, the sentence above, is the bar's reading: the goal bar's
+tooltip, while a pointer is over it, a finger rests on it, or it (or its
+row) has focus; a screen reader hears it as the bar's (or the row's)
+description. A pair with enough days and no clear result keeps its
+sentence and its label.
+
 Simulated, 60 people without any real link: 3% saw any pattern, 0.2% of
 tests gave a false one; weekend and trend confounders 0 of 30; a real null
 with enough days was Geen patroon 20 of 20.

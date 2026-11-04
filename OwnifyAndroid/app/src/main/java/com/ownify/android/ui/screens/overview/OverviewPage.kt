@@ -104,6 +104,7 @@ import com.ownify.android.ui.design.countUpText
 import com.ownify.android.ui.design.cssPadding
 import com.ownify.android.ui.design.press
 import com.ownify.android.ui.design.rememberPlayOnSight
+import com.ownify.android.ui.design.ReadingBar
 import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.design.loopValue
 import com.ownify.android.ui.theme.Accent
@@ -425,18 +426,10 @@ private const val HOLD_MS = 280L
 /** The reading bubble, for tests. */
 const val GoalReadingTag = "goal-reading"
 
-/** `.goal__tip`: the reading, in a small near-solid pill (`--tip-surface`). */
+/** `.goal__tip`: the reading, in the shared small near-solid pill (ReadingBar.kt). */
 @Composable
 private fun ReadingBubble(text: String, modifier: Modifier) {
-    val shape = RoundedCornerShape(50)
-    Box(
-        modifier
-            .clearAndSetSemantics { testTag = GoalReadingTag }
-            .liquidGlass(shape, Panes.Tip)
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-    ) {
-        T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
-    }
+    com.ownify.android.ui.design.ReadingBubble(text, modifier, tag = GoalReadingTag)
 }
 
 /**
@@ -553,6 +546,14 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
                     }
                     Column(Modifier.weight(1f)) {
                         T(item.title, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
+                        val progress = item.progress
+                        if (combined && progress != null) {
+                            // Still gathering (38.0): only the bar; what is still needed is its reading.
+                            val (play, sight) = rememberPlayOnSight()
+                            ReadingBar(progress, item.body, play, Modifier.padding(top = Ownify.Space1).then(sight), accent = accent,
+                                onTap = if (opens) ({ shell.openDetail(Detail.Insights) }) else null)
+                            return@Column
+                        }
                         T(item.body, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
                         if (combined) {
                             // Its label, and "only your own data" where no research is behind it.

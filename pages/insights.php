@@ -58,7 +58,12 @@ $mark = static fn (string $accent): string => match ($accent) {
                                     <span class="settings-row__mark" aria-hidden="true"><?= icon($mark($row['accent'])) ?></span>
                                     <span class="settings-row__text">
                                         <span class="settings-row__label"><?= e($row['title']) ?></span>
-                                        <span class="settings-row__value"><?= e($row['body']) ?></span>
+                                        <?php if (isset($row['progress'])): ?>
+                                            <?php /* Still gathering (38.0): only the bar; the row's focus shows its tooltip. */
+                                            component('insight-progress', $data + ['progress' => ['share' => $row['progress'], 'text' => $row['body'], 'id' => 'page-' . $row['code'], 'focusable' => false]]); ?>
+                                        <?php else: ?>
+                                            <span class="settings-row__value"><?= e($row['body']) ?></span>
+                                        <?php endif; ?>
                                     </span>
                                     <?= icon('chevron-right', 'settings-row__chevron') ?>
                                 </button>

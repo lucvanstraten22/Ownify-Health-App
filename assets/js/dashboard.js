@@ -201,5 +201,26 @@
         if (event.target.closest && event.target.closest('[data-goal-track]')) { event.preventDefault(); }
     });
 
+    /* 38.0 — a combined insight's bar (components/insight-progress.php): a
+       hold that showed the reading is not also a tap, so letting go opens
+       nothing; a plain tap on a bar over a card's way in opens the card, as
+       a tap anywhere else on it does. */
+    var held = 0;
+    document.addEventListener('pointerup', function () {
+        if (track && track.classList.contains('is-reading')) { held = Date.now(); }
+    }, { capture: true, passive: true });
+    document.addEventListener('click', function (event) {
+        var bar = event.target.closest && event.target.closest('.insight-lock[data-goal-track]');
+        if (!bar) { return; }
+        if (Date.now() - held < 600) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        var card = bar.closest('.card--opens');
+        var way = card && card.querySelector(':scope > .cm-head, .card__open');
+        if (way && !bar.closest('button')) { way.click(); }
+    }, true);
+
     window.addEventListener('blur', end);
 }());

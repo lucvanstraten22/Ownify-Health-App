@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -81,8 +82,8 @@ class ResearchFlowTest {
         state.put("insights", research.getJSONObject("insights"))
         state.put("recommendation", research.getJSONObject("recommendation"))
         state.put("research", research.getJSONObject("research"))
-        // The Scorekompas a server sends (compass-demo.json), with the point of attention stored with the insights.
-        state.put("compass", json("compass-demo.json").put("opportunity", research.getJSONObject("compass_opportunity")))
+        // The Scorekompas a server sends (compass-demo.json).
+        state.put("compass", json("compass-demo.json"))
         val account = state.getJSONObject("settings").getJSONObject("pages").getJSONObject("account")
         account.getJSONArray("blocks").put(JSONObject().put("type", "insight").put("slot", "body"))
         return AppData.parse(state)
@@ -105,13 +106,13 @@ class ResearchFlowTest {
 
     private fun count(text: String) = compose.onAllNodes(hasText(text), useUnmergedTree = true).fetchSemanticsNodes().size
 
-    /** Every "Bekijk onderzoek" chip in the tree, the page under a detail first. */
+    /** Every "Bekijk onderzoek" link in the tree, the page under a detail first. */
     private fun research() = compose.onAllNodes(hasText("Bekijk onderzoek") and hasClickAction())
 
     /** A label (Betrouwbaar, …) anyone could tap: none, since 29.1 — it is only said in the detail. */
     private fun tappableLabels(label: String) = compose.onAllNodes(hasText(label) and hasClickAction()).fetchSemanticsNodes().size
 
-    /** Taps the [index]th "Bekijk onderzoek" chip. */
+    /** Taps the [index]th "Bekijk onderzoek" link. */
     private fun tapResearch(index: Int) {
         val node = research()[index]
         node.performScrollTo()
@@ -147,13 +148,12 @@ class ResearchFlowTest {
         assertEquals(listOf("nutrition.fat", "nutrition.carbs", "nutrition.rating", "sleep.stages", "training.measurement"), insights.references.keys.toList())
         assertTrue(data.overview.recommendation.filled)
         assertEquals("c2-0", data.overview.recommendation.evidence?.research)
-        assertEquals("c23-0", data.compass.opportunity.research?.research)
 
         val details = data.research.details
         assertEquals(9, details.size)
         // Every chip on the pages opens a detail that is there.
         val opened = insights.items.mapNotNull { it.evidence?.research } + insights.context.values.mapNotNull { it.evidence?.research } +
-            insights.references.values.map { it.research } + listOfNotNull(data.overview.recommendation.evidence?.research, data.compass.opportunity.research?.research)
+            insights.references.values.map { it.research } + listOfNotNull(data.overview.recommendation.evidence?.research)
         assertTrue(opened.all { it in details })
 
         val mea = details.getValue("c14-0")
@@ -201,14 +201,28 @@ class ResearchFlowTest {
     }
 
     @Test
-    fun `the chip opens the detail over Overzicht - what Ownify says, how strong, what was found, the source`() {
+    fun `the link opens the detail over Overzicht - the summary as points, the source with its limitations, how strong last`() {
         show()
         tapResearch(0)
         assertEquals(Detail.Research("c2-0"), shell.detail)
         assertNull(shell.under)
         heading("Uit onderzoek blijkt").assertExists()
         text("Volwassenen van 18 tot 60 jaar: regelmatig minstens 7 uur slaap per nacht. Korter slapen hangt samen met meer gezondheidsrisico's.").assertExists()
-        for (eyebrow in listOf("BEWIJSKRACHT", "WAT HET ONDERZOEK VOND", "VOOR WIE", "BEPERKINGEN", "BRON")) text(eyebrow).assertExists()
+        // 38.0: Samenvatting onderzoek first, Bron, Bewijskracht last — no "Voor wie", no Beperkingen block.
+        val order = listOf("SAMENVATTING ONDERZOEK", "BRON", "BEWIJSKRACHT").map { compose.onNodeWithText(it).fetchSemanticsNode().boundsInRoot.top }
+        assertEquals(order.sorted(), order)
+        for (gone in listOf("VOOR WIE", "WAT HET ONDERZOEK VOND", "BEPERKINGEN")) assertEquals(gone, 0, count(gone))
+        // The findings, one point a sentence.
+        text("Volwassenen horen regelmatig 7 uur of meer per nacht te slapen.").assertExists()
+        text("Regelmatig korter dan 7 uur slapen hangt samen met onder meer gewichtstoename, diabetes, hoge bloeddruk, hart- en vaatziekten, depressie en een hoger sterfterisico.").assertExists()
+        // Beperkingen: a link beside the source, opening the limitations in place.
+        assertEquals(0, count("Gebaseerd op verbanden, niet op bewezen oorzaken."))
+        tap(hasText("Beperkingen") and hasClickAction())
+        compose.mainClock.advanceTimeBy(600)
+        text("Gebaseerd op verbanden, niet op bewezen oorzaken.").assertExists()
+        tap(hasText("Beperkingen") and hasClickAction())
+        compose.mainClock.advanceTimeBy(600)
+        assertEquals(0, count("Gebaseerd op verbanden, niet op bewezen oorzaken."))
         text("Dit label zegt hoe sterk onderzoek deze bewering onderbouwt. Het is geen kans en geen percentage.").assertExists()
         text("Recommended Amount of Sleep for a Healthy Adult: A Joint Consensus Statement of the American Academy of Sleep Medicine and Sleep Research Society").assertExists()
         text("De publicatie is in het Engels.").assertExists()
@@ -247,17 +261,12 @@ class ResearchFlowTest {
     }
 
     @Test
-    fun `the Scorekompas's point of attention - its research under the explanation`() {
+    fun `the Scorekompas - no point of attention any more`() {
         show()
         compose.runOnUiThread { shell.openDetail(Detail.ScoreCompass) }
         compose.waitForIdle()
-        text("Mogelijk aandachtspunt").assertExists()
-        tap(hasText("Bekijk onderzoek") and hasClickAction())
-        assertEquals(Detail.Research("c23-0", over = Detail.ScoreCompass), shell.detail)
-        text("Richtlijnen goede voeding 2015").assertExists()
-        // The publisher's PDF, read in the app.
-        assertEquals(1, compose.onAllNodes(hasText("Lees de pdf") and hasClickAction()).fetchSemanticsNodes().size)
-        assertEquals("only Ownify's own copies are downloaded", 0, count("Download de pdf"))
+        text("Vergeleken met jezelf").assertExists()
+        assertEquals(0, count("Mogelijk aandachtspunt"))
     }
 
     @Test

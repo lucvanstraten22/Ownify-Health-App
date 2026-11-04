@@ -704,7 +704,7 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Scorekompas - the score card opens it, its four parts are the server's, and back returns to Overzicht`() {
+    fun `Scorekompas - the score card opens it, its three parts are the server's, and back returns to Overzicht`() {
         withCompass()
         MemoryTokenStorage.signedIn()
         show()
@@ -718,9 +718,11 @@ class OwnifyAppFlowTest {
         // The page under it is out of reach, as the website makes it inert.
         compose.onAllNodes(hasText("Vandaag") and isHeading()).assertCountEquals(0)
 
-        for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf", "Mogelijk aandachtspunt")) {
+        for (title in listOf("Waar je score uit bestaat", "Wat er verandert", "Vergeleken met jezelf")) {
             compose.onNode(hasText(title) and isHeading()).performScrollTo().assertIsDisplayed()
         }
+        // 38.0: no Mogelijk aandachtspunt.
+        compose.onAllNodes(hasText("Mogelijk aandachtspunt")).assertCountEquals(0)
         // What is changing: the score's own week first, today read closely under it.
         compose.onNode(hasText("De afgelopen 7 dagen lag je score tussen 68 en 73.")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Dagcijfer 7,3")).performScrollTo().assertIsDisplayed()
@@ -741,7 +743,6 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("5 oktober")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Slaapduur 68 · Regelmaat 57 · Kwaliteit 66")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("−1 ten opzichte van de 30 dagen daarvoor")).performScrollTo().assertIsDisplayed()
-        compose.onNode(hasText("Hogere dagcijfers zouden samengaan met een hogere voedingsscore.")).performScrollTo().assertIsDisplayed()
         // The page's end, scrolled to as TalkBack scrolls (performScrollTo() keeps
         // trying on the last line of a column, in this version of Compose's test kit).
         compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("Het Scorekompas beschrijft", substring = true)))

@@ -175,7 +175,13 @@ if (!function_exists('insights_today')) {
             return;
         }
 
-        $claims     = research_claims();
+        /* Only research whose population the person belongs to
+           (config/research-eligibility.php). */
+        $claims     = research_claims_for([
+            'age'            => $facts['profile']['age'] ?? null,
+            'gender'         => $facts['profile']['sex'] ?? null,
+            'activity_level' => $facts['profile']['activity_level'] ?? null,
+        ]);
         $candidates = insights_candidates($facts, $claims, $cfg);
         $yesterday  = insights_yesterday($userId, $date);
         $best       = insights_choose($candidates, $yesterday, $cfg);

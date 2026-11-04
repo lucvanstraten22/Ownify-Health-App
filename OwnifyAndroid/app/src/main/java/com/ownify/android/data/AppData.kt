@@ -343,8 +343,7 @@ data class Compass(
     val direction: CompassDirection?,
     val composition: CompassComposition,
     val trend: CompassTrend,
-    val comparison: CompassComparison,
-    val opportunity: CompassOpportunity
+    val comparison: CompassComparison
 ) {
     companion object {
         fun parse(o: JSONObject?) = Compass(
@@ -360,8 +359,7 @@ data class Compass(
             direction = CompassDirection.parse(o.obj("direction")),
             composition = CompassComposition.parse(o.obj("composition")),
             trend = CompassTrend.parse(o.obj("trend")),
-            comparison = CompassComparison.parse(o.obj("comparison")),
-            opportunity = CompassOpportunity.parse(o.obj("opportunity"))
+            comparison = CompassComparison.parse(o.obj("comparison"))
         )
     }
 }
@@ -613,42 +611,6 @@ data class CompassRow(val id: String, val label: String, val value: Int?, val ba
     }
 }
 
-/** The component with the most room, or [empty] saying why there is none. */
-data class CompassOpportunity(
-    val title: String,
-    val filled: Boolean,
-    val empty: String?,
-    val label: String?,
-    val accent: String?,
-    val icon: String?,
-    val name: String?,
-    val value: Int?,
-    val band: String?,
-    val fact: String?,
-    val relation: String?,
-    val gainText: String?,
-    /** The research about the component it names (docs/INSIGHTS.md): its context, not its reason. */
-    val research: Evidence? = null
-) {
-    companion object {
-        fun parse(o: JSONObject?) = CompassOpportunity(
-            title = o.str("title").orEmpty(),
-            filled = o.str("state") == "filled",
-            empty = o.str("empty"),
-            label = o.str("label"),
-            accent = o.str("accent"),
-            icon = o.str("icon"),
-            name = o.str("name"),
-            value = o.int("value"),
-            band = o.str("band"),
-            fact = o.str("fact"),
-            relation = o.str("relation"),
-            gainText = o.str("gain_text"),
-            research = Evidence.parse(o.obj("research"))
-        )
-    }
-}
-
 /** The Overzicht goal card (components/goal-progress.php). */
 data class GoalCard(
     val title: String,
@@ -749,7 +711,9 @@ data class Insight(
     val tier: String? = null,
     val tierLabel: String = "",
     val own: String? = null,
-    val detail: String? = null
+    val detail: String? = null,
+    /** 38.0: a combined insight still gathering — how far along (0–1); [body] is what is still needed, its tooltip. */
+    val progress: Float? = null
 ) {
     companion object {
         fun parse(o: JSONObject, state: String? = null) = Insight(
@@ -761,7 +725,8 @@ data class Insight(
             tier = o.obj("tier").str("key"),
             tierLabel = o.obj("tier").str("label").orEmpty(),
             own = o.str("own"),
-            detail = o.str("detail")
+            detail = o.str("detail"),
+            progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f)
         )
     }
 }
@@ -881,7 +846,9 @@ data class CorrelationDetail(
     val sourcesTitle: String,
     val sources: List<MethodSource>,
     val icon: String,
-    val accent: String
+    val accent: String,
+    /** 38.0: still gathering — the bar instead of the label; [body] is what is still needed. */
+    val progress: Float? = null
 ) {
     companion object {
         fun parse(o: JSONObject): CorrelationDetail {
@@ -899,7 +866,8 @@ data class CorrelationDetail(
                 method.arr("paragraphs").strings(),
                 method.str("sources_title").orEmpty(),
                 method.arr("sources").map(MethodSource::parse),
-                o.str("icon").orEmpty(), o.str("accent").orEmpty()
+                o.str("icon").orEmpty(), o.str("accent").orEmpty(),
+                progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f)
             )
         }
     }
@@ -958,7 +926,6 @@ data class ResearchCopy(
     val title: String,
     val found: String,
     val evidence: String,
-    val population: String,
     val limitations: String,
     val source: String,
     val kindLabel: String,
@@ -978,7 +945,6 @@ data class ResearchCopy(
             title = o.str("title") ?: tr("Uit onderzoek blijkt"),
             found = o.str("found").orEmpty(),
             evidence = o.str("evidence").orEmpty(),
-            population = o.str("population").orEmpty(),
             limitations = o.str("limitations").orEmpty(),
             source = o.str("source").orEmpty(),
             kindLabel = o.str("kind_label").orEmpty(),
@@ -1001,7 +967,6 @@ data class ResearchDetail(
     val claimKey: String,
     val retired: Boolean,
     val statement: String,
-    val population: String,
     val limitations: List<String>,
     val strength: ResearchStrength,
     val source: ResearchSource,
@@ -1018,7 +983,6 @@ data class ResearchDetail(
                 claimKey = o.str("claim_key").orEmpty(),
                 retired = o.bool("retired"),
                 statement = o.str("statement").orEmpty(),
-                population = o.str("population").orEmpty(),
                 limitations = o.arr("limitations").strings(),
                 strength = ResearchStrength(
                     key = strength.str("key").orEmpty(),
@@ -1039,6 +1003,8 @@ data class ResearchDetail(
                     year = source.text("year").orEmpty(),
                     citation = source.str("citation").orEmpty(),
                     findings = source.str("findings").orEmpty(),
+                    // Samenvatting onderzoek (38.0): the findings, one point a sentence.
+                    summary = source.arr("summary").strings().ifEmpty { listOfNotNull(source.str("findings")?.takeIf { it.isNotEmpty() }) },
                     // Only a publication's address on the web: never anything else to hand the browser.
                     href = source.str("href")?.takeIf { it.startsWith("https://") },
                     verified = source.str("verified").orEmpty()
@@ -1069,6 +1035,7 @@ data class ResearchSource(
     val year: String,
     val citation: String,
     val findings: String,
+    val summary: List<String>,
     val href: String?,
     val verified: String
 )

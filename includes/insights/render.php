@@ -153,12 +153,20 @@ if (!function_exists('insights_render')) {
 
         $today = insights_today($userId);
         $copy  = insights_copy();
+        /* Who the research may be shown to (config/research-eligibility.php):
+           everything below shows only research this person belongs to. */
+        $person = research_person(user_account($userId));
 
         $used  = [];   // research detail ids, with what they need
 
-        /* Each slot's insight, rendered once and used wherever it shows. */
+        /* Each slot's insight, rendered once and used wherever it shows —
+           not when its research no longer holds for the person (a stored
+           insight from before 38.0, or a profile that changed since). */
         $items = [];
         foreach ($today['slots'] as $slot => $row) {
+            if (!insights_row_eligible($row, $person)) {
+                continue;
+            }
             $item = insights_render($row, 'insight', $copy);
             if ($item !== null) {
                 $items[$slot] = $item;
@@ -188,9 +196,8 @@ if (!function_exists('insights_render')) {
         /* 31.0 (D1): with migration 029 Overzicht shows four combined
            insights instead, and its head opens the Inzichten page; the
            insights above stay on their own pages (context, below). */
-        $age  = user_account($userId)['age'] ?? null;
         if (function_exists('corr_hydrate')) {
-            $data = corr_hydrate($data, $userId, $today['mode'] !== null, $age, $used);
+            $data = corr_hydrate($data, $userId, $today['mode'] !== null, $person, $used);
         }
 
         /* Each page shows its own slot's insight, the same one. */
@@ -202,27 +209,41 @@ if (!function_exists('insights_render')) {
         ];
 
         /* Eén kleine suggestie. */
-        $data['recommendation'] = insights_recommendation($data['recommendation'] ?? [], $today, $copy, $used);
+        $data['recommendation'] = insights_recommendation($data['recommendation'] ?? [], $today, $copy, $used, $person);
 
-        /* The research next to reference values and the Scorekompas. */
-        $data['insights']['references'] = insights_references($age, $used);
-        if (isset($data['compass']['opportunity']) && is_array($data['compass']['opportunity'])) {
-            $data['compass']['opportunity']['research'] = insights_compass_research($data['compass']['opportunity'], $age, $used);
-        }
+        /* The research next to reference values. */
+        $data['insights']['references'] = insights_references($person, $used);
 
-        /* Every detail any of them opens, in the request's language. */
+        /* Every detail any of them opens, in the request's language — each
+           checked once more, so no page can open research the person does
+           not belong to. */
         $data['research'] = [
             'copy'    => research_detail_copy(),
-            'details' => insights_research_details($used),
+            'details' => insights_research_details($used, $person),
         ];
 
         return $data;
     }
 
+    /**
+     * Whether a stored insight's research still holds for the person: its
+     * claim version, checked as any claim is (research_eligible()).
+     */
+    function insights_row_eligible(array $row, array $person): bool
+    {
+        $claim = research_claim_by_id((int) ($row['claim_id'] ?? 0));
+
+        return $claim !== null && research_eligible($claim, $person);
+    }
+
     /** Eén kleine suggestie: the day's one, or a calm word that there is none. */
-    function insights_recommendation(array $rec, array $today, array $copy, array &$used): array
+    function insights_recommendation(array $rec, array $today, array $copy, array &$used, ?array $person = null): array
     {
         $row = $today['suggestion'];
+        /* A suggestion whose research does not hold for the person is not made to them. */
+        if ($row !== null && $person !== null && !insights_row_eligible($row, $person)) {
+            $row = null;
+        }
 
         if ($row === null) {
             /* Not worked out yet (a request still busy): the existing empty card. */
@@ -267,8 +288,9 @@ if (!function_exists('insights_render')) {
 
     /**
      * The research beside Ownify's own reference values, by where it shows
-     * (docs/INSIGHTS.md, "Naast een richtwaarde"). General guidance: shown
-     * without a known age, but not to an age the claim excludes.
+     * (docs/INSIGHTS.md, "Naast een richtwaarde"), only where the person
+     * belongs to the claim's population (research_eligible(): an age-bound
+     * claim needs a known age, since 38.0).
      *
      * Only the places that show it, on both apps: a reference nobody shows
      * would be a detail nobody can open. Voeding's detail lines (verzadigd
@@ -277,8 +299,13 @@ if (!function_exists('insights_render')) {
      *
      * @return array<string, array{research: string, strength: array{key: string, label: string}, label: string}>
      */
-    function insights_references(?int $age, array &$used): array
+    function insights_references(array|int|null $who, array &$used): array
     {
+        $person = research_person($who);
+        $age    = $person['age'];
+        /* Each anchor: its claims in order of preference, the first the
+           person may be shown — from 65 PROT-AGE's protein advice, else
+           (e.g. it cannot be shown) the Dutch norm. */
         $anchors = [
             'nutrition.fat'        => ['nutrition.fat', 'proxy'],
             'nutrition.carbs'      => ['nutrition.carbohydrates', 'direct'],
@@ -287,7 +314,7 @@ if (!function_exists('insights_render')) {
             'training.measurement' => ['measurement.wearables', 'direct'],
             /* 31.0 (D9): the age proposal and the claims that had no place.
                Protein: from 65 the PROT-AGE advice, before it the Dutch norm. */
-            'nutrition.protein'    => [$age !== null && $age >= 65 ? 'nutrition.protein.older' : 'nutrition.protein', 'proxy'],
+            'nutrition.protein'    => [$age !== null && $age >= 65 ? ['nutrition.protein.older', 'nutrition.protein'] : 'nutrition.protein', 'proxy'],
             'nutrition.sugar'      => ['nutrition.free_sugars', 'proxy'],
             'nutrition.energy'     => ['nutrition.energy_estimate', 'direct'],
             'training.intensity'   => ['activity.intensity.age', 'direct'],
@@ -298,9 +325,16 @@ if (!function_exists('insights_render')) {
 
         $copy = insights_copy();
         $out  = [];
-        foreach ($anchors as $anchor => [$key, $applicability]) {
-            $claim = research_claim($key);
-            if ($claim === null || ($age !== null && !research_age_fits($claim, $age))) {
+        foreach ($anchors as $anchor => [$keys, $applicability]) {
+            $claim = null;
+            foreach ((array) $keys as $key) {
+                $candidate = research_claim($key);
+                if ($candidate !== null && research_eligible($candidate, $person)) {
+                    $claim = $candidate;
+                    break;
+                }
+            }
+            if ($claim === null) {
                 continue;
             }
             $strength = research_strength_for((string) $claim['strength'], $applicability);
@@ -315,54 +349,13 @@ if (!function_exists('insights_render')) {
                     'key'   => $strength,
                     'label' => (string) (config_copy('research')['strengths'][$strength]['label'] ?? ''),
                 ],
-                'label'    => (string) (!empty($ageLabel[$anchor]) ? $copy['research_age'] : $copy['research']),
+                /* "Bij jouw leeftijd" only where the claim is the one for the age. */
+                'label'    => (string) (!empty($ageLabel[$anchor]) && ($anchor !== 'nutrition.protein' || $claim['claim_key'] === 'nutrition.protein.older')
+                    ? $copy['research_age'] : $copy['research']),
             ];
         }
 
         return $out;
-    }
-
-    /**
-     * The Scorekompas's Mogelijk aandachtspunt: the research about the
-     * component it names, when there is approved research for it — the
-     * observation stays the compass's own, this is its context.
-     */
-    function insights_compass_research(array $opportunity, ?int $age, array &$used): ?array
-    {
-        if (($opportunity['state'] ?? null) !== 'filled') {
-            return null;
-        }
-
-        $rules = insights_config()['rules'];
-        [$entries, $applicability] = match ($opportunity['category'] . '.' . $opportunity['part']) {
-            'sleep.duration'   => [$rules['sleep.duration']['claims'], 'direct'],
-            'sleep.regularity' => [$rules['sleep.regularity']['claims'], 'direct'],
-            'sleep.quality'    => [[[null, null, 'sleep.tracking']], 'direct'],
-            'nutrition.rating' => [[[null, null, 'nutrition.pattern']], 'direct'],
-            'training.volume'  => [$rules['activity.minutes']['claims'], 'proxy'],
-            default            => [[], 'direct'],
-        };
-
-        $claim = insights_claim_for($entries, $age, research_claims());
-        if ($claim === null) {
-            return null;
-        }
-        $strength = research_strength_for((string) $claim['strength'], $applicability);
-        if ($strength === null) {
-            return null;
-        }
-
-        $id = research_detail_id((int) $claim['id'], $applicability);
-        $used[$id] = [(int) $claim['id'], $applicability];
-
-        return [
-            'research' => $id,
-            'strength' => [
-                'key'   => $strength,
-                'label' => (string) (config_copy('research')['strengths'][$strength]['label'] ?? ''),
-            ],
-            'label'    => (string) insights_copy()['research'],
-        ];
     }
 
     /**
@@ -371,10 +364,17 @@ if (!function_exists('insights_render')) {
      * @param array<string, array{0: int, 1: string}> $used
      * @return array<string, array<string, mixed>>
      */
-    function insights_research_details(array $used): array
+    function insights_research_details(array $used, array|int|null $who = null): array
     {
+        $person = func_num_args() > 1 ? research_person($who) : null;
         $out = [];
         foreach ($used as $id => [$claimId, $applicability]) {
+            if ($person !== null) {
+                $claim = research_claim_by_id((int) $claimId);
+                if ($claim === null || !research_eligible($claim, $person)) {
+                    continue;
+                }
+            }
             $detail = research_detail($claimId, $applicability);
             if ($detail !== null) {
                 $out[$id] = $detail;

@@ -36,7 +36,7 @@ if (!function_exists('corr_hydrate')) {
      *
      * @param array<string, array{0: int, 1: string}> $used  research details the page needs
      */
-    function corr_hydrate(array $data, int $userId, bool $insightsRan, ?int $age, array &$used): array
+    function corr_hydrate(array $data, int $userId, bool $insightsRan, array|int|null $who, array &$used): array
     {
         $stored = correlations_today($userId, null, $insightsRan);
         if ($stored === null) {
@@ -45,9 +45,10 @@ if (!function_exists('corr_hydrate')) {
 
         $cfg  = corr_config();
         $copy = corr_copy();
+        $age  = research_person($who);                    // the person, as research is checked against
         $rows = [];
         foreach ($stored['pairs'] as $code => $r) {
-            $rows[$code] = corr_row($code, (array) $cfg['pairs'][$code], $r, $copy, $stored);
+            $rows[$code] = corr_row($code, (array) $cfg['pairs'][$code], $r, $copy, $stored, $age);
         }
 
         /* Overzicht: four, or the empty word when nothing has any data. */
@@ -124,7 +125,7 @@ if (!function_exists('corr_hydrate')) {
      *
      * @return array<string, mixed>
      */
-    function corr_row(string $code, array $pair, array $r, array $copy, array $stored): array
+    function corr_row(string $code, array $pair, array $r, array $copy, array $stored, array|int|null $who = null): array
     {
         $text = (array) $copy['pairs'][$code];
         $tier = (string) $r['tier'];
@@ -136,10 +137,37 @@ if (!function_exists('corr_hydrate')) {
             'title'  => (string) $text['title'],
             'body'   => corr_sentence($code, $pair, $r, $copy, $stored),
             'tier'   => ['key' => $tier, 'label' => (string) $copy['tiers'][$tier]],
-            'own'    => ($pair['claims'] ?? []) === [] ? (string) $copy['own_data_short'] : null,
+            /* "Alleen uit je eigen gegevens" when no research behind it holds for the person. */
+            'own'    => corr_pair_claims($pair, $who) === [] ? (string) $copy['own_data_short'] : null,
             'state'  => in_array($tier, ['clear', 'pattern'], true) ? 'filled' : 'waiting',
             'detail' => corr_detail_id($code),
+            /* Still gathering what it needs (38.0): only a bar, how far along,
+               and what is still needed as its tooltip (the sentence). */
+            'progress' => corr_progress($pair, $r),
         ] + $look;
+    }
+
+    /**
+     * How far a pair still gathering data is (38.0): the share of what
+     * corr_need() asks for — days, and days in the smaller group — that is
+     * there; the smaller of the two, so the bar never runs ahead of what is
+     * missing. Null when nothing is missing or the pair has a result.
+     */
+    function corr_progress(array $pair, array $r): ?float
+    {
+        if (($r['tier'] ?? null) !== 'unclear' || !is_array($r['need'] ?? null)) {
+            return null;
+        }
+        $cfg    = corr_config();
+        $weekly = $pair['lag'] === 'week';
+        $days   = $weekly ? (int) $pair['min_weeks'] : (int) $cfg['tiers']['pattern']['days'];
+        $group  = $weekly ? (int) ($pair['min_group'] ?? 3) : (int) $cfg['tiers']['pattern']['group'];
+        $n      = (int) ($r['n'] ?? 0);
+        $small  = min((int) ($r['n_high'] ?? 0), (int) ($r['n_low'] ?? 0));
+
+        $share = min($days > 0 ? $n / $days : 1.0, $group > 0 ? $small / $group : 1.0);
+
+        return round(max(0.0, min(1.0, $share)), 3);
     }
 
     /** The marker of a row: the area the insight is about (heart belongs to Training). */
@@ -264,7 +292,7 @@ if (!function_exists('corr_hydrate')) {
      *
      * @return array<string, mixed>
      */
-    function corr_detail_view(string $code, array $pair, array $r, array $row, array $copy, array $stored, ?int $age, array &$used): array
+    function corr_detail_view(string $code, array $pair, array $r, array $row, array $copy, array $stored, array|int|null $age, array &$used): array
     {
         $d    = (array) $copy['detail'];
         $tier = (string) $r['tier'];
@@ -295,7 +323,7 @@ if (!function_exists('corr_hydrate')) {
         $research = [];
         foreach (corr_pair_claims($pair, $age) as $key) {
             $claim = research_claim($key);
-            if ($claim === null || !research_age_fits($claim, $age)) {
+            if ($claim === null || !research_eligible($claim, $age)) {
                 continue;
             }
             $strength = research_strength_for((string) $claim['strength'], (string) $pair['applicability']);
@@ -317,6 +345,7 @@ if (!function_exists('corr_hydrate')) {
         return [
             'id'          => corr_detail_id($code),
             'code'        => $code,
+            'progress'    => $row['progress'] ?? null,
             'title'       => $row['title'],
             'tier'        => $row['tier'] + ['means' => corr_tier_means($tier, $copy, (int) $stored['tested'])],
             'body'        => $row['body'],

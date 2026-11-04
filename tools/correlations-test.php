@@ -517,10 +517,15 @@ $keysFor = static function (int $uid) use ($data): array {
 };
 $young = $keysFor($who);
 $old71 = $keysFor($older);
-check('34: protein on training days with the sport advice, never the 65+ one (' . implode(', ', $young) . ')',
+check('34: protein on training days never with the 65+ advice (' . implode(', ', $young) . ')',
     !in_array('nutrition.protein.older', $young, true));
-check('71: the 65+ advice, never the 18–64 sport advice (' . implode(', ', $old71) . ')',
-    in_array('nutrition.protein.older', $old71, true) && !in_array('nutrition.protein.exercise', $old71, true));
+/* 38.0 (config/research-eligibility.php): the sport advice holds for healthy
+   people who exercise, PROT-AGE not with severe kidney disease — neither of
+   which Ownify knows — so neither is shown; the Dutch norm, by age only, is. */
+check('34 and 71: not the sport advice nor PROT-AGE, which need what Ownify does not know (' . implode(', ', $old71) . ')',
+    !in_array('nutrition.protein.exercise', $young, true) && !in_array('nutrition.protein.exercise', $old71, true)
+    && !in_array('nutrition.protein.older', $old71, true));
+check('71: the Dutch protein norm, which holds by age alone', in_array('nutrition.protein', $old71, true));
 
 section('In English');
 i18n_force('en');

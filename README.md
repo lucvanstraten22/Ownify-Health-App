@@ -442,23 +442,22 @@ there is no demo or example data.
 
 The score on Overzicht explained. Tapping its card opens a detail page, the
 Scorekompas, and the card says where the score is heading: **↑ Stijgend**,
-**→ Stabiel** or **↓ Dalend**. The page answers four questions:
+**→ Stabiel** or **↓ Dalend**. The page answers three questions:
 
 ```
 Scorekompas ──┬── Waar je score uit bestaat   the categories, each component with the
               │                               weight it has now and what it rests on
               ├── Wat er verandert            30 days: a line, and dated sentences
-              ├── Vergeleken met jezelf       now, and the daily score's average over
-              │                               7 days, 30 days and the 30 before
-              └── Mogelijk aandachtspunt      the component with the most room
+              └── Vergeleken met jezelf       now, and the daily score's average over
+                                              7 days, 30 days and the 30 before
 ```
 
 It reads the Health Score and never scores: `includes/score-compass.php`
 works from `health_score_history()` — the engine's own result at the end of
 each of the last 60 days, recalculated from the records — and nothing it does
 changes a weight, a curve, the window, the minimum or a band. It says what
-happened and when ("sinds", "in dezelfde periode"), never why; an opportunity
-says what a higher score would go together with, never what to do; the only
+happened and when ("sinds", "in dezelfde periode"), never why, and never what
+to do (the Mogelijk aandachtspunt section was removed in 38.0); the only
 comparison is with the person's own past; too few days is an empty state,
 never a zero. The website and the app show the same block, worked out once
 on the server. The rules, the thresholds and the limits are in

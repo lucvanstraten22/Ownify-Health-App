@@ -2,11 +2,18 @@ package com.ownify.android.ui
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.assertContentDescriptionContains
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
@@ -167,6 +174,63 @@ class CorrelationsFlowTest {
         val titles = data().correlations.groups.flatMap { group -> group.rows.map { it.title } }
         assertEquals(17, titles.size)
         for (title in titles) assertEquals(title, 1, compose.onAllNodes(row(title)).fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `still gathering - only the bar, what is still needed as its reading when a finger rests on it`() {
+        show()
+        compose.runOnUiThread { shell.openDetail(Detail.Insights) }
+        compose.waitForIdle()
+        val needed = "Nog 30 dagen met gelogde cafeïne nodig."
+        val locked = data().correlations.groups.flatMap { it.rows }.single { it.code == "C17" }
+        assertEquals(0f, locked.progress)
+        // No sentence, no percentage under the name — the row still says it to TalkBack.
+        assertEquals(0, compose.onAllNodesWithText(needed, useUnmergedTree = true).fetchSemanticsNodes().size)
+        compose.onNode(row("Cafeïne en slaap")).performScrollTo()
+        compose.waitForIdle()
+        val reading = hasTestTag(com.ownify.android.ui.design.InsightReadingTag)
+        assertTrue(compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+
+        // The row says it to TalkBack, and opens the insight.
+        val lockedRow = compose.onNode(row("Cafeïne en slaap"))
+        lockedRow.assertContentDescriptionContains(needed, substring = true)
+        tap(row("Cafeïne en slaap"))
+        assertEquals(Detail.InsightPage("insight-C17"), shell.detail)
+
+        // Its page: the bar instead of the label, what is still needed as the bar's description.
+        assertEquals(0, compose.onAllNodes(hasContentDescription("Wat Ownify zag: Nog onduidelijk"), useUnmergedTree = true).fetchSemanticsNodes().size)
+        // (the page's bar, and the row's under it)
+        assertEquals(2, compose.onAllNodes(hasContentDescription(needed), useUnmergedTree = true).fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `the bar's reading - a finger at rest shows it, letting go hides it, a tap is a tap`() {
+        var taps = 0
+        compose.setContent {
+            OwnifyTheme {
+                CompositionLocalProvider(LocalStillMotion provides true) {
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().padding(top = 120.dp)) {
+                        com.ownify.android.ui.design.ReadingBar(0.4f, "Nog 2 dagen", play = true, onTap = { taps++ })
+                    }
+                }
+            }
+        }
+        val reading = hasTestTag(com.ownify.android.ui.design.InsightReadingTag)
+        val bar = compose.onNode(hasContentDescription("Nog 2 dagen"), useUnmergedTree = true)
+        assertTrue(compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+
+        bar.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(600)
+        compose.onNode(reading, useUnmergedTree = true).assertExists()
+        bar.performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(600)
+        assertTrue("letting go hides it", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
+        assertEquals("a hold is not a tap", 0, taps)
+
+        bar.performTouchInput { down(center); up() }
+        compose.mainClock.advanceTimeBy(600)
+        assertEquals(1, taps)
+        assertTrue("a tap shows nothing", compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
     }
 
     @Test
