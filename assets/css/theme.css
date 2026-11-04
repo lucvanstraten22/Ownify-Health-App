@@ -368,38 +368,44 @@
        without naming it. */
     --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
-    --fs-brand: 1.4rem;    /* app name            ~22px */
-    --fs-section: 1.3rem;  /* section titles      ~21px */
-    --fs-score: 2.9rem;    /* primary score       ~46px */
-    --fs-score-sm: 1.75rem;/* secondary scores    ~28px */
-    --fs-body: 0.9375rem;  /* body                 15px */
-    --fs-label: 0.875rem;  /* labels               14px */
-    --fs-small: 0.8125rem; /* captions             13px */
-    --fs-tiny: 0.6875rem;  /* eyebrow / tabs       11px */
+    /* The type scale (37.0, docs/THEME.md): seven steps, each with its own
+       weight, letter spacing and line height, and nothing between them.
+       Mirrored in OwnifyTheme.kt (Ownify.Fs…) and checked by TokenParityTest.
+         Display      44 / 700   the health score, a goal's percentage
+         Large title  28 / 700   a page's title, a large figure
+         Title        22 / 600   the app's name, a card's or a block's title
+         Headline     17 / 600   a goal's, a challenge's or a dialog's name
+         Body         15 / 400   running text, a row's label
+         Subhead      13 / 400   notes, intros, a row's value, meta
+         Caption      11 / 600   eyebrows (caps), tab labels, badges, axes
+       Weights: 400, 600 and 700 only. Text typed in a field is 16 — iOS
+       zooms into anything smaller — and is the one size outside the scale. */
+    --fs-display: 2.75rem;      /* 44px */
+    --fs-large-title: 1.75rem;  /* 28px */
+    --fs-title: 1.375rem;       /* 22px */
+    --fs-headline: 1.0625rem;   /* 17px */
+    --fs-body: 0.9375rem;       /* 15px */
+    --fs-subhead: 0.8125rem;    /* 13px */
+    --fs-caption: 0.6875rem;    /* 11px */
+    --fs-input: 1rem;           /* 16px — iOS zooms into anything smaller */
 
-    /* The named steps between and above those, so no rule writes a size of
-       its own. Mirrored in OwnifyTheme.kt (Ownify.FsFootnote …) and checked
-       against it by the app's TokenParityTest. */
-    --fs-footnote: 0.75rem;     /* a sentence of small print   12px */
-    --fs-input: 1rem;           /* text typed in a field       16px — iOS zooms into anything smaller */
-    --fs-headline: 1.0625rem;   /* a goal's or a block's name  17px */
-    --fs-title-3: 1.1875rem;    /* the primary goal's name     19px */
-    --fs-title-2: 1.25rem;      /* a figure's heading          20px */
-    --fs-title-1: 1.375rem;     /* a detail's title            22px */
-    --fs-figure: 1.5rem;        /* a secondary percentage      24px */
-    --fs-large-title: 1.75rem;  /* a page's title              28px */
-    --fs-score-md: 2.4rem;      /* a goal's hero, narrow       38px */
-
-    /* Letter spacing is set per size, never once for all: small text gets
-       none (it needs its room), body text -0.01em, titles -0.02em, the big
-       numbers their own tighter values. A rule that names no spacing at 12px
-       or below takes --tracking-small. */
-    --tracking-small: 0em;
-    --tracking-body: -0.01em;
-    --tracking-title: -0.02em;
+    /* Letter spacing, one per step: tighter as type grows, none at 13 and 11
+       (small text needs its room); uppercase captions are spaced open. */
+    --tracking-display: -0.035em;
     --tracking-large-title: -0.025em;
+    --tracking-title: -0.02em;
+    --tracking-headline: -0.015em;
+    --tracking-body: -0.01em;
+    --tracking-small: 0em;
+    --tracking-wide: 0.06em;
 
-    --tracking-wide: 0.08em;
+    /* Line height, one per kind of text: tight for figures and titles,
+       open for reading. */
+    --lh-display: 1;
+    --lh-title: 1.2;
+    --lh-headline: 1.25;
+    --lh-body: 1.45;
+    --lh-small: 1.35;
 
     /* --- motion ---------------------------------------------------------- */
     --transition-fast: 180ms ease;
@@ -458,8 +464,9 @@
        header's veil reaches past its box; --dock-fade how far the dock's
        reaches above the assistant's grip. Mirrored in OwnifyTheme.kt. */
     --edge-fade: 16px;
-    --veil-top: 0.95;                   /* the header's veil: how solid at its top … */
-    --veil-mid: 0.88;                   /* … and halfway down, before it fades out */
+    --veil-top: 0.9;                    /* the header's veil: how solid at its top … */
+    --veil-mid: 0.7;                    /* … and at its bottom, before it fades out */
+    --veil-shade: 0.16;                 /* the --shade over its top, gone by 70 % down */
     --veil-deep-top: 0.97;              /* a detail's bar with its title in it: */
     --veil-deep-mid: 0.94;              /* more solid, and reaching 2.5 × --edge-fade */
     --dock-fade: 28px;
@@ -477,7 +484,6 @@
        why the icon box is well over twice the type size. */
     --tab-icon: 24px;
     --tab-gap: 3px;
-    --tab-label: 0.625rem;
     --tab-glow-inset: 4px;
     /* How much wider the selected pane is on each side than its inset, so the
        longest labels (Gezondheid, Community, Instellingen) sit inside its
@@ -553,7 +559,7 @@ body {
     color: var(--text-primary);
     font-family: var(--font-sans);
     font-size: var(--fs-body);
-    line-height: 1.5;
+    line-height: var(--lh-body);
     letter-spacing: var(--tracking-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -764,9 +770,10 @@ button {
     border-radius: var(--radius-pill);
     background: var(--bg-secondary);
     color: var(--text-primary);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     text-decoration: none;
     transition: transform var(--transition-fast);
+    letter-spacing: var(--tracking-small);
 }
 
 .skip-link:focus { transform: translate(-50%, 0); }
@@ -1039,6 +1046,7 @@ button {
     --glint-k: 3;
     --shade: 62, 46, 54;
     --shade-k: 0.38;
+    --veil-shade: 0.05;
     --scrim: 38, 30, 34;
     --scrim-k: 0.5;
     --ground: 246, 241, 246;

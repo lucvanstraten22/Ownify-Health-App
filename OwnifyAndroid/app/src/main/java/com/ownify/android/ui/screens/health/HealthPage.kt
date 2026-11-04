@@ -174,19 +174,19 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                             countUpText(score.value?.toString() ?: "—", play && !empty),
                             OwnifyType.style(
                                 when {
-                                    empty -> Ownify.FsScoreSm * 0.6f
-                                    narrow -> Ownify.FsFigure
-                                    else -> Ownify.FsScoreSm
+                                    empty -> Ownify.FsLargeTitle * 0.6f
+                                    narrow -> Ownify.FsLargeTitle
+                                    else -> Ownify.FsLargeTitle
                                 },
                                 if (empty) FontWeight.Normal else FontWeight.Bold,
                                 if (empty) Ownify.TextMuted else Ownify.TextPrimary,
-                                tracking = (-0.035).em, lineHeight = 1.em, tabular = true
+                                lineHeight = 1.em, tabular = true
                             ),
                             Modifier.alignByBaseline().padding(end = if (empty) 3.dp else 0.dp)
                         )
                         T(
                             "/${score.max}",
-                            OwnifyType.style(if (narrow) Ownify.FsTiny else Ownify.FsSmall, color = Ownify.TextMuted),
+                            OwnifyType.style(if (narrow) Ownify.FsCaption else Ownify.FsSubhead, color = Ownify.TextMuted),
                             Modifier.alignByBaseline()
                         )
                     } }
@@ -201,7 +201,7 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                         T(
                             area.label,
                             // `.health-card__label`'s own -0.01em.
-                            OwnifyType.style(if (narrow) Ownify.FsTiny else Ownify.FsSmall, FontWeight.SemiBold, tracking = (-0.01).em),
+                            OwnifyType.style(if (narrow) Ownify.FsCaption else Ownify.FsSubhead, FontWeight.SemiBold),
                             maxLines = 1
                         )
                         JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 13.dp, color = Ownify.TextMuted)
@@ -277,7 +277,7 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
 
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
             period.since?.let {
-                T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, lineHeight = 1.45.em), Modifier.padding(bottom = Ownify.Space5))
+                T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(bottom = Ownify.Space5))
             }
             HistoryPlot(
                 key = period.key,
@@ -317,11 +317,11 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
                 val scored = scores(point)
                 val detail = point.detail?.takeIf { scored.isNotEmpty() }
                 Row {
-                    T(point.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
-                    detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+                    T(point.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+                    detail?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1) }
                 }
                 if (scored.isEmpty()) {
-                    point.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
+                    point.note?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
                 } else {
                     Column(Modifier.width(IntrinsicSize.Max).padding(top = 1.dp)) {
                         for ((category, value) in scored) {
@@ -335,12 +335,12 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
                                 )
                                 T(
                                     category.label,
-                                    OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.4.em),
+                                    OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary),
                                     Modifier.padding(start = 6.dp),
                                     maxLines = 1
                                 )
                                 Spacer(Modifier.widthIn(min = 6.dp).weight(1f))
-                                T(value.toString(), OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                                T(value.toString(), OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
                             }
                         }
                     }
@@ -494,7 +494,7 @@ private fun Chart(
         if (empty != null) {
             T(
                 empty,
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
                 Modifier.fillMaxWidth().padding(top = 46.dp),
                 align = TextAlign.Center
             )
@@ -509,7 +509,7 @@ private fun Chart(
 @Composable
 fun Axis(labels: List<String>, modifier: Modifier = Modifier) {
     val density = LocalDensity.current
-    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
+    val style = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted)
     // height: 1.2em of the card's 15 sp text.
     val height = with(density) { (Ownify.FsBody.toPx() * 1.2f).toDp() }
     Layout(

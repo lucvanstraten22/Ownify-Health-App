@@ -200,6 +200,48 @@ cut out of a tile, a picture or a round button by a ring of the ground, or
 beside a bare line icon with a soft halo of its own colour. The only red that
 means "this waits for you"; `--error` stays the colour of a failed entry.
 
+## The header's veil (37.0)
+
+Scrolled, the header lays a veil over the page: the ground at 90 % at its top
+lightening to 70 % at its bottom (`--veil-top`, `--veil-mid`), with a breath
+of the theme's own `--shade` over its top (`--veil-shade`: 16 % in Dark, 5 %
+in White) that is gone by 70 % down. Below the header it fades out over 48px
+along an S-curve (smoothstep), so neither end of the fade draws a line; the
+blur leaves with it. `.app-header::before`, Header.kt (`HeaderFrame`).
+
+## Type (37.0)
+
+One family — the system's own interface face: SF Pro on Apple, Roboto on
+Android and in the Android app, Segoe UI on Windows (`--font-sans`). No other
+font or typeface is added without the user's approval.
+
+Seven steps, each with its own weight, letter spacing and line height, and
+nothing between them (`--fs-*`, `--tracking-*`, `--lh-*` in theme.css;
+`Ownify.Fs*`, `Tracking*`, `Lh*` in OwnifyTheme.kt, checked by
+TokenParityTest):
+
+| Step | Size | Weight | Spacing | Line height | For |
+| --- | --- | --- | --- | --- | --- |
+| Display | 44 | 700 | −0.035em | 1.0 | the health score, a goal's percentage, the welcome wordmark |
+| Large title | 28 | 700 | −0.025em | 1.2 | a page's title, a large figure |
+| Title | 22 | 600 | −0.02em | 1.2 | the app's name, a card's or a block's title, an empty state |
+| Headline | 17 | 600 | −0.015em | 1.25 | a goal's, a challenge's or a dialog's name, a detail bar's title |
+| Body | 15 | 400 | −0.01em | 1.45 | running text, a row's label |
+| Subhead | 13 | 400 | 0 | 1.35 | notes, intros, a row's value, meta, dates |
+| Caption | 11 | 600 | 0 (caps +0.06em) | 1.35 | eyebrows, tab labels, badges, chart axes and units |
+
+Weights are 400, 600 and 700 only. A number takes its step's size in 700
+with tabular figures. Text typed in a field is 16 (`--fs-input`) — iOS zooms
+into anything smaller — the one size outside the scale. A size that has to
+fit a drawing (the hero ring's number, a percent sign beside a figure) is
+worked out from a step, never written on its own. On Android
+`OwnifyType.style()` takes the spacing and line height from the size when a
+style names none; on the website every rule with a size names its step's.
+
+A settings row's label comes first: as wide as it needs, up to 70 % of the
+row, so it never breaks to make room; the value takes the rest and ends in
+an ellipsis (`.settings-field`, `FieldColumns`).
+
 ## Contrast
 
 White Mode, the worst of a card, a well inside a card and the ground

@@ -37,7 +37,7 @@
     align-items: center;
     gap: var(--space-2);
     padding-inline: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -59,7 +59,7 @@
 
 .goals-eyebrow {
     padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -80,7 +80,7 @@
 
 .goals-slots {
     padding-inline: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -118,7 +118,7 @@
 
 .goal-card__category {
     display: block;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -130,7 +130,7 @@
     margin-top: 2px;
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
     color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -151,10 +151,10 @@
 }
 
 .goal-card__percent-value {
-    font-size: var(--fs-score-sm);
+    font-size: var(--fs-large-title);
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--tracking-large-title);
     font-variant-numeric: tabular-nums;
 }
 
@@ -162,16 +162,18 @@
 
 .goal-card__percent-sign {
     margin-left: 2px;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-card__target {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-card .meter { margin-top: 0; }
@@ -184,12 +186,13 @@
 }
 
 .goal-card__deadline {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-card__chevron {
@@ -225,7 +228,9 @@
     pointer-events: none;
 }
 
-.goal-card--primary .goal-card__name { font-size: var(--fs-title-3); }
+.goal-card--primary .goal-card__name { font-size: var(--fs-headline);
+    letter-spacing: var(--tracking-headline);
+}
 .goal-card--primary .meter--goal { height: 10px; }
 
 /* --- secondary: the same card, a little quieter ------------------------ */
@@ -248,11 +253,15 @@
 .goal-card--completed .icon-tile .icon { width: 17px; height: 17px; }
 
 .goal-card--secondary .meter--goal { height: 8px; }
-.goal-card--secondary .goal-card__percent-value { font-size: var(--fs-figure); }
+.goal-card--secondary .goal-card__percent-value { font-size: var(--fs-large-title);
+    letter-spacing: var(--tracking-large-title);
+}
 
 /* --- completed: finished, not faded out -------------------------------- */
 .goal-card--completed .meter--goal { height: 8px; }
-.goal-card--completed .goal-card__percent-value { font-size: var(--fs-figure); }
+.goal-card--completed .goal-card__percent-value { font-size: var(--fs-large-title);
+    letter-spacing: var(--tracking-large-title);
+}
 
 .goal-card__done {
     display: grid;
@@ -325,16 +334,17 @@
 
 .goals-empty__title {
     margin-top: var(--space-4);
-    font-size: var(--fs-section);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-title);
 }
 
 .goals-empty__body {
     margin-top: var(--space-2);
     max-width: 32ch;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .goals-empty__cta {
@@ -361,7 +371,7 @@
 .goal-hero__heads { min-width: 0; }
 
 .goal-hero__category {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -370,18 +380,18 @@
 
 .goal-hero__name {
     margin-top: var(--space-1);
-    font-size: var(--fs-title-1);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
+    letter-spacing: var(--tracking-title);
+    line-height: var(--lh-title);
 }
 
 /* A long name — over 40 characters — at Title 3 with balanced lines: calm, and
    all of it readable. */
 .goal-hero__name.is-long {
-    font-size: var(--fs-title-3);
-    letter-spacing: var(--tracking-title);
-    line-height: 1.25;
+    font-size: var(--fs-headline);
+    letter-spacing: var(--tracking-headline);
+    line-height: var(--lh-headline);
     text-wrap: balance;
 }
 
@@ -406,10 +416,10 @@
 }
 
 .goal-hero__percent-value {
-    font-size: var(--fs-score);
+    font-size: var(--fs-display);
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.045em;
+    letter-spacing: var(--tracking-display);
     font-variant-numeric: tabular-nums;
 }
 
@@ -419,10 +429,11 @@
     margin-left: 3px;
     font-size: var(--fs-headline);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-headline);
 }
 
 .goal-hero__target {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -435,7 +446,7 @@
     margin-top: var(--space-1);
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
     text-transform: none;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
@@ -449,8 +460,9 @@
 
 .goal-hero__deadline {
     margin-top: var(--space-3);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-hero__facts {
@@ -495,7 +507,7 @@
 }
 
 .goal-source__note {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -540,8 +552,9 @@
     border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: var(--radius-md);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-manage__state[hidden] { display: none; }
@@ -560,7 +573,7 @@
 .goal-manage__hint {
     display: block;
     margin-top: var(--space-1);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     font-weight: 400;
     color: var(--text-secondary);
@@ -578,8 +591,9 @@
 .goal-confirm[hidden] { display: none; }
 
 .goal-confirm__text {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-confirm__row {
@@ -666,7 +680,7 @@
 
 .wizard__count {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -699,19 +713,20 @@
 .wizard__title {
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .wizard__lede {
     margin-top: var(--space-1);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .wizard__label {
     display: block;
     margin-bottom: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -734,6 +749,7 @@
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-input);
+    letter-spacing: var(--tracking-body);
 }
 
 .wizard__input::placeholder { color: var(--text-muted); }
@@ -760,8 +776,9 @@
 
 .wizard__suffix {
     flex: none;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .wizard__field[hidden] { display: none; }
@@ -770,7 +787,7 @@
 
 .wizard__hint {
     margin-top: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -783,12 +800,22 @@
     .goal-card--secondary,
     .goal-card--completed { padding: var(--space-3); }
 
-    .goal-card--primary .goal-card__name { font-size: var(--fs-headline); }
-    .goal-card__percent-value { font-size: var(--fs-figure); }
-    .goal-card__target { font-size: var(--fs-small); }
+    .goal-card--primary .goal-card__name { font-size: var(--fs-headline);
+    letter-spacing: var(--tracking-headline);
+}
+    .goal-card__percent-value { font-size: var(--fs-large-title);
+    letter-spacing: var(--tracking-large-title);
+}
+    .goal-card__target { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
 
-    .goal-hero__percent-value { font-size: var(--fs-score-md); }
-    .goal-hero__name { font-size: var(--fs-title-3); }
+    .goal-hero__percent-value { font-size: var(--fs-display);
+    letter-spacing: var(--tracking-display);
+}
+    .goal-hero__name { font-size: var(--fs-headline);
+    letter-spacing: var(--tracking-headline);
+}
 
 }
 
@@ -817,9 +844,10 @@
 .wizard__error {
     margin: 0 0 var(--space-3);
     color: var(--error);
-    font-size: var(--fs-small);
-    line-height: 1.4;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     text-align: center;
+    letter-spacing: var(--tracking-small);
 }
 
 .wizard__error[hidden] { display: none; }
@@ -851,9 +879,9 @@
 
 .day-calendar__head {
     margin-bottom: 6px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
-    letter-spacing: var(--tracking-wide);
+    letter-spacing: var(--tracking-small);
     color: var(--text-faint);
     text-align: center;
 }
@@ -865,7 +893,7 @@
     border-radius: var(--radius-sm);
     border: 1px solid transparent;
     background: var(--glass-soft);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-faint);
@@ -960,7 +988,7 @@
 .goal-chart__unit {
     margin: 0 0 6px;
     text-align: left;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -1037,7 +1065,7 @@
 .goal-chart__end {
     position: absolute;
     transform: translate(-100%, calc(-100% - 9px));
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -1117,25 +1145,26 @@
 /* Date then value, as in "12 september / 80 kg" — but the value is the bold
    one, because it is what the finger went looking for. */
 .goal-chart__tip-date {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
-    line-height: 1.25;
+    line-height: var(--lh-small);
     color: var(--text-muted);
 }
 
 .goal-chart__tip-value {
-    font-size: var(--fs-small);
-    line-height: 1.25;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 /* What the day did and how far the goal was then: "+ 2,5 km · 62% van je doel". */
 .goal-chart__tip-note {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
-    line-height: 1.25;
+    line-height: var(--lh-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
 }
@@ -1165,7 +1194,7 @@
     position: absolute;
     right: 0;
     transform: translateY(-50%);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
@@ -1240,6 +1269,7 @@
     font-size: var(--fs-input);
     -webkit-appearance: none;
     appearance: none;
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-search__input::-webkit-search-cancel-button { display: none; }
@@ -1346,19 +1376,21 @@
 }
 
 .goal-option__label {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-option__meta {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-list__empty[hidden],
@@ -1393,16 +1425,20 @@
     cursor: pointer;
 }
 
-.goal-type__label { font-size: var(--fs-label); font-weight: 600; }
+.goal-type__label { font-size: var(--fs-body); font-weight: 600;
+    letter-spacing: var(--tracking-body);
+}
 
 .goal-type__hint {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-type__example {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-type[aria-checked="true"] .goal-type__example { color: var(--text-secondary); }
@@ -1440,9 +1476,10 @@
 
 .goal-row__word {
     flex: none;
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-row__word--quiet { color: var(--text-muted); font-weight: 400; }
@@ -1477,7 +1514,7 @@
     border-radius: var(--radius-sm);
     background: var(--lg-face), var(--lg-body-thick);
     box-shadow: var(--lg-shadow), var(--lg-glint);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-primary);
     opacity: 0;
     transform: translateY(-4px);
@@ -1487,6 +1524,7 @@
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
     position: relative;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-direction__tip.is-shown { opacity: 1; transform: none; }
@@ -1500,7 +1538,7 @@
 }
 
 .goal-baseline__label {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -1508,9 +1546,10 @@
 }
 
 .goal-baseline__value {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-baseline .wizard__hint { margin-top: var(--space-1); }
@@ -1546,7 +1585,7 @@
 }
 
 .goal-date__label {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -1554,13 +1593,14 @@
 }
 
 .goal-date__value {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
-.goal-date__value.is-empty { color: var(--text-secondary); font-weight: 500; }
+.goal-date__value.is-empty { color: var(--text-secondary); font-weight: 400; }
 
 .goal-durations { margin-top: var(--space-3); }
 
@@ -1570,7 +1610,7 @@
 .goal-calendar__title {
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .goal-calendar__nav {
@@ -1582,16 +1622,17 @@
 }
 
 .goal-calendar__month {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     text-transform: capitalize;
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-calendar__weekdays {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     margin-top: var(--space-3);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     color: var(--text-muted);
     text-align: center;
     text-transform: uppercase;
@@ -1613,9 +1654,10 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-variant-numeric: tabular-nums;
     cursor: pointer;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-calendar__day.is-between { background: var(--health-wash); border-radius: 0; }
@@ -1675,7 +1717,7 @@
 
 .goal-review__row dt {
     flex: none;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -1685,10 +1727,11 @@
 .goal-review__row dd {
     margin: 0;
     min-width: 0;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     text-align: right;
     overflow-wrap: anywhere;
+    letter-spacing: var(--tracking-small);
 }
 
 /* ------------------------------------------------------- back · forward */
@@ -1765,9 +1808,10 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     color: var(--health);
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-entry__save { flex: none; }
@@ -1813,15 +1857,20 @@
     min-width: 0;
 }
 
-.goal-period__name { font-size: var(--fs-small); font-weight: 600; }
-.goal-period__dates { font-size: var(--fs-tiny); color: var(--text-muted); }
+.goal-period__name { font-size: var(--fs-subhead); font-weight: 600;
+    letter-spacing: var(--tracking-small);
+}
+.goal-period__dates { font-size: var(--fs-subhead); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
 
 .goal-period__value {
     flex: none;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .goal-period.is-met .goal-period__value { color: var(--text-primary); }

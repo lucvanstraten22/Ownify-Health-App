@@ -117,12 +117,12 @@ fun SleepNightCard(night: SleepNight, evidence: Evidence? = null, ageEvidence: E
             night.asleep?.let { asleep ->
                 Column(horizontalAlignment = Alignment.End) {
                     Row {
-                        T(asleep, OwnifyType.style(Ownify.FsTitle2, FontWeight.Bold, tracking = (-0.03).em, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
-                        T("u", OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextMuted, lineHeight = 1.1.em), Modifier.alignByBaseline().padding(start = 3.dp))
+                        T(asleep, OwnifyType.style(Ownify.FsTitle, FontWeight.Bold, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
+                        T("u", OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextMuted, lineHeight = 1.1.em), Modifier.alignByBaseline().padding(start = 3.dp))
                     }
                     T(
                         night.asleepLabel + (night.efficiency?.let { " · $it% ${night.efficiencyLabel}" } ?: ""),
-                        OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
                         Modifier.padding(top = 2.dp),
                         maxLines = 1
                     )
@@ -137,8 +137,8 @@ fun SleepNightCard(night: SleepNight, evidence: Evidence? = null, ageEvidence: E
                     Row(Modifier.height(RowHeight).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(6.dp).clip(RoundedCornerShape(2.dp)).background(stageColor(row.key)))
                         Column(Modifier.padding(start = 6.dp)) {
-                            T(row.label, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1, ellipsis = true)
-                            row.total?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em, tabular = true), maxLines = 1) }
+                            T(row.label, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1, ellipsis = true)
+                            row.total?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1) }
                         }
                     }
                 }
@@ -151,7 +151,7 @@ fun SleepNightCard(night: SleepNight, evidence: Evidence? = null, ageEvidence: E
             TickAxis(night.ticks, Modifier.padding(start = LabelWidth + Ownify.Space3, top = Ownify.Space2))
         }
         night.note?.let {
-            T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
+            T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
         }
         if (night.staged) {
             // How far a wearable's stages can be trusted, and (31.0, D9) that deep sleep and efficiency change with age.
@@ -270,8 +270,8 @@ private fun NightPlot(night: SleepNight, modifier: Modifier) {
     ) {
         blocks.getOrNull(reading)?.let { b ->
             ReadingTip((b.from + b.to) / 2f) {
-                T(night.rows.getOrNull(b.row)?.label.orEmpty(), OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em), maxLines = 1)
-                T("${b.began} – ${b.ended}", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                T(night.rows.getOrNull(b.row)?.label.orEmpty(), OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold), maxLines = 1)
+                T("${b.began} – ${b.ended}", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1)
             }
         }
     }

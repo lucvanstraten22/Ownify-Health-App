@@ -291,7 +291,7 @@ private fun TrendBubble(direction: com.ownify.android.data.CompassDirection, pla
             }
             T(
                 direction.label,
-                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.em),
+                OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary, lineHeight = 1.em),
                 Modifier.padding(end = Ownify.Space4),
                 maxLines = 1
             )
@@ -328,7 +328,7 @@ private fun GoalProgressCard(goal: GoalCard, primaryId: String?) {
             Row(verticalAlignment = Alignment.Bottom) {
                 T(
                     countUpText(goal.progress?.toString() ?: "—", play && set),
-                    OwnifyType.style(Ownify.FsScoreSm, FontWeight.Bold, if (set) Ownify.TextPrimary else Ownify.TextSecondary, tracking = (-0.035).em, lineHeight = 1.em, tabular = true)
+                    OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold, if (set) Ownify.TextPrimary else Ownify.TextSecondary, lineHeight = 1.em, tabular = true)
                 )
                 if (set) T("%", JStyle.Meta, Modifier.padding(start = 2.dp))
             }
@@ -435,7 +435,7 @@ private fun ReadingBubble(text: String, modifier: Modifier) {
             .liquidGlass(shape, Panes.Tip)
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        T(text, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
+        T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
     }
 }
 
@@ -552,7 +552,7 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
                         OwnifyIcons.solid(item.icon)?.let { JIcon(it, size = 16.dp, color = Color.White) }
                     }
                     Column(Modifier.weight(1f)) {
-                        T(item.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
+                        T(item.title, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary))
                         T(item.body, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
                         if (combined) {
                             // Its label, and "only your own data" where no research is behind it.
@@ -600,7 +600,7 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
         IconTile(icon, color = Color.White, background = tile, border = tile)
         Column(Modifier.weight(1f)) {
             T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
-            if (meta != null) T(meta, JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+            if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }
     }
 }

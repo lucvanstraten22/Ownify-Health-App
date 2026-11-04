@@ -79,17 +79,18 @@
 
 .devices__name {
     display: block;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .devices__source {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     overflow: hidden;
@@ -97,15 +98,18 @@
     white-space: nowrap;
 }
 
-.devices__status { font-size: var(--fs-footnote); }
+.devices__status { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
 
 /* ---------------------------------------------------------- empty + add */
 .devices__empty {
     margin-bottom: var(--space-4);
     padding-top: var(--space-1);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
     text-align: center;
+    letter-spacing: var(--tracking-small);
 }
 
 .devices__add {

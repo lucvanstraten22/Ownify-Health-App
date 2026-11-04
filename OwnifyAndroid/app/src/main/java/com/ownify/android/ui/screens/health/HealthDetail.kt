@@ -241,7 +241,7 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
 fun EditorError(text: String, modifier: Modifier = Modifier) {
     T(
         text,
-        OwnifyType.style(Ownify.FsSmall, color = Ownify.Error, lineHeight = 1.4.em),
+        OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error),
         modifier
             .fillMaxWidth()
             .padding(top = Ownify.Space3)
@@ -285,10 +285,10 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count:
                 // A figure written as it is ("1:12", "5:50", "1.468") is not counted up.
                 if (count) countUpText(metric.value ?: "—", play && !empty) else metric.value ?: "—",
                 OwnifyType.style(
-                    Ownify.FsTitle2,
+                    Ownify.FsTitle,
                     if (empty) FontWeight.SemiBold else FontWeight.Bold,
                     if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
-                    tracking = (-0.03).em, lineHeight = 1.1.em, tabular = true
+                    lineHeight = 1.em, tabular = true
                 ),
                 Modifier.alignByBaseline()
             )
@@ -296,7 +296,7 @@ private fun MetricTile(metric: Metric, play: Boolean, modifier: Modifier, count:
                 T(
                     metric.unit,
                     // Inside the value, it keeps the value's spacing: -0.03em of 20, -0.6.
-                    OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextMuted, lineHeight = 1.1.em, tracking = (-0.6).sp),
+                    OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextMuted, lineHeight = 1.1.em, tracking = (-0.6).sp),
                     Modifier.alignByBaseline().padding(start = 3.dp)
                 )
             }
@@ -314,7 +314,7 @@ private fun SleepTimeline(timeline: Timeline) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Column(Modifier.fillMaxWidth()) {
             T(timeline.title, JStyle.Eyebrow, Modifier.semantics { heading() })
-            T(timeline.hint, JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+            T(timeline.hint, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }
 
         // .hypnogram
@@ -370,13 +370,13 @@ private fun SleepTimeline(timeline: Timeline) {
                             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
                         ) {
                             Box(Modifier.size(8.dp).clip(RoundedCornerShape(3.dp)).background(stageColor(stage.tone)))
-                            T(stage.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+                            T(stage.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
                             val share = stage.share
                             T(
                                 if (share != null) numberText(share) + "%" else "—",
                                 OwnifyType.style(
-                                    Ownify.FsSmall,
-                                    if (share != null) FontWeight.SemiBold else FontWeight.Medium,
+                                    Ownify.FsSubhead,
+                                    if (share != null) FontWeight.SemiBold else FontWeight.Normal,
                                     if (share != null) Ownify.TextPrimary else Ownify.TextMuted,
                                     tabular = true
                                 )
@@ -420,7 +420,7 @@ private fun MetricGroupCard(group: MetricGroup) {
             // .card__head: space-between — the headings take the row, the lock sits at its end.
             Column(Modifier.weight(1f)) {
                 T(group.title, JStyle.Eyebrow, Modifier.semantics { heading() })
-                if (!group.hint.isNullOrEmpty()) T(group.hint, JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+                if (!group.hint.isNullOrEmpty()) T(group.hint, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
             }
             if (group.locked) {
                 Box(
@@ -456,13 +456,13 @@ private fun MetricRow(metric: Metric, first: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            T(metric.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+            T(metric.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
             Row {
                 T(
                     metric.value ?: "—",
                     OwnifyType.style(
-                        Ownify.FsSmall,
-                        if (empty) FontWeight.Medium else FontWeight.SemiBold,
+                        Ownify.FsSubhead,
+                        if (empty) FontWeight.Normal else FontWeight.SemiBold,
                         if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                         tabular = true
                     ),
@@ -472,7 +472,7 @@ private fun MetricRow(metric: Metric, first: Boolean) {
                 if (!empty && metric.unit.isNotEmpty()) {
                     T(
                         metric.unit,
-                        OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted),
                         Modifier.alignByBaseline().padding(start = 3.dp)
                     )
                 }

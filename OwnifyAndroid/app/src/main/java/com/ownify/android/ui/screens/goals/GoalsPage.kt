@@ -420,9 +420,8 @@ fun GoalCard(
                             T(
                                 model.name,
                                 OwnifyType.style(
-                                    if (primary && !narrow) Ownify.FsTitle3 else Ownify.FsHeadline, FontWeight.SemiBold,
-                                    if (model.paused) Ownify.TextSecondary else Ownify.TextPrimary,
-                                    tracking = (-0.015).em
+                                    Ownify.FsHeadline, FontWeight.SemiBold,
+                                    if (model.paused) Ownify.TextSecondary else Ownify.TextPrimary
                                 ),
                                 Modifier.padding(top = 2.dp),
                                 maxLines = 1,
@@ -445,9 +444,9 @@ fun GoalCard(
                             T(
                                 countUpText(model.percent?.toString() ?: "—", play && !empty),
                                 OwnifyType.style(
-                                    if (primary && !narrow) Ownify.FsScoreSm else Ownify.FsFigure, FontWeight.Bold,
+                                    if (primary && !narrow) Ownify.FsLargeTitle else Ownify.FsLargeTitle, FontWeight.Bold,
                                     if ((empty && !preview) || model.paused) Ownify.TextSecondary else Ownify.TextPrimary,
-                                    tracking = (-0.035).em, lineHeight = 1.em, tabular = true
+                                    lineHeight = 1.em, tabular = true
                                 ),
                                 Modifier.alignByBaseline()
                             )
@@ -455,7 +454,7 @@ fun GoalCard(
                         }
                         T(
                             model.targetLabel,
-                            OwnifyType.style(if (narrow) Ownify.FsSmall else Ownify.FsLabel, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true),
+                            OwnifyType.style(if (narrow) Ownify.FsSubhead else Ownify.FsBody, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true),
                             Modifier.alignByBaseline(),
                             maxLines = 1
                         )

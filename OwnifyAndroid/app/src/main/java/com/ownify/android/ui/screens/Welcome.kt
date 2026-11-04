@@ -127,18 +127,13 @@ fun WelcomeScreen(
             Rise(90) {
                 T(
                     appName,
-                    OwnifyType.style(
-                        (screen.width.value * 0.105f).coerceIn(36f, 48f).sp,
-                        FontWeight.Bold,
-                        tracking = (-0.04).em,
-                        lineHeight = 1.05.em
-                    ),
+                    OwnifyType.style(Ownify.FsDisplay, FontWeight.Bold),
                     Modifier.semantics { heading() },
                     align = TextAlign.Center
                 )
             }
             Rise(160) {
-                val style = OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary, lineHeight = 1.45.em)
+                val style = OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary)
                 T(
                     subtitle,
                     style,
@@ -181,7 +176,7 @@ private fun WelcomeButton(label: String, primary: Boolean, onClick: () -> Unit, 
     ) {
         T(
             label,
-            OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, tracking = (-0.01).em),
+            OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold),
             Modifier.padding(horizontal = Ownify.Space4),
             maxLines = 1
         )

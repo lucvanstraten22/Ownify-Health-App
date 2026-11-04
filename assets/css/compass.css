@@ -90,8 +90,8 @@
 }
 
 .score-trend__label {
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     line-height: 1;
     letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
@@ -196,13 +196,15 @@
 .detail--compass .score-ring__value { stroke: url(#compassRingGradient); }
 
 .compass-note {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .compass-empty {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* The sentences: what happened and when. */
@@ -211,8 +213,9 @@
     flex-direction: column;
     gap: var(--space-2);
     margin-top: var(--space-4);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 /* A score with its band's dot: the colour says how high, never which category. */
@@ -221,10 +224,11 @@
     align-items: center;
     gap: var(--space-2);
     flex: none;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-body);
 }
 
 .compass-score__dot {
@@ -236,7 +240,7 @@
 }
 
 .compass-score:not([data-score="high"]):not([data-score="mid"]):not([data-score="low"]) {
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-muted);
 }
 
@@ -279,14 +283,14 @@
 }
 
 .compass-cat__label {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
 }
 
 .compass-cat__meta {
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -295,8 +299,9 @@
     margin-top: var(--space-3);
     padding-top: var(--space-3);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .compass-rows {
@@ -317,7 +322,8 @@
     display: flex;
     align-items: baseline;
     gap: var(--space-2);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
 }
 
 .compass-row__label {
@@ -327,7 +333,7 @@
 }
 
 .compass-row__weight {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
@@ -341,7 +347,7 @@
 }
 
 .compass-row.is-empty .compass-row__value {
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-muted);
 }
 
@@ -356,7 +362,7 @@
 .compass-row.is-empty .compass-row__meter { height: 4px; }
 
 .compass-row__note {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -420,7 +426,7 @@
     left: calc(-1 * var(--level-gutter));
     width: calc(var(--level-gutter) - 8px);
     transform: translateY(-50%);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     line-height: 1;
     text-align: right;
@@ -489,21 +495,21 @@
 }
 
 .compass-day__date {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
 }
 
 .compass-day__label {
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .compass-day__note {
     margin-top: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -533,25 +539,28 @@
 }
 
 .compass-day__cat-label {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .compass-day__parts {
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
-.compass-day__cat .compass-score { font-size: var(--fs-small); }
+.compass-day__cat .compass-score { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
 
 .compass-day__note[hidden],
 .compass-day__parts[hidden] { display: none; }
 
 .compass-history__hint {
     margin-top: var(--space-3);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
@@ -570,7 +579,7 @@
 
 .compass-compare__note {
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -579,9 +588,10 @@
     margin-top: var(--space-3);
     padding-top: var(--space-3);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --------------------------------------------------------------------------

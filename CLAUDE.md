@@ -71,10 +71,16 @@ introduce inconsistencies or make design decisions on the user's behalf. If
 a new style seems genuinely necessary, or anything is unclear, ask first and
 wait for approval.
 
+Never introduce a new font or typeface on either app — not even as a
+fallback or for one component — without first telling the user which font,
+where and why, and getting their explicit approval before integrating it.
+The type system (sizes, weights, spacing, line heights) is in `docs/THEME.md`
+and `--fs-*` / `Ownify.Fs*`; use only its steps.
+
 ## Version number
 
 The version shown in Instellingen → Over de app (`config/settings.php`: the
-`about` row and its `Versie` field) is currently **Beta 36.2**. Bump it with
+`about` row and its `Versie` field) is currently **Beta 37.0**. Bump it with
 every change that is shipped, in the same commit, and keep the Android
 `versionName` (`OwnifyAndroid/app/build.gradle.kts`) at the same number
 (without "Beta") with `versionCode` one higher.
@@ -88,4 +94,4 @@ by 10.0):
 
 Every commit title starts with the new version number, then the
 description: `10.1 Show the version in commit titles`.
-The next version is 36.3 for a small update, or 37.0 for a big one.
+The next version is 37.1 for a small update, or 38.0 for a big one.

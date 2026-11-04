@@ -260,9 +260,9 @@
 .ai-island:disabled { padding-right: 18px; }
 
 .ai-island__name {
-    font-size: var(--fs-label);
-    font-weight: 650;
-    letter-spacing: -0.01em;
+    font-size: var(--fs-body);
+    font-weight: 600;
+    letter-spacing: var(--tracking-body);
     white-space: nowrap;
 }
 
@@ -270,18 +270,20 @@
     display: inline-block;
     max-width: 0;
     overflow: hidden;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
     white-space: nowrap;
     opacity: 0;
     transition: max-width 420ms var(--ease-out-strong), opacity 300ms var(--ease-out);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-island__count {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-island__count:empty { display: none; }
@@ -378,26 +380,27 @@
 
 .ai-empty__title {
     margin-top: var(--space-3);
-    font-size: var(--fs-brand);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--tracking-title);
     text-wrap: balance;
 }
 
 .ai-empty__status {
     max-width: 30em;
     margin-top: var(--space-2);
-    font-size: var(--fs-small);
-    line-height: 1.5;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-empty__note {
     max-width: 30em;
     margin-top: var(--space-3);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
-    line-height: 1.5;
+    line-height: var(--lh-small);
     color: var(--text-muted);
 }
 
@@ -423,13 +426,14 @@
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
     color: var(--text-secondary);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     text-align: left;
     cursor: pointer;
     transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
     position: relative;
     isolation: isolate;
     box-shadow: var(--lg-shadow-small), var(--lg-glint);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-suggestion:focus-visible {
@@ -474,9 +478,10 @@
     background: var(--ai-user);
     color: var(--ai-on-user);
     font-size: var(--fs-body);
-    line-height: 1.42;
+    line-height: var(--lh-body);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+    letter-spacing: var(--tracking-body);
 }
 
 /* OwnifyAI: grey glass on the left. */
@@ -499,8 +504,9 @@
         0 1px 2px rgba(var(--shade), calc(0.10 * var(--shade-k)));
     color: var(--text-primary);
     font-size: var(--fs-body);
-    line-height: 1.5;
+    line-height: var(--lh-body);
     overflow-wrap: anywhere;
+    letter-spacing: var(--tracking-body);
 }
 
 .ai-msg__bubble > * + * { margin-top: var(--space-3); }
@@ -510,9 +516,9 @@
 .ai-msg__bubble strong { font-weight: 600; color: var(--text-primary); }
 
 .ai-msg__bubble h3 {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
-    letter-spacing: 0.01em;
+    letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
 }
 
@@ -543,9 +549,9 @@
     border-radius: var(--radius-pill);
     background: var(--lg-face), var(--lg-body);
     color: var(--text-secondary);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
-    line-height: 1.4;
+    line-height: var(--lh-small);
     text-align: center;
     position: relative;
     isolation: isolate;
@@ -566,16 +572,17 @@
 }
 
 .ai-action__title {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-action__summary {
     margin-top: var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
-    line-height: 1.5;
+    line-height: var(--lh-small);
     color: var(--text-secondary);
 }
 
@@ -589,7 +596,7 @@
 
 .ai-action__status {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
     color: var(--text-muted);
@@ -643,17 +650,18 @@
 
 .ai-consent__title {
     margin-top: var(--space-4);
-    font-size: var(--fs-section);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-title);
 }
 
 .ai-consent__intro {
     max-width: 32em;
     margin-top: var(--space-2);
-    font-size: var(--fs-small);
-    line-height: 1.55;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-consent__points {
@@ -666,17 +674,19 @@
     padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 1.1em);
     list-style: disc;
     text-align: left;
-    font-size: var(--fs-small);
-    line-height: 1.5;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-consent__points li::marker { color: var(--health); }
 
 .ai-consent__error {
     margin-top: var(--space-3);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--attention);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-consent__error[hidden] { display: none; }
@@ -694,7 +704,7 @@
 
 .ai-consent__footer {
     margin-top: var(--space-3);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -801,7 +811,7 @@
 
 .ai-composer__meta {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
@@ -820,8 +830,9 @@
     border-radius: var(--radius-md);
     background: var(--attention-wash);
     color: var(--text-primary);
-    font-size: var(--fs-small);
-    line-height: 1.45;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-notice[hidden] { display: none; }
@@ -905,9 +916,9 @@
 }
 
 .ai-history__title {
-    font-size: var(--fs-section);
-    font-weight: 650;
-    letter-spacing: -0.02em;
+    font-size: var(--fs-title);
+    font-weight: 600;
+    letter-spacing: var(--tracking-title);
 }
 
 .ai-history__search {
@@ -968,6 +979,7 @@
     isolation: isolate;
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
+    letter-spacing: var(--tracking-body);
 }
 
 .ai-history__new-icon { width: 18px; height: 18px; }
@@ -986,9 +998,9 @@
 
 .ai-history__group {
     margin: var(--space-3) 4px 6px;
-    font-size: var(--fs-tiny);
-    font-weight: 650;
-    letter-spacing: 0.08em;
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     color: var(--text-muted);
 }
@@ -1040,12 +1052,13 @@
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .ai-history__when {
     max-width: 100%;
     overflow: hidden;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-overflow: ellipsis;
@@ -1095,16 +1108,17 @@
     border-radius: var(--radius-pill);
     background: var(--lg-face), var(--lg-gold), var(--lg-body);
     box-shadow: var(--lg-shadow-small), var(--lg-glint);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
 }
 
 .ai-history__empty {
     padding: 18px 8px;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     text-align: center;
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* Reduced motion — the device's setting or Animaties uit: no drifting light,
@@ -1237,12 +1251,13 @@
     width: 22px;
     height: 16px;
     overflow: hidden;
-    font-size: var(--fs-tiny);
-    font-weight: 650;
+    font-size: var(--fs-caption);
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
     line-height: 16px;
     text-align: center;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 .ai-wait__num > span { grid-area: 1 / 1; }
@@ -1255,8 +1270,8 @@
 .ai-wait__label {
     flex: none;
     padding-right: var(--space-3);
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     line-height: 1;
     letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
@@ -1273,10 +1288,11 @@
     background: transparent;
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
+    letter-spacing: var(--tracking-small);
 }
 
 /* At 0: the ring turns as the sync capsule's does, and it says Versturen…. */

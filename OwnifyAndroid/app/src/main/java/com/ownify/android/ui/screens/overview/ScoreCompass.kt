@@ -226,8 +226,8 @@ private fun CategoryHead(label: String, meta: String, icon: String?, accent: Str
             IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = Color.White, background = tint, border = tint)
         }
         Column(Modifier.weight(1f)) {
-            T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em))
-            if (meta.isNotEmpty()) T(meta, JStyle.Tiny, Modifier.padding(top = 2.dp))
+            T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
+            if (meta.isNotEmpty()) T(meta, JStyle.Meta, Modifier.padding(top = 2.dp))
         }
         ScoreValue(value, band)
     }
@@ -250,15 +250,15 @@ private fun PartRow(part: CompassPart, play: Boolean) {
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            T(part.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f).alignByBaseline())
+            T(part.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f).alignByBaseline())
             part.weight?.let {
-                T("$it%", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true), Modifier.alignByBaseline())
+                T("$it%", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), Modifier.alignByBaseline())
             }
             T(
                 part.value?.toString() ?: "—",
                 OwnifyType.style(
-                    Ownify.FsSmall,
-                    if (empty) FontWeight.Medium else FontWeight.SemiBold,
+                    Ownify.FsSubhead,
+                    if (empty) FontWeight.Normal else FontWeight.SemiBold,
                     if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                     tabular = true
                 ),
@@ -319,7 +319,7 @@ private fun TrendCard(trend: CompassTrend) {
             if (period.text.isNotEmpty() || period.since != null) {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                     period.text.forEach { T(it, JStyle.Lede) }
-                    period.since?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)) }
+                    period.since?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)) }
                 }
             }
             PeriodChart(
@@ -390,10 +390,10 @@ private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier:
         // .goal-chart__tip: the date — or a week's or month's days and that its score is their mean — and the score.
         val day = points[i]!!
         Row {
-            T(day.label + if (day.detail != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
-            day.detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+            T(day.label + if (day.detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+            day.detail?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1) }
         }
-        T(day.value?.toString() ?: "—", OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+        T(day.value?.toString() ?: "—", OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
     }
 }
 
@@ -410,10 +410,10 @@ private fun DayPanel(day: CompassDay, readout: CompassReadout) {
             Column(Modifier.weight(1f)) {
                 // A week's or month's days, and beside them that its scores are their mean.
                 Row {
-                    T(day.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em))
+                    T(day.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
                     day.detail?.let {
-                        T(" · ", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextMuted, tracking = (-0.01f).em))
-                        T(it, OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary, tracking = (-0.01f).em))
+                        T(" · ", OwnifyType.style(Ownify.FsBody, color = Ownify.TextMuted))
+                        T(it, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary))
                     }
                 }
                 T(readout.score, JStyle.Tiny, Modifier.padding(top = 2.dp))
@@ -443,10 +443,10 @@ private fun DayPanel(day: CompassDay, readout: CompassReadout) {
                                 }
                         )
                         Column(Modifier.weight(1f)) {
-                            T(name?.label ?: category.id, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+                            T(name?.label ?: category.id, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
                             category.parts?.let { T(it, JStyle.Tiny, Modifier.padding(top = 2.dp)) }
                         }
-                        ScoreValue(category.value, category.band, textSize = Ownify.FsSmall)
+                        ScoreValue(category.value, category.band, textSize = Ownify.FsSubhead)
                     }
                 }
             }
@@ -534,7 +534,7 @@ private fun Chart(trend: CompassTrend) {
         if (!filled) {
             T(
                 trend.empty,
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
                 Modifier.fillMaxWidth().padding(top = 46.dp),
                 align = TextAlign.Center
             )
@@ -559,7 +559,7 @@ private fun ComparisonCard(comparison: CompassComparison) {
         comparison.delta?.let {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
                 Rule()
-                T(it, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary), Modifier.padding(top = Ownify.Space3))
+                T(it, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary), Modifier.padding(top = Ownify.Space3))
             }
         }
     }
@@ -579,7 +579,7 @@ private fun CompareRow(row: CompassRow, first: Boolean) {
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
             Column(Modifier.weight(1f)) {
-                T(row.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+                T(row.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
                 T(row.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
             }
             ScoreValue(row.value, row.band)
@@ -604,14 +604,14 @@ private fun OpportunityCard(opportunity: CompassOpportunity) {
                 )
             }
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                opportunity.fact?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextPrimary)) }
+                opportunity.fact?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextPrimary)) }
                 opportunity.relation?.let { T(it, JStyle.Lede) }
             }
             // The research about the component it names, where there is any: its context, not its reason.
             ResearchEvidence(opportunity.research)
             opportunity.gainText?.let { CardHint(it, icon = null, plain = true) }
         } else {
-            T(opportunity.empty.orEmpty(), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted))
+            T(opportunity.empty.orEmpty(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted))
         }
     }
 }
@@ -625,7 +625,7 @@ private fun OpportunityCard(opportunity: CompassOpportunity) {
  * says how high, never which category. No score: a faint dot and "—".
  */
 @Composable
-internal fun ScoreValue(value: Int?, band: String?, textSize: TextUnit = Ownify.FsLabel) {
+internal fun ScoreValue(value: Int?, band: String?, textSize: TextUnit = Ownify.FsBody) {
     val scored = ScoreBand.of(band)
     val dot = scored?.color ?: Ownify.TextFaint
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -641,7 +641,7 @@ internal fun ScoreValue(value: Int?, band: String?, textSize: TextUnit = Ownify.
             value?.toString() ?: "—",
             OwnifyType.style(
                 textSize,
-                if (scored != null) FontWeight.SemiBold else FontWeight.Medium,
+                if (scored != null) FontWeight.SemiBold else FontWeight.Normal,
                 if (scored != null) Ownify.TextPrimary else Ownify.TextMuted,
                 tabular = true
             )

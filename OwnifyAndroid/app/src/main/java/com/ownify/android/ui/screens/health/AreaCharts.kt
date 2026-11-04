@@ -107,7 +107,7 @@ fun AreaChartsGrid(area: String, charts: List<AreaChart>) {
         val gap = Ownify.Space3.roundToPx()
         val w = (constraints.maxWidth - gap) / 2
         val pad = Ownify.Space4.roundToPx()
-        val axis = with(density) { (Ownify.FsTiny.toPx() * 2.5f) }.toInt() + Ownify.Space1.roundToPx()
+        val axis = with(density) { (Ownify.FsCaption.toPx() * 2.5f) }.toInt() + Ownify.Space1.roundToPx()
         val rest = 2 * pad + 2 + Ownify.Space3.roundToPx() + MiniPlotMin.roundToPx() + axis
         val heads = charts.mapIndexed { i, chart ->
             subcompose("head$i") { MiniHead(chart, accent) }.firstOrNull()
@@ -140,7 +140,7 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
             T(
                 chart.title,
-                OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary, tracking = (-0.01).em, lineHeight = 1.25.em)
+                OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextSecondary)
                     .copy(hyphens = Hyphens.Auto),
                 Modifier.weight(1f)
             )
@@ -149,7 +149,7 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
         // `.area-chart__now`: each series' key with its value, never apart; a pair that does not fit goes to the next line.
         FlowRow(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), itemVerticalAlignment = Alignment.CenterVertically) {
             val latest = chart.latest
-            val valueStyle = OwnifyType.style(Ownify.FsHeadline, FontWeight.Bold, tracking = (-0.02).em, lineHeight = 1.25.em, tabular = true)
+            val valueStyle = OwnifyType.style(Ownify.FsHeadline, FontWeight.Bold, tabular = true)
             if (latest == null || latest.texts.all { it == null }) {
                 T("—", valueStyle.copy(color = Ownify.TextMuted, fontWeight = FontWeight.SemiBold))
             } else {
@@ -167,12 +167,12 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
                         }
                         T(text, valueStyle, Modifier.alignByBaseline(), maxLines = 1)
                         // `.area-chart__of`: its target after the value, quieter — "van 2.300 kcal".
-                        if (k == 0) latest.of?.let { T(it, OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, Ownify.TextMuted), Modifier.alignByBaseline(), maxLines = 1) }
+                        if (k == 0) latest.of?.let { T(it, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted), Modifier.alignByBaseline(), maxLines = 1) }
                     }
                 }
-                latest.date?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1) }
+                latest.date?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
                 // `.area-chart__sub`: the same value in its second unit (kJ, ml), on a line of its own.
-                latest.sub?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), Modifier.fillMaxWidth(), maxLines = 1) }
+                latest.sub?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth(), maxLines = 1) }
             }
         }
     }
@@ -195,7 +195,7 @@ internal fun AreaChartMini(chart: AreaChart, accent: Accent, height: Dp, bare: B
     val content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         MiniHead(chart, accent)
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(top = Ownify.Space3)) {
-            val axis = with(LocalDensity.current) { (Ownify.FsTiny.toPx() * 2.5f).toDp() } + Ownify.Space1
+            val axis = with(LocalDensity.current) { (Ownify.FsCaption.toPx() * 2.5f).toDp() } + Ownify.Space1
             AreaPlot(chart, accent, week, Modifier, height = (maxHeight - axis).coerceAtLeast(MiniPlotMin), mini = true)
         }
     }
@@ -262,13 +262,13 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
         val values = chart.series.mapIndexedNotNull { k, s -> p.texts.getOrNull(k)?.let { s to it } }
         val detail = p.detail?.takeIf { values.isNotEmpty() }
         Row {
-            T(p.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
-            detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+            T(p.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+            detail?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1) }
         }
         if (values.isEmpty()) {
-            p.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
+            p.note?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
         } else if (chart.series.size == 1) {
-            T(values.first().second, OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+            T(values.first().second, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
         } else {
             for ((s, text) in values) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -279,9 +279,9 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
                             .clip(RoundedCornerShape(2.dp))
                             .background(seriesColor(s, mixed, accent))
                     )
-                    T(s.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.4.em), Modifier.padding(start = 6.dp), maxLines = 1)
+                    T(s.label, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), Modifier.padding(start = 6.dp), maxLines = 1)
                     Spacer(Modifier.width(8.dp))
-                    T(text, OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                    T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
                 }
             }
         }
@@ -325,7 +325,7 @@ private fun AreaChartCard(chart: AreaChart, accent: Accent) {
         val units = chart.units
         if (units != null && period.gridAlt.isNotEmpty()) {
             Row(Modifier.fillMaxWidth().padding(top = Ownify.Space4), horizontalArrangement = Arrangement.SpaceBetween) {
-                val unitStyle = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted)
+                val unitStyle = OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted)
                 T(units.first, unitStyle)
                 T(units.second, unitStyle)
             }

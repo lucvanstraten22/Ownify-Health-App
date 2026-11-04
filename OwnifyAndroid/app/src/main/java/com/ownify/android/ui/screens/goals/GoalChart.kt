@@ -166,7 +166,7 @@ private fun EmptyHistory(goal: Goal, history: String, empty: String) {
             if (chart != null && chart.xTicks.isNotEmpty()) XTicks(chart, Modifier.padding(top = Ownify.Space2))
             else Axis(listOf(goal.startLabel.ifEmpty { tr("Start") }, if (goal.isReached) tr("Behaald") else if (goal.isCompleted) tr("Afgelopen") else tr("Nu")), Modifier.padding(top = Ownify.Space2))
         }
-        T(empty, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = 46.dp), align = TextAlign.Center)
+        T(empty, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = 46.dp), align = TextAlign.Center)
     }
 }
 
@@ -370,7 +370,7 @@ private fun EndLabel(chart: GoalChart, reading: Boolean) {
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
     // Measured here to place it, so its inherited letter spacing is settled here too.
-    val style = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true, tracking = LocalTracking.current)
+    val style = OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true, tracking = LocalTracking.current)
     val label = remember(end.label, style) { measurer.measure(end.label, style, maxLines = 1) }
     val shown by animateFloatAsState(if (reading) 0f else 1f, tween(Ownify.FastMs, easing = Ownify.Ease), label = "end")
     val lines = rememberSvgPaths(chart.line)
@@ -478,10 +478,10 @@ private fun Reading(point: ChartPoint, accent: Color) {
                     .cssPadding(PaddingValues(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp), border = 1.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                T(point.date, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
-                T(point.value, OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                T(point.date, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+                T(point.value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
                 // `.goal-chart__tip-note`: what the day did and how far the goal was then.
-                if (point.note.isNotEmpty()) T(point.note, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                if (point.note.isNotEmpty()) T(point.note, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary, tabular = true), maxLines = 1)
             }
         },
         modifier = Modifier.clearAndSetSemantics { }
@@ -500,7 +500,7 @@ private fun Reading(point: ChartPoint, accent: Color) {
 /** `.goal-chart__y`: the value labels, each centred on its gridline. */
 @Composable
 private fun YTicks(chart: GoalChart, modifier: Modifier) {
-    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true)
+    val style = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true)
     Layout(
         content = { chart.yTicks.forEach { T(it.label, style, maxLines = 1) } },
         modifier = modifier.clearAndSetSemantics { }
@@ -523,7 +523,7 @@ private fun YTicks(chart: GoalChart, modifier: Modifier) {
 @Composable
 private fun XTicks(chart: GoalChart, modifier: Modifier) {
     val density = LocalDensity.current
-    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
+    val style = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted)
     val height = with(density) { (Ownify.FsBody.toPx() * if (chart.xTicks.any { it.day != null }) 2.4f else 1.2f).toDp() }
     Layout(
         content = { chart.xTicks.forEach { TickLabel(it.label, it.day, it.month, style) } },

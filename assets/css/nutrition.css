@@ -42,14 +42,16 @@
 
 .rating-slider__value {
     min-width: 1.4em;
-    font-size: var(--fs-figure);
+    font-size: var(--fs-large-title);
     font-weight: 700;
-    letter-spacing: var(--tracking-title);
+    letter-spacing: var(--tracking-large-title);
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
 
-.rating-slider__question { font-size: var(--fs-small); color: var(--text-muted); }
+.rating-slider__question { font-size: var(--fs-subhead); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
 
 .rating-slider__track {
     position: relative;
@@ -119,8 +121,9 @@
     justify-content: space-between;
     margin: 0;
     padding: 0 9px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     color: var(--text-faint);
+    letter-spacing: var(--tracking-small);
 }
 
 .rating-slider__saved { white-space: normal; }
@@ -139,7 +142,7 @@
     flex: 1;
     margin: 0;
     text-align: center;
-    font-weight: 650;
+    font-weight: 600;
 }
 
 .nutrition-daynav .glass:disabled { opacity: 0.35; }
@@ -191,9 +194,13 @@
 }
 
 .nutrition-ring__center p { margin: 0; }
-.nutrition-ring__label { font-size: var(--fs-small); font-weight: 600; color: var(--text-muted); }
-.nutrition-ring__value { font-size: var(--fs-score-sm); font-weight: 700; letter-spacing: var(--tracking-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
-.nutrition-ring__sub { font-size: var(--fs-tiny); color: var(--text-muted); }
+.nutrition-ring__label { font-size: var(--fs-subhead); font-weight: 600; color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
+.nutrition-ring__value { font-size: var(--fs-large-title); font-weight: 700; letter-spacing: var(--tracking-large-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.nutrition-ring__sub { font-size: var(--fs-caption); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
 
 /* A row: the Row shape (docs/THEME.md), opening in place. */
 .nutrition-rows { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
@@ -229,11 +236,11 @@
 }
 
 .nutrition-row__head:disabled { cursor: default; }
-.nutrition-row__head:disabled .nutrition-row__grams { font-weight: 500; color: var(--text-muted); }
+.nutrition-row__head:disabled .nutrition-row__grams { font-weight: 400; color: var(--text-muted); }
 
 .nutrition-row__key { width: 10px; height: 10px; border-radius: 3px; background: var(--macro); }
 .nutrition-row__name { font-weight: 600; }
-.nutrition-row__grams { font-weight: 650; font-variant-numeric: tabular-nums; }
+.nutrition-row__grams { font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .nutrition-row__chevron {
     width: 14px;
@@ -251,8 +258,9 @@
     flex-wrap: wrap;
     gap: 0 var(--space-3);
     margin: 0;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* The bubbles: the goal wizard's glass chip (.glass--chip), as a status —
@@ -332,13 +340,16 @@
     grid-template-columns: auto minmax(0, 1fr);
     gap: 3px var(--space-3);
     margin: var(--space-3) 0 0;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
 }
 
 .nutrition-row__facts dt { color: var(--text-muted); }
 .nutrition-row__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.nutrition-row__why { margin: var(--space-2) 0 0; font-size: var(--fs-tiny); color: var(--text-muted); }
+.nutrition-row__why { margin: var(--space-2) 0 0; font-size: var(--fs-subhead); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
 
 .nutrition-row__details {
     display: flex;
@@ -358,15 +369,20 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1) var(--space-2);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .nutrition-row__detail { flex: 1 0 auto; }
 .nutrition-row__details strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.nutrition-row__extra { color: var(--text-muted); font-size: var(--fs-tiny); white-space: nowrap; }
+.nutrition-row__extra { color: var(--text-muted); font-size: var(--fs-subhead); white-space: nowrap;
+    letter-spacing: var(--tracking-small);
+}
 
-.nutrition-day__hint { margin: var(--space-3) 0 0; font-size: var(--fs-tiny); color: var(--text-muted); }
+.nutrition-day__hint { margin: var(--space-3) 0 0; font-size: var(--fs-subhead); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
 
 @media (prefers-reduced-motion: reduce) {
     .nutrition-row__more,

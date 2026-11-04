@@ -291,7 +291,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                         error?.let {
                             T(
                                 it,
-                                OwnifyType.style(Ownify.FsSmall, color = Ownify.Error, lineHeight = 1.4.em),
+                                OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error),
                                 Modifier.fillMaxWidth().padding(top = Ownify.Space3).semantics { liveRegion = LiveRegionMode.Assertive },
                                 align = TextAlign.Center
                             )
@@ -450,7 +450,7 @@ private fun MeasureStep(draft: Draft, goals: Goals) {
     if (draft.measurement == "custom" && draft.category == null) {
         T(
             words["custom_category"],
-            OwnifyType.style(Ownify.FsFootnote, color = Ownify.Attention),
+            OwnifyType.style(Ownify.FsSubhead, color = Ownify.Attention),
             Modifier.padding(top = Ownify.Space2).semantics { liveRegion = LiveRegionMode.Polite }
         )
     }
@@ -517,12 +517,12 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
                 (if (m.custom) OwnifyIcons.sparkle else OwnifyIcons.named(category?.icon))?.let { JIcon(it, size = 15.dp, color = accent) }
             }
             Column(Modifier.weight(1f)) {
-                T(m.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                T(m.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
                 // In Voorgesteld, why: where the person is and what is suggested.
                 val reason = m.suggestionReason.takeIf { draft.query.isBlank() && draft.category == null && m.suggested != null && it.isNotEmpty() }
                 T(
                     if (m.custom) m.hint else reason ?: (category?.label.orEmpty() + " · " + (if (isAuto(m, goals)) words["auto"] else words["manual"])),
-                    OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted),
+                    OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
                     maxLines = 1,
                     ellipsis = true
                 )
@@ -610,9 +610,9 @@ private fun TypeCard(label: String, hint: String, example: String, chosen: Boole
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
-            T(hint, OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary))
-            T(example, OwnifyType.style(Ownify.FsFootnote, color = if (chosen) Ownify.TextSecondary else Ownify.TextMuted))
+            T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
+            T(hint, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
+            T(example, OwnifyType.style(Ownify.FsSubhead, color = if (chosen) Ownify.TextSecondary else Ownify.TextMuted))
         }
     }
 }
@@ -701,7 +701,7 @@ private fun SetupStep(draft: Draft, goals: Goals) {
         problem(draft, goals)?.takeIf { it.isNotEmpty() }?.let {
             T(
                 it,
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.Error, lineHeight = 1.4.em),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error),
                 Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Assertive },
                 align = TextAlign.Center
             )
@@ -778,8 +778,8 @@ private fun PeriodRow(draft: Draft, goals: Goals, m: GoalMeasurement) {
                 label = words.target("period"),
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done)
             )
-            T(m.count ?: tr("keer"), OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary), maxLines = 1)
-            T(words["per"], OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), maxLines = 1)
+            T(m.count ?: tr("keer"), OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary), maxLines = 1)
+            T(words["per"], OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), maxLines = 1)
             GlassSelect(goals.periods.map { it.key to it.label }, draft.period, { draft.period = it }, words["period_label"])
         }
     }
@@ -820,7 +820,7 @@ private fun DirectionRow(draft: Draft, goals: Goals) {
         tip?.let {
             T(
                 it,
-                OwnifyType.style(Ownify.FsSmall),
+                OwnifyType.style(Ownify.FsSubhead),
                 Modifier
                     .fillMaxWidth()
                     .padding(top = Ownify.Space2)
@@ -868,7 +868,7 @@ private fun Baseline(draft: Draft, goals: Goals) {
         "measured" -> Column {
             Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, verticalAlignment = Alignment.CenterVertically) {
                 T(words["baseline_label"], JStyle.Caption, Modifier.weight(1f), uppercase = true)
-                T(valueText(draft.baselineValue ?: 0.0, unit), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tabular = true))
+                T(valueText(draft.baselineValue ?: 0.0, unit), OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, tabular = true))
             }
             T(words["baseline_measured"].replace("%s", draft.baselineOn.orEmpty()), JStyle.Footnote, Modifier.padding(top = Ownify.Space1))
         }
@@ -882,7 +882,7 @@ private fun Baseline(draft: Draft, goals: Goals) {
                     label = words["baseline_label"],
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)
                 )
-                T(unit.label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary))
+                T(unit.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary))
             }
             T(words["baseline_manual"], JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
         }
@@ -932,7 +932,7 @@ private fun DateButton(label: String, value: String, modifier: Modifier, empty: 
             T(label, JStyle.Caption, uppercase = true)
             T(
                 value,
-                OwnifyType.style(Ownify.FsLabel, if (empty) FontWeight.Medium else FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary, tabular = true),
+                OwnifyType.style(Ownify.FsBody, if (empty) FontWeight.Normal else FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary, tabular = true),
                 maxLines = 1
             )
         }
@@ -961,7 +961,7 @@ private fun CalendarStep(draft: Draft, goals: Goals) {
         GlassRound(OwnifyIcons.chevronLeft, words["calendar_prev"], { month = month.minusMonths(1) }, size = 34.dp, enabled = month.minusDays(1) >= min)
         T(
             OwnifyFormat.date(month, "month_year").replaceFirstChar { it.uppercase() },
-            OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold),
+            OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold),
             Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
             align = TextAlign.Center
         )
@@ -969,7 +969,7 @@ private fun CalendarStep(draft: Draft, goals: Goals) {
     }
     Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3).clearAndSetSemantics { }) {
         OwnifyPreferences.weekInitials().forEach {
-            T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tracking = Ownify.TrackingWide), Modifier.weight(1f), align = TextAlign.Center)
+            T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tracking = Ownify.TrackingWide), Modifier.weight(1f), align = TextAlign.Center)
         }
     }
     val first = OwnifyPreferences.weekFirstDay(month)
@@ -1020,7 +1020,7 @@ private fun DayCell(d: LocalDate, draft: Draft, mode: String, enabled: Boolean, 
         ) {
             T(
                 d.dayOfMonth.toString(),
-                OwnifyType.style(Ownify.FsSmall, if (chosen || isStart || isEnd) FontWeight.SemiBold else FontWeight.Normal,
+                OwnifyType.style(Ownify.FsSubhead, if (chosen || isStart || isEnd) FontWeight.SemiBold else FontWeight.Normal,
                     if (enabled) Ownify.TextPrimary else Ownify.TextFaint, tabular = true),
                 Modifier.alpha(if (enabled) 1f else 0.5f)
             )
@@ -1079,7 +1079,7 @@ private fun ReviewStep(draft: Draft, goals: Goals) {
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)
             ) {
                 T(term, JStyle.Caption, Modifier.alignByBaseline(), uppercase = true)
-                T(value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold), Modifier.weight(1f).alignByBaseline(), align = TextAlign.End)
+                T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), Modifier.weight(1f).alignByBaseline(), align = TextAlign.End)
             }
         }
     }

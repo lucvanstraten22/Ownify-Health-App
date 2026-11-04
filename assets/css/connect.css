@@ -30,22 +30,27 @@ body.connect-page {
 
 .connect__title {
     margin: 0 0 var(--space-3);
-    font-size: var(--fs-section);
+    font-size: var(--fs-title);
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-title);
     color: var(--text-primary);
 }
 
 .connect__text {
     margin: 0 0 var(--space-3);
     font-size: var(--fs-body);
-    line-height: 1.5;
+    line-height: var(--lh-body);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-body);
 }
 
 .connect__text strong { color: var(--text-primary); }
-.connect__text--quiet { font-size: var(--fs-small); color: var(--text-muted); }
-.connect__warn { font-size: var(--fs-small); color: var(--attention); }
+.connect__text--quiet { font-size: var(--fs-subhead); color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
+}
+.connect__warn { font-size: var(--fs-subhead); color: var(--attention);
+    letter-spacing: var(--tracking-small);
+}
 .connect__warn strong { color: inherit; }
 
 .connect__actions {
@@ -54,6 +59,8 @@ body.connect-page {
     margin-top: var(--space-5);
 }
 
-.connect__actions .btn { width: 100%; cursor: pointer; font: inherit; font-size: var(--fs-small); font-weight: 600; }
+.connect__actions .btn { width: 100%; cursor: pointer; font: inherit; font-size: var(--fs-subhead); font-weight: 600;
+    letter-spacing: var(--tracking-small);
+}
 
 

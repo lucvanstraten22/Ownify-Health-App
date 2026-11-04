@@ -169,7 +169,7 @@ fun Notice(text: String, link: OwnifyLink? = null) {
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     ) {
-        T(text, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+        T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
         if (link != null) {
             AccountLink(link.label, Modifier.padding(top = Ownify.Space1)) {
                 runCatching {
@@ -188,7 +188,7 @@ fun Notice(text: String, link: OwnifyLink? = null) {
 fun AccountLink(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     T(
         text,
-        OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold).copy(textDecoration = TextDecoration.Underline),
+        OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold).copy(textDecoration = TextDecoration.Underline),
         modifier.clickable(role = Role.Button, onClick = onClick)
     )
 }
@@ -198,7 +198,7 @@ fun AccountLink(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 fun ErrorBox(text: String, modifier: Modifier = Modifier) {
     T(
         text,
-        OwnifyType.style(Ownify.FsSmall, color = Ownify.TextPrimary),
+        OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextPrimary),
         modifier
             .fillMaxWidth()
             .note(NoteTone.Attention)
@@ -423,10 +423,10 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     }
 
     // .account__username, .account__meta
-    T(tr("Kies je gebruikersnaam"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(tr("Kies je gebruikersnaam"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         trf("Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.", step.email),
-        JStyle.Tiny,
+        JStyle.Meta,
         Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4)
     )
 
@@ -498,10 +498,10 @@ private fun ColumnScope.VerifyStep(step: PendingStep, onCancelled: () -> Unit) {
     }
 
     // .account__username, .account__meta
-    T(tr("Bevestig je e-mailadres"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(tr("Bevestig je e-mailadres"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         trf("We hebben een link gestuurd naar %s. Open die link om je account af te maken.", step.emailMasked),
-        JStyle.Tiny,
+        JStyle.Meta,
         Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4)
     )
 
@@ -552,10 +552,10 @@ private fun ColumnScope.ForgotForm(onBack: () -> Unit) {
         OwnifyConnection.forgotPassword(email)
     }
 
-    T(tr("Wachtwoord vergeten"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em))
+    T(tr("Wachtwoord vergeten"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         answer ?: tr("Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen."),
-        JStyle.Tiny,
+        JStyle.Meta,
         Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4).semantics { liveRegion = LiveRegionMode.Polite }
     )
 
@@ -608,7 +608,7 @@ fun QuietLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
         val interaction = remember { MutableInteractionSource() }
         T(
             text,
-            OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted).copy(textDecoration = TextDecoration.Underline),
+            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted).copy(textDecoration = TextDecoration.Underline),
             modifier
                 .clip(RoundedCornerShape(50))
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
@@ -645,7 +645,7 @@ private fun ColumnScope.PairingForm(onBack: () -> Unit) {
 
     T(
         tr("Heb je nog geen account in de app? Koppel deze telefoon met een koppelcode van de website. Je gezondheidsgegevens worden dan gesynchroniseerd; inloggen kan later."),
-        OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
+        OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
         Modifier.padding(bottom = Ownify.Space4)
     )
 

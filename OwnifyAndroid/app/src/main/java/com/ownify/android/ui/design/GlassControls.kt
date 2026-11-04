@@ -131,7 +131,7 @@ fun GlassChip(
         ) {
             T(
                 text,
-                OwnifyType.style(Ownify.FsTiny, if (chosen) FontWeight.SemiBold else FontWeight.Medium, if (chosen) Ownify.TextPrimary else Ownify.TextSecondary, tracking = 0.em),
+                OwnifyType.style(Ownify.FsCaption, if (chosen) FontWeight.SemiBold else FontWeight.SemiBold, if (chosen) Ownify.TextPrimary else Ownify.TextSecondary),
                 Modifier
                     .press(interaction, enabled = enabled && onClick != null)
                     .alpha(if (enabled) 1f else 0.5f)
@@ -217,7 +217,7 @@ fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, e
             if (loading) Spinner(15.dp)
             T(
                 text,
-                OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, if (enabled) Ownify.TextPrimary else Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (enabled) Ownify.TextPrimary else Ownify.TextMuted),
                 maxLines = 1
             )
         }
@@ -257,9 +257,9 @@ fun GlassSelect(
                 // never moves what is beside it, nor the menu hanging from it.
                 Box {
                     options.forEach { (_, text) ->
-                        T(text, OwnifyType.style(Ownify.FsInput, FontWeight.Medium), Modifier.alpha(0f).clearAndSetSemantics { }, maxLines = 1)
+                        T(text, OwnifyType.style(Ownify.FsInput, FontWeight.Normal), Modifier.alpha(0f).clearAndSetSemantics { }, maxLines = 1)
                     }
-                    T(current, OwnifyType.style(Ownify.FsInput, FontWeight.Medium), maxLines = 1)
+                    T(current, OwnifyType.style(Ownify.FsInput, FontWeight.Normal), maxLines = 1)
                 }
                 JIcon(OwnifyIcons.chevronDown, size = 14.dp, color = Ownify.TextMuted)
             }
@@ -275,7 +275,7 @@ fun GlassSelect(
                         text = {
                             T(
                                 text,
-                                OwnifyType.style(Ownify.FsLabel, if (key == selected) FontWeight.SemiBold else FontWeight.Normal,
+                                OwnifyType.style(Ownify.FsBody, if (key == selected) FontWeight.SemiBold else FontWeight.Normal,
                                     if (key == selected) Ownify.Health else Ownify.TextPrimary)
                             )
                         },

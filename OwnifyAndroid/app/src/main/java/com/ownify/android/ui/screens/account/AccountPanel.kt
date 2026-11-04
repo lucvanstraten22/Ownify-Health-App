@@ -197,7 +197,7 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
         AvatarCircle(auth.avatar, 52.dp, 22.dp)
         Column(Modifier.weight(1f)) {
             T(auth.username.orEmpty(), JStyle.Subtitle)
-            T(tr("Lid sinds") + " " + memberSince(auth.createdAt), JStyle.Tiny, Modifier.padding(top = Ownify.Space1))
+            T(tr("Lid sinds") + " " + memberSince(auth.createdAt), JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }
     }
 
@@ -362,7 +362,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
             ChromeText {
                 T(
                     tr("Bestand kiezen"),
-                    OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary),
+                    OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextPrimary),
                     Modifier
                         .clip(shape)
                         .background(Ownify.fill(0.08f))
@@ -373,7 +373,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
             }
             T(
                 name ?: tr("Geen bestand gekozen"),
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, lineHeight = 1.3.em),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
                 Modifier.weight(1f),
                 maxLines = 2,
                 ellipsis = true
@@ -409,7 +409,7 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
         ) {
             // .account__nav-text: the line, and the badge pushed to its end (margin-left: auto).
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                T(text, OwnifyType.style(Ownify.FsLabel), Modifier.weight(1f, fill = badge != null), maxLines = 1, ellipsis = true)
+                T(text, OwnifyType.style(Ownify.FsBody), Modifier.weight(1f, fill = badge != null), maxLines = 1, ellipsis = true)
                 if (badge != null) Badge(badge)
             }
             JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextMuted)
@@ -430,7 +430,7 @@ private fun Badge(text: String) {
             .cssPadding(PaddingValues(horizontal = Ownify.Space2), border = 1.dp),
         contentAlignment = Alignment.Center
     ) {
-        T(text, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold), maxLines = 1)
+        T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold), maxLines = 1)
     }
 }
 
@@ -673,11 +673,11 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     ) {
         InButton {
             Column(Modifier.weight(1f)) {
-                T(tr("Vriendverzoeken toestaan"), OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+                T(tr("Vriendverzoeken toestaan"), OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
                 T(
                     toggleError ?: if (allowed) tr("Anderen kunnen je een vriendverzoek sturen.")
                     else tr("Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven."),
-                    OwnifyType.style(Ownify.FsTiny, color = if (toggleError != null) Ownify.Attention else Ownify.TextMuted),
+                    OwnifyType.style(Ownify.FsSubhead, color = if (toggleError != null) Ownify.Attention else Ownify.TextMuted),
                     Modifier.padding(top = 2.dp)
                 )
             }
@@ -734,12 +734,12 @@ private fun PersonRow(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Box(if (notice != null) Modifier.notice(notice, NoticePlace.Circle) else Modifier) { AvatarCircle(person.avatar, 40.dp, 18.dp) }
             Column(Modifier.weight(1f)) {
-                T(person.username, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                T(person.username, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
                 val line = state.message ?: status
                 if (!line.isNullOrEmpty()) {
                     T(
                         line,
-                        OwnifyType.style(Ownify.FsTiny, color = if (state.error) Ownify.Attention else Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsSubhead, color = if (state.error) Ownify.Attention else Ownify.TextMuted),
                         Modifier.padding(top = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }
                     )
                 }
@@ -772,7 +772,7 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
             .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        T(trf("%s verwijderen uit je vrienden?", name), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+        T(trf("%s verwijderen uit je vrienden?", name), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
         Row(horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             Btn(tr("Annuleren"), onClick = onCancel, enabled = !busy, modifier = Modifier.weight(1f))
             Btn(tr("Verwijderen"), onClick = onRemove, enabled = !busy, modifier = Modifier.weight(1f), look = BtnLook.Final)
@@ -812,7 +812,7 @@ private fun SentMark() {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.CenterHorizontally)
     ) {
         JIcon(OwnifyIcons.check, size = 15.dp, color = Ownify.TextPrimary)
-        T(tr("Verzoek verstuurd"), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+        T(tr("Verzoek verstuurd"), OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
     }
 }
 
@@ -840,7 +840,7 @@ fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = t
                 .padding(horizontal = Ownify.Space2),
             contentAlignment = Alignment.Center
         ) {
-            T(text, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
+            T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
         }
     }
 }

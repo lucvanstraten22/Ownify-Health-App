@@ -39,7 +39,7 @@
     padding-bottom: var(--space-1);
     font-size: var(--fs-large-title);
     font-weight: 700;
-    line-height: 1.15;
+    line-height: var(--lh-title);
     letter-spacing: var(--tracking-large-title);
 }
 
@@ -123,10 +123,11 @@
 }
 
 .board-row__rank {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
     text-align: right;
+    letter-spacing: var(--tracking-small);
 }
 
 /* The only emphasis the top of the board gets: weight, not medals. */
@@ -143,10 +144,11 @@
     border: 1px solid var(--glass-hairline);
     border-radius: 50%;
     background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     color: var(--accent);
     color: color-mix(in srgb, var(--accent) calc(100% - 22% * var(--tint-keep)), var(--tint-base));
+    letter-spacing: var(--tracking-small);
 }
 
 .board-row__avatar .icon { width: 16px; height: 16px; color: var(--text-muted); }
@@ -165,27 +167,29 @@
 }
 
 .board-row__name {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     color: var(--text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .board-row__points {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
-.board-row__points.is-empty { font-weight: 500; color: var(--text-muted); }
+.board-row__points.is-empty { font-weight: 400; color: var(--text-muted); }
 
 .board-row__unit {
     margin-left: 3px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-muted);
 }
 
@@ -272,7 +276,7 @@
 }
 
 .board-gap__label {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
@@ -302,21 +306,22 @@
     margin-top: var(--space-4);
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .board-empty__body {
     margin-top: var(--space-2);
     max-width: 30ch;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .board-you-label {
     margin-top: var(--space-5);
     margin-bottom: var(--space-2);
     padding-inline: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -346,7 +351,11 @@
     }
 
     .board-row__avatar { width: 30px; height: 30px; }
-    .board-row__name { font-size: var(--fs-small); }
-    .board-row__points { font-size: var(--fs-small); }
+    .board-row__name { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
+    .board-row__points { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
     .range-switch--wide .range-switch__option { padding-inline: var(--space-1); }
 }

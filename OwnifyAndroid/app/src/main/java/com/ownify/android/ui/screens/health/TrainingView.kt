@@ -163,7 +163,7 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
     Column(modifier.fillMaxWidth().padding(Ownify.Space4)) {
         T(
             sessions.title,
-            OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary, tracking = (-0.01).em, lineHeight = 1.25.em),
+            OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextSecondary),
             Modifier.semantics { heading() }
         )
         if (sessions.items.isEmpty()) {
@@ -192,15 +192,15 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
                             Column(Modifier.weight(1f).padding(start = 7.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                                 T(
                                     item.label,
-                                    OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, tracking = (-0.01).em, lineHeight = 1.25.em),
+                                    OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold),
                                     maxLines = 1,
                                     ellipsis = true
                                 )
                                 // On the narrowest phones the duration goes under the day (`.training-session__when`).
                                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    T("${item.date} · ${item.time}", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.3.em, tabular = true), Modifier.padding(end = Ownify.Space2), maxLines = 1)
+                                    T("${item.date} · ${item.time}", OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true), Modifier.padding(end = Ownify.Space2), maxLines = 1)
                                     item.duration?.let {
-                                        T(it, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary, lineHeight = 1.3.em, tabular = true), maxLines = 1)
+                                        T(it, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true), maxLines = 1)
                                     }
                                 }
                             }
@@ -309,7 +309,7 @@ private fun DayRow(title: String, heart: HeartChart, day: Int, last: Int, step: 
         StepButton(OwnifyIcons.chevronLeft, heart.prev, enabled = day < last) { step(1) }
         T(
             title,
-            OwnifyType.style(Ownify.FsBody, FontWeight.Bold, tracking = (-0.01).em),
+            OwnifyType.style(Ownify.FsBody, FontWeight.Bold),
             Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
             align = TextAlign.Center,
             maxLines = 1
@@ -409,17 +409,17 @@ private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
         val p = plot.points[i]
         val value = p.texts.firstOrNull()
         Row {
-            T(p.label + if (p.detail != null && value != null) " · " else "", OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.25.em), maxLines = 1)
-            if (value != null) p.detail?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.25.em), maxLines = 1) }
+            T(p.label + if (p.detail != null && value != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+            if (value != null) p.detail?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1) }
         }
         if (value == null) {
-            p.note?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), maxLines = 1) }
+            p.note?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(width = 10.dp, height = 2.5.dp).clip(RoundedCornerShape(2.dp)).background(dotColor(i)))
-                T(label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.4.em), Modifier.padding(start = 6.dp), maxLines = 1)
+                T(label, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), Modifier.padding(start = 6.dp), maxLines = 1)
                 Spacer(Modifier.width(8.dp))
-                T(value, OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, lineHeight = 1.25.em, tabular = true), maxLines = 1)
+                T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
             }
         }
     }
@@ -452,14 +452,14 @@ private fun HeartZonesLegend(zones: HeartZones) {
                 pair.forEachIndexed { k, (name, range) ->
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(Ownify.zone(r * 2 + k + 1)))
-                        T(name, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
-                        T(range, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true), maxLines = 1)
+                        T(name, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
+                        T(range, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1)
                     }
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-        T(zones.note, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), Modifier.padding(top = Ownify.Space2))
+        T(zones.note, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(top = Ownify.Space2))
     }
 }
 

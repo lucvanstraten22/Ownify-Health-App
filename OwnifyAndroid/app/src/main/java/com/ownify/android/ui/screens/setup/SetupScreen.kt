@@ -232,7 +232,7 @@ private fun SetupColumn(data: AppData, setup: Setup, step: String, index: Int, d
         ) {
             // .setup__top: the app's name, and a way out.
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(top = Ownify.Space3), verticalAlignment = Alignment.CenterVertically) {
-                T(data.app.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em), Modifier.weight(1f))
+                T(data.app.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.weight(1f))
                 LinkButton(setup.logout, enabled = !busy) { OwnifyConnection.logout(context) }
             }
 
@@ -270,7 +270,7 @@ private fun SetupColumn(data: AppData, setup: Setup, step: String, index: Int, d
                         error?.let {
                             T(
                                 it,
-                                OwnifyType.style(Ownify.FsSmall, color = Ownify.Error, lineHeight = 1.4.em),
+                                OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error),
                                 Modifier.padding(top = Ownify.Space4).semantics { liveRegion = LiveRegionMode.Assertive }
                             )
                         }
@@ -349,7 +349,7 @@ private fun Primary(label: String, enabled: Boolean, modifier: Modifier = Modifi
 /** `.setup__title` and `.setup__lede`. */
 @Composable
 private fun StepHead(title: String, lede: String) {
-    T(title, OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em, lineHeight = 1.25.em), Modifier.semantics { heading() })
+    T(title, OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold), Modifier.semantics { heading() })
     T(lede, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2))
 }
 
@@ -392,8 +392,8 @@ private fun FocusChoice(option: SetupFocusOption, chosen: Boolean, onClick: () -
         ) {
             OwnifyIcons.named(option.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = accent) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                T(option.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em))
-                T(option.line, JStyle.Tiny)
+                T(option.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
+                T(option.line, JStyle.Meta)
             }
             Box(
                 Modifier.size(22.dp).clip(CircleShape).background(dot).border(1.5.dp, ring, CircleShape),
@@ -440,16 +440,16 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             OwnifyIcons.named(source.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = if (linked) Ownify.Health else Ownify.TextSecondary) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                T(source.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
+                T(source.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
                 T(source.note, JStyle.Footnote)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(Modifier.size(7.dp).clip(CircleShape).background(if (linked) Ownify.Health else Ownify.TextFaint))
-                T(if (linked) source.connectedLabel else source.notConnectedLabel, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary))
+                T(if (linked) source.connectedLabel else source.notConnectedLabel, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary))
             }
         }
         Box(Modifier.fillMaxWidth().padding(top = Ownify.Space3).height(1.dp).background(Ownify.GlassHairline))
-        T(source.app, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space3))
+        T(source.app, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space3))
 
         // What can be asked for on this phone, only while it is missing.
         val needsInstall = health.known && !health.available
@@ -477,7 +477,7 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
 private fun Quiet(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         JIcon(icon, Modifier.padding(top = 2.dp), size = 15.dp, color = Ownify.TextMuted)
-        T(text, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.weight(1f))
+        T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.weight(1f))
     }
 }
 
@@ -504,7 +504,7 @@ private fun ProfileField(field: SetupField, value: String, onChange: (String, St
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 JIcon(OwnifyIcons.lock, size = 13.dp, color = Ownify.TextMuted)
-                T(field.value.orEmpty(), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
+                T(field.value.orEmpty(), OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
             }
             input.type == "date" -> DateControl(input, value, field.label) { onChange(field.key, it) }
             else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -516,7 +516,7 @@ private fun ProfileField(field: SetupField, value: String, onChange: (String, St
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                     actions = androidx.compose.foundation.text.KeyboardActions(onDone = { onDone() })
                 )
-                if (input.unit.isNotEmpty()) T(input.unit, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted))
+                if (input.unit.isNotEmpty()) T(input.unit, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted))
             }
         }
         T(field.reason, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
@@ -553,8 +553,8 @@ private fun ColumnScope.GoalStep(
                 .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space4), border = 1.dp)
         ) {
             T(suggestion.eyebrow, JStyle.Caption, uppercase = true)
-            T(suggestion.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em), Modifier.padding(top = Ownify.Space2))
-            T(suggestion.basis, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
+            T(suggestion.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.padding(top = Ownify.Space2))
+            T(suggestion.basis, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
             T(suggestion.summary, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
             Row(Modifier.padding(top = Ownify.Space4), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 Primary(suggestion.add, enabled = !busy) { onAdd(suggestion.input) }
@@ -574,7 +574,7 @@ private fun ColumnScope.GoalStep(
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             JIcon(OwnifyIcons.check, Modifier.padding(top = 2.dp), size = 15.dp, color = Ownify.Health)
-            T(g.addedText(g.goals.first()), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+            T(g.addedText(g.goals.first()), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
         }
     } else if (g.canAdd) {
         Btn(

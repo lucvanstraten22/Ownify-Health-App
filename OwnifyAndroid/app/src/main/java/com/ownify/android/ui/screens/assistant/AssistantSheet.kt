@@ -334,7 +334,7 @@ private fun Island(ai: AiCopy, enabled: Boolean, modifier: Modifier, onClick: ()
                 AiLogo(32.dp, 30.dp, halo = thinking)
                 T(
                     ai.title,
-                    OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em, lineHeight = 1.em),
+                    OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, lineHeight = 1.em),
                     Modifier.padding(start = 9.dp),
                     maxLines = 1
                 )
@@ -345,7 +345,7 @@ private fun Island(ai: AiCopy, enabled: Boolean, modifier: Modifier, onClick: ()
                 ) {
                     T(
                         tr("denkt na…"),
-                        OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary, lineHeight = 1.em),
+                        OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary, lineHeight = 1.em),
                         Modifier.padding(start = 10.dp).clearAndSetSemantics { },
                         maxLines = 1
                     )
@@ -354,7 +354,7 @@ private fun Island(ai: AiCopy, enabled: Boolean, modifier: Modifier, onClick: ()
                     if (count > 0) {
                         T(
                             count.toString(),
-                            OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tabular = true, lineHeight = 1.em),
+                            OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted, tabular = true, lineHeight = 1.em),
                             Modifier.padding(start = 9.dp),
                             maxLines = 1
                         )
@@ -505,13 +505,13 @@ private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
                 consent.points.forEachIndexed { i, point ->
                     Row(Modifier.padding(top = if (i == 0) 0.dp else Ownify.Space3)) {
                         Box(Modifier.padding(top = 8.dp, end = Ownify.Space3).size(5.dp).background(Ownify.Health, CircleShape))
-                        T(point, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+                        T(point, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
                     }
                 }
             }
 
             OwnifyAssistant.consentError?.let {
-                T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.Attention), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+                T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.Attention), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             }
 
             Row(Modifier.fillMaxWidth().padding(top = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -602,11 +602,11 @@ private fun EmptyState(ai: AiCopy, modifier: Modifier) {
             Box(Modifier.padding(bottom = Ownify.Space2)) { AiLogo(64.dp, 64.dp) }
             T(
                 ai.empty.title,
-                OwnifyType.style(screen.fsBrand, FontWeight.SemiBold, tracking = (-0.03).em, lineHeight = 1.25.em),
+                OwnifyType.style(screen.fsBrand, FontWeight.SemiBold),
                 Modifier.padding(top = Ownify.Space3).semantics { heading() },
                 align = TextAlign.Center
             )
-            T(ai.empty.body, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
+            T(ai.empty.body, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
             if (!hasData && ai.empty.noData.isNotEmpty()) {
                 T(ai.empty.noData, JStyle.Footnote, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             }
@@ -638,7 +638,7 @@ private fun Suggestion(text: String, onClick: () -> Unit) {
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3),
             contentAlignment = Alignment.CenterStart
         ) {
-            T(text, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+            T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
         }
     }
 }
@@ -668,7 +668,7 @@ private fun UserBubble(text: String) {
                 .background(AiUser)
                 .padding(start = 14.dp, end = 14.dp, top = 9.dp, bottom = 10.dp)
         ) {
-            T(text, OwnifyType.style(Ownify.FsBody, color = Color.White, lineHeight = 1.42.em))
+            T(text, OwnifyType.style(Ownify.FsBody, color = Color.White))
         }
     }
 }
@@ -710,13 +710,13 @@ private fun SystemNote(text: String) {
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             JIcon(OwnifyIcons.check, size = 14.dp, color = Ownify.Health)
-            T(text, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary, lineHeight = 1.4.em), align = TextAlign.Center)
+            T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), align = TextAlign.Center)
         }
     }
 }
 
 private val AnswerStyle: TextStyle
-    get() = OwnifyType.style(Ownify.FsBody, lineHeight = 1.55.em)
+    get() = OwnifyType.style(Ownify.FsBody)
 
 /** The server's blocks: paragraphs, a short heading, bullets and steps — text and bold only. */
 @Composable
@@ -729,7 +729,7 @@ private fun Blocks(message: AiMessage) {
     message.blocks.forEach { block ->
         when (block) {
             is AiBlock.Paragraph -> Rich(block.spans, AnswerStyle)
-            is AiBlock.Heading -> Rich(block.spans, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextSecondary))
+            is AiBlock.Heading -> Rich(block.spans, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextSecondary))
             is AiBlock.Bullets -> ListItems(block.items) { "•" }
             is AiBlock.Steps -> ListItems(block.items) { "${it + 1}." }
         }
@@ -777,9 +777,9 @@ private fun ActionCard(ai: AiCopy, messageId: Long, action: AiAction) {
             .border(1.dp, if (done) Ownify.GlassBorderSoft else Ownify.HealthEdge, shape)
             .padding(Ownify.Space4)
     ) {
-        T(action.title, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+        T(action.title, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
         if (action.summary.isNotEmpty()) {
-            T(action.summary, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
+            T(action.summary, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
         }
         if (action.pending) {
             Row(Modifier.padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -790,7 +790,7 @@ private fun ActionCard(ai: AiCopy, messageId: Long, action: AiAction) {
             action.status?.let {
                 T(
                     it,
-                    OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, if (done) Ownify.Health else Ownify.TextMuted),
+                    OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, if (done) Ownify.Health else Ownify.TextMuted),
                     Modifier.padding(top = Ownify.Space2)
                 )
             }
@@ -874,7 +874,7 @@ private fun Composer(ai: AiCopy) {
                 .padding(start = Ownify.Space4, end = 6.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary, lineHeight = 1.4.em, tracking = 0.sp)
+            val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary)
             BasicTextField(
                 value = a.draft,
                 onValueChange = { a.draft = it.take(2000) },
@@ -903,7 +903,7 @@ private fun Composer(ai: AiCopy) {
 
         val left = ai.remainingText(usage)
         if (left.isNotEmpty()) {
-            T(left, JStyle.Tiny, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
+            T(left, JStyle.Meta, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
         }
     }
 }
@@ -977,13 +977,13 @@ private fun WaitCapsule(modifier: Modifier) {
                             },
                             label = "wait-seconds"
                         ) { n ->
-                            T(n.coerceAtLeast(0).toString(), OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true, lineHeight = 1.em), maxLines = 1)
+                            T(n.coerceAtLeast(0).toString(), OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true, lineHeight = 1.em), maxLines = 1)
                         }
                     }
                 }
                 T(
                     if (sendingNow) tr("Versturen…") else tr("Even druk — je vraag wacht"),
-                    OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.em),
+                    OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary, lineHeight = 1.em),
                     Modifier.padding(end = if (sendingNow) Ownify.Space4 else Ownify.Space3),
                     maxLines = 1
                 )
@@ -998,7 +998,7 @@ private fun WaitCapsule(modifier: Modifier) {
                             .padding(start = Ownify.Space3, end = Ownify.Space3 + 3.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        T(tr("Annuleren"), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, lineHeight = 1.em), maxLines = 1)
+                        T(tr("Annuleren"), OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, lineHeight = 1.em), maxLines = 1)
                     }
                 }
             }
@@ -1039,11 +1039,11 @@ private fun NoticeCard(ai: AiCopy, notice: AiNotice) {
             .semantics { liveRegion = LiveRegionMode.Polite },
         verticalAlignment = Alignment.Top
     ) {
-        T(notice.text, OwnifyType.style(Ownify.FsSmall, lineHeight = 1.45.em), Modifier.weight(1f))
+        T(notice.text, OwnifyType.style(Ownify.FsSubhead), Modifier.weight(1f))
         if (notice.retry != null || notice.reload) {
             T(
                 ai.retry,
-                OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.Health),
+                OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.Health),
                 Modifier
                     .padding(start = Ownify.Space3)
                     .clickable(role = Role.Button) {
@@ -1130,7 +1130,7 @@ private fun HistoryLayer(ai: AiCopy) {
             Row(Modifier.fillMaxWidth().padding(start = 2.dp, end = 2.dp, top = 2.dp, bottom = Ownify.Space3), verticalAlignment = Alignment.CenterVertically) {
                 T(
                     ai.history,
-                    OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em, lineHeight = 1.2.em),
+                    OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold),
                     Modifier.weight(1f).semantics { heading() }
                 )
                 RoundGlass(OwnifyIcons.chevron, tr("Sluiten"), size = 34.dp) { a.historyOpen = false }
@@ -1155,7 +1155,7 @@ private fun HistoryLayer(ai: AiCopy) {
                             item(key = "g-$key") {
                                 T(
                                     rows.first().groupLabel.uppercase(),
-                                    OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tracking = 0.08.em),
+                                    OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide),
                                     Modifier.padding(start = 4.dp, end = 4.dp, top = Ownify.Space3, bottom = 6.dp).semantics { heading() }
                                 )
                             }
@@ -1178,7 +1178,7 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
     // The one field (as JInput): a pill, 44, the soft border, .05; .07 while focused.
     val shape = RoundedCornerShape(50)
     var focused by remember { mutableStateOf(false) }
-    val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary, lineHeight = 1.2.em, tracking = 0.sp)
+    val style = OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary)
     val label = tr("Zoek in je gesprekken")
     Row(
         Modifier
@@ -1241,7 +1241,7 @@ private fun NewChatButton(label: String, onClick: () -> Unit) {
 private fun EmptyLine(text: String) {
     T(
         text,
-        OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted),
+        OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 18.dp),
         align = TextAlign.Center
     )
@@ -1271,7 +1271,7 @@ private fun HistoryRow(ai: AiCopy, conversation: AiConversation, current: Boolea
             T(conversation.title, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
             T(
                 conversation.meta ?: conversation.label,
-                OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
                 Modifier.padding(top = 2.dp),
                 maxLines = 1,
                 ellipsis = true

@@ -155,7 +155,7 @@ private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Bo
                 contentAlignment = Alignment.Center
             ) { JIcon(icon, size = 16.dp, color = Ownify.TextSecondary) }
             Column(Modifier.weight(1f)) {
-                T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+                T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                 if (!value.isNullOrEmpty()) T(value, JStyle.Meta, Modifier.padding(top = 2.dp))
             }
             JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextFaint)
@@ -188,8 +188,8 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
             detail.numbers.forEachIndexed { i, (label, value) ->
                 StateRow(divided = i > 0) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
-                        T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
-                        T(value, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary), Modifier.alignByBaseline(), align = TextAlign.End)
+                        T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal), Modifier.weight(1f).alignByBaseline())
+                        T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary), Modifier.alignByBaseline(), align = TextAlign.End)
                     }
                 }
             }
@@ -247,9 +247,9 @@ private fun ChartA(chart: CorrelationChart, accent: Color) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    T(row.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f).alignByBaseline())
-                    T(row.count, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true), Modifier.alignByBaseline())
-                    T(row.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), Modifier.alignByBaseline(), align = TextAlign.End)
+                    T(row.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f).alignByBaseline())
+                    T(row.count, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), Modifier.alignByBaseline())
+                    T(row.value, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), Modifier.alignByBaseline(), align = TextAlign.End)
                 }
                 Meter(share = row.fill, play = play, height = 4.dp, emptyHeight = 4.dp, accent = accent)
             }

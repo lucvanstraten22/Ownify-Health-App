@@ -381,7 +381,7 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
             ChromeText {
                 T(
                     item.label,
-                    OwnifyType.style(Ownify.FsTab, FontWeight.Medium, color, tracking = (-0.012).em, lineHeight = 1.em),
+                    OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color, lineHeight = 1.em),
                     maxLines = 1
                 )
             }

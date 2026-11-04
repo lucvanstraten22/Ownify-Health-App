@@ -195,7 +195,7 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
         ) {
             Mark(OwnifyIcons.named(row.icon), notice = if (row.id == "devices") "sources" else null)
             Column(Modifier.weight(1f)) {
-                T(row.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+                T(row.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                 if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = 2.dp))
             }
             JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextFaint)
@@ -229,7 +229,7 @@ private fun DeleteLink(label: String, enabled: Boolean, onClick: () -> Unit) {
         val color by animateColorAsState(if (pressed) Ownify.TextSecondary else Ownify.TextMuted, tween(Ownify.FastMs, easing = Ownify.Ease), label = "delete")
         T(
             label,
-            OwnifyType.style(Ownify.FsSmall, color = color).copy(textDecoration = if (enabled) TextDecoration.Underline else TextDecoration.None),
+            OwnifyType.style(Ownify.FsSubhead, color = color).copy(textDecoration = if (enabled) TextDecoration.Underline else TextDecoration.None),
             Modifier
                 .padding(top = Ownify.Space2)
                 .press(interaction, enabled = enabled)

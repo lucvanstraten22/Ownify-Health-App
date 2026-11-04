@@ -114,8 +114,8 @@ private fun ProgressRow(row: CalibrationProgress) {
         Tile(row.icon, row.accent)
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                T(row.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em), Modifier.weight(1f))
-                T(row.count, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true), maxLines = 1)
+                T(row.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.weight(1f))
+                T(row.count, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true), maxLines = 1)
             }
             Row(Modifier.fillMaxWidth().padding(top = Ownify.Space2).clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
                 for (n in 1..row.needed.coerceAtLeast(1)) {
@@ -128,8 +128,8 @@ private fun ProgressRow(row: CalibrationProgress) {
                 }
             }
             when {
-                row.detail != null -> T(row.detail, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2))
-                row.how != null -> T(row.how, JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+                row.detail != null -> T(row.detail, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2))
+                row.how != null -> T(row.how, JStyle.Meta, Modifier.padding(top = Ownify.Space2))
             }
         }
     }
@@ -145,7 +145,7 @@ private fun StartRow(row: CalibrationStart) {
     ) {
         Tile(row.icon, row.accent)
         Column(Modifier.weight(1f)) {
-            T(row.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em))
+            T(row.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
             row.fact?.let { T(it, JStyle.Footnote, Modifier.padding(top = 2.dp)) }
         }
         ScoreValue(row.value, row.band)
@@ -167,7 +167,7 @@ private fun OpenCompass(cal: Calibration, onOpen: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            T(cal.open.orEmpty(), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+            T(cal.open.orEmpty(), OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
             JIcon(OwnifyIcons.chevronRight, size = 15.dp, color = Ownify.TextMuted)
         }
     }

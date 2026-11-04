@@ -104,6 +104,6 @@ fun BoxScope.ToastHost() {
                 testTag = TOAST
             }
     ) {
-        T(text, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextPrimary), align = TextAlign.Center)
+        T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextPrimary), align = TextAlign.Center)
     }
 }

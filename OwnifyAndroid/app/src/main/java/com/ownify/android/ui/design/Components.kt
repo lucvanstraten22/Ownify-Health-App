@@ -106,31 +106,31 @@ import androidx.compose.ui.semantics.heading
 /** The text classes, each in the theme on screen (so read when used, not kept). */
 object JStyle {
     /** `.page-intro__title`, `.community__title`: a page's own title, one step above every card title. */
-    val LargeTitle: TextStyle get() = OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold, tracking = Ownify.TrackingLargeTitle, lineHeight = 1.15.em)
+    val LargeTitle: TextStyle get() = OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold)
 
     /** `.card__title`, `.score-ring__label`. */
-    val Section: TextStyle get() = OwnifyType.style(Ownify.FsSection, FontWeight.SemiBold, tracking = (-0.02).em)
+    val Section: TextStyle get() = OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold)
 
     /** `.card--hero .score-ring__label`: the name under a hero's ring. */
-    val HeroLabel: TextStyle get() = OwnifyType.style(Ownify.FsTitle2, FontWeight.Bold, tracking = Ownify.TrackingTitle)
+    val HeroLabel: TextStyle get() = OwnifyType.style(Ownify.FsTitle, FontWeight.Bold)
 
     /** `.card__eyebrow` (its own -0.01em). */
-    val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01).em)
+    val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold)
 
     /** `.card__caption`, `.settings-eyebrow`: small caps, spaced. */
-    val Caption: TextStyle get() = OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
+    val Caption: TextStyle get() = OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
 
     /** `.card__subtitle`, `.goal__name`, `.confirm__title`. */
-    val Subtitle: TextStyle get() = OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em)
+    val Subtitle: TextStyle get() = OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold)
 
-    val Meta: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)
-    val Lede: TextStyle get() = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary)
-    val Small: TextStyle get() = OwnifyType.style(Ownify.FsSmall)
-    val Label: TextStyle get() = OwnifyType.style(Ownify.FsLabel)
-    val Tiny: TextStyle get() = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)
+    val Meta: TextStyle get() = OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)
+    val Lede: TextStyle get() = OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary)
+    val Small: TextStyle get() = OwnifyType.style(Ownify.FsSubhead)
+    val Label: TextStyle get() = OwnifyType.style(Ownify.FsBody)
+    val Tiny: TextStyle get() = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted)
 
     /** `--fs-footnote`: a sentence of small print — hints, notes, the disclaimer. 11 sp stays for labels. */
-    val Footnote: TextStyle get() = OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted)
+    val Footnote: TextStyle get() = OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)
     val Body: TextStyle get() = OwnifyType.Base
 }
 
@@ -392,9 +392,9 @@ fun Chip(
         T(
             text,
             when {
-                muted -> OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, color, tracking = 0.em)
-                quiet -> OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, color, tracking = 0.em)
-                else -> OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, color, tracking = Ownify.TrackingWide)
+                muted -> OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color)
+                quiet -> OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color)
+                else -> OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color, tracking = Ownify.TrackingWide)
             },
             maxLines = 1,
             uppercase = !muted && !quiet
@@ -445,7 +445,7 @@ fun Pill(
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
             if (icon != null) JIcon(icon, size = 18.dp, color = Ownify.TextPrimary)
-            ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextPrimary), maxLines = 1) }
+            ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextPrimary), maxLines = 1) }
         }
     }
 }
@@ -522,7 +522,7 @@ fun Btn(
                 content()
             } else {
                 if (icon != null) JIcon(icon, size = iconSize, color = look.text)
-                ChromeText { T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, look.text), maxLines = 1) }
+                ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, look.text), maxLines = 1) }
             }
         }
     }
@@ -735,7 +735,7 @@ fun ScoreRing(
                 T(scale, JStyle.Tiny)
             } else {
                 Spacer(Modifier.height(Ownify.Space1))
-                T(scale, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, tracking = 0.sp))
+                T(scale, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
             }
         }
     }
@@ -797,7 +797,7 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
                     T(
                         item.value?.toString() ?: "—",
                         OwnifyType.style(
-                            Ownify.FsLabel,
+                            Ownify.FsBody,
                             if (item.value == null) FontWeight.Normal else FontWeight.SemiBold,
                             if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
                             lineHeight = 1.em, tabular = true
@@ -807,7 +807,7 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
                 T(
                     item.label,
                     // 1.3: room for the descenders (p, g), as on the website.
-                    OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary, lineHeight = 1.3.em),
+                    OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
                     Modifier.padding(top = 3.dp),
                     maxLines = 1, ellipsis = true
                 )
@@ -851,12 +851,12 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
                         drawCircle(item.dot)
                     }
             )
-            T(item.label, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary), maxLines = 1)
+            T(item.label, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1)
             if (values) T(
                 item.value?.toString() ?: "—",
                 OwnifyType.style(
-                    Ownify.FsTiny,
-                    if (item.value == null) FontWeight.Medium else FontWeight.SemiBold,
+                    Ownify.FsCaption,
+                    if (item.value == null) FontWeight.Normal else FontWeight.SemiBold,
                     if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
                     tabular = true
                 ),
@@ -976,7 +976,7 @@ fun RangeSwitch(
                         .cssPadding(PaddingValues(horizontal = optionPadding), border = 1.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    ChromeText { T(text, OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, color), maxLines = 1) }
+                    ChromeText { T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color), maxLines = 1) }
                 }
             }
         }
@@ -1033,7 +1033,7 @@ fun JInput(
     val border = if (focused) Ownify.HealthStrong else Ownify.GlassBorderSoft
     val fill = if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f)
     // A field's text, like a button's, keeps `letter-spacing: normal`.
-    val style = OwnifyType.style(textSize, color = Ownify.TextPrimary, lineHeight = 1.3.em, tracking = 0.sp)
+    val style = OwnifyType.style(textSize, color = Ownify.TextPrimary)
 
     BasicTextField(
         value = value,
@@ -1167,7 +1167,7 @@ enum class StatusTone {
  * and the header's quick look (12 sp, [textSize]).
  */
 @Composable
-fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, textSize: TextUnit = Ownify.FsSmall, wrap: Boolean = false) {
+fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, textSize: TextUnit = Ownify.FsSubhead, wrap: Boolean = false) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         Box(
             Modifier
@@ -1186,6 +1186,6 @@ fun StatusBadge(text: String, tone: StatusTone, modifier: Modifier = Modifier, t
                     }
                 }
         )
-        T(text, OwnifyType.style(textSize, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.3.em), maxLines = if (wrap) Int.MAX_VALUE else 1)
+        T(text, OwnifyType.style(textSize, FontWeight.Normal, Ownify.TextSecondary), maxLines = if (wrap) Int.MAX_VALUE else 1)
     }
 }

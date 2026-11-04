@@ -129,6 +129,8 @@ class OwnifyPalette(
     val glintK: Float,
     val shade: Color,
     val shadeK: Float,
+    /** `--veil-shade`: the shade over the top of the header's veil. */
+    val veilShade: Float,
     val scrim: Color,
     val scrimK: Float,
     val ground: Color,
@@ -190,6 +192,7 @@ class OwnifyPalette(
             glintK = 1f,
             shade = Color.Black,
             shadeK = 1f,
+            veilShade = 0.16f,
             scrim = Color.Black,
             scrimK = 1f,
             ground = Color(40, 34, 44),
@@ -259,6 +262,7 @@ class OwnifyPalette(
             glintK = 3f,
             shade = Color(62, 46, 54),
             shadeK = 0.38f,
+            veilShade = 0.05f,
             scrim = Color(38, 30, 34),
             scrimK = 0.5f,
             ground = Color(246, 241, 246),
@@ -530,52 +534,49 @@ object Ownify {
     val PaneRim: List<Color> get() = palette.paneRim
 
     // --- type sizes -------------------------------------------------------
-    val FsBrand = 22.4.sp
-    val FsSection = 20.8.sp
-    val FsScore = 46.4.sp
-    val FsScoreSm = 28.sp
-    val FsBody = 15.sp
-    val FsLabel = 14.sp
-    val FsSmall = 13.sp
-    val FsTiny = 11.sp
-    val FsTab = 10.sp
-
-    // The named steps between and above those (theme.css, the same names),
-    // so no screen writes a size of its own. TokenParityTest checks each.
-    /** `--fs-footnote`: a sentence of small print. */
-    val FsFootnote = 12.sp
-    /** `--fs-input`: text typed in a field. */
-    val FsInput = 16.sp
-    /** `--fs-headline`: a goal's or a block's name. */
-    val FsHeadline = 17.sp
-    /** `--fs-title-3`: the primary goal's name. */
-    val FsTitle3 = 19.sp
-    /** `--fs-title-2`: a figure's heading. */
-    val FsTitle2 = 20.sp
-    /** `--fs-title-1`: a detail's title. */
-    val FsTitle1 = 22.sp
-    /** `--fs-figure`: a secondary percentage. */
-    val FsFigure = 24.sp
-    /** `--fs-large-title`: a page's title. */
+    // The type scale (37.0, theme.css `--fs-*`, docs/THEME.md): seven steps,
+    // each with its own weight, letter spacing and line height, and nothing
+    // between them. TokenParityTest checks each against the website.
+    /** `--fs-display`: the health score, a goal's percentage (700). */
+    val FsDisplay = 44.sp
+    /** `--fs-large-title`: a page's title, a large figure (700). */
     val FsLargeTitle = 28.sp
-    /** `--fs-score-md`: a goal's hero on a narrow screen. */
-    val FsScoreMd = 38.4.sp
+    /** `--fs-title`: the app's name, a card's or a block's title (600). */
+    val FsTitle = 22.sp
+    /** `--fs-headline`: a goal's, a challenge's or a dialog's name (600). */
+    val FsHeadline = 17.sp
+    /** `--fs-body`: running text, a row's label (400). */
+    val FsBody = 15.sp
+    /** `--fs-subhead`: notes, intros, a row's value, meta (400). */
+    val FsSubhead = 13.sp
+    /** `--fs-caption`: eyebrows (caps), tab labels, badges, axes (600). */
+    val FsCaption = 11.sp
+    /** `--fs-input`: text typed in a field — the one size outside the scale. */
+    val FsInput = 16.sp
 
-    /** `--tracking-wide: 0.08em`, the uppercase labels. */
-    val TrackingWide = 0.08.em
+    /** `--tracking-wide`, the uppercase captions. */
+    val TrackingWide = 0.06.em
 
     /**
-     * Letter spacing per size (theme.css `--tracking-*`): small text — 12 sp
-     * and below — none, body -0.01em, titles -0.02em, the page's title
-     * -0.025em. Text whose style names none takes [TrackingSmall] at 12 sp or
-     * below (see `T()`), the body's otherwise.
+     * Letter spacing per step (theme.css `--tracking-*`): tighter as type
+     * grows, none at 13 and 11. [OwnifyType.style] takes it from the size
+     * when a style names none.
      */
-    val TrackingSmall = 0.em
-    val TrackingBody = (-0.01).em
-    val TrackingTitle = (-0.02).em
+    val TrackingDisplay = (-0.035).em
     val TrackingLargeTitle = (-0.025).em
+    val TrackingTitle = (-0.02).em
+    val TrackingHeadline = (-0.015).em
+    val TrackingBody = (-0.01).em
+    val TrackingSmall = 0.em
+
+    /** Line height per kind of text (theme.css `--lh-*`). */
+    val LhDisplay = 1.em
+    val LhTitle = 1.2.em
+    val LhHeadline = 1.25.em
+    val LhBody = 1.45.em
+    val LhSmall = 1.35.em
     /** The largest size [TrackingSmall] applies to. */
-    val SmallTextMax = 12.sp
+    val SmallTextMax = 13.sp
 
     // --- tinted states ------------------------------------------------------
     // theme.css's `--health-wash` … `--attention-strong`: the green and the
@@ -630,6 +631,14 @@ object Ownify {
     /** `--veil-deep-top` / `--veil-deep-mid`: a detail bar's scroll edge once the page's name is in it. */
     const val VeilDeepTop = 0.97f
     const val VeilDeepMid = 0.94f
+
+    /** `--veil-top` / `--veil-mid`: the main header's veil, deepest at its top. */
+    const val VeilTop = 0.9f
+    const val VeilMid = 0.7f
+    /** `--veil-shade`: the theme's shade over the veil's top, gone by 70 % down. */
+    val VeilShade: Float get() = palette.veilShade
+    /** The shade's colour (`--shade`). */
+    val VeilShadeColor: Color get() = palette.shade
 
 
     /** `--shell-w: min(92vw, 33.5rem)`. */
@@ -808,7 +817,7 @@ object OwnifyType {
     private val Plain = TextStyle(
         fontFamily = FontFamily.Default,
         fontSize = Ownify.FsBody,
-        lineHeight = 1.5.em,
+        lineHeight = 1.45.em,
         // Unspecified: taken from where the text sits (LocalTracking), as CSS inherits it.
         letterSpacing = TextUnit.Unspecified,
         platformStyle = PlatformTextStyle(includeFontPadding = false),
@@ -830,16 +839,38 @@ object OwnifyType {
         weight: FontWeight = FontWeight.Normal,
         color: Color = Ownify.TextPrimary,
         tracking: androidx.compose.ui.unit.TextUnit = TextUnit.Unspecified,
-        lineHeight: androidx.compose.ui.unit.TextUnit = 1.5.em,
+        lineHeight: androidx.compose.ui.unit.TextUnit = TextUnit.Unspecified,
         tabular: Boolean = false
     ): TextStyle = Plain.copy(
         fontSize = size,
         fontWeight = weight,
         color = color,
-        letterSpacing = tracking,
-        lineHeight = lineHeight,
+        // The step's own spacing and line height unless the style names one.
+        letterSpacing = if (tracking != TextUnit.Unspecified) tracking else trackingFor(size),
+        lineHeight = if (lineHeight != TextUnit.Unspecified) lineHeight else lineHeightFor(size),
         fontFeatureSettings = if (tabular) Tabular else null
     )
+
+    /** A step's letter spacing (theme.css: the rule's `--tracking-*`). */
+    fun trackingFor(size: androidx.compose.ui.unit.TextUnit): androidx.compose.ui.unit.TextUnit = when {
+        !size.isSp -> TextUnit.Unspecified
+        size.value >= Ownify.FsDisplay.value -> Ownify.TrackingDisplay
+        size.value >= Ownify.FsLargeTitle.value -> Ownify.TrackingLargeTitle
+        size.value >= Ownify.FsTitle.value -> Ownify.TrackingTitle
+        size.value >= Ownify.FsHeadline.value -> Ownify.TrackingHeadline
+        size.value >= Ownify.FsBody.value -> Ownify.TrackingBody
+        else -> Ownify.TrackingSmall
+    }
+
+    /** A step's line height (theme.css: the rule's `--lh-*`). */
+    fun lineHeightFor(size: androidx.compose.ui.unit.TextUnit): androidx.compose.ui.unit.TextUnit = when {
+        !size.isSp -> 1.5.em
+        size.value >= Ownify.FsDisplay.value -> Ownify.LhDisplay
+        size.value >= Ownify.FsTitle.value -> Ownify.LhTitle
+        size.value >= Ownify.FsHeadline.value -> Ownify.LhHeadline
+        size.value >= Ownify.FsBody.value -> Ownify.LhBody
+        else -> Ownify.LhSmall
+    }
 }
 
 /**

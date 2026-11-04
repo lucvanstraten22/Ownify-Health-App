@@ -131,7 +131,7 @@ private fun ConfirmTitle(text: String, modifier: Modifier = Modifier, align: Tex
 /** `.confirm__body`. */
 @Composable
 private fun ConfirmBody(text: String, modifier: Modifier = Modifier, align: TextAlign = TextAlign.Center, color: Color = Ownify.TextSecondary) {
-    T(text, OwnifyType.style(Ownify.FsSmall, color = color), modifier.fillMaxWidth().padding(top = Ownify.Space2), align = align)
+    T(text, OwnifyType.style(Ownify.FsSubhead, color = color), modifier.fillMaxWidth().padding(top = Ownify.Space2), align = align)
 }
 
 /** `.confirm__row`: two equal answers, 24 below what they answer. */
@@ -264,7 +264,7 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                             label = tr("Voet"),
                             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
                         )
-                        T("ft", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary))
+                        T("ft", OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary))
                         JInput(
                             inches, { inches = it.filter(Char::isDigit).take(2) },
                             modifier = Modifier.weight(1f),
@@ -272,7 +272,7 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                             actions = KeyboardActions(onDone = { if (!saving) save() })
                         )
-                        T("in", OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary))
+                        T("in", OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary))
                     }
                 }
                 else -> {
@@ -289,7 +289,7 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                             ),
                             actions = KeyboardActions(onDone = { if (!saving) save() })
                         )
-                        if (input.unit.isNotEmpty()) T(input.unit, OwnifyType.style(Ownify.FsLabel, color = Ownify.TextSecondary))
+                        if (input.unit.isNotEmpty()) T(input.unit, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary))
                     }
                 }
             }
@@ -357,7 +357,7 @@ fun DeviceNameEditor(overlay: Overlay.RenameDevice, data: AppData) {
         // `.field-editor__note`: what saving does, and what empty gives back.
         T(
             listOfNotNull(labels["rename_note"], labels["rename_own"]?.replace("%s", own)).joinToString(" "),
-            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
             Modifier.fillMaxWidth().padding(top = Ownify.Space2)
         )
 
@@ -439,7 +439,7 @@ fun PasswordEditor(overlay: Overlay) {
         // `.field-editor__note`: what saving does.
         T(
             tr("Minimaal 8 tekens. Je blijft hier ingelogd; op je andere apparaten word je uitgelogd."),
-            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
             Modifier.fillMaxWidth().padding(top = Ownify.Space2)
         )
 
@@ -572,7 +572,7 @@ fun SigninEditor(overlay: Overlay.SigninEdit, data: AppData) {
         // `.field-editor__note`: what saving does.
         T(
             note,
-            OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, lineHeight = 1.4.em),
+            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
             Modifier.fillMaxWidth().padding(top = Ownify.Space2)
         )
 
@@ -617,7 +617,7 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
                         .cssPadding(PaddingValues(horizontal = Ownify.Space3), border = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    T(label, OwnifyType.style(Ownify.FsLabel, color = if (active) Ownify.TextPrimary else Ownify.TextSecondary))
+                    T(label, OwnifyType.style(Ownify.FsBody, color = if (active) Ownify.TextPrimary else Ownify.TextSecondary))
                 }
             }
         }
@@ -654,7 +654,7 @@ internal fun DateControl(input: FieldInput, value: String, label: String, onPick
                 .padding(horizontal = Ownify.Space4),
             contentAlignment = Alignment.CenterStart
         ) {
-            T(shown ?: "dd-mm-jjjj", OwnifyType.style(Ownify.FsLabel, color = if (shown != null) Ownify.TextPrimary else Ownify.TextFaint, tabular = true))
+            T(shown ?: "dd-mm-jjjj", OwnifyType.style(Ownify.FsBody, color = if (shown != null) Ownify.TextPrimary else Ownify.TextFaint, tabular = true))
         }
     }
 }
@@ -734,7 +734,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
             error?.let {
                 T(
                     it,
-                    OwnifyType.style(Ownify.FsSmall),
+                    OwnifyType.style(Ownify.FsSubhead),
                     Modifier
                         .fillMaxWidth()
                         .padding(top = Ownify.Space3)

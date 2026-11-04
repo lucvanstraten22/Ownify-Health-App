@@ -209,7 +209,7 @@ fun PullSyncIndicator(pull: PullSyncState, modifier: Modifier = Modifier) {
                 if (label != null) {
                     T(
                         label,
-                        OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, Ownify.TextSecondary, lineHeight = 1.em),
+                        OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary, lineHeight = 1.em),
                         Modifier.padding(end = if (failed) Ownify.Space2 else Ownify.Space4),
                         maxLines = 1
                     )
@@ -218,7 +218,7 @@ fun PullSyncIndicator(pull: PullSyncState, modifier: Modifier = Modifier) {
                     Box(Modifier.width(1.dp).fillMaxHeight().background(Ownify.GlassHairline))
                     T(
                         tr("Opnieuw"),
-                        OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, lineHeight = 1.em),
+                        OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, lineHeight = 1.em),
                         Modifier.padding(start = Ownify.Space3, end = Ownify.Space3 + 3.dp),
                         maxLines = 1
                     )

@@ -110,7 +110,7 @@ class SettingsLayoutTest {
         }
         assertEquals("in that order", tops.sorted(), tops)
         // Each setting's own content.
-        for (kept in listOf("Metrisch", "Imperiaal", "Gewicht", "Maandag", "Zondag", "Minder beweging", "Grotere tekst")) text(kept).assertExists()
+        for (kept in listOf("Metrisch", "Imperiaal", "Gewicht", "Maandag", "Zondag", "Grotere tekst", "Extra contrast", "Animaties uit")) text(kept).assertExists()
     }
 
     @Test

@@ -78,8 +78,9 @@
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
     background: var(--inset-fill);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .account__error {
@@ -133,12 +134,12 @@
 .account__username {
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .account__meta {
     margin-top: var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -151,7 +152,7 @@
 .account__label {
     display: block;
     margin-bottom: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -178,6 +179,7 @@
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-input);
+    letter-spacing: var(--tracking-body);
 }
 
 /* The picture field, as the app draws it (AccountPanel.kt, FileField): a
@@ -205,9 +207,9 @@
     border: 1px solid var(--glass-border-soft);
     border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.08 * var(--fill-k)));
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
-    letter-spacing: normal;
+    letter-spacing: var(--tracking-small);
     color: var(--text-primary);
     white-space: nowrap;
 }
@@ -219,10 +221,11 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    font-size: var(--fs-small);
-    line-height: 1.3;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     color: var(--text-secondary);
     overflow-wrap: anywhere;
+    letter-spacing: var(--tracking-small);
 }
 
 .account__file:focus-within {
@@ -247,7 +250,7 @@
 
 .account__hint {
     margin-top: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -355,9 +358,10 @@
     background: var(--inset-fill);
     color: var(--text-primary);
     font: inherit;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     text-align: left;
     transition: background-color var(--transition-fast);
+    letter-spacing: var(--tracking-body);
 }
 
 .account__nav:active { background: rgba(var(--fill), calc(0.08 * var(--fill-k))); }
@@ -386,7 +390,7 @@
     border: 1px solid color-mix(in srgb, var(--health) 42%, transparent);
     border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--health) 22%, transparent);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
     white-space: nowrap;
@@ -453,15 +457,16 @@
 
 .friend__name {
     overflow: hidden;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .friend__status {
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -499,8 +504,9 @@
     border: 1px solid color-mix(in srgb, var(--health) 42%, transparent);
     border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--health) 18%, transparent);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
+    letter-spacing: var(--tracking-small);
 }
 
 .friend__done .icon { width: 15px; height: 15px; }
@@ -522,8 +528,9 @@
 .friend__confirm .friend__actions--wide { grid-column: auto; }
 
 .friend__confirm-text {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --------------------------------------------------------------- switch
@@ -549,15 +556,16 @@
 
 .account__toggle-label {
     display: block;
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-body);
 }
 
 .account__toggle-note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }

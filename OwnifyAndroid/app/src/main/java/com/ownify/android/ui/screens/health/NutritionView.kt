@@ -211,10 +211,10 @@ private fun RatingSliderCard(view: NutritionView, index: Int, evidence: Evidence
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             T(
                 if (empty) "–" else value.toString(),
-                OwnifyType.style(Ownify.FsFigure, FontWeight.Bold, tracking = Ownify.TrackingTitle, lineHeight = 1.em, tabular = true),
+                OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold, lineHeight = 1.em, tabular = true),
                 Modifier.alignByBaseline().width(28.dp)
             )
-            T("/ 10 · " + copy.question.format(word), OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), Modifier.alignByBaseline())
+            T("/ 10 · " + copy.question.format(word), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.alignByBaseline())
         }
 
         val thumbScale by animateFloatAsState(if (dragging) 1.12f else 1f, tween(Ownify.PressOutMs, easing = Ownify.EaseOutStrong), label = "thumb")
@@ -293,7 +293,7 @@ private fun RatingSliderCard(view: NutritionView, index: Int, evidence: Evidence
         }
         // `.rating-slider__scale`
         Row(Modifier.fillMaxWidth().padding(top = Ownify.Space2, start = 9.dp, end = 9.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            val scale = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextFaint)
+            val scale = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextFaint)
             T("1", scale); T("5", scale); T("10", scale)
         }
         // `.status`: saved, not yet, or why not.
@@ -383,7 +383,7 @@ private fun CompositionCard(view: NutritionView, index: Int, references: Map<Str
 
         // The hint only where there is a ring to tap; an empty day says why in the ring itself.
         if (day.kcal != null) {
-            T(copy.hint, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), Modifier.fillMaxWidth().padding(top = Ownify.Space3))
+            T(copy.hint, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space3))
         }
         // 31.0 (D9): how the energy target in the ring is estimated (NUT-04).
         ResearchEvidence(references["nutrition.energy"])
@@ -426,7 +426,7 @@ private fun Doughnut(day: NutritionDay, open: String?, size: Dp, modifier: Modif
                     style = Stroke(3f * u, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(1f * u, 9f * u)))
                 )
             }
-            T(day.note.orEmpty(), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.35.em), Modifier.padding(horizontal = size * 0.22f), align = TextAlign.Center)
+            T(day.note.orEmpty(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(horizontal = size * 0.22f), align = TextAlign.Center)
             return@Box
         }
 
@@ -476,13 +476,13 @@ private fun Doughnut(day: NutritionDay, open: String?, size: Dp, modifier: Modif
         // `.nutrition-ring__center`: the day's total, or the open part's own numbers.
         val lit = day.macros.firstOrNull { it.key == open }
         Column(Modifier.padding(horizontal = size * 0.22f).clearAndSetSemantics { }, horizontalAlignment = Alignment.CenterHorizontally) {
-            val value = OwnifyType.style(Ownify.FsScoreSm, FontWeight.Bold, tracking = Ownify.TrackingTitle, lineHeight = 1.1.em, tabular = true)
-            val sub = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.35.em)
+            val value = OwnifyType.style(Ownify.FsLargeTitle, FontWeight.Bold, lineHeight = 1.1.em, tabular = true)
+            val sub = OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)
             if (lit == null) {
                 T(day.centre?.value.orEmpty(), value, align = TextAlign.Center)
                 T(day.centre?.sub.orEmpty(), sub, align = TextAlign.Center)
             } else {
-                T(lit.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextMuted), align = TextAlign.Center)
+                T(lit.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextMuted), align = TextAlign.Center)
                 T(OwnifyFormat.number(lit.share ?: 0.0, 0) + " %", value, align = TextAlign.Center)
                 T(lit.facts.firstOrNull()?.second.orEmpty(), sub, align = TextAlign.Center)
             }
@@ -548,7 +548,7 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
             T(m.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.weight(1f))
             T(
                 m.head,
-                OwnifyType.style(Ownify.FsBody, if (m.logged) FontWeight.SemiBold else FontWeight.Medium, if (m.logged) Ownify.TextPrimary else Ownify.TextMuted, tabular = true)
+                OwnifyType.style(Ownify.FsBody, if (m.logged) FontWeight.SemiBold else FontWeight.Normal, if (m.logged) Ownify.TextPrimary else Ownify.TextMuted, tabular = true)
             )
             if (m.logged) JIcon(OwnifyIcons.chevronRight, Modifier.rotate(turn), size = 14.dp, color = Ownify.TextFaint)
         }
@@ -557,7 +557,7 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
         Column(Modifier.fillMaxWidth().padding(start = 10.dp + Ownify.Space3), verticalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
             if (m.sub.isNotEmpty()) {
                 FlowRow(Modifier.padding(top = Ownify.Space1), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                    m.sub.forEach { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted)) }
+                    m.sub.forEach { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)) }
                 }
             }
             if (m.verdict != null && m.verdictText != null) Bubble(m.verdictText, m.verdict)
@@ -570,7 +570,7 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     FactGrid(m.facts, Modifier.padding(top = Ownify.Space3))
-                    m.why?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.4.em), Modifier.padding(top = Ownify.Space2)) }
+                    m.why?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(top = Ownify.Space2)) }
                     if (m.details.isNotEmpty()) {
                         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
                             Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
@@ -587,13 +587,13 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
                                         verticalArrangement = Arrangement.spacedBy(Ownify.Space1),
                                         itemVerticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        T(d.label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f).wholeWidth())
+                                        T(d.label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f).wholeWidth())
                                         if (d.value != null) {
-                                            T(d.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true), maxLines = 1)
-                                            d.extra?.let { T(it, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1) }
+                                            T(d.value, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, tabular = true), maxLines = 1)
+                                            d.extra?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), maxLines = 1) }
                                             if (d.verdict != null && d.verdictText != null) Bubble(d.verdictText, d.verdict)
                                         } else {
-                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted), maxLines = 1)
+                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
                                         }
                                     }
                                     // 31.0 (D9): why sugar has no verdict (free sugars, NUT-01).
@@ -626,10 +626,9 @@ private fun Bubble(text: String, verdict: String) {
     T(
         text,
         OwnifyType.style(
-            Ownify.FsTiny,
-            if (strong) FontWeight.SemiBold else FontWeight.Medium,
-            when (verdict) { "in" -> Ownify.TextPrimary; "high" -> Ownify.Attention; else -> Ownify.TextSecondary },
-            tracking = 0.em
+            Ownify.FsCaption,
+            if (strong) FontWeight.SemiBold else FontWeight.Normal,
+            when (verdict) { "in" -> Ownify.TextPrimary; "high" -> Ownify.Attention; else -> Ownify.TextSecondary }
         ),
         Modifier
             .glass(RoundedCornerShape(50), look)
@@ -663,8 +662,8 @@ private fun Meter(meter: NutritionMeter, color: Color, modifier: Modifier) {
 /** `.nutrition-row__facts`: a name and its value a line, the names one column as wide as the widest. */
 @Composable
 private fun FactGrid(facts: List<Pair<String, String>>, modifier: Modifier) {
-    val label = OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, lineHeight = 1.4.em)
-    val value = OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, lineHeight = 1.4.em, tabular = true)
+    val label = OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)
+    val value = OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, tabular = true)
     Layout(
         content = {
             facts.forEach { (l, v) ->

@@ -36,10 +36,10 @@ data class ScreenMetrics(val width: Dp, val height: Dp) {
         get() = when {
             narrow -> 40.sp
             wide -> 49.6.sp
-            else -> Ownify.FsScore
+            else -> Ownify.FsDisplay
         }
 
-    val fsBrand: TextUnit get() = if (narrow) Ownify.FsTitle2 else Ownify.FsBrand
+    val fsBrand: TextUnit get() = if (narrow) Ownify.FsTitle else Ownify.FsTitle
 
     /** `.tabbar` width: `min(94vw, 27.5rem)`, 97vw below 360, the column from 900. */
     val tabbarWidth: Dp

@@ -195,7 +195,7 @@ private fun StateRow(divided: Boolean, content: @Composable ColumnScope.() -> Un
 /** `.settings-state__label`: 15/500. In [language] for TalkBack when it is the publication's own title. */
 @Composable
 private fun Label(text: String, language: String? = null) {
-    val style = OwnifyType.style(Ownify.FsLabel, FontWeight.Medium)
+    val style = OwnifyType.style(Ownify.FsBody, FontWeight.Normal)
     if (language == null) {
         T(text, style)
         return

@@ -156,10 +156,10 @@ private fun Hero(data: AppData, goal: Goal) {
                 T(
                     goal.name,
                     if (long) {
-                        OwnifyType.style(Ownify.FsTitle3, FontWeight.SemiBold, tracking = Ownify.TrackingTitle, lineHeight = 1.25.em)
+                        OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold)
                             .copy(lineBreak = LineBreak.Heading)
                     } else {
-                        OwnifyType.style(if (narrow) Ownify.FsTitle3 else Ownify.FsTitle1, FontWeight.SemiBold, tracking = (-0.025).em, lineHeight = 1.2.em)
+                        OwnifyType.style(if (narrow) Ownify.FsHeadline else Ownify.FsTitle, FontWeight.SemiBold)
                     },
                     Modifier.padding(top = Ownify.Space1).semantics { heading() }
                 )
@@ -185,9 +185,9 @@ private fun Hero(data: AppData, goal: Goal) {
                 T(
                     countUpText(goal.percent?.toString() ?: "—", play && !empty),
                     OwnifyType.style(
-                        if (narrow) Ownify.FsScoreMd else LocalScreen.current.fsScore, FontWeight.Bold,
+                        if (narrow) Ownify.FsDisplay else LocalScreen.current.fsScore, FontWeight.Bold,
                         if (empty) Ownify.TextSecondary else Ownify.TextPrimary,
-                        tracking = (-0.045).em, lineHeight = 1.em, tabular = true
+                        lineHeight = 1.em, tabular = true
                     ),
                     Modifier.alignByBaseline()
                 )
@@ -197,7 +197,7 @@ private fun Hero(data: AppData, goal: Goal) {
                 T(labels["target"].orEmpty(), JStyle.Caption, uppercase = true, align = TextAlign.End)
                 T(
                     goal.targetLabel.ifEmpty { "—" },
-                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em, tabular = true),
+                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tabular = true),
                     Modifier.padding(top = Ownify.Space1),
                     align = TextAlign.End
                 )
@@ -239,7 +239,7 @@ private fun Hero(data: AppData, goal: Goal) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PeriodRow(label: String, started: String, ends: String) {
-    val style = OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true)
+    val style = OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true)
     Column(Modifier.fillMaxWidth()) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
         Row(
@@ -250,7 +250,7 @@ private fun PeriodRow(label: String, started: String, ends: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            T(label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+            T(label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
             FlowRow(
                 Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End),
@@ -278,12 +278,12 @@ private fun FactRow(label: String, value: String?, first: Boolean = false) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            T(label, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+            T(label, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
             T(
                 value ?: "—",
                 OwnifyType.style(
-                    Ownify.FsSmall,
-                    if (empty) FontWeight.Medium else FontWeight.SemiBold,
+                    Ownify.FsSubhead,
+                    if (empty) FontWeight.Normal else FontWeight.SemiBold,
                     if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                     tabular = true
                 ),
@@ -329,7 +329,7 @@ private fun Days(goal: Goal, copy: Map<String, String>) {
                 OwnifyPreferences.weekInitials().forEach {
                     T(
                         it,
-                        OwnifyType.style(Ownify.FsTiny, FontWeight.SemiBold, Ownify.TextFaint, tracking = Ownify.TrackingWide),
+                        OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextFaint, tracking = Ownify.TrackingWide),
                         Modifier.weight(1f),
                         align = TextAlign.Center
                     )
@@ -383,7 +383,7 @@ private fun DayBlock(day: GoalDay, modifier: Modifier) {
         T(
             day.day?.toString().orEmpty(),
             // `color: var(--bg)` names no colour, so the number keeps the card's text colour.
-            OwnifyType.style(Ownify.FsTiny, color = if (coloured) Ownify.TextPrimary else Ownify.TextFaint, tabular = true),
+            OwnifyType.style(Ownify.FsCaption, color = if (coloured) Ownify.TextPrimary else Ownify.TextFaint, tabular = true),
             Modifier.alpha(if (coloured) 0.75f else 0.55f)
         )
     }
@@ -439,7 +439,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
                 Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                         JIcon(OwnifyIcons.check, size = 17.dp, color = Ownify.Health)
-                        T(tr("Vandaag afgevinkt"), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.Health))
+                        T(tr("Vandaag afgevinkt"), OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, Ownify.Health))
                     }
                     GlassChip(entry.undo ?: tr("Vandaag ongedaan maken"), chosen = false, enabled = !saving, onClick = { save(done = false) })
                 }
@@ -509,10 +509,10 @@ private fun Periods(goal: Goal, copy: Map<String, String>) {
                         if (met) JIcon(OwnifyIcons.check, size = 13.dp, color = Ownify.Health)
                     }
                     Column(Modifier.weight(1f)) {
-                        T(p.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
-                        T(p.dates, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted))
+                        T(p.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
+                        T(p.dates, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted))
                     }
-                    T(p.value, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, if (met) Ownify.TextPrimary else Ownify.TextSecondary, tabular = true))
+                    T(p.value, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, if (met) Ownify.TextPrimary else Ownify.TextSecondary, tabular = true))
                 }
             }
         }
@@ -579,7 +579,7 @@ private fun RowFrame(first: Boolean, content: @Composable androidx.compose.found
 @Composable
 private fun LabelWithNote(label: String, note: String, modifier: Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
+        T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
         if (note.isNotEmpty()) T(note, JStyle.Footnote)
     }
 }
@@ -619,7 +619,7 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
             if (alone) {
                 T(
                     copy["priority_alone"].orEmpty(),
-                    OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted),
+                    OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
                     Modifier.padding(horizontal = Ownify.Space1).padding(bottom = Ownify.Space1)
                 )
             }
@@ -640,7 +640,7 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                         .note(NoteTone.Attention)
                         .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
                 ) {
-                    T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSmall))
+                    T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSubhead))
                     Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                         Btn(copy["delete_no"].orEmpty(), onClick = { confirming = false }, modifier = Modifier.weight(1f))
                         Btn(
@@ -665,7 +665,7 @@ private fun ManageButton(icon: ImageVector, label: String, text: Color = Ownify.
     Btn(label, onClick = onClick, modifier = Modifier.fillMaxWidth(), look = BtnLook(text = text)) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             JIcon(icon, size = 17.dp, color = Ownify.TextMuted)
-            T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, text), maxLines = 1)
+            T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, text), maxLines = 1)
         }
     }
 }

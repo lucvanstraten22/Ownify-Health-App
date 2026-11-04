@@ -127,7 +127,7 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
                 if (preview.rows.size <= 1) {
                     Btn(tr("Vriend toevoegen"), onClick = addFriend, modifier = Modifier.fillMaxWidth(), icon = OwnifyIcons.userPlus)
                 } else if (preview.line.isNotEmpty()) {
-                    T(preview.line, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary))
+                    T(preview.line, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
                 }
             }
         }
@@ -150,7 +150,7 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
                             verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
                         ) {
                             TargetArt()
-                            T(ch.copy.text("page", "empty_title"), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), align = TextAlign.Center)
+                            T(ch.copy.text("page", "empty_title"), OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), align = TextAlign.Center)
                         }
                     }
                     ChallengeActions(ch.copy["page"])
@@ -227,8 +227,8 @@ private fun PodiumColumn(place: Int, entry: BoardEntry?, onAdd: () -> Unit, modi
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 PodiumAvatar(entry, you)
-                T(label, OwnifyType.style(Ownify.FsFootnote, FontWeight.SemiBold), Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
-                T(points(entry.points), OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, tabular = true), maxLines = 1)
+                T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+                T(points(entry.points), OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1)
             }
         } else {
             val interaction = remember { MutableInteractionSource() }
@@ -270,7 +270,7 @@ private fun PodiumColumn(place: Int, entry: BoardEntry?, onAdd: () -> Unit, modi
                 .clearAndSetSemantics { },
             contentAlignment = Alignment.Center
         ) {
-            T(place.toString(), OwnifyType.style(Ownify.FsSmall, FontWeight.Bold, if (you) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
+            T(place.toString(), OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, if (you) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
         }
     }
 }
@@ -297,7 +297,7 @@ private fun PodiumAvatar(entry: BoardEntry, you: Boolean) {
         contentAlignment = Alignment.Center
     ) {
         if (entry.name.isNotEmpty()) {
-            T(initial(entry.name), OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
+            T(initial(entry.name), OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
         } else {
             JIcon(OwnifyIcons.user, size = 18.dp, color = Ownify.TextMuted)
         }
@@ -577,7 +577,7 @@ private fun BoardRow(
     ) {
         T(
             rankText,
-            OwnifyType.style(Ownify.FsSmall, if (lit) FontWeight.SemiBold else FontWeight.Normal, if (lit) Ownify.TextPrimary else Ownify.TextMuted, tabular = true),
+            OwnifyType.style(Ownify.FsSubhead, if (lit) FontWeight.SemiBold else FontWeight.Normal, if (lit) Ownify.TextPrimary else Ownify.TextMuted, tabular = true),
             Modifier.width(if (narrow) 30.4.dp else 36.dp),
             align = TextAlign.End,
             maxLines = 1
@@ -591,7 +591,7 @@ private fun BoardRow(
             contentAlignment = Alignment.Center
         ) {
             if (name != null) {
-                T(initial(name), OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
+                T(initial(name), OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.tint(accent, 0.78f)), maxLines = 1)
             } else {
                 JIcon(OwnifyIcons.user, size = 16.dp, color = Ownify.TextMuted)
             }
@@ -600,7 +600,7 @@ private fun BoardRow(
         }
         T(
             name ?: "—",
-            OwnifyType.style(if (narrow) Ownify.FsSmall else Ownify.FsLabel, if (you) FontWeight.SemiBold else FontWeight.Normal, if (you) Ownify.TextPrimary else Ownify.TextSecondary),
+            OwnifyType.style(if (narrow) Ownify.FsSubhead else Ownify.FsBody, if (you) FontWeight.SemiBold else FontWeight.Normal, if (you) Ownify.TextPrimary else Ownify.TextSecondary),
             Modifier.weight(1f),
             maxLines = 1,
             ellipsis = true
@@ -610,15 +610,15 @@ private fun BoardRow(
             T(
                 points(entry.points),
                 OwnifyType.style(
-                    if (narrow) Ownify.FsSmall else Ownify.FsLabel,
-                    if (empty) FontWeight.Medium else FontWeight.SemiBold,
+                    if (narrow) Ownify.FsSubhead else Ownify.FsBody,
+                    if (empty) FontWeight.Normal else FontWeight.SemiBold,
                     if (empty) Ownify.TextMuted else Ownify.TextPrimary,
                     tabular = true
                 ),
                 Modifier.alignByBaseline(),
                 maxLines = 1
             )
-            T(unit, OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 3.dp), maxLines = 1)
+            T(unit, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 3.dp), maxLines = 1)
         }
     }
 }
@@ -667,7 +667,7 @@ private fun AddFriendsRow(label: String, onClick: () -> Unit) {
         }
         T(
             label,
-            OwnifyType.style(if (narrow) Ownify.FsSmall else Ownify.FsLabel, FontWeight.Normal, Ownify.TextSecondary),
+            OwnifyType.style(if (narrow) Ownify.FsSubhead else Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary),
             Modifier.weight(1f),
             maxLines = 1,
             ellipsis = true

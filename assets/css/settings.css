@@ -12,7 +12,7 @@
 .settings-eyebrow {
     padding-inline: var(--space-2);
     margin-bottom: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -23,8 +23,9 @@
     margin-top: calc(-1 * var(--space-1));
     margin-bottom: var(--space-3);
     padding-inline: var(--space-2);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --------------------------------------------------------------------------
@@ -99,9 +100,10 @@
 
 .settings-row__label {
     display: block;
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-body);
 }
 
 /* The current value, under the label: a long category name keeps its own
@@ -109,8 +111,9 @@
 .settings-row__value {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .settings-row__chevron {
@@ -166,7 +169,7 @@
     display: block;
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -175,8 +178,9 @@
 .settings-identity__meta {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --------------------------------------------------------------------------
@@ -198,7 +202,7 @@
 .settings-logout__icon { width: 17px; height: 17px; }
 
 .settings-actions__note {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -209,12 +213,13 @@
     margin-top: var(--space-2);
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-pill);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
     text-decoration: underline;
     text-underline-offset: 3px;
     text-decoration-color: rgba(var(--ink), 0.22);
     transition: color var(--transition-fast);
+    letter-spacing: var(--tracking-small);
 }
 
 .settings-delete:active { color: var(--text-secondary); }
@@ -241,19 +246,25 @@
 }
 .settings-section__text { display: grid; gap: 2px; min-width: 0; }
 .settings-section__title {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
 }
 .settings-section__lede {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --- profile fields ---------------------------------------------------- */
+/* The label first: as wide as it needs, up to 70 % of the row, so it never
+   breaks to make room ("E-mailadres"); the value takes the rest and ends in
+   an ellipsis when it is longer. Mirrored in SettingsDetail.kt (FieldColumns). */
 .settings-field {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: fit-content(70%) minmax(0, 1fr) auto;
 }
+
+.settings-field__avatar { justify-self: end; }
 
 .settings-field.is-editable { transition: background-color var(--transition-fast); }
 .settings-field.is-editable:active:not(:disabled) { background: rgba(var(--fill), calc(0.05 * var(--fill-k))); }
@@ -262,31 +273,33 @@
 
 .settings-field__label {
     display: block;
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
+    letter-spacing: var(--tracking-body);
 }
 
 .settings-field__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .settings-field__value {
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     color: var(--text-secondary);
     text-align: right;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-small);
 }
 
 .settings-field.is-empty .settings-field__value {
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-muted);
 }
 
@@ -334,15 +347,16 @@
 
 .settings-hero__name {
     margin-top: var(--space-3);
-    font-size: var(--fs-title-2);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-title);
 }
 
 .settings-hero__meta {
     margin-top: var(--space-1);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --- choice ------------------------------------------------------------- */
@@ -357,14 +371,15 @@
 
 .settings-option__label {
     display: block;
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
+    letter-spacing: var(--tracking-body);
 }
 
 .settings-option__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -408,26 +423,28 @@
 }
 
 .settings-state__label {
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
     min-width: 0;
+    letter-spacing: var(--tracking-body);
 }
 
 /* A fact's value: the same ink and weight as every value in Settings — not
    the accent, which read as a link to something that is not there. */
 .settings-state__value {
     flex: none;
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     color: var(--text-secondary);
     text-align: right;
+    letter-spacing: var(--tracking-small);
 }
 
 /* A status sits level with its label, as a value does. */
 .settings-state__head > .status { align-self: center; }
 
 .settings-state.is-empty .settings-state__value {
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-muted);
 }
 
@@ -435,7 +452,7 @@
     display: block;
     margin-top: var(--space-1);
     max-width: 44ch;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -450,9 +467,10 @@
 
 .settings-toggle__label {
     display: block;
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-body);
 }
 
 /* A switch that works reads like every other row's label; one that cannot
@@ -462,7 +480,7 @@
 .settings-toggle__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -557,17 +575,18 @@
 
 .integration__label {
     display: block;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: var(--tracking-body);
 }
 
 .integration__note {
     display: block;
     margin-top: 2px;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     overflow: hidden;
@@ -575,7 +594,9 @@
     white-space: nowrap;
 }
 
-.integration__status { font-size: var(--fs-footnote); }
+.integration__status { font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
+}
 
 .integration__chevron {
     width: 16px;
@@ -598,7 +619,7 @@
 
 .integration__caption {
     margin-top: var(--space-4);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -632,7 +653,7 @@
    would put a third column in a two-column row, and the values above would
    stop lining up with each other. */
 .device__id span {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -653,7 +674,7 @@
     background: transparent;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
     transition: color var(--transition-fast);
@@ -665,14 +686,15 @@
 .card.settings-rows { padding: var(--space-3) var(--space-4); }
 
 .settings-rows .metric-row__label {
-    font-size: var(--fs-label);
-    font-weight: 500;
+    font-size: var(--fs-body);
+    font-weight: 400;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-body);
 }
 
 .settings-rows .metric-row__value,
 .integration__body .metric-row__value {
-    font-weight: 500;
+    font-weight: 400;
     color: var(--text-secondary);
 }
 
@@ -699,9 +721,10 @@
 /* The editor's line under its field: what saving does. */
 .field-editor__note {
     margin-top: var(--space-2);
-    font-size: var(--fs-footnote);
-    line-height: 1.4;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .btn--link:focus-visible { color: var(--text-primary); }
@@ -724,7 +747,7 @@
     align-items: center;
     gap: var(--space-2);
     margin-top: var(--space-3);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -740,8 +763,9 @@
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-md);
     background: var(--inset-fill);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .settings-note[hidden] { display: none; }
@@ -808,13 +832,14 @@
     margin-top: var(--space-3);
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .confirm__body {
     margin-top: var(--space-2);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .confirm__row {
@@ -831,7 +856,7 @@
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: left;
@@ -855,9 +880,10 @@
     border: 1px solid var(--attention-edge);
     border-radius: var(--radius-md);
     background: var(--attention-wash);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-primary);
     text-align: left;
+    letter-spacing: var(--tracking-small);
 }
 
 .confirm__error[hidden] { display: none; }
@@ -921,6 +947,7 @@
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-input);
+    letter-spacing: var(--tracking-body);
 }
 
 .field-editor__input:focus-visible {
@@ -939,8 +966,9 @@
 
 .field-editor__unit {
     flex: none;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-body);
 }
 
 /* The choice list is the settings page's own option row, stacked. */
@@ -960,8 +988,9 @@
     border-radius: var(--radius-sm);
     background: var(--inset-fill);
     color: var(--text-secondary);
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     text-align: left;
+    letter-spacing: var(--tracking-body);
 }
 
 .field-editor__option.is-active {
@@ -973,8 +1002,9 @@
 .field-editor__error {
     margin-top: var(--space-3);
     color: var(--error);
-    font-size: var(--fs-small);
-    line-height: 1.4;
+    font-size: var(--fs-subhead);
+    line-height: var(--lh-small);
+    letter-spacing: var(--tracking-small);
 }
 
 .field-editor__error[hidden] { display: none; }
@@ -999,7 +1029,7 @@
 
 .pairing__expiry {
     margin-top: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
@@ -1036,8 +1066,9 @@
 .settings-action__confirm[hidden] { display: none; }
 
 .settings-action__question {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-primary);
+    letter-spacing: var(--tracking-small);
 }
 
 .settings-action__buttons {

@@ -231,7 +231,7 @@ fun SyncResult(modifier: Modifier = Modifier) {
     if (line != null) {
         T(
             line,
-            OwnifyType.style(Ownify.FsTiny, color = if (OwnifySync.state is OwnifySyncState.Failed) Ownify.Attention else Ownify.TextMuted),
+            OwnifyType.style(Ownify.FsSubhead, color = if (OwnifySync.state is OwnifySyncState.Failed) Ownify.Attention else Ownify.TextMuted),
             modifier.fillMaxWidth().padding(top = Ownify.Space3).semantics { liveRegion = LiveRegionMode.Polite }
         )
     }
@@ -263,14 +263,14 @@ fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolea
         ) {
             T(
                 label,
-                if (list) OwnifyType.style(Ownify.FsLabel, FontWeight.Medium) else OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
+                if (list) OwnifyType.style(Ownify.FsBody, FontWeight.Normal) else OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
                 Modifier.weight(1f)
             )
             T(
                 value,
                 OwnifyType.style(
-                    Ownify.FsSmall,
-                    FontWeight.Medium,
+                    Ownify.FsSubhead,
+                    FontWeight.Normal,
                     if (empty) Ownify.TextMuted else Ownify.TextSecondary,
                     tabular = true
                 ),

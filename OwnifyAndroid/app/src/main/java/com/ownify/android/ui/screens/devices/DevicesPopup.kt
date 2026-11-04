@@ -83,7 +83,7 @@ fun DevicesPopup(overlay: Overlay, data: AppData) {
                     if (lines.isEmpty()) {
                         T(
                             data.header.devicesEmpty,
-                            OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary),
+                            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
                             Modifier.fillMaxWidth().padding(top = Ownify.Space1, bottom = Ownify.Space4),
                             align = TextAlign.Center
                         )
@@ -120,10 +120,10 @@ private fun DeviceRow(line: DeviceLine) {
             IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (line.connected) Ownify.Health else Ownify.TextSecondary)
         }
         Column(Modifier.weight(1f)) {
-            T(line.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-            if (line.source != null) T(line.source, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+            T(line.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+            if (line.source != null) T(line.source, JStyle.Meta, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
         }
         // Only what is linked is listed: not connected means it needs a look.
-        StatusBadge(line.state, if (line.connected) StatusTone.On else StatusTone.Warn, textSize = Ownify.FsFootnote)
+        StatusBadge(line.state, if (line.connected) StatusTone.On else StatusTone.Warn, textSize = Ownify.FsSubhead)
     }
 }

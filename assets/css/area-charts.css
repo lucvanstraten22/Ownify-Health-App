@@ -82,25 +82,28 @@
     display: flex;
     justify-content: space-between;
     margin: 0 0 var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* Its target after the value, quieter: "van 2.300 kcal". */
 .area-chart__of {
     margin-left: 0.3em;
-    font-size: var(--fs-tiny);
-    font-weight: 500;
+    font-size: var(--fs-caption);
+    font-weight: 600;
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* The small card's value once more, in its second unit (kJ, ml). */
 .area-chart__sub {
     display: block;
     flex-basis: 100%;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --- small, on the area's page ------------------------------------------- */
@@ -128,10 +131,10 @@
     padding: 0;
     border: 0;
     background: none;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.01em;
+    line-height: var(--lh-small);
+    letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
     text-align: left;
     hyphens: manual;
@@ -173,8 +176,8 @@
 .area-chart__none {
     font-size: var(--fs-headline);
     font-weight: 700;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
+    line-height: var(--lh-headline);
+    letter-spacing: var(--tracking-headline);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -182,7 +185,7 @@
 .area-chart__none { color: var(--text-muted); font-weight: 600; }
 
 .area-chart__when {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
@@ -222,14 +225,14 @@
     flex: none;
     height: 2.5em;                    /* two rows of the dates' own size */
     margin-top: var(--space-1);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
-    line-height: 1.2;
+    line-height: var(--lh-small);
 }
 .area-chart--mini .chart__empty {
     top: 50%;
     padding-inline: 0;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     transform: translateY(-50%);
 }

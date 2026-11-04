@@ -165,7 +165,7 @@ internal fun FacesRow(faces: Faces, pending: Boolean = false) {
             Box(Modifier.offset(x = (-5).dp * i)) { ChallengeAvatar(p, 30.dp, pending, ring = true) }
         }
         if (faces.more > 0) {
-            T("+${faces.more}", OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, tabular = true), Modifier.offset(x = (-5).dp * faces.people.size).padding(start = Ownify.Space2), maxLines = 1)
+            T("+${faces.more}", OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true), Modifier.offset(x = (-5).dp * faces.people.size).padding(start = Ownify.Space2), maxLines = 1)
         }
     }
 }
@@ -324,7 +324,7 @@ private fun ActionTile(label: String, modifier: Modifier, onClick: () -> Unit, m
         horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
     ) {
         Box(Modifier.clearAndSetSemantics { }) { mark() }
-        T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, Ownify.TextPrimary, tracking = (-0.01).em, lineHeight = 1.2.em), Modifier.weight(1f))
+        T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, Ownify.TextPrimary), Modifier.weight(1f))
     }
 }
 
@@ -396,7 +396,7 @@ private fun FanFront(view: ChallengeView, onClick: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 NeutralTile(view.icon, small = true)
-                T(view.name, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, lineHeight = 1.25.em), Modifier.weight(1f), maxLines = 2, ellipsis = true)
+                T(view.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.weight(1f), maxLines = 2, ellipsis = true)
                 Chip(view.kindLabel)
             }
             ChallengeBarView(view.bar, accent)
@@ -405,7 +405,7 @@ private fun FanFront(view: ChallengeView, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
             ) {
-                TwoWeights(view.tile.strong, view.tile.rest, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary, tabular = true), Modifier.weight(1f))
+                TwoWeights(view.tile.strong, view.tile.rest, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary, tabular = true), Modifier.weight(1f))
                 FacesRow(view.faces)
             }
         }
@@ -436,14 +436,14 @@ internal fun ChallengeCard(view: ChallengeView, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                 NeutralTile(view.icon)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    T(view.name, OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = (-0.015).em, lineHeight = 1.25.em))
+                    T(view.name, OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
                     T(view.deadline, JStyle.Footnote)
                 }
             }
             if (!view.versus) {
                 FigLine {
-                    TwoWeights(view.line.strong, view.line.rest, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, tabular = true))
-                    T(view.line.sub, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted), align = TextAlign.End)
+                    TwoWeights(view.line.strong, view.line.rest, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true))
+                    T(view.line.sub, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), align = TextAlign.End)
                 }
                 ChallengeBarView(view.bar, accent, big = true)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Ownify.Space3), verticalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
@@ -451,7 +451,7 @@ internal fun ChallengeCard(view: ChallengeView, onClick: () -> Unit) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.5.dp)).background(if (person.you) accent.color else toneColor(person.tone)))
                             T(person.label, JStyle.Footnote, maxLines = 1)
-                            T(person.valueText, OwnifyType.style(Ownify.FsFootnote, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
+                            T(person.valueText, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
                         }
                     }
                 }
@@ -463,10 +463,10 @@ internal fun ChallengeCard(view: ChallengeView, onClick: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
                         ) {
-                            T(person.rank.toString(), OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextMuted, tabular = true), Modifier.width(14.dp), maxLines = 1)
+                            T(person.rank.toString(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true), Modifier.width(14.dp), maxLines = 1)
                             ChallengeAvatar(person, 24.dp)
                             Box(Modifier.weight(1f)) { PersonBar(person.share, if (person.you) accent.color else Ownify.ink(0.42f), top = 0.dp) }
-                            T(person.valueText, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, tabular = true), maxLines = 1)
+                            T(person.valueText, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, tabular = true), maxLines = 1)
                         }
                     }
                 }
@@ -518,8 +518,8 @@ private fun IdeaRow(idea: ChallengeIdea, icon: String, onClick: () -> Unit) {
     ) {
         NeutralTile(icon, small = true, modifier = Modifier.clearAndSetSemantics { })
         Column(Modifier.weight(1f)) {
-            T(idea.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold))
-            T(idea.sub, JStyle.Tiny)
+            T(idea.title, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
+            T(idea.sub, JStyle.Meta)
         }
         JIcon(OwnifyIcons.plus, size = 16.dp, color = Ownify.TextFaint)
     }
@@ -555,7 +555,7 @@ internal fun ChallengeItem(view: ChallengeView, onClick: () -> Unit) {
             T(view.name, JStyle.Subtitle)
             ChallengeBarView(view.bar, accent)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                TwoWeights(view.line.strong, view.line.rest, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted, tabular = true))
+                TwoWeights(view.line.strong, view.line.rest, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true))
                 T(view.line.sub, JStyle.Meta, Modifier.weight(1f), align = TextAlign.End)
             }
             Foot(view.faces, view.deadline)
@@ -632,7 +632,7 @@ private fun PersonRow(person: ChallengePerson, versus: Boolean, accent: Accent, 
             if (versus) {
                 T(
                     person.rank.toString(),
-                    OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, if (person.you) Ownify.TextPrimary else Ownify.TextMuted, tabular = true),
+                    OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, if (person.you) Ownify.TextPrimary else Ownify.TextMuted, tabular = true),
                     Modifier.widthIn(min = 22.dp),
                     align = TextAlign.End,
                     maxLines = 1
@@ -644,7 +644,7 @@ private fun PersonRow(person: ChallengePerson, versus: Boolean, accent: Accent, 
             Column(Modifier.weight(1f)) {
                 T(
                     person.label,
-                    OwnifyType.style(Ownify.FsLabel, if (person.you) FontWeight.SemiBold else FontWeight.Normal, if (person.you) Ownify.TextPrimary else Ownify.TextSecondary),
+                    OwnifyType.style(Ownify.FsBody, if (person.you) FontWeight.SemiBold else FontWeight.Normal, if (person.you) Ownify.TextPrimary else Ownify.TextSecondary),
                     maxLines = 1,
                     ellipsis = true
                 )
@@ -653,9 +653,9 @@ private fun PersonRow(person: ChallengePerson, versus: Boolean, accent: Accent, 
                 }
             }
             Row(verticalAlignment = Alignment.Bottom) {
-                T(person.valueText, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
+                T(person.valueText, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
                 if (!versus) {
-                    T(person.shareText, OwnifyType.style(Ownify.FsTiny, FontWeight.Medium, Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 4.dp), maxLines = 1)
+                    T(person.shareText, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 4.dp), maxLines = 1)
                 }
             }
         }
@@ -776,7 +776,7 @@ fun ChallengeDetail(data: AppData, view: ChallengeView, overList: Boolean, scrol
             val long = view.name.length > 32
             T(
                 view.name,
-                if (long) OwnifyType.style(Ownify.FsTitle2, FontWeight.Bold, tracking = (-0.015).em, lineHeight = 1.25.em) else JStyle.LargeTitle,
+                if (long) OwnifyType.style(Ownify.FsTitle, FontWeight.Bold) else JStyle.LargeTitle,
                 Modifier.heroName().semantics { heading() }
             )
             T(view.subtitle, JStyle.Meta)
@@ -785,7 +785,7 @@ fun ChallengeDetail(data: AppData, view: ChallengeView, overList: Boolean, scrol
         // 2 — where it stands
         JCard(Modifier.fillMaxWidth().reveal()) {
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                T(view.big.figure, OwnifyType.style(Ownify.FsScore, FontWeight.Bold, tracking = (-0.05).em, lineHeight = 1.em, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
+                T(view.big.figure, OwnifyType.style(Ownify.FsDisplay, FontWeight.Bold, lineHeight = 1.em, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
                 T(view.big.of, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.alignByBaseline().weight(1f, fill = false))
             }
             ChallengeBarView(view.bar, accent, big = true, modifier = Modifier.padding(top = Ownify.Space4))
@@ -832,7 +832,7 @@ fun ChallengeDetail(data: AppData, view: ChallengeView, overList: Boolean, scrol
                 Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                     T(
                         code.toCharArray().joinToString(" "),
-                        OwnifyType.style(Ownify.FsTitle2, FontWeight.SemiBold, tracking = 0.12.em, tabular = true).copy(fontFamily = FontFamily.Monospace),
+                        OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold, tracking = 0.12.em, tabular = true).copy(fontFamily = FontFamily.Monospace),
                         Modifier.weight(1f).clearAndSetSemantics { contentDescription = code.toCharArray().joinToString(" ") },
                         maxLines = 1
                     )
@@ -873,7 +873,7 @@ private fun InviteRow(label: String, hint: String, onClick: () -> Unit) {
     ) {
         IconTile(OwnifyIcons.userPlus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
         Column(Modifier.weight(1f)) {
-            T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+            T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
             T(hint, JStyle.Meta)
         }
         JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextMuted)
@@ -893,7 +893,7 @@ internal fun LinkButton(label: String, onClick: () -> Unit) {
             .padding(horizontal = Ownify.Space3),
         contentAlignment = Alignment.Center
     ) {
-        T(label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold, Ownify.TextMuted), maxLines = 1)
+        T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextMuted), maxLines = 1)
     }
 }
 

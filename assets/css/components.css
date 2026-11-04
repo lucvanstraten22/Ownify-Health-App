@@ -110,7 +110,7 @@
 .card--hero .card__title {
     font-size: var(--fs-large-title);
     font-weight: 700;
-    line-height: 1.15;
+    line-height: var(--lh-title);
     letter-spacing: var(--tracking-large-title);
 }
 
@@ -118,6 +118,7 @@
     margin-top: 2px;
     font-size: var(--fs-body);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-body);
 }
 
 .card__head {
@@ -137,20 +138,20 @@
 .card__headings { min-width: 0; }
 
 .card__title {
-    font-size: var(--fs-section);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-title);
 }
 
 .card__eyebrow {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
     color: var(--text-primary);
 }
 
 .card__caption {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -160,24 +161,26 @@
 .card__subtitle {
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .card__subtitle--tight { margin-bottom: var(--space-1); }
 
 .card__meta {
     margin-top: var(--space-1);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
-.card__meta--small { font-size: var(--fs-tiny); letter-spacing: var(--tracking-small); }
+.card__meta--small { font-size: var(--fs-subhead); letter-spacing: var(--tracking-small); }
 
 .card__lede {
     margin-inline: auto;
     max-width: 34ch;
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 .card--hero .card__lede { margin-top: var(--space-2); }
@@ -196,7 +199,7 @@
     margin-top: var(--space-4);
     padding-top: var(--space-4);
     border-top: 1px solid var(--glass-hairline);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -224,26 +227,28 @@
 }
 
 /* Scrolled: a tint over the page blurred behind it, and the two fade out
-   together towards the bottom edge — a scroll edge, not a line. The blur
-   used to stop at the header's box while its tint faded, which left a hard
-   seam across the cards. The veil is solid down to the header's own bottom
-   — --space-3 under the buttons — and fades out below it over
-   --header-fade, in one eased curve: the tint is even and the mask alone
-   fades it, so tint and blur leave together. It sits behind the header's
-   own content. Mirrored in Header.kt (HeaderFrame). */
+   together towards the bottom edge — a scroll edge, not a line. The tint is
+   deepest at the top — the ground, with a breath of the theme's own --shade
+   over it — and lightens all the way down (--veil-top to --veil-mid), so
+   the page shows through a little more the lower it goes. Below the
+   header's own bottom the mask fades it out over --header-fade along an
+   S-curve (smoothstep): it leaves the solid part and arrives at nothing
+   with no slope, so neither end of the fade draws a line. The blur goes
+   with the mask, so tint and blur leave together. It sits behind the
+   header's own content. Mirrored in Header.kt (HeaderFrame). */
 .app-header::before {
     content: "";
     position: absolute;
-    --header-fade: 32px;
+    --header-fade: 48px;
     inset: 0 0 calc(-1 * var(--header-fade)) 0;
     z-index: -1;
-    background: linear-gradient(180deg,
-        rgba(var(--ground), var(--veil-top)) 0%,
-        rgba(var(--ground), var(--veil-mid)) 100%);
+    background:
+        linear-gradient(180deg, rgba(var(--shade), var(--veil-shade)) 0%, rgba(var(--shade), 0) 70%),
+        linear-gradient(180deg, rgba(var(--ground), var(--veil-top)) 0%, rgba(var(--ground), var(--veil-mid)) 100%);
     -webkit-backdrop-filter: blur(var(--blur-bar)) saturate(140%);
     backdrop-filter: blur(var(--blur-bar)) saturate(140%);
-    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.82) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.55) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.28) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.09) calc(100% - var(--header-fade) * 0.2), transparent 100%);
-    mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.82) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.55) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.28) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.09) calc(100% - var(--header-fade) * 0.2), transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.972) calc(100% - var(--header-fade) * 0.9), rgba(0, 0, 0, 0.896) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.784) calc(100% - var(--header-fade) * 0.7), rgba(0, 0, 0, 0.648) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.5) calc(100% - var(--header-fade) * 0.5), rgba(0, 0, 0, 0.352) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.216) calc(100% - var(--header-fade) * 0.3), rgba(0, 0, 0, 0.104) calc(100% - var(--header-fade) * 0.2), rgba(0, 0, 0, 0.028) calc(100% - var(--header-fade) * 0.1), transparent 100%);
+    mask-image: linear-gradient(180deg, #000 calc(100% - var(--header-fade)), rgba(0, 0, 0, 0.972) calc(100% - var(--header-fade) * 0.9), rgba(0, 0, 0, 0.896) calc(100% - var(--header-fade) * 0.8), rgba(0, 0, 0, 0.784) calc(100% - var(--header-fade) * 0.7), rgba(0, 0, 0, 0.648) calc(100% - var(--header-fade) * 0.6), rgba(0, 0, 0, 0.5) calc(100% - var(--header-fade) * 0.5), rgba(0, 0, 0, 0.352) calc(100% - var(--header-fade) * 0.4), rgba(0, 0, 0, 0.216) calc(100% - var(--header-fade) * 0.3), rgba(0, 0, 0, 0.104) calc(100% - var(--header-fade) * 0.2), rgba(0, 0, 0, 0.028) calc(100% - var(--header-fade) * 0.1), transparent 100%);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--transition-fast);
@@ -288,9 +293,9 @@
 .pill--devices { justify-self: start; }
 
 .app-header__name {
-    font-size: var(--fs-brand);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--tracking-title);
 }
 
 .pill--account { justify-self: end; }
@@ -308,11 +313,12 @@
     align-items: center;
     gap: var(--space-2);
     flex: none;
-    font-size: var(--fs-small);
-    font-weight: 500;
-    line-height: 1.3;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
+    line-height: var(--lh-small);
     color: var(--text-secondary);
     white-space: nowrap;
+    letter-spacing: var(--tracking-small);
 }
 
 .status__dot {
@@ -525,8 +531,9 @@
 .pill__icon { width: 18px; height: 18px; }
 
 .pill__label {
-    font-size: var(--fs-small);
-    font-weight: 500;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
+    letter-spacing: var(--tracking-small);
 }
 
 .btn {
@@ -539,9 +546,10 @@
     border-radius: var(--radius-pill);
     background: var(--glass);
     color: var(--text-primary);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     transition: background-color var(--transition-fast), transform var(--press-out) var(--ease-out-strong);
+    letter-spacing: var(--tracking-small);
 }
 
 .btn:disabled {
@@ -683,32 +691,32 @@
 }
 
 .score-ring__number {
-    font-size: var(--fs-score);
+    font-size: var(--fs-display);
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.045em;
+    letter-spacing: var(--tracking-display);
     font-variant-numeric: tabular-nums;
 }
 
 /* No score yet: a calm, smaller dash rather than a bold bar at score size
    (Components.kt ScoreRing and HealthPage do the same). */
 .is-empty .score-ring__number {
-    font-size: calc(var(--fs-score) * 0.6);
+    font-size: calc(var(--fs-display) * 0.6);
     font-weight: 400;
     color: var(--text-muted);
 }
 
 .score-ring__scale {
     margin-top: var(--space-2);
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .score-ring__label {
-    font-size: var(--fs-section);
+    font-size: var(--fs-title);
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-title);
 }
 
 /* The hero's ring: larger, on the ground, in the page's colour (a gradient
@@ -738,19 +746,19 @@
 }
 
 .card--hero:not(.is-empty) .score-ring__number {
-    font-size: calc(var(--fs-score) * 1.32);
+    font-size: calc(var(--fs-display) * 1.32);
     letter-spacing: -0.05em;
 }
 
 .card--hero:not(.is-empty) .score-ring__scale {
     margin-top: var(--space-1);
-    font-size: var(--fs-small);
-    letter-spacing: normal;
+    font-size: var(--fs-subhead);
+    letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
 }
 
 .card--hero .score-ring__label {
-    font-size: var(--fs-title-2);
+    font-size: var(--fs-title);
     font-weight: 700;
     letter-spacing: var(--tracking-title);
 }
@@ -811,7 +819,7 @@
 }
 
 .legend__label {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-secondary);
     white-space: nowrap;
@@ -873,11 +881,12 @@
 .pillar-ring__value {
     grid-area: dial;
     align-self: center;
-    font-size: var(--fs-label);
-    font-weight: 650;
+    font-size: var(--fs-body);
+    font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+    letter-spacing: var(--tracking-body);
 }
 
 .pillar-ring.is-empty .pillar-ring__value { font-weight: 400; color: var(--text-muted); }
@@ -888,10 +897,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     /* Room for the descenders (p, g): the box clips what it truncates. */
-    line-height: 1.3;
+    line-height: var(--lh-small);
     color: var(--text-secondary);
+    letter-spacing: var(--tracking-small);
 }
 
 /* --------------------------------------------------------------------------
@@ -905,23 +915,24 @@
 }
 
 .score-value__number {
-    font-size: var(--fs-score-sm);
+    font-size: var(--fs-large-title);
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--tracking-large-title);
     font-variant-numeric: tabular-nums;
 }
 
 .is-empty .score-value .score-value__number {
     margin-inline-end: 3px;
-    font-size: calc(var(--fs-score-sm) * 0.6);
+    font-size: calc(var(--fs-large-title) * 0.6);
     font-weight: 400;
     color: var(--text-muted);
 }
 
 .score-value__max {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .meter {
@@ -1002,7 +1013,7 @@
     border: 1px solid var(--glass-hairline);
     border-radius: var(--radius-pill);
     background: rgba(var(--fill), calc(0.055 * var(--fill-k)));
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     font-weight: 600;
     letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
@@ -1015,7 +1026,7 @@
 .chip--muted {
     text-transform: none;
     letter-spacing: 0;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-muted);
 }
 
@@ -1069,9 +1080,9 @@
 .insights__marker .icon { width: 16px; height: 16px; }
 
 .insights__title {
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--tracking-body);
 }
 
 .insights__item.is-empty .insights__title { color: var(--text-secondary); }
@@ -1083,8 +1094,9 @@
 
 .insights__text {
     margin-top: var(--space-1);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 /* Combined insights (31.0, docs/CORRELATIONS.md): a row's label line sits at
@@ -1170,7 +1182,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 .goal__name {
     font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--tracking-headline);
 }
 
 .is-empty .goal__name { color: var(--text-secondary); }
@@ -1182,19 +1194,20 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .goal__percent {
-    font-size: var(--fs-score-sm);
+    font-size: var(--fs-large-title);
     font-weight: 700;
     line-height: 1;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--tracking-large-title);
     font-variant-numeric: tabular-nums;
 }
 
 .is-empty .goal__percent { color: var(--text-secondary); }
 
 .goal__unit-sign {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
     margin-left: 2px;
+    letter-spacing: var(--tracking-small);
 }
 
 /* Each stop sits at its own place on the bar (`--p`, percent): the first
@@ -1242,7 +1255,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .milestones__label {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -1280,7 +1293,7 @@ a.settings-row { color: inherit; text-decoration: none; }
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
     box-shadow: var(--lg-shadow), var(--lg-glint);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -1290,6 +1303,7 @@ a.settings-row { color: inherit; text-decoration: none; }
     transform: translate(calc(var(--p, 0) * -1%), calc(-100% + 2px));
     transition: opacity var(--transition-fast), transform var(--transition-fast);
     isolation: isolate;
+    letter-spacing: var(--tracking-small);
 }
 
 .goal__track.is-reading .goal__tip,
@@ -1313,7 +1327,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .goal__note {
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
@@ -1339,10 +1353,11 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .board__rank {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
     text-align: center;
+    letter-spacing: var(--tracking-small);
 }
 
 .board__avatar {
@@ -1359,16 +1374,18 @@ a.settings-row { color: inherit; text-decoration: none; }
 .board__avatar .icon { width: 15px; height: 15px; }
 
 .board__name {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-secondary);
     min-width: 0;
+    letter-spacing: var(--tracking-small);
 }
 
 .board__value {
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
+    letter-spacing: var(--tracking-small);
 }
 
 .board__row--self {
@@ -1571,7 +1588,7 @@ a.settings-row { color: inherit; text-decoration: none; }
        carries more dead space above the strokes than the label's box carries
        under its baseline, and centring the boxes leaves the pair reading low.
        Measured in label ems, so it holds if the type ever moves. */
-    padding: 0 0 calc(var(--tab-label) * var(--tab-optical));
+    padding: 0 0 calc(var(--fs-caption) * var(--tab-optical));
     border-radius: var(--radius-pill);
     /* Translucent glass gives back less contrast than a solid bar, so the
        resting label carries a little more of its own. */
@@ -1589,13 +1606,13 @@ a.settings-row { color: inherit; text-decoration: none; }
    baseline and the bar keeps its height at every width. */
 .tab__label {
     display: block;
-    font-size: var(--tab-label);
-    font-weight: 500;
+    font-size: var(--fs-caption);
+    font-weight: 600;
     /* No leading. The icon above is already trimmed to its ink, so the label
        is measured the same way and the gap between them is the gap, not the
        gap plus two half-leadings. */
     line-height: 1;
-    letter-spacing: -0.012em;
+    letter-spacing: var(--tracking-small);
     text-align: center;
     white-space: nowrap;
 }
@@ -1707,7 +1724,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 .disclaimer {
     margin-top: var(--space-2);
     padding-inline: var(--space-2);
-    font-size: var(--fs-footnote);
+    font-size: var(--fs-subhead);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     text-align: center;
@@ -1773,12 +1790,13 @@ a.settings-row { color: inherit; text-decoration: none; }
     padding: calc(var(--space-1) + 1px) calc(var(--space-3) + 1px);
     border-radius: var(--radius-pill);
     font: inherit;
-    font-size: var(--fs-tiny);
-    font-weight: 500;
-    line-height: 1.6;
+    font-size: var(--fs-caption);
+    font-weight: 600;
+    line-height: var(--lh-small);
     color: var(--text-secondary);
     white-space: nowrap;
     cursor: pointer;
+    letter-spacing: var(--tracking-small);
 }
 
 /* The chip stays chip-sized; what a finger can hit is taller. */
@@ -1821,10 +1839,11 @@ a.settings-row { color: inherit; text-decoration: none; }
     padding: 0 var(--space-5);
     border-radius: var(--radius-pill);
     font: inherit;
-    font-size: var(--fs-label);
+    font-size: var(--fs-body);
     font-weight: 600;
     background: var(--lg-face), var(--lg-green), var(--lg-body);
     cursor: pointer;
+    letter-spacing: var(--tracking-body);
 }
 
 .glass--cta::after { background: var(--lg-green-rim); }
@@ -1863,8 +1882,9 @@ a.settings-row { color: inherit; text-decoration: none; }
     color: var(--text-primary);
     font: inherit;
     font-size: var(--fs-input);
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
+    letter-spacing: var(--tracking-body);
 }
 
 .glass--select select:focus-visible { outline: none; }

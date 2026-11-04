@@ -144,7 +144,7 @@ private fun ReviewContent(review: ChallengeReview) {
         }
     }
     Column(Modifier.padding(top = Ownify.Space4)) {
-        review.facts.forEachIndexed { i, (label, value) -> Fact(label, i > 0) { T(value, OwnifyType.style(Ownify.FsSmall, FontWeight.Medium), align = TextAlign.End) } }
+        review.facts.forEachIndexed { i, (label, value) -> Fact(label, i > 0) { T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal), align = TextAlign.End) } }
         Fact(review.peopleLabel, divided = true) { FacesRow(review.faces) }
     }
     Note(OwnifyIcons.shield, review.privacy, Modifier.padding(top = Ownify.Space4))
@@ -177,7 +177,7 @@ private fun Note(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
     ) {
         JIcon(icon, Modifier.padding(top = 1.dp), size = 15.dp, color = Ownify.TextMuted)
-        T(text, OwnifyType.style(Ownify.FsFootnote, color = Ownify.TextSecondary), Modifier.weight(1f))
+        T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
     }
 }
 
@@ -424,7 +424,7 @@ fun ChallengeCodeSheet(overlay: Overlay.ChallengeCode, data: AppData) {
             val text = message
             if (text != null) {
                 if (error) Box(Modifier.padding(top = 6.dp, end = Ownify.Space2).size(6.dp).background(Ownify.Attention, CircleShape))
-                T(text, OwnifyType.style(Ownify.FsSmall, color = if (error) Ownify.TextPrimary else Ownify.TextMuted), align = TextAlign.Center)
+                T(text, OwnifyType.style(Ownify.FsSubhead, color = if (error) Ownify.TextPrimary else Ownify.TextMuted), align = TextAlign.Center)
             }
         }
     }
@@ -561,7 +561,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                     T("−", OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
                 }
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
-                    T(OwnifyFormat.number(target), OwnifyType.style(Ownify.FsTitle2, FontWeight.SemiBold, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
+                    T(OwnifyFormat.number(target), OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
                     T(" " + String.format(java.util.Locale.ROOT, metric.many, "").trim(), OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.alignByBaseline(), maxLines = 1)
                 }
                 Btn("+", contentDescription = copy["more"], onClick = { target += metric.step; touched = true }) {
@@ -631,7 +631,7 @@ private fun MetricChip(label: String, icon: String, accent: Accent, selected: Bo
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
     ) {
         OwnifyIcons.named(icon)?.let { JIcon(it, size = 14.dp, color = accent.color) }
-        T(label, OwnifyType.style(Ownify.FsTiny, if (selected) FontWeight.SemiBold else FontWeight.Medium, if (selected) Ownify.TextPrimary else Ownify.TextSecondary, tracking = 0.em), maxLines = 1)
+        T(label, OwnifyType.style(Ownify.FsCaption, if (selected) FontWeight.SemiBold else FontWeight.SemiBold, if (selected) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
     }
 }
 
@@ -665,7 +665,7 @@ private fun PickPerson(person: ChallengePerson, selected: Boolean, modifier: Mod
                 ) { JIcon(OwnifyIcons.check, size = 11.dp, color = Color.White) }
             }
         }
-        T(person.name, OwnifyType.style(Ownify.FsTiny, color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
+        T(person.name, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
     }
 }
 

@@ -1034,7 +1034,8 @@ class OwnifyAppFlowTest {
         compose.onAllNodes(hasText("Wissen") and hasClickAction()).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Al je gezondheidsgegevens wissen?")
         assertTrue(server.requestsTo("wipe.php").isEmpty())
-        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onLast().performSemanticsAction(SemanticsActions.OnClick)
+        // Its yes stands where its button was, above the conversations' own "Wissen".
+        compose.onAllNodes(hasText("Wissen") and hasClickAction()).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Je gegevens zijn gewist. Je account staat er nog.")
         assertEquals(mapOf("confirm" to "wissen"), form(server.requestsTo("wipe.php").single()))
         compose.waitUntil(10_000) { server.requestsTo("state.php").size > reads }

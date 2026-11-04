@@ -40,24 +40,24 @@
 }
 
 .sleep-night__value {
-    font-size: var(--fs-title-2);
+    font-size: var(--fs-title);
     font-weight: 700;
     line-height: 1.1;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--tracking-title);
     font-variant-numeric: tabular-nums;
 }
 
 .sleep-night__unit {
     margin-left: 3px;
-    font-size: var(--fs-small);
-    font-weight: 500;
-    letter-spacing: 0;
+    font-size: var(--fs-subhead);
+    font-weight: 400;
+    letter-spacing: var(--tracking-small);
     color: var(--text-muted);
 }
 
 .sleep-night__word {
     margin-top: 2px;
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     color: var(--text-muted);
     white-space: nowrap;
@@ -104,10 +104,10 @@
 }
 
 .sleep-night__name {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
     font-weight: 600;
-    line-height: 1.25;
+    line-height: var(--lh-small);
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -115,9 +115,9 @@
 }
 
 .sleep-night__total {
-    font-size: var(--fs-tiny);
+    font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
-    line-height: 1.25;
+    line-height: var(--lh-small);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
 }
@@ -177,9 +177,10 @@
 
 .sleep-night__note {
     margin-top: var(--space-4);
-    font-size: var(--fs-small);
+    font-size: var(--fs-subhead);
     color: var(--text-muted);
     text-align: center;
+    letter-spacing: var(--tracking-small);
 }
 
 .sleep-night.is-empty .sleep-night__plot { opacity: 0.55; }

@@ -119,7 +119,7 @@ fun SharedHeader(
             }
             T(
                 appName,
-                OwnifyType.style(screen.fsBrand, FontWeight.SemiBold, tracking = (-0.03).em),
+                OwnifyType.style(screen.fsBrand, FontWeight.SemiBold),
                 Modifier.padding(horizontal = Ownify.Space3).semantics { heading() },
                 maxLines = 1
             )
@@ -144,7 +144,7 @@ fun SharedHeader(
  * veil fades in and out over `--transition-fast`, as on the website.
  */
 /** `--header-fade`: how far below the main header its veil fades out. */
-private val HeaderFade = 32.dp
+private val HeaderFade = 48.dp
 
 @Composable
 fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean = false, content: @Composable BoxScope.() -> Unit) {
@@ -175,15 +175,20 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                         drawContent()
                         drawRect(
                             if (deep) Brush.verticalGradient(0f to Color.Black, 0.5f to Color.Black, 1f to Color.Transparent)
-                            // Solid to the header's bottom, then one eased fade (`.app-header::before` mask).
+                            // Solid to the header's bottom, then an S-curve (smoothstep) to nothing,
+                            // with no slope at either end (`.app-header::before` mask).
                             else {
                                 val f = HeaderFade.toPx() / size.height
-                                Brush.verticalGradient(
-                                    0f to Color.Black, (1f - f) to Color.Black,
-                                    (1f - f * 0.8f) to Color.Black.copy(alpha = 0.82f), (1f - f * 0.6f) to Color.Black.copy(alpha = 0.55f),
-                                    (1f - f * 0.4f) to Color.Black.copy(alpha = 0.28f), (1f - f * 0.2f) to Color.Black.copy(alpha = 0.09f),
-                                    1f to Color.Transparent
-                                )
+                                val stops = buildList {
+                                    add(0f to Color.Black)
+                                    add((1f - f) to Color.Black)
+                                    for (i in 1..9) {
+                                        val t = i / 10f
+                                        add((1f - f * (1f - t)) to Color.Black.copy(alpha = 1f - (3f * t * t - 2f * t * t * t)))
+                                    }
+                                    add(1f to Color.Transparent)
+                                }
+                                Brush.verticalGradient(*stops.toTypedArray())
                             },
                             blendMode = BlendMode.DstIn
                         )
@@ -196,8 +201,15 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
                                 0.62f to Ownify.BgMain.copy(alpha = Ownify.VeilDeepMid),
                                 1f to Ownify.BgMain.copy(alpha = 0f)
                             ) else Brush.verticalGradient(
-                                0f to Ownify.BgMain.copy(alpha = 0.95f),
-                                1f to Ownify.BgMain.copy(alpha = 0.88f)
+                                0f to Ownify.BgMain.copy(alpha = Ownify.VeilTop),
+                                1f to Ownify.BgMain.copy(alpha = Ownify.VeilMid)
+                            )
+                        )
+                        // A breath of the theme's shade over the top, gone by 70 % down.
+                        if (!deep) drawRect(
+                            Brush.verticalGradient(
+                                0f to Ownify.VeilShadeColor.copy(alpha = Ownify.VeilShade),
+                                0.7f to Ownify.VeilShadeColor.copy(alpha = 0f)
                             )
                         )
                     }
@@ -292,7 +304,7 @@ fun DetailHeader(
             if (titleBeside && title != null && shown.value > 0f) {
                 T(
                     title,
-                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = Ownify.TrackingTitle),
+                    OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold),
                     Modifier
                         .weight(1f)
                         .padding(start = Ownify.Space3)
@@ -307,7 +319,7 @@ fun DetailHeader(
         if (!titleBeside && title != null && shown.value > 0f) {
             T(
                 title,
-                OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold, tracking = Ownify.TrackingTitle),
+                OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold),
                 Modifier
                     .align(Alignment.Center)
                     .widthIn(max = screen.shell * 0.4f)

@@ -155,7 +155,7 @@ private fun IdentityHero(data: AppData) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             AvatarCircle(profile.avatar, 68.dp, 28.dp)
-            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(Ownify.FsTitle2, FontWeight.SemiBold, tracking = (-0.02).em), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             T(name.ifEmpty { tr("Naam nog niet ingevuld") }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
         }
     }
@@ -226,7 +226,7 @@ private fun FieldRow(field: ProfileField, divided: Boolean, status: Pair<String,
                 .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp),
             label = {
                 Column {
-                    T(field.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+                    T(field.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                     if (!field.note.isNullOrEmpty()) T(field.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                     if (status != null) StatusBadge(status.first, status.second, Modifier.padding(top = 2.dp))
                 }
@@ -237,7 +237,7 @@ private fun FieldRow(field: ProfileField, divided: Boolean, status: Pair<String,
                 } else {
                     T(
                         field.value ?: field.blank,
-                        OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
                         align = TextAlign.End,
                         maxLines = 1,
                         ellipsis = true
@@ -396,7 +396,11 @@ private fun FieldColumns(
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
         val markBoxes = marks.map { it.measure(loose) }
         val markWidth = markBoxes.maxOfOrNull { it.width } ?: 0
-        val valueBoxes = values.map { it.measure(loose.copy(maxWidth = (width - markWidth - 2 * gap).coerceAtLeast(0))) }
+        // The label first, as wide as it needs up to 70 % of the row, so it never
+        // breaks to make room ("E-mailadres"); the value takes the rest (`.settings-field`).
+        val room = (width - markWidth - 2 * gap).coerceAtLeast(0)
+        val reserve = minOf(labels.maxOfOrNull { it.maxIntrinsicWidth(constraints.maxHeight) } ?: 0, (room * 0.7f).toInt())
+        val valueBoxes = values.map { it.measure(loose.copy(maxWidth = (room - reserve).coerceAtLeast(0))) }
         val valueWidth = valueBoxes.maxOfOrNull { it.width } ?: 0
         val labelBoxes = labels.map { it.measure(loose.copy(maxWidth = (width - markWidth - valueWidth - 2 * gap).coerceAtLeast(0))) }
         val height = (labelBoxes + valueBoxes + markBoxes).maxOfOrNull { it.height }
@@ -512,7 +516,7 @@ private fun StaticField(
             .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp),
         label = {
             Column {
-                T(label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+                T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                 if (note != null) T(note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                 if (status != null) StatusBadge(status.first, status.second, Modifier.padding(top = 2.dp))
             }
@@ -520,7 +524,7 @@ private fun StaticField(
         value = {
             T(
                 value,
-                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, if (filled) Ownify.TextSecondary else Ownify.TextMuted),
                 align = TextAlign.End,
                 maxLines = 1,
                 ellipsis = true
@@ -626,14 +630,14 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                     head()
                     Column(Modifier.weight(1f)) {
-                        T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-                        T(item.note, JStyle.Tiny, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+                        T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                        T(item.note, JStyle.Meta, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
                     }
-                    if (!narrow) StatusBadge(statusText, statusTone, textSize = Ownify.FsFootnote)
+                    if (!narrow) StatusBadge(statusText, statusTone, textSize = Ownify.FsSubhead)
                     JIcon(OwnifyIcons.chevronDown, Modifier.graphicsLayer { rotationZ = turn }, size = 16.dp, color = Ownify.TextFaint)
                 }
                 // Below 360 dp the status takes a line of its own, under the name.
-                if (narrow) Row(Modifier.padding(start = 32.dp + Ownify.Space3)) { StatusBadge(statusText, statusTone, textSize = Ownify.FsFootnote) }
+                if (narrow) Row(Modifier.padding(start = 32.dp + Ownify.Space3)) { StatusBadge(statusText, statusTone, textSize = Ownify.FsSubhead) }
             }
         }
 
@@ -664,8 +668,8 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                                 ) {
                                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        T(device.label, OwnifyType.style(Ownify.FsSmall, FontWeight.SemiBold))
-                                        T(device.lastSync ?: labels["never"].orEmpty(), JStyle.Tiny)
+                                        T(device.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold))
+                                        T(device.lastSync ?: labels["never"].orEmpty(), JStyle.Meta)
                                     }
                                     // `.device__actions`: two quiet links — its name, and unpairing this one phone —
                                     // 4 apart; each link already pulls 8 past its box, so the last one's text
@@ -779,7 +783,7 @@ private fun IntegrationHint(text: String, icon: androidx.compose.ui.graphics.vec
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
     ) {
         JIcon(icon, size = 14.dp, color = color)
-        T(text, OwnifyType.style(Ownify.FsTiny, color = color), Modifier.weight(1f))
+        T(text, OwnifyType.style(Ownify.FsSubhead, color = color), Modifier.weight(1f))
     }
 }
 
@@ -852,8 +856,8 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                             T(
                                 option.label,
                                 OwnifyType.style(
-                                    Ownify.FsLabel,
-                                    if (on) FontWeight.SemiBold else FontWeight.Medium,
+                                    Ownify.FsBody,
+                                    if (on) FontWeight.SemiBold else FontWeight.Normal,
                                     if (option.disabled) Ownify.TextSecondary else Ownify.TextPrimary
                                 )
                             )
@@ -908,7 +912,7 @@ private fun StatesBlock(block: SettingsBlock.States) {
                 ) {
                     if (block.status) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
-                            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f))
+                            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal), Modifier.weight(1f))
                             // Its switch decides the dot: green while on; off, what the server says the phone's is —
                             // never its "on", which may be from before the switch.
                             val tone = when {
@@ -920,10 +924,10 @@ private fun StatesBlock(block: SettingsBlock.States) {
                         }
                     } else {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
-                            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium), Modifier.weight(1f).alignByBaseline())
+                            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal), Modifier.weight(1f).alignByBaseline())
                             T(
                                 value ?: "—",
-                                OwnifyType.style(Ownify.FsSmall, FontWeight.Medium, if (value != null) Ownify.TextSecondary else Ownify.TextMuted),
+                                OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, if (value != null) Ownify.TextSecondary else Ownify.TextMuted),
                                 Modifier.alignByBaseline(),
                                 align = TextAlign.End
                             )
@@ -965,7 +969,7 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
                         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                     ) {
                         Column(Modifier.weight(1f)) {
-                            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+                            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
                             if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                         }
                         Toggle(item.on, dimmed = true)
@@ -1038,10 +1042,10 @@ private fun LiveToggleRow(item: ToggleItem, key: String, divided: Boolean) {
     ) {
         Column(Modifier.weight(1f)) {
             // A switch that works reads like every other row's label.
-            T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium))
+            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
             val note = error ?: (if (on) item.noteOn else item.noteOff) ?: item.note
             if (!note.isNullOrEmpty()) {
-                T(note, OwnifyType.style(Ownify.FsTiny, color = if (error != null) Ownify.Attention else Ownify.TextMuted), Modifier.padding(top = 2.dp))
+                T(note, OwnifyType.style(Ownify.FsSubhead, color = if (error != null) Ownify.Attention else Ownify.TextMuted), Modifier.padding(top = 2.dp))
             }
         }
         Toggle(on)
@@ -1143,12 +1147,12 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
-                T(item.label, OwnifyType.style(Ownify.FsLabel, FontWeight.Medium, Ownify.TextSecondary))
+                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
                 val note = said ?: item.note
                 if (!note.isNullOrEmpty()) {
                     T(
                         note,
-                        OwnifyType.style(Ownify.FsTiny, color = if (failed) Ownify.Attention else Ownify.TextMuted),
+                        OwnifyType.style(Ownify.FsSubhead, color = if (failed) Ownify.Attention else Ownify.TextMuted),
                         Modifier.padding(top = 2.dp).semantics { liveRegion = LiveRegionMode.Polite }
                     )
                 }
@@ -1159,7 +1163,7 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
         if (asking) {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
                 Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
-                T(item.question, OwnifyType.style(Ownify.FsSmall), Modifier.padding(top = Ownify.Space3))
+                T(item.question, OwnifyType.style(Ownify.FsSubhead), Modifier.padding(top = Ownify.Space3))
                 Row(
                     Modifier.fillMaxWidth().padding(top = Ownify.Space3),
                     horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End)
@@ -1208,8 +1212,8 @@ private fun SectionHead(block: SettingsBlock.Section) {
     ) {
         OwnifyIcons.named(block.icon)?.let { IconTile(it) }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            T(block.title, OwnifyType.style(Ownify.FsLabel, FontWeight.SemiBold, tracking = (-0.01f).em), Modifier.semantics { heading() })
-            block.lede?.let { T(it, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted)) }
+            T(block.title, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.semantics { heading() })
+            block.lede?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted)) }
         }
     }
 }
@@ -1250,6 +1254,6 @@ fun SettingsNote(icon: String, text: String, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         OwnifyIcons.named(icon)?.let { JIcon(it, Modifier.padding(top = 2.dp), size = 16.dp, color = Ownify.TextMuted) }
-        T(text, OwnifyType.style(Ownify.FsSmall, color = Ownify.TextSecondary), Modifier.weight(1f))
+        T(text, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.weight(1f))
     }
 }

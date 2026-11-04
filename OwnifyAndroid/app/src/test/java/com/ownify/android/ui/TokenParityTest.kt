@@ -87,22 +87,25 @@ class TokenParityTest {
     @Test
     fun `type sizes`() {
         for ((name, value) in listOf(
-            "fs-brand" to Ownify.FsBrand, "fs-section" to Ownify.FsSection, "fs-score" to Ownify.FsScore,
-            "fs-score-sm" to Ownify.FsScoreSm, "fs-body" to Ownify.FsBody, "fs-label" to Ownify.FsLabel,
-            "fs-small" to Ownify.FsSmall, "fs-tiny" to Ownify.FsTiny, "fs-footnote" to Ownify.FsFootnote,
-            "fs-input" to Ownify.FsInput, "fs-headline" to Ownify.FsHeadline, "fs-title-3" to Ownify.FsTitle3,
-            "fs-title-2" to Ownify.FsTitle2, "fs-title-1" to Ownify.FsTitle1, "fs-figure" to Ownify.FsFigure,
-            "fs-large-title" to Ownify.FsLargeTitle, "fs-score-md" to Ownify.FsScoreMd, "tab-label" to Ownify.FsTab,
+            "fs-display" to Ownify.FsDisplay, "fs-large-title" to Ownify.FsLargeTitle, "fs-title" to Ownify.FsTitle,
+            "fs-headline" to Ownify.FsHeadline, "fs-body" to Ownify.FsBody, "fs-subhead" to Ownify.FsSubhead,
+            "fs-caption" to Ownify.FsCaption, "fs-input" to Ownify.FsInput,
         )) sp(name, value)
     }
 
     @Test
     fun `letter spacing per size`() {
         for ((name, value) in listOf(
-            "tracking-small" to Ownify.TrackingSmall, "tracking-body" to Ownify.TrackingBody,
-            "tracking-title" to Ownify.TrackingTitle, "tracking-large-title" to Ownify.TrackingLargeTitle,
+            "tracking-display" to Ownify.TrackingDisplay, "tracking-large-title" to Ownify.TrackingLargeTitle,
+            "tracking-title" to Ownify.TrackingTitle, "tracking-headline" to Ownify.TrackingHeadline,
+            "tracking-body" to Ownify.TrackingBody, "tracking-small" to Ownify.TrackingSmall,
             "tracking-wide" to Ownify.TrackingWide,
         )) near("--$name", em(name), value.value)
+        // Line heights per kind of text, unitless on the website.
+        for ((name, value) in listOf(
+            "lh-display" to Ownify.LhDisplay, "lh-title" to Ownify.LhTitle, "lh-headline" to Ownify.LhHeadline,
+            "lh-body" to Ownify.LhBody, "lh-small" to Ownify.LhSmall,
+        )) near("--$name", raw(name).toFloat(), value.value)
     }
 
     @Test
@@ -130,6 +133,8 @@ class TokenParityTest {
         near("--lg-tint-thick", raw("lg-tint-thick").toFloat(), Ownify.LgTintThick)
         near("--veil-deep-top", raw("veil-deep-top").toFloat(), Ownify.VeilDeepTop)
         near("--veil-deep-mid", raw("veil-deep-mid").toFloat(), Ownify.VeilDeepMid)
+        near("--veil-top", raw("veil-top").toFloat(), Ownify.VeilTop)
+        near("--veil-mid", raw("veil-mid").toFloat(), Ownify.VeilMid)
     }
 
     @Test
@@ -198,7 +203,9 @@ class TokenParityTest {
         val dir = File(System.getProperty("user.dir")).absoluteFile.let { d ->
             var x: File? = d; while (x != null && !File(x, "assets/css").isDirectory) x = x.parentFile; File(x, "assets/css")
         }
-        val stray = dir.listFiles { f -> f.name.endsWith(".css") && f.name != "theme.css" }!!.flatMap { f ->
+        // phone-sim.css draws the iPhone around the website — its status bar is
+        // the phone's own type, not Ownify's — so it is not held to the scale.
+        val stray = dir.listFiles { f -> f.name.endsWith(".css") && f.name != "theme.css" && f.name != "phone-sim.css" }!!.flatMap { f ->
             f.readLines().mapIndexedNotNull { i, line ->
                 if (Regex("""font-size:\s*[0-9.]+(rem|px)""").containsMatchIn(line)) "${f.name}:${i + 1} ${line.trim()}" else null
             }

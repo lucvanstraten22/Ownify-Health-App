@@ -170,7 +170,7 @@ fun HistoryPlot(
     var linger by remember { mutableStateOf<Job?>(null) }
     val ownKey = remember { Any() }
     val measurer = rememberTextMeasurer()
-    val levelStyle = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = 1.em, tabular = true)
+    val levelStyle = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, lineHeight = 1.em, tabular = true)
 
     DisposableEffect(ownKey) { onDispose { owned.set(ownKey, null) } }
 
@@ -432,7 +432,7 @@ fun HistoryPlot(
         if (!filled) {
             T(
                 empty,
-                OwnifyType.style(Ownify.FsSmall, color = Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted),
                 Modifier.fillMaxWidth().padding(top = (height - 8.dp) / 2),
                 align = TextAlign.Center
             )
@@ -493,10 +493,10 @@ fun ReadingTip(x: Float, content: @Composable ColumnScope.() -> Unit) {
 @Composable
 fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1, compact: Boolean = false) {
     val density = LocalDensity.current
-    val style = OwnifyType.style(Ownify.FsTiny, color = Ownify.TextMuted, lineHeight = if (compact) 1.2.em else 1.5.em)
+    val style = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, lineHeight = if (compact) 1.2.em else 1.5.em)
     // height: 1.2em of the card's 15 sp text a row; 2.4em for two — compact, 2.5em of the dates' own size.
     val two = rows > 1 || ticks.any { it.day != null }
-    val height = with(density) { if (compact) (Ownify.FsTiny.toPx() * 2.5f).toDp() else (Ownify.FsBody.toPx() * if (two) 2.4f else 1.2f).toDp() }
+    val height = with(density) { if (compact) (Ownify.FsCaption.toPx() * 2.5f).toDp() else (Ownify.FsBody.toPx() * if (two) 2.4f else 1.2f).toDp() }
     Layout(
         content = { ticks.forEach { TickLabel(it.label, it.day, it.month, style) } },
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }
