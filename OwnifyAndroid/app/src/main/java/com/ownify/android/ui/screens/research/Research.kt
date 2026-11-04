@@ -183,7 +183,7 @@ fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: Scrol
  * muted disc, the footnote's type, 8 between.
  */
 @Composable
-private fun Points(points: List<String>, modifier: Modifier = Modifier) {
+internal fun Points(points: List<String>, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         points.forEach { point ->
             Row(Modifier.fillMaxWidth()) {
@@ -299,7 +299,8 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
             TextLink(copy.openSource, onClick = { view(context, href) }, modifier = Modifier.padding(start = Ownify.Space2, bottom = Ownify.Space1))
         }
 
-        SettingsNote("info", pdf.note)
+        // Nothing is said when there is no pdf to read in the app (38.1).
+        if (pdf.note.isNotEmpty() && pdf.mode != "link") SettingsNote("info", pdf.note)
         if (offline) SettingsNote("info", copy.offline, Modifier.padding(top = Ownify.Space2))
 
         if (reading && address != null) {

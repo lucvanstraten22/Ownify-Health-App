@@ -60,7 +60,7 @@ $mark = static fn (string $accent): string => match ($accent) {
                                         <span class="settings-row__label"><?= e($row['title']) ?></span>
                                         <?php if (isset($row['progress'])): ?>
                                             <?php /* Still gathering (38.0): only the bar; the row's focus shows its tooltip. */
-                                            component('insight-progress', $data + ['progress' => ['share' => $row['progress'], 'text' => $row['body'], 'id' => 'page-' . $row['code'], 'focusable' => false]]); ?>
+                                            component('insight-progress', $data + ['progress' => ['share' => $row['progress'], 'text' => $row['progress_text'] ?? $row['body'], 'label' => $row['body'], 'id' => 'page-' . $row['code'], 'focusable' => false]]); ?>
                                         <?php else: ?>
                                             <span class="settings-row__value"><?= e($row['body']) ?></span>
                                         <?php endif; ?>

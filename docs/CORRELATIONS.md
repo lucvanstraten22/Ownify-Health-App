@@ -17,7 +17,7 @@ kind; this page is what 31.0 adds.
 | --- | --- |
 | Overzicht › **Nuttige inzichten** | four combined insights, each with its label; the whole card opens Inzichten, pressed and lifted as the goal card is (31.1). A link still being gathered fills an empty place as a quiet row ("Nog 2 gemeten nachten nodig.") |
 | **Inzichten** (`pages/insights.php`, Android `InsightsPage`) | all 17 links, grouped by label, strongest first; each row opens its own page. **Mogelijk patroon** is only shown here, with how likely chance is |
-| An insight's page (`pages/insight-detail.php`, `InsightDetailPage`) | Wat Ownify zag (the label, what it means, "a pattern, not a cause", Chart A), In cijfers, Uit onderzoek blijkt (the research at the person's age, each with "Bekijk onderzoek", or that it is their own data only), Hoe Ownify dit berekent (the method and its three sources) |
+| An insight's page (`pages/insight-detail.php`, `InsightDetailPage`) | Inzicht ("Wat Ownify zag" until 38.1: the label, what it means, "a pattern, not a cause", Chart A — or only the bar), Uit onderzoek blijkt right under it (the research at the person's age, each with "Bekijk onderzoek", or that it is their own data only), In cijfers, Hoe Ownify dit berekent (the method in four short points, then its three sources) |
 | Slaap, Voeding, Training | their own single-area insight, as before (R5) |
 | Overzicht › Eén kleine suggestie | unchanged (R5) |
 
@@ -131,12 +131,16 @@ gemeten nachten nodig."
 on Overzicht, on Inzichten and on its own page (there instead of the label
 chip) — no percentage, no "Nog onduidelijk", no line beside it. How full:
 the smaller of days / Patroon's days and smaller group / Patroon's group
-(`corr_progress()`), so it never runs ahead of what is missing. What is
-still needed, the sentence above, is the bar's reading: the goal bar's
-tooltip, while a pointer is over it, a finger rests on it, or it (or its
-row) has focus; a screen reader hears it as the bar's (or the row's)
-description. A pair with enough days and no clear result keeps its
-sentence and its label.
+(`corr_progress()`), so it never runs ahead of what is missing. How much
+is left is the bar's reading — only that since 38.1, "Nog 3 dagen" (weeks
+for a weekly pair, `corr_progress_text()`): the goal bar's tooltip, while
+a pointer is over it, a finger rests on it, or it (or its row) has focus.
+The full sentence ("Nog 3 dagen nodig met …") stands under the insight's
+title on its page, and is what a screen reader hears for a row. On its
+page the bar is the card's first row, and the card lets its tooltip rise
+above it instead of cutting it off. On Inzichten the Nog onduidelijk rows
+go furthest bar first, so the bars step down. A pair with enough days and
+no clear result keeps its sentence and its label.
 
 Simulated, 60 people without any real link: 3% saw any pattern, 0.2% of
 tests gave a false one; weekend and trend confounders 0 of 30; a real null
@@ -147,7 +151,8 @@ with enough days was Geen patroon 20 of 20.
 `corr_overview()`: first Duidelijk patroon and Patroon, ordered by label,
 then whether research exists for the person's age, then |ρ| — at most one
 per outcome. Places left are filled with links still being gathered (that
-have data and could be shown), the closest to enough first. Mogelijk
+have data and could be shown), the furthest along their bar first
+(`corr_progress()`, 38.1; the fewest days missing before). Mogelijk
 patroon, Geen patroon and links without any data never go on Overzicht.
 
 ## Chart A and the numbers

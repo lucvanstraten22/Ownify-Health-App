@@ -38,7 +38,7 @@ return [
     'Er is nog geen duidelijk beeld: over %1$d dagen ging het soms samen en soms niet.' => 'There is no clear picture yet: over %1$d days it sometimes went together and sometimes not.',
 
     /* ---- an insight's own page */
-    'Wat Ownify zag' => 'What Ownify saw',
+    'Inzicht' => 'Insight',
     'In cijfers' => 'In numbers',
     'Hoe Ownify dit berekent' => 'How Ownify works this out',
     'Gecorrigeerd voor je weekdagen en je trend over de periode.' => 'Adjusted for your weekdays and your trend over the period.',
@@ -52,14 +52,14 @@ return [
     'Periode' => 'Period',
     'De afgelopen %d dagen' => 'The last %d days',
     '%1$s tot %2$s' => '%1$s to %2$s',
-    'Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.'
-        => 'Ownify lines your days up: a training day next to the night after, a night next to the day after. Days without a measurement do not count; nothing is counted as zero.',
-    'Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.'
-        => 'First Ownify takes your own weekday pattern and your slow trend over the period out of each series, because weekends and a busy month change many things at once. Outliers count only so much.',
-    'Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify %d verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.'
-        => 'Then Ownify measures the association with a rank correlation, taking into account how days resemble each other. Because Ownify looks at %d links at once, it corrects for the number of comparisons, so chance hits stay rare.',
-    'Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen.'
-        => 'A pattern only counts when it goes the same way in both halves of the period and the difference is big enough to matter.',
+    'Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.' => 'Each day stands next to the night or day after it; days without a measurement do not count.',
+    'Je weekdagpatroon en je trend worden er eerst uit gehaald.' => 'Your weekday pattern and your trend are taken out first.',
+    'De samenhang is een rangcorrelatie, gecorrigeerd voor %d vergelijkingen.' => 'The association is a rank correlation, corrected for %d comparisons.',
+    'Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat.' => 'A pattern only counts when it goes the same way in both halves of the period.',
+    /* A bar's tooltip while it is still gathering (38.1). */
+    'Nog 1 dag' => '1 day left',
+    'Nog 1 week' => '1 week left',
+    'Nog %d weken' => '%d weeks left',
     'Over de methode' => 'About the method',
 
     /* ---- units in a sentence */

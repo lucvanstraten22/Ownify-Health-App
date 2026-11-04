@@ -229,7 +229,8 @@ class ResearchFlowTest {
         // Its source has no PDF Ownify may show: the publication at its publisher, nothing else.
         assertEquals(1, compose.onAllNodes(hasText("Bekijk de publicatie") and hasClickAction()).fetchSemanticsNodes().size)
         assertEquals(0, count("Lees de pdf"))
-        text("Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.").assertExists()
+        // 38.1: no word about the pdf that is not there.
+        assertEquals(0, count("Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever."))
         // The label is said here, as a status: nothing to tap.
         assertTrue(count("Betrouwbaar") >= 1)
         assertEquals(0, tappableLabels("Betrouwbaar"))

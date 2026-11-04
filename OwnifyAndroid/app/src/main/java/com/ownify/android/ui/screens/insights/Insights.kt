@@ -64,6 +64,7 @@ import com.ownify.android.ui.design.reveal
 import com.ownify.android.ui.design.rememberPlayOnSight
 import com.ownify.android.ui.design.ReadingBar
 import com.ownify.android.ui.screens.research.ResearchEvidence
+import com.ownify.android.ui.screens.research.Points
 import com.ownify.android.ui.screens.settings.SettingsCard
 import com.ownify.android.ui.screens.settings.SettingsEyebrow
 import com.ownify.android.ui.screens.settings.SettingsNote
@@ -118,7 +119,8 @@ fun InsightsPage(correlations: Correlations, scroll: ScrollState) {
  */
 @Composable
 private fun InsightRow(row: Insight, divided: Boolean, onClick: () -> Unit) {
-    NavRow(markOf(row.accent), row.title, row.body, divided, description = row.title + " — " + row.body, progress = row.progress, onClick = onClick)
+    NavRow(markOf(row.accent), row.title, row.body, divided, description = row.title + " — " + row.body, progress = row.progress,
+        reading = row.progressText, onClick = onClick)
 }
 
 /** The outline mark of the area an insight is about (heart belongs to Training). */
@@ -133,7 +135,8 @@ private fun markOf(accent: String): ImageVector = when (accent) {
  * its value under it, a chevron that moves 2 dp on a press.
  */
 @Composable
-private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Boolean, description: String, progress: Float? = null, onClick: () -> Unit) {
+private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Boolean, description: String, progress: Float? = null,
+                   reading: String? = null, onClick: () -> Unit) {
     InButton {
         val narrow = LocalScreen.current.narrow
         val interaction = remember { MutableInteractionSource() }
@@ -163,7 +166,7 @@ private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Bo
                 T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                 if (progress != null) {
                     val (play, sight) = rememberPlayOnSight()
-                    ReadingBar(progress, value.orEmpty(), play, Modifier.then(sight), onTap = onClick)
+                    ReadingBar(progress, reading ?: value.orEmpty(), play, Modifier.then(sight), onTap = onClick)
                 } else if (!value.isNullOrEmpty()) T(value, JStyle.Meta, Modifier.padding(top = 2.dp))
             }
             JIcon(OwnifyIcons.chevronRight, Modifier.offset { IntOffset(nudge.roundToPx(), 0) }, size = 15.dp, color = Ownify.TextFaint)
@@ -172,9 +175,10 @@ private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Bo
 }
 
 /**
- * One combined insight: Wat Ownify zag (the label as a status chip, what it
- * means, that it is no cause; Chart A), In cijfers, Uit onderzoek blijkt —
- * or that it is the person's own data only — and Hoe Ownify dit berekent.
+ * One combined insight (38.1 order): Inzicht (the label as a status chip,
+ * what it means, that it is no cause; Chart A — or, still gathering, only
+ * the bar), Uit onderzoek blijkt — or that it is the person's own data only
+ * — In cijfers, and Hoe Ownify dit berekent, as points.
  */
 @Composable
 fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scroll: ScrollState) {
@@ -183,13 +187,16 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
     DetailColumn(scroll, back = labels.back, backAria = tr("Terug naar Inzichten")) {
         PageIntro(detail.title, detail.body, Modifier.reveal())
 
-        Block(labels.seen) {
+        val progress = detail.progress
+        // Still gathering: the bar's reading stands above the card's first row, so the card does not cut it off.
+        Block(labels.seen, clipContent = progress == null) {
             StateRow(divided = false) {
-                val progress = detail.progress
                 if (progress != null) {
-                    // Still gathering (38.0): only the bar instead of the label; what is still needed is the lede and its reading.
+                    // Still gathering (38.0): only the bar instead of the label; its reading is how much is left (38.1).
                     val (play, sight) = rememberPlayOnSight()
-                    ReadingBar(progress, detail.body, play, Modifier.then(sight), accent = Accent.of(detail.accent).color)
+                    // Room above the bar for its reading, inside the card (`.insights-detail__seen .insight-lock`).
+                    ReadingBar(progress, detail.progressText ?: detail.body, play, Modifier.padding(top = Ownify.Space4).then(sight),
+                        accent = Accent.of(detail.accent).color)
                 } else {
                     GlassChip(detail.tierLabel, chosen = false, onClick = null, description = "${labels.seen}: ${detail.tierLabel}")
                     Note(detail.tierMeans)
@@ -197,17 +204,6 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
                 detail.notCause?.let { Note(it) }
             }
             detail.chart?.let { chart -> StateRow(divided = true) { ChartA(chart, Accent.of(detail.accent).color) } }
-        }
-
-        Block(labels.numbers) {
-            detail.numbers.forEachIndexed { i, (label, value) ->
-                StateRow(divided = i > 0) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
-                        T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal), Modifier.weight(1f).alignByBaseline())
-                        T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary), Modifier.alignByBaseline(), align = TextAlign.End)
-                    }
-                }
-            }
         }
 
         Column(Modifier.fillMaxWidth().reveal()) {
@@ -227,10 +223,22 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
             }
         }
 
+        Block(labels.numbers) {
+            detail.numbers.forEachIndexed { i, (label, value) ->
+                StateRow(divided = i > 0) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
+                        T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal), Modifier.weight(1f).alignByBaseline())
+                        T(value, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextSecondary), Modifier.alignByBaseline(), align = TextAlign.End)
+                    }
+                }
+            }
+        }
+
         Column(Modifier.fillMaxWidth().reveal()) {
             SettingsEyebrow(labels.method)
             SettingsCard {
-                StateRow(divided = false) { detail.method.forEach { Note(it) } }
+                // 38.1: the method in short points, as Samenvatting onderzoek lists its findings.
+                StateRow(divided = false) { Points(detail.method) }
             }
             if (detail.sources.isNotEmpty()) {
                 SettingsEyebrow(detail.sourcesTitle, Modifier.padding(top = Ownify.Space4))
@@ -275,10 +283,10 @@ private fun ChartA(chart: CorrelationChart, accent: Color) {
 
 /** A block: its eyebrow, and its card of rows (`.settings-block` > `.card.settings-card`). */
 @Composable
-private fun Block(title: String, rows: @Composable ColumnScope.() -> Unit) {
+private fun Block(title: String, clipContent: Boolean = true, rows: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(title)
-        SettingsCard(content = rows)
+        SettingsCard(clipContent = clipContent, content = rows)
     }
 }
 

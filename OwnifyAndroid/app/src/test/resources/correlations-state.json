@@ -241,7 +241,6 @@
             "download_pdf": "Download de pdf",
             "pdf_hosted": "Een ongewijzigde kopie van de publicatie, gedeeld onder %s.",
             "pdf_official": "De officiële pdf, rechtstreeks van de uitgever.",
-            "pdf_none": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
             "pdf_loading": "De pdf wordt geladen…",
             "pdf_failed": "De pdf kon niet worden geladen. Je kunt hem bij de uitgever openen.",
             "offline": "Je bent offline. De publicatie opent zodra je weer verbinding hebt.",
@@ -294,7 +293,7 @@
                     "mode": "link",
                     "href": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4434546/",
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen, alle rechten voorbehouden"
                 }
             },
@@ -437,7 +436,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Webpagina, geen pdf"
                 }
             },
@@ -485,7 +484,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen in PMC, geen hergebruiklicentie"
                 }
             },
@@ -533,7 +532,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -581,7 +580,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -628,7 +627,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -678,7 +677,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY-NC-ND 4.0"
                 }
             },
@@ -725,7 +724,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -772,7 +771,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -823,7 +822,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY 4.0"
                 }
             },
@@ -870,7 +869,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -917,7 +916,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY 4.0"
                 }
             },
@@ -963,7 +962,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY 4.0"
                 }
             },
@@ -1010,7 +1009,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY 4.0"
                 }
             },
@@ -1057,7 +1056,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1107,7 +1106,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY 4.0"
                 }
             },
@@ -1155,7 +1154,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen in PMC, geen hergebruiklicentie"
                 }
             },
@@ -1202,7 +1201,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1250,7 +1249,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1296,7 +1295,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1342,7 +1341,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1388,7 +1387,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY"
                 }
             },
@@ -1436,7 +1435,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1484,7 +1483,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen in PMC, geen hergebruiklicentie"
                 }
             },
@@ -1530,7 +1529,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1576,7 +1575,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -1623,7 +1622,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen in PMC, licentie nog te bevestigen"
                 }
             },
@@ -1672,7 +1671,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Licentie niet bevestigd"
                 }
             },
@@ -1721,7 +1720,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Webpagina, geen pdf"
                 }
             },
@@ -1769,7 +1768,7 @@
                     "mode": "link",
                     "href": "https://www.sleephealthjournal.org/article/S2352721823001663/pdf",
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen, alle rechten voorbehouden"
                 }
             },
@@ -1816,7 +1815,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY volgens Europe PMC, nog te bevestigen"
                 }
             },
@@ -1959,7 +1958,7 @@
                     "mode": "link",
                     "href": "https://zoek.officielebekendmakingen.nl/blg-1226497.pdf",
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Gratis te lezen, auteursrecht voorbehouden"
                 }
             },
@@ -2006,7 +2005,7 @@
                     "mode": "link",
                     "href": "https://academic.oup.com/sleep/article-pdf/44/5/zsaa291/37933402/zsaa291.pdf",
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "CC BY-NC 4.0"
                 }
             },
@@ -2148,7 +2147,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -2195,7 +2194,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Niet vrij beschikbaar (abonnement)"
                 }
             },
@@ -2243,7 +2242,7 @@
                     "mode": "link",
                     "href": null,
                     "embed": false,
-                    "note": "Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.",
+                    "note": null,
                     "licence": "Geen open licentie"
                 }
             }
@@ -2499,7 +2498,8 @@
                             "detail": "insight-C10",
                             "icon": "pulse",
                             "accent": "sleep",
-                            "progress": 0.0
+                            "progress": 0.0,
+                            "progress_text": "Nog 30 dagen"
                         },
                         {
                             "code": "C16",
@@ -2530,7 +2530,8 @@
                             "detail": "insight-C17",
                             "icon": "pulse",
                             "accent": "sleep",
-                            "progress": 0.0
+                            "progress": 0.0,
+                            "progress_text": "Nog 30 dagen"
                         }
                     ]
                 }
@@ -2639,10 +2640,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -2736,10 +2737,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -2895,10 +2896,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3010,10 +3011,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3125,10 +3126,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3213,10 +3214,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3292,10 +3293,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3406,10 +3407,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3494,10 +3495,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3551,10 +3552,10 @@
                 "own_data": "Alleen uit je eigen gegevens: er is geen goedgekeurd onderzoek over dit verband.",
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3580,7 +3581,8 @@
                 },
                 "icon": "pulse",
                 "accent": "sleep",
-                "progress": 0.0
+                "progress": 0.0,
+                "progress_text": "Nog 30 dagen"
             },
             "insight-C11": {
                 "id": "insight-C11",
@@ -3647,10 +3649,10 @@
                 "own_data": "Alleen uit je eigen gegevens: er is geen goedgekeurd onderzoek over dit verband.",
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3752,10 +3754,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3847,10 +3849,10 @@
                 "own_data": "Alleen uit je eigen gegevens: er is geen goedgekeurd onderzoek over dit verband.",
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -3952,10 +3954,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -4057,10 +4059,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -4126,10 +4128,10 @@
                 "own_data": "Alleen uit je eigen gegevens: er is geen goedgekeurd onderzoek over dit verband.",
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -4193,10 +4195,10 @@
                 "own_data": null,
                 "method": {
                     "paragraphs": [
-                        "Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.",
-                        "Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.",
-                        "Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify 17 verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.",
-                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen."
+                        "Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.",
+                        "Je weekdagpatroon en je trend worden er eerst uit gehaald.",
+                        "De samenhang is een rangcorrelatie, gecorrigeerd voor 17 vergelijkingen.",
+                        "Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat."
                     ],
                     "sources_title": "Over de methode",
                     "sources": [
@@ -4222,11 +4224,12 @@
                 },
                 "icon": "pulse",
                 "accent": "sleep",
-                "progress": 0.0
+                "progress": 0.0,
+                "progress_text": "Nog 30 dagen"
             }
         },
         "labels": {
-            "seen": "Wat Ownify zag",
+            "seen": "Inzicht",
             "numbers": "In cijfers",
             "research": "Uit onderzoek blijkt",
             "method": "Hoe Ownify dit berekent",

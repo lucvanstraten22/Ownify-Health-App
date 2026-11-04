@@ -118,5 +118,25 @@ check('enough days but not in the smaller group: the group decides', abs($group 
 check('a result, or nothing missing: no bar', corr_progress($pair, ['tier' => 'unclear', 'need' => null, 'n' => 80]) === null
     && corr_progress($pair, ['tier' => 'clear', 'need' => null, 'n' => 80]) === null);
 
+section('9. The bar\'s tooltip and the order (38.1)');
+$copy = corr_copy();
+check('the tooltip is only how much is left: "Nog 15 dagen"', corr_progress_text($pair, ['tier' => 'unclear', 'need' => ['kind' => 'days', 'count' => 15], 'n' => 15, 'n_high' => 20, 'n_low' => 20], $copy) === 'Nog 15 dagen');
+check('… one: "Nog 1 dag"; a group still short is days too', corr_progress_text($pair, ['tier' => 'unclear', 'need' => ['kind' => 'group', 'count' => 1], 'n' => 60, 'n_high' => 3, 'n_low' => 50], $copy) === 'Nog 1 dag');
+check('… a weekly pair counts weeks', corr_progress_text(['lag' => 'week', 'min_weeks' => 8, 'min_group' => 3, 'claims' => []], ['tier' => 'unclear', 'need' => ['kind' => 'days', 'count' => 3], 'n' => 5, 'n_high' => 3, 'n_low' => 3], $copy) === 'Nog 3 weken');
+check('… and no bar, no tooltip', corr_progress_text($pair, ['tier' => 'clear', 'need' => null, 'n' => 80], $copy) === null);
+
+$cfgPairs = corr_config();
+$codes = array_slice(array_keys((array) $cfgPairs['pairs']), 0, 4);
+$codes = array_values(array_filter($codes, static fn ($c) => $cfgPairs['pairs'][$c]['lag'] !== 'week'));
+$need  = (int) $cfgPairs['tiers']['pattern']['days'];
+$waiting = [];
+foreach ([[$codes[0], 0.2], [$codes[1], 0.9], [$codes[2], 0.5]] as [$code, $share]) {
+    $n = (int) round($share * $need);
+    $waiting[$code] = ['tier' => 'unclear', 'available' => true, 'n' => $n, 'n_high' => 99, 'n_low' => 99,
+                       'need' => ['kind' => 'days', 'count' => $need - $n]];
+}
+check('Overzicht fills up with the furthest bar first', corr_overview($waiting, $cfgPairs, 40) === [$codes[1], $codes[2], $codes[0]],
+    json_encode(corr_overview($waiting, $cfgPairs, 40)));
+
 echo "\n" . $passed . ' passed, ' . $failed . " failed\n";
 exit($failed === 0 ? 0 : 1);

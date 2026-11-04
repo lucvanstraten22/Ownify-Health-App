@@ -181,11 +181,17 @@ return [
             'match'  => 'Dit komt overeen met wat onderzoek gemiddeld vindt.',
             'differ' => 'Dit is anders dan wat onderzoek gemiddeld vindt. Dat kan: mensen verschillen.',
         ],
+        /* A bar's tooltip while it is still gathering (38.1): only how much
+           is left; the sentence stands under the insight's title. */
+        'progress_text' => [
+            'days'  => ['Nog 1 dag', 'Nog %d dagen'],
+            'weeks' => ['Nog 1 week', 'Nog %d weken'],
+        ],
         'unclear_text' => 'Er is nog geen duidelijk beeld: over %1$d dagen ging het soms samen en soms niet.',
 
         /* The insight's own page. */
         'detail' => [
-            'seen'       => 'Wat Ownify zag',
+            'seen'       => 'Inzicht',
             'numbers'    => 'In cijfers',
             'research'   => 'Uit onderzoek blijkt',
             'method'     => 'Hoe Ownify dit berekent',
@@ -200,11 +206,12 @@ return [
             'period'     => 'Periode',
             'period_value' => 'De afgelopen %d dagen',
             'interval_value' => '%1$s tot %2$s',
+            /* 38.1: short, as points. */
             'method_text' => [
-                'Ownify zet je dagen naast elkaar: een trainingsdag naast de nacht erna, een nacht naast de dag erna. Dagen zonder meting tellen niet mee; niets wordt als nul geteld.',
-                'Eerst haalt Ownify je eigen weekdagpatroon en je langzame trend over de periode uit elke reeks, want het weekend en een drukke maand laten veel dingen tegelijk veranderen. Uitschieters tellen beperkt mee.',
-                'Dan meet Ownify de samenhang met een rangcorrelatie, rekening houdend met hoe dagen op elkaar lijken. Omdat Ownify %d verbanden tegelijk bekijkt, wordt gecorrigeerd voor het aantal vergelijkingen, zodat toevalstreffers zeldzaam blijven.',
-                'Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat en het verschil groot genoeg is om ertoe te doen.',
+                'Elke dag staat naast de nacht of dag erna; dagen zonder meting tellen niet mee.',
+                'Je weekdagpatroon en je trend worden er eerst uit gehaald.',
+                'De samenhang is een rangcorrelatie, gecorrigeerd voor %d vergelijkingen.',
+                'Een patroon telt pas als het in beide helften van de periode dezelfde kant op gaat.',
             ],
             'method_sources' => 'Over de methode',
         ],

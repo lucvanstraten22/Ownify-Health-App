@@ -121,7 +121,8 @@ fun Modifier.cardSurface(
     style: CardStyle,
     ground: GroundPlacement?,
     shadows: ShadowContext?,
-    highlight: Boolean = true
+    highlight: Boolean = true,
+    clipContent: Boolean = true
 ): Modifier {
     val position = SurfacePosition()
 
@@ -148,7 +149,8 @@ fun Modifier.cardSurface(
             drawBoxShadows(shape, style.shadows.filter { it.inset }, shadows, outline)
             drawBorder(outline, style.border)
 
-            clipPath(box) { this@drawWithContent.drawContent() }
+            // A reading bubble may stand above the card's first row (38.1): then nothing is cut off.
+            if (clipContent) clipPath(box) { this@drawWithContent.drawContent() } else drawContent()
 
             if (highlight) {
                 // inset-inline: 12%; top: 0 (inside the border); height: 1px
@@ -228,12 +230,13 @@ fun JCard(
     shape: Shape = cardShape(),
     padding: PaddingValues = PaddingValues(Ownify.Space5),
     highlight: Boolean = true,
+    clipContent: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val shadows = LocalGraphicsContext.current.shadowContext
     Column(
         modifier = modifier
-            .cardSurface(shape, style, LocalGround.current, shadows, highlight)
+            .cardSurface(shape, style, LocalGround.current, shadows, highlight, clipContent)
             // The 1 px border takes room, as `.card`'s does (border-box).
             .cssPadding(padding, border = 1.dp),
         content = content

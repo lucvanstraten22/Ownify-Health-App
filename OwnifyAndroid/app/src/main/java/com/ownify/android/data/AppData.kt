@@ -712,8 +712,10 @@ data class Insight(
     val tierLabel: String = "",
     val own: String? = null,
     val detail: String? = null,
-    /** 38.0: a combined insight still gathering — how far along (0–1); [body] is what is still needed, its tooltip. */
-    val progress: Float? = null
+    /** 38.0: a combined insight still gathering — how far along (0–1); [body] is what is still needed. */
+    val progress: Float? = null,
+    /** 38.1: the bar's tooltip, "Nog 3 dagen". */
+    val progressText: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject, state: String? = null) = Insight(
@@ -726,7 +728,8 @@ data class Insight(
             tierLabel = o.obj("tier").str("label").orEmpty(),
             own = o.str("own"),
             detail = o.str("detail"),
-            progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f)
+            progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f),
+            progressText = o.str("progress_text")
         )
     }
 }
@@ -848,7 +851,9 @@ data class CorrelationDetail(
     val icon: String,
     val accent: String,
     /** 38.0: still gathering — the bar instead of the label; [body] is what is still needed. */
-    val progress: Float? = null
+    val progress: Float? = null,
+    /** 38.1: the bar's tooltip, "Nog 3 dagen". */
+    val progressText: String? = null
 ) {
     companion object {
         fun parse(o: JSONObject): CorrelationDetail {
@@ -867,7 +872,8 @@ data class CorrelationDetail(
                 method.str("sources_title").orEmpty(),
                 method.arr("sources").map(MethodSource::parse),
                 o.str("icon").orEmpty(), o.str("accent").orEmpty(),
-                progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f)
+                progress = o.num("progress")?.toFloat()?.coerceIn(0f, 1f),
+                progressText = o.str("progress_text")
             )
         }
     }

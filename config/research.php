@@ -118,7 +118,6 @@ return [
         'download_pdf' => 'Download de pdf',
         'pdf_hosted'   => 'Een ongewijzigde kopie van de publicatie, gedeeld onder %s.',
         'pdf_official' => 'De officiële pdf, rechtstreeks van de uitgever.',
-        'pdf_none'     => 'Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.',
         'pdf_loading'  => 'De pdf wordt geladen…',
         'pdf_failed'   => 'De pdf kon niet worden geladen. Je kunt hem bij de uitgever openen.',
         'offline'      => 'Je bent offline. De publicatie opent zodra je weer verbinding hebt.',

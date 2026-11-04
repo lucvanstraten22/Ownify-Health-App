@@ -234,6 +234,29 @@ if (!function_exists('corr_evaluate')) {
         return null;
     }
 
+    /**
+     * How far a pair still gathering data is (38.0): the share of what
+     * corr_need() asks for — days, and days in the smaller group — that is
+     * there; the smaller of the two, so the bar never runs ahead of what is
+     * missing. Null when nothing is missing or the pair has a result.
+     */
+    function corr_progress(array $pair, array $r): ?float
+    {
+        if (($r['tier'] ?? null) !== 'unclear' || !is_array($r['need'] ?? null)) {
+            return null;
+        }
+        $cfg    = corr_config();
+        $weekly = $pair['lag'] === 'week';
+        $days   = $weekly ? (int) $pair['min_weeks'] : (int) $cfg['tiers']['pattern']['days'];
+        $group  = $weekly ? (int) ($pair['min_group'] ?? 3) : (int) $cfg['tiers']['pattern']['group'];
+        $n      = (int) ($r['n'] ?? 0);
+        $small  = min((int) ($r['n_high'] ?? 0), (int) ($r['n_low'] ?? 0));
+
+        $share = min($days > 0 ? $n / $days : 1.0, $group > 0 ? $small / $group : 1.0);
+
+        return round(max(0.0, min(1.0, $share)), 3);
+    }
+
     /** How the chart shows an outcome. */
     function corr_chart_kind(string $outcome): string
     {
@@ -331,7 +354,7 @@ if (!function_exists('corr_evaluate')) {
     /**
      * Overzicht's four (D1, D4, R3): Duidelijk patroon and Patroon first —
      * stronger, then with research, then the stronger correlation — one per
-     * outcome; then the Nog onduidelijk pairs closest to enough data.
+     * outcome; then the Nog onduidelijk pairs furthest along their bar.
      *
      * @param array<string, array> $pairs  corr_evaluate()['pairs'] (or stored)
      * @return list<string> pair codes
@@ -363,11 +386,13 @@ if (!function_exists('corr_evaluate')) {
         /* Fill up with what is closest to being known — only pairs the
            person has data for at all. */
         $waiting = array_filter($pairs, static fn ($r) => $r['tier'] === 'unclear' && ($r['available'] ?? false) && $r['n'] > 0);
-        uksort($waiting, static function ($a, $b) use ($waiting) {
-            $na = $waiting[$a]['need']['count'] ?? PHP_INT_MAX;
-            $nb = $waiting[$b]['need']['count'] ?? PHP_INT_MAX;
+        /* 38.1: by how far the bar is — the share of what is needed that
+           is there — so the furthest comes first and the bars step down. */
+        uksort($waiting, static function ($a, $b) use ($waiting, $cfg) {
+            $pa = corr_progress((array) $cfg['pairs'][$a], $waiting[$a]) ?? -1.0;
+            $pb = corr_progress((array) $cfg['pairs'][$b], $waiting[$b]) ?? -1.0;
 
-            return [$na, $a] <=> [$nb, $b];
+            return [-$pa, $a] <=> [-$pb, $b];
         });
         foreach (array_keys($waiting) as $code) {
             if (count($shown) >= $count) {

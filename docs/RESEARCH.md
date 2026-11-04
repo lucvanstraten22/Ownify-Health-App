@@ -249,7 +249,8 @@ Since 38.0, short and in this order:
    chevron turned, `aria-expanded`); the kind of research and when it was
    last checked; then **Lees de pdf** / **Download de pdf** where there is
    one, **Bekijk de publicatie** as a text link, what the PDF is (its
-   licence), and the offline line
+   licence) — nothing at all when there is no PDF to read in Ownify (38.1;
+   "Geen pdf om in Ownify te lezen" before) — and the offline line
 4. **Bewijskracht**, last — the label as a status (the same chip, never
    pressed), what it means, why it is lower here when it is, and that it is
    no chance or percentage

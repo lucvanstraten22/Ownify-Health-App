@@ -2,17 +2,19 @@
 /**
  * One combined insight (docs/CORRELATIONS.md), over the Inzichten page:
  *
- *   Wat Ownify zag        the label and what it means, the sentence, and
+ *   Inzicht               the label and what it means, the sentence, and
  *                         that it is a pattern in the person's own data, not
  *                         a cause; Chart A (D2): the two day groups as two
- *                         rows with the existing meter bar, from zero
- *   In cijfers            the difference and its 90% interval, the
- *                         correlation, the chance and the corrected chance,
- *                         the days per group, the period
+ *                         rows with the existing meter bar, from zero — or,
+ *                         still gathering, only the bar ("Wat Ownify zag"
+ *                         until 38.1)
  *   Uit onderzoek blijkt  the approved research for this link at the
  *                         person's age, each with "Bekijk onderzoek" — or
  *                         that this comes from their own data only
- *   Hoe Ownify dit berekent  the method in four sentences, and its sources
+ *   In cijfers            the difference and its 90% interval, the
+ *                         correlation, the chance and the corrected chance,
+ *                         the days per group, the period
+ *   Hoe Ownify dit berekent  the method in four short points, and its sources
  *
  * Built from Instellingen' pieces (page-intro, settings-block, the card with
  * its states and rows, the note, the glass chip) and the Scorekompas's rows
@@ -48,12 +50,14 @@ $id     = $d['id'];
 
                 <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-seen">
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-seen"><?= e($labels['seen']) ?></h2>
-                    <div class="card settings-card">
+                    <?php /* Still gathering, the bar's tooltip stands above the card's
+                             first row: the card does not cut it off (38.1). */ ?>
+                    <div class="card settings-card<?= isset($d['progress']) ? ' insights-detail__seen' : '' ?>">
                         <div class="settings-state">
                             <?php if (isset($d['progress'])): ?>
                                 <?php /* Still gathering (38.0): only the bar; what is still
-                                         needed is the lede above and the bar's tooltip. */
-                                component('insight-progress', $data + ['progress' => ['share' => $d['progress'], 'text' => $d['body'], 'id' => 'detail-' . $d['code']]]); ?>
+                                         needed is the lede above, how much the tooltip (38.1). */
+                                component('insight-progress', $data + ['progress' => ['share' => $d['progress'], 'text' => $d['progress_text'] ?? $d['body'], 'id' => 'detail-' . $d['code']]]); ?>
                             <?php else: ?>
                             <span class="settings-state__head">
                                 <span class="glass glass--chip research-detail__strength"><?= e($d['tier']['label']) ?></span>
@@ -87,20 +91,6 @@ $id     = $d['id'];
                     </div>
                 </section>
 
-                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-numbers">
-                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-numbers"><?= e($labels['numbers']) ?></h2>
-                    <div class="card settings-card">
-                        <?php foreach ($d['numbers'] as $number): ?>
-                            <div class="settings-state">
-                                <span class="settings-state__head">
-                                    <span class="settings-state__label"><?= e($number['label']) ?></span>
-                                    <span class="settings-state__value"><?= e($number['value']) ?></span>
-                                </span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-
                 <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-research">
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-research"><?= e($labels['research']) ?></h2>
                     <?php if ($d['research'] !== []): ?>
@@ -126,13 +116,30 @@ $id     = $d['id'];
                     <?php endif; ?>
                 </section>
 
+                <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-numbers">
+                    <h2 class="settings-eyebrow" id="<?= e($id) ?>-numbers"><?= e($labels['numbers']) ?></h2>
+                    <div class="card settings-card">
+                        <?php foreach ($d['numbers'] as $number): ?>
+                            <div class="settings-state">
+                                <span class="settings-state__head">
+                                    <span class="settings-state__label"><?= e($number['label']) ?></span>
+                                    <span class="settings-state__value"><?= e($number['value']) ?></span>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+
                 <section class="settings-block reveal" aria-labelledby="<?= e($id) ?>-method">
                     <h2 class="settings-eyebrow" id="<?= e($id) ?>-method"><?= e($labels['method']) ?></h2>
                     <div class="card settings-card">
                         <div class="settings-state">
-                            <?php foreach ($d['method']['paragraphs'] as $paragraph): ?>
-                                <span class="settings-state__note"><?= e($paragraph) ?></span>
-                            <?php endforeach; ?>
+                            <?php /* 38.1: short points, as Samenvatting onderzoek lists its findings. */ ?>
+                            <ul class="research-detail__points">
+                                <?php foreach ($d['method']['paragraphs'] as $paragraph): ?>
+                                    <li><?= e($paragraph) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                     </div>
                     <?php if ($d['method']['sources'] !== []): ?>

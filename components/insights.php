@@ -75,7 +75,7 @@ $titleId  = 'insights-title' . ($slot === null ? '' : '-' . $slot);
                     <?php if ($combined && isset($item['progress'])): ?>
                         <?php /* Still gathering (38.0): only the bar — no label, no line;
                                  what is still needed is its tooltip. */
-                        component('insight-progress', $data + ['progress' => ['share' => $item['progress'], 'text' => $item['body'], 'id' => 'card-' . $item['code']]]); ?>
+                        component('insight-progress', $data + ['progress' => ['share' => $item['progress'], 'text' => $item['progress_text'] ?? $item['body'], 'label' => $item['body'], 'id' => 'card-' . $item['code']]]); ?>
                     <?php elseif ($combined): ?>
                         <p class="insights__text"><?= e($item['body']) ?></p>
                         <p class="card__meta card__meta--small"><?= e(implode(' · ', array_filter([$item['tier']['label'], $item['own'] ?? null]))) ?></p>

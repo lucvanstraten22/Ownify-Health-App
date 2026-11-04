@@ -254,8 +254,8 @@ fun SettingsEyebrow(text: String, modifier: Modifier = Modifier) {
 
 /** `.settings-card`: the card without padding, its rows edge to edge, a hairline between them. */
 @Composable
-fun SettingsCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    JCard(modifier.fillMaxWidth(), padding = PaddingValues(0.dp), content = content)
+fun SettingsCard(modifier: Modifier = Modifier, clipContent: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+    JCard(modifier.fillMaxWidth(), padding = PaddingValues(0.dp), clipContent = clipContent, content = content)
 }
 
 /** A hairline between two parts of a card. */

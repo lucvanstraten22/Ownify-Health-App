@@ -550,7 +550,7 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
                         if (combined && progress != null) {
                             // Still gathering (38.0): only the bar; what is still needed is its reading.
                             val (play, sight) = rememberPlayOnSight()
-                            ReadingBar(progress, item.body, play, Modifier.padding(top = Ownify.Space1).then(sight), accent = accent,
+                            ReadingBar(progress, item.progressText ?: item.body, play, Modifier.padding(top = Ownify.Space1).then(sight), accent = accent,
                                 onTap = if (opens) ({ shell.openDetail(Detail.Insights) }) else null)
                             return@Column
                         }

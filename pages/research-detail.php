@@ -128,10 +128,12 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                     <?php /* "Bekijk de publicatie": the text link (38.0, a button before). */ ?>
                     <a class="text-link press research-detail__source-link" href="<?= e($source['href']) ?>" target="_blank" rel="noopener noreferrer"><?= e($copy['open_source']) ?><?= icon('chevron-right', 'text-link__icon') ?></a>
 
-                    <p class="settings-note" data-research-note>
-                        <?= icon('info', 'settings-note__icon') ?>
-                        <span><?= e($pdf['note']) ?></span>
-                    </p>
+                    <?php if (!empty($pdf['note'])): ?>
+                        <p class="settings-note" data-research-note>
+                            <?= icon('info', 'settings-note__icon') ?>
+                            <span><?= e($pdf['note']) ?></span>
+                        </p>
+                    <?php endif; ?>
                     <p class="settings-note" data-research-offline hidden>
                         <?= icon('info', 'settings-note__icon') ?>
                         <span><?= e($copy['offline']) ?></span>

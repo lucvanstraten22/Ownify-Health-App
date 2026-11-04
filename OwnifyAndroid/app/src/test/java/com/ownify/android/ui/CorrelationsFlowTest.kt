@@ -177,7 +177,7 @@ class CorrelationsFlowTest {
     }
 
     @Test
-    fun `still gathering - only the bar, what is still needed as its reading when a finger rests on it`() {
+    fun `still gathering - only the bar, how much is left as its reading when a finger rests on it`() {
         show()
         compose.runOnUiThread { shell.openDetail(Detail.Insights) }
         compose.waitForIdle()
@@ -197,10 +197,12 @@ class CorrelationsFlowTest {
         tap(row("Cafeïne en slaap"))
         assertEquals(Detail.InsightPage("insight-C17"), shell.detail)
 
-        // Its page: the bar instead of the label, what is still needed as the bar's description.
-        assertEquals(0, compose.onAllNodes(hasContentDescription("Wat Ownify zag: Nog onduidelijk"), useUnmergedTree = true).fetchSemanticsNodes().size)
-        // (the page's bar, and the row's under it)
-        assertEquals(2, compose.onAllNodes(hasContentDescription(needed), useUnmergedTree = true).fetchSemanticsNodes().size)
+        // Its page: the bar instead of the label; its reading only how much is left (38.1) — the sentence is the lede.
+        assertEquals(0, compose.onAllNodes(hasContentDescription("Inzicht: Nog onduidelijk"), useUnmergedTree = true).fetchSemanticsNodes().size)
+        assertEquals("Nog 30 dagen", locked.progressText)
+        // (the page's bar, the Inzichten row's under it, and Overzicht's card under that)
+        assertEquals(3, compose.onAllNodes(hasContentDescription("Nog 30 dagen"), useUnmergedTree = true).fetchSemanticsNodes().size)
+        text(needed).assertExists()
     }
 
     @Test
@@ -234,7 +236,7 @@ class CorrelationsFlowTest {
     }
 
     @Test
-    fun `an insight's page over Inzichten - the label, Chart A, the numbers, the research, the method`() {
+    fun `an insight's page over Inzichten - Inzicht, then the research, the numbers, the method in points`() {
         show()
         compose.runOnUiThread { shell.openDetail(Detail.Insights) }
         compose.waitForIdle()
@@ -243,7 +245,12 @@ class CorrelationsFlowTest {
         assertEquals(Detail.Insights, shell.under)
 
         heading("Water op trainingsdagen").assertExists()
-        for (eyebrow in listOf("WAT OWNIFY ZAG", "IN CIJFERS", "UIT ONDERZOEK BLIJKT", "HOE OWNIFY DIT BEREKENT")) heading(eyebrow).assertExists()
+        // 38.1: Inzicht, Uit onderzoek blijkt right under it, then In cijfers, then Hoe Ownify dit berekent.
+        val tops = listOf("INZICHT", "UIT ONDERZOEK BLIJKT", "IN CIJFERS", "HOE OWNIFY DIT BEREKENT").map { eyebrow ->
+            heading(eyebrow).assertExists().fetchSemanticsNode().positionInRoot.y
+        }
+        assertEquals(tops.sorted(), tops)
+        text("Je weekdagpatroon en je trend worden er eerst uit gehaald.").assertExists()
         text("Een samenhang in jouw gegevens, geen oorzaak.").assertExists()
         // Chart A: the two day groups, their days, their values.
         for (cell in listOf("Trainingsdagen", "46 dagen", "1,88 l", "Rustdagen", "43 dagen", "1,63 l")) text(cell).assertExists()

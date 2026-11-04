@@ -1294,6 +1294,12 @@ a.settings-row { color: inherit; text-decoration: none; }
     text-align: left;
 }
 
+/* The insight's own page: the bar is the card's first row; room above it
+   for its tooltip, and the card does not cut off a taller one (38.1). */
+.settings-card.insights-detail__seen { overflow: visible; }
+.insights-detail__seen .insight-lock { padding-top: var(--space-5); }
+.insights-detail__seen .insight-lock__tip { top: var(--space-5); }
+
 /* In a row that is a button, the row's focus shows it. */
 .settings-row:focus-visible .insight-lock__tip {
     opacity: 1;

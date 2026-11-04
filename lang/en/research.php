@@ -45,7 +45,6 @@ return [
     'Download de pdf' => 'Download the PDF',
     'Een ongewijzigde kopie van de publicatie, gedeeld onder %s.' => 'An unmodified copy of the publication, shared under %s.',
     'De officiële pdf, rechtstreeks van de uitgever.' => 'The official PDF, straight from the publisher.',
-    'Geen pdf om in Ownify te lezen: de publicatie opent bij de uitgever.' => 'No PDF to read in Ownify: the publication opens at the publisher.',
     'De pdf wordt geladen…' => 'Loading the PDF…',
     'De pdf kon niet worden geladen. Je kunt hem bij de uitgever openen.' => 'The PDF could not be loaded. You can open it at the publisher.',
     'Je bent offline. De publicatie opent zodra je weer verbinding hebt.' => 'You are offline. The publication opens as soon as you are connected again.',

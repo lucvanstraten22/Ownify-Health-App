@@ -568,7 +568,8 @@ if (!function_exists('research_config')) {
                 'mode'  => 'link',
                 'href'  => $source['pdf_url'] ?? null,
                 'embed' => false,
-                'note'  => (string) $copy['detail']['pdf_none'],
+                /* No pdf to read in Ownify: nothing is said about it (38.1). */
+                'note'  => null,
             ],
         };
         $pdf['licence'] = $text['licence'];

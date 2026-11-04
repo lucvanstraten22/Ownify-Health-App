@@ -72,6 +72,9 @@ if (!function_exists('corr_hydrate')) {
             if ($in === []) {
                 continue;
             }
+            /* Still gathering (38.1): the furthest bar first, so the bars
+               step down; a row without one after them. */
+            usort($in, static fn ($a, $b) => ($b['progress'] ?? -1) <=> ($a['progress'] ?? -1));
             $groups[] = [
                 'tier'  => $tier,
                 'label' => (string) $copy['tiers'][$tier],
@@ -144,30 +147,20 @@ if (!function_exists('corr_hydrate')) {
             /* Still gathering what it needs (38.0): only a bar, how far along,
                and what is still needed as its tooltip (the sentence). */
             'progress' => corr_progress($pair, $r),
+            'progress_text' => corr_progress_text($pair, $r, $copy),
         ] + $look;
     }
 
-    /**
-     * How far a pair still gathering data is (38.0): the share of what
-     * corr_need() asks for — days, and days in the smaller group — that is
-     * there; the smaller of the two, so the bar never runs ahead of what is
-     * missing. Null when nothing is missing or the pair has a result.
-     */
-    function corr_progress(array $pair, array $r): ?float
+    /** The bar's tooltip (38.1): "Nog 3 dagen", "Nog 2 weken" — or null without a bar. */
+    function corr_progress_text(array $pair, array $r, array $copy): ?string
     {
-        if (($r['tier'] ?? null) !== 'unclear' || !is_array($r['need'] ?? null)) {
+        if (corr_progress($pair, $r) === null) {
             return null;
         }
-        $cfg    = corr_config();
-        $weekly = $pair['lag'] === 'week';
-        $days   = $weekly ? (int) $pair['min_weeks'] : (int) $cfg['tiers']['pattern']['days'];
-        $group  = $weekly ? (int) ($pair['min_group'] ?? 3) : (int) $cfg['tiers']['pattern']['group'];
-        $n      = (int) ($r['n'] ?? 0);
-        $small  = min((int) ($r['n_high'] ?? 0), (int) ($r['n_low'] ?? 0));
+        $count = (int) $r['need']['count'];
+        [$one, $many] = (array) $copy['progress_text'][$pair['lag'] === 'week' ? 'weeks' : 'days'];
 
-        $share = min($days > 0 ? $n / $days : 1.0, $group > 0 ? $small / $group : 1.0);
-
-        return round(max(0.0, min(1.0, $share)), 3);
+        return sprintf($count === 1 ? (string) $one : (string) $many, $count);
     }
 
     /** The marker of a row: the area the insight is about (heart belongs to Training). */
@@ -346,6 +339,7 @@ if (!function_exists('corr_hydrate')) {
             'id'          => corr_detail_id($code),
             'code'        => $code,
             'progress'    => $row['progress'] ?? null,
+            'progress_text' => $row['progress_text'] ?? null,
             'title'       => $row['title'],
             'tier'        => $row['tier'] + ['means' => corr_tier_means($tier, $copy, (int) $stored['tested'])],
             'body'        => $row['body'],
