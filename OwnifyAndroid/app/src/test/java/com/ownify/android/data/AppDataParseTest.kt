@@ -47,9 +47,14 @@ class AppDataParseTest {
 
             val about = settings.page("about")!!.blocks
             assertEquals(
-                listOf("App" to listOf("Naam", "Versie"), "Juridisch" to listOf("Privacyverklaring", "Voorwaarden", "Licenties")),
+                listOf("App" to listOf("Naam", "Versie")),
                 about.filterIsInstance<SettingsBlock.Rows>().map { block -> block.title to block.items.map { it.first } }
             )
+            // Juridisch: the three documents (39.0), each opening its own page.
+            val juridisch = about.filterIsInstance<SettingsBlock.Documents>().single()
+            assertEquals("Juridisch", juridisch.title)
+            assertEquals(listOf("privacy" to "Privacyverklaring", "terms" to "Voorwaarden", "licenses" to "Licenties"), juridisch.items.map { it.id to it.label })
+            for (row in juridisch.items) assertNotNull(row.id, fixture(name).legal.document(row.id))
             // Hulp keeps its heading, over the note that followed Contact.
             val hulp = about.last() as SettingsBlock.Note
             assertEquals("Hulp", hulp.title)
@@ -59,6 +64,32 @@ class AppDataParseTest {
             assertTrue(others.isNotEmpty())
             assertTrue(others.all { it.title == null })
         }
+    }
+
+    @Test
+    fun `Over de app's documents - the Privacyverklaring, the Voorwaarden and the Licenties, every section complete`() {
+        val legal = fixture("state-demo.json").legal
+        assertEquals("Over de app", legal.back)
+        assertEquals(listOf("privacy", "terms", "licenses"), legal.documents.map { it.id })
+        for (doc in legal.documents) {
+            assertTrue(doc.id, doc.title.isNotEmpty() && doc.lede.isNotEmpty() && doc.sections.isNotEmpty())
+            for (section in doc.sections) {
+                assertTrue(section.title, section.title.isNotEmpty())
+                assertTrue(section.title, section.text.isNotEmpty() || section.points.isNotEmpty() || section.licence != null)
+            }
+        }
+        val licenses = legal.document("licenses")!!.sections
+        // The website's one package, with its version and its source.
+        val phpmailer = licenses.single { it.title.endsWith("PHPMailer") }
+        assertTrue(phpmailer.points.single().startsWith("phpmailer/phpmailer "))
+        assertEquals("https://github.com/PHPMailer/PHPMailer", phpmailer.link!!.second)
+        // Every Android package with a version; every licence text there in full.
+        val packages = licenses.filter { it.title.startsWith("Android-app · ") }.flatMap { it.points }
+        assertTrue(packages.size > 100)
+        assertTrue(packages.all { it.matches(Regex("[\\w.-]+:[\\w.-]+ \\S+")) })
+        val texts = licenses.mapNotNull { it.licence }
+        assertEquals(4, texts.size)
+        assertTrue(texts.any { it.contains("Apache License") && it.contains("Version 2.0") })
     }
 
     @Test

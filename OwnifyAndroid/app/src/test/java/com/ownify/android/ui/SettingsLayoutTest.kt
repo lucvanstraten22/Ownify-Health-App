@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.dp
 import com.ownify.android.data.AppData
@@ -133,5 +134,33 @@ class SettingsLayoutTest {
         // note's own frame and padding (1 + 16) to its text.
         val gap = with(compose.density) { (note.top - hulp.bottom).toDp() }
         assertTrue("the note right under Hulp: $gap", gap > 24.dp && gap < 26.dp)
+    }
+
+    @Test
+    fun `Juridisch - each document opens its own page over Over de app, its licence texts open in place`() {
+        show()
+        compose.runOnUiThread { shell.openDetail(Detail.SettingsPage("about")) }
+        compose.waitForIdle()
+
+        compose.onNode(hasContentDescription("Privacyverklaring") and hasClickAction()).performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        heading("Privacyverklaring").assertExists()
+        for (section in listOf("WELKE GEGEVENS OWNIFY GEBRUIKT", "HEALTH CONNECT", "OWNIFYAI", "JE RECHTEN EN WAT JE ZELF KUNT")) heading(section).assertExists()
+        // Back goes to Over de app.
+        compose.runOnUiThread { shell.back() }
+        compose.waitForIdle()
+        heading("JURIDISCH").assertExists()
+
+        compose.onNode(hasContentDescription("Licenties") and hasClickAction()).performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        heading("Licenties").assertExists()
+        heading("WEBSITE · PHPMAILER").assertExists()
+        // The licence text is closed until asked for, then there in full.
+        assertTrue(none("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION"))
+        val toggles = compose.onAllNodes(hasText("Licentietekst") and hasClickAction())
+        assertEquals(4, toggles.fetchSemanticsNodes().size)
+        toggles[0].performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        assertTrue(compose.onAllNodes(hasText("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION", substring = true), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty())
     }
 }

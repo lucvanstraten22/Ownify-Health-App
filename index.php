@@ -228,6 +228,11 @@ foreach ($data['navigation'] as $position => $item) {
                 ]); ?>
             <?php endforeach; ?>
 
+            <?php /* Over de app's documents (39.0, config/legal.php), over its page. */ ?>
+            <?php foreach (is_file(__DIR__ . '/pages/legal-detail.php') ? $data['legal']['documents'] ?? [] : [] as $legalDocument): ?>
+                <?php page('legal-detail', ['legal_document' => $legalDocument] + $data); ?>
+            <?php endforeach; ?>
+
             <?php /* "Uit onderzoek blijkt" (docs/INSIGHTS.md): one page per piece
                      of research this page shows, last, so it opens over any of
                      the ones above (data-detail-parent="*"). */ ?>

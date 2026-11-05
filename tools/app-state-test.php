@@ -330,12 +330,19 @@ try {
             }
         }
     }
-    check('Over de app in the app\'s words: Ownify, and what it uses',
+    check('Over de app: Ownify, and Juridisch as three documents (39.0)',
         ($appSays['Naam'][0] ?? null) === 'Ownify'
-        && ($appSays['Licenties'][0] ?? null) === 'AndroidX, Kotlin en Google Play-services', json_encode($appSays['Licenties'] ?? null));
+        && array_column(array_values(array_filter($app['body']['data']['settings']['pages']['about']['blocks'] ?? [],
+            static fn ($b) => ($b['type'] ?? '') === 'documents'))[0]['items'] ?? [], 'id') === ['privacy', 'terms', 'licenses']);
     check('…and no variant is left for the app to choose', !$variant);
-    check('the website keeps its own: no external packages', str_contains($page['raw'], 'Geen externe pakketten')
-        && !str_contains($page['raw'], 'Google Play-services'));
+    $legal = $app['body']['data']['legal'] ?? [];
+    check('the app reads the documents the website shows: the same three, each on its own page',
+        array_column($legal['documents'] ?? [], 'id') === ['privacy', 'terms', 'licenses']
+        && str_contains($page['raw'], 'data-detail="legal-privacy"') && str_contains($page['raw'], 'data-detail="legal-terms"')
+        && str_contains($page['raw'], 'data-detail="legal-licenses"') && !str_contains($page['raw'], 'Binnenkort'));
+    check('the Licenties name both apps\' packages: PHPMailer and the Android libraries',
+        str_contains(json_encode($legal, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'phpmailer/phpmailer')
+        && str_contains(json_encode($legal, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'androidx.core:core'));
 
     /* Instellingen's groups, the same on both: Meldingen, Thema & uiterlijk,
        Taal and Voorkeuren under App — Voorkeuren one row, its three settings

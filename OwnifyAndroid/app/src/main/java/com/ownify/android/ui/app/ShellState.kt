@@ -93,6 +93,12 @@ sealed interface Detail {
         override val parent: Detail get() = Insights
     }
 
+    /** One of Over de app's documents (pages/legal-detail.php, 39.0), over Over de app. */
+    data class LegalPage(val id: String) : Detail {
+        override val key get() = "legal:$id"
+        override val parent: Detail get() = SettingsPage("about")
+    }
+
     /** The detail this one opens over, or null: it opens over the rail. */
     val parent: Detail? get() = null
 }

@@ -219,6 +219,11 @@ if (!function_exists('app_page_data')) {
         /* Settings: integrations resolved, profile read off the signed-in record. */
         $data['settings'] = settings_prepare(config_copy('settings'), $data['auth']);
 
+        /* Over de app's Privacyverklaring, Voorwaarden and Licenties (39.0,
+           config/legal.php): each a page of its own over Over de app. */
+        require_once __DIR__ . '/legal.php';
+        $data['legal'] = legal_documents();
+
         /* Insights (docs/INSIGHTS.md): the day's, worked out once from the
            person's own data and approved research, stored, and shown the
            same on both apps — Overzicht's Nuttige inzichten and Eén kleine

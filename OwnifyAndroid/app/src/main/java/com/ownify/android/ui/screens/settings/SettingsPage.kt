@@ -169,7 +169,7 @@ private fun IdentityCard(data: AppData, onClick: () -> Unit) {
 
 /** `.settings-row`: its mark, its name, the current value under it, a chevron. */
 @Composable
-private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () -> Unit) {
+internal fun SettingsRowButton(row: SettingsRow, divided: Boolean, description: String? = null, onClick: () -> Unit) {
     InButton {
         val narrow = LocalScreen.current.narrow
         val meta = row.value ?: row.hint
@@ -186,7 +186,7 @@ private fun SettingsRowButton(row: SettingsRow, divided: Boolean, onClick: () ->
                 .clickable(interaction, indication = null, onClick = onClick)
                 .clearAndSetSemantics {
                     role = Role.Button
-                    contentDescription = row.label + (meta?.let { " — $it" } ?: "") + ". " + tr("Open instellingen.")
+                    contentDescription = description ?: (row.label + (meta?.let { " — $it" } ?: "") + ". " + tr("Open instellingen."))
                     onClick { onClick(); true }
                 }
                 .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (divided) 1.dp else 0.dp),

@@ -1195,6 +1195,11 @@ a.settings-row { color: inherit; text-decoration: none; }
 
 .research-detail__points li::marker { color: var(--text-muted); }
 
+/* Over de app's documents (39.0): a source or the licence text under a
+   section's text, and the licence text itself with its own line breaks. */
+.legal-detail__link { align-self: flex-start; }
+.legal-detail__licence { white-space: pre-wrap; overflow-wrap: anywhere; padding-top: var(--space-2); }
+
 /* Beperkingen: beside the source, opened in place the way Voeding opens a
    macronutrient's row — the same 280 ms strong ease-out, the chevron turned.
    Closed it is out of the way of the keyboard and a screen reader too. */

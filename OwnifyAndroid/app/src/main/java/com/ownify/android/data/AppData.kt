@@ -39,7 +39,9 @@ data class AppData(
     /** "Uit onderzoek blijkt" (docs/RESEARCH.md): every detail an evidence chip on these pages opens. */
     val research: Research = Research.parse(null),
     /** Inzichten (docs/CORRELATIONS.md, 31.0): every combined insight and its page; empty before migration 029. */
-    val correlations: Correlations = Correlations.parse(null)
+    val correlations: Correlations = Correlations.parse(null),
+    /** Over de app's Privacyverklaring, Voorwaarden and Licenties (39.0, config/legal.php). */
+    val legal: Legal = Legal.parse(null)
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -67,9 +69,46 @@ data class AppData(
                 challenges = Challenges.parse(data.obj("challenges")),
                 notices = Notices.parse(data.obj("notices")),
                 research = Research.parse(data.obj("research")),
-                correlations = Correlations.parse(data.obj("correlations"))
+                correlations = Correlations.parse(data.obj("correlations")),
+                legal = Legal.parse(data.obj("legal"))
             )
         }
+    }
+}
+
+/**
+ * Over de app's documents (39.0, config/legal.php, lib/legal.php): each
+ * opens on a page of its own over Over de app.
+ */
+data class Legal(val back: String, val licenceText: String, val documents: List<LegalDocument>) {
+    fun document(id: String): LegalDocument? = documents.firstOrNull { it.id == id }
+
+    companion object {
+        fun parse(o: JSONObject?) = Legal(
+            o.str("back") ?: tr("Over de app"),
+            o.str("licence_text").orEmpty(),
+            o.arr("documents").map(LegalDocument::parse)
+        )
+    }
+}
+
+data class LegalDocument(val id: String, val label: String, val icon: String, val title: String, val lede: String, val sections: List<LegalSection>) {
+    companion object {
+        fun parse(o: JSONObject) = LegalDocument(
+            o.str("id").orEmpty(), o.str("label").orEmpty(), o.str("icon").orEmpty(),
+            o.str("title").orEmpty(), o.str("lede").orEmpty(), o.arr("sections").map(LegalSection::parse)
+        )
+    }
+}
+
+/** A section: its paragraphs, its points, a link to open in the browser, and a licence's full text, folded. */
+data class LegalSection(val title: String, val text: List<String>, val points: List<String>, val link: Pair<String, String>?, val licence: String?) {
+    companion object {
+        fun parse(o: JSONObject) = LegalSection(
+            o.str("title").orEmpty(), o.arr("text").strings(), o.arr("points").strings(),
+            o.obj("link")?.let { l -> l.str("href")?.let { (l.str("label").orEmpty()) to it } },
+            o.str("licence")
+        )
     }
 }
 
@@ -2434,6 +2473,8 @@ sealed interface SettingsBlock {
     data class States(val title: String, val lede: String?, val items: List<StateItem>, val status: Boolean = false) : SettingsBlock
     data class Toggles(val title: String, val lede: String?, val items: List<ToggleItem>) : SettingsBlock
     data class Rows(val title: String, val items: List<Pair<String, String>>) : SettingsBlock
+    /** Rows that each open a document over this screen (39.0: Over de app's Juridisch). */
+    data class Documents(val title: String, val items: List<SettingsRow>) : SettingsBlock
     /** [title]: the heading it sits under, when it has one (Over de app's Hulp). */
     data class Note(val icon: String, val text: String, val title: String? = null) : SettingsBlock
     data class Actions(val title: String, val items: List<ActionItem>) : SettingsBlock
@@ -2476,6 +2517,10 @@ sealed interface SettingsBlock {
                             it.str("endpoint")?.takeIf { e -> e.matches(Regex("^api/[a-z0-9/_-]+\\.php$")) }
                         )
                     }
+                )
+                "documents" -> Documents(
+                    o.str("title").orEmpty(),
+                    o.arr("items").map { SettingsRow(it.str("id").orEmpty(), it.str("icon").orEmpty(), it.str("label").orEmpty(), null, null) }
                 )
                 "rows" -> Rows(o.str("title").orEmpty(), o.arr("items").map { it.str("label").orEmpty() to it.text("value").orEmpty() })
                 "note" -> Note(o.str("icon") ?: "info", o.str("text").orEmpty(), o.str("title")?.takeIf { it.isNotEmpty() })

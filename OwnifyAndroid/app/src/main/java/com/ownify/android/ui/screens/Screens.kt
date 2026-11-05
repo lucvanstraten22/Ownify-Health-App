@@ -47,6 +47,7 @@ import com.ownify.android.ui.screens.overview.ScoreCompassDetail
 import com.ownify.android.ui.screens.research.ResearchDetailPage
 import com.ownify.android.ui.screens.settings.DeleteConfirm
 import com.ownify.android.ui.screens.settings.DeviceNameEditor
+import com.ownify.android.ui.screens.settings.LegalDocumentPage
 import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
 import com.ownify.android.ui.screens.settings.PasswordEditor
@@ -94,6 +95,7 @@ object OwnifyScreens {
                 is Detail.Research -> data.research.detail(detail.id)?.let { ResearchDetailPage(data.research, it, scroll) }
                 Detail.Insights -> InsightsPage(data.correlations, scroll)
                 is Detail.InsightPage -> data.correlations.detail(detail.id)?.let { InsightDetailPage(data.correlations, it, scroll) }
+                is Detail.LegalPage -> data.legal.document(detail.id)?.let { LegalDocumentPage(data.legal, it, scroll) }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },

@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 38.1'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 39.0'],
             ],
         ],
     ],
@@ -519,18 +519,19 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 38.1'],
+                        ['label' => 'Versie',  'value' => 'Beta 39.0'],
                     ],
                 ],
 
+                /* 39.0: each opens its document (config/legal.php) on a page
+                   of its own over this one. */
                 [
-                    'type'  => 'rows',
+                    'type'  => 'documents',
                     'title' => 'Juridisch',
                     'items' => [
-                        ['label' => 'Privacyverklaring', 'value' => 'Binnenkort'],
-                        ['label' => 'Voorwaarden',       'value' => 'Binnenkort'],
-                        ['label' => 'Licenties',         'value' => 'Geen externe pakketten',
-                         'value_app' => 'AndroidX, Kotlin en Google Play-services'],
+                        ['id' => 'privacy',  'icon' => 'shield', 'label' => 'Privacyverklaring'],
+                        ['id' => 'terms',    'icon' => 'info',   'label' => 'Voorwaarden'],
+                        ['id' => 'licenses', 'icon' => 'copy',   'label' => 'Licenties'],
                     ],
                 ],
 

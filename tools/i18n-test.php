@@ -361,7 +361,9 @@ function state_texts(mixed $node, string $key = ''): array
                     'fields',
                     /* A measurement's search words hold both languages on purpose: "slapen" finds Slaapduur in either. */
                     'keywords', 'unit_codes', 'unit_code', 'imperial_unit', 'canonical', 'default_direction', 'user_auto',
-                    'units_system', 'week_start', 'measurement', 'variant', 'period_unit', 'outcome', 'tracking'];
+                    'units_system', 'week_start', 'measurement', 'variant', 'period_unit', 'outcome', 'tracking',
+                    /* A licence's own text, in English in both languages (docs/LEGAL.md): "meet", "gratis". */
+                    'licence'];
     if (is_array($node)) {
         $out = [];
         foreach ($node as $k => $v) {

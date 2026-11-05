@@ -77,6 +77,7 @@ import com.ownify.android.data.SettingsBlock
 import com.ownify.android.data.SettingsPage
 import com.ownify.android.connection.OwnifyConnection
 import com.ownify.android.data.ToggleItem
+import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
@@ -137,6 +138,7 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
                 is SettingsBlock.States -> StatesBlock(block)
                 is SettingsBlock.Toggles -> TogglesBlock(block)
                 is SettingsBlock.Rows -> RowsBlock(block)
+                is SettingsBlock.Documents -> DocumentsBlock(block)
                 is SettingsBlock.Note -> NoteBlock(block)
                 is SettingsBlock.Actions -> ActionsBlock(block)
                 is SettingsBlock.Section -> SectionHead(block)
@@ -1184,6 +1186,20 @@ private fun RowsBlock(block: SettingsBlock.Rows) {
         // `.card.settings-rows`: the choice lists' inner padding, so the text starts on one line.
         JCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3)) {
             block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0, list = true) }
+        }
+    }
+}
+
+/** Over de app's Juridisch (39.0): Instellingen' own rows, each opening its document over this screen. */
+@Composable
+private fun DocumentsBlock(block: SettingsBlock.Documents) {
+    val shell = LocalShell.current
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(block.title)
+        SettingsCard {
+            block.items.forEachIndexed { i, row ->
+                SettingsRowButton(row, divided = i > 0, description = row.label) { shell.openDetail(Detail.LegalPage(row.id)) }
+            }
         }
     }
 }

@@ -19,6 +19,8 @@
  *                 rest are off and disabled while the feature does not exist
  *   actions       a button that does one thing after "are you sure?" in place
  *   rows          plain label/value information
+ *   documents     rows that each open a document over this screen (39.0:
+ *                 Over de app's Privacyverklaring, Voorwaarden, Licenties)
  *   note          one framed line of explanation
  *   section       a heading over the blocks after it, with its icon and one
  *                 line (Voorkeuren: Eenheden, Eerste dag van de week and
@@ -448,6 +450,26 @@ foreach ($page['blocks'] as $block) {
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
+                            </div>
+                        </section>
+
+                    <?php elseif ($block['type'] === 'documents'): ?>
+
+                        <?php /* The settings rows of Instellingen itself, each opening its
+                                 document on a page of its own (pages/legal-detail.php). */ ?>
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <div class="card settings-card">
+                                <?php foreach ($block['items'] as $item): ?>
+                                    <button type="button" class="settings-row press" data-detail-open="legal-<?= e($item['id']) ?>">
+                                        <span class="settings-row__mark" aria-hidden="true"><?= icon($item['icon']) ?></span>
+                                        <span class="settings-row__text">
+                                            <span class="settings-row__label"><?= e($item['label']) ?></span>
+                                        </span>
+                                        <?= icon('chevron-right', 'settings-row__chevron') ?>
+                                    </button>
+                                <?php endforeach; ?>
                             </div>
                         </section>
 
