@@ -277,7 +277,9 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
                 // The night's whole time first (`.sleep-night__tip-total`), then each stage.
                 total?.let {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        T(night.periodTotal, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1)
+                        // No colour of its own: the key's place kept empty, so the name lines up with the stages'.
+                        Spacer(Modifier.size(8.dp))
+                        T(night.periodTotal, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), Modifier.padding(start = 6.dp), maxLines = 1)
                         Spacer(Modifier.width(8.dp))
                         T(it, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
                     }
