@@ -231,3 +231,6 @@
     box-shadow: none;
 }
 
+
+/* The reading's "Totaal" row: no colour of its own, its key's place kept so the columns line up. */
+.sleep-night .sleep-night__tip-blank { visibility: hidden; }

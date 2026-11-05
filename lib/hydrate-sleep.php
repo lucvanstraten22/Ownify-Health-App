@@ -120,6 +120,7 @@ if (!function_exists('hydrate_sleep')) {
             'nights'  => $days,
             'stages'  => array_map(static fn (array $s): array => ['key' => (string) $s['key'], 'label' => (string) $s['label']], (array) ($copy['period_stages'] ?? [])),
             'period_hint' => (string) ($copy['period_hint'] ?? ''),
+            'period_total' => (string) ($copy['period_total'] ?? 'Totaal'),
             'period_empty' => (string) $copy['empty'],
             'periods' => $stacked,
         ];
@@ -215,7 +216,7 @@ if (!function_exists('hydrate_sleep')) {
         $out['staged'] = $out['blocks'] !== [];
         if ($out['staged']) {
             foreach ($totals as $r => $seconds) {
-                $out['rows'][$r]['total'] = sprintf((string) $copy['minutes'], (int) round($seconds / 60));
+                $out['rows'][$r]['total'] = hydrate_hours((int) round($seconds / 60)) . ' ' . t('u');
             }
         } else {
             $out['note'] = (string) $copy['unstaged'];
@@ -341,6 +342,14 @@ if (!function_exists('hydrate_sleep')) {
                     $below += $v;
                 }
                 $stacks[] = $parts;
+            }
+
+            /* The reading's first row: the night's whole time, every stage
+               together ("Totaal 8:12 u"), before each stage's own. */
+            foreach ($chart['periods'][$k]['points'] as $i => $point) {
+                $parts = array_filter(array_map(static fn (array $vs) => $vs[$i] ?? null, $values), static fn ($v) => $v !== null);
+                $total = $parts === [] ? null : area_chart_text(['format' => 'hours'], array_sum($parts));
+                array_splice($chart['periods'][$k]['points'][$i], 3, 0, [$total]);
             }
 
             $chart['periods'][$k]['stacks'] = $stacks;

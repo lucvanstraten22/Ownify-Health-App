@@ -239,7 +239,9 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
             readable = { i -> period.points.getOrNull(i) != null },
             describe = { i ->
                 period.points.getOrNull(i)?.let { p ->
-                    val said = stages.mapIndexedNotNull { k, (_, label) -> p.texts.getOrNull(k)?.let { "$label $it" } }
+                    // Each point's texts: the night's whole time, then each stage's.
+                    val said = listOfNotNull(p.texts.getOrNull(0)?.let { "${night.periodTotal} $it" }) +
+                        stages.mapIndexedNotNull { k, (_, label) -> p.texts.getOrNull(k + 1)?.let { "$label $it" } }
                     p.label + (p.detail?.let { ", $it" } ?: "") + ": " + if (said.isEmpty()) p.note ?: "—" else said.joinToString(", ")
                 }.orEmpty()
             },
@@ -262,7 +264,8 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
         ) { i ->
             // `.health-history__tip`: the night or the days, then each stage's time.
             val p = period.points[i]
-            val values = stages.mapIndexedNotNull { k, s -> p.texts.getOrNull(k)?.let { s to it } }
+            val total = p.texts.getOrNull(0)
+            val values = stages.mapIndexedNotNull { k, s -> p.texts.getOrNull(k + 1)?.let { s to it } }
             val detail = p.detail?.takeIf { values.isNotEmpty() }
             Row {
                 T(p.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
@@ -271,6 +274,14 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
             if (values.isEmpty()) {
                 p.note?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
             } else {
+                // The night's whole time first (`.sleep-night__tip-total`), then each stage.
+                total?.let {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        T(night.periodTotal, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1)
+                        Spacer(Modifier.width(8.dp))
+                        T(it, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
+                    }
+                }
                 for ((s, text) in values) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(stageColor(s.first)))

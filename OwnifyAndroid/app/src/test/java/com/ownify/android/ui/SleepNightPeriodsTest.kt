@@ -94,7 +94,7 @@ class SleepNightPeriodsTest {
         show()
         assertTrue(shown("Slaapverloop"))
         assertTrue(shown("Nacht van 2 op 3 nov"))
-        assertTrue(shown("110 min"))
+        assertTrue(shown("1:50 u"))
         click(compose.onNode(hasContentDescription("Vorige nacht") and hasClickAction()))
         assertTrue(shown("Nacht van 1 op 2 nov"))
         click(compose.onNode(hasContentDescription("Volgende nacht") and hasClickAction()))
@@ -122,6 +122,6 @@ class SleepNightPeriodsTest {
         assertEquals("today first: no night yet, and it says so", "5 november: Geen meting op deze dag.", reading(plot))
         act("Vorige dag")
         act("Vorige dag")
-        assertEquals("3 november: Diep 1:17 u, Licht 4:02 u, REM 1:46 u, Rusteloosheid 0:02 u, Wakker 0:25 u", reading(plot))
+        assertEquals("3 november: Totaal 7:32 u, Diep 1:17 u, Licht 4:02 u, REM 1:46 u, Rusteloosheid 0:02 u, Wakker 0:25 u", reading(plot))
     }
 }

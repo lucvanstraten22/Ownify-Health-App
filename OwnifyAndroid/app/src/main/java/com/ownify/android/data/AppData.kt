@@ -1422,6 +1422,8 @@ data class SleepNight(
     /** The stages over a period, bottom to top: Diep, Licht, REM, Wakker. */
     val stages: List<Pair<String, String>> = emptyList(),
     val periodHint: String = "",
+    /** The bars' reading's first row: "Totaal", every stage together (each point's first text). */
+    val periodTotal: String = "Totaal",
     val periodEmpty: String = "",
     val periods: List<SleepStackPeriod> = emptyList()
 ) {
@@ -1457,6 +1459,7 @@ data class SleepNight(
             nights = o.arr("nights").map { parse(it) },
             stages = o.arr("stages").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
             periodHint = o.str("period_hint").orEmpty(),
+            periodTotal = o.str("period_total") ?: "Totaal",
             periodEmpty = o.str("period_empty").orEmpty(),
             periods = o.arr("periods").map { SleepStackPeriod.parse(it) }
         )

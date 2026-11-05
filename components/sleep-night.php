@@ -178,6 +178,12 @@ $stages  = $night['stages'] ?? [];
                         <div class="goal-chart__tip health-history__tip" data-reading-tip aria-hidden="true" hidden>
                             <span class="goal-chart__tip-date"><span data-tip-date></span><span class="compass-plot__detail" data-tip-detail hidden></span></span>
                             <span class="health-history__tip-rows">
+                                <?php /* The night's whole time first: every stage together. */ ?>
+                                <span class="health-history__tip-row sleep-night__tip-total" data-tip-row="total" hidden>
+                                    <span class="health-history__tip-key sleep-night__tip-blank" aria-hidden="true"></span>
+                                    <span class="health-history__tip-label"><?= e($night['period_total'] ?? t('Totaal')) ?></span>
+                                    <strong class="goal-chart__tip-value" data-tip-value></strong>
+                                </span>
                                 <?php foreach ($stages as $s): ?>
                                     <span class="health-history__tip-row" data-tip-row="<?= e($s['key']) ?>" data-stage="<?= e($s['key']) ?>" hidden>
                                         <span class="health-history__tip-key sleep-night__key" aria-hidden="true"></span>

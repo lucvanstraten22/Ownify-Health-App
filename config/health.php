@@ -145,8 +145,8 @@ return [
                     ['key' => 'light',    'label' => 'Licht',         'kinds' => [4]],
                     ['key' => 'deep',     'label' => 'Diep',          'kinds' => [5]],
                 ],
-                /* A stage's time over the night, beside its name. */
-                'minutes' => '%d min',
+                /* A stage's time over the night, beside its name, in hours
+                   as the bars over a period read it ("1:17 u", 40.1). */
                 /* The chart's spoken label: %1$s bedtime, %2$s wake time. */
                 'aria'   => 'Slaapfasen van %1$s tot %2$s',
                 'hint'   => 'Tik of schuif over de fasen om de tijden te zien.',
@@ -169,6 +169,8 @@ return [
                 'empty_day' => 'Geen nacht opgenomen op deze ochtend.',
                 'period_hint'  => 'Tik of schuif over de grafiek om de fasen per nacht te zien.',
                 'period_title' => 'Slaapfasen',
+                /* The bars' reading: the night's whole time first, then each stage. */
+                'period_total' => 'Totaal',
                 'period_stages' => [
                     ['key' => 'deep',  'label' => 'Diep'],
                     ['key' => 'light', 'label' => 'Licht'],

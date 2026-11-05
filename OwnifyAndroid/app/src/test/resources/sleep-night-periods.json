@@ -5,27 +5,27 @@
         {
             "key": "awake",
             "label": "Wakker",
-            "total": "9 min"
+            "total": "0:09 u"
         },
         {
             "key": "restless",
             "label": "Rusteloosheid",
-            "total": "2 min"
+            "total": "0:02 u"
         },
         {
             "key": "rem",
             "label": "REM",
-            "total": "110 min"
+            "total": "1:50 u"
         },
         {
             "key": "light",
             "label": "Licht",
-            "total": "196 min"
+            "total": "3:16 u"
         },
         {
             "key": "deep",
             "label": "Diep",
-            "total": "108 min"
+            "total": "1:48 u"
         }
     ],
     "has_night": true,
@@ -306,27 +306,27 @@
                 {
                     "key": "awake",
                     "label": "Wakker",
-                    "total": "9 min"
+                    "total": "0:09 u"
                 },
                 {
                     "key": "restless",
                     "label": "Rusteloosheid",
-                    "total": "2 min"
+                    "total": "0:02 u"
                 },
                 {
                     "key": "rem",
                     "label": "REM",
-                    "total": "110 min"
+                    "total": "1:50 u"
                 },
                 {
                     "key": "light",
                     "label": "Licht",
-                    "total": "196 min"
+                    "total": "3:16 u"
                 },
                 {
                     "key": "deep",
                     "label": "Diep",
-                    "total": "108 min"
+                    "total": "1:48 u"
                 }
             ],
             "has_night": true,
@@ -489,27 +489,27 @@
                 {
                     "key": "awake",
                     "label": "Wakker",
-                    "total": "9 min"
+                    "total": "0:09 u"
                 },
                 {
                     "key": "restless",
                     "label": "Rusteloosheid",
-                    "total": "2 min"
+                    "total": "0:02 u"
                 },
                 {
                     "key": "rem",
                     "label": "REM",
-                    "total": "115 min"
+                    "total": "1:55 u"
                 },
                 {
                     "key": "light",
                     "label": "Licht",
-                    "total": "216 min"
+                    "total": "3:36 u"
                 },
                 {
                     "key": "deep",
                     "label": "Diep",
-                    "total": "113 min"
+                    "total": "1:53 u"
                 }
             ],
             "has_night": true,
@@ -693,27 +693,27 @@
                 {
                     "key": "awake",
                     "label": "Wakker",
-                    "total": "11 min"
+                    "total": "0:11 u"
                 },
                 {
                     "key": "restless",
                     "label": "Rusteloosheid",
-                    "total": "4 min"
+                    "total": "0:04 u"
                 },
                 {
                     "key": "rem",
                     "label": "REM",
-                    "total": "119 min"
+                    "total": "1:59 u"
                 },
                 {
                     "key": "light",
                     "label": "Licht",
-                    "total": "232 min"
+                    "total": "3:52 u"
                 },
                 {
                     "key": "deep",
                     "label": "Diep",
-                    "total": "122 min"
+                    "total": "2:02 u"
                 }
             ],
             "has_night": true,
@@ -904,27 +904,27 @@
                 {
                     "key": "awake",
                     "label": "Wakker",
-                    "total": "11 min"
+                    "total": "0:11 u"
                 },
                 {
                     "key": "restless",
                     "label": "Rusteloosheid",
-                    "total": "3 min"
+                    "total": "0:03 u"
                 },
                 {
                     "key": "rem",
                     "label": "REM",
-                    "total": "112 min"
+                    "total": "1:52 u"
                 },
                 {
                     "key": "light",
                     "label": "Licht",
-                    "total": "206 min"
+                    "total": "3:26 u"
                 },
                 {
                     "key": "deep",
                     "label": "Diep",
-                    "total": "101 min"
+                    "total": "1:41 u"
                 }
             ],
             "has_night": true,
@@ -1094,27 +1094,27 @@
                 {
                     "key": "awake",
                     "label": "Wakker",
-                    "total": "16 min"
+                    "total": "0:16 u"
                 },
                 {
                     "key": "restless",
                     "label": "Rusteloosheid",
-                    "total": "9 min"
+                    "total": "0:09 u"
                 },
                 {
                     "key": "rem",
                     "label": "REM",
-                    "total": "120 min"
+                    "total": "2:00 u"
                 },
                 {
                     "key": "light",
                     "label": "Licht",
-                    "total": "189 min"
+                    "total": "3:09 u"
                 },
                 {
                     "key": "deep",
                     "label": "Diep",
-                    "total": "105 min"
+                    "total": "1:45 u"
                 }
             ],
             "has_night": true,
@@ -1301,6 +1301,7 @@
         }
     ],
     "period_hint": "Tik of schuif over de grafiek om de fasen per nacht te zien.",
+    "period_total": "Totaal",
     "period_empty": "Zodra er een nacht is opgenomen, zie je hier je slaapfasen.",
     "periods": [
         {
@@ -1354,6 +1355,7 @@
                     "30 oktober",
                     null,
                     null,
+                    "7:42 u",
                     "0:57 u",
                     "4:41 u",
                     "1:41 u",
@@ -1364,6 +1366,7 @@
                     "31 oktober",
                     null,
                     null,
+                    "7:28 u",
                     "1:22 u",
                     "4:16 u",
                     "1:35 u",
@@ -1374,6 +1377,7 @@
                     "1 november",
                     null,
                     null,
+                    "8:31 u",
                     "1:18 u",
                     "5:12 u",
                     "1:38 u",
@@ -1384,6 +1388,7 @@
                     "2 november",
                     null,
                     null,
+                    "8:10 u",
                     "1:08 u",
                     "4:47 u",
                     "1:40 u",
@@ -1394,6 +1399,7 @@
                     "3 november",
                     null,
                     null,
+                    "7:32 u",
                     "1:17 u",
                     "4:02 u",
                     "1:46 u",
@@ -1408,12 +1414,14 @@
                     null,
                     null,
                     null,
+                    null,
                     null
                 ],
                 [
                     "5 november",
                     null,
                     "Geen meting op deze dag.",
+                    null,
                     null,
                     null,
                     null,
@@ -1743,6 +1751,7 @@
                     "7 oktober",
                     null,
                     null,
+                    "7:17 u",
                     "1:18 u",
                     "4:08 u",
                     "1:27 u",
@@ -1753,6 +1762,7 @@
                     "8 oktober",
                     null,
                     null,
+                    "6:53 u",
                     "1:08 u",
                     "4:07 u",
                     "1:24 u",
@@ -1763,6 +1773,7 @@
                     "9 oktober",
                     null,
                     null,
+                    "7:36 u",
                     "1:01 u",
                     "4:39 u",
                     "1:36 u",
@@ -1773,6 +1784,7 @@
                     "10 oktober",
                     null,
                     null,
+                    "7:48 u",
                     "1:12 u",
                     "4:28 u",
                     "1:47 u",
@@ -1783,6 +1795,7 @@
                     "11 oktober",
                     null,
                     null,
+                    "8:12 u",
                     "1:18 u",
                     "4:51 u",
                     "1:32 u",
@@ -1793,6 +1806,7 @@
                     "12 oktober",
                     null,
                     null,
+                    "8:04 u",
                     "1:00 u",
                     "4:56 u",
                     "1:46 u",
@@ -1803,6 +1817,7 @@
                     "13 oktober",
                     null,
                     null,
+                    "8:02 u",
                     "1:03 u",
                     "4:35 u",
                     "1:53 u",
@@ -1813,6 +1828,7 @@
                     "14 oktober",
                     null,
                     null,
+                    "8:43 u",
                     "1:20 u",
                     "5:23 u",
                     "1:35 u",
@@ -1823,6 +1839,7 @@
                     "15 oktober",
                     null,
                     null,
+                    "8:00 u",
                     "1:22 u",
                     "4:26 u",
                     "1:50 u",
@@ -1833,6 +1850,7 @@
                     "16 oktober",
                     null,
                     null,
+                    "7:56 u",
                     "1:12 u",
                     "4:32 u",
                     "1:48 u",
@@ -1843,6 +1861,7 @@
                     "17 oktober",
                     null,
                     null,
+                    "9:06 u",
                     "1:19 u",
                     "5:40 u",
                     "1:45 u",
@@ -1853,6 +1872,7 @@
                     "18 oktober",
                     null,
                     null,
+                    "7:58 u",
                     "1:09 u",
                     "4:40 u",
                     "1:50 u",
@@ -1863,6 +1883,7 @@
                     "19 oktober",
                     null,
                     null,
+                    "7:30 u",
                     "1:02 u",
                     "4:31 u",
                     "1:23 u",
@@ -1873,6 +1894,7 @@
                     "20 oktober",
                     null,
                     null,
+                    "8:40 u",
                     "1:05 u",
                     "5:41 u",
                     "1:35 u",
@@ -1883,6 +1905,7 @@
                     "21 oktober",
                     null,
                     null,
+                    "8:01 u",
                     "1:00 u",
                     "4:45 u",
                     "1:55 u",
@@ -1893,6 +1916,7 @@
                     "22 oktober",
                     null,
                     null,
+                    "7:52 u",
                     "1:11 u",
                     "4:36 u",
                     "1:38 u",
@@ -1903,6 +1927,7 @@
                     "23 oktober",
                     null,
                     null,
+                    "8:51 u",
                     "1:25 u",
                     "5:01 u",
                     "1:55 u",
@@ -1913,6 +1938,7 @@
                     "24 oktober",
                     null,
                     null,
+                    "8:07 u",
                     "1:11 u",
                     "4:56 u",
                     "1:49 u",
@@ -1923,6 +1949,7 @@
                     "25 oktober",
                     null,
                     null,
+                    "9:16 u",
                     "1:25 u",
                     "5:46 u",
                     "1:41 u",
@@ -1933,6 +1960,7 @@
                     "26 oktober",
                     null,
                     null,
+                    "8:10 u",
                     "1:25 u",
                     "4:58 u",
                     "1:30 u",
@@ -1943,6 +1971,7 @@
                     "27 oktober",
                     null,
                     null,
+                    "8:29 u",
                     "1:18 u",
                     "5:19 u",
                     "1:33 u",
@@ -1953,6 +1982,7 @@
                     "28 oktober",
                     null,
                     null,
+                    "7:38 u",
                     "1:24 u",
                     "4:32 u",
                     "1:24 u",
@@ -1963,6 +1993,7 @@
                     "29 oktober",
                     null,
                     null,
+                    "7:53 u",
                     "1:01 u",
                     "4:33 u",
                     "1:45 u",
@@ -1973,6 +2004,7 @@
                     "30 oktober",
                     null,
                     null,
+                    "7:42 u",
                     "0:57 u",
                     "4:41 u",
                     "1:41 u",
@@ -1983,6 +2015,7 @@
                     "31 oktober",
                     null,
                     null,
+                    "7:28 u",
                     "1:22 u",
                     "4:16 u",
                     "1:35 u",
@@ -1993,6 +2026,7 @@
                     "1 november",
                     null,
                     null,
+                    "8:31 u",
                     "1:18 u",
                     "5:12 u",
                     "1:38 u",
@@ -2003,6 +2037,7 @@
                     "2 november",
                     null,
                     null,
+                    "8:10 u",
                     "1:08 u",
                     "4:47 u",
                     "1:40 u",
@@ -2013,6 +2048,7 @@
                     "3 november",
                     null,
                     null,
+                    "7:32 u",
                     "1:17 u",
                     "4:02 u",
                     "1:46 u",
@@ -2027,12 +2063,14 @@
                     null,
                     null,
                     null,
+                    null,
                     null
                 ],
                 [
                     "5 november",
                     null,
                     "Geen meting op deze dag.",
+                    null,
                     null,
                     null,
                     null,
@@ -3009,6 +3047,7 @@
                     "8 – 14 aug",
                     "weekgemiddelde",
                     null,
+                    "7:46 u",
                     "1:08 u",
                     "4:42 u",
                     "1:31 u",
@@ -3019,6 +3058,7 @@
                     "15 – 21 aug",
                     "weekgemiddelde",
                     null,
+                    "7:47 u",
                     "1:14 u",
                     "4:25 u",
                     "1:46 u",
@@ -3029,6 +3069,7 @@
                     "22 – 28 aug",
                     "weekgemiddelde",
                     null,
+                    "8:03 u",
                     "1:09 u",
                     "4:50 u",
                     "1:38 u",
@@ -3039,6 +3080,7 @@
                     "29 aug – 4 sep",
                     "weekgemiddelde",
                     null,
+                    "8:01 u",
                     "1:17 u",
                     "4:38 u",
                     "1:44 u",
@@ -3049,6 +3091,7 @@
                     "5 – 11 sep",
                     "weekgemiddelde",
                     null,
+                    "7:54 u",
                     "1:13 u",
                     "4:35 u",
                     "1:44 u",
@@ -3059,6 +3102,7 @@
                     "12 – 18 sep",
                     "weekgemiddelde",
                     null,
+                    "7:49 u",
                     "1:15 u",
                     "4:34 u",
                     "1:36 u",
@@ -3069,6 +3113,7 @@
                     "19 – 25 sep",
                     "weekgemiddelde",
                     null,
+                    "7:54 u",
                     "1:06 u",
                     "4:53 u",
                     "1:32 u",
@@ -3079,6 +3124,7 @@
                     "26 sep – 2 okt",
                     "weekgemiddelde",
                     null,
+                    "7:23 u",
                     "1:06 u",
                     "4:21 u",
                     "1:35 u",
@@ -3089,6 +3135,7 @@
                     "3 – 9 okt",
                     "weekgemiddelde",
                     null,
+                    "7:32 u",
                     "1:08 u",
                     "4:30 u",
                     "1:31 u",
@@ -3099,6 +3146,7 @@
                     "10 – 16 okt",
                     "weekgemiddelde",
                     null,
+                    "8:06 u",
                     "1:12 u",
                     "4:44 u",
                     "1:44 u",
@@ -3109,6 +3157,7 @@
                     "17 – 23 okt",
                     "weekgemiddelde",
                     null,
+                    "8:17 u",
                     "1:10 u",
                     "4:59 u",
                     "1:43 u",
@@ -3119,6 +3168,7 @@
                     "24 – 30 okt",
                     "weekgemiddelde",
                     null,
+                    "8:12 u",
                     "1:14 u",
                     "4:58 u",
                     "1:38 u",
@@ -3129,6 +3179,7 @@
                     "31 okt – 5 nov",
                     "weekgemiddelde",
                     null,
+                    "7:55 u",
                     "1:16 u",
                     "4:34 u",
                     "1:40 u",
@@ -3613,6 +3664,7 @@
                     "4 aug – 3 sep",
                     "maandgemiddelde",
                     null,
+                    "7:54 u",
                     "1:12 u",
                     "4:39 u",
                     "1:39 u",
@@ -3623,6 +3675,7 @@
                     "4 sep – 3 okt",
                     "maandgemiddelde",
                     null,
+                    "7:45 u",
                     "1:11 u",
                     "4:35 u",
                     "1:37 u",
@@ -3633,6 +3686,7 @@
                     "4 okt – 3 nov",
                     "maandgemiddelde",
                     null,
+                    "8:05 u",
                     "1:12 u",
                     "4:47 u",
                     "1:40 u",
@@ -3643,6 +3697,7 @@
                     "4 – 5 nov",
                     null,
                     "Geen meting in deze maand.",
+                    null,
                     null,
                     null,
                     null,

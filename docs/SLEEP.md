@@ -38,8 +38,10 @@ Training's heart-rate switch, arrows and swipe (`training.js`,
   them, and they are taken out of Wakker's stored minutes, which include
   them. A night without recorded periods has no Rusteloosheid part and keeps
   Wakker as stored. A stage
-  not measured that night has no part, never a 0. The reading gives each
-  stage's time ("Diep 1:17 u"), and the stages are named under the chart.
+  not measured that night has no part, never a 0. The reading gives the
+  night's whole time first ("Totaal 7:32 u", every stage together), then each
+  stage's ("Diep 1:17 u"), and the stages are named under the chart. Under
+  Vandaag each row's time is in hours too ("1:50 u").
 
 `hydrate_sleep_night()` returns the night opened first at its top level, as
 before, plus `options`, `nights` (each with its `key` and `heading`),

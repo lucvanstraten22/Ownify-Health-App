@@ -144,7 +144,7 @@ check('  the hours between them, none crowding either end',
 check('five rows, top to bottom: Wakker, Rusteloosheid, REM, Licht, Diep',
     array_column($n['rows'], 'label') === ['Wakker', 'Rusteloosheid', 'REM', 'Licht', 'Diep']);
 check('  each with its time over the night',
-    array_column($n['rows'], 'total') === ['10 min', '5 min', '25 min', '350 min', '60 min'], json_encode(array_column($n['rows'], 'total')));
+    array_column($n['rows'], 'total') === ['0:10 u', '0:05 u', '0:25 u', '5:50 u', '1:00 u'], json_encode(array_column($n['rows'], 'total')));
 check('each period on its row, with its own times',
     $n['blocks'][0] === [0, 0.0, 2.08, '23:00', '23:10'] && $n['blocks'][3] === [1, 25.0, 26.04, '01:00', '01:05'] && $n['blocks'][4][0] === 2,
     json_encode(array_slice($n['blocks'], 0, 5)));
@@ -251,8 +251,8 @@ $bar = $week['stacks'][2];
 check('  stacked: each part starts where the one below it ends, the bottom at the base',
     $bar[0][1] === $bar[1][2] && $bar[1][1] === $bar[2][2] && $bar[2][1] === $bar[3][2] && $bar[3][1] === $bar[4][2] && $bar[0][2] === 100.0,
     json_encode($bar));
-check('  the minutes read in hours, per stage — Rusteloosheid its own, out of Wakker\'s stored 15',
-    array_slice($week['points'][2], 3) === ['1:00 u', '5:50 u', '0:25 u', '0:05 u', '0:10 u'], json_encode($week['points'][2]));
+check('  the reading in hours: the whole night first, then each stage — Rusteloosheid its own, out of Wakker\'s stored 15',
+    array_slice($week['points'][2], 3) === ['7:30 u', '1:00 u', '5:50 u', '0:25 u', '0:05 u', '0:10 u'], json_encode($week['points'][2]));
 check('  its levels named in hours', $week['grid'] !== [] && str_ends_with((string) $week['grid'][0]['label'], ' u'), json_encode($week['grid']));
 $year = end($v['periods']);
 check('1 jaar: a month as one bar, the mean of its nights', $year['group'] === 'month' && count(array_filter($year['stacks'])) >= 1);
