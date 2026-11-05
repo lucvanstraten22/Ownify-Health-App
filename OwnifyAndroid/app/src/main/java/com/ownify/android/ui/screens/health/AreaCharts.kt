@@ -44,6 +44,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.ownify.android.data.AreaChart
+import com.ownify.android.data.AreaAbout
+import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.cssPadding
+import com.ownify.android.ui.screens.research.Points
+import com.ownify.android.ui.screens.settings.SettingsCard
+import com.ownify.android.ui.screens.settings.SettingsEyebrow
+import com.ownify.android.ui.screens.settings.settingsRow
 import com.ownify.android.data.AreaPeriod
 import com.ownify.android.data.AreaSeries
 import com.ownify.android.ui.app.Detail
@@ -303,6 +310,30 @@ fun AreaChartDetail(chart: AreaChart, area: String, scroll: ScrollState) {
     DetailColumn(scroll, back = chart.back, backAria = trf("Terug naar %s", chart.back)) {
         PageIntro(chart.title, null, Modifier.reveal())
         AreaChartCard(chart, Accent.of(area))
+        chart.about?.let { AreaAboutBlock(it) }
+    }
+}
+
+/**
+ * 40.1: "Over …" under the large chart, as on the website — Samenvatting
+ * onderzoek's eyebrow, its card and its points (`.settings-block` >
+ * `.settings-state` > `.research-detail__points`).
+ */
+@Composable
+private fun AreaAboutBlock(about: AreaAbout) {
+    Column(Modifier.fillMaxWidth().reveal()) {
+        SettingsEyebrow(about.title)
+        SettingsCard {
+            val narrow = LocalScreen.current.narrow
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .settingsRow(false)
+                    .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3)
+            ) {
+                Points(about.points)
+            }
+        }
     }
 }
 

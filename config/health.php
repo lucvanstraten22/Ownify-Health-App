@@ -154,8 +154,28 @@ return [
                 /* A night with its times but no stages: a phone without a
                    watch, or synced before the stages were kept. */
                 'unstaged' => 'Van deze nacht zijn geen slaapfasen opgenomen.',
-                /* How far back the last night is looked for. */
+                /* How many nights the arrows reach: this morning's and the
+                   six before it, as Training's heart rate has its days. */
                 'days'   => 7,
+                /* 40.1: Training's heart-rate switch — Vandaag a night,
+                   with an arrow either side; 7 dagen to 1 jaar each night's
+                   stages as one bar, stacked from Diep at the bottom to
+                   Wakker at the top (the night's stored minutes;
+                   Rusteloosheid, stage 7, its own part from the recorded
+                   stages, taken out of Wakker's minutes, which include it). */
+                'today'  => 'Vandaag',
+                'prev'   => 'Vorige nacht',
+                'next'   => 'Volgende nacht',
+                'empty_day' => 'Geen nacht opgenomen op deze ochtend.',
+                'period_hint'  => 'Tik of schuif over de grafiek om de fasen per nacht te zien.',
+                'period_title' => 'Slaapfasen',
+                'period_stages' => [
+                    ['key' => 'deep',  'label' => 'Diep'],
+                    ['key' => 'light', 'label' => 'Licht'],
+                    ['key' => 'rem',   'label' => 'REM'],
+                    ['key' => 'restless', 'label' => 'Rusteloosheid'],
+                    ['key' => 'awake', 'label' => 'Wakker'],
+                ],
             ],
 
             /* The charts, in their order on the page — Ownify's area
@@ -166,15 +186,38 @@ return [
                score, 0–100), so no scale is shared or named. */
             'charts' => [
                 'bed'       => ['title' => 'Tijd in bed + Regelmaat',
+                                'about' => ['name' => 'Tijd in bed en Regelmaat', 'points' => [
+                                    'Tijd in bed: hoe lang je per nacht in bed lag, van naar bed gaan tot opstaan.',
+                                    'Wakker liggen telt mee, dus het is meestal iets langer dan je slaaptijd.',
+                                    'Regelmaat: een score van 0 tot 100 voor hoe gelijk je bedtijd en opstaantijd de afgelopen dagen waren.',
+                                    'Een vast ritme telt mee in je slaapscore; het is hetzelfde deel als in het Scorekompas.',
+                                ]],
                                 'series' => [
                                     ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars', 'format' => 'hours'],
                                     ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line', 'format' => 'score', 'range' => [0, 100]],
                                 ]],
                 'spo2'      => ['title' => 'SpO₂',
+                                'about' => ['name' => 'SpO₂', 'points' => [
+                                    'Het zuurstofgehalte van je bloed: hoeveel procent van je rode bloedcellen zuurstof meedraagt.',
+                                    'Je horloge of ring meet het met licht door je huid, meestal tijdens de slaap.',
+                                    "Een meting aan de pols kan tot zo'n 2 procentpunt afwijken van een medische meting.",
+                                    'Ownify toont de waarde per nacht en trekt er geen medische conclusies uit.',
+                                ]],
                                 'series' => [['key' => 'spo2', 'label' => 'SpO₂', 'unit' => '%', 'kind' => 'line', 'decimals' => 0]]],
                 'skin_temp' => ['title' => 'Huidtemperatuur',
+                                'about' => ['name' => 'Huidtemperatuur', 'points' => [
+                                    'De temperatuur van je huid tijdens de slaap, gemeten door je horloge of ring.',
+                                    'Het is niet je lichaamstemperatuur: je huid is koeler en reageert ook op je kamer en dekens.',
+                                    'Vooral nuttig om te zien hoe een nacht afwijkt van je eigen gewone nachten.',
+                                ]],
                                 'series' => [['key' => 'skin_temp', 'label' => 'Huidtemperatuur', 'unit' => '°C', 'kind' => 'line', 'decimals' => 1]]],
                 'hrv'       => ['title' => 'Hartslag­variabiliteit',   /* a soft hyphen: where it breaks on a small card */
+                                'about' => ['name' => 'Hartslagvariabiliteit', 'points' => [
+                                    'Hoeveel de tijd tussen twee hartslagen van slag tot slag verschilt, in milliseconden.',
+                                    'Gemeten in rust, meestal tijdens de nacht.',
+                                    'In je score vergelijkt Ownify het met je eigen waarden van de 60 dagen ervoor, niet met die van anderen.',
+                                    'Hoe goed een horloge HRV meet, verschilt sterk per apparaat.',
+                                ]],
                                 'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
                 /* Breathing and heart rate while asleep, each night's own value:
                    respiratory_rate as the source measured it (Polar once a
@@ -182,8 +225,19 @@ return [
                    sleeping_hr — heart rate inside the sleep session, never the
                    day's resting heart rate. A night without one stays empty. */
                 'respiratory_rate' => ['title' => 'Ademfrequentie',
+                                'about' => ['name' => 'Ademfrequentie', 'points' => [
+                                    'Hoe vaak je per minuut ademhaalt tijdens de slaap.',
+                                    'Gemeten door je horloge of ring; Ownify toont één waarde per nacht.',
+                                    'Vooral nuttig om je eigen nachten met elkaar te vergelijken.',
+                                ]],
                                 'series' => [['key' => 'respiratory_rate', 'label' => 'Ademfrequentie', 'unit' => '/min', 'kind' => 'line', 'decimals' => 1]]],
                 'sleeping_hr' => ['title' => 'Rusthartslag',
+                                'about' => ['name' => 'Rusthartslag', 'points' => [
+                                    'Je gemiddelde hartslag tijdens de slaap, in slagen per minuut.',
+                                    'Alleen de hartslag binnen je slaap telt, niet je hartslag overdag.',
+                                    'Horloges meten de hartslag in rust nauwkeurig.',
+                                    'Vooral nuttig om je eigen nachten met elkaar te vergelijken.',
+                                ]],
                                 'series' => [['key' => 'sleeping_hr', 'label' => 'Hartslag in slaap', 'unit' => 'bpm', 'kind' => 'line', 'decimals' => 0]]],
             ],
             'chart_copy' => [
@@ -258,9 +312,20 @@ return [
             'charts' => [
                 /* One set of bars, its kJ the same bars converted (× 4,184). */
                 'energy' => ['title' => 'Energie',
+                                'about' => ['name' => 'Energie', 'points' => [
+                                    'Hoeveel energie je per dag at en dronk, zoals gelogd in een voedingsapp.',
+                                    'Ownify telt alleen wat gelogd is; niets wordt aangevuld of geschat.',
+                                    'De kilojoules zijn dezelfde hoeveelheid in een andere eenheid.',
+                                    'Handig om te zien hoe je inname van dag tot dag verschilt.',
+                                ]],
                              'series' => [['key' => 'energy', 'label' => 'Energie', 'unit' => 'kcal', 'kind' => 'bars', 'decimals' => 0,
                                            'alt' => ['unit' => 'kJ', 'factor' => 4.184]]]],
                 'water'  => ['title' => 'Water',
+                                'about' => ['name' => 'Water', 'points' => [
+                                    'Hoeveel je per dag dronk, zoals gelogd in een app.',
+                                    'Alleen wat je als drinken logt telt mee.',
+                                    'Handig om te zien hoe je drinken van dag tot dag verschilt.',
+                                ]],
                              'sub'    => ['unit' => 'ml', 'factor' => 1000],
                              'series' => [['key' => 'water', 'label' => 'Water', 'unit' => 'L', 'kind' => 'bars', 'decimals' => 1]]],
             ],
@@ -348,25 +413,60 @@ return [
             ],
             'charts' => [
                 'sessions'       => ['title' => 'Trainingen per dag',
+                                'about' => ['name' => 'Trainingen per dag', 'points' => [
+                                    'Hoeveel trainingen je per dag deed: opgenomen door je horloge of telefoon, of zelf ingevoerd.',
+                                    'Elke vastgelegde training telt mee, ook een korte.',
+                                ]],
                                      'series' => [['key' => 'sessions', 'label' => 'Trainingen', 'unit' => 'training', 'units' => 'trainingen', 'kind' => 'bars', 'format' => 'count']]],
                 'steps'          => ['title' => 'Stappen + Afstand',
+                                'about' => ['name' => 'Stappen en Afstand', 'points' => [
+                                    'Stappen: hoeveel stappen je per dag zette, geteld door je telefoon of horloge.',
+                                    'Afstand: hoe ver je die dag aflegde, volgens je telefoon of horloge.',
+                                    'Telefoons en horloges tellen stappen redelijk nauwkeurig: meestal tussen 9 procent te weinig en 12 procent te veel.',
+                                ]],
                                      'series' => [
                                          ['key' => 'steps',    'label' => 'Stappen', 'unit' => '',   'kind' => 'bars', 'decimals' => 0],
                                          ['key' => 'distance', 'label' => 'Afstand', 'unit' => 'km', 'kind' => 'line', 'decimals' => 1],
                                      ]],
                 /* Both kcal: one height, its levels named. */
-                'energy'         => ['title' => 'Actieve + Totale calorieën', 'scale' => 'shared',
+                'energy'         => ['title' => 'Actieve + Totale calorieën',
+                                'about' => ['name' => 'Actieve en Totale calorieën', 'points' => [
+                                    'Actief: de energie die je verbruikte door te bewegen, bovenop wat je in rust verbruikt.',
+                                    'Totaal: al je energieverbruik van die dag, rust meegerekend.',
+                                    'Horloges schatten energieverbruik minder nauwkeurig dan stappen en hartslag: van 21 procent te weinig tot 15 procent te veel.',
+                                ]], 'scale' => 'shared',
                                      'series' => [
                                          ['key' => 'active_energy', 'label' => 'Actief', 'unit' => 'kcal', 'kind' => 'line', 'decimals' => 0],
                                          ['key' => 'total_energy',  'label' => 'Totaal', 'unit' => 'kcal', 'kind' => 'bars', 'decimals' => 0],
                                      ]],
                 'floors'         => ['title' => 'Verdiepingen',
+                                'about' => ['name' => 'Verdiepingen', 'points' => [
+                                    'Hoeveel verdiepingen je per dag omhoog liep, zoals je telefoon of horloge ze telt.',
+                                    'Hoeveel hoogte als één verdieping telt, bepaalt je apparaat.',
+                                    'Trappen omlaag tellen niet mee.',
+                                ]],
                                      'series' => [['key' => 'floors', 'label' => 'Verdiepingen', 'unit' => '', 'kind' => 'line', 'decimals' => 0]]],
                 'active_minutes' => ['title' => 'Actieve minuten',
+                                'about' => ['name' => 'Actieve minuten', 'points' => [
+                                    'De minuten per dag waarin je bron je als actief telde, zoals stevig wandelen of sporten.',
+                                    'Wanneer een minuut actief is, bepaalt de bron zelf; dat verschilt per apparaat.',
+                                    'Health Connect stuurt deze waarde niet; de grafiek vult zich als een andere bron dat doet.',
+                                ]],
                                      'series' => [['key' => 'active_minutes', 'label' => 'Actieve minuten', 'unit' => 'min', 'kind' => 'line', 'decimals' => 0]]],
                 'hrv'            => ['title' => 'HRV',
+                                'about' => ['name' => 'HRV', 'points' => [
+                                    'Hartslagvariabiliteit: hoeveel de tijd tussen twee hartslagen van slag tot slag verschilt, in milliseconden.',
+                                    'Gemeten in rust, meestal tijdens de nacht; dezelfde waarde als op Slaap.',
+                                    'In je score vergelijkt Ownify het met je eigen waarden van de 60 dagen ervoor, niet met die van anderen.',
+                                    'Hoe goed een horloge HRV meet, verschilt sterk per apparaat.',
+                                ]],
                                      'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
                 'training_load'  => ['title' => 'Hartbelasting',
+                                'about' => ['name' => 'Hartbelasting', 'points' => [
+                                    'Een waarde van je bron voor hoe zwaar je hart die dag werkte tijdens inspanning.',
+                                    'Ownify rekent dit niet zelf uit en toont het zoals de bron het stuurt.',
+                                    'Health Connect stuurt deze waarde niet; de grafiek vult zich als een andere bron dat doet.',
+                                ]],
                                      'series' => [['key' => 'training_load', 'label' => 'Hartbelasting', 'unit' => '', 'kind' => 'line', 'decimals' => 0]]],
             ],
             'chart_copy' => [

@@ -139,6 +139,13 @@ if (!function_exists('area_charts')) {
                 : null,
             'default' => (string) $periods[0]['days'],
             'periods' => $built,
+            /* 40.1: "Over …" under the large chart — what it shows, what it
+               measures and why it helps, in short points. Only the chart's
+               own page shows it, never the small chart. */
+            'about'   => isset($chart['about']['points']) ? [
+                'title'  => tf('Over %s', (string) ($chart['about']['name'] ?? $chart['title'])),
+                'points' => array_values(array_map('strval', (array) $chart['about']['points'])),
+            ] : null,
         ];
     }
 
@@ -292,10 +299,9 @@ if (!function_exists('area_charts')) {
             'group'    => $grain,
             'aria'     => sprintf((string) $copy['aria'], (string) $chart['title'], $per, (string) ($period['spoken'] ?? $period['label'])),
             'axis'     => $ticks,
-            /* The same dates in two rows — the day over its month where the
-               month is named — for the small chart, too narrow for "8 okt"
-               seven times. */
-            'axis_rows' => $days === 7 ? time_axis_rows($axis['ticks'], $place) : null,
+            /* No second row any more: 7 dagen names weekdays, "Ma" … "Zo",
+               which fit the small chart as they are (40.1). */
+            'axis_rows' => null,
             'x'        => array_column($points, 'x'),
             'points'   => array_map(static fn (array $p): array => array_merge([$p['label'], $p['detail'], $p['note']], $p['texts']), $points),
             'carried'  => array_keys(array_filter(array_column($points, 'carried'))),

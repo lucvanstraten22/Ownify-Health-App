@@ -49,6 +49,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.ownify.android.data.SleepNight
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.ownify.android.data.SleepStackPeriod
+import com.ownify.android.ui.design.HistoryPlot
+import com.ownify.android.ui.design.Legend
+import com.ownify.android.ui.design.LegendItem
+import com.ownify.android.ui.design.PlotBars
+import com.ownify.android.ui.design.RangeSwitch
+import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.app.LocalOwnedAreas
 import com.ownify.android.ui.app.ownsGestures
 import com.ownify.android.ui.design.JCard
@@ -98,66 +108,183 @@ private fun stageColor(key: String): Color = when (key) {
 // ---------------------------------------------------------------------------
 
 /**
- * `components/sleep-night.php`: the head — the night's date, how long was
- * slept and how much of the time in bed — then Wakker, Rusteloosheid, REM,
- * Licht and Diep as rows, each named with its time over the night, and each
- * recorded period of a stage a block on its row from bedtime at the left to
- * wake time at the right. A finger on the night reads the period there: its
- * stage, and when it began and ended.
+ * `components/sleep-night.php` (40.1): Training's heart-rate switch over the
+ * night. Vandaag shows one night — this morning's and the six before it, an
+ * arrow either side and a swipe, opened on the newest night there is: its
+ * name, how long was slept and how much of the time in bed, then Wakker,
+ * Rusteloosheid, REM, Licht and Diep as rows, each recorded period of a stage
+ * a block on its row from bedtime to wake time; a finger reads the period
+ * there. 7 dagen to 1 jaar show each night's stages as one bar, Diep at the
+ * bottom to Wakker at the top, read as every chart over time is.
  */
 /** [evidence]: how far a wearable's stages can be trusted (docs/INSIGHTS.md), beside a night that has them. */
 @Composable
 fun SleepNightCard(night: SleepNight, evidence: Evidence? = null, ageEvidence: Evidence? = null) {
+    val nights = night.nights.ifEmpty { listOf(night) }
+    val opened = nights.indexOfFirst { it.key == night.defaultKey }.coerceAtLeast(0)
+    val last = nights.lastIndex
+    var selected by rememberSaveable { mutableStateOf(night.defaultKey) }
+    var day by rememberSaveable { mutableIntStateOf(opened) }
+    val period = night.periods.firstOrNull { it.period.key == selected }
+    val switched = night.options.isNotEmpty()
+    val step = { by: Int -> day = (day + by).coerceIn(0, last) }
+    val one = nights[day.coerceIn(0, last)]
+    val filled = nights.any { it.staged } || night.periods.any { it.period.hasData }
+
     JCard(Modifier.fillMaxWidth().reveal()) {
-        Row(Modifier.fillMaxWidth().padding(bottom = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            Column(Modifier.weight(1f)) {
-                T(night.title, JStyle.Eyebrow, Modifier.semantics { heading() })
-                night.date?.let { T(it, JStyle.Tiny, Modifier.padding(top = Ownify.Space1)) }
-            }
-            night.asleep?.let { asleep ->
-                Column(horizontalAlignment = Alignment.End) {
-                    Row {
-                        T(asleep, OwnifyType.style(Ownify.FsTitle, FontWeight.Bold, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
-                        T("u", OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextMuted, lineHeight = 1.1.em), Modifier.alignByBaseline().padding(start = 3.dp))
-                    }
-                    T(
-                        night.asleepLabel + (night.efficiency?.let { " · $it% ${night.efficiencyLabel}" } ?: ""),
-                        OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
-                        Modifier.padding(top = 2.dp),
-                        maxLines = 1
-                    )
-                }
-            }
+        T(night.title, JStyle.Eyebrow, Modifier.semantics { heading() })
+        // From a server before 40.1: no switch, the night's date under the title as before.
+        if (night.options.isEmpty()) night.date?.let { T(it, JStyle.Tiny, Modifier.padding(top = Ownify.Space1, bottom = Ownify.Space4)) }
+
+        if (switched) {
+            // Five options, closer together than four (`.heart-chart__switch`).
+            RangeSwitch(
+                night.options,
+                selected,
+                { key ->
+                    selected = key
+                    if (key == night.defaultKey) day = opened          // Vandaag again: the newest night
+                },
+                Modifier.padding(top = Ownify.Space4),
+                wide = true,
+                optionPadding = 4.dp,
+                label = night.switchLabel
+            )
         }
 
-        Row(Modifier.fillMaxWidth()) {
-            // `.sleep-night__labels`: each stage's name and time, its colour beside it.
-            Column(Modifier.width(LabelWidth)) {
-                night.rows.forEach { row ->
-                    Row(Modifier.height(RowHeight).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(6.dp).clip(RoundedCornerShape(2.dp)).background(stageColor(row.key)))
-                        Column(Modifier.padding(start = 6.dp)) {
-                            T(row.label, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1, ellipsis = true)
-                            row.total?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1) }
-                        }
-                    }
-                }
+        if (period == null) {
+            if (switched) DayRow(one.heading ?: one.date.orEmpty(), night.prev, night.next, day, last, step)
+            Column(Modifier.fillMaxWidth().padding(top = if (switched) Ownify.Space3 else 0.dp).then(if (switched) Modifier.flicks { by -> step(by) } else Modifier)) {
+                NightBody(one)
             }
-            NightPlot(night, Modifier.padding(start = Ownify.Space3).weight(1f))
+        } else {
+            StagePlot(night, period)
         }
 
-        if (night.ticks.isNotEmpty()) {
-            // Bedtime at the left edge, wake time at the right, hours between.
-            TickAxis(night.ticks, Modifier.padding(start = LabelWidth + Ownify.Space3, top = Ownify.Space2))
-        }
-        night.note?.let {
-            T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
-        }
-        if (night.staged) {
+        if (filled) {
             // How far a wearable's stages can be trusted, and (31.0, D9) that deep sleep and efficiency change with age.
             ResearchEvidence(listOf(evidence, ageEvidence))
-            T(night.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
+            T(if (period == null) night.hint else night.periodHint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)
         }
+    }
+}
+
+/** One night: its sum under its name, its rows and blocks, the times under them, and its line. */
+@Composable
+private fun NightBody(night: SleepNight) {
+    night.asleep?.let { asleep ->
+        // `.sleep-night__range .sleep-night__sum`: centred under the night's name.
+        Column(Modifier.fillMaxWidth().padding(bottom = Ownify.Space4), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row {
+                T(asleep, OwnifyType.style(Ownify.FsTitle, FontWeight.Bold, lineHeight = 1.1.em, tabular = true), Modifier.alignByBaseline())
+                T(tr("u"), OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextMuted, lineHeight = 1.1.em), Modifier.alignByBaseline().padding(start = 3.dp))
+            }
+            T(
+                night.asleepLabel + (night.efficiency?.let { " · $it% ${night.efficiencyLabel}" } ?: ""),
+                OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
+                Modifier.padding(top = 2.dp),
+                maxLines = 1
+            )
+        }
+    }
+
+    Row(Modifier.fillMaxWidth()) {
+        // `.sleep-night__labels`: each stage's name and time, its colour beside it.
+        Column(Modifier.width(LabelWidth)) {
+            night.rows.forEach { row ->
+                Row(Modifier.height(RowHeight).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).clip(RoundedCornerShape(2.dp)).background(stageColor(row.key)))
+                    Column(Modifier.padding(start = 6.dp)) {
+                        T(row.label, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1, ellipsis = true)
+                        row.total?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1) }
+                    }
+                }
+            }
+        }
+        key(night.key) { NightPlot(night, Modifier.padding(start = Ownify.Space3).weight(1f)) }
+    }
+
+    if (night.ticks.isNotEmpty()) {
+        // Bedtime at the left edge, wake time at the right, hours between.
+        TickAxis(night.ticks, Modifier.padding(start = LabelWidth + Ownify.Space3, top = Ownify.Space2))
+    }
+    night.note?.let {
+        T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space4), align = TextAlign.Center)
+    }
+}
+
+/**
+ * 7 dagen to 1 jaar: each night's stages as one bar (`.sleep-night__stacks`),
+ * the Verloop's plot 160 dp tall with its levels in hours, each stage in its
+ * own colour — a part square where the next sits on it, the top one rounded —
+ * the reading each stage's time, and the stages named under it.
+ */
+@Composable
+private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
+    val period = stacked.period
+    val stages = night.stages
+    Box(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+        HistoryPlot(
+            key = "sleep-stages" + period.key,
+            viewBox = Size(period.width, period.height),
+            xs = period.x,
+            lines = emptyList(),
+            filled = period.hasData,
+            dayDots = false,
+            small = false,
+            carried = { false },
+            axis = period.axis,
+            centredAxis = true,
+            aria = period.aria,
+            readable = { i -> period.points.getOrNull(i) != null },
+            describe = { i ->
+                period.points.getOrNull(i)?.let { p ->
+                    val said = stages.mapIndexedNotNull { k, (_, label) -> p.texts.getOrNull(k)?.let { "$label $it" } }
+                    p.label + (p.detail?.let { ", $it" } ?: "") + ": " + if (said.isEmpty()) p.note ?: "—" else said.joinToString(", ")
+                }.orEmpty()
+            },
+            empty = night.periodEmpty,
+            modifier = Modifier,
+            onRead = { },
+            height = 160.dp,
+            levels = period.grid,
+            gutter = if (period.grid.isNotEmpty()) 34.dp else 0.dp,
+            bars = stages.map { (stage, _) ->
+                PlotBars(
+                    stageColor(stage),
+                    stacked.w,
+                    stacked.stacks.map { parts -> parts.firstOrNull { it.stage == stage }?.top },
+                    bottom = stacked.stacks.map { parts -> parts.firstOrNull { it.stage == stage }?.bottom },
+                    roundTop = stacked.stacks.map { parts -> parts.lastOrNull()?.stage == stage },
+                    focusDot = false
+                )
+            }
+        ) { i ->
+            // `.health-history__tip`: the night or the days, then each stage's time.
+            val p = period.points[i]
+            val values = stages.mapIndexedNotNull { k, s -> p.texts.getOrNull(k)?.let { s to it } }
+            val detail = p.detail?.takeIf { values.isNotEmpty() }
+            Row {
+                T(p.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+                detail?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1) }
+            }
+            if (values.isEmpty()) {
+                p.note?.let { T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1) }
+            } else {
+                for ((s, text) in values) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(stageColor(s.first)))
+                        T(s.second, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), Modifier.padding(start = 6.dp), maxLines = 1)
+                        Spacer(Modifier.width(8.dp))
+                        T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
+                    }
+                }
+            }
+        }
+    }
+    if (period.hasData) {
+        // The stages named, top to bottom as the bar has them: no stage told by its colour alone.
+        Legend(stages.reversed().map { (key, label) -> LegendItem(label, null, Accent.of("sleep"), dot = stageColor(key)) }, Modifier.padding(top = Ownify.Space4), values = false, columns = 3)
     }
 }
 

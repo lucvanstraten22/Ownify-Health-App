@@ -101,7 +101,18 @@ class PlotLine(
  * the top — null for a day without one.
  */
 @Immutable
-class PlotBars(val color: Color, val width: Float, val top: List<Float?>, val focus: Color = color)
+class PlotBars(
+    val color: Color,
+    val width: Float,
+    val top: List<Float?>,
+    val focus: Color = color,
+    /** 40.1, a part of a stacked bar (Slaapverloop over a period): where each part ends below, % from the top — null: the bottom. */
+    val bottom: List<Float?>? = null,
+    /** Whether each part is its bar's top, rounded as a bar is; the others square, a hairline of the card above them. */
+    val roundTop: List<Boolean>? = null,
+    /** A dot at the bar's top while it is read. */
+    val focusDot: Boolean = true
+)
 
 /** A band across the plot from [top] to [bottom], % from its top, in [color] (a heart-rate zone), with a 1 dp [edge] above and below it (a bereik). */
 @Immutable
@@ -355,18 +366,24 @@ fun HistoryPlot(
                             if (top == null) return@forEachIndexed
                             val left = xs[i] / 100f * size.width - w / 2f
                             val y = top / 100f * size.height
+                            // A stacked part (`.sleep-night__part`): from its own bottom, square below, rounded only on top.
+                            val stacked = set.bottom != null
+                            val base = set.bottom?.getOrNull(i)?.let { it / 100f * size.height } ?: size.height
+                            val tr = if (set.roundTop?.getOrNull(i) ?: true) r else 0f
+                            val br = if (stacked) 0f else 1.dp.toPx()
                             val bar = androidx.compose.ui.graphics.Path().apply {
                                 addRoundRect(
                                     androidx.compose.ui.geometry.RoundRect(
-                                        left, y, left + w, size.height,
-                                        topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
-                                        topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r),
-                                        bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(1.dp.toPx(), 1.dp.toPx()),
-                                        bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                                        left, y, left + w, base,
+                                        topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(tr, tr),
+                                        topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(tr, tr),
+                                        bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(br, br),
+                                        bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(br, br)
                                     )
                                 )
                             }
                             drawPath(bar, set.color)
+                            if (stacked && tr == 0f) drawLine(Ownify.BgSecondary, Offset(left, y + 0.5.dp.toPx()), Offset(left + w, y + 0.5.dp.toPx()), 1.dp.toPx())
                         }
                     }
                     lines.forEachIndexed { i, line -> washes[i].forEach { drawPath(it.stretched(viewBox, size), line.color.copy(alpha = 0.10f)) } }
@@ -409,6 +426,7 @@ fun HistoryPlot(
                         }
                         // A bar's point: at its top, in the full colour.
                         for (set in bars) {
+                            if (!set.focusDot) continue
                             val y = set.top.getOrNull(reading) ?: continue
                             val c = Offset(px, y / 100f * size.height)
                             drawCircle(Ownify.mix(set.focus, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)

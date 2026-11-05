@@ -7,7 +7,7 @@ apps draw what it sends.
 
 ```
 Slaap ──┬── the score                    (unchanged)
-        ├── Slaapverloop                 the last night, stage by stage
+        ├── Slaapverloop                 a night stage by stage; the nights over a period (40.1)
         ├── Tijd in bed + Regelmaat │ SpO₂
         │   Huidtemperatuur         │ Hartslagvariabiliteit
         ├── Nachtelijke waarden          what no chart shows (hartslag, ademhaling)
@@ -17,9 +17,36 @@ Slaap ──┬── the score                    (unchanged)
 Nothing here is a new calculation, and nothing is advice. Every value is
 one Ownify already recorded. A day without one is a gap, never a 0.
 
-## Slaapverloop — the night
+## Slaapverloop — the night, and the nights over a period (40.1)
 
-The last night of the past seven days, by the one rule every reader uses
+Training's heart-rate switch, arrows and swipe (`training.js`,
+`TrainingView.kt` `DayRow`): **Vandaag · 7 dagen · 30 dagen · 90 dagen ·
+1 jaar**.
+
+- **Vandaag** shows one night at a time: this morning's and the six before
+  it, ‹ an older night, › a newer one, or a swipe over its name. It opens on
+  the newest night there is, and choosing Vandaag again goes back to it. A
+  morning without a night shows its date, empty rows and "Geen nacht
+  opgenomen op deze ochtend." Each night is drawn as described below, its
+  name over the arrows and its sum ("7:05 u geslapen") under it.
+- **7 dagen to 1 jaar** show each night's stages as one bar on Ownify's time
+  axis (docs/CHARTS.md): Diep at the bottom, then Licht, REM, Rusteloosheid
+  and Wakker on top, in the stages' own colours, the levels in hours. Over 90 dagen a bar
+  is a week's mean, over a year a month's, as every chart over time. The
+  minutes are the night's stored ones (`deep/light/rem/awake_minutes`).
+  Rusteloosheid (stage 7) has no stored minutes: its recorded periods give
+  them, and they are taken out of Wakker's stored minutes, which include
+  them. A night without recorded periods has no Rusteloosheid part and keeps
+  Wakker as stored. A stage
+  not measured that night has no part, never a 0. The reading gives each
+  stage's time ("Diep 1:17 u"), and the stages are named under the chart.
+
+`hydrate_sleep_night()` returns the night opened first at its top level, as
+before, plus `options`, `nights` (each with its `key` and `heading`),
+`stages` and `periods` (each an area-chart period with `stacks`: a night's
+parts, bottom up, [stage, top, bottom] in % from the plot's top).
+
+Each night: the main sleep of the morning it ended, by the one rule every reader uses
 (`health_night_on()`: the main sleep of the morning it ended, never a nap,
 a duplicate counted once, a night broken by getting up still one night).
 

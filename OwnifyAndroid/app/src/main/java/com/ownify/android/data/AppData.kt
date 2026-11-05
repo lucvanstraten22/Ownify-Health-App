@@ -1407,10 +1407,26 @@ data class SleepNight(
     val blocks: List<SleepBlock>,
     val ticks: List<CompassTick>,
     val aria: String,
-    val note: String?
+    val note: String?,
+    /** 40.1: this night's key ("d0" this morning's, "d1" the one before…) and its name over the arrows. */
+    val key: String = "d0",
+    val heading: String? = null,
+    /** Training's heart-rate switch: Vandaag (a night at a time), then 7 dagen to 1 jaar. */
+    val switchLabel: String = "",
+    val prev: String = "",
+    val next: String = "",
+    val defaultKey: String = "d0",
+    val options: List<Pair<String, String>> = emptyList(),
+    /** This morning's night and the six before it, newest first; empty from an older server. */
+    val nights: List<SleepNight> = emptyList(),
+    /** The stages over a period, bottom to top: Diep, Licht, REM, Wakker. */
+    val stages: List<Pair<String, String>> = emptyList(),
+    val periodHint: String = "",
+    val periodEmpty: String = "",
+    val periods: List<SleepStackPeriod> = emptyList()
 ) {
     companion object {
-        fun parse(o: JSONObject) = SleepNight(
+        fun parse(o: JSONObject): SleepNight = SleepNight(
             title = o.str("title").orEmpty(),
             hint = o.str("hint").orEmpty(),
             rows = o.arr("rows").map { SleepRow(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("total")) },
@@ -1430,10 +1446,55 @@ data class SleepNight(
             },
             ticks = o.arr("ticks").map(CompassTick::parse),
             aria = o.str("aria").orEmpty(),
-            note = o.str("note")
+            note = o.str("note"),
+            key = o.str("key") ?: "d0",
+            heading = o.str("heading"),
+            switchLabel = o.str("switch").orEmpty(),
+            prev = o.str("prev").orEmpty(),
+            next = o.str("next").orEmpty(),
+            defaultKey = o.str("default") ?: "d0",
+            options = o.arr("options").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
+            nights = o.arr("nights").map { parse(it) },
+            stages = o.arr("stages").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
+            periodHint = o.str("period_hint").orEmpty(),
+            periodEmpty = o.str("period_empty").orEmpty(),
+            periods = o.arr("periods").map { SleepStackPeriod.parse(it) }
         )
     }
 }
+
+/**
+ * 40.1: the nights over a period — an area chart's period (its axis, points
+ * and levels) with each night's stages as one bar: [stacks] a night's parts,
+ * bottom up, each [stage, top, bottom] in % from the plot's top; [tops] each
+ * stage's top at each point.
+ */
+data class SleepStackPeriod(
+    val period: AreaPeriod,
+    val w: Float,
+    val stacks: List<List<SleepStackPart>>,
+    val tops: Map<String, List<Float?>>
+) {
+    companion object {
+        fun parse(o: JSONObject): SleepStackPeriod? {
+            val period = AreaPeriod.parse(o) ?: return null
+            val stacks = o.arr("stacks").let { a ->
+                if (a == null) emptyList() else (0 until a.length()).map { i ->
+                    val parts = a.optJSONArray(i) ?: return@map emptyList()
+                    (0 until parts.length()).mapNotNull { j ->
+                        val p = parts.optJSONArray(j) ?: return@mapNotNull null
+                        SleepStackPart(p.optString(0), p.optDouble(1).toFloat(), p.optDouble(2).toFloat())
+                    }
+                }
+            }
+            val tops = o.obj("tops")?.let { t -> t.keys().asSequence().associateWith { k -> t.optJSONArray(k).floats() } }.orEmpty()
+            return SleepStackPeriod(period, (o.num("w") ?: 2.0).toFloat(), stacks, tops)
+        }
+    }
+}
+
+/** A stage's part of a night's bar: from [top] to [bottom], % from the plot's top. */
+data class SleepStackPart(val stage: String, val top: Float, val bottom: Float)
 
 data class SleepRow(val key: String, val label: String, val total: String?)
 
@@ -1458,7 +1519,9 @@ data class AreaChart(
     val defaultPeriod: String,
     val periods: List<AreaPeriod>,
     /** The two units over a chart with a second scale — "kcal" on the left, "kJ" on the right — or null. */
-    val units: Pair<String, String>? = null
+    val units: Pair<String, String>? = null,
+    /** 40.1: "Over …" under the large chart — its title and short points — or null. */
+    val about: AreaAbout? = null
 ) {
     /** Bars and a line: drawn in two shades. */
     val mixed get() = series.map { it.kind }.distinct().size > 1
@@ -1480,13 +1543,20 @@ data class AreaChart(
                 latest = o.obj("latest")?.let { AreaLatest(it.arr("texts").let(::textsOf), it.str("date"), it.str("of"), it.str("sub")) },
                 defaultPeriod = o.str("default") ?: periods.first().key,
                 periods = periods,
-                units = o.arr("units")?.let { u -> if (u.length() >= 2) u.optString(0) to u.optString(1) else null }
+                units = o.arr("units")?.let { u -> if (u.length() >= 2) u.optString(0) to u.optString(1) else null },
+                about = o.obj("about")?.let { a ->
+                    val points = a.arr("points")?.let { list -> (0 until list.length()).map { list.optString(it) }.filter { it.isNotEmpty() } }.orEmpty()
+                    if (points.isEmpty()) null else AreaAbout(a.str("title").orEmpty(), points)
+                }
             )
         }
     }
 }
 
 data class AreaSeries(val key: String, val label: String, val kind: String)
+
+/** A chart's "Over …": what it shows, what it measures and why it helps (40.1). */
+data class AreaAbout(val title: String, val points: List<String>)
 
 /**
  * The small chart's head: each series' value, the day when it is not today's,

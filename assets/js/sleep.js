@@ -16,7 +16,12 @@
  * Where the finger is between two periods, the nearer one is read. Every
  * word and time is the server's; nothing here formats one.
  *
- * The four small charts are Ownify's area charts (area-charts.js).
+ * Vandaag shows a night at a time, this morning's and the six before it:
+ * the arrows and the switch are Training's heart rate's (training.js,
+ * health-trend.js); 7 dagen to 1 jaar are read as every chart over time
+ * is (compass-history.js).
+ *
+ * The small charts are Ownify's area charts (area-charts.js).
  */
 
 (function () {
@@ -26,14 +31,28 @@
 
     var LINGER = 1600;      // ms a touch reading stays after the finger lifts
 
-    Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-night]'), night);
+    /* Each night of the card on its own (40.1: the arrows go back over seven,
+       training.js); the switch says which hint is under it. */
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sleep-night]'), function (card) {
+        var live   = card.querySelector('[data-night-live]');
+        var scopes = card.querySelectorAll('[data-night-range]');
+        Array.prototype.forEach.call(scopes.length ? scopes : [card], function (scope) { night(scope, live); });
+
+        card.addEventListener('click', function (event) {
+            var option = event.target.closest('[data-range-option]');
+            if (!option) { return; }
+            var period = !option.hasAttribute('data-day-option');
+            Array.prototype.forEach.call(card.querySelectorAll('[data-hint-for]'), function (hint) {
+                hint.hidden = (hint.getAttribute('data-hint-for') === 'period') !== period;
+            });
+        });
+    });
 
     /* =============================================================== night */
 
-    function night(card) {
+    function night(card, live) {
         var plot   = card.querySelector('[data-night-plot]');
         var tip    = card.querySelector('[data-night-tip]');
-        var live   = card.querySelector('[data-night-live]');
         var source = card.querySelector('[data-night-blocks]');
         if (!plot || !tip || !source) { return; }
 

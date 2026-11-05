@@ -11,4 +11,5 @@ return [
     'geen gegevens' => 'no data',
     'vandaag, nog open' => 'today, still open',
     'nog niet geweest' => 'not yet',
+    'Over %s' => 'About %s',
 ];

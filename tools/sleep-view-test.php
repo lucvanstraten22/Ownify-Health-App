@@ -194,10 +194,13 @@ $spo2   = $charts['spo2']['periods'][0];
 
 check('six charts, in their order', array_keys($charts) === ['bed', 'spo2', 'skin_temp', 'hrv', 'respiratory_rate', 'sleeping_hr']);
 check('7 dagen of a young history: from its first day at the left, the rest ahead',
-    $bed['axis'][0]['label'] === score_compass_date($day(2), true) && count($bed['axis']) === 7
+    $bed['axis'][0]['label'] === mb_convert_case(i18n_weekday((int) date('w', strtotime($day(2))), true), MB_CASE_TITLE) && count($bed['axis']) === 7
     && count($bed['points']) === 3 && $bed['x'][0] === $bed['axis'][0]['x'],
     json_encode([array_column($bed['axis'], 'label'), count($bed['points'])]));
-check('  its dates in two rows for the small chart', $bed['axis_rows'][0]['day'] === (string) (int) substr($day(2), 8, 2) && $bed['axis_rows'][0]['month'] !== null);
+check('  its weekdays in one row on the small chart too (40.1)', $bed['axis_rows'] === null);
+$gaps = array_map(static fn ($i) => $bed['axis'][$i + 1]['x'] - $bed['axis'][$i]['x'], range(0, 5));
+check('  seven equal places (to a hundredth of a percent), the points on their days', max($gaps) - min($gaps) < 0.02
+    && $bed['x'] === array_slice(array_column($bed['axis'], 'x'), 0, count($bed['x'])), json_encode([array_column($bed['axis'], 'x'), $bed['x']]));
 check('Tijd in bed each night, nothing for the night without one',
     array_column($bed['points'], 3) === ['8:00 u', null, '8:00 u'], json_encode(array_column($bed['points'], 3)));
 check('  the bars: a top for each night, null — never 0 — between',
@@ -217,6 +220,45 @@ $weeks = $charts['bed']['periods'][2];
 check('90 dagen: a week as one point — its days\' mean, said so',
     $weeks['group'] === 'week' && $weeks['points'][0][3] === '8:00 u' && $weeks['points'][0][1] === 'weekgemiddelde' && $weeks['points'][0][4] === '73',
     json_encode($weeks['points']));
+
+/* =================================================================== */
+
+section('5. Slaapverloop: a night at a time, and the nights over a period (40.1)');
+
+$v = hydrate_sleep_night($sleep['night'], $userId, $today, $sleep['chart_copy'], $periods);
+
+check('Training\'s switch: Vandaag, then 7 dagen to 1 jaar',
+    array_column($v['options'], 'label') === array_merge(['Vandaag'], array_column($periods, 'label')) && $v['options'][0]['key'] === 'd0' && $v['default'] === 'd0',
+    json_encode($v['options']));
+check('seven mornings under Vandaag, this one first, the arrows\' words',
+    count($v['nights']) === 7 && array_column($v['nights'], 'key') === ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6'] && $v['prev'] === 'Vorige nacht' && $v['next'] === 'Volgende nacht');
+check('  each night its own: this morning\'s from 23:00, two mornings back from 22:30',
+    $v['nights'][0]['start'] === '23:00' && $v['nights'][2]['start'] === '22:30' && $v['nights'][2]['has_night'] && $v['nights'][0]['heading'] === $v['nights'][0]['date'] && $v['title'] === 'Slaapverloop',
+    json_encode([$v['nights'][0]['start'], $v['nights'][2]['start']]));
+check('  a morning without a night: its date, no blocks, and it says so',
+    !$v['nights'][1]['has_night'] && $v['nights'][1]['blocks'] === [] && $v['nights'][1]['note'] === $sleep['night']['empty_day']
+    && $v['nights'][1]['heading'] === score_compass_date($day(1), true));
+check('  the top level is the night opened first, as before', $v['start'] === '23:00' && $v['blocks'] === $v['nights'][0]['blocks']);
+
+$week = $v['periods'][0];
+check('7 dagen on Ownify\'s time axis, weekdays under it', $week['key'] === '7' && count($week['axis']) === 7
+    && $week['axis'][0]['label'] === mb_convert_case(i18n_weekday((int) date('w', strtotime($day(2))), true), MB_CASE_TITLE),
+    json_encode(array_column($week['axis'], 'label')));
+check('  each night one bar, Diep at the bottom: this morning\'s parts in order',
+    array_column($week['stacks'][2], 0) === ['deep', 'light', 'rem', 'restless', 'awake'] && $week['stacks'][1] === [],
+    json_encode($week['stacks']));
+$bar = $week['stacks'][2];
+check('  stacked: each part starts where the one below it ends, the bottom at the base',
+    $bar[0][1] === $bar[1][2] && $bar[1][1] === $bar[2][2] && $bar[2][1] === $bar[3][2] && $bar[3][1] === $bar[4][2] && $bar[0][2] === 100.0,
+    json_encode($bar));
+check('  the minutes read in hours, per stage — Rusteloosheid its own, out of Wakker\'s stored 15',
+    array_slice($week['points'][2], 3) === ['1:00 u', '5:50 u', '0:25 u', '0:05 u', '0:10 u'], json_encode($week['points'][2]));
+check('  its levels named in hours', $week['grid'] !== [] && str_ends_with((string) $week['grid'][0]['label'], ' u'), json_encode($week['grid']));
+$year = end($v['periods']);
+check('1 jaar: a month as one bar, the mean of its nights', $year['group'] === 'month' && count(array_filter($year['stacks'])) >= 1);
+
+$none = hydrate_sleep_night($sleep['night'], $userId, $day(40), $sleep['chart_copy'], $periods);
+check('no night in the week: the first morning, saying so as before', $none['default'] === 'd0' && !$none['has_night'] && $none['note'] === $sleep['night']['empty']);
 
 echo "\n" . str_repeat('-', 72) . "\n";
 printf("  %d passed, %d failed\n", $pass, $fail);

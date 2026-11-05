@@ -184,6 +184,37 @@ class SleepViewTest {
     }
 
     @Test
+    fun `a chart's own page ends with Over it - its points, never on the small chart (40,1)`() {
+        val state = json("state-demo.json").getJSONObject("data")
+        val view = json("sleep-view.json")
+        val charts = view.getJSONArray("charts")
+        for (i in 0 until charts.length()) {
+            val c = charts.getJSONObject(i)
+            if (c.getString("id") == "spo2") c.put("about", JSONObject().put("title", "Over SpO₂").put("points", org.json.JSONArray(listOf("Het zuurstofgehalte van je bloed.", "Gemeten tijdens de slaap."))))
+        }
+        state.getJSONObject("health").getJSONObject("areas").getJSONObject("sleep").put("view", view)
+        val data = AppData.parse(state)
+        compose.setContent {
+            OwnifyTheme {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    CompositionLocalProvider(LocalScreen provides ScreenMetrics(maxWidth, maxHeight), LocalStillMotion provides true) {
+                        AppShell(data, OwnifyScreens.shell, onShell = { shell = it })
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.runOnUiThread { shell.tab("health"); shell.openDetail(Detail.HealthArea("sleep")) }
+        compose.waitForIdle()
+        assertTrue("not on Slaap's small chart", none("Het zuurstofgehalte van je bloed."))
+        mini("SpO₂").performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
+        compose.onNode(hasText("OVER SPO₂") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading), useUnmergedTree = true).assertExists()
+        text("Het zuurstofgehalte van je bloed.").assertExists()
+        text("Gemeten tijdens de slaap.").assertExists()
+    }
+
+    @Test
     fun `leaving for another tab closes both`() {
         show()
         mini("Huidtemperatuur").performSemanticsAction(SemanticsActions.OnClick)

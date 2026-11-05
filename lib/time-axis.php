@@ -11,7 +11,7 @@
  *                the period stays empty on the right, ahead of it. Once the
  *                history fills the period the window rolls: today at the
  *                right edge, a day older at the left each day.
- *   the dates    7 days    every day               "8 okt"
+ *   the dates    7 days    every day, its weekday  "Ma" "Di" … "Zo" (40.1)
  *                30 days   every third day         "8 okt" "11" "14" … "1 nov" "4"
  *                90 days   every seventh day       "8 okt" "15" "22" … "5 nov" …
  *                365 days  13 month boundaries,    "okt" "nov" … "sep" "okt"
@@ -171,10 +171,18 @@ if (!function_exists('time_axis')) {
             return $month;
         }
 
+        /* A week: each day's weekday, "Ma" … "Zo" ("Mon" … "Sun"), seven
+           equal places (40.1). The reading still carries the full date. */
+        if ($days === 7) {
+            $weekday = i18n_weekday((int) $date->format('w'), true);
+
+            return mb_strtoupper(mb_substr($weekday, 0, 1)) . mb_substr($weekday, 1);
+        }
+
         $day = (string) (int) $date->format('j');
 
-        /* A week names every day in full; longer periods their month where it begins. */
-        if ($days === 7 || $previous === null || $previous->format('n') !== $date->format('n')) {
+        /* Longer periods name their month where it begins. */
+        if ($previous === null || $previous->format('n') !== $date->format('n')) {
             return i18n_locale() === 'en' ? $month . ' ' . $day : $day . ' ' . $month;     // "Oct 8", "8 okt"
         }
 

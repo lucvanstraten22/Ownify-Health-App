@@ -191,3 +191,43 @@
     .sleep-night__chart { column-gap: var(--space-2); }
     .sleep-night__axis { margin-left: calc(var(--label-w) + var(--space-2)); }
 }
+
+/* --------------------------------------------------------------------------
+   Slaapverloop over the nights (40.1): Training's heart-rate switch and
+   arrows (training.css), each night's own sum under its name, and over a
+   period each night's stages as one bar.
+   -------------------------------------------------------------------------- */
+.sleep-night__head { flex-wrap: wrap; row-gap: var(--space-4); }
+
+.sleep-night__range .sleep-night__sum {
+    justify-items: center;
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+/* The bars over a period: the Verloop's plot, 160 px, its levels in hours. */
+.sleep-night { --level-gutter: 34px; }
+.sleep-night__stacks {
+    height: 160px;
+    margin-left: var(--level-gutter);
+}
+.sleep-night__range .chart__axis.has-levels { margin-left: var(--level-gutter); }
+
+/* A stage's part of a night's bar: its own colour, square where it meets
+   the next, the top one rounded as a bar is; a hairline of the card between. */
+.sleep-night__part {
+    background: var(--stage);
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 var(--bg-secondary);
+}
+.sleep-night__part.is-top { border-radius: 4px 4px 0 0; box-shadow: none; }
+
+/* The stage's key in the reading and under the chart: its colour, a square as a bar's is. */
+.sleep-night .sleep-night__key {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--stage);
+    box-shadow: none;
+}
+

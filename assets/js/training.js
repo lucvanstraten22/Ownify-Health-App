@@ -19,11 +19,13 @@
     var SWIPE = 48;         // px sideways a swipe travels
     var FLICK = 350;        // ms a swipe over the chart takes at most, or it was a reading
 
-    Array.prototype.forEach.call(document.querySelectorAll('[data-heart-chart]'), chart);
+    /* Training's heart rate, and Slaap's Slaapverloop over its nights (40.1,
+       components/sleep-night.php): the same arrows, swipe and switch. */
+    Array.prototype.forEach.call(document.querySelectorAll('[data-heart-chart], [data-day-chart]'), chart);
 
     function chart(card) {
         var days  = Array.prototype.slice.call(card.querySelectorAll('[data-heart-day]'));
-        var today = card.querySelector('[data-range-option="d0"]');
+        var today = card.querySelector('[data-day-option]') || card.querySelector('[data-range-option="d0"]');
         var live  = card.querySelector('[data-reading-live]');
         if (!days.length || !today) { return; }
 

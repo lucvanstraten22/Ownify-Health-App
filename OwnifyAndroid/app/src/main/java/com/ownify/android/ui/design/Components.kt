@@ -829,7 +829,7 @@ data class LegendItem(val label: String, val value: Int?, val accent: Accent, va
  * One column below 360 dp.
  */
 @Composable
-fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boolean = true) {
+fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boolean = true, columns: Int = items.size) {
     val narrow = LocalScreen.current.narrow
     val box = modifier
         .fillMaxWidth()
@@ -869,9 +869,19 @@ fun Legend(items: List<LegendItem>, modifier: Modifier = Modifier, values: Boole
         Column(box, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             items.forEach { Item(it, Modifier) }
         }
-    } else {
+    } else if (columns >= items.size) {
         Row(box, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             items.forEach { Item(it, Modifier.weight(1f)) }
+        }
+    } else {
+        // More items than columns (Slaapverloop's five stages): rows of [columns], as `.legend`'s grid wraps.
+        Column(box, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+            items.chunked(columns).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                    row.forEach { Item(it, Modifier.weight(1f)) }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
         }
     }
 }

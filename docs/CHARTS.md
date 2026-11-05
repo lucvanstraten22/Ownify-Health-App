@@ -24,7 +24,7 @@ server sends. Its own test is `tools/time-axis-test.php`.
 
 | Period | The window | The dates under it | A point is |
 | --- | --- | --- | --- |
-| **7 dagen** (the default) | 7 days | every day: `8 okt · 9 okt · 10 okt …` | a day |
+| **7 dagen** (the default) | 7 days | every day, its weekday: `Do · Vr · Za · Zo · Ma · Di · Wo` (40.1; English `Thu · Fri …`) | a day |
 | **30 dagen** | 30 days | every third day: `8 okt · 11 · 14 · … · 29 · 1 nov · 4` (10 dates) | a day |
 | **90 dagen** | 90 days | every seventh day: `8 okt · 15 · 22 · 29 · 5 nov …` (13 dates) | a week |
 | **1 jaar** | 365 days | 13 month boundaries: `okt · nov · dec · … · sep · okt` | a month |
@@ -37,6 +37,11 @@ server sends. Its own test is `tools/time-axis-test.php`.
     the rest of the week empty. Never the two days shifted to the right,
     never the chart zoomed into them.
   - A full history in 7 dagen: 2 to 8 oktober, today the last date.
+- **7 dagen names weekdays** (40.1): seven equal places, one per day, each
+  under its own day whether it has a value or not — a missing day stays an
+  empty place, it never shifts the others. The weekday fits the small
+  charts in one row, so they no longer take two rows of dates. The reading
+  still gives the full date ("3 november").
 - **The dates** stand at their days, counted from the window's first day.
   They are real dates: never "Vandaag", never a year (the reading carries
   the full date). Over 30 and 90 days a date names its month at the first
@@ -134,8 +139,8 @@ An area chart (`lib/area-charts.php`) may carry, besides its series:
 - a series' `alt` [unit, factor]: a second scale — its levels named on the
   right of the large chart, both units over the plot ("kcal", "kJ"), the
   reading in both ("1.844 kcal · 7.715 kJ") and the head's line under it.
-  Its narrower plot takes 7 dagen's dates in two rows, as 30 and 90 dagen
-  always are. Levels of five characters or more ("2.000") take a wider
+  Its narrower plot takes 30 and 90 dagen's dates in two rows; 7 dagen's
+  weekdays fit in one. Levels of five characters or more ("2.000") take a wider
   gutter (34 instead of 26).
 
 ## Where it lives

@@ -49,7 +49,7 @@ if (!function_exists('hydrate_sleep')) {
     function hydrate_sleep(array $area, array $periods, int $userId, array $history, string $today): array
     {
         return [
-            'night'  => hydrate_sleep_night((array) $area['night'], $userId, $today),
+            'night'  => hydrate_sleep_night((array) $area['night'], $userId, $today, (array) $area['chart_copy'], $periods),
             'charts' => hydrate_sleep_charts((array) $area['charts'], (array) $area['chart_copy'], $periods, $userId, $history, $today),
         ];
     }
@@ -59,11 +59,74 @@ if (!function_exists('hydrate_sleep')) {
        ================================================================== */
 
     /**
-     * The last night of the past `days` (the main sleep, health_night_on()'s
-     * rule): its bedtime and wake time, how long was slept and how much of
-     * the time in bed, and each recorded period of a stage on its row.
+     * Slaapverloop (40.1): Training's heart-rate switch over the night.
+     *
+     *   Vandaag   one night at a time — this morning's and the six before
+     *             it (`days`), an arrow either side — each with its bedtime
+     *             and wake time, how long was slept and how much of the time
+     *             in bed, and each recorded period of a stage on its row.
+     *             Opened on the newest night there is.
+     *   7 dagen … 1 jaar   each night's stage minutes as one bar on Ownify's
+     *             time axis (docs/CHARTS.md), Diep at the bottom to Wakker at
+     *             the top; a week's or month's the mean of its nights.
+     *
+     * The top level is the night opened first, as it always was.
+     *
+     * @param array $chartCopy  Slaap's `chart_copy`: the words of its charts over time
+     * @param array $periods    config/compass.php's history periods
      */
-    function hydrate_sleep_night(array $copy, int $userId, string $today): array
+    function hydrate_sleep_night(array $copy, int $userId, string $today, array $chartCopy = [], array $periods = []): array
+    {
+        $count  = max(1, (int) $copy['days']);
+        $from   = (new DateTimeImmutable($today))->modify('-' . ($count - 1) . ' day')->format('Y-m-d');
+        $nights = db_available() ? health_nights_on($userId, $from, $today) : [];
+
+        $days   = [];
+        $opened = null;
+        for ($d = 0; $d < $count; $d++) {
+            $date   = (new DateTimeImmutable($today))->modify("-{$d} day")->format('Y-m-d');
+            $night  = $nights[$date] ?? null;
+            $one    = hydrate_sleep_night_one($copy, $userId, $night);
+            $one['key']   = 'd' . $d;
+            $one['heading'] = $one['date'] ?? score_compass_date($date, true);
+            if ($night === null) {
+                $one['note'] = (string) ($copy['empty_day'] ?? $copy['empty']);
+            }
+            $opened ??= $night !== null ? $d : null;
+            $days[] = $one;
+        }
+
+        /* No night at all: the first, saying so as it always did. */
+        $default = $opened ?? 0;
+        $out     = $days[$default];
+        if ($opened === null) {
+            $out['note']    = (string) $copy['empty'];
+            $days[0]['note'] = (string) $copy['empty'];
+        }
+
+        $stacked = $periods !== [] && $chartCopy !== [] ? hydrate_sleep_night_periods($copy, $chartCopy, $periods, $userId, $today) : [];
+
+        $options = [['key' => 'd' . $default, 'label' => (string) ($copy['today'] ?? 'Vandaag')]];
+        foreach ($stacked as $period) {
+            $options[] = ['key' => $period['key'], 'label' => $period['label']];
+        }
+
+        return $out + [
+            'switch'  => t('Periode kiezen'),
+            'prev'    => (string) ($copy['prev'] ?? ''),
+            'next'    => (string) ($copy['next'] ?? ''),
+            'default' => 'd' . $default,
+            'options' => $options,
+            'nights'  => $days,
+            'stages'  => array_map(static fn (array $s): array => ['key' => (string) $s['key'], 'label' => (string) $s['label']], (array) ($copy['period_stages'] ?? [])),
+            'period_hint' => (string) ($copy['period_hint'] ?? ''),
+            'period_empty' => (string) $copy['empty'],
+            'periods' => $stacked,
+        ];
+    }
+
+    /** One night, or none: its times, its sums and its stages on their rows. */
+    function hydrate_sleep_night_one(array $copy, int $userId, ?array $night): array
     {
         $rows = array_map(static fn (array $s): array => ['key' => (string) $s['key'], 'label' => (string) $s['label'], 'total' => null], $copy['stages']);
         $out  = [
@@ -85,18 +148,10 @@ if (!function_exists('hydrate_sleep')) {
             'note'       => (string) $copy['empty'],
         ];
 
-        if (!db_available()) {
+        if ($night === null) {
             return $out;
         }
 
-        $from   = (new DateTimeImmutable($today))->modify('-' . max(0, (int) $copy['days'] - 1) . ' day')->format('Y-m-d');
-        $nights = health_nights_on($userId, $from, $today);
-        if ($nights === []) {
-            return $out;
-        }
-
-        ksort($nights);
-        $night = end($nights);
         $start = (int) $night['start'];
         $end   = (int) $night['end'];
         $span  = max(60, $end - $start);
@@ -169,6 +224,133 @@ if (!function_exists('hydrate_sleep')) {
         $out['ticks'] = hydrate_sleep_night_ticks($start, $end);
 
         return $out;
+    }
+
+    /**
+     * 7 dagen to 1 jaar: each night's minutes per stage (the night's own
+     * stored minutes; Rusteloosheid from its recorded periods, out of Wakker) as one bar, stacked from the first of
+     * `period_stages` at the bottom — on Ownify's time axis, a week's or
+     * month's the mean of its nights (area_chart()). In hours, as Tijd in
+     * bed is; each stage's part of a bar given as [stage, top, bottom] in %
+     * from the plot's top.
+     */
+    function hydrate_sleep_night_periods(array $copy, array $chartCopy, array $periods, int $userId, string $today): array
+    {
+        $stages = (array) ($copy['period_stages'] ?? []);
+        if ($stages === []) {
+            return [];
+        }
+
+        $yearAgo = (new DateTimeImmutable($today))->modify('-364 day')->format('Y-m-d');
+        $nights  = db_available() ? health_nights_on($userId, $yearAgo, $today) : [];
+        $staged  = array_filter($nights, static fn (array $n): bool => $n['deep'] !== null || $n['light'] !== null || $n['rem'] !== null);
+
+        /* Rusteloosheid (stage 7, awake in bed) has no stored minutes: its
+           recorded periods, per night. The stored awake minutes include it,
+           so Wakker is what is left. A night without recorded periods keeps
+           Wakker as stored and has no Rusteloosheid part — never guessed. */
+        $restless = [];
+        if ($staged !== [] && db_available()) {
+            foreach (db_all(
+                'SELECT st.sleep_session_id AS id,
+                        SUM(CASE WHEN st.stage = 7 THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) AS seconds
+                   FROM sleep_stages st
+                   JOIN sleep_sessions s ON s.id = st.sleep_session_id
+                  WHERE s.user_id = ? AND s.night_of BETWEEN ? AND ?
+               GROUP BY st.sleep_session_id',
+                [$userId, $yearAgo, $today]
+            ) as $row) {
+                $restless[(int) $row['id']] = (float) $row['seconds'] / 60;
+            }
+        }
+        foreach ($staged as $date => $night) {
+            $parts = array_values(array_filter(array_map('intval', (array) ($night['parts'] ?? [$night['session_id']])), static fn (int $id): bool => isset($restless[$id])));
+            if ($parts === []) {
+                $staged[$date]['restless'] = null;
+                continue;
+            }
+            $minutes = array_sum(array_map(static fn (int $id): float => $restless[$id], $parts));
+            $staged[$date]['restless'] = round($minutes);
+            if ($night['awake'] !== null) {
+                $staged[$date]['awake'] = max(0.0, (float) $night['awake'] - round($minutes));
+            }
+        }
+        $first   = $staged === [] ? null : (string) min(array_keys($staged));
+
+        $chart = area_chart(
+            'stages',
+            [
+                'title'  => (string) ($copy['period_title'] ?? $copy['title']),
+                'scale'  => 'shared',
+                'series' => array_map(static fn (array $s): array => [
+                    'key' => (string) $s['key'], 'label' => (string) $s['label'], 'unit' => 'u', 'kind' => 'bars', 'format' => 'hours',
+                ], $stages),
+            ],
+            ['hint' => (string) ($copy['period_hint'] ?? $chartCopy['hint']), 'empty' => (string) $copy['empty']] + $chartCopy,
+            $periods,
+            static function (array $s) use ($staged, $first): array {
+                $out = [];
+                foreach ($staged as $date => $night) {
+                    $minutes = $night[(string) $s['key']] ?? null;
+                    if ($minutes === null) {
+                        continue;                   // not measured that night: no part, never a 0
+                    }
+                    $hours = (float) $minutes / 60;
+                    $out[(string) $date] = [$hours, area_chart_text($s, $hours), false];
+                }
+
+                return [$out, $first];
+            },
+            $today
+        );
+
+        $padY  = AREA_CHART_PAD_Y;
+        $h     = AREA_CHART_H;
+        $baseY = static fn (float $v, float $high): float => round(($padY + (1 - $v / $high) * ($h - $padY)) / $h * 100, 2);
+
+        foreach ($chart['periods'] as $k => $period) {
+            $values = $period['values'];
+            $n      = count($period['x']);
+
+            /* The height: the tallest night, whole, out to a round step. */
+            $tallest = 0.0;
+            for ($i = 0; $i < $n; $i++) {
+                $tallest = max($tallest, array_sum(array_map(static fn (array $vs): float => (float) ($vs[$i] ?? 0), $values)));
+            }
+            $step = max(goal_chart_step(0, $tallest > 0 ? $tallest : 1.0, 3), 0.5);
+            $high = max($step, ceil($tallest / $step) * $step);
+
+            $grid = [];
+            for ($level = $step; $level <= $high + $step / 1000; $level += $step) {
+                $grid[] = ['y' => $baseY($level, $high), 'label' => i18n_number($level, goal_chart_step_decimals($step)) . ' ' . t('u')];
+            }
+
+            /* Each bar from the bottom up, a stage's part after the one below it. */
+            $stacks = [];
+            $tops   = array_fill_keys(array_column($stages, 'key'), array_fill(0, $n, null));
+            for ($i = 0; $i < $n; $i++) {
+                $below = 0.0;
+                $parts = [];
+                foreach ($stages as $j => $stage) {
+                    $v = $values[$j][$i] ?? null;
+                    if ($v === null || $v <= 0) {
+                        continue;
+                    }
+                    $parts[] = [(string) $stage['key'], $baseY($below + $v, $high), $baseY($below, $high)];
+                    $tops[(string) $stage['key']][$i] = $baseY($below + $v, $high);
+                    $below += $v;
+                }
+                $stacks[] = $parts;
+            }
+
+            $chart['periods'][$k]['stacks'] = $stacks;
+            $chart['periods'][$k]['w']      = $period['bars'][0]['w'] ?? 2.0;
+            $chart['periods'][$k]['tops']   = $tops;
+            $chart['periods'][$k]['grid']   = $period['has_data'] ? $grid : [];
+            unset($chart['periods'][$k]['values'], $chart['periods'][$k]['bars'], $chart['periods'][$k]['lines']);
+        }
+
+        return $chart['periods'];
     }
 
     /**

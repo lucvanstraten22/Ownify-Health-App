@@ -41,8 +41,8 @@ $froms  = static fn (array $axis): array => array_column($axis['slots'], 'from')
 section('A new history: it starts at the left, the rest stays empty');
 
 $a = time_axis(7, '2026-10-08', '2026-10-09');
-check('7 dagen of two days: 8 to 14 oktober, every day named, no Vandaag',
-    $labels($a) === ['8 okt', '9 okt', '10 okt', '11 okt', '12 okt', '13 okt', '14 okt'], implode(' ', $labels($a)));
+check('7 dagen of two days: 8 to 14 oktober, every day its weekday (40.1), no Vandaag',
+    $labels($a) === ['Do', 'Vr', 'Za', 'Zo', 'Ma', 'Di', 'Wo'], implode(' ', $labels($a)));
 check('  the window runs ahead of today', $a['start'] === '2026-10-08' && $a['end'] === '2026-10-14' && !$a['rolling']);
 check('  two points, at the left — not stretched, not moved right',
     $froms($a) === ['2026-10-08', '2026-10-09'] && array_column($a['slots'], 'x') === [0.0, 16.67]);
@@ -73,8 +73,9 @@ check('no history: the period from today, no points', $a['start'] === '2026-10-0
 section('A full history: the window rolls, today at the right');
 
 $a = time_axis(7, '2025-01-01', '2026-10-08');
-check('7 dagen: 2 to 8 oktober, today the last date — by its date',
-    $a['rolling'] && $labels($a)[0] === '2 okt' && $labels($a)[6] === '8 okt' && end($a['slots'])['x'] === 100.0);
+check('7 dagen: 2 to 8 oktober, today the last place — by its weekday',
+    $a['rolling'] && $labels($a)[0] === 'Vr' && $labels($a)[6] === 'Do' && end($a['slots'])['x'] === 100.0
+    && $xs($a) === [0.0, 16.67, 33.33, 50.0, 66.67, 83.33, 100.0]);
 
 $a = time_axis(30, '2025-01-01', '2026-10-08');
 check('30 dagen: 9 september to today, a point a day, the newest at the right',

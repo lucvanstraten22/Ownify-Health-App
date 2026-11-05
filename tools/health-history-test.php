@@ -30,7 +30,7 @@
  *     unbroken line at 82; after that it has none — a gap, never a 0
  *   - a category without a score on a day the others have one is a gap in
  *     its own line only
- *   - a week names every day, today by its date; every point is a dot
+ *   - a week names every day by its weekday (40.1); every point is a dot
  *   - the Scorekompas's own history is the same with or without it; its
  *     line is the Health Score drawn the same way — weeks, months, its own
  *     height — and everything else of it as it was
@@ -114,6 +114,12 @@ function account(int $age = 400): int
 function day(int $days): string
 {
     return (new DateTimeImmutable('today'))->modify(sprintf('%+d days', -$days))->format('Y-m-d');
+}
+
+/** A day's label over 7 dagen (40.1): its weekday, "Ma" … "Zo". */
+function wd(string $date): string
+{
+    return mb_convert_case(i18n_weekday((int) date('w', strtotime($date)), true), MB_CASE_TITLE);
 }
 
 /**
@@ -239,9 +245,9 @@ check('every point is that category\'s recorded score that day', $ok);
 check('  the Scorekompas\'s own history is not touched by it', $pages['untouched']);
 
 $week = $history['periods'][0];
-check('a week names every day — today by its date', count($week['axis']) === 7 && $week['every']
+check('a week names every day — by its weekday (40.1)', count($week['axis']) === 7 && $week['every']
     && array_column($week['axis'], 'x') === $week['chart']['x']
-    && $week['axis'][6]['label'] === score_compass_date(day(0), true));
+    && $week['axis'][6]['label'] === wd(day(0)));
 check('  30 days: a date every third day, its month where it begins',
     count($history['periods'][1]['axis']) === 10 && $history['periods'][1]['axis'][0]['label'] === score_compass_date(day(29), true));
 check('  every point is a dot', array_column($history['periods'], 'dots') === ['every', 'every', 'every', 'every']);
@@ -342,8 +348,8 @@ foreach ([...$pages['history']['periods'], ...$pages['compass']['trend']['period
 }
 check('two days of Slaap: in every period of both charts the first point is at the left edge', $ok);
 $week = period($pages, '7');
-check('  7 dagen: the week from its first day, every day by its date, the days ahead empty',
-    array_column($week['axis'], 'label') === array_map(static fn ($ago) => score_compass_date(day($ago), true), [2, 1, 0, -1, -2, -3, -4])
+check('  7 dagen: the week from its first day, every day by its weekday, the days ahead empty',
+    array_column($week['axis'], 'label') === array_map(static fn ($ago) => wd(day($ago)), [2, 1, 0, -1, -2, -3, -4])
     && $week['chart']['x'] === [0.0, 16.67, 33.33], json_encode($week['axis']));
 check('  — not moved to the right, not stretched over the width', max($week['chart']['x']) < 50);
 $month = period($pages, '30');
@@ -404,8 +410,8 @@ for ($ago = 380; $ago >= 1; $ago--) {
 }
 $pages = pages($u);
 $week  = period($pages, '7');
-check('7 dagen: the last seven days, today the last date — by its date',
-    $week['axis'][0]['label'] === score_compass_date(day(6), true) && end($week['axis'])['label'] === score_compass_date(day(0), true)
+check('7 dagen: the last seven days, today the last place — by its weekday',
+    $week['axis'][0]['label'] === wd(day(6)) && end($week['axis'])['label'] === wd(day(0))
     && end($week['chart']['x']) === 100.0);
 $month = period($pages, '30');
 check('30 dagen: the last 30, a point a day, the newest at the right',
@@ -531,7 +537,7 @@ $chart = static function (int $days) use ($goal, $today): array {
 };
 $two = $chart(2);
 check('two days: 7 dagen from the first, at the left — the rest of the week empty',
-    count($two['x_ticks']) === 7 && $two['x_ticks'][0]['label'] === score_compass_date(day(1), true)
+    count($two['x_ticks']) === 7 && $two['x_ticks'][0]['label'] === wd(day(1))
     && $two['points'][0]['x'] === $two['x_ticks'][0]['left'] && $two['points'][1]['x'] < 25);
 $ten = $chart(10);
 check('ten days: 30 dagen, a date every third day', count($ten['x_ticks']) === 10 && $ten['points'][0]['x'] === $ten['x_ticks'][0]['left']);

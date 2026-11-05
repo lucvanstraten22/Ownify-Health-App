@@ -250,7 +250,7 @@ private fun HeartCard(heart: HeartChart, evidence: List<Evidence?>) {
             label = heart.switchLabel
         )
 
-        if (dayMode) DayRow(plot.title.orEmpty(), heart, day, last, step)
+        if (dayMode) DayRow(plot.title.orEmpty(), heart.prev, heart.next, day, last, step)
 
         Box(
             Modifier
@@ -278,9 +278,9 @@ private fun HeartHead(title: String) {
     }
 }
 
-/** `.heart-chart__day`: ‹ older, the day's name, newer › — and a swipe over it. */
+/** `.heart-chart__day`: ‹ older, the day's name, newer › — and a swipe over it. Slaap's Slaapverloop's too (40.1). */
 @Composable
-private fun DayRow(title: String, heart: HeartChart, day: Int, last: Int, step: (Int) -> Unit) {
+internal fun DayRow(title: String, prev: String, next: String, day: Int, last: Int, step: (Int) -> Unit) {
     val owned = LocalOwnedAreas.current
     val ownKey = remember { Any() }
     DisposableEffect(ownKey) { onDispose { owned.set(ownKey, null) } }
@@ -307,7 +307,7 @@ private fun DayRow(title: String, heart: HeartChart, day: Int, last: Int, step: 
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StepButton(OwnifyIcons.chevronLeft, heart.prev, enabled = day < last) { step(1) }
+        StepButton(OwnifyIcons.chevronLeft, prev, enabled = day < last) { step(1) }
         T(
             title,
             OwnifyType.style(Ownify.FsBody, FontWeight.Bold),
@@ -315,7 +315,7 @@ private fun DayRow(title: String, heart: HeartChart, day: Int, last: Int, step: 
             align = TextAlign.Center,
             maxLines = 1
         )
-        StepButton(OwnifyIcons.chevronRight, heart.next, enabled = day > 0) { step(-1) }
+        StepButton(OwnifyIcons.chevronRight, next, enabled = day > 0) { step(-1) }
     }
 }
 
@@ -344,7 +344,7 @@ private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, la
  * day, to the left a newer one. Only watched — never consumed — so a slow
  * slide is still the chart's reading.
  */
-private fun Modifier.flicks(step: (Int) -> Unit): Modifier = pointerInput(Unit) {
+internal fun Modifier.flicks(step: (Int) -> Unit): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
         var end = down.position

@@ -1,8 +1,8 @@
 <?php
 /**
  * One of an area's charts on a page of its own (lib/area-charts.php): its
- * name and the chart, large, over 7 dagen, 30 dagen, 90 dagen and 1 jaar —
- * nothing else. Opened from its small chart on the area's page (Slaap,
+ * name and the chart, large, over 7 dagen, 30 dagen, 90 dagen and 1 jaar,
+ * and under it "Over …": what the chart shows, in short points (40.1). Opened from its small chart on the area's page (Slaap,
  * Training), over it; back goes to that page.
  */
 declare(strict_types=1);
@@ -32,6 +32,22 @@ $area  = (string) $data['chart_area'];
                 </header>
 
                 <?php component('area-chart', $data + ['chart_mode' => 'full']); ?>
+
+                <?php if ($chart['about'] !== null): ?>
+                    <?php /* 40.1: what the chart shows, in Samenvatting onderzoek's short points. */ ?>
+                    <section class="settings-block reveal" aria-labelledby="<?= e($area . '-' . $chart['id']) ?>-about">
+                        <h2 class="settings-eyebrow" id="<?= e($area . '-' . $chart['id']) ?>-about"><?= e($chart['about']['title']) ?></h2>
+                        <div class="card settings-card">
+                            <div class="settings-state">
+                                <ul class="research-detail__points">
+                                    <?php foreach ($chart['about']['points'] as $point): ?>
+                                        <li><?= e($point) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+                <?php endif; ?>
             </div>
         </main>
     </div>
