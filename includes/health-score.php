@@ -1319,11 +1319,13 @@ if (!function_exists('health_score_now')) {
      * Only today: a result for a day that has passed is never written, so
      * the record of that day stays what it was (health_score_history()).
      */
-    function health_score_store(int $userId, array $scores): void
+    function health_score_store(int $userId, array $scores, bool $past = false): void
     {
         $date = substr((string) $scores['as_of'], 0, 10);
 
-        if ($date < date('Y-m-d')) {
+        /* A day that has passed keeps its score — unless the person changed
+           that day's own data by hand ($past, health_score_restore_days()). */
+        if ($date < date('Y-m-d') && !$past) {
             return;
         }
 
@@ -1406,6 +1408,39 @@ if (!function_exists('health_score_now')) {
                score; the page shows it either way. */
             error_log('[ownify] health score: could not record the day\'s scores: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * The recorded scores of days that have passed, worked out again after
+     * the person entered, corrected or removed data of $date by hand (40.0,
+     * docs/MANUAL-ENTRY.md): that day and the days after it whose 168 hours
+     * reach back over it — at most six, never today (health_score_refresh()
+     * has it) or a day still to come. Each day is worked out as at its end,
+     * from the data as it is now; a day whose scores come out the same is not
+     * written (health_score_store()). Nothing before $date changes.
+     *
+     * @return list<string> the dates worked out again
+     */
+    function health_score_restore_days(int $userId, string $date, ?DateTimeImmutable $now = null): array
+    {
+        $now   ??= new DateTimeImmutable('now');
+        $today  = $now->format('Y-m-d');
+        $start  = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if ($start === false || $date >= $today) {
+            return [];
+        }
+
+        $done = [];
+        for ($i = 0; $i < health_score_window_days(); $i++) {
+            $day = $start->modify('+' . $i . ' days');
+            if ($day->format('Y-m-d') >= $today) {
+                break;
+            }
+            health_score_store($userId, health_score_now($userId, $day->setTime(23, 59, 59)), true);
+            $done[] = $day->format('Y-m-d');
+        }
+
+        return $done;
     }
 
     /** Whether daily_scores has the columns migration 010 adds. */

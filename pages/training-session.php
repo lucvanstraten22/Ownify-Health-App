@@ -74,6 +74,30 @@ $suffix  = $session['detail'];
                         </ul>
                     </section>
                 <?php endif; ?>
+
+                <?php /* Removing it (40.0, docs/MANUAL-ENTRY.md): Doelen's delete
+                         and its confirmation, as on a goal's page. One that was
+                         synced is removed from Ownify only. */ ?>
+                <?php $remove = $data['manual_entry']['remove'] ?? null; ?>
+                <?php if ($remove !== null): ?>
+                    <section class="goal-manage manual-entry__remove reveal" data-entry-remove="<?= e($session['id']) ?>">
+                        <button type="button" class="btn goal-manage__button goal-manage__button--danger press" data-entry-action="remove">
+                            <?= icon('trash', 'goal-manage__icon') ?>
+                            <?= e($remove['button']) ?>
+                        </button>
+                        <div class="goal-confirm" data-entry-confirm hidden>
+                            <p class="goal-confirm__text"><?= e($remove['confirm']) ?></p>
+                            <?php if (empty($session['manual'])): ?>
+                                <p class="goal-confirm__text manual-entry__imported"><?= e($remove['imported']) ?></p>
+                            <?php endif; ?>
+                            <div class="goal-confirm__row">
+                                <button type="button" class="btn press" data-entry-action="remove-cancel"><?= e($remove['no']) ?></button>
+                                <button type="button" class="btn btn--caution press" data-entry-action="remove-confirm"><?= e($remove['yes']) ?></button>
+                            </div>
+                        </div>
+                        <p class="wizard__error" role="alert" data-entry-error hidden></p>
+                    </section>
+                <?php endif; ?>
             </div>
         </main>
     </div>

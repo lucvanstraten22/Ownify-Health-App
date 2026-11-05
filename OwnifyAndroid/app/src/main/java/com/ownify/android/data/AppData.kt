@@ -41,7 +41,9 @@ data class AppData(
     /** Inzichten (docs/CORRELATIONS.md, 31.0): every combined insight and its page; empty before migration 029. */
     val correlations: Correlations = Correlations.parse(null),
     /** Over de app's Privacyverklaring, Voorwaarden and Licenties (39.0, config/legal.php). */
-    val legal: Legal = Legal.parse(null)
+    val legal: Legal = Legal.parse(null),
+    /** Slaap's and Training's + and their entry pages, removing a training (40.0, docs/MANUAL-ENTRY.md); null before migration 030. */
+    val manualEntry: ManualEntry? = null
 ) {
     companion object {
         fun parse(data: JSONObject): AppData {
@@ -70,7 +72,41 @@ data class AppData(
                 notices = Notices.parse(data.obj("notices")),
                 research = Research.parse(data.obj("research")),
                 correlations = Correlations.parse(data.obj("correlations")),
-                legal = Legal.parse(data.obj("legal"))
+                legal = Legal.parse(data.obj("legal")),
+                manualEntry = ManualEntry.parse(data.obj("manual_entry"))
+            )
+        }
+    }
+}
+
+/**
+ * A night or a training entered by hand (40.0, config/manual-entry.php,
+ * docs/MANUAL-ENTRY.md): the two entry pages' words — one layout, only
+ * [sleep]'s and [training]'s differ — the activity types a training can be,
+ * Health Connect's own names, and the remove action on a training's page.
+ */
+data class ManualEntry(
+    val today: String,
+    val common: Map<String, String>,
+    val sleep: Map<String, String>,
+    val training: Map<String, String>,
+    val types: List<Pair<String, String>>,
+    val remove: Map<String, String>
+) {
+    /** The words of one page: "sleep" or "training". */
+    fun page(kind: String): Map<String, String> = if (kind == "sleep") sleep else training
+
+    companion object {
+        fun parse(o: JSONObject?): ManualEntry? {
+            if (o == null) return null
+            val training = o.obj("training")
+            return ManualEntry(
+                today = o.str("today").orEmpty(),
+                common = o.obj("common").stringMap(),
+                sleep = o.obj("sleep").stringMap(),
+                training = training.stringMap(),
+                types = training.arr("types").map { it.str("value").orEmpty() to it.str("label").orEmpty() }.filter { it.first.isNotEmpty() },
+                remove = o.obj("remove").stringMap()
             )
         }
     }
@@ -1837,7 +1873,9 @@ data class TrainingSession(
     val statsTitle: String,
     val stats: List<SessionStat>,
     val heartTitle: String,
-    val heart: HeartPlot
+    val heart: HeartPlot,
+    /** Entered by hand (40.0): removing it removes it, where a synced one stays where it came from. */
+    val manual: Boolean = false
 ) {
     companion object {
         fun parse(o: JSONObject): TrainingSession? {
@@ -1851,7 +1889,8 @@ data class TrainingSession(
                 statsTitle = o.str("stats_title").orEmpty(),
                 stats = o.arr("stats").map { SessionStat(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("value") ?: return@map null, it.str("unit").orEmpty()) },
                 heartTitle = heart.str("title").orEmpty(),
-                heart = HeartPlot.parse(heart) ?: return null
+                heart = HeartPlot.parse(heart) ?: return null,
+                manual = o.bool("manual")
             )
         }
     }

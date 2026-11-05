@@ -124,4 +124,15 @@ $ratio = score_ratio($score['value'], $score['max']);
         </main>
     </div>
 
+    <?php /* Slaap's and Training's + (40.0, docs/MANUAL-ENTRY.md): each opens
+             its own entry page over it — Doelen's + in the floating control's
+             place. None before migration 030, none on Voeding. */ ?>
+    <?php $entry = $data['manual_entry'] ?? null; ?>
+    <?php if ($entry !== null && isset($entry[$area['id']]) && in_array($area['id'], ['sleep', 'training'], true)): ?>
+        <button type="button" class="fab glass glass--round glass--cta is-visible press" data-detail-open="<?= e($entry[$area['id']]['detail']) ?>"
+                aria-label="<?= e($entry[$area['id']]['add']) ?>">
+            <?= icon('plus') ?>
+        </button>
+    <?php endif; ?>
+
 </article>

@@ -495,7 +495,9 @@ if (!function_exists('hydrate_training')) {
         $from  = date('Y-m-d H:i:s', $start);
         $to    = date('Y-m-d H:i:s', $end);
         $label = hydrate_training_kind($w['type']);
-        $row   = db_one('SELECT active_kcal, total_kcal, avg_cadence, elevation_gain_m FROM workouts WHERE id = ? AND user_id = ?', [$w['id'], $userId]) ?? [];
+        $row   = db_one('SELECT w.active_kcal, w.total_kcal, w.avg_cadence, w.elevation_gain_m, s.code AS source
+                               FROM workouts w LEFT JOIN data_sources s ON s.id = w.source_id
+                              WHERE w.id = ? AND w.user_id = ?', [$w['id'], $userId]) ?? [];
 
         $window = static fn (string $code): ?float => $end > $start ? health_metric_window_total($userId, $code, $from, $to) : null;
         $minutes = $end > $start ? health_heart_minutes($userId, $from, $to) : [];
@@ -556,6 +558,9 @@ if (!function_exists('hydrate_training')) {
             'title'  => $label,
             'date'   => score_compass_ucfirst(hydrate_training_weekday($date)) . (i18n_locale() === 'en' ? ', ' : ' ') . score_compass_date_in($date, substr($today, 0, 4)),
             'time'   => date('H:i', $start) . ' – ' . date('H:i', $end),
+            /* Where it came from (40.0): entered by hand, or synced — what
+               removing it does differs (docs/MANUAL-ENTRY.md). */
+            'manual' => ($row['source'] ?? null) === 'manual',
             'back'   => (string) $copy['back'],
             'stats_title' => (string) $copy['stats_title'],
             'stats'  => $stats,

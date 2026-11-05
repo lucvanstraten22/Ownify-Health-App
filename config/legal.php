@@ -137,6 +137,7 @@ return [
                     'points' => [
                         'Inzien en meenemen: Instellingen › Privacy › Gegevens downloaden geeft al je gegevens in één JSON-bestand.',
                         'Aanpassen: je profiel en je lichaamsmaten pas je aan in Instellingen › Account. Je geboortedatum en geslacht liggen vast zodra ze zijn ingevuld.',
+                        'Zelf invoeren en verwijderen: met de + op Slaap en op Training voer je een nacht of een training in, of pas je de tijden van een nacht aan. Een training verwijder je op zijn eigen pagina. Kwam die uit Health Connect of Polar, dan verdwijnt alleen de kopie in Ownify; Ownify onthoudt welke het was, zodat de volgende synchronisatie hem niet terugzet.',
                         'Wissen: Instellingen › Privacy › Gegevens wissen verwijdert al je gezondheidsgegevens, scores, punten, inzichten en doelen. Je account blijft bestaan.',
                         'Account verwijderen: onderaan Instellingen. Je account en alles wat erbij hoort worden direct en definitief verwijderd; Ownify vraagt Google ook de toegang van Ownify tot je Google-account in te trekken. Uitdagingen die je maakte blijven voor de anderen bestaan, zonder jouw naam.',
                         'Toestemming intrekken: voor OwnifyAI in Instellingen › Privacy, voor Health Connect in Health Connect zelf.',

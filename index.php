@@ -196,6 +196,12 @@ foreach ($data['navigation'] as $position => $item) {
                 <?php page('training-session', ['session' => $session, 'zones' => $trainingView['heart']['zones'], 'hint' => $trainingView['heart']['hint']] + $data); ?>
             <?php endforeach; ?>
 
+            <?php /* Slaap's and Training's entry pages, each over its own area
+                     (40.0, docs/MANUAL-ENTRY.md): two pages, one layout. */ ?>
+            <?php foreach (($data['manual_entry'] ?? null) !== null ? ['sleep', 'training'] : [] as $entryKind): ?>
+                <?php page('manual-entry', $data + ['entry_kind' => $entryKind]); ?>
+            <?php endforeach; ?>
+
             <?php foreach ($data['goals']['all'] as $goal): ?>
                 <?php /* The new key goes first: `+` keeps the left side, and the
                          dashboard config already owns a 'goal' of its own. */ ?>
@@ -289,6 +295,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/area-charts.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/sleep.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/training.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/manual-entry.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/community.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/challenges.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goals.js')) ?>" defer></script>

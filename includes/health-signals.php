@@ -368,6 +368,17 @@ if (!function_exists('health_scoring_config')) {
      * where a row came from.
      */
 
+    /** ', corrected_at' once migration 030 is in, else nothing: the nights read the same before it. */
+    function health_sleep_corrected_column(): string
+    {
+        static $column = null;
+
+        return $column ??= db_available() && (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'sleep_sessions' AND column_name = 'corrected_at'"
+        ) > 0 ? ', corrected_at' : '';
+    }
+
     /**
      * Nights whose sleep ended in ($from, $to], one per date, oldest first.
      * The score and the points read their windows this way.
@@ -378,7 +389,7 @@ if (!function_exists('health_scoring_config')) {
     {
         return health_nights_from_rows(db_all(
             'SELECT id, night_of, started_at, ended_at, duration_minutes, time_in_bed_minutes,
-                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes
+                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes' . health_sleep_corrected_column() . '
                FROM sleep_sessions
               WHERE user_id = ? AND ended_at > ? AND ended_at <= ?
            ORDER BY night_of, started_at',
@@ -396,7 +407,7 @@ if (!function_exists('health_scoring_config')) {
     {
         $nights = health_nights_from_rows(db_all(
             'SELECT id, night_of, started_at, ended_at, duration_minutes, time_in_bed_minutes,
-                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes
+                    efficiency_pct, awakenings, awake_minutes, light_minutes, deep_minutes, rem_minutes' . health_sleep_corrected_column() . '
                FROM sleep_sessions
               WHERE user_id = ? AND night_of BETWEEN ? AND ?
            ORDER BY night_of, started_at',
@@ -453,6 +464,9 @@ if (!function_exists('health_scoring_config')) {
                 'light'      => $number($row['light_minutes']),
                 'deep'       => $number($row['deep_minutes']),
                 'rem'        => $number($row['rem_minutes']),
+                /* Its times entered by hand (migration 030): the person's word
+                   on when they slept goes before any device's. */
+                'corrected'  => !empty($row['corrected_at']),
             ];
         }
 
@@ -499,7 +513,7 @@ if (!function_exists('health_scoring_config')) {
         $sleeps = [];
 
         foreach ($groups as $group) {
-            usort($group, static fn ($a, $b) => [$staged($b), $b['minutes']] <=> [$staged($a), $a['minutes']]);
+            usort($group, static fn ($a, $b) => [!empty($b['corrected']), $staged($b), $b['minutes']] <=> [!empty($a['corrected']), $staged($a), $a['minutes']]);
             $sleeps[] = ['best' => $group[0], 'weight' => max(array_column($group, 'minutes'))];
         }
 

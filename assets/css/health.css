@@ -896,3 +896,34 @@
    neither scroll it nor start its own pull-to-refresh. Below the top it
    scrolls and bounces as every page does. */
 .page > .screen__scroll.is-at-top { overscroll-behavior-y: none; }
+
+/* ==========================================================================
+   Sleep and training entered by hand (40.0, docs/MANUAL-ENTRY.md)
+   --------------------------------------------------------------------------
+   Nothing of its own to look at: the floating control's place with Doelen's
+   + in it, and the goal wizard's fields, select and buttons in a card. Only
+   how they are laid out is here.
+   ========================================================================== */
+
+/* The +: .glass makes itself relative; floating, it stays where .fab puts it. */
+.fab.glass { position: absolute; }
+
+.manual-entry__fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.manual-entry__field .wizard__hint { margin-top: var(--space-2); }
+
+/* The activity list as wide as the fields around it. */
+.manual-entry__select { flex: 1 1 auto; min-width: 0; }
+.manual-entry__select select { width: 100%; }
+
+.manual-entry__span { margin-top: var(--space-5); font-variant-numeric: tabular-nums; }
+.manual-entry__span:empty { display: none; }
+
+.manual-entry__foot .wizard__error { text-align: center; }
+
+.manual-entry__remove .wizard__error { margin: var(--space-2) 0 0; }
+.goal-confirm__text.manual-entry__imported { margin-top: var(--space-2); color: var(--text-secondary); }

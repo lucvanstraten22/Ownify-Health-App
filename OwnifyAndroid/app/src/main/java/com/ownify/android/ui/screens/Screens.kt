@@ -48,6 +48,7 @@ import com.ownify.android.ui.screens.research.ResearchDetailPage
 import com.ownify.android.ui.screens.settings.DeleteConfirm
 import com.ownify.android.ui.screens.settings.DeviceNameEditor
 import com.ownify.android.ui.screens.settings.LegalDocumentPage
+import com.ownify.android.ui.screens.health.ManualEntryPage
 import com.ownify.android.ui.screens.settings.FieldEditor
 import com.ownify.android.ui.screens.settings.PairingPanel
 import com.ownify.android.ui.screens.settings.PasswordEditor
@@ -87,7 +88,7 @@ object OwnifyScreens {
                 is Detail.SettingsPage -> data.settings.page(detail.id)?.let { SettingsDetail(data, it, scroll) }
                 is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id)?.let { AreaChartDetail(it, detail.area, scroll) }
                 is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.let { view ->
-                    view.session(detail.id)?.let { TrainingSessionDetail(it, view.heart, scroll) }
+                    view.session(detail.id)?.let { TrainingSessionDetail(it, view.heart, scroll, data.manualEntry) }
                 }
                 Detail.Leaderboard -> LeaderboardDetail(data)
                 Detail.Challenges -> ChallengesDetail(data, scroll)
@@ -96,6 +97,7 @@ object OwnifyScreens {
                 Detail.Insights -> InsightsPage(data.correlations, scroll)
                 is Detail.InsightPage -> data.correlations.detail(detail.id)?.let { InsightDetailPage(data.correlations, it, scroll) }
                 is Detail.LegalPage -> data.legal.document(detail.id)?.let { LegalDocumentPage(data.legal, it, scroll) }
+                is Detail.ManualEntry -> data.manualEntry?.let { ManualEntryPage(it, detail.kind, scroll) }
             }
         },
         assistant = { data -> AssistantSheet(data.ai) },

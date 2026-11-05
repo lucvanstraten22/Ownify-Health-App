@@ -157,6 +157,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
             Detail.Insights -> data.correlations.available
             is Detail.InsightPage -> data.correlations.detail(detail.id) != null
             is Detail.LegalPage -> data.legal.document(detail.id) != null
+            is Detail.ManualEntry -> data.manualEntry != null
         }
         if (!exists) shell.closeDetail()
     }
@@ -356,6 +357,7 @@ private fun DetailPage(shell: ShellState, data: AppData, screens: ShellScreens, 
         is Detail.InsightPage -> Accent.of(data.correlations.detail(detail.id)?.accent)
         // pages/legal-detail.php's `data-accent="health"`, as Over de app's.
         is Detail.LegalPage -> Accent.HEALTH
+        is Detail.ManualEntry -> Accent.of(detail.kind)
     }
     val ground = remember(detail.key, accent) { GroundPlacement(if (detail is Detail.HealthArea) Ground.areaDetail(accent) else Ground.detail(accent)) }
     val visibility = remember(detail.key) { Visibility() }

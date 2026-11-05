@@ -224,6 +224,12 @@ if (!function_exists('app_page_data')) {
         require_once __DIR__ . '/legal.php';
         $data['legal'] = legal_documents();
 
+        /* Sleep and training entered by hand (40.0, docs/MANUAL-ENTRY.md):
+           Slaap's and Training's + and their pages, and removing a training.
+           Null before migration 030: no + and no remove. */
+        require_once dirname(__DIR__) . '/includes/health-manual.php';
+        $data['manual_entry'] = health_manual_page_data(date('Y-m-d'));
+
         /* Insights (docs/INSIGHTS.md): the day's, worked out once from the
            person's own data and approved research, stored, and shown the
            same on both apps — Overzicht's Nuttige inzichten and Eén kleine

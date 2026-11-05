@@ -59,6 +59,7 @@ import com.ownify.android.data.HeartChart
 import com.ownify.android.data.HeartPlot
 import com.ownify.android.data.HeartZones
 import com.ownify.android.data.Metric
+import com.ownify.android.data.ManualEntry
 import com.ownify.android.data.TrainingSession
 import com.ownify.android.data.TrainingSessions
 import com.ownify.android.data.TrainingView
@@ -473,7 +474,7 @@ private fun HeartZonesLegend(zones: HeartZones) {
  * over Training; back goes to Training.
  */
 @Composable
-fun TrainingSessionDetail(session: TrainingSession, heart: HeartChart, scroll: ScrollState) {
+fun TrainingSessionDetail(session: TrainingSession, heart: HeartChart, scroll: ScrollState, entry: ManualEntry? = null) {
     CompositionLocalProvider(LocalAccent provides Accent.TRAINING) {
         DetailColumn(scroll, back = session.back, backAria = trf("Terug naar %s", session.back)) {
             PageIntro(session.title, "${session.date} · ${session.time}", Modifier.reveal())
@@ -490,6 +491,8 @@ fun TrainingSessionDetail(session: TrainingSession, heart: HeartChart, scroll: S
             if (session.stats.isNotEmpty()) {
                 MetricTiles(session.stats.map { Metric(it.key, it.label, it.unit, it.value, null) }, title = session.statsTitle, count = false)
             }
+            // Removing it (40.0, docs/MANUAL-ENTRY.md): Doelen's delete and its confirmation.
+            RemoveTraining(entry, session)
         }
     }
 }

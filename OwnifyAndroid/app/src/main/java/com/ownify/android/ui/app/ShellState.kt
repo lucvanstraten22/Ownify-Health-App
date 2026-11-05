@@ -93,6 +93,15 @@ sealed interface Detail {
         override val parent: Detail get() = Insights
     }
 
+    /**
+     * Slaap's or Training's entry page (pages/manual-entry.php, 40.0), over
+     * that area, opened by its + only: [kind] "sleep" or "training".
+     */
+    data class ManualEntry(val kind: String) : Detail {
+        override val key get() = "entry:$kind"
+        override val parent: Detail get() = HealthArea(kind)
+    }
+
     /** One of Over de app's documents (pages/legal-detail.php, 39.0), over Over de app. */
     data class LegalPage(val id: String) : Detail {
         override val key get() = "legal:$id"

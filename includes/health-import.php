@@ -187,6 +187,29 @@ if (!function_exists('health_import_records')) {
         $nightOf  = $r['night_of'] ?? $end->format('Y-m-d');
         $duration = $r['duration_minutes'] ?? (int) round(($end->getTimestamp() - $start->getTimestamp()) / 60);
 
+        /* A night whose times the person entered by hand (Slaap's +,
+           migration 030, docs/MANUAL-ENTRY.md): this record, when it is the
+           one that night was, keeps the person's times and brings only its
+           measurements; any other recording of that sleep is left out, so a
+           sync never puts the device's version beside the person's. */
+        $corrected = health_import_corrected();
+        if ($corrected) {
+            $own = db_value('SELECT id FROM sleep_sessions WHERE user_id = ? AND source_id = ? AND external_id = ?',
+                [$userId, $sourceId, $externalId]);
+            $over = $own !== null ? null : db_value(
+                'SELECT id FROM sleep_sessions
+                  WHERE user_id = ? AND corrected_at IS NOT NULL AND started_at < ? AND ended_at > ?
+                  LIMIT 1',
+                [$userId, $end->format('Y-m-d H:i:s'), $start->format('Y-m-d H:i:s')]
+            );
+            if ($over !== null) {
+                return ['ok' => true, 'error' => null, 'date' => null];
+            }
+        }
+        $keep = static fn (string $column): string => $corrected
+            ? $column . ' = IF(corrected_at IS NULL, VALUES(' . $column . '), ' . $column . ')'
+            : $column . ' = VALUES(' . $column . ')';
+
         db_run(
             'INSERT INTO sleep_sessions
                 (user_id, source_id, external_id, night_of, started_at, ended_at,
@@ -194,11 +217,11 @@ if (!function_exists('health_import_records')) {
                  awake_minutes, light_minutes, deep_minutes, rem_minutes)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
-                external_id = VALUES(external_id), night_of = VALUES(night_of),
-                started_at = VALUES(started_at), ended_at = VALUES(ended_at),
-                duration_minutes = VALUES(duration_minutes),
-                time_in_bed_minutes = VALUES(time_in_bed_minutes),
-                efficiency_pct = VALUES(efficiency_pct), awakenings = VALUES(awakenings),
+                external_id = VALUES(external_id), ' . $keep('night_of') . ',
+                ' . $keep('started_at') . ', ' . $keep('ended_at') . ',
+                ' . $keep('duration_minutes') . ',
+                ' . $keep('time_in_bed_minutes') . ',
+                ' . $keep('efficiency_pct') . ', awakenings = VALUES(awakenings),
                 awake_minutes = VALUES(awake_minutes), light_minutes = VALUES(light_minutes),
                 deep_minutes = VALUES(deep_minutes), rem_minutes = VALUES(rem_minutes)',
             [
@@ -214,8 +237,15 @@ if (!function_exists('health_import_records')) {
             ]
         );
 
+        /* The row as it stands: a corrected night keeps its own morning. */
+        $stored = db_one('SELECT id, night_of FROM sleep_sessions WHERE user_id = ? AND source_id = ? AND external_id = ?',
+            [$userId, $sourceId, $externalId]);
+        if ($stored !== null) {
+            $nightOf = (string) $stored['night_of'];
+        }
+
         if (isset($r['stages']) && is_array($r['stages'])) {
-            health_import_sleep_stages($userId, $start, $r['stages']);
+            health_import_sleep_stages($userId, $start, $r['stages'], $stored === null ? null : (int) $stored['id']);
         }
 
         return ['ok' => true, 'error' => null, 'date' => $nightOf, 'touch' => [['nights', $nightOf]]];
@@ -230,13 +260,15 @@ if (!function_exists('health_import_records')) {
      *
      * @param array<int,array{stage: int, started_at: string, ended_at: string}> $stages
      */
-    function health_import_sleep_stages(int $userId, DateTimeImmutable $start, array $stages): void
+    function health_import_sleep_stages(int $userId, DateTimeImmutable $start, array $stages, ?int $sessionId = null): void
     {
         if (!function_exists('health_sleep_stages_stored') || !health_sleep_stages_stored()) {
             return;                       // migration 018 not imported yet: the minutes are kept all the same
         }
 
-        $session = db_value(
+        /* By the record's own row where it is known: a corrected night no
+           longer starts when the device says it did. */
+        $session = $sessionId ?? db_value(
             'SELECT id FROM sleep_sessions WHERE user_id = ? AND started_at = ?',
             [$userId, $start->format('Y-m-d H:i:s')]
         );
@@ -331,6 +363,15 @@ if (!function_exists('health_import_records')) {
 
         if ($seconds !== null && $seconds <= 0) {
             return ['ok' => false, 'error' => 'Training met een duur van nul.', 'date' => null];
+        }
+
+        /* Removed in Ownify (migration 030, docs/MANUAL-ENTRY.md): the sync
+           sends it again, Ownify leaves it out. */
+        if (health_import_corrected() && db_value(
+            "SELECT 1 FROM health_import_removed WHERE user_id = ? AND source_id = ? AND kind = 'workout' AND external_id = ?",
+            [$userId, $sourceId, $externalId]
+        ) !== null) {
+            return ['ok' => true, 'error' => null, 'date' => null];
         }
 
         db_run(
@@ -584,6 +625,20 @@ if (!function_exists('health_import_records')) {
     /* -------------------------------------------------------------- casts */
 
     /** Accepts an ISO 8601 string, a DateTimeInterface or epoch seconds. */
+    /** Whether migration 030 is in: corrected nights and removed records are kept apart. */
+    function health_import_corrected(): bool
+    {
+        static $ready = null;
+
+        return $ready ??= (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'health_import_removed'"
+        ) > 0 && (int) db_value(
+            "SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = 'sleep_sessions' AND column_name = 'corrected_at'"
+        ) > 0;
+    }
+
     function health_import_time(mixed $value): ?DateTimeImmutable
     {
         if ($value === null || $value === '') {

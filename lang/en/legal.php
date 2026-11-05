@@ -105,4 +105,5 @@ return [
     'Deze pakketten van Google vallen onder de Android Software Development Kit License; de tekst staat bij de bron.' => 'These packages from Google fall under the Android Software Development Kit License; the text is at the source.',
     'Kotlin-bibliotheken (kotlinx)' => 'Kotlin libraries (kotlinx)',
     'Google Play-services en Inloggen met Google' => 'Google Play services and Sign in with Google',
+    'Zelf invoeren en verwijderen: met de + op Slaap en op Training voer je een nacht of een training in, of pas je de tijden van een nacht aan. Een training verwijder je op zijn eigen pagina. Kwam die uit Health Connect of Polar, dan verdwijnt alleen de kopie in Ownify; Ownify onthoudt welke het was, zodat de volgende synchronisatie hem niet terugzet.' => 'Entering and deleting yourself: with the + on Sleep and on Training you enter a night or a workout, or change a night\'s times. You delete a workout on its own page. If it came from Health Connect or Polar, only the copy in Ownify disappears; Ownify remembers which one it was, so the next sync does not bring it back.',
 ];

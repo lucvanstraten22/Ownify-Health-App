@@ -310,7 +310,7 @@ return [
         /* Strength minutes per week (Momma et al. 2022). */
         'strength_curve' => [[0, 0], [30, 80], [60, 100]],
         /* The workouts that are strength training. */
-        'strength_types' => ['strength', 'weightlifting', 'weight_training', 'calisthenics'],
+        'strength_types' => ['strength', 'strength_training', 'weightlifting', 'weight_training', 'calisthenics'],
         /* The share of aerobic minutes that were vigorous -> score. */
         'intensity_curve' => [[0, 0], [0.5, 100]],
         /* Days with at least `active_day_minutes` aerobic minutes or

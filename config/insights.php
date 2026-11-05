@@ -79,7 +79,7 @@ return [
         'nutrition_min_days'     => 3,    // days whose log looks complete
         'complete_energy_share'  => [0.7, 1.6],  // logged kcal against the energy target
         'weight_max_age_days'    => 180,  // a weight older than this is not used
-        'strength_types'         => ['strength', 'weightlifting', 'weight_training', 'calisthenics'],
+        'strength_types'         => ['strength', 'strength_training', 'weightlifting', 'weight_training', 'calisthenics'],
     ],
 
     /* ---------------------------------------------------------------- slots */

@@ -243,6 +243,9 @@ class FakeOwnifyServer {
     @Volatile
     var stateBody: String = FakeOwnifyServer::class.java.classLoader!!.getResource("state-demo.json").readText()
 
+    /** A training entered by hand overlaps one already there: refused (409), as health_manual_workout() does. */
+    var entryOverlap = false
+
     /**
      * Uitdagingen (api/challenges/…php): what each endpoint answers — status
      * and body — by its file name. One not named answers ok with a message.
@@ -650,6 +653,15 @@ class FakeOwnifyServer {
                 }
             }
             // Two of the app's writes, with the account token.
+            // A night or a training entered by hand, a training removed (40.0, docs/MANUAL-ENTRY.md).
+            path.endsWith("/health/sleep-entry.php") || path.endsWith("/health/training-entry.php") || path.endsWith("/health/training-delete.php") -> when {
+                !tokenWorks -> reply(exchange, 401, """{"ok":false,"error":"Dit apparaat is niet gekoppeld."}""")
+                path.endsWith("/training-entry.php") && entryOverlap ->
+                    reply(exchange, 409, """{"ok":false,"error":"Er staat al een activiteit geregistreerd op dit tijdstip."}""")
+                path.endsWith("/sleep-entry.php") -> reply(exchange, 200, """{"ok":true,"session_id":7,"updated":false,"heart_minutes":0,"message":"Nacht opgeslagen"}""")
+                path.endsWith("/training-entry.php") -> reply(exchange, 200, """{"ok":true,"workout_id":8,"heart_minutes":0,"message":"Training opgeslagen"}""")
+                else -> reply(exchange, 200, """{"ok":true,"imported":false}""")
+            }
             path.endsWith("/health/rating.php") || path.endsWith("/profile/username.php") -> {
                 val works = bearer != null && bearer !in revoked && bearer != TEST_TOKEN
                 if (works) reply(exchange, 200, """{"ok":true,"message":"Opgeslagen."}""")

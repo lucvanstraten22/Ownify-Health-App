@@ -469,6 +469,7 @@ CREATE TABLE `sleep_sessions` (
     `light_minutes`       SMALLINT UNSIGNED NULL,
     `deep_minutes`        SMALLINT UNSIGNED NULL,
     `rem_minutes`         SMALLINT UNSIGNED NULL,
+    `corrected_at`        DATETIME NULL COMMENT 'When the bedtime and wake-up time were entered by hand; a sync keeps them',
     `created_at`          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_sleep_session` (`user_id`, `started_at`),
@@ -578,6 +579,23 @@ CREATE TABLE `workout_hr_zones` (
     PRIMARY KEY (`workout_id`, `zone`),
     CONSTRAINT `fk_zone_workout` FOREIGN KEY (`workout_id`)
         REFERENCES `workouts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- A record from outside Ownify the person removed in Ownify (migration 030,
+-- docs/MANUAL-ENTRY.md): its source and id, so the next sync does not bring
+-- it back. Only Ownify's copy is removed; the source keeps its own.
+CREATE TABLE `health_import_removed` (
+    `user_id`     BIGINT UNSIGNED NOT NULL,
+    `source_id`   SMALLINT UNSIGNED NOT NULL,
+    `kind`        ENUM('workout') NOT NULL,
+    `external_id` VARCHAR(191) NOT NULL COMMENT 'Its id in the system it came from',
+    `removed_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`user_id`, `source_id`, `kind`, `external_id`),
+    CONSTRAINT `fk_removed_user` FOREIGN KEY (`user_id`)
+        REFERENCES `users` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_removed_source` FOREIGN KEY (`source_id`)
+        REFERENCES `data_sources` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

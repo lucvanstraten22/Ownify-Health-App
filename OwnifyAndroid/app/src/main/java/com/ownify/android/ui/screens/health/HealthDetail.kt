@@ -102,6 +102,7 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
     // The research beside the area's own reference values (docs/INSIGHTS.md).
     val references = data.overview.insights.references
     CompositionLocalProvider(LocalAccent provides Accent.of(area.accent)) {
+      Box {
         DetailColumn(scroll, back = tr("Gezondheid"), backAria = tr("Terug naar Gezondheid"), title = area.label) {
             HeroCard(area)
             // The area's own stored insight with its research (docs/INSIGHTS.md), right under its score, or nothing.
@@ -127,6 +128,9 @@ fun HealthDetail(data: AppData, area: Area, scroll: ScrollState) {
             val history = data.health.history
             if (history != null) HistoryCard(history, data.compass.trend.days, only = area.id) else TrendCard(data, only = area.id)
         }
+        // Slaap's and Training's + (40.0, docs/MANUAL-ENTRY.md): its own entry page over it.
+        EntryFab(data.manualEntry, area.id)
+      }
     }
 }
 
