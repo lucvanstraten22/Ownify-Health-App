@@ -184,7 +184,7 @@ $stages  = $night['stages'] ?? [];
                                     <span class="health-history__tip-label"><?= e($night['period_total'] ?? t('Totaal')) ?></span>
                                     <strong class="goal-chart__tip-value" data-tip-value></strong>
                                 </span>
-                                <?php foreach ($stages as $s): ?>
+                                <?php foreach (array_reverse($stages) as $s): ?>
                                     <span class="health-history__tip-row" data-tip-row="<?= e($s['key']) ?>" data-stage="<?= e($s['key']) ?>" hidden>
                                         <span class="health-history__tip-key sleep-night__key" aria-hidden="true"></span>
                                         <span class="health-history__tip-label"><?= e($s['label']) ?></span>

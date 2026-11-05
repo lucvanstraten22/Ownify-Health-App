@@ -241,7 +241,7 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
                 period.points.getOrNull(i)?.let { p ->
                     // Each point's texts: the night's whole time, then each stage's.
                     val said = listOfNotNull(p.texts.getOrNull(0)?.let { "${night.periodTotal} $it" }) +
-                        stages.mapIndexedNotNull { k, (_, label) -> p.texts.getOrNull(k + 1)?.let { "$label $it" } }
+                        stages.reversed().mapIndexedNotNull { k, (_, label) -> p.texts.getOrNull(k + 1)?.let { "$label $it" } }
                     p.label + (p.detail?.let { ", $it" } ?: "") + ": " + if (said.isEmpty()) p.note ?: "—" else said.joinToString(", ")
                 }.orEmpty()
             },
@@ -265,7 +265,8 @@ private fun StagePlot(night: SleepNight, stacked: SleepStackPeriod) {
             // `.health-history__tip`: the night or the days, then each stage's time.
             val p = period.points[i]
             val total = p.texts.getOrNull(0)
-            val values = stages.mapIndexedNotNull { k, s -> p.texts.getOrNull(k + 1)?.let { s to it } }
+            // Top to bottom, as the bar, the legend and Vandaag's rows: Wakker first.
+            val values = stages.reversed().mapIndexedNotNull { k, s -> p.texts.getOrNull(k + 1)?.let { s to it } }
             val detail = p.detail?.takeIf { values.isNotEmpty() }
             Row {
                 T(p.label + if (detail != null) " · " else "", OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)

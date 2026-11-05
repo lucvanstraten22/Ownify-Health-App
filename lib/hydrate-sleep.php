@@ -349,7 +349,10 @@ if (!function_exists('hydrate_sleep')) {
             foreach ($chart['periods'][$k]['points'] as $i => $point) {
                 $parts = array_filter(array_map(static fn (array $vs) => $vs[$i] ?? null, $values), static fn ($v) => $v !== null);
                 $total = $parts === [] ? null : area_chart_text(['format' => 'hours'], array_sum($parts));
-                array_splice($chart['periods'][$k]['points'][$i], 3, 0, [$total]);
+                /* Then each stage top to bottom, as the bar, the legend and
+                   Vandaag's rows have them: Wakker first, Diep last. */
+                $point = $chart['periods'][$k]['points'][$i];
+                $chart['periods'][$k]['points'][$i] = array_merge(array_slice($point, 0, 3), [$total], array_reverse(array_slice($point, 3)));
             }
 
             $chart['periods'][$k]['stacks'] = $stacks;

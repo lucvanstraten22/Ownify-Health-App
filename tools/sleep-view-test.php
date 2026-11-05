@@ -252,7 +252,7 @@ check('  stacked: each part starts where the one below it ends, the bottom at th
     $bar[0][1] === $bar[1][2] && $bar[1][1] === $bar[2][2] && $bar[2][1] === $bar[3][2] && $bar[3][1] === $bar[4][2] && $bar[0][2] === 100.0,
     json_encode($bar));
 check('  the reading in hours: the whole night first, then each stage — Rusteloosheid its own, out of Wakker\'s stored 15',
-    array_slice($week['points'][2], 3) === ['7:30 u', '1:00 u', '5:50 u', '0:25 u', '0:05 u', '0:10 u'], json_encode($week['points'][2]));
+    array_slice($week['points'][2], 3) === ['7:30 u', '0:10 u', '0:05 u', '0:25 u', '5:50 u', '1:00 u'], json_encode($week['points'][2]));
 check('  its levels named in hours', $week['grid'] !== [] && str_ends_with((string) $week['grid'][0]['label'], ' u'), json_encode($week['grid']));
 $year = end($v['periods']);
 check('1 jaar: a month as one bar, the mean of its nights', $year['group'] === 'month' && count(array_filter($year['stacks'])) >= 1);
