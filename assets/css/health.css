@@ -122,6 +122,29 @@
     color: var(--text-primary);
 }
 
+/* 41.0 — slid along (navigation-core.js): sideways belongs to the switch,
+   upright to the page's scroll. While a finger slides it, the chosen glass
+   is the option under the finger, grown a little on the glass's spring;
+   the one chosen before rests until the lift chooses. */
+.range-switch { touch-action: pan-y; }
+.range-switch__option { transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--glass-spring-dur) var(--glass-spring); }
+.range-switch.is-sliding .range-switch__option.is-active:not(.is-under) {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+}
+.range-switch.is-sliding .range-switch__option.is-under {
+    background: var(--lg-chosen);
+    box-shadow: var(--lg-chosen-edge);
+    color: var(--text-primary);
+    transform: scale(var(--glass-grow));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .range-switch.is-sliding .range-switch__option.is-under { transform: none; }
+}
+:root[data-motion="reduce"] .range-switch.is-sliding .range-switch__option.is-under { transform: none; }
+
 /* --------------------------------------------------------------------------
    Trend chart — thin lines, three gridlines, nothing else.
    -------------------------------------------------------------------------- */

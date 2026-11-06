@@ -9,6 +9,18 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.unit.dp
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
@@ -65,6 +77,57 @@ fun Modifier.press(interaction: MutableInteractionSource, scale: Float = 0.97f, 
         scaleY = value
         alpha = if (down && reduced) 0.72f else 1f
     }
+}
+
+/**
+ * 41.0 — Liquid Glass under the finger (`.glass.press:active`, components.css):
+ * a glass control held grows to [Ownify.GlassGrow] on a spring that overshoots
+ * a touch, and its rim catches more light (`--lg-glint-lit`: the top edge at
+ * .30, the whole rim at .12, through the theme's glint); on release it springs
+ * back. Only for the glass controls — the round and primary glass, its chips,
+ * the pills, the floating +, the account's close and the assistant's round
+ * buttons. Reduced motion: nothing grows, the press dims to 72 % as every
+ * press does. [shape] is the glass's own, for the rim.
+ */
+fun Modifier.glassPress(interaction: MutableInteractionSource, shape: Shape, enabled: Boolean = true): Modifier = composed {
+    val pressed by interaction.collectIsPressedAsState()
+    val reduced = LocalReducedMotion.current
+    val down = pressed && enabled
+    val grow by animateFloatAsState(
+        targetValue = if (down && !reduced) Ownify.GlassGrow else 1f,
+        animationSpec = spring(dampingRatio = Ownify.GlassSpringDamping, stiffness = Ownify.GlassSpringStiffness),
+        label = "glass"
+    )
+    val lit by animateFloatAsState(
+        targetValue = if (down) 1f else 0f,
+        animationSpec = tween(if (down) Ownify.PressInMs else Ownify.FastMs, easing = Ownify.EaseOutStrong),
+        label = "glassLit"
+    )
+    val top = Ownify.glint(0.30f)
+    val ring = Ownify.glint(0.12f)
+    this
+        .graphicsLayer {
+            scaleX = grow
+            scaleY = grow
+            alpha = if (down && reduced) 0.72f else 1f
+        }
+        .drawWithContent {
+            drawContent()
+            if (lit <= 0f) return@drawWithContent
+            val outline = shape.createOutline(size, layoutDirection, this)
+            val px = 1.dp.toPx()
+            // Inside the edge only, as an inset shadow is: the stroke's outer half is clipped.
+            clipPath(Path().apply { addOutline(outline) }) {
+                // The whole rim, a hairline…
+                drawOutline(outline, ring.copy(alpha = ring.alpha * lit), style = Stroke(px * 2))
+                // …and the top edge brighter, fading out by a third of the way down.
+                drawOutline(
+                    outline,
+                    Brush.verticalGradient(0f to top.copy(alpha = top.alpha * lit), 0.34f to Color.Transparent),
+                    style = Stroke(px * 2)
+                )
+            }
+        }
 }
 
 /**

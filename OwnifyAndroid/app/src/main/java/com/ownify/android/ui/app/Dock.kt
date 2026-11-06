@@ -105,7 +105,11 @@ fun Dock(
     onTab: (String) -> Unit,
     onOpenAssistant: () -> Unit,
     onZones: (List<Rect>) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** 41.0: held by a finger sliding it along the bar — the glass grows a little. */
+    glassHeld: () -> Boolean = { false },
+    /** 41.0: where the five tabs are, dp in the root, for the slide. */
+    onTabsZone: (Rect) -> Unit = { }
 ) {
     val screen = LocalScreen.current
     val density = LocalDensity.current
@@ -132,7 +136,8 @@ fun Dock(
             }
         )
         Tabbar(
-            items, current, glassAt, onTab,
+            items, current, glassAt, glassHeld, onTab,
+            { onTabsZone(it.toDp(density.density)) },
             Modifier
                 .padding(bottom = bottom + Ownify.DockGap)
                 .onGloballyPositioned {
@@ -201,7 +206,15 @@ private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier
  * glass that marks the chosen one ([TabGlass]), at [glassAt] tabs along.
  */
 @Composable
-private fun Tabbar(items: List<NavItem>, current: String, glassAt: () -> Float, onTab: (String) -> Unit, modifier: Modifier) {
+private fun Tabbar(
+    items: List<NavItem>,
+    current: String,
+    glassAt: () -> Float,
+    glassHeld: () -> Boolean,
+    onTab: (String) -> Unit,
+    onTabs: (Rect) -> Unit,
+    modifier: Modifier
+) {
     val screen = LocalScreen.current
     val shape = RoundedCornerShape(if (screen.desktop) screen.cardRadius else 999.dp)
 
@@ -219,12 +232,12 @@ private fun Tabbar(items: List<NavItem>, current: String, glassAt: () -> Float, 
                 .fillMaxSize()
                 .padding(horizontal = if (screen.desktop) Ownify.Space2 else screen.tabEdge)
         ) {
-            Row(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxSize().onGloballyPositioned { onTabs(it.boundsInRoot()) }) {
                 for (item in items) {
                     Tab(item, item.id == current, { onTab(item.id) }, Modifier.weight(1f).fillMaxHeight())
                 }
             }
-            if (items.isNotEmpty()) TabGlass(items.size, glassAt, Modifier.matchParentSize())
+            if (items.isNotEmpty()) TabGlass(items.size, glassAt, glassHeld, Modifier.matchParentSize())
         }
     }
 }
@@ -251,11 +264,17 @@ private const val GlassThin = 0.25f
  * to the tab.
  */
 @Composable
-private fun TabGlass(count: Int, at: () -> Float, modifier: Modifier) {
+private fun TabGlass(count: Int, at: () -> Float, held: () -> Boolean, modifier: Modifier) {
     val still = LocalStillMotion.current || LocalReducedMotion.current
     var x by remember { mutableFloatStateOf(at()) }
     var v by remember { mutableFloatStateOf(0f) }
     val shadows = LocalGraphicsContext.current.shadowContext
+    // 41.0: held, it grows on the glass controls' spring (Motion.kt glassPress); not with animations off.
+    val lift by animateFloatAsState(
+        if (held() && !still) Ownify.GlassGrow else 1f,
+        spring(dampingRatio = Ownify.GlassSpringDamping, stiffness = Ownify.GlassSpringStiffness),
+        label = "tabGlassLift"
+    )
 
     LaunchedEffect(still) {
         var move: Job? = null
@@ -295,8 +314,8 @@ private fun TabGlass(count: Int, at: () -> Float, modifier: Modifier) {
                     pane.placeWithLayer(side, inset) {
                         val long = 1f + GlassStretch * (1f - exp(-abs(v) / GlassStretchSpeed))
                         translationX = x * cell
-                        scaleX = long
-                        scaleY = 1f - GlassThin * (long - 1f)
+                        scaleX = long * lift
+                        scaleY = (1f - GlassThin * (long - 1f)) * lift
                     }
                 }
             }
@@ -346,7 +365,8 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
     val lifted = pressed && !active
     val glow by animateFloatAsState(if (lifted) 0.45f else 0f, tween(Ownify.SlowMs, easing = Ownify.EaseOut), label = "glow")
     val grow by animateFloatAsState(if (lifted) 1f else 0.94f, tween(Ownify.SlowMs, easing = Ownify.EaseOut), label = "grow")
-    val color by animateColorAsState(if (active || pressed) Ownify.TextPrimary else Ownify.TextSecondary, tween(Ownify.FastMs, easing = Ownify.Ease), label = "ink")
+    // 41.0: the pages not open in the muted ink, the open one (and one under the finger) in the primary.
+    val color by animateColorAsState(if (active || pressed) Ownify.TextPrimary else Ownify.TextMuted, tween(Ownify.FastMs, easing = Ownify.Ease), label = "ink")
     val shadows = LocalGraphicsContext.current.shadowContext
 
     Box(

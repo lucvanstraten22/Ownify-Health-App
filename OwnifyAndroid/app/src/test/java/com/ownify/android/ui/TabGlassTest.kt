@@ -243,6 +243,45 @@ class TabGlassTest {
         assertRestsOn("Community")
     }
 
+    /**
+     * 41.0 — the bar slid along (page-navigation.js): a finger sideways on the
+     * bar takes the glass with it, grown a little while held, and nothing is
+     * chosen until it lets go; then the tab under the glass is.
+     */
+    @Test
+    fun `the bar slid along - the glass follows the finger grown, nothing changes until the lift, then that tab`() {
+        show()
+        val rest = glass().width
+        val from = tabBox("Overzicht").center
+        val to = tabBox("Instellingen").center
+        compose.mainClock.autoAdvance = true
+
+        compose.onRoot().performTouchInput {
+            down(from)
+            repeat(10) { moveBy(Offset((to.x - from.x) / 10f, 0f)); advanceEventTime(16) }
+        }
+        compose.mainClock.advanceTimeBy(600)
+        assertEquals("nothing chosen while held", "Overzicht", selected())
+        assertEquals("the glass is under the finger", to.x, glass().center.x, 0.1f * (tabBox("Community").center.x - tabBox("Overzicht").center.x) + 1f)
+        assertTrue("grown while held (${glass().width / rest})", glass().width / rest in 1.05f..1.11f)
+
+        compose.onRoot().performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(900)
+        assertRestsOn("Instellingen")
+        assertEquals("back to its resting size", rest, glass().width, 0.5f)
+
+        // Slid away and back to the tab it started on: nothing happens.
+        val home = tabBox("Instellingen").center
+        compose.onRoot().performTouchInput {
+            down(home)
+            repeat(6) { moveBy(Offset(-(home.x - tabBox("Community").center.x) / 6f, 0f)); advanceEventTime(16) }
+            repeat(6) { moveBy(Offset((home.x - tabBox("Community").center.x) / 6f, 0f)); advanceEventTime(16) }
+            up()
+        }
+        compose.mainClock.advanceTimeBy(900)
+        assertRestsOn("Instellingen")
+    }
+
     @Test
     fun `with motion held still, the glass goes straight to the tab`() {
         show(still = true)

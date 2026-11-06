@@ -222,6 +222,9 @@
     --lg-body-thick: rgba(var(--pane-body), max(var(--lg-tint-thick), var(--pane-solid)));
     --lg-filter: blur(var(--pane-blur)) saturate(var(--pane-saturate)) brightness(var(--pane-brightness));
     --lg-glint: inset 0 1px 0 rgba(255, 255, 255, calc(0.13 * var(--glint-k)));
+    /* Held (41.0): the top edge brighter and the whole rim catching the light. */
+    --lg-glint-lit: inset 0 1px 0 rgba(255, 255, 255, calc(0.30 * var(--glint-k))),
+        inset 0 0 0 1px rgba(255, 255, 255, calc(0.12 * var(--glint-k)));
     --lg-shadow: 0 8px 20px rgba(var(--shade), calc(0.26 * var(--shade-k)));              /* a control */
     --lg-shadow-small: 0 2px 7px rgba(var(--shade), calc(0.16 * var(--shade-k)));        /* a chip, a segment */
     --lg-shadow-float: 0 18px 44px rgba(var(--shade), calc(0.46 * var(--shade-k))),
@@ -430,6 +433,12 @@
     --panel-out-duration: 180ms;
     --press-in: 140ms;
     --press-out: 240ms;
+    /* 41.0 — a glass control held: 8 % larger, on a spring (damping 0.65,
+       response 0.35 s: about 0.5 % past and back, settled in 520 ms).
+       Mirrored in OwnifyTheme.kt (GlassGrow, GlassSpring). */
+    --glass-grow: 1.08;
+    --glass-spring-dur: 520ms;
+    --glass-spring: linear(0, 0.089, 0.284, 0.505, 0.705, 0.862, 0.969, 1.033, 1.062, 1.068, 1.06, 1.046, 1.031, 1.018, 1.008, 1.001, 0.997, 0.996, 0.995, 0.996, 1);
     --panel-in: opacity var(--panel-in-duration) var(--ease-out-strong),
         transform var(--panel-in-duration) var(--ease-out-strong),
         -webkit-backdrop-filter var(--panel-in-duration) var(--ease-out-strong),
@@ -863,6 +872,9 @@ button {
         transform: none !important;
         opacity: 0.72;
     }
+
+    /* The floating + keeps its place and does not grow (41.0). */
+    .fab:active { transform: translate(var(--fab-x), 0) !important; }
 }
 
 /* Voorkeuren › Toegankelijkheid › Animaties uit: the same, chosen on the
@@ -890,6 +902,8 @@ button {
     transform: none !important;
     opacity: 0.72;
 }
+
+:root[data-motion="reduce"] .fab:active { transform: translate(var(--fab-x), 0) !important; }
 
 /* ==========================================================================
    White Mode — the same design in a light environment.

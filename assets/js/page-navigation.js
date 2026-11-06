@@ -144,6 +144,20 @@
         var decay = DAMPING * omega;
         var ring = omega * Math.sqrt(1 - DAMPING * DAMPING);
 
+        // 41.0 — held (a finger sliding it along the bar), the glass grows
+        // (--glass-grow) on the glass controls' spring (damping 0.65,
+        // stiffness 322 — Motion.kt glassPress), and settles back on release.
+        var LIFT = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--glass-grow')) || 1.08;
+        var LIFT_OMEGA = Math.sqrt(322);
+        var LIFT_DECAY = 0.65 * LIFT_OMEGA;
+        var LIFT_RING = LIFT_OMEGA * Math.sqrt(1 - 0.65 * 0.65);
+        var lift = 1;         // the glass's size, 1 at rest
+        var liftV = 0;
+        var liftTarget = 1;
+        var liftFrom = 0;
+        var liftSpeed = 0;
+        var liftAt = 0;
+
         var slots = [];       // each tab's pane: its left edge, px from the bar
         var x = index;        // where the glass is, in tabs
         var v = 0;            // and how fast it is going, in tabs per second
@@ -190,7 +204,7 @@
             if (!slots.length) { return; }
             var long = 1 + STRETCH * (1 - Math.exp(-Math.abs(v) / STRETCH_SPEED));
             var thin = 1 - THIN * (long - 1);
-            pane.style.transform = 'translate3d(' + left(x).toFixed(2) + 'px, 0, 0) scale(' + long.toFixed(4) + ', ' + thin.toFixed(4) + ')';
+            pane.style.transform = 'translate3d(' + left(x).toFixed(2) + 'px, 0, 0) scale(' + (long * lift).toFixed(4) + ', ' + (thin * lift).toFixed(4) + ')';
         }
 
         /** The spring at a moment: x and v, from its start. */
@@ -205,17 +219,63 @@
             v = e * (-decay * (a * cos + b * sin) + ring * (b * cos - a * sin));
         }
 
+        /** The lift's spring at a moment, from its start. */
+        function sampleLift(now) {
+            var t = Math.max(0, now - liftAt) / 1000;
+            var a = liftFrom;
+            var b = (liftSpeed + LIFT_DECAY * a) / LIFT_RING;
+            var e = Math.exp(-LIFT_DECAY * t);
+            var cos = Math.cos(LIFT_RING * t);
+            var sin = Math.sin(LIFT_RING * t);
+            lift = liftTarget + e * (a * cos + b * sin);
+            liftV = e * (-LIFT_DECAY * (a * cos + b * sin) + LIFT_RING * (b * cos - a * sin));
+        }
+
         function tick(now) {
             frame = 0;
             sample(now);
-            if (Math.abs(x - target) < 0.001 && Math.abs(v) < 0.01) {
-                x = target;
-                v = 0;
-                draw();
-                return;
-            }
+            sampleLift(now);
+            var still = Math.abs(x - target) < 0.001 && Math.abs(v) < 0.01;
+            var rested = Math.abs(lift - liftTarget) < 0.0005 && Math.abs(liftV) < 0.01;
+            if (still) { x = target; v = 0; }
+            if (rested) { lift = liftTarget; liftV = 0; }
             draw();
-            frame = window.requestAnimationFrame(tick);
+            if (!still || !rested) { frame = window.requestAnimationFrame(tick); }
+        }
+
+        /** Held or let go: the glass grows a little, or settles back. Not with reduced motion. */
+        function hold(on) {
+            var at = window.performance.now();
+            if (frame) { sample(at); sampleLift(at); }
+            var goal = on && !nav.reduceMotion ? LIFT : 1;
+            if (goal === liftTarget && lift === goal) { return; }
+            liftFrom = lift - goal;
+            liftSpeed = liftV;
+            liftTarget = goal;
+            liftAt = at;
+            if (nav.reduceMotion) { lift = goal; liftV = 0; draw(); return; }
+            if (!frame) {
+                // The position's spring carries on from where it is.
+                from = x - target;
+                fromSpeed = v;
+                startedAt = at;
+                frame = window.requestAnimationFrame(tick);
+            }
+        }
+
+        /** Where a finger at clientX is along the bar, in tabs: over a tab's middle, that tab. */
+        function at(clientX) {
+            var centers = tabs.map(function (tab) {
+                var box = tab.getBoundingClientRect();
+                return box.left + box.width / 2;
+            });
+            var last = centers.length - 1;
+            if (clientX <= centers[0]) { return 0; }
+            if (clientX >= centers[last]) { return last; }
+            for (var i = 0; i < last; i++) {
+                if (clientX < centers[i + 1]) { return i + (clientX - centers[i]) / (centers[i + 1] - centers[i]); }
+            }
+            return last;
         }
 
         /** Sends the glass to a place in tabs, from wherever it is and at whatever speed. */
@@ -249,7 +309,7 @@
             window.addEventListener('resize', measure);
         }
 
-        return { to: to };
+        return { to: to, hold: hold, at: at, bar: bar, tabs: tabs };
     }());
 
     /* ------------------------------------------------------------- motion */
@@ -342,6 +402,61 @@
             settle(drag ? drag.base : index);
         }
     });
+
+    /* ---------------------------------------------------- the bar, slid */
+
+    /**
+     * 41.0 — the tab bar slid along (iOS's Liquid Glass tab bar): a finger
+     * that goes sideways on the bar takes the glass with it — grown a little
+     * while held — over whichever tab it passes, and nothing changes until
+     * it lets go: then the tab under the glass is chosen, as a tap on it
+     * would choose it (the same click, so a detail open over the page closes
+     * too). Back over the page it started on, nothing happens. A tap is
+     * still a tap; an upward pull on the bar is still the assistant's; the
+     * rail does not move while the bar is slid. Registered after the rail's
+     * own sideways drag, so it is asked first (navigation-core.js).
+     */
+    if (glass) {
+        var scrub = null;   // { position } while a finger slides the bar
+
+        nav.register('x', {
+            canStart: function (ctx) {
+                return !nav.state.aiOpen && !!(ctx.target && ctx.target.closest && ctx.target.closest('.tabbar'));
+            },
+
+            begin: function () {
+                // A rail still settling is placed now: the bar speaks of the page shown.
+                if (settleTimer) { settle(index); }
+                scrub = { position: index };
+                glass.bar.classList.add('is-sliding');
+                glass.hold(true);
+            },
+
+            move: function (ctx) {
+                if (!scrub) { return; }
+                scrub.position = glass.at(ctx.x);
+                glass.to(scrub.position);
+            },
+
+            end: function () {
+                if (!scrub) { return; }
+                var chosen = nav.clamp(Math.round(scrub.position), 0, glass.tabs.length - 1);
+                scrub = null;
+                glass.bar.classList.remove('is-sliding');
+                glass.hold(false);
+                if (chosen === index) { glass.to(index); return; }
+                // Chosen by letting go: the tab's own click, so all that a tap does happens.
+                glass.tabs[chosen].click();
+            },
+
+            cancel: function () {
+                scrub = null;
+                glass.bar.classList.remove('is-sliding');
+                glass.hold(false);
+                glass.to(index);
+            }
+        });
+    }
 
     /* --------------------------------------------------------- tab clicks */
 

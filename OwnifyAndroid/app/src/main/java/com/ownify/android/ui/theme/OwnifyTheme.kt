@@ -673,6 +673,10 @@ object Ownify {
     val EaseOutStrong = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
     const val PanelInMs = 240
     const val PanelOutMs = 180
+    /** 41.0 (`--glass-grow`, `--glass-spring`): a glass control held is 8 % larger, on a spring — damping 0.65, response 0.35 s. */
+    const val GlassGrow = 1.08f
+    const val GlassSpringDamping = 0.65f
+    const val GlassSpringStiffness = 322f
     const val PressInMs = 140
     const val PressOutMs = 240
 

@@ -228,11 +228,14 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
                         items = data.navigation,
                         current = shell.currentPage,
                         // The rail and the bar are one list: a page's place is its tab's.
-                        glassAt = { if (shell.railHeld) shell.rail else shell.index.toFloat() },
+                        // Slid along by a finger (41.0), it is where the finger has it.
+                        glassAt = { shell.tabSlide ?: if (shell.railHeld) shell.rail else shell.index.toFloat() },
+                        glassHeld = { shell.tabSlide != null },
                         openAria = data.ai.openAria,
                         onTab = shell::tab,
                         onOpenAssistant = shell::openAi,
                         onZones = { shell.dockZones = it },
+                        onTabsZone = { shell.tabsZone = it },
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .then(if (shell.aiOpen) Modifier.clearAndSetSemantics { } else Modifier)

@@ -137,6 +137,33 @@ The chosen piece inside the glass — the tab bar's lozenge, a segment — is
 `--lg-chosen` / `--lg-chosen-edge` (`drawChosenGlass`). White Mode follows
 through `--glint-k`, `--pane-body` and `--shade`; nothing is written twice.
 
+**Under the finger (41.0).** Every press elsewhere settles to 97 %
+(`.press`, `Modifier.press`). A glass control instead grows while it is
+held — 8 % (`--glass-grow`, `Ownify.GlassGrow`) on a spring with a touch of
+overshoot (damping 0.65, response 0.35 s: `--glass-spring`,
+`Ownify.GlassSpring*`) — and its rim catches more light (`--lg-glint-lit`).
+It springs back on release. That is the round and primary glass, its chips,
+the header's and the back pills, the floating +, the account's close and the
+assistant's round buttons (`.glass.press`, `.pill.press`, `.fab`,
+`.account__close`, `.ai-round`; `Modifier.glassPress(…)`). Not cards, rows,
+tiles or a goal type. Reduced motion: nothing grows, the press dims as every
+press does.
+
+**Slid, chosen on the lift (41.0).** The tab bar's glass and a segmented
+control's chosen piece follow a finger sliding sideways over them, grown a
+little, and nothing is chosen until it lets go: then the option under it is
+chosen as a tap would. A tap is still a tap; upright movement stays the
+page's scroll (and, on the tab bar, the assistant's pull). On the web the tab
+bar is a controller of the deck's gesture pipeline (page-navigation.js) and
+every `.range-switch` is owned by navigation-core.js; on Android the same:
+`tabSlideController` (ShellState.kt) and `RangeSwitch`.
+
+**Native where the platform has it (41.0).** Instellingen' switches are
+Apple's own (`<input type="checkbox" switch>`, Safari 17.4 and later) where
+the browser has it, with its motion and haptic; the row stays the same
+`role="switch"` button. Elsewhere, and in the app, the drawn switch. Selects
+and date and time fields were already the platform's own.
+
 **Actions.** The secondary button in a card stays what it was (`.btn`, `Btn`
 with the default `BtnLook`: `--glass` with the glass border, a pill). What
 floats or leads is the glass, in three looks:

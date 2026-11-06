@@ -521,6 +521,15 @@
 /* Off and unavailable are different things, and look it. */
 .settings-toggle:disabled .switch { opacity: 0.55; }
 
+/* 41.0 — Apple's own switch, where Safari has it (settings.js): its own size
+   and motion, Ownify's green when on. */
+.switch-native {
+    flex: none;
+    margin: 0;
+    accent-color: var(--health);
+}
+.settings-toggle:disabled:not(.settings-toggle--live) .switch-native { opacity: 0.55; }
+
 /* A switch that saves: pressable, like a row. While it saves it waits,
    dimmed as a whole, as the Vrienden switch does — not "unavailable". */
 .settings-toggle--live {

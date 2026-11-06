@@ -318,15 +318,6 @@ object Panes {
     val HeaderButton: PaneStyle
         get() = Control
 
-    /** `.pill--devices:active`: the pane settles. */
-    val HeaderButtonPressed: PaneStyle
-        get() = Control.copy(
-            shadows = listOf(
-                BoxShadow(y = 3.dp, blur = 10.dp, color = Ownify.shade(0.26f)),
-                BoxShadow(y = 1.dp, blur = 0.dp, color = Ownify.glint(0.10f), inset = true)
-            )
-        )
-
     /** `.welcome__button`: a control. */
     val WelcomeButton: PaneStyle
         get() = Control

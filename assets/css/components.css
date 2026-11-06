@@ -439,12 +439,7 @@
 .pill--devices .icon,
 .pill--account .icon { width: var(--header-icon); height: var(--header-icon); }
 
-/* A press settles the pane rather than shrinking the button. */
-.pill--devices:active,
-.pill--account:active {
-    transform: scale(0.96);
-    box-shadow: 0 3px 10px rgba(var(--shade), calc(0.26 * var(--shade-k))), inset 0 1px 0 rgba(255, 255, 255, calc(0.10 * var(--glint-k)));
-}
+/* A press is the glass's own: it grows and its rim lights (41.0, with .glass). */
 
 .pill--devices > *,
 .pill--account > * { position: relative; }
@@ -1732,9 +1727,10 @@ a.settings-row { color: inherit; text-decoration: none; }
        Measured in label ems, so it holds if the type ever moves. */
     padding: 0 0 calc(var(--fs-caption) * var(--tab-optical));
     border-radius: var(--radius-pill);
-    /* Translucent glass gives back less contrast than a solid bar, so the
-       resting label carries a little more of its own. */
-    color: var(--text-secondary);
+    /* 41.0: the pages not open rest in the muted ink, so the open one — the
+       primary ink on its lozenge — is the one that stands out. No hover
+       change; a press still brightens the tab under the finger (below). */
+    color: var(--text-muted);
     transition: color var(--transition-fast);
 }
 
@@ -1819,6 +1815,11 @@ a.settings-row { color: inherit; text-decoration: none; }
 
 /* A press lifts the glass under the finger, then lets it settle. */
 .tab:not(.is-active):active .tab__glow { opacity: 0.45; transform: none; }
+
+/* 41.0 — slid along (page-navigation.js): the glass under the finger is the
+   only cue; the tab the finger started on does not also stay pressed. */
+.tabbar.is-sliding .tab .tab__glow { opacity: 0; }
+.tabbar.is-sliding .tab:not(.is-active) { color: var(--text-muted); }
 .tab:not(.is-active):active { color: var(--text-primary); }
 
 /* --------------------------------------------------------------------------
@@ -1858,7 +1859,7 @@ a.settings-row { color: inherit; text-decoration: none; }
     transform: translate(var(--fab-x), 0);
 }
 
-.fab:active { transform: translate(var(--fab-x), 0) scale(0.94); }
+/* Its press is the glass's (41.0, below with .glass). */
 
 /* --------------------------------------------------------------------------
    Footnote
@@ -2003,6 +2004,35 @@ a.settings-row { color: inherit; text-decoration: none; }
 
 .glass--cta:disabled::after { background: var(--pane-rim); opacity: 0.6; }
 .glass--cta:disabled.press:active { transform: none; }
+
+/* 41.0 — Liquid Glass under the finger. A control that is glass grows a
+   little while it is held (--glass-grow, on a spring that overshoots a
+   touch, --glass-spring) and its rim catches more light (--lg-glint-lit),
+   then springs back on release. Only the glass controls: the round and
+   primary glass, its chips, the header's and the back pills, the floating
+   +, the account's close and the assistant's round buttons — not cards,
+   rows, tiles or a goal type. Reduced motion: no growing, the dim of every
+   press instead (theme.css). The app does the same (Motion.kt glassPress). */
+:is(.glass.press:not(.goal-type), .pill.press, .account__close.press, .ai-round.press) {
+    transition: transform var(--glass-spring-dur) var(--glass-spring),
+        box-shadow var(--transition-fast),
+        background-color var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+:is(.glass.press:not(.goal-type, :disabled, [aria-disabled="true"]), .pill.press, .account__close.press, .ai-round.press):active {
+    transform: scale(var(--glass-grow));
+    box-shadow: var(--lg-shadow), var(--lg-glint-lit);
+    transition-duration: var(--glass-spring-dur), var(--press-in), var(--transition-fast), var(--transition-fast);
+}
+
+.glass--chip.press:not(:disabled):active { box-shadow: var(--lg-shadow-small), var(--lg-glint-lit); }
+
+.fab:active {
+    transform: translate(var(--fab-x), 0) scale(var(--glass-grow));
+    box-shadow: var(--lg-shadow), var(--lg-glint-lit);
+    transition: opacity var(--transition-fast), transform var(--glass-spring-dur) var(--glass-spring), box-shadow var(--press-in);
+}
 
 /* A select in the glass: the native list on a phone, the glass around it. */
 .glass--select {

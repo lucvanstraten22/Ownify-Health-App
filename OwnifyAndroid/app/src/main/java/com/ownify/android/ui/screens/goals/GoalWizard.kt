@@ -1,4 +1,5 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.Panes
 import com.ownify.android.ui.design.liquidGlass
 
@@ -922,7 +923,7 @@ private fun DateButton(label: String, value: String, modifier: Modifier, empty: 
         val interaction = remember { MutableInteractionSource() }
         Column(
             modifier
-                .press(interaction)
+                .glassPress(interaction, RoundedCornerShape(Ownify.RadiusSm))
                 .heightIn(min = 50.dp)
                 .glass(RoundedCornerShape(Ownify.RadiusSm))
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))

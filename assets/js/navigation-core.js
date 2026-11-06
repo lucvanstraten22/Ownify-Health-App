@@ -191,8 +191,9 @@ window.AppNav = (function () {
 
     function owned(target) {
         /* An element that reads horizontal drags itself — the goal chart,
-           scrubbed with a finger — is not the deck's to route. */
-        return !!(target && target.closest && target.closest('[data-gesture-own]'));
+           scrubbed with a finger, a period switch slid along (41.0, below) —
+           is not the deck's to route. */
+        return !!(target && target.closest && target.closest('[data-gesture-own], .range-switch'));
     }
 
     function start(kind, id, x, y, time, target, pointerType) {
@@ -591,6 +592,13 @@ window.AppNav = (function () {
     /* ------------------------------------------------------------ wiring */
 
     deck.addEventListener('touchstart', onTouchStart, { passive: true });
+
+    /* iOS Safari shows :active only under an element that listens for touch.
+       The panels outside the deck (the goal wizard, the account, the
+       confirmations) have glass controls too, whose press — growing, the rim
+       lit (41.0) — is :active: one empty, passive listener on the document
+       lets them answer the finger as the deck's do. It never blocks a scroll. */
+    document.addEventListener('touchstart', function () {}, { passive: true });
     deck.addEventListener('touchmove', onTouchMove, { passive: false });
     deck.addEventListener('touchend', onTouchEnd, { passive: false });
     deck.addEventListener('touchcancel', onTouchCancel, { passive: true });
@@ -603,6 +611,8 @@ window.AppNav = (function () {
 
     document.addEventListener('click', function (event) {
         if (!swallowUntil) { return; }
+        // A click the app makes itself (the tab bar chosen by letting go, 41.0) is meant.
+        if (!event.isTrusted) { return; }
 
         var own = event.timeStamp <= swallowUntil;
         swallowUntil = 0;
@@ -623,6 +633,95 @@ window.AppNav = (function () {
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) { abandon(); }
     });
+
+    /* ------------------------------------------- a period switch, slid */
+
+    /* 41.0 — every `.range-switch` (7 dagen · 30 dagen · …, Ranglijst's
+       boards, a goal's priority): a finger or cursor that goes sideways over
+       it takes the chosen glass along to the option under it — grown a
+       little (--glass-grow) — and nothing is chosen until it lets go; then
+       that option's own click chooses it, as a tap would. Back over the one
+       already chosen, or a drag that turns upright (the page scrolls), and
+       nothing changes. A tap is still a tap, and the keys are unchanged. */
+    (function () {
+        var SLIDE = 8;      // px sideways before it is a slide, not a tap
+        var slide = null;   // { bar, id, x, y, sliding, under } from press to lift
+        var quietUntil = 0; // the browser's own click after a slide, which is not one
+
+        function optionAt(bar, clientX) {
+            var options = Array.prototype.filter.call(bar.querySelectorAll('.range-switch__option'), function (o) {
+                return !o.disabled && o.offsetParent !== null;
+            });
+            var best = null;
+            var gap = Infinity;
+            options.forEach(function (o) {
+                var box = o.getBoundingClientRect();
+                var d = clientX < box.left ? box.left - clientX : (clientX > box.right ? clientX - box.right : 0);
+                if (d < gap) { gap = d; best = o; }
+            });
+            return best;
+        }
+
+        function stop(choose, event) {
+            var s = slide;
+            slide = null;
+            if (!s || !s.sliding) { return; }
+            s.bar.classList.remove('is-sliding');
+            if (s.under) { s.under.classList.remove('is-under'); }
+            quietUntil = (event ? event.timeStamp : 0) + 400;
+            if (choose && s.under && !s.under.classList.contains('is-active')) {
+                // The option's own click: whatever a tap on it does happens.
+                s.under.click();
+            }
+        }
+
+        document.addEventListener('pointerdown', function (event) {
+            if (event.pointerType === 'mouse' && event.button !== 0) { return; }
+            var option = event.target.closest && event.target.closest('.range-switch__option');
+            if (!option || option.disabled) { slide = null; return; }
+            slide = { bar: option.closest('.range-switch'), id: event.pointerId, x: event.clientX, y: event.clientY, sliding: false, under: null };
+        }, { passive: true });
+
+        document.addEventListener('pointermove', function (event) {
+            var s = slide;
+            if (!s || event.pointerId !== s.id) { return; }
+            if (event.pointerType === 'mouse' && !(event.buttons & 1)) { stop(true, event); return; }
+
+            if (!s.sliding) {
+                var dx = Math.abs(event.clientX - s.x);
+                var dy = Math.abs(event.clientY - s.y);
+                if (dy > SLIDE && dy > dx) { slide = null; return; }   // the page's scroll
+                if (dx < SLIDE) { return; }
+                s.sliding = true;
+                s.bar.classList.add('is-sliding');
+                try { s.bar.setPointerCapture(event.pointerId); } catch (ignored) { /* not critical */ }
+            }
+
+            var under = optionAt(s.bar, event.clientX);
+            if (under && under !== s.under) {
+                if (s.under) { s.under.classList.remove('is-under'); }
+                s.under = under;
+                under.classList.add('is-under');
+            }
+        }, { passive: true });
+
+        document.addEventListener('pointerup', function (event) {
+            if (slide && event.pointerId === slide.id) { stop(true, event); }
+        }, { passive: true });
+
+        document.addEventListener('pointercancel', function (event) {
+            if (slide && event.pointerId === slide.id) { stop(false, event); }
+        }, { passive: true });
+
+        /* The press that became a slide is not also a tap. */
+        document.addEventListener('click', function (event) {
+            if (!event.isTrusted || event.timeStamp > quietUntil) { return; }
+            if (!event.target.closest || !event.target.closest('.range-switch')) { return; }
+            quietUntil = 0;
+            event.stopPropagation();
+            event.preventDefault();
+        }, true);
+    }());
 
     /* A translated layer still counts towards the deck's scrollable overflow.
        Nothing can scroll it by hand, but a programmatic scroll would shift

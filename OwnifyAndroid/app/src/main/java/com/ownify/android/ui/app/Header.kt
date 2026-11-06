@@ -1,5 +1,6 @@
 package com.ownify.android.ui.app
 
+import com.ownify.android.ui.design.glassPress
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.draw.drawWithContent
@@ -221,26 +222,18 @@ fun HeaderFrame(scrolled: Boolean, modifier: Modifier = Modifier, deep: Boolean 
 
 /**
  * One of the two header buttons (`.pill--devices` / `.pill--account`): a 46
- * circle of the floating glass. A press settles the pane (scale .96, a
- * shorter shadow). [dot] is the friend-request dot on the rim.
+ * circle of the floating glass. A press is the glass's own (41.0,
+ * [glassPress]): it grows and its rim lights. [dot] is the friend-request dot
+ * on the rim.
  */
 @Composable
 fun HeaderButton(onClick: () -> Unit, label: String, notice: String? = null, content: @Composable BoxScope.() -> Unit) {
     val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        if (pressed) 0.96f else 1f,
-        tween(if (pressed) Ownify.PressInMs else Ownify.PressOutMs, easing = Ownify.EaseOutStrong),
-        label = "button"
-    )
 
     Box(
         Modifier
             .size(Ownify.HeaderButton)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
+            .glassPress(interaction, CircleShape)
             // The red dot on the button's own circle (docs/NOTICES.md).
             .then(if (notice != null) Modifier.notice(notice, NoticePlace.Circle) else Modifier)
     ) {
@@ -252,7 +245,7 @@ fun HeaderButton(onClick: () -> Unit, label: String, notice: String? = null, con
                         .semantics { contentDescription = label }
                 )
                 .size(Ownify.HeaderButton),
-            style = if (pressed) Panes.HeaderButtonPressed else Panes.HeaderButton,
+            style = Panes.HeaderButton,
             content = content
         )
     }

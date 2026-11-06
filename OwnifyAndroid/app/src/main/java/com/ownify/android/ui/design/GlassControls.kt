@@ -135,7 +135,7 @@ fun GlassChip(
                 text,
                 OwnifyType.style(Ownify.FsCaption, if (chosen) FontWeight.SemiBold else FontWeight.SemiBold, if (chosen) Ownify.TextPrimary else Ownify.TextSecondary),
                 Modifier
-                    .press(interaction, enabled = enabled && onClick != null)
+                    .glassPress(interaction, shape, enabled = enabled && onClick != null)
                     .alpha(if (enabled) 1f else 0.5f)
                     .glass(shape, GlassLook(chosen = chosen, shadow = 7.dp, lift = 2.dp))
                     .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
@@ -205,7 +205,7 @@ fun GlassRound(
         val interaction = remember { MutableInteractionSource() }
         Box(
             modifier
-                .press(interaction, enabled = enabled)
+                .glassPress(interaction, CircleShape, enabled = enabled)
                 .size(size)
                 .alpha(if (enabled) 1f else 0.5f)
                 .glass(CircleShape, GlassLook(chosen = chosen == true))
@@ -245,7 +245,7 @@ fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, e
         val interaction = remember { MutableInteractionSource() }
         Row(
             modifier
-                .press(interaction, enabled = enabled && !loading)
+                .glassPress(interaction, RoundedCornerShape(50), enabled = enabled && !loading)
                 .heightIn(min = 44.dp)
                 .glass(RoundedCornerShape(50), GlassLook(cta = enabled && !caution, caution = enabled && caution))
                 .clickable(interaction, indication = null, enabled = enabled && !loading, role = Role.Button, onClick = blurring(onClick))

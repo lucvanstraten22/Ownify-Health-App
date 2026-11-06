@@ -1,5 +1,14 @@
 package com.ownify.android.ui.design
 
+import com.ownify.android.ui.app.ownsGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.geometry.CornerRadius
 import com.ownify.android.i18n.OwnifyFormat
 import com.ownify.android.i18n.trf
@@ -437,7 +446,7 @@ fun Pill(
                         .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                         .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
                 )
-                .press(interaction)
+                .glassPress(interaction, shape)
                 .heightIn(min = 44.dp)
                 .glass(shape)
                 .padding(padding),
@@ -939,9 +948,42 @@ fun RangeSwitch(
     InButton {
         val shape = RoundedCornerShape(50)
         val shadows = LocalGraphicsContext.current.shadowContext
+        // 41.0 — slid along (navigation-core.js): the option under the finger while
+        // a finger slides the switch sideways; chosen only when it lifts.
+        var under by remember { mutableStateOf<String?>(null) }
+        val spans = remember { HashMap<String, ClosedFloatingPointRange<Float>>() }
+        val owned = com.ownify.android.ui.app.LocalOwnedAreas.current
+        val ownKey = remember { Any() }
+        DisposableEffect(ownKey) { onDispose { owned.set(ownKey, null) } }
+        fun optionAt(x: Float): String? = options
+            .filter { it.first !in disabled }
+            .minByOrNull { (key, _) ->
+                val span = spans[key] ?: return@minByOrNull Float.MAX_VALUE
+                when {
+                    x < span.start -> span.start - x
+                    x > span.endInclusive -> x - span.endInclusive
+                    else -> 0f
+                }
+            }?.first
         Row(
             modifier
                 .then(if (wide) Modifier.fillMaxWidth() else Modifier)
+                // Sideways is the switch's, not the rail's (`data-gesture-own`); upright stays the page's scroll.
+                .ownsGestures(owned, ownKey)
+                .pointerInput(options, disabled) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { at -> under = optionAt(at.x) },
+                        onDragEnd = {
+                            val chosen = under
+                            under = null
+                            if (chosen != null && chosen != selected) onSelect(chosen)
+                        },
+                        onDragCancel = { under = null }
+                    ) { change, _ ->
+                        change.consume()
+                        optionAt(change.position.x)?.let { under = it }
+                    }
+                }
                 // The glass drawn, not clipped: the options' hit areas reach past its edge, as on the website.
                 .drawWithContent {
                     val outline = shape.createOutline(size, layoutDirection, this)
@@ -959,16 +1001,28 @@ fun RangeSwitch(
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             for ((key, text) in options) {
-                val active = key == selected
+                // While slid, the chosen glass is the option under the finger.
+                val active = key == (under ?: selected)
                 val color by animateColorAsState(
                     if (active) Ownify.TextPrimary else Ownify.TextMuted,
                     tween(Ownify.FastMs, easing = Ownify.Ease),
                     label = "option"
                 )
+                val reduced = LocalReducedMotion.current
+                val grow by animateFloatAsState(
+                    if (key == under && !reduced) Ownify.GlassGrow else 1f,
+                    spring(dampingRatio = Ownify.GlassSpringDamping, stiffness = Ownify.GlassSpringStiffness),
+                    label = "optionGrow"
+                )
                 val off = key in disabled
                 Box(
                     Modifier
                         .then(if (wide) Modifier.weight(1f) else Modifier)
+                        .onGloballyPositioned { spans[key] = it.positionInParent().x..(it.positionInParent().x + it.size.width) }
+                        .graphicsLayer {
+                            scaleX = grow
+                            scaleY = grow
+                        }
                         .hitArea(
                             Modifier
                                 .clickable(enabled = !off, role = Role.Button, onClick = blurring { onSelect(key) })

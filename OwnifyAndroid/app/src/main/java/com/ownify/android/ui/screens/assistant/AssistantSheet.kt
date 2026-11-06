@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.assistant
 
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.liquidGlass
 
 import com.ownify.android.ui.design.GlassLook
@@ -289,7 +290,7 @@ private fun RoundGlass(icon: ImageVector, label: String, modifier: Modifier = Mo
         val interaction = remember { MutableInteractionSource() }
         Pane(
             modifier
-                .press(interaction)
+                .glassPress(interaction, CircleShape)
                 .size(size)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
                 .semantics { contentDescription = label },

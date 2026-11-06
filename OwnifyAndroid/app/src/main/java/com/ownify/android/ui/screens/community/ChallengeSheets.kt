@@ -1,4 +1,5 @@
 package com.ownify.android.ui.screens.community
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.CardStyle
 
@@ -624,7 +625,7 @@ private fun MetricChip(label: String, icon: String, accent: Accent, selected: Bo
                     .semantics { this.selected = selected },
                 across = false
             )
-            .press(interaction)
+            .glassPress(interaction, shape)
             .glass(shape, GlassLook(chosen = selected, shadow = 7.dp, lift = 2.dp))
             .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
         verticalAlignment = Alignment.CenterVertically,

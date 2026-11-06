@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.overview
 
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.hitArea
 import com.ownify.android.ui.design.glass
 import com.ownify.android.ui.design.Panes
@@ -661,7 +662,7 @@ private fun ScrollTop(scroll: ScrollState) {
                         }
                         .semantics { contentDescription = tr("Terug naar je dagscore") }
                 )
-                .press(interaction, scale = 0.94f)
+                .glassPress(interaction, CircleShape)
                 .size(44.dp)
                 .glass(CircleShape),
             contentAlignment = Alignment.Center

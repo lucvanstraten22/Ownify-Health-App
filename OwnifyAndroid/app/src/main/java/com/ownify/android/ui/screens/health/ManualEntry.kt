@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.ui.design.glassPress
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
@@ -117,7 +118,7 @@ fun EntryFab(entry: ManualEntry?, area: String) {
                         .clickable(interaction, indication = null, role = Role.Button) { shell.openDetail(Detail.ManualEntry(area)) }
                         .semantics { contentDescription = label }
                 )
-                .press(interaction, scale = 0.94f)
+                .glassPress(interaction, CircleShape)
                 .size(44.dp)
                 .glass(CircleShape, GlassLook(cta = true)),
             contentAlignment = Alignment.Center

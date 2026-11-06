@@ -161,14 +161,46 @@
      */
     function setSwitch(toggle, on, error) {
         var mark = toggle.querySelector('.switch');
+        var native = toggle.querySelector('.switch-native');
         var note = toggle.querySelector('[data-setting-toggle-note]');
 
         toggle.setAttribute('aria-checked', on ? 'true' : 'false');
         if (mark) { mark.classList.toggle('is-on', on); }
+        if (native) { native.checked = on; }
         if (note) {
             note.textContent = error || toggle.getAttribute(on ? 'data-note-on' : 'data-note-off');
             note.classList.toggle('is-error', !!error);
         }
+    }
+
+    /* 41.0 — where the browser has Apple's own switch (Safari 17.4 and later:
+       `<input type="checkbox" switch>`), Instellingen' switches are that one —
+       its look, its motion and, on an iPhone, its haptic tick — in place of
+       the drawn .switch. The row stays the same button (role="switch",
+       aria-checked, the keys): the native switch is only what the finger
+       touches and the eye sees, hidden from assistive technology and the tab
+       order. Elsewhere the drawn switch stays. The app keeps its own (Toggle). */
+    var nativeSwitch = typeof HTMLInputElement !== 'undefined' && 'switch' in HTMLInputElement.prototype;
+
+    function busy(toggle, on) {
+        toggle.disabled = on;
+        var native = toggle.querySelector('.switch-native');
+        if (native) { native.disabled = on || toggle.hasAttribute('aria-disabled'); }
+    }
+
+    if (nativeSwitch) {
+        Array.prototype.forEach.call(document.querySelectorAll('.settings-toggle .switch'), function (mark) {
+            var toggle = mark.closest('.settings-toggle');
+            var input = document.createElement('input');
+            input.type = 'checkbox';
+            input.setAttribute('switch', '');
+            input.className = 'switch-native';
+            input.tabIndex = -1;
+            input.setAttribute('aria-hidden', 'true');
+            input.checked = toggle.getAttribute('aria-checked') === 'true';
+            input.disabled = toggle.disabled;
+            mark.replaceWith(input);
+        });
     }
 
     document.addEventListener('click', function (event) {
@@ -184,7 +216,7 @@
         body.append(key, before ? '0' : '1');
 
         setSwitch(toggle, !before);
-        toggle.disabled = true;
+        busy(toggle, true);
 
         fetch(toggle.getAttribute('data-endpoint') || 'api/profile/privacy.php', { method: 'POST', body: body, credentials: 'same-origin' })
             .then(function (response) {
@@ -194,7 +226,7 @@
             })
             .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
             .then(function (answer) {
-                toggle.disabled = false;
+                busy(toggle, false);
 
                 if (!answer || !answer.ok) {
                     setSwitch(toggle, before, (answer && answer.error) || T.t('Dit kon niet worden opgeslagen.'));

@@ -225,8 +225,6 @@
         background-color: rgba(var(--fill), calc(0.04 * var(--fill-k)));
     }
 
-    .tab:not(.is-active):hover { color: var(--text-primary); }
-
     .fab:hover {
         background: rgba(var(--fill), calc(0.11 * var(--fill-k)));
         color: var(--text-primary);

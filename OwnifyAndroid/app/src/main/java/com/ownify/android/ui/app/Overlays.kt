@@ -1,4 +1,5 @@
 package com.ownify.android.ui.app
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.glass
 import com.ownify.android.ui.design.liquidGlass
 import com.ownify.android.ui.design.Panes
@@ -270,7 +271,7 @@ fun RoundButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier:
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .press(interaction)
+            .glassPress(interaction, CircleShape)
             .size(34.dp)
             .glass(CircleShape)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)

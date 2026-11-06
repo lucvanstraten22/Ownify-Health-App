@@ -269,6 +269,11 @@ class ShellState(
     var dockZones: List<Rect> = emptyList()
     var sheetTopZone: Rect? = null
 
+    /** 41.0: where the tab bar's five tabs are (dp, the root's), and where its glass is slid to, in tabs, while a finger slides it. */
+    var tabsZone: Rect? = null
+    var tabSlide by mutableStateOf<Float?>(null)
+        private set
+
     // --------------------------------------------------------- the panels
 
     val overlays = mutableStateListOf<Overlay>()
@@ -571,9 +576,49 @@ class ShellState(
         override fun cancel() = pull.cancel()
     }
 
-    /** The detail layer claims a rightward drag before the rail may (their zones never overlap). */
+    /**
+     * Horizontal, on the tab bar: its glass slid along (41.0, page-navigation.js).
+     * The glass follows the finger over the tabs — grown a little while held —
+     * and nothing changes until the lift; then the tab under it is chosen as a
+     * tap would choose it ([tab]). Back over the page it started on, nothing
+     * happens. The rail stays put meanwhile; an upward pull on the bar is still
+     * the assistant's (that is the other axis).
+     */
+    val tabSlideController = object : AxisController {
+        override fun canStart(ctx: GestureContext) =
+            !aiOpen && !overlayOpen && pageIds.size > 1 && tabsZone?.contains(Offset(ctx.startX, ctx.startY)) == true
+
+        private fun at(ctx: GestureContext): Float {
+            val zone = tabsZone ?: return index.toFloat()
+            val cell = zone.width / pageIds.size
+            // Over a tab's middle, that tab; between two, between them.
+            return ((ctx.startX + ctx.dx - zone.left) / cell - 0.5f).coerceIn(0f, pageIds.lastIndex.toFloat())
+        }
+
+        override fun begin(ctx: GestureContext) {
+            // A rail still settling is placed now: the bar speaks of the page shown.
+            if (railJob?.isActive == true) settleRail(index)
+            tabSlide = at(ctx)
+        }
+
+        override fun move(ctx: GestureContext) {
+            if (tabSlide != null) tabSlide = at(ctx)
+        }
+
+        override fun end(ctx: GestureContext) {
+            val chosen = kotlin.math.round(tabSlide ?: return).toInt().coerceIn(0, pageIds.lastIndex)
+            tabSlide = null
+            if (chosen != index) tab(pageIds[chosen])
+        }
+
+        override fun cancel() {
+            tabSlide = null
+        }
+    }
+
+    /** The detail layer claims a rightward drag before the rail may (their zones never overlap); the tab bar's slide before either. */
     val controllers: Map<Axis, List<AxisController>>
-        get() = mapOf(Axis.X to listOf(detailController, railController), Axis.Y to listOf(pullController, aiController))
+        get() = mapOf(Axis.X to listOf(tabSlideController, detailController, railController), Axis.Y to listOf(pullController, aiController))
 
     /** Predictive back on a detail page: the page follows the back gesture. */
     fun backProgress(progress: Float) {

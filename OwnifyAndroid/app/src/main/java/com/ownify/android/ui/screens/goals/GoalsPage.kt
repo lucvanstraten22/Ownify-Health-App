@@ -1,4 +1,5 @@
 package com.ownify.android.ui.screens.goals
+import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.GlassLook
 import com.ownify.android.ui.design.glass
 
@@ -256,7 +257,7 @@ private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
-            .press(interaction, scale = 0.94f, enabled = enabled)
+            .glassPress(interaction, CircleShape, enabled = enabled)
             .size(44.dp)
             .glass(CircleShape, GlassLook(cta = enabled))
             .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
