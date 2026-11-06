@@ -23,17 +23,26 @@ declare(strict_types=1);
 $settings = [
 
     /**
-     * Google Health API — the cloud one, read server to server.
+     * Google Health API — the cloud one, read server to server (44.0,
+     * includes/google-health.php, docs/GOOGLE-HEALTH.md).
      *
-     * Obtained from a Google Cloud project: an OAuth 2.0 Client ID of type
-     * "Web application", with the redirect URI below registered on it.
+     * Obtained from a Google Cloud project with the Google Health API enabled:
+     * an OAuth 2.0 Client ID of type "Web application", with the redirect URI
+     * below registered on it. The id and the secret come from the environment
+     * (GOOGLE_HEALTH_CLIENT_ID, GOOGLE_HEALTH_CLIENT_SECRET) or from
+     * config/integrations.local.php — never from this file.
      */
     'google_health' => [
         'client_id'     => '',
         'client_secret' => '',
         // Must match a redirect URI registered on the OAuth client, exactly,
-        // including https and any trailing path.
-        'redirect_uri'  => '',
+        // including https and any trailing path. The live site's; a local
+        // copy sets its own (GOOGLE_HEALTH_REDIRECT_URI or the local file).
+        'redirect_uri'  => 'https://ownify.acits.nl/api/integrations/google_health/callback.php',
+        // The first sync reaches this many days back; later ones overlap the
+        // last few days, because a watch can reach Google days late.
+        'initial_days'  => 30,
+        'overlap_days'  => 3,
         // Asked for at consent time. Read-only: Ownify imports, it never writes
         // back to anyone's health account.
         'scopes'        => [

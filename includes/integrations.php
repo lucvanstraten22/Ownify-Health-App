@@ -47,6 +47,11 @@ if (!function_exists('integration_providers')) {
                 'label'     => 'Google Health',
                 'transport' => 'cloud',
                 'note'      => t('Fitbit en Pixel Watch, via je Google-account'),
+                /* 44.0: built (includes/google-health.php, docs/GOOGLE-HEALTH.md):
+                   fetched on request (api/integrations/google_health/sync.php),
+                   after connecting and hourly from cron. */
+                'sync'      => true,
+                'check'     => 'google_health_problem',
             ],
             'polar' => [
                 'label'     => 'Polar',
@@ -125,7 +130,7 @@ if (!function_exists('integration_providers')) {
      * For a cloud source, in this order — each a different fix:
      *
      *   connect flow   its sign-in pages exist (api/integrations/<provider>/
-     *                  callback.php): Google Health's were never built
+     *                  callback.php)
      *   credentials    a client id, secret and redirect URI that are real
      *   its own check  what only that provider needs (Polar: migration 020)
      *   the app key    tokens can be sealed before they are stored
@@ -418,6 +423,10 @@ if (!function_exists('integration_providers')) {
             return tf('Polar gaf geen toegang tot %s. Accepteer de toestemmingen in je Polar-account (account.polar.com) en koppel Polar opnieuw.', $list($m[1]));
         }
 
+        if (preg_match('/^Google gaf geen toegang tot (.+)\. Koppel Google Health opnieuw en sta alle gegevens toe\.$/u', $stored, $m)) {
+            return tf('Google gaf geen toegang tot %s. Koppel Google Health opnieuw en sta alle gegevens toe.', $list($m[1]));
+        }
+
         if (preg_match('/^Niet alles kon worden opgehaald \((.+)\)\. Het wordt later opnieuw geprobeerd\.$/u', $stored, $m)) {
             return tf('Niet alles kon worden opgehaald (%s). Het wordt later opnieuw geprobeerd.', $list($m[1]));
         }
@@ -454,3 +463,4 @@ if (!function_exists('integration_providers')) {
 /* Polar's own half: its credentials check, connecting and syncing. Loaded
    after the functions above, which it builds on. */
 require_once __DIR__ . '/polar.php';
+require_once __DIR__ . '/google-health.php';

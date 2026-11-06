@@ -109,15 +109,15 @@ echo "\n== the live server, before ==\n";
 $live = server(['integrations.local.php' => $liveIntegrations]);
 check('Polar: credentials and migration found, then stopped by the missing app key',
     ($live['reasons']['polar'] ?? null) === 'De server kan tokens nog niet veilig opslaan.', $live['output']);
-check('Google Health: the example\'s placeholders no longer count as credentials, and its flow was never built',
-    ($live['reasons']['google_health'] ?? null) === 'Deze koppeling is nog niet beschikbaar in Ownify.', $live['output']);
+check('Google Health (44.0, built): the example\'s placeholders do not count as credentials — not set up on the server',
+    ($live['reasons']['google_health'] ?? null) === 'Deze koppeling is op de server nog niet ingesteld.', $live['output']);
 check('the server log says why, by name, without a value', str_contains($live['log'], 'OWNIFY_APP_KEY is not set') && str_contains($live['log'], 'config/app.local.php'), $live['log']);
 check('Health Connect is untouched by the key', array_key_exists('google_health_connect', $live['reasons']) && $live['reasons']['google_health_connect'] === null);
 
 echo "\n== the fix: config/app.local.php with app_key ==\n";
 $fixed = server(['integrations.local.php' => $liveIntegrations, 'app.local.php' => "['app_key' => '" . $key . "']"]);
 check('Polar passes the check: it can be connected', array_key_exists('polar', $fixed['reasons']) && $fixed['reasons']['polar'] === null, $fixed['output']);
-check('Google Health still says plainly it is not available (no connect flow), not a key problem', ($fixed['reasons']['google_health'] ?? '') === 'Deze koppeling is nog niet beschikbaar in Ownify.');
+check('Google Health still says it is not set up on the server (placeholders), not a key problem', ($fixed['reasons']['google_health'] ?? '') === 'Deze koppeling is op de server nog niet ingesteld.');
 check('nothing about the key in the log, and never the key', !str_contains($fixed['log'], 'APP_KEY') && !str_contains($fixed['log'] . $fixed['output'], $key));
 
 echo "\n== or OWNIFY_APP_KEY in the environment ==\n";

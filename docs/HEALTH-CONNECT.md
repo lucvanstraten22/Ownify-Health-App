@@ -21,6 +21,9 @@ phone.
 So: an app on the phone reads Health Connect and posts to Ownify. That app is
 the Ownify Android app, `OwnifyAndroid/` in this repository.
 
+The Google Health API — Fitbit and Pixel Watch through a Google account — is
+a separate source since 44.0, read by the server: docs/GOOGLE-HEALTH.md.
+
 ## How the app proves whose data it is sending
 
 It cannot use the session cookie — it is not a browser, and a cookie living

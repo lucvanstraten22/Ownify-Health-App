@@ -27,7 +27,11 @@ if (!integration_known($provider)) {
 }
 
 /* Polar: its tokens go, and any connection still being made with it. */
-$done = $provider === 'polar' ? polar_disconnect($userId) : integration_disconnect($userId, $provider);
+$done = match ($provider) {
+    'polar'         => polar_disconnect($userId),
+    'google_health' => google_health_disconnect($userId),      // 44.0: also withdrawn at Google
+    default         => integration_disconnect($userId, $provider),
+};
 
 if (!$done) {
     api_fail('Ontkoppelen is niet gelukt.', 500);
