@@ -93,6 +93,14 @@ internal object TestSyncEnvironment : OwnifySyncEnvironment {
 
     override val status: OwnifySyncStatusStore get() = OwnifySyncStatusPrefs(context)
 
+    /**
+     * 43.0: the first sync reads a week here, as every sync did before — one
+     * read, one request — so these tests keep meaning what they meant. The
+     * month, a week at a time, and the changes have their own tests
+     * (HealthConnectSyncModesTest).
+     */
+    override val historyRange: java.time.Duration get() = java.time.Duration.ofDays(7)
+
     override suspend fun token(): String? = OwnifyConnection.storedToken(context)
 
     override suspend fun tokenRejected(token: String) = OwnifyConnection.rejected(context, token)

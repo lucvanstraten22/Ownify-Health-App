@@ -125,6 +125,14 @@ private fun SignedInApp(screens: ShellScreens) {
 
     LaunchedEffect(Unit) { OwnifyAppState.refresh(context) }
 
+    // 43.0: a newer Ownify on GitHub, asked at most once a day (OwnifyUpdates);
+    // told once per version, then shown in Instellingen › the phone's card.
+    LaunchedEffect(Unit) {
+        com.ownify.android.connection.OwnifyUpdates.check(context)?.let { update ->
+            OwnifyToast.show(com.ownify.android.i18n.trf("Ownify %s is beschikbaar", update.version))
+        }
+    }
+
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME && OwnifyAppState.data != null) OwnifyAppState.refresh(context)

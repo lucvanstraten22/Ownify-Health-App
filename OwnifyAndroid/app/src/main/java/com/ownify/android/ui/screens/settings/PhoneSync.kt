@@ -6,6 +6,9 @@ import com.ownify.android.i18n.trn
 import com.ownify.android.i18n.OwnifyFormat
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +51,8 @@ import com.ownify.android.connection.OwnifyBackgroundSync
 import com.ownify.android.connection.OwnifySync
 import com.ownify.android.connection.OwnifySyncOutcomeKind
 import com.ownify.android.connection.OwnifySyncState
+import com.ownify.android.connection.OwnifySyncRunner
+import com.ownify.android.connection.OwnifyUpdates
 import com.ownify.android.ui.design.Btn
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.T
@@ -69,10 +74,14 @@ import kotlinx.coroutines.withContext
  * went — and ask for that access. Android-only (docs/PARITY.md).
  */
 
-/** The Health Connect read permissions the sync needs: one per record type it sends. */
-val HealthPermissions: Set<String> = IngestPayload.TYPES.map { HealthPermission.getReadPermission(it) }.toSet()
+/** The Health Connect read permissions the sync can use: one per record type it sends. */
+val HealthPermissions: Set<String> = IngestPayload.permissions()
 
 private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
+private const val PLAY_STORE_PACKAGE = "com.android.vending"
+
+/** 43.0: an hourly sync this long ago is late — Android is likely holding it back. */
+private val LATE = java.time.Duration.ofHours(3)
 
 /** What Health Connect on this phone allows, read when the screen opens and again on every return to it. */
 @Stable
@@ -82,16 +91,34 @@ class PhoneHealth {
     var background by mutableStateOf<BackgroundRead?>(null)
     var known by mutableStateOf(false)
 
-    val total: Int get() = IngestPayload.TYPES.size
+    /** What this phone's Health Connect can grant (43.0: skin temperature only where it has the feature). */
+    var permissions by mutableStateOf(HealthPermissions)
+
+    val total: Int get() = permissions.size
     val available: Boolean get() = sdk == HealthConnectClient.SDK_AVAILABLE
+
+    /** 43.0: whether Android's battery optimisation applies to Ownify — it may then hold the hourly sync back. Null: unknown. */
+    var batteryRestricted by mutableStateOf<Boolean?>(null)
+
+    /** 43.0: whether the Play Store is on this phone — Health Connect is installed and updated from there. */
+    var playStore by mutableStateOf(true)
+
+    /** 43.0: Android's own version — Health Connect is part of Android from 14 on. */
+    var androidVersion by mutableIntStateOf(Build.VERSION.SDK_INT)
 
     suspend fun read(context: Context) {
         val app = context.applicationContext
         val status = withContext(Dispatchers.IO) { runCatching { HealthConnectClient.getSdkStatus(app) }.getOrDefault(HealthConnectClient.SDK_UNAVAILABLE) }
         sdk = status
+        batteryRestricted = runCatching {
+            !(app.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(app.packageName)
+        }.getOrNull()
+        playStore = runCatching { app.packageManager.getPackageInfo(PLAY_STORE_PACKAGE, 0); true }.getOrDefault(false)
         if (status == HealthConnectClient.SDK_AVAILABLE) {
-            val permissions = runCatching { HealthConnectClient.getOrCreate(app).permissionController.getGrantedPermissions() }.getOrDefault(emptySet())
-            granted = HealthPermissions.count { it in permissions }
+            val client = runCatching { HealthConnectClient.getOrCreate(app) }.getOrNull()
+            if (client != null) permissions = IngestPayload.permissions(IngestPayload.availableTypes(client))
+            val have = runCatching { client!!.permissionController.getGrantedPermissions() }.getOrDefault(emptySet())
+            granted = permissions.count { it in have }
             background = runCatching { OwnifyBackgroundSync.backgroundRead(app) }.getOrNull()
         } else {
             granted = 0
@@ -187,13 +214,45 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
                 empty = record.lastSuccessAt == null
             )
             record.lastOutcome?.let { PhoneRow(tr("Status"), outcomeText(it)) }
+            // 43.0: the first import of a newly connected phone, while it is under way.
+            val historyFrom = record.historyFrom
+            if (!record.historyDone && historyFrom != null) {
+                val total = OwnifySyncRunner.HISTORY.toDays().toInt()
+                val done = java.time.Duration.between(historyFrom, Instant.now()).toDays().toInt().coerceIn(0, total)
+                PhoneRow(tr("Eerste import"), trf("%d van %d dagen", done, total))
+            }
+            if (active && health.batteryRestricted != null) {
+                PhoneRow(
+                    tr("Batterijbeheer"),
+                    if (health.batteryRestricted == true) tr("Geoptimaliseerd") else tr("Onbeperkt"),
+                    empty = health.batteryRestricted == true
+                )
+            }
+            PhoneRow(tr("App-versie"), OwnifyUpdates.installed(context).ifEmpty { "—" })
+            OwnifyUpdates.available?.let { update -> PhoneRow(tr("Nieuwe versie"), update.version) }
+        }
+
+        // 43.0: why, in a line, when something stands in the way.
+        val late = active && record.lastSuccessAt?.let { java.time.Duration.between(it, Instant.now()) > LATE } == true
+        val notes = buildList {
+            healthConnectNote(health)?.let(::add)
+            if (late) add(tr("De laatste synchronisatie is meer dan drie uur geleden. Android kan synchroniseren op de achtergrond uitstellen om de batterij te sparen."))
+            if (active && health.batteryRestricted == true && (late || health.background == BackgroundRead.GRANTED)) {
+                add(tr("Zet de batterijbeperking voor Ownify uit, zodat het elk uur kan synchroniseren terwijl de app dicht is."))
+                manufacturerNote()?.let(::add)
+            }
+        }
+        for (note in notes) {
+            T(note, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space3))
         }
 
         // What can be asked for, only when it is missing.
-        val needsInstall = health.known && !health.available
+        val needsInstall = health.known && canInstall(health)
         val needsRead = health.available && health.granted < health.total
         val needsBackground = health.available && health.granted > 0 && health.background == BackgroundRead.NOT_GRANTED
-        if (needsInstall || needsRead || needsBackground) {
+        val needsBattery = active && health.batteryRestricted == true && (late || health.background == BackgroundRead.GRANTED)
+        val update = OwnifyUpdates.available
+        if (needsInstall || needsRead || needsBackground || needsBattery || update != null) {
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                 if (needsInstall) {
                     Btn(
@@ -202,13 +261,20 @@ fun PhoneSection(health: PhoneHealth, modifier: Modifier = Modifier) {
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (needsRead) Btn(tr("Toegang geven"), onClick = { askRead.launch(HealthPermissions) }, modifier = Modifier.fillMaxWidth())
+                if (needsRead) Btn(tr("Toegang geven"), onClick = { askRead.launch(health.permissions) }, modifier = Modifier.fillMaxWidth())
                 if (needsBackground) {
                     Btn(
                         tr("Op de achtergrond toestaan"),
                         onClick = { askBackground.launch(setOf(OwnifyBackgroundSync.BACKGROUND_PERMISSION)) },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                if (needsBattery) {
+                    Btn(tr("Batterijbeperking uitzetten"), onClick = { openBatterySettings(context) }, modifier = Modifier.fillMaxWidth())
+                }
+                if (update != null) {
+                    // To the APK on GitHub, in the browser: nothing is downloaded or installed by the app itself.
+                    Btn(trf("Ownify %s downloaden", update.version), onClick = { openLink(context, update.apk) }, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
@@ -314,9 +380,65 @@ internal fun outcomeText(kind: OwnifySyncOutcomeKind): String = when (kind) {
     OwnifySyncOutcomeKind.EXPIRED -> tr("De koppeling met Ownify is verlopen")
 }
 
-/** Health Connect's own page in the Play Store: to install it, or bring it up to date. */
 /** Health Connect in the Play Store — to install or update it (also the setup's Gegevens step). */
 internal fun openHealthConnectStore(context: Context) = openStore(context)
+
+/**
+ * 43.0 — whether Health Connect can be installed or updated from here: an
+ * update always can; installing only on Android 13 and older, where it is
+ * a separate app — from 14 on it is part of Android.
+ */
+internal fun canInstall(health: PhoneHealth): Boolean = !health.available &&
+    (health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ||
+        health.androidVersion < Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+
+/** 43.0: why Health Connect is not there, and what to do — or null when it is. */
+internal fun healthConnectNote(health: PhoneHealth): String? = when {
+    !health.known || health.available -> null
+    !health.playStore && canInstall(health) ->
+        tr("Health Connect komt uit de Play Store, en die staat niet op deze telefoon. Zonder Health Connect kan Ownify hier niets lezen.")
+    health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
+        if (health.androidVersion >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            tr("Ownify heeft een nieuwere Health Connect nodig. Op deze telefoon hoort Health Connect bij Android: werk het bij via de Play Store of de systeemupdates van Google Play.")
+        } else {
+            tr("Ownify heeft een nieuwere Health Connect nodig. Werk de app Health Connect bij in de Play Store.")
+        }
+    health.androidVersion < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+        tr("Op Android 13 en ouder is Health Connect een aparte, gratis app. Installeer die uit de Play Store en geef Ownify daarna toegang.")
+    else ->
+        tr("Health Connect hoort bij Android, maar is hier niet te gebruiken — bijvoorbeeld in een werkprofiel. Ownify kan op deze telefoon niets lezen.")
+}
+
+/** 43.0: the phone maker's own extra switch for apps in the background, where it has one. */
+internal fun manufacturerNote(maker: String = Build.MANUFACTURER.orEmpty()): String? = when (maker.lowercase()) {
+    "xiaomi", "redmi", "poco" -> tr("Op Xiaomi-telefoons: zet ook Autostart aan voor Ownify (Instellingen › Apps › Ownify).")
+    "huawei", "honor" -> tr("Op Huawei- en Honor-telefoons: kies bij App-start voor Ownify ‘Handmatig beheren’ en sta uitvoeren op de achtergrond toe.")
+    "samsung" -> tr("Op Samsung-telefoons: zet Ownify niet bij de apps in slaapstand (Instellingen › Batterij › Achtergrondgebruik).")
+    "oneplus", "oppo", "realme", "vivo" -> tr("Op deze telefoon: sta Ownify ook toe op de achtergrond te draaien bij de batterij-instellingen van de app.")
+    else -> null
+}
+
+/**
+ * Asks Android to let Ownify run without battery optimisation — its own
+ * one-tap dialog — or, where that is not offered, opens the list where it
+ * is set, or Ownify's app settings.
+ */
+internal fun openBatterySettings(context: Context) {
+    val pkg = context.packageName
+    val tries = listOf(
+        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, "package:$pkg".toUri()),
+        Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$pkg".toUri())
+    )
+    for (intent in tries) {
+        if (runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) return
+    }
+}
+
+/** A web link in the browser. */
+internal fun openLink(context: Context, url: String) {
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
 
 private fun openStore(context: Context) {
     val uri = "market://details?id=$HEALTH_CONNECT_PACKAGE&url=healthconnect%3A%2F%2Fonboarding".toUri()

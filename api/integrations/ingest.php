@@ -32,18 +32,23 @@ if ($device === null) {
 $input   = api_json_body();
 $records = $input['records'] ?? null;
 
-if (!is_array($records)) {
+/* 43.0: the ids of records Health Connect no longer has (the app's
+   incremental sync reads its changes, deletions included). Optional: an
+   app from before sends none. */
+$deleted = $input['deleted'] ?? [];
+
+if (!is_array($records) || !is_array($deleted)) {
     api_fail('Verwacht een records-array.', 422);
 }
 
-if (count($records) > 2000) {
+if (count($records) > 2000 || count($deleted) > 2000) {
     api_fail('Stuur maximaal 2000 records per keer.', 413);
 }
 
 /* Nothing to send is a normal outcome — a phone with no new data, or one
    whose owner granted no permissions. It is not an error and must not look
    like one, or the app will retry forever. */
-if ($records === []) {
+if ($records === [] && $deleted === []) {
     device_note_sync($device['device_id']);
     integration_note_sync($device['user_id'], $device['provider'], 'ok');
 
@@ -51,7 +56,7 @@ if ($records === []) {
 }
 
 $mapped = health_connect_map($records);
-$result = health_import_records($device['user_id'], $device['provider'], $mapped['records']);
+$result = health_import_records($device['user_id'], $device['provider'], $mapped['records'], array_values($deleted));
 
 if (!$result['ok']) {
     integration_note_sync($device['user_id'], $device['provider'], 'failed', $result['error']);
@@ -72,6 +77,7 @@ integration_note_sync(
 api_ok([
     'written'  => $result['written'],
     'skipped'  => $result['skipped'],
+    'deleted'  => $result['deleted'] ?? 0,
     'days'     => $result['days'],
     'unmapped' => $mapped['unmapped'],
     'problems' => $result['problems'],

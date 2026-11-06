@@ -93,10 +93,11 @@ import com.ownify.android.ui.screens.account.LinkButton
 import com.ownify.android.ui.screens.goals.GoalWizard
 import com.ownify.android.ui.screens.goals.StepIn
 import com.ownify.android.ui.screens.settings.DateControl
-import com.ownify.android.ui.screens.settings.HealthPermissions
 import com.ownify.android.ui.screens.settings.PhoneHealth
 import com.ownify.android.ui.screens.settings.SyncResult
 import com.ownify.android.ui.screens.settings.openHealthConnectStore
+import com.ownify.android.ui.screens.settings.canInstall
+import com.ownify.android.ui.screens.settings.healthConnectNote
 import com.ownify.android.ui.screens.settings.rememberPhoneHealth
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.design.Ground
@@ -452,7 +453,11 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
         T(source.app, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space3))
 
         // What can be asked for on this phone, only while it is missing.
-        val needsInstall = health.known && !health.available
+        val needsInstall = health.known && canInstall(health)
+        // 43.0: why Health Connect is not there, in a line (as in Instellingen).
+        healthConnectNote(health)?.let {
+            T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.fillMaxWidth().padding(top = Ownify.Space3))
+        }
         val needsRead = health.available && health.granted == 0
         if (needsInstall || needsRead) {
             Btn(
@@ -461,7 +466,7 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
                     health.sdk == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> tr("Health Connect bijwerken")
                     else -> tr("Health Connect installeren")
                 },
-                onClick = { if (needsRead) askRead.launch(HealthPermissions) else openHealthConnectStore(context) },
+                onClick = { if (needsRead) askRead.launch(health.permissions) else openHealthConnectStore(context) },
                 modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
             )
         }

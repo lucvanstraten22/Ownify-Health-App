@@ -5,7 +5,7 @@ declare(strict_types=1);
 return [
 
     /* ---- the Android app's own sentences (OwnifyAndroid/) */
-    'Ownify leest je stappen, afstand, verdiepingen, calorieën, hartslag, rusthartslag, hartslagvariabiliteit, zuurstofsaturatie, slaap, trainingen, voeding, water, gewicht, lengte en vetpercentage uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.' => 'Ownify reads your steps, distance, floors climbed, calories, heart rate, resting heart rate, heart rate variability, oxygen saturation, sleep, workouts, nutrition, water, weight, height and body fat from Health Connect and sends them to your own Ownify account. With background access it also does this about once an hour while the app is closed. Ownify only reads: it never changes or deletes anything in Health Connect.',
+    'Ownify leest je stappen, afstand, verdiepingen, calorieën, hartslag, rusthartslag, hartslagvariabiliteit, zuurstofsaturatie, ademhalingsfrequentie, huid- en lichaamstemperatuur, slaap, trainingen, voeding, water, gewicht, lengte, vetpercentage en vetvrije massa uit Health Connect en stuurt ze naar je eigen Ownify-account. Met toegang op de achtergrond doet het dit ook ongeveer eens per uur terwijl de app dicht is. Ownify leest alleen: het verandert of verwijdert nooit iets in Health Connect.' => 'Ownify reads your steps, distance, floors climbed, calories, heart rate, resting heart rate, heart rate variability, oxygen saturation, respiratory rate, skin and body temperature, sleep, workouts, nutrition, water, weight, height, body fat and lean body mass from Health Connect and sends them to your own Ownify account. With background access it also does this about once an hour while the app is closed. Ownify only reads: it never changes or deletes anything in Health Connect.',
     'De koppeling met Ownify is verlopen. Koppel deze telefoon opnieuw.' => 'The connection with Ownify has expired. Pair this phone again.',
     'Je sessie is verlopen. Log opnieuw in.' => 'Your session has expired. Please log in again.',
     'Je bent uitgelogd.' => 'You are logged out.',
@@ -92,4 +92,27 @@ return [
     'Gekoppeld aan %s' => 'Paired with %s',
     'Deze telefoon is gekoppeld' => 'This phone is paired',
     'Met een koppelcode. Log in om ook je account te gebruiken.' => 'With a pairing code. Log in to use your account as well.',
+
+    // 43.0 — Health Connect: the phone's card, battery, updates
+    'Ownify %s is beschikbaar' => 'Ownify %s is available',
+    'Eerste import' => 'First import',
+    '%d van %d dagen' => '%d of %d days',
+    'Batterijbeheer' => 'Battery',
+    'Geoptimaliseerd' => 'Optimised',
+    'Onbeperkt' => 'Unrestricted',
+    'App-versie' => 'App version',
+    'Nieuwe versie' => 'New version',
+    'De laatste synchronisatie is meer dan drie uur geleden. Android kan synchroniseren op de achtergrond uitstellen om de batterij te sparen.' => 'The last sync was more than three hours ago. Android can postpone background syncing to save battery.',
+    'Zet de batterijbeperking voor Ownify uit, zodat het elk uur kan synchroniseren terwijl de app dicht is.' => 'Turn off the battery restriction for Ownify, so it can sync every hour while the app is closed.',
+    'Batterijbeperking uitzetten' => 'Turn off battery restriction',
+    'Ownify %s downloaden' => 'Download Ownify %s',
+    'Health Connect komt uit de Play Store, en die staat niet op deze telefoon. Zonder Health Connect kan Ownify hier niets lezen.' => 'Health Connect comes from the Play Store, which is not on this phone. Without Health Connect, Ownify cannot read anything here.',
+    'Ownify heeft een nieuwere Health Connect nodig. Op deze telefoon hoort Health Connect bij Android: werk het bij via de Play Store of de systeemupdates van Google Play.' => 'Ownify needs a newer Health Connect. On this phone Health Connect is part of Android: update it through the Play Store or the Google Play system updates.',
+    'Ownify heeft een nieuwere Health Connect nodig. Werk de app Health Connect bij in de Play Store.' => 'Ownify needs a newer Health Connect. Update the Health Connect app in the Play Store.',
+    'Op Android 13 en ouder is Health Connect een aparte, gratis app. Installeer die uit de Play Store en geef Ownify daarna toegang.' => 'On Android 13 and older, Health Connect is a separate, free app. Install it from the Play Store, then give Ownify access.',
+    'Health Connect hoort bij Android, maar is hier niet te gebruiken — bijvoorbeeld in een werkprofiel. Ownify kan op deze telefoon niets lezen.' => 'Health Connect is part of Android, but cannot be used here — in a work profile, for example. Ownify cannot read anything on this phone.',
+    'Op Xiaomi-telefoons: zet ook Autostart aan voor Ownify (Instellingen › Apps › Ownify).' => 'On Xiaomi phones: also turn on Autostart for Ownify (Settings › Apps › Ownify).',
+    'Op Huawei- en Honor-telefoons: kies bij App-start voor Ownify ‘Handmatig beheren’ en sta uitvoeren op de achtergrond toe.' => 'On Huawei and Honor phones: under App launch, set Ownify to ‘Manage manually’ and allow it to run in the background.',
+    'Op Samsung-telefoons: zet Ownify niet bij de apps in slaapstand (Instellingen › Batterij › Achtergrondgebruik).' => 'On Samsung phones: do not put Ownify among the sleeping apps (Settings › Battery › Background usage limits).',
+    'Op deze telefoon: sta Ownify ook toe op de achtergrond te draaien bij de batterij-instellingen van de app.' => 'On this phone: also allow Ownify to run in the background in the app\'s battery settings.',
 ];

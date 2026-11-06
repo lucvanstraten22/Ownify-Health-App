@@ -38,6 +38,7 @@ require_once __DIR__ . '/health-data.php';
 require_once __DIR__ . '/goal-progress.php';
 require_once __DIR__ . '/health-score.php';
 require_once __DIR__ . '/points.php';
+require_once __DIR__ . '/health-workout-enrich.php';
 if (is_file(__DIR__ . '/insights/notify.php')) {
     require_once __DIR__ . '/insights/notify.php';
 }
@@ -50,10 +51,12 @@ if (!function_exists('health_import_records')) {
      * @param int    $userId     the authenticated user — from the session, never a request
      * @param string $sourceCode a data_sources.code, e.g. 'google_health'
      * @param array  $records    normalised records; see health_import_one()
+     * @param array  $deleted    43.0: the source's ids of records it no longer has
+     *                           (Health Connect's deletions); see health_import_delete()
      *
      * @return array counts and per-record problems
      */
-    function health_import_records(int $userId, string $sourceCode, array $records): array
+    function health_import_records(int $userId, string $sourceCode, array $records, array $deleted = []): array
     {
         $sourceId = health_source_id($sourceCode);
 
@@ -92,23 +95,49 @@ if (!function_exists('health_import_records')) {
             }
         }
 
+        /* 43.0: what the source deleted goes here too, and what it touched
+           is looked at again like anything written. */
+        $removed = 0;
+        if ($deleted !== []) {
+            $gone    = health_import_delete($userId, $sourceId, $deleted);
+            $removed = $gone['deleted'];
+            foreach ($gone['days'] as $day) {
+                $days[$day] = true;
+            }
+            foreach ($gone['touch'] as [$kind, $what]) {
+                $touched[$kind][] = $what;
+            }
+        }
+
+        /* 43.0: a Health Connect workout carries only its type and times;
+           its distance, energy and heart rate are in the records around it
+           (health-workout-enrich.php). Filled in before the points look at
+           it, so its intensity and a record count where the data allows. */
+        if (($written > 0 || $removed > 0) && $days !== []) {
+            foreach (health_workouts_enrich($userId, $sourceCode, array_keys($days)) as $workoutId) {
+                $touched['workouts'][] = $workoutId;
+            }
+        }
+
+        $changed = $written + $removed;
+
         /* The goals that read this data are recomputed in the same breath.
            This is what makes "new steps arrive, the steps goal moves" true
            rather than something the user has to trigger by opening the goal
            and pressing something. A sync that finishes a goal says so. */
-        $goalsCompleted = $written > 0 ? goal_refresh_all($userId) : 0;
+        $goalsCompleted = $changed > 0 ? goal_refresh_all($userId) : 0;
 
         /* What the batch earned, the moment it arrived — each night, workout,
            rating and day of steps once, however often it is sent — and the
            Health Score recalculated over the 168 hours that now include it.
            Two separate things: the score does not pay out. */
-        $awards = $written > 0 ? points_process($userId, $touched) : [];
-        $scores = $written > 0 ? health_score_refresh($userId) : null;
+        $awards = $changed > 0 ? points_process($userId, $touched) : [];
+        $scores = $changed > 0 ? health_score_refresh($userId) : null;
 
         /* Today's insights look again on the next load, without a new
            Gemini call (docs/INSIGHTS.md). A sync that repeats the same week
            finds the same facts and changes nothing. */
-        if ($written > 0 && function_exists('insights_note_change')) {
+        if ($changed > 0 && function_exists('insights_note_change')) {
             insights_note_change($userId);
         }
 
@@ -117,6 +146,7 @@ if (!function_exists('health_import_records')) {
             'error'           => null,
             'written'         => $written,
             'skipped'         => $skipped,
+            'deleted'         => $removed,
             'days'            => array_keys($days),
             'problems'        => array_slice($problems, 0, 20),
             'goals_completed' => $goalsCompleted,
@@ -620,6 +650,76 @@ if (!function_exists('health_import_records')) {
         };
 
         return ['ok' => true, 'error' => null, 'date' => $when->format('Y-m-d'), 'touch' => $touch];
+    }
+
+    /* ------------------------------------------------------------ deleted */
+
+    /**
+     * 43.0 — records the source no longer has (Health Connect's
+     * deletions, docs/HEALTH-CONNECT.md), by the id it knew them by:
+     * removed from every table that keeps that source's records, for this
+     * user only. What hangs off them goes with them (a night's stages, a
+     * meal's nutrients, a workout's zones). A night corrected in Ownify
+     * stays: the person's correction is theirs. Heart-rate minutes are kept
+     * per app and minute, not per record, so they stay too.
+     *
+     * @param list<string> $ids
+     * @return array{deleted: int, days: list<string>, touch: list<array{0: string, 1: mixed}>}
+     */
+    function health_import_delete(int $userId, int $sourceId, array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(
+            static fn ($id) => is_scalar($id) ? trim((string) $id) : '',
+            $ids
+        ), static fn (string $id) => $id !== '' && mb_strlen($id) <= 191)));
+
+        $deleted = 0;
+        $days    = [];
+        $touch   = [];
+        $kept    = health_import_corrected() ? ' AND corrected_at IS NULL' : '';
+
+        foreach (array_chunk($ids, 500) as $chunk) {
+            $marks  = implode(',', array_fill(0, count($chunk), '?'));
+            $params = array_merge([$userId, $sourceId], $chunk);
+            $where  = 'user_id = ? AND source_id = ? AND external_id IN (' . $marks . ')';
+
+            foreach (db_all('SELECT id, started_at FROM workouts WHERE ' . $where, $params) as $row) {
+                $touch[] = ['workouts', (int) $row['id']];       // gone: its points go too
+                $days[]  = substr((string) $row['started_at'], 0, 10);
+            }
+            $deleted += (db_run('DELETE FROM workouts WHERE ' . $where, $params)?->rowCount() ?? 0);
+
+            foreach (db_all('SELECT night_of FROM sleep_sessions WHERE ' . $where . $kept, $params) as $row) {
+                $touch[] = ['nights', (string) $row['night_of']];
+                $days[]  = (string) $row['night_of'];
+            }
+            $deleted += (db_run('DELETE FROM sleep_sessions WHERE ' . $where . $kept, $params)?->rowCount() ?? 0);
+
+            foreach (db_all('SELECT consumed_at FROM nutrition_entries WHERE ' . $where, $params) as $row) {
+                $days[] = substr((string) $row['consumed_at'], 0, 10);
+            }
+            $deleted += (db_run('DELETE FROM nutrition_entries WHERE ' . $where, $params)?->rowCount() ?? 0);
+
+            foreach (db_all('SELECT measured_at FROM user_measurements WHERE ' . $where, $params) as $row) {
+                $days[] = substr((string) $row['measured_at'], 0, 10);
+            }
+            $deleted += (db_run('DELETE FROM user_measurements WHERE ' . $where, $params)?->rowCount() ?? 0);
+
+            foreach (db_all(
+                'SELECT t.code, m.recorded_at FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id
+                  WHERE m.user_id = ? AND m.source_id = ? AND m.external_id IN (' . $marks . ')',
+                $params
+            ) as $row) {
+                $day    = substr((string) $row['recorded_at'], 0, 10);
+                $days[] = $day;
+                if ($row['code'] === 'steps') {
+                    $touch[] = ['step_days', $day];
+                }
+            }
+            $deleted += (db_run('DELETE FROM health_metrics WHERE ' . $where, $params)?->rowCount() ?? 0);
+        }
+
+        return ['deleted' => $deleted, 'days' => array_values(array_unique(array_filter($days))), 'touch' => $touch];
     }
 
     /* -------------------------------------------------------------- casts */

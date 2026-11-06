@@ -107,8 +107,12 @@ One pipeline, `connection/OwnifySyncRunner.kt`, does every sync:
 1. the stored token — sync or account, both may upload (`OwnifyConnection`,
    encrypted by `OwnifyTokenStore`) — none: nothing is read or sent;
 2. Health Connect access — none: nothing is sent;
-3. the records of the last 7 days (`HealthConnectSyncReader`), granted types
-   only;
+3. the records (`HealthConnectSyncReader`), granted types only — since 43.0
+   one of three reads: the first sync after connecting reads **30 days**, a
+   week at a time; after that only Health Connect's **changes** since the
+   last sync (deletions included, passed on as `deleted`); and once a day the
+   **full** last 7 days as a safety net, also whenever the changes cannot be
+   read (docs/HEALTH-CONNECT.md, *Syncing*);
 4. the JSON the server reads (`IngestPayload`), Health Connect's own format —
    a heart-rate record with its samples during sleep (`samples`, for
    "Hartslag in slaap") and all of them (`allSamples`, for Training's heart
@@ -118,10 +122,17 @@ One pipeline, `connection/OwnifySyncRunner.kt`, does every sync:
    `Authorization: Bearer <token>` over HTTPS — no user id, no token in the
    body.
 
-The same 7 days are sent again every time. That is safe: the server updates a
-record it already has (by Health Connect's `metadata.id`), counts two apps'
-records of the same moment once, and pays points once. Nothing is added up,
-removed or deduplicated on the phone.
+Sending a record again is safe: the server updates a record it already has
+(by Health Connect's `metadata.id`), counts two apps' records of the same
+moment once, and pays points once. Nothing is added up, removed or
+deduplicated on the phone. Where the next sync carries on (the changes
+token, the history's place) is stored only once everything up to it has
+arrived.
+
+**Updates (43.0).** The app is an APK on GitHub Releases. Once a day at most
+it asks GitHub's public Releases API for a newer version (`OwnifyUpdates`),
+says so once, and links to the APK from the phone's card — it never
+downloads or installs anything itself.
 
 Two things start that pipeline:
 

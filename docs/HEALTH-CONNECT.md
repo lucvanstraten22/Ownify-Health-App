@@ -96,7 +96,16 @@ Content-Type: application/json
 { "records": [ { "recordType": "SleepSession", "metadata": { "id": "…" }, … } ] }
 ```
 
-Up to 2000 records per call. Sending nothing is a **success**, not an error —
+Up to 2000 records per call. Since 43.0 the body may also carry
+`"deleted": ["<metadata.id>", …]` (up to 2000): records Health Connect no
+longer has, which the app learns from its changes (*Syncing*, below). Each is
+removed for this account and this source from every table that keeps it —
+a night with its stages, a meal with its nutrients, a workout with its zones
+and its points — except a night the person corrected in Ownify. Heart-rate
+minutes are kept per app and minute, not per record, and stay. The answer
+counts them in `deleted`. An app from before 43.0 sends none.
+
+Sending nothing is a **success**, not an error —
 a phone with no new data or no granted permissions is a normal Tuesday, and an
 error there would make the app retry forever.
 
@@ -202,7 +211,8 @@ without eventually duplicating them.
 | `HeartRateVariabilityRmssd` | metric `hrv` | |
 | `OxygenSaturation` | metric `spo2` | |
 | `RespiratoryRate` | metric `respiratory_rate` | |
-| `SkinTemperature`, `BodyTemperature` | metric `skin_temp` | |
+| `SkinTemperature` | metric `skin_temp` | 43.0: its `baseline` plus the mean of its `deltas`, filed at the end of its interval; without a baseline there is only a difference, and nothing is stored |
+| `BodyTemperature` | metric `skin_temp` | 43.0: only one taken on the skin (`measurementLocation` finger 2, toe 7, wrist 9); one in the mouth, ear or armpit reads about 37 °C, not a skin temperature, and is reported as unmapped |
 | `Hydration` | metric `water` | litres; sent by Ownify for Android since 29.0 |
 | `Nutrition` | a meal + its nutrients | sodium and caffeine grams → milligrams (caffeine since 31.0: metric `caffeine`, migration 029; docs/CORRELATIONS.md) |
 | `Weight` | measurement `weight` | kg; sent by Ownify for Android since 29.0 |
@@ -285,14 +295,10 @@ is one night.
    WorkManager: every hour while the phone is paired, on a network and with a
    battery that is not low, plus once right after pairing, after Health
    Connect access is granted and on opening the app when the last sync is more
-   than 30 minutes old. Every run — automatic or the "Sync to Ownify" button —
-   is the same pipeline and re-sends the last 7 days: data arrives late and
-   gets corrected, and re-sending is safe by design (the server upserts on
-   `metadata.id` and counts overlapping apps once). A changes token could
-   later make each run smaller; it would not change what the server stores.
-   Once, on the first sync after 31.0, the meals of the 30 days before that
-   week go along too, for their caffeine (`mealHistorySent`; a run that fails
-   to send, or may not read meals yet, tries again next time).
+   than 30 minutes old. Every run — automatic or a pull — is the same
+   pipeline (`OwnifySyncRunner`), and since 43.0 it reads one of three ways
+   (*Syncing*, below). Re-sending is safe by design (the server upserts on
+   `metadata.id` and counts overlapping apps once).
 4. Reading while the app is closed needs Health Connect's own
    `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND`, which the user
    grants separately and which exists only where Health Connect reports
@@ -331,6 +337,86 @@ val json = sessions.map { r ->
 
 // POST { "records": json } with Authorization: Bearer <token>
 ```
+
+## Syncing (43.0)
+
+One pipeline, three reads (`SyncMode` in `OwnifySyncRunner.kt`):
+
+| | when | what is read |
+| --- | --- | --- |
+| **History** | the first sync after pairing or signing in on this phone | the last **30 days** (all Health Connect gives an app), a week at a time, the newest week first; each week is sent before the next is read, so a month of second-by-second heart rate is never in memory at once. After every week its place is stored (`historyFrom`): a run that stops — offline, the phone asleep — carries on from there next time |
+| **Changes** | every other run | only what changed in Health Connect since the last sync, through its changes token: written records, and **deleted** ones (passed on as `deleted`). In the order it happened: written then deleted is deleted; deleted then written again is sent. Heart rate goes with the night around it, and a night with the heart rate in it, so a night's sleeping heart rate is worked out whichever arrived first. At most 20 pages a run; the rest the next run |
+| **Full** | once a day, and whenever the changes cannot be read | the last **7 days**, every granted type — the sync as it was before 43.0 — plus a new changes token, asked for before reading so nothing written meanwhile falls between them. The changes cannot be read without a token yet, with one Health Connect let expire or refuses, or when other types were granted since the token was taken |
+
+Where the next run carries on — the changes token, the history's place — is
+stored only once everything up to it has arrived. A run that fails reads
+the same again next time, which the upsert makes harmless, so nothing is
+lost and nothing doubled. A phone that synced before 43.0 has had its first
+sync: it goes straight to a full week, then the changes.
+
+What this saves: an hourly run reads a handful of changed records instead of
+a week of every type, so far less battery on the phone, fewer reads against
+Health Connect's background limits, and far smaller batches for the server.
+
+### Workouts, filled in (43.0)
+
+A Health Connect exercise session carries only its type and times; what was
+measured during it are separate records, often from other apps. After every
+batch the server fills in each Health Connect workout on the days the batch
+touched (`includes/health-workout-enrich.php`): distance (only for sports
+that cover distance — running, walking, cycling, swimming, rowing, …),
+active and total calories, and the mean and highest minute of heart rate
+(only when heart rate covers at least half the workout). One app per value —
+the one that recorded the most of it — never added up across apps; a record
+partly inside the workout counts for that part. Only filled in, never
+emptied: a value the workout carries itself stays, and other sources are not
+touched. With them the points read a Health Connect workout as any other:
+its intensity from its heart rate against the person's maximum, and a
+personal record from its distance and pace.
+
+### The four types added in 43.0
+
+`RespiratoryRate`, `SkinTemperature`, `BodyTemperature` and `LeanBodyMass`
+(their mapping is in the table above). Skin temperature is a feature of newer
+Health Connect versions only (`FEATURE_SKIN_TEMPERATURE`): the app asks for
+it only where the phone has it, so "access" can be complete without it.
+
+### On the phone (43.0)
+
+The phone's card in Instellingen (`PhoneSync.kt`) says, besides access and
+the last sync:
+
+- while the history is under way, how far it is (*Eerste import: 14 van 30
+  dagen*);
+- whether Android's battery optimisation applies to Ownify, and — when the
+  hourly sync runs while the app is closed, or the last sync is more than
+  three hours old — that Android may hold it back, with a button that asks
+  Android to lift it for Ownify (its own one-tap dialog,
+  `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`), and the extra switch Xiaomi,
+  Huawei/Honor, Samsung and BBK phones have;
+- when Health Connect is missing or old, what to do on this phone: on
+  Android 13 and older it is a separate free app from the Play Store (install
+  or update); from Android 14 it is part of Android (an update comes through
+  the Play Store or Google Play system updates; nothing to install); without
+  the Play Store it cannot be had at all;
+- the app's version, and a newer one when there is one (*Updates*, below).
+
+## Updates (43.0)
+
+Ownify for Android is a signed APK on GitHub Releases
+(`.github/workflows/android-apk.yml`), not in a store. Once a day at most,
+while it is open, the app asks GitHub's public Releases API — free, no key —
+for the latest release of `lucvanstraten22/Ownify-Health-App`
+(`OwnifyUpdates.kt`). A newer version (its tag, `v43.1`) is told once in a
+toast and shown on the phone's card with a button to its APK, which opens in
+the browser: nothing is downloaded or installed by the app, and the request
+carries only the app's name and version.
+
+The workflow takes the version from `app/build.gradle.kts` — the tag is
+`v<versionName>`, the file `Ownify-<versionName>.apk`, the title
+`Ownify <versionName> (Build <versionCode>)` — and a second build of the same
+version replaces that release's APK. Before 43.0 it stamped every build
+`27.0.<run>`; those older releases compare as older.
 
 ## Testing the server without a phone
 
@@ -430,11 +516,11 @@ migration 028 removes its catalogue row wherever nothing refers to it).
 
 ## What you still have to do outside the code
 
-- **Publish the Android app.** Health Connect access requires a declaration
-  form about which data types you read and why, and health data has its own
-  Play Store policy. Check the current requirements when you submit — they
-  change, and they are stricter than for an ordinary app. What to declare is
-  under *The Play Console declaration* below.
+- **Release the Android app.** Ownify is not published on Google Play: it is
+  a signed APK on GitHub Releases — run *Build Ownify Android Release*
+  (`android-apk.yml`), and the app finds it (*Updates*). Health Connect works
+  the same for an app installed this way. The declaration below is kept as
+  the record of what is read and why; it would only be needed for a store.
 - **Set `OWNIFY_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it
   on Hestia*, has the exact commands. None of this flow needs it: a device
   token is hashed, not encrypted, and the test above passes on a server with no
@@ -449,7 +535,7 @@ migration 028 removes its catalogue row wherever nothing refers to it).
 Google Play asks every app that reads Health Connect to declare, per data
 type, which feature uses it and why (Play Console › App content › Health
 apps / Health Connect), and checks it against the app's privacy policy and
-its rationale screen. This is what the app reads (29.0: sixteen types, all
+its rationale screen. This is what the app reads (43.0: twenty types, all
 read-only; `IngestPayload.TYPES`, `AndroidManifest.xml`) and what to declare
 for each. Check the form's current wording when you submit: it changes.
 
@@ -471,6 +557,10 @@ for each. Check the form's current wording when you submit: it changes.
 | `READ_WEIGHT` (29.0) | weight | Lichaamsmaten, a weight goal, the energy target, the BMI insight |
 | `READ_HEIGHT` (29.0) | height | Lichaamsmaten, the energy target, the BMI insight |
 | `READ_BODY_FAT` (29.0) | body fat | a body-fat goal |
+| `READ_RESPIRATORY_RATE` (43.0) | breathing rate | Slaap |
+| `READ_SKIN_TEMPERATURE` (43.0) | skin temperature | Slaap |
+| `READ_BODY_TEMPERATURE` (43.0) | a temperature taken on the skin | Slaap |
+| `READ_LEAN_BODY_MASS` (43.0) | lean body mass | Lichaamsmaten, its goal |
 | `READ_HEALTH_DATA_IN_BACKGROUND` | the hourly sync while the app is closed | — |
 
 With its own consent, OwnifyAI can also use any of these to answer the

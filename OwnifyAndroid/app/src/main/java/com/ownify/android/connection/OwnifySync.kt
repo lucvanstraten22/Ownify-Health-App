@@ -36,7 +36,11 @@ data class OwnifySyncSummary(
     /** Types not read because their Health Connect permission is not granted. */
     val notGranted: List<String>,
     /** The server's answers for every batch, added together. */
-    val result: IngestResult
+    val result: IngestResult,
+    /** 43.0: which kind of read it was. */
+    val mode: SyncMode = SyncMode.FULL,
+    /** 43.0: records Health Connect deleted, passed on to the server. */
+    val deleted: Int = 0
 )
 
 /**

@@ -290,10 +290,11 @@ class OwnifyApi(private val baseUrl: String = BASE_URL) {
      * Sends Health Connect records (IngestPayload) to ingest.php. The server
      * maps, stores and deduplicates them, and answers with what it did.
      */
-    suspend fun ingest(token: String, records: JSONArray): OwnifyResult<IngestResult> =
+    suspend fun ingest(token: String, records: JSONArray, deleted: List<String> = emptyList()): OwnifyResult<IngestResult> =
         post(
             "api/integrations/ingest.php",
-            JSONObject().put("records", records),
+            // 43.0: `deleted`, Health Connect's ids of records it no longer has — only when there are any.
+            JSONObject().put("records", records).apply { if (deleted.isNotEmpty()) put("deleted", JSONArray(deleted)) },
             token,
             readTimeoutMs = INGEST_TIMEOUT_MS
         ) { json -> readIngestResult(json) }

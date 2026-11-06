@@ -151,8 +151,17 @@ if (!function_exists('health_connect_map')) {
                                         health_connect_number($r['percentage'] ?? null), $start, $origin),
             'RespiratoryRate'      => health_connect_metric($id, 'respiratory_rate',
                                         health_connect_number($r['rate'] ?? null), $start, $origin),
-            'SkinTemperature', 'BodyTemperature' => health_connect_metric($id, 'skin_temp',
-                                        health_connect_number($r['temperature']['celsius'] ?? null), $start, $origin),
+            /* 43.0 — skin temperature is a baseline with deltas from it
+               over an interval (a night, from a ring or a watch); body
+               temperature is one reading, and only one taken on the skin
+               (finger, toe, wrist) is a skin temperature: a thermometer in
+               the mouth, ear or armpit reads about 37 °C, not the 33 °C of
+               the Huidtemperatuur card, so those stay out (reported as
+               unmapped) until Ownify has a place for them. */
+            'SkinTemperature'      => health_connect_metric($id, 'skin_temp',
+                                        health_connect_skin_temperature($r), $end ?? $start, $origin),
+            'BodyTemperature'      => health_connect_on_skin($r) ? health_connect_metric($id, 'skin_temp',
+                                        health_connect_number($r['temperature']['celsius'] ?? null), $start, $origin) : [],
             'Hydration'            => health_connect_metric($id, 'water',
                                         health_connect_number($r['volume']['liters'] ?? null), $end ?? $start, $interval),
 
@@ -455,6 +464,46 @@ if (!function_exists('health_connect_map')) {
         }
 
         return $out;
+    }
+
+    /* --------------------------------------------------------- temperature */
+
+    /**
+     * A SkinTemperature record's temperature in °C: its baseline plus the
+     * mean of its deltas (Health Connect's own shape), or a plain
+     * `temperature` from an app that sends one. Without a baseline there is
+     * only a difference from an unknown temperature: null, nothing stored.
+     */
+    function health_connect_skin_temperature(array $r): ?float
+    {
+        $plain = health_connect_number($r['temperature']['celsius'] ?? null);
+        if ($plain !== null) {
+            return $plain;
+        }
+
+        $baseline = health_connect_number($r['baseline']['celsius'] ?? null);
+        if ($baseline === null) {
+            return null;
+        }
+
+        $deltas = [];
+        foreach ((array) ($r['deltas'] ?? []) as $delta) {
+            $value = health_connect_number(is_array($delta) ? ($delta['delta']['celsius'] ?? null) : null);
+            if ($value !== null) {
+                $deltas[] = $value;
+            }
+        }
+
+        return round($baseline + ($deltas === [] ? 0.0 : array_sum($deltas) / count($deltas)), 2);
+    }
+
+    /**
+     * Whether a BodyTemperature reading was taken on the skin: Health
+     * Connect's measurement locations finger (2), toe (7) and wrist (9).
+     */
+    function health_connect_on_skin(array $r): bool
+    {
+        return in_array((int) ($r['measurementLocation'] ?? 0), [2, 7, 9], true);
     }
 
     /* --------------------------------------------------------- small parts */

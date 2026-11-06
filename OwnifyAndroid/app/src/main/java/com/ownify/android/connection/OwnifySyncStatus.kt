@@ -26,7 +26,20 @@ data class OwnifySyncRecord(
      * their caffeine, so combined insights do not start from zero. A flag,
      * nothing more.
      */
-    val mealHistorySent: Boolean = false
+    val mealHistorySent: Boolean = false,
+    /**
+     * 43.0 — whether this phone's first sync, the 30 days of history, is
+     * complete. A phone that synced before 43.0 has had its first sync.
+     */
+    val historyDone: Boolean = false,
+    /** While the history is under way: the oldest moment already sent, so a sync that stopped carries on from there. */
+    val historyFrom: Instant? = null,
+    /** Health Connect's changes token: where the next sync carries on reading changes. Not health data. */
+    val changesToken: String? = null,
+    /** The record types [changesToken] was asked for: when the granted types change, a new one is needed. */
+    val changesTypes: String? = null,
+    /** When the last full read of the week was sent: one a day backs up the changes. */
+    val lastFullAt: Instant? = null
 )
 
 /**
@@ -69,7 +82,13 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
                 ?.let { name -> OwnifySyncOutcomeKind.entries.firstOrNull { it.name == name } },
             lastWasAutomatic = prefs.getBoolean(KEY_AUTOMATIC, false),
             lastWritten = if (prefs.contains(KEY_WRITTEN)) prefs.getInt(KEY_WRITTEN, 0) else null,
-            mealHistorySent = prefs.getBoolean(KEY_MEAL_HISTORY, false)
+            mealHistorySent = prefs.getBoolean(KEY_MEAL_HISTORY, false),
+            // A phone that synced before 43.0 kept no such flag: it has had its first sync.
+            historyDone = prefs.getBoolean(KEY_HISTORY_DONE, prefs.contains(KEY_SUCCESS)),
+            historyFrom = instant(KEY_HISTORY_FROM),
+            changesToken = prefs.getString(KEY_CHANGES_TOKEN, null),
+            changesTypes = prefs.getString(KEY_CHANGES_TYPES, null),
+            lastFullAt = instant(KEY_FULL)
         )
 
     override fun write(record: OwnifySyncRecord) {
@@ -80,6 +99,11 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
             putBoolean(KEY_AUTOMATIC, record.lastWasAutomatic)
             if (record.lastWritten == null) remove(KEY_WRITTEN) else putInt(KEY_WRITTEN, record.lastWritten)
             putBoolean(KEY_MEAL_HISTORY, record.mealHistorySent)
+            putBoolean(KEY_HISTORY_DONE, record.historyDone)
+            putOrRemove(KEY_HISTORY_FROM, record.historyFrom)
+            if (record.changesToken == null) remove(KEY_CHANGES_TOKEN) else putString(KEY_CHANGES_TOKEN, record.changesToken)
+            if (record.changesTypes == null) remove(KEY_CHANGES_TYPES) else putString(KEY_CHANGES_TYPES, record.changesTypes)
+            putOrRemove(KEY_FULL, record.lastFullAt)
         }
     }
 
@@ -103,5 +127,10 @@ internal class OwnifySyncStatusPrefs(context: Context) : OwnifySyncStatusStore {
         const val KEY_AUTOMATIC = "last_was_automatic"
         const val KEY_WRITTEN = "last_written"
         const val KEY_MEAL_HISTORY = "meal_history_sent"
+        const val KEY_HISTORY_DONE = "history_done"
+        const val KEY_HISTORY_FROM = "history_from"
+        const val KEY_CHANGES_TOKEN = "changes_token"
+        const val KEY_CHANGES_TYPES = "changes_types"
+        const val KEY_FULL = "last_full_at"
     }
 }

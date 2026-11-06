@@ -20,6 +20,13 @@
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
     <uses-permission android:name="android.permission.health.READ_HEIGHT" />
     <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
+    <!-- 43.0: breathing and skin temperature for Slaap, lean body mass for
+         Lichaamsmaten. Skin temperature exists only where Health Connect
+         reports FEATURE_SKIN_TEMPERATURE, and is only asked for there. -->
+    <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE" />
+    <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" />
+    <uses-permission android:name="android.permission.health.READ_LEAN_BODY_MASS" />
     <!-- The automatic Ownify sync reads while the app is closed. Health Connect
          asks the user for it separately ("Access data in the background"), and
          only offers it where its FEATURE_READ_HEALTH_DATA_IN_BACKGROUND is
@@ -28,6 +35,10 @@
 
     <!-- Ownify account connection -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 43.0: the one-tap "let Ownify run without battery optimisation" dialog,
+         offered on the phone's card when Android may hold the hourly sync back.
+         Ownify is not distributed through Google Play (an APK on GitHub). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

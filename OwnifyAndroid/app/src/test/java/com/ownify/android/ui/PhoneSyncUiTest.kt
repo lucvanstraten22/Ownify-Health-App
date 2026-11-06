@@ -121,13 +121,22 @@ class PhoneSyncUiTest {
     // ------------------------------------------------------------ the states
 
     @Test
-    fun `no Health Connect - it says so and offers to install it, nothing else`() {
-        show(health(HealthConnectClient.SDK_UNAVAILABLE))
+    fun `no Health Connect on Android 13 - it says so and offers to install it, nothing else`() {
+        show(health(HealthConnectClient.SDK_UNAVAILABLE).apply { androidVersion = android.os.Build.VERSION_CODES.TIRAMISU })
 
         shows("Niet beschikbaar")
         offers("Health Connect installeren", true)
         offers("Toegang geven", false)
         offers("Op de achtergrond toestaan", false)
+    }
+
+    @Test
+    fun `no Health Connect on Android 14 and later - part of Android, nothing to install, and it says why (43_0)`() {
+        show(health(HealthConnectClient.SDK_UNAVAILABLE).apply { androidVersion = android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE })
+
+        shows("Niet beschikbaar")
+        offers("Health Connect installeren", false)
+        assertTrue(compose.onAllNodes(hasText("hoort bij Android", substring = true)).fetchSemanticsNodes().isNotEmpty())
     }
 
     @Test

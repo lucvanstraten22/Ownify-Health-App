@@ -52,7 +52,7 @@ class IngestPayloadTest {
 
     @Test
     fun `the four types added in 29_0 - water and the body, in Health Connect's own names and units`() {
-        assertEquals(16, IngestPayload.TYPES.size)
+        assertEquals(20, IngestPayload.TYPES.size)
         val sent = IngestPayload.of(
             listOf(
                 HydrationRecord(SyncFixtures.at("2026-09-25T09:00:00"), SyncFixtures.CEST, SyncFixtures.at("2026-09-25T09:05:00"), SyncFixtures.CEST,

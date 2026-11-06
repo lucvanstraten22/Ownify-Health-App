@@ -30,11 +30,16 @@ jobs:
         run: |
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ownify-release.jks"
 
+      # 43.0: the app's own version (app/build.gradle.kts), so the release's tag
+      # is what the app compares itself with (OwnifyUpdates) and each APK's
+      # versionCode is higher than the last one people installed.
       - name: Set version
         run: |
-          VERSION="27.0.${GITHUB_RUN_NUMBER}"
-          echo "OWNIFY_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
-          echo "OWNIFY_VERSION_CODE=$((30 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          NAME=$(sed -n 's/.*OWNIFY_VERSION_NAME") ?: "\([0-9.]*\)".*/\1/p' app/build.gradle.kts)
+          CODE=$(sed -n 's/.*OWNIFY_VERSION_CODE")?.toIntOrNull() ?: \([0-9]*\).*/\1/p' app/build.gradle.kts)
+          test -n "$NAME" && test -n "$CODE"
+          echo "OWNIFY_VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "OWNIFY_VERSION_CODE=$CODE" >> "$GITHUB_ENV"
 
       - name: Make Gradle executable
         run: chmod +x gradlew
@@ -53,11 +58,19 @@ jobs:
           name: Ownify-release-apk
           path: OwnifyAndroid/app/build/outputs/apk/release/app-release.apk
 
+      # One release per version: built again, its APK is replaced. The file is
+      # named after the version; the app links to the first .apk of the latest
+      # release (docs/HEALTH-CONNECT.md, Updates).
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${OWNIFY_VERSION_NAME}" \
-            app/build/outputs/apk/release/app-release.apk \
-            --title "Ownify 27.0 (Build ${OWNIFY_VERSION_CODE})" \
-            --generate-notes
+          APK="Ownify-${OWNIFY_VERSION_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          if gh release view "v${OWNIFY_VERSION_NAME}" > /dev/null 2>&1; then
+            gh release upload "v${OWNIFY_VERSION_NAME}" "$APK" --clobber
+          else
+            gh release create "v${OWNIFY_VERSION_NAME}" "$APK" \
+              --title "Ownify ${OWNIFY_VERSION_NAME} (Build ${OWNIFY_VERSION_CODE})" \
+              --generate-notes
+          fi

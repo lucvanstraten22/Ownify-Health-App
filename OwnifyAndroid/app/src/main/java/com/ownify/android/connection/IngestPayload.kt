@@ -1,7 +1,14 @@
 package com.ownify.android.connection
 
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
+import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.BodyFatRecord
+import androidx.health.connect.client.records.BodyTemperatureRecord
+import androidx.health.connect.client.records.LeanBodyMassRecord
+import androidx.health.connect.client.records.RespiratoryRateRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.FloorsClimbedRecord
@@ -25,6 +32,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlin.reflect.KClass
 
 /**
  * Health Connect records as the JSON ingest.php reads — one object per record,
@@ -63,8 +71,33 @@ internal object IngestPayload {
         HydrationRecord::class,
         WeightRecord::class,
         HeightRecord::class,
-        BodyFatRecord::class
+        BodyFatRecord::class,
+        // 43.0: what the server already maps — breathing and skin temperature
+        // for Slaap, lean body mass for Lichaamsmaten and its goal.
+        RespiratoryRateRecord::class,
+        SkinTemperatureRecord::class,
+        BodyTemperatureRecord::class,
+        LeanBodyMassRecord::class
     )
+
+    /**
+     * [TYPES] as far as this phone's Health Connect has them: skin
+     * temperature is a feature of newer versions only
+     * (FEATURE_SKIN_TEMPERATURE), and a permission that does not exist on
+     * the phone can never be granted — asking for it would leave "access"
+     * looking incomplete for ever.
+     */
+    fun availableTypes(client: HealthConnectClient): List<KClass<out Record>> {
+        val skin = runCatching {
+            client.features.getFeatureStatus(HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE) ==
+                HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+        }.getOrDefault(false)
+        return if (skin) TYPES else TYPES - SkinTemperatureRecord::class
+    }
+
+    /** The read permissions for [types]. */
+    fun permissions(types: List<KClass<out Record>> = TYPES): Set<String> =
+        types.map { HealthPermission.getReadPermission(it) }.toSet()
 
     /**
      * Every record as its JSON object, in the order given.
@@ -98,6 +131,10 @@ internal object IngestPayload {
                 is HeightRecord -> height(record)
                 is BodyFatRecord -> bodyFat(record)
                 is HeartRateRecord -> heartRate(record, nights)
+                is RespiratoryRateRecord -> respiratoryRate(record)
+                is SkinTemperatureRecord -> skinTemperature(record)
+                is BodyTemperatureRecord -> bodyTemperature(record)
+                is LeanBodyMassRecord -> leanBodyMass(record)
                 else -> null
             }
         }
@@ -220,6 +257,37 @@ internal object IngestPayload {
     private fun bodyFat(r: BodyFatRecord): JSONObject =
         instant("BodyFat", r, r.time, r.zoneOffset)
             .put("percentage", r.percentage.value)
+
+    /** Breaths per minute (43.0). */
+    private fun respiratoryRate(r: RespiratoryRateRecord): JSONObject =
+        instant("RespiratoryRate", r, r.time, r.zoneOffset)
+            .put("rate", r.rate)
+
+    /**
+     * Skin temperature over an interval, Health Connect's own shape (43.0):
+     * a baseline — when the app that measured it knows one — and the
+     * deltas from it; the server adds them up into a temperature.
+     */
+    private fun skinTemperature(r: SkinTemperatureRecord): JSONObject =
+        interval("SkinTemperature", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
+            .putIfPresent("baseline", r.baseline?.let { JSONObject().put("celsius", it.inCelsius) })
+            .put("deltas", JSONArray(r.deltas.map { delta ->
+                JSONObject()
+                    .put("time", time(delta.time, r.startZoneOffset))
+                    .put("delta", JSONObject().put("celsius", delta.delta.inCelsius))
+            }))
+            .put("measurementLocation", r.measurementLocation)
+
+    /** One body temperature reading, with where it was taken (43.0): the server keeps only one taken on the skin. */
+    private fun bodyTemperature(r: BodyTemperatureRecord): JSONObject =
+        instant("BodyTemperature", r, r.time, r.zoneOffset)
+            .put("temperature", JSONObject().put("celsius", r.temperature.inCelsius))
+            .put("measurementLocation", r.measurementLocation)
+
+    /** Lean body mass, in kilograms (43.0). */
+    private fun leanBodyMass(r: LeanBodyMassRecord): JSONObject =
+        instant("LeanBodyMass", r, r.time, r.zoneOffset)
+            .put("mass", JSONObject().put("kilograms", r.mass.inKilograms))
 
     /** `samples`: only those inside one of [nights]; `allSamples`: every one. Null without samples. */
     private fun heartRate(r: HeartRateRecord, nights: List<SleepSessionRecord>): JSONObject? {
