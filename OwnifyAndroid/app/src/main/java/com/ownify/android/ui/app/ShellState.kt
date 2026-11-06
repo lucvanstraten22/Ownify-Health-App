@@ -1,6 +1,7 @@
 package com.ownify.android.ui.app
 
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Stable
@@ -232,6 +233,9 @@ class ShellState(
     private var aiDrag: Drag? = null
     private var aiJob: Job? = null
 
+    /** 42.0: the swipe-up hint (AiHint.kt), told when the sheet opens or a finger finds it. */
+    var aiHint: AiHint? = null
+
     // ------------------------------------------------------ reduced motion
 
     /**
@@ -440,11 +444,18 @@ class ShellState(
         }
     }
 
-    private fun settleAi(target: Float) {
+    /**
+     * 42.0 — the sheet lands on a spring that takes over the finger's speed
+     * ([velocity], sheet heights per second, up positive), not on a fixed
+     * curve: critically damped, so it never bounces past open or closed, and
+     * a flick arrives sooner than a slow lift (ai-sheet.js `runSpring`).
+     */
+    private fun settleAi(target: Float, velocity: Float = 0f) {
         val opening = target == 1f
         val changed = opening != aiOpen
         aiDrag = null
         aiOpen = opening
+        if (opening) aiHint?.opened()
         aiJob?.cancel()
         if (reduceMotion) {
             aiProgress = target
@@ -452,7 +463,10 @@ class ShellState(
             return
         }
         aiJob = scope.launch {
-            animate(aiProgress, target, animationSpec = tween(Ownify.ScreenMs, easing = Ownify.ScreenEase)) { v, _ -> aiProgress = v }
+            animate(aiProgress, target, initialVelocity = velocity, animationSpec = AiSpring) { v, _ ->
+                // A fast flick would carry it past: it lands there instead.
+                aiProgress = v.coerceIn(0f, 1f)
+            }
         }
     }
 
@@ -532,6 +546,8 @@ class ShellState(
             val state = if (aiOpen) 1f else 0f
             val from = if (aiJob?.isActive == true) aiProgress else state
             aiJob?.cancel()
+            // A finger on the handle has found the gesture: no more hints.
+            if (!aiOpen) aiHint?.found()
             val base = if (kotlin.math.abs(from - state) < 1f) state else kotlin.math.round(from)
             aiDrag = Drag(from, base)
             aiProgress = from
@@ -545,7 +561,9 @@ class ShellState(
 
         override fun end(ctx: GestureContext) {
             val drag = aiDrag ?: return settleAi(if (aiOpen) 1f else 0f)
-            settleAi(GestureRules.resolve(ctx, drag.base, drag.position, ctx.dy, ctx.vy, ctx.height).coerceIn(0f, 1f))
+            // The finger's speed at the lift (dp/ms, down positive) as sheet heights per second, up positive.
+            val velocity = if (ctx.height > 0f) -ctx.vy * 1000f / ctx.height else 0f
+            settleAi(GestureRules.resolve(ctx, drag.base, drag.position, ctx.dy, ctx.vy, ctx.height).coerceIn(0f, 1f), velocity)
         }
 
         override fun cancel() = settleAi(aiDrag?.base ?: if (aiOpen) 1f else 0f)
@@ -632,3 +650,9 @@ class ShellState(
     }
 
 }
+
+/**
+ * The sheet's spring (ai-sheet.js SPRING_K): damping ratio 1, response
+ * 0.38 s — stiffness (2π / 0.38)² ≈ 273.
+ */
+internal val AiSpring = spring(dampingRatio = 1f, stiffness = 273f, visibilityThreshold = 0.0005f)

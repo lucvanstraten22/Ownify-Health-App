@@ -324,7 +324,11 @@ data class AiSession(
     val unavailable: String?,
     val notice: String?,
     val usage: AiUsage,
-    val hasData: Boolean
+    val hasData: Boolean,
+    /** 42.0, the swipe-up hint (AiHint.kt): this account ever asked OwnifyAI something. */
+    val used: Boolean = false,
+    /** 42.0: the account's own key (not its id) under which this phone remembers it opened the sheet. */
+    val account: String = ""
 ) {
     companion object {
         fun parse(o: JSONObject?) = AiSession(
@@ -333,7 +337,9 @@ data class AiSession(
             unavailable = o.str("unavailable"),
             notice = o.str("notice"),
             usage = AiUsage.parse(o.obj("usage")),
-            hasData = o.bool("has_data")
+            hasData = o.bool("has_data"),
+            used = o.bool("used"),
+            account = o.str("account").orEmpty()
         )
     }
 }

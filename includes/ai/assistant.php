@@ -712,6 +712,12 @@ if (!function_exists('ai_chat')) {
             'consent'     => ai_consent_state($userId),
             'usage'       => ai_usage_summary($userId),
             'has_data'    => ai_has_data($userId),
+            /* 42.0 — the swipe-up hint (docs/AI.md): whether this
+               account ever asked OwnifyAI anything, and a key of its own
+               (not its id) under which a device remembers that it opened the
+               sheet — so two accounts on one device are told apart. */
+            'used'        => ai_installed() && db_value('SELECT 1 FROM ai_conversations WHERE user_id = ? LIMIT 1', [$userId]) !== null,
+            'account'     => substr(hash('sha256', 'ownify-ai-hint:' . $userId), 0, 16),
         ];
     }
 

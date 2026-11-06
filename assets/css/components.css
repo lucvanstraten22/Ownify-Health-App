@@ -1600,6 +1600,30 @@ a.settings-row { color: inherit; text-decoration: none; }
     background: rgba(var(--ink), 0.42);
 }
 
+/* 42.0 — the swipe-up hint (ai-sheet.js, docs/AI.md): the grip rises a
+   little and settles, twice, taking on its pressed look on the way up —
+   the width and tone above, nothing new. With reduced motion it only takes
+   on that look for a moment. Mirrored in Dock.kt (AssistantHandle). */
+.ai-handle.is-hinting .ai-handle__grip {
+    animation: ai-hint 1500ms var(--ease-out) both;
+}
+
+.ai-handle.is-hint-lit .ai-handle__grip {
+    width: 50px;
+    background: rgba(var(--ink), 0.42);
+}
+
+@keyframes ai-hint {
+    0%, 64%, 100% { transform: none; background-color: rgba(var(--ink), 0.18); }
+    16%, 44%      { transform: translateY(-6px) scaleX(1.32); background-color: rgba(var(--ink), 0.42); }
+    30%           { transform: translateY(-1.5px) scaleX(1.08); background-color: rgba(var(--ink), 0.24); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-handle.is-hinting .ai-handle__grip { animation: none; }
+}
+:root[data-motion="reduce"] .ai-handle.is-hinting .ai-handle__grip { animation: none; }
+
 /* --------------------------------------------------------------------------
    The tab bar — a pane of glass floating over the page
 

@@ -47,6 +47,38 @@ The same on both apps (`pages/ai.php`, `assets/css/ai.css`, `ai-chat.js`;
 - **Empty.** The logo, *Wat wil je weten?*, what OwnifyAI is for and three
   questions to start with.
 
+## Swipe up, and the hint (42.0)
+
+The same on both apps (`assets/js/ai-sheet.js`, `components.css`
+`.ai-handle`; `ShellState.kt` `settleAi`, `AiHint.kt`, `Dock.kt`
+`AssistantHandle`). Prototypes of the three hints considered:
+https://claude.ai/artifact/PF2vrjfh1AF3AbqxvZfuHz (A was chosen).
+
+- **From every page.** A swipe up from the dock — the grip or the tab bar —
+  opens the sheet over whichever of the five pages is showing; a swipe down
+  on its top closes it. The sheet follows the finger 1 : 1.
+- **A spring, not a curve.** On release the sheet lands on a spring that
+  takes over the finger's speed (`−vy × 1000 / height`, sheet heights per
+  second): damping ratio 1, so it never bounces past open or closed;
+  response 0.38 s (stiffness ≈ 273). A flick arrives sooner than a slow
+  lift; a finger can catch it on the way and carry on from where it is. A
+  tap on the grip uses the same spring from rest. With reduced motion it is
+  placed at once and fades in, as before.
+- **The hint.** The grip rises 6 and settles, twice, in 1.5 s, taking on its
+  own pressed look on the way up (50 wide, ink 0.42) — nothing new is drawn.
+  With reduced motion it only takes on that look for a moment.
+  - Never used OwnifyAI: 2.5 s after the app opens, then every 6–8 s.
+  - Used it before: once, 2.5 s after the app opens, and not again in that
+    app session (the web: this tab, `sessionStorage`; the app: the process).
+  - A finger starting the swipe ends the hints for the session.
+  - Never over something: not while the sheet, a detail page or a panel is
+    in front, or the app is in the background — it tries again 2 s later.
+- **Used, per account.** `ai_summary()` sends `used` (the account has a
+  conversation) and `account`, a hash of the account's id under which a
+  device remembers that the sheet was opened (`localStorage`
+  `ownify-ai-opened:<account>`; SharedPreferences `ownify_ai_hint`), so two
+  accounts on one device are told apart.
+
 Both apps talk to the same five endpoints, with the same answers, the same
 limits and the same stored conversations — a conversation started on the phone
 is there on the website. Neither app ever talks to Google: the Gemini API key

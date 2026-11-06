@@ -91,7 +91,11 @@ with bold only.
 - Detail layer above the rail, below the dock; closes with a rightward swipe,
   the back pill, or system back (predictive).
 - Assistant sheet above everything but the panels; opens by a swipe up from
-  the dock or the handle, closes by a swipe down on its top or the pill.
+  the dock or the handle, closes by a swipe down on its top or the pill. It
+  lands on the same critically damped spring on both (response 0.38 s,
+  stiffness 273), starting at the finger's speed (`runSpring`, `AiSpring`),
+  and the grip's swipe-up hint follows the same rules (docs/AI.md, 42.0):
+  the web keeps "this session" per tab, the app per process.
   Inside it the conversation scrolls to its newest message, and the composer
   stays above the keyboard: the website follows `visualViewport`
   (`--ai-keyboard`), the app the keyboard's insets.

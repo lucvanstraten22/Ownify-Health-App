@@ -125,6 +125,25 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
     // Pull to sync, on all five pages (PullSync.kt): what it syncs, with the
     // pages as they are now, and its one tick.
     val context = LocalContext.current
+
+    // 42.0 — the swipe-up hint (AiHint.kt): for this account, while the app
+    // is in front and nothing stands in front of the five pages. On the real
+    // clock, like the dots above, so a test's idling never waits on it.
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    val aiHint = remember(data.ai.session.account) {
+        AiHint(AiHint.prefs(context), data.ai.session.account.ifEmpty { "anon" }, data.ai.session.used)
+    }
+    SideEffect { shell.aiHint = aiHint }
+    LaunchedEffect(aiHint) {
+        aiHint.run(
+            free = {
+                lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED) &&
+                    !shell.aiOpen && shell.aiProgress == 0f && !shell.overlayOpen &&
+                    !(shell.detail != null && shell.detailShown)
+            },
+            wait = { ms -> kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { kotlinx.coroutines.delay(ms) } }
+        )
+    }
     val view = LocalView.current
     val latest by rememberUpdatedState(data)
     SideEffect {
@@ -234,6 +253,7 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
                         openAria = data.ai.openAria,
                         onTab = shell::tab,
                         onOpenAssistant = shell::openAi,
+                        hint = { aiHint.tick },
                         onZones = { shell.dockZones = it },
                         onTabsZone = { shell.tabsZone = it },
                         modifier = Modifier

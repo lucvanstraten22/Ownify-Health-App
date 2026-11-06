@@ -6,7 +6,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import com.ownify.android.i18n.tr
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -35,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -46,6 +49,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -88,6 +92,7 @@ import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -109,7 +114,9 @@ fun Dock(
     /** 41.0: held by a finger sliding it along the bar — the glass grows a little. */
     glassHeld: () -> Boolean = { false },
     /** 41.0: where the five tabs are, dp in the root, for the slide. */
-    onTabsZone: (Rect) -> Unit = { }
+    onTabsZone: (Rect) -> Unit = { },
+    /** 42.0: how many swipe-up hints so far (AiHint.kt); the grip plays one each time it rises. */
+    hint: () -> Int = { 0 }
 ) {
     val screen = LocalScreen.current
     val density = LocalDensity.current
@@ -130,6 +137,7 @@ fun Dock(
         AssistantHandle(
             openAria,
             onOpenAssistant,
+            hint,
             Modifier.onGloballyPositioned {
                 handleZone[0] = it.boundsInRoot().toDp(density.density)
                 report()
@@ -177,13 +185,39 @@ private fun Modifier.dockEdge(safeBottom: androidx.compose.ui.unit.Dp): Modifier
     )
 }
 
-/** `.ai-handle`: a 128 × 40 target around a 38 × 4 grip that widens to 50 and brightens under the finger. */
+/**
+ * `.ai-handle`: a 128 × 40 target around a 38 × 4 grip that widens to 50 and
+ * brightens under the finger.
+ *
+ * 42.0 — the swipe-up hint (`.ai-handle.is-hinting`, AiHint.kt): each time
+ * [hint] counts up, the grip rises 6 and settles, twice, taking on that
+ * pressed look on the way up. With reduced motion it only takes on the look
+ * for a moment (`.is-hint-lit`); in a still screenshot, nothing.
+ */
 @Composable
-private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier) {
+private fun AssistantHandle(aria: String, onOpen: () -> Unit, hint: () -> Int, modifier: Modifier) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val grip by animateDpAsState(if (pressed) 50.dp else 38.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "grip")
-    val tone by animateColorAsState(if (pressed) Ownify.ink(0.42f) else Ownify.ink(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
+    val reduced = LocalReducedMotion.current
+    val still = LocalStillMotion.current
+    var lit by remember { mutableStateOf(false) }
+    val lift = remember { Animatable(0f) }
+    val count = hint()
+    LaunchedEffect(count) {
+        if (count == 0 || still) return@LaunchedEffect
+        if (reduced) {
+            lit = true
+            delay(AiHint.SHOWN_MS.toLong())
+            lit = false
+        } else {
+            lift.snapTo(0f)
+            lift.animateTo(0f, AiHintRise)
+        }
+    }
+    val on = pressed || lit
+    val grip by animateDpAsState(if (on) 50.dp else 38.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "grip")
+    val tone by animateColorAsState(if (on) Ownify.ink(0.42f) else Ownify.ink(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
+    val rise = lift.value
 
     Box(
         modifier
@@ -195,8 +229,31 @@ private fun AssistantHandle(aria: String, onOpen: () -> Unit, modifier: Modifier
             .size(128.dp, Ownify.AiHandleHeight),
         contentAlignment = Alignment.Center
     ) {
-        Box(Modifier.size(grip, 4.dp).background(tone, RoundedCornerShape(50)))
+        Box(
+            Modifier
+                .graphicsLayer {
+                    translationY = -6.dp.toPx() * rise
+                    scaleX = 1f + (50f / 38f - 1f) * rise
+                }
+                .testTag("ai-grip")
+                .size(grip, 4.dp)
+                .background(lerp(tone, Ownify.ink(0.42f), rise), RoundedCornerShape(50))
+        )
     }
+}
+
+/**
+ * The hint's two rises (`@keyframes ai-hint`, 1500 ms): up by 16 %, most of
+ * the way down by 30 %, up again by 44 %, home by 64 %, then still.
+ */
+private val AiHintRise = keyframes<Float> {
+    durationMillis = AiHint.SHOWN_MS
+    0f at 0 using Ownify.EaseOut
+    1f at 240 using Ownify.EaseOut
+    0.25f at 450 using Ownify.EaseOut
+    1f at 660 using Ownify.EaseOut
+    0f at 960
+    0f at AiHint.SHOWN_MS
 }
 
 /**
