@@ -1,0 +1,31 @@
+name: Google Health probe
+
+# Run by hand (Actions → Google Health probe → Run workflow): a read-only look
+# at Google Health on the live site — its connections, PHP's error log and,
+# when asked, one real request per data type (.github/scripts/google-health-probe.sh).
+on:
+  workflow_dispatch:
+    inputs:
+      api:
+        description: 'Also ask the Google Health API once per data type'
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  group: ownify-production
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look at Google Health on the live site
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+          PROBE_API: ${{ inputs.api && '1' || '0' }}
+        run: bash .github/scripts/google-health-probe.sh
