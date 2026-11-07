@@ -155,6 +155,34 @@ $theme  = app_theme_head($app);     // lib/theme.php
         if (wide && wide.addEventListener) { wide.addEventListener('change', layout); }
         else if (wide && wide.addListener) { wide.addListener(layout); }
         window.ownifyLayout = { apply: layout };
+
+        /* Off to Google or Polar (signing in, linking, confirming, connecting
+           a source). Their pages refuse to be shown in a frame — Google
+           answers 403 — so from the iPhone on a wide screen the whole window
+           goes, as it does on a phone. The way back lands on this page
+           around the iPhone: ownify_trip asks it to leave the message the
+           callback left for the iPhone itself (auth_flash_take()). */
+        var TRIP = 'ownify_trip';
+        function tripCookie(age) {
+            document.cookie = TRIP + '=' + (age > 0 ? '1' : '') + '; Max-Age=' + age + '; Path=/; SameSite=Lax'
+                + (location.protocol === 'https:' ? '; Secure' : '');
+        }
+        window.ownifyLeave = function (url) {
+            var target = window;
+            if (root.getAttribute('data-frame') === 'phone') {
+                try {
+                    if (window.top.location.origin === window.location.origin) { target = window.top; }
+                } catch (error) { target = window; }
+            }
+            if (target !== window) { tripCookie(900); }
+            target.location.assign(new URL(url, window.location.href).href);
+        };
+        /* Back on a narrow window instead: no iPhone to leave it for. */
+        if (root.getAttribute('data-layout') === 'phone' && root.getAttribute('data-frame') !== 'phone'
+            && new RegExp('(?:^|;\\s*)' + TRIP + '=1').test(document.cookie)) {
+            tripCookie(0);
+            window.location.reload();
+        }
     })();
     </script>
 

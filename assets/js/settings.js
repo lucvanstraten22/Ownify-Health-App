@@ -53,9 +53,15 @@
         }
     });
 
+    /* The page around the iPhone on a wide screen leaves the notes below
+       for the iPhone, which opens them (back from Google, components/document-head.php). */
+    var aroundPhone = document.documentElement.getAttribute('data-layout') === 'phone-frame'
+        && !!document.querySelector('[data-phone-screen]');
+
     /* After a language or units change the page is drawn again: open the
        screen the choice was made on, as it was left. */
     window.addEventListener('load', function () {
+        if (aroundPhone) { return; }
         var reopen = null, source = null;
         try {
             reopen = sessionStorage.getItem('ownify-reopen'); sessionStorage.removeItem('ownify-reopen');
@@ -412,9 +418,9 @@
     document.addEventListener('click', function (event) {
         var connect = event.target.closest('[data-integration-connect]');
         if (connect) {
-            window.location.href = 'api/integrations/'
+            window.ownifyLeave('api/integrations/'
                 + encodeURIComponent(connect.getAttribute('data-integration-connect'))
-                + '/start.php';
+                + '/start.php');                        // the whole window (components/document-head.php)
             return;
         }
 
@@ -892,7 +898,7 @@
                             sessionStorage.setItem('ownify-reopen', 'settings-account');
                             if (current.next) { sessionStorage.setItem('ownify-signin-next', current.next); }
                         } catch (e) { /* private mode */ }
-                        window.location.assign(result.redirect);
+                        window.ownifyLeave(result.redirect);
                         return;
                     }
 
@@ -980,6 +986,7 @@
     /* Back from confirming with Google: the row it was for opens by itself,
        now with its fields (the Inloggen block has already said it worked). */
     (function () {
+        if (aroundPhone) { return; }
         var next = null;
         try {
             next = sessionStorage.getItem('ownify-signin-next');
@@ -1080,7 +1087,7 @@
                        Google so it can forget Ownify too; otherwise the page
                        reloads, signed out, and says what happened. */
                     if (result.redirect) {
-                        window.location.assign(result.redirect);
+                        window.ownifyLeave(result.redirect);
                     } else {
                         window.location.reload();
                     }
@@ -1118,7 +1125,7 @@
             .then(function (result) {
                 if (result && result.ok && result.redirect) {
                     try { sessionStorage.setItem('ownify-reopen', 'settings-account'); } catch (e) { /* private mode */ }
-                    window.location.assign(result.redirect);
+                    window.ownifyLeave(result.redirect);
                     return;
                 }
 

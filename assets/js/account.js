@@ -173,7 +173,7 @@
 
         send('api/auth/oauth.php', body).then(function (result) {
             if (result.ok && result.redirect) {
-                window.location.assign(result.redirect);
+                window.ownifyLeave(result.redirect);   // the whole window, also from the iPhone on a wide screen
                 return;
             }
 

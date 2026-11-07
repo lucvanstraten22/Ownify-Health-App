@@ -50,5 +50,19 @@ Pro (`components/phone-simulator.php`, `assets/css/phone-sim.css`,
 - **Account e-mail links** (`?account-link#token`, `?wachtwoord-vergeten`)
   go into the phone whole; the token leaves the window's address bar at once
   (`assets/js/account.js`).
+- **Google and Polar take the whole window** (44.1). Their sign-in and
+  consent pages refuse to be framed (Google answers *403. That's an error.*),
+  and so do Ownify's own callbacks (`frame-ancestors 'none'`). So every trip
+  there leaves the phone through `window.ownifyLeave(url)` (the head's
+  script, `components/document-head.php`): from the phone it moves the top
+  window, as a phone browser shows it, and sets the short-lived marker
+  `ownify_trip`. The trips are signing in or registering with Google,
+  linking or removing it, confirming with Google, deleting an account that
+  has it, and connecting Google Health or Polar. The way back lands on the
+  page around the phone. While the marker is there, the server leaves the
+  one-time message for the phone's own request (`auth_flash_take()`, by
+  `Sec-Fetch-Dest`), and settings.js leaves its reopen notes for it too. The
+  phone's request clears the marker. Back on a narrow window, the head's
+  script clears it and reloads once.
 - A mouse is still a mouse in there: hover is the desktop browser's, not a
   finger's.

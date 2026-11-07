@@ -71,6 +71,26 @@ if (!function_exists('auth_provider_available')) {
     {
         session_boot();
 
+        /* Back from Google or Polar on a wide screen (ownifyLeave(),
+           components/document-head.php): the page around the iPhone leaves
+           the message for the iPhone, whose own request takes it. */
+        if (isset($_COOKIE['ownify_trip'])) {
+            $dest = (string) ($_SERVER['HTTP_SEC_FETCH_DEST'] ?? '');
+
+            if ($dest === 'document') {
+                return null;
+            }
+
+            if ($dest === 'iframe' && !headers_sent()) {
+                setcookie('ownify_trip', '', [
+                    'expires'  => time() - 3600,
+                    'path'     => '/',
+                    'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+                    'samesite' => 'Lax',
+                ]);
+            }
+        }
+
         $flash = $_SESSION['auth_flash'] ?? null;
         unset($_SESSION['auth_flash']);
 
