@@ -194,7 +194,7 @@ return [
             'only_one'=> 'Je gezondheidsscore rust voorlopig alleen op %1$s. %2$s telt mee zodra er 3 dagen van zijn.',
             'all'     => 'Je gezondheidsscore is nu %1$d: het gemiddelde van %2$s.',
             'alone'   => 'Je gezondheidsscore rust nu alleen op %s.',
-            'open'    => 'Bekijk de opbouw in het Scorekompas',
+            'open'    => 'Bekijk de opbouw van je Gezondheidsscore',
         ],
 
         /* A category with enough days once, but nothing new for three
@@ -222,7 +222,7 @@ return [
             ],
             'empty_title' => 'Nog geen startpunt',
             'empty_lede'  => 'Daarvoor zijn 3 dagen met gegevens nodig. Zodra ze er zijn, verschijnt je eerste score hier.',
-            'open'    => 'Bekijk je score in het Scorekompas',
+            'open'    => 'Bekijk je Gezondheidsscore',
         ],
 
         /* Names in a sentence — "slaap", "voeding en training": the categories'

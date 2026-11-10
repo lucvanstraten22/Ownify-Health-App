@@ -314,7 +314,7 @@ if (!function_exists('health_import_records')) {
             $to   = health_import_time($stage['ended_at'] ?? null);
             $kind = (int) ($stage['stage'] ?? 0);
 
-            if ($from === null || $to === null || $to <= $from || $kind < 1 || $kind > 7) {
+            if ($from === null || $to === null || $to <= $from || $kind < 1 || $kind > 8) {      // 8: Ownify's restless (46.0)
                 continue;
             }
 

@@ -206,14 +206,13 @@ class OwnifyAppFlowTest {
         field("Gebruikersnaam").performTextInput("nieuw")
         field("E-mailadres").performTextInput("nieuw@example.com")
         field("Wachtwoord").performTextInput("lang-genoeg-wachtwoord")
-        field("Herhaal wachtwoord").performTextInput("lang-genoeg-wachtwoord")
         button("Account aanmaken").performScrollTo().performClick()
 
         waitForPages()
         assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
         val sent = server.requestsTo("app-register.php").single().body
         assertEquals("nieuw", sent.getString("username"))
-        assertEquals("the repeat goes to the server, which compares", "lang-genoeg-wachtwoord", sent.getString("password_confirm"))
+        assertTrue("45.0: no repeat when registering, so none is sent", !sent.has("password_confirm"))
     }
 
     @Test
@@ -637,8 +636,8 @@ class OwnifyAppFlowTest {
         compose.onNodeWithText("Slaapduur").assertExists()
         compose.onNodeWithText("Regelmaat").assertExists()
         compose.onNodeWithText("Je gezondheidsscore rust voorlopig alleen op slaap.", substring = true).assertExists()
-        compose.onNode(hasContentDescription("Bekijk de opbouw in het Scorekompas") and hasClickAction()).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasContentDescription("Bekijk de opbouw van je Gezondheidsscore") and hasClickAction()).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
     }
 
     @Test
@@ -699,7 +698,7 @@ class OwnifyAppFlowTest {
 
     private fun backToOverview() {
         compose.onNode(hasContentDescription("Terug naar Overzicht") and hasClickAction()).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).fetchSemanticsNodes().isEmpty() }
         compose.onNode(hasText("Vandaag") and isHeading()).assertExists()
     }
 
@@ -714,7 +713,7 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("Dalend")).assertIsDisplayed()
         scoreButton.performClick()
 
-        compose.onNode(hasText("Scorekompas") and isHeading()).assertExists()
+        compose.onNode(hasText("Gezondheidsscore") and isHeading()).assertExists()
         // The page under it is out of reach, as the website makes it inert.
         compose.onAllNodes(hasText("Vandaag") and isHeading()).assertCountEquals(0)
 
@@ -745,15 +744,15 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("−1 ten opzichte van de 30 dagen daarvoor")).performScrollTo().assertIsDisplayed()
         // The page's end, scrolled to as TalkBack scrolls (performScrollTo() keeps
         // trying on the last line of a column, in this version of Compose's test kit).
-        compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("Het Scorekompas beschrijft", substring = true)))
+        compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("De Gezondheidsscore beschrijft", substring = true)))
             .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 100_000f) }
-        compose.onNode(hasText("Het Scorekompas beschrijft", substring = true)).assertIsDisplayed()
+        compose.onNode(hasText("De Gezondheidsscore beschrijft", substring = true)).assertIsDisplayed()
 
         backToOverview()
 
         // As TalkBack opens it: the button's own action.
         scoreButton.performSemanticsAction(SemanticsActions.OnClick)
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
         backToOverview()
     }
 
@@ -769,7 +768,7 @@ class OwnifyAppFlowTest {
         val name = compose.onAllNodes(hasText("Gezondheidsscore")).onFirst().fetchSemanticsNode().boundsInRoot
         assertTrue("the bubble above the name", bubble.bottom <= name.top)
         compose.onNode(hasText("Dalend")).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Scorekompas") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
         backToOverview()
 
         // Slaap, Voeding, Training, left to right, whatever the focus.
@@ -782,7 +781,7 @@ class OwnifyAppFlowTest {
         for (label in listOf("Slaap", "Voeding", "Training")) {
             compose.onNode(hasContentDescription("$label:", substring = true) and hasClickAction()).performScrollTo().performClick()
             compose.waitUntil(5_000) { compose.onAllNodes(hasText(label) and isHeading()).fetchSemanticsNodes().isNotEmpty() }
-            compose.onAllNodes(hasText("Scorekompas") and isHeading()).assertCountEquals(0)
+            compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).assertCountEquals(0)
             compose.onAllNodes(hasContentDescription("Terug", substring = true) and hasClickAction()).onFirst().performClick()
             compose.waitUntil(5_000) { compose.onAllNodes(hasText("Vandaag") and isHeading()).fetchSemanticsNodes().isNotEmpty() }
             compose.waitForIdle()

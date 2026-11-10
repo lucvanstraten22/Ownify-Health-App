@@ -1,9 +1,9 @@
 {
- "title": "Scorekompas",
+ "title": "Gezondheidsscore",
  "lede": "Hoe je Gezondheidsscore is opgebouwd, wat er verandert en waar de meeste ruimte zit.",
  "back": "Overzicht",
- "open": "Open het Scorekompas",
- "footnote": "Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
+ "open": "Open de Gezondheidsscore",
+ "footnote": "De Gezondheidsscore beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.",
  "score": {
   "value": 81,
   "max": 100,

@@ -490,7 +490,7 @@ CREATE TABLE `sleep_stages` (
     `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `sleep_session_id` BIGINT UNSIGNED NOT NULL,
     `stage`            TINYINT UNSIGNED NOT NULL
-                       COMMENT 'Health Connect: 1 awake, 2 sleeping, 3 out of bed, 4 light, 5 deep, 6 REM, 7 awake in bed',
+                       COMMENT 'Health Connect: 1 awake, 2 sleeping, 3 out of bed, 4 light, 5 deep, 6 REM, 7 awake in bed; Ownify: 8 restless (46.0)',
     `started_at`       DATETIME NOT NULL,
     `ended_at`         DATETIME NOT NULL,
     PRIMARY KEY (`id`),

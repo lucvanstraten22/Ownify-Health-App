@@ -14,7 +14,7 @@
  *     tokens; a state used twice, a strange state, refused at Google
  *   - the first sync: every data type read over 30 days with Google's own
  *     filters; a workout with Google's distance, calories, heart rate and
- *     speed; a night with its stages (RESTLESS as Rusteloosheid) and its
+ *     speed; a night with its stages (RESTLESS as Rusteloosheid, part of the sleep) and its
  *     sleeping heart rate; steps, distance, energy, resting heart rate, HRV,
  *     SpO2, breathing, weight, body fat, height, water and a meal — all on
  *     the clock they were recorded on; heart rate minute by minute
@@ -176,6 +176,15 @@ $data = [
     'height' => [['name' => 'users/me/dataTypes/height/dataPoints/h1', 'dataSource' => $watch, 'height' => ['sampleTime' => $st("{$day}T07:31:00"), 'heightMillimeters' => '1680']]],
     'hydration-log' => [['name' => 'users/me/dataTypes/hydration-log/dataPoints/water1', 'dataSource' => $watch, 'hydrationLog' => [
         'interval' => $iv("{$day}T09:00:00", "{$day}T09:05:00"), 'amountConsumed' => ['milliliters' => 250]]]],
+    /* 46.0 */
+    'active-minutes' => [
+        ['name' => 'users/me/dataTypes/active-minutes/dataPoints/am1', 'dataSource' => $watch, 'activeMinutes' => ['interval' => $iv("{$day}T07:00:00", "{$day}T07:40:00"),
+            'activeMinutesByActivityLevel' => [['activityLevel' => 'LIGHT', 'activeMinutes' => '5'], ['activityLevel' => 'MODERATE', 'activeMinutes' => '12'], ['activityLevel' => 'VIGOROUS', 'activeMinutes' => '20']]]],
+        ['name' => 'users/me/dataTypes/active-minutes/dataPoints/am2', 'dataSource' => $watch, 'activeMinutes' => ['interval' => $iv("{$day}T15:00:00", "{$day}T15:30:00"),
+            'activeMinutesByActivityLevel' => [['activityLevel' => 'LIGHT', 'activeMinutes' => '30']]]],
+    ],
+    'daily-sleep-temperature-derivations' => [['dataSource' => $watch, 'dailySleepTemperatureDerivations' => ['date' => $date($day),
+        'nightlyTemperatureCelsius' => 33.6, 'baselineTemperatureCelsius' => 33.4]]],
     'nutrition-log' => [['name' => 'users/me/dataTypes/nutrition-log/dataPoints/lunch1', 'dataSource' => $watch, 'nutritionLog' => [
         'interval' => $iv("{$day}T12:30:00", "{$day}T12:45:00"), 'mealType' => 'LUNCH', 'foodDisplayName' => 'Broodje kaas',
         'energy' => ['kcal' => 450], 'totalCarbohydrate' => ['grams' => 50], 'totalFat' => ['grams' => 15],
@@ -277,8 +286,10 @@ check('…on the clock it was run on', $w['started_at'] === $day . ' 07:00:00', 
 $n = db_one("SELECT * FROM sleep_sessions WHERE user_id = ?", [$user]);
 check('the night, filed under its morning, with its stages', $n !== null && $n['night_of'] === $day
     && (int) $n['deep_minutes'] === 90 && (int) $n['rem_minutes'] === 90, json_encode($n));
-$restless = (int) db_value('SELECT COUNT(*) FROM sleep_stages WHERE sleep_session_id = ? AND stage = 7', [(int) $n['id']]);
-check('RESTLESS kept as Rusteloosheid (stage 7)', $restless === 1);
+$restless = (int) db_value('SELECT COUNT(*) FROM sleep_stages WHERE sleep_session_id = ? AND stage = 8', [(int) $n['id']]);
+check('46.0: RESTLESS kept as Rusteloosheid (Ownify\'s stage 8)', $restless === 1);
+check('46.0: …and counted as sleep, never as time awake: awake is the AWAKE stage alone', (int) $n['awake_minutes'] === 15
+    && (int) $n['duration_minutes'] === 435 && (int) $n['time_in_bed_minutes'] === 450, json_encode($n));
 
 $metric = static fn (string $code): ?string => db_value(
     'SELECT m.value FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id WHERE m.user_id = ? AND t.code = ? ORDER BY m.recorded_at DESC LIMIT 1',
@@ -293,6 +304,10 @@ check('weight, body fat, height', (float) $measure('weight') === 71.4 && (float)
 check('water and the meal with its nutrients', abs((float) $metric('water') - 0.25) < 0.001
     && db_value("SELECT label FROM nutrition_entries WHERE user_id = ?", [$user]) === 'Broodje kaas'
     && (float) $metric('protein') === 22.0);
+check('46.0: active minutes — moderate and vigorous only, light minutes are not active', (float) db_value("SELECT value FROM health_metrics WHERE user_id = ? AND external_id = 'gh:active-minutes:am1'", [$user]) === 32.0
+    && (int) db_value("SELECT COUNT(*) FROM health_metrics WHERE user_id = ? AND external_id = 'gh:active-minutes:am2'", [$user]) === 0);
+check('46.0: the night\'s skin temperature, in the morning', abs((float) $metric('skin_temp') - 33.6) < 0.001
+    && (string) db_value("SELECT DATE_FORMAT(recorded_at, '%H:%i') FROM health_metrics WHERE user_id = ? AND external_id LIKE 'gh:daily-sleep-temperature-derivations:%'", [$user]) === '07:00');
 check('heart rate minute by minute', (int) db_value('SELECT COUNT(*) FROM heart_rate_minutes WHERE user_id = ?', [$user]) === 43);
 check('the watch named on the connection', integration_get($user, 'google_health')['external_account_label'] === 'Pixel Watch 3');
 check('the last sync noted', integration_get($user, 'google_health')['last_sync_status'] === 'ok');

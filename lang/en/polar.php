@@ -30,4 +30,8 @@ return [
     'hartslag tijdens trainingen' => 'heart rate during workouts',
     'hartslag' => 'heart rate',
     'nightly recharge' => 'Nightly Recharge',
+    // 46.0
+    'huidtemperatuur' => 'skin temperature',
+    'SpO2-metingen' => 'SpO2 readings',
+    'Polar is gesynchroniseerd. Koppel Polar opnieuw om ook je huidtemperatuur en SpO2-metingen te delen.' => 'Polar is synced. Connect Polar again to also share your skin temperature and SpO2 readings.',
 ];

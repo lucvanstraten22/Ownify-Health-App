@@ -30,12 +30,12 @@ declare(strict_types=1);
 
 return [
 
-    'title'    => 'Scorekompas',
-    'lede'     => 'Hoe je Gezondheidsscore is opgebouwd en wat er verandert.',
+    'title'    => 'Gezondheidsscore',
+    'lede'     => 'Gezondheid',
     'back'     => 'Overzicht',
     /* The Overzicht card opens the compass; this ends its spoken label. */
-    'open'     => 'Open het Scorekompas',
-    'footnote' => 'Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.',
+    'open'     => 'Open de Gezondheidsscore',
+    'footnote' => 'De Gezondheidsscore beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.',
 
     /* The direction under the score, on Overzicht and here. */
     'directions' => [

@@ -34,10 +34,9 @@ Training's heart-rate switch, arrows and swipe (`training.js`,
   and Wakker on top, in the stages' own colours, the levels in hours. Over 90 dagen a bar
   is a week's mean, over a year a month's, as every chart over time. The
   minutes are the night's stored ones (`deep/light/rem/awake_minutes`).
-  Rusteloosheid (stage 7) has no stored minutes: its recorded periods give
-  them, and they are taken out of Wakker's stored minutes, which include
-  them. A night without recorded periods has no Rusteloosheid part and keeps
-  Wakker as stored. A stage
+  Rusteloosheid (stage 8, 46.0) has no stored minutes: its recorded periods
+  give them. It is part of the sleep, never in Wakker's stored minutes. A
+  night without recorded periods has no Rusteloosheid part. A stage
   not measured that night has no part, never a 0. The reading gives the
   night's whole time first ("Totaal 7:32 u", every stage together), then each
   stage's ("Diep 1:17 u"), and the stages are named under the chart. Under
@@ -72,18 +71,45 @@ a duplicate counted once, a night broken by getting up still one night).
 
 Health Connect numbers its stages. Each row draws:
 
-| Row | Health Connect stage |
+| Row | Stage |
 | --- | --- |
-| Wakker | 1 — awake |
-| Rusteloosheid | 7 — awake in bed: lying awake, not an awakening (the minutes count it as awake, the awakenings do not) |
+| Wakker | 1 — awake; 7 — awake in bed (lying awake) |
+| Rusteloosheid | 8 — Ownify's own (46.0): a brief awakening inside sleep, or Google's RESTLESS |
 | REM | 6 |
 | Licht | 4 |
 | Diep | 5 |
 | *(no row: a gap)* | 2 — asleep, kind unknown; 3 — out of bed |
 
-Health Connect has no stage called "restless". Stage 7 is the closest it
-records, so Rusteloosheid shows it. A source that never writes stage 7
-leaves that row empty, honestly.
+### Restlessness is not time awake (46.0)
+
+Health Connect has no stage called "restless". Fitbit (and the Pixel Watch,
+through the Fitbit app) writes its **short awakenings** — the brief wakes of
+a minute or two that its own app counts as restlessness, not as time awake —
+into Health Connect as ordinary awake stages (1), carved out of the sleep
+around them. Google Health sends the same night with those short
+awakenings apart (`shortAwakenings`, overlapping the sleep) and its awake
+time without them. Before 46.0 Ownify added every awake stage up, and
+rounded every period of a minute or two to whole minutes first, so a
+Fitbit night read about 30–40 minutes awake where Fitbit and Google say
+5–15, and its time in bed came out longer than the night.
+
+Since 46.0 (`health_connect_sleep()`):
+
+- an awake period of **at most 3 minutes** (Fitbit's own threshold for a
+  short awakening) **with sleep right before and after it** is
+  Rusteloosheid — stage 8, part of the sleep: it counts towards the time
+  asleep and the efficiency, and never as time awake or as an awakening;
+- an awake period at the start or end of the night, or a longer one, stays
+  awake;
+- Google's RESTLESS (a "classic" night) is stage 8 too;
+- each stage's time is added up in seconds and rounded once;
+- Polar's hypnogram keeps every wake as awake: Polar counts its own
+  interruptions so.
+
+Sleep duration, time in bed, efficiency, the awake minutes, the awakenings,
+the Slaap charts, the sleep score and OwnifyAI all read these numbers, so
+they agree. Nights already stored are worked out again when they are
+synced again (the Android app sends the last 30 days again every day).
 
 ### Where the periods come from
 

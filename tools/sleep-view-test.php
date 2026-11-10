@@ -108,8 +108,8 @@ $stages = [
     ['23:00', '23:10', 1],     // awake, falling asleep
     ['23:10', '00:00', 4],     // light
     ['00:00', '01:00', 5],     // deep
-    ['01:00', '01:05', 7],     // awake in bed: Rusteloosheid
-    ['01:05', '01:30', 6],     // REM
+    ['01:00', '01:03', 1],     // 46.0: a brief awakening between sleep — Rusteloosheid, part of the sleep
+    ['01:03', '01:30', 6],     // REM
     ['01:30', '02:00', 2],     // asleep, kind unknown: on no row
     ['02:00', '07:00', 4],     // light
 ];
@@ -120,8 +120,8 @@ check('every period stored, on the session\'s clock',
     (int) db_value('SELECT COUNT(*) FROM sleep_stages WHERE sleep_session_id = ?', [$session]) === 7
     && db_value('SELECT MIN(started_at) FROM sleep_stages WHERE sleep_session_id = ?', [$session]) === $day(1) . ' 23:00:00');
 $row = db_one('SELECT light_minutes, deep_minutes, rem_minutes, awake_minutes, duration_minutes FROM sleep_sessions WHERE id = ?', [$session]);
-check('  the minutes per stage as before: light 350, deep 60, REM 25, awake 15, asleep 465',
-    [(int) $row['light_minutes'], (int) $row['deep_minutes'], (int) $row['rem_minutes'], (int) $row['awake_minutes'], (int) $row['duration_minutes']] === [350, 60, 25, 15, 465],
+check('  the minutes per stage: light 350, deep 60, REM 27, awake 10 (the brief awakening is not awake), asleep 470',
+    [(int) $row['light_minutes'], (int) $row['deep_minutes'], (int) $row['rem_minutes'], (int) $row['awake_minutes'], (int) $row['duration_minutes']] === [350, 60, 27, 10, 470],
     json_encode($row));
 
 $import([$night('v1', $today, '23:00', '07:00', $stages)]);
@@ -144,15 +144,15 @@ check('  the hours between them, none crowding either end',
 check('five rows, top to bottom: Wakker, Rusteloosheid, REM, Licht, Diep',
     array_column($n['rows'], 'label') === ['Wakker', 'Rusteloosheid', 'REM', 'Licht', 'Diep']);
 check('  each with its time over the night',
-    array_column($n['rows'], 'total') === ['0:10 u', '0:05 u', '0:25 u', '5:50 u', '1:00 u'], json_encode(array_column($n['rows'], 'total')));
+    array_column($n['rows'], 'total') === ['0:10 u', '0:03 u', '0:27 u', '5:50 u', '1:00 u'], json_encode(array_column($n['rows'], 'total')));
 check('each period on its row, with its own times',
-    $n['blocks'][0] === [0, 0.0, 2.08, '23:00', '23:10'] && $n['blocks'][3] === [1, 25.0, 26.04, '01:00', '01:05'] && $n['blocks'][4][0] === 2,
+    $n['blocks'][0] === [0, 0.0, 2.08, '23:00', '23:10'] && $n['blocks'][3] === [1, 25.0, 25.63, '01:00', '01:03'] && $n['blocks'][4][0] === 2,
     json_encode(array_slice($n['blocks'], 0, 5)));
 check('  "asleep, kind unknown" on no row: a gap from 01:30 to 02:00',
     $n['blocks'][4][4] === '01:30' && $n['blocks'][5][3] === '02:00' && $n['blocks'][5][1] === 37.5, json_encode(array_slice($n['blocks'], 4, 2)));
 check('  the last period ends at the right edge', end($n['blocks'])[2] === 100.0 && end($n['blocks'])[4] === '07:00');
 check('the night named, its sleep and efficiency', $n['date'] === sprintf('Nacht van %d op %s', (int) substr($day(1), 8, 2), score_compass_date($today, true))
-    && $n['asleep'] === '7:45' && $n['efficiency'] === 97 && $n['staged'] && $n['note'] === null,
+    && $n['asleep'] === '7:50' && $n['efficiency'] === 98 && $n['staged'] && $n['note'] === null,
     json_encode([$n['date'], $n['asleep'], $n['efficiency']]));
 
 /* =================================================================== */
@@ -251,8 +251,8 @@ $bar = $week['stacks'][2];
 check('  stacked: each part starts where the one below it ends, the bottom at the base',
     $bar[0][1] === $bar[1][2] && $bar[1][1] === $bar[2][2] && $bar[2][1] === $bar[3][2] && $bar[3][1] === $bar[4][2] && $bar[0][2] === 100.0,
     json_encode($bar));
-check('  the reading in hours: the whole night first, then each stage — Rusteloosheid its own, out of Wakker\'s stored 15',
-    array_slice($week['points'][2], 3) === ['7:30 u', '0:10 u', '0:05 u', '0:25 u', '5:50 u', '1:00 u'], json_encode($week['points'][2]));
+check('  the reading in hours: the whole night first, then each stage — Rusteloosheid its own, Wakker as stored (10)',
+    array_slice($week['points'][2], 3) === ['7:30 u', '0:10 u', '0:03 u', '0:27 u', '5:50 u', '1:00 u'], json_encode($week['points'][2]));
 check('  its levels named in hours', $week['grid'] !== [] && str_ends_with((string) $week['grid'][0]['label'], ' u'), json_encode($week['grid']));
 $year = end($v['periods']);
 check('1 jaar: a month as one bar, the mean of its nights', $year['group'] === 'month' && count(array_filter($year['stacks'])) >= 1);

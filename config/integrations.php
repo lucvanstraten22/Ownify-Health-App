@@ -94,6 +94,9 @@ $settings = [
             'continuous_samples:read',
             'devices:read',
             'sports:read',
+            // 46.0: skin temperature during the night, and SpO2 spot checks.
+            'temperature_measurement:read',
+            'tests:read',
         ],
         // Polar's own addresses (AccessLink v4). Not secrets; changeable only
         // so the test suite can stand in for Polar (tools/polar-test.php).

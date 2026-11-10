@@ -366,6 +366,22 @@ world(static function (array &$w) use ($redirect, $day, $offset, $zone): void {
                 'heart'     => [heart($day(2), 'DEV-A', 60), heart($day(1), 'DEV-A', 58), heart($day(0), 'DEV-A', 56)],
                 'recharge'  => [['sleepResultDate' => $day(1), 'meanNightlyRecoveryRmssd' => 41, 'meanNightlyRecoveryRespirationInterval' => 4000],
                                 ['sleepResultDate' => $day(0), 'meanNightlyRecoveryRmssd' => 45, 'meanNightlyRecoveryRespirationInterval' => 4000]],
+                /* 46.0: skin temperature over the last night (two samples in it,
+                   one in the afternoon), a core sensor, and two SpO2 tests. */
+                'temperature' => [
+                    ['startTime' => (new DateTimeImmutable($day(0) . 'T01:00:00' . $zone))->format('Y-m-d\TH:i:s.000P'), 'measurementType' => 'TM_SKIN_TEMPERATURE',
+                     'temperatureMeasurementSamples' => [['recordingTimeDeltaMilliseconds' => 0, 'temperatureCelsius' => 33.0],
+                                                         ['recordingTimeDeltaMilliseconds' => 3600000, 'temperatureCelsius' => 34.0],
+                                                         ['recordingTimeDeltaMilliseconds' => 12 * 3600000, 'temperatureCelsius' => 30.0]]],
+                    ['startTime' => (new DateTimeImmutable($day(0) . 'T02:00:00' . $zone))->format('Y-m-d\TH:i:s.000P'), 'measurementType' => 'TM_CORE_TEMPERATURE',
+                     'temperatureMeasurementSamples' => [['recordingTimeDeltaMilliseconds' => 0, 'temperatureCelsius' => 37.1]]],
+                ],
+                'tests' => [
+                    ['startTime' => $day(1) . 'T09:00:00', 'spo2TestResult' => ['testTime' => $day(1) . 'T09:00:00', 'timeZoneOffsetMinutes' => $offset,
+                        'testStatus' => 'SPO2_TEST_PASSED', 'bloodOxygenPercent' => 97]],
+                    ['startTime' => $day(1) . 'T10:00:00', 'spo2TestResult' => ['testTime' => $day(1) . 'T10:00:00', 'timeZoneOffsetMinutes' => $offset,
+                        'testStatus' => 'SPO2_TEST_FAILED', 'bloodOxygenPercent' => 80]],
+                ],
             ],
             'bob' => [
                 'devices'   => ['devicesData' => [['deviceReference' => ['uuid' => 'uuid-b'], 'productVariant' => ['productDescription' => 'Polar H10']]],
@@ -408,7 +424,7 @@ parse_str((string) parse_url((string) $start['location'], PHP_URL_QUERY), $autho
 check('start goes to Polar\'s authorize page', $start['status'] === 303 && str_starts_with((string) $start['location'], $fakeBase . '/oauth/authorize'), summary($start));
 check('…with response_type=code, the client id and the exact redirect URI', ($authorize['response_type'] ?? '') === 'code'
     && ($authorize['client_id'] ?? '') === 'test-client' && ($authorize['redirect_uri'] ?? '') === $redirect);
-check('…asking only the read scopes Ownify uses', ($authorize['scope'] ?? '') === 'training_sessions:read activity:read sleep:read nightly_recharge:read continuous_samples:read devices:read sports:read', (string) ($authorize['scope'] ?? ''));
+check('…asking only the read scopes Ownify uses', ($authorize['scope'] ?? '') === 'training_sessions:read activity:read sleep:read nightly_recharge:read continuous_samples:read devices:read sports:read temperature_measurement:read tests:read', (string) ($authorize['scope'] ?? ''));
 check('…with a long random state, never the secret', strlen((string) ($authorize['state'] ?? '')) >= 40 && !str_contains((string) $start['location'], 'test-secret'));
 check('only the state\'s hash is stored', db_value('SELECT COUNT(*) FROM integration_oauth_states WHERE state_hash = ?', [hash('sha256', (string) $authorize['state'])]) == 1
     && db_value('SELECT COUNT(*) FROM integration_oauth_states WHERE state_hash = ?', [(string) $authorize['state']]) == 0);
@@ -500,6 +516,11 @@ check('24/7 heart rate: a day of five-minute readings, and the training\'s minut
 $hrv = db_one("SELECT value, recorded_at FROM health_metrics WHERE user_id = ? AND external_id = ?", [$alice['id'], 'polar:recharge:' . $day(0) . ':hrv']);
 check('Nightly Recharge: HRV, at the end of its night', $hrv !== null && (float) $hrv['value'] === 45.0 && $hrv['recorded_at'] === $day(0) . ' 07:00:00', json_encode($hrv));
 check('Nightly Recharge: breathing rate (60 000 / 4 000 ms = 15 /min)', (float) db_value("SELECT value FROM health_metrics WHERE user_id = ? AND external_id = ?", [$alice['id'], 'polar:recharge:' . $day(0) . ':breathing']) === 15.0);
+check('46.0: skin temperature, the mean of the night\'s skin samples (not the core sensor, not the afternoon)',
+    (float) db_value("SELECT value FROM health_metrics WHERE user_id = ? AND external_id = ?", [$alice['id'], 'polar:skin-temp:' . $day(0)]) === 33.5);
+check('46.0: SpO2 — a passed test, at its moment; a failed one left out',
+    (int) db_value("SELECT COUNT(*) FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id WHERE m.user_id = ? AND t.code = 'spo2' AND m.external_id LIKE 'polar:spo2:%'", [$alice['id']]) === 1
+    && (float) db_value("SELECT m.value FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id WHERE m.user_id = ? AND t.code = 'spo2' AND m.external_id LIKE 'polar:spo2:%'", [$alice['id']]) === 97.0);
 check('the night\'s heart rate, from the 24/7 readings during it', (float) db_value("SELECT value FROM health_metrics WHERE user_id = ? AND external_id = ?", [$alice['id'], 'polar:sleep-hr:' . $day(0)]) > 55);
 
 $withFeatures = array_filter(sent(), static fn ($r) => $r['features'] !== [] && $r['path'] !== '/v4/data/continuous-samples');

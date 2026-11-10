@@ -48,10 +48,19 @@ again rewrites it, never adds to it.
 | `GET /nightly-recharge-results` (the window at once) | `nightly_recharge:read` | `hrv` (the night's mean RMSSD, ms) and `respiratory_rate` (60 000 ÷ the mean respiration interval in ms), at the end of that night |
 | `GET /activity/list` (which days), then `?features=samples` per day | `activity:read` | `steps` per hour, per device, each hour with its span — so a day's total counts every moment once against any other source (`health_metric_totals()`); never an hour still to come |
 | `GET /user-devices` | `devices:read` | the watch's name on the settings row ("Apparaten: Polar Pacer Pro") |
+| `GET /temperature-measurements` (46.0) | `temperature_measurement:read` | `skin_temp`: each night's mean of the skin-temperature samples taken during it, at the end of the night; a sensor Polar names as core is left out |
+| `GET /tests/list` (46.0) | `tests:read` | `spo2`: a passed SpO2 test's blood oxygen, at its moment; a test Polar did not pass is left out; the other tests have no place in Ownify |
 
 **Not read, on purpose.** Profile and e-mail (`profile:read`): Ownify does not
-need them, and the row names the watch instead. PPI, routes, tests, calendar,
-training targets, skin contact and temperature: nothing in Ownify shows them.
+need them, and the row names the watch instead. PPI, routes, calendar, training
+targets, skin contact, sleep-wake vectors, the sleep score and Polar's other
+tests (orthostatic, ECG, fitness, jumps): nothing in Ownify shows them.
+
+**46.0: a connection made before.** The two new scopes are asked for when
+connecting; a connection made earlier syncs everything else as before and
+says once, on its settings row, to connect Polar again to share skin
+temperature and SpO2 as well. Polar refusing either (403) is said the same
+way, never as a failed sync.
 
 **Read, but not kept, on purpose.** Nightly Recharge's recovery status (a
 class of 1 to 6 relative to the person's own baseline, with a sub-level) is
@@ -69,7 +78,7 @@ The OAuth 2.0 authorization-code flow, as Polar documents it:
 
 - **Authorize**: `https://auth.polar.com/oauth/authorize` with
   `response_type=code`, `client_id`, `redirect_uri` (always sent — Polar
-  requires it when a client has more than one), `scope` (the seven above,
+  requires it when a client has more than one), `scope` (the nine above,
   read-only) and `state`.
 - **Token**: `POST https://auth.polar.com/oauth/token`, Basic auth with the
   client id and secret, `grant_type=authorization_code`, the `code` and the

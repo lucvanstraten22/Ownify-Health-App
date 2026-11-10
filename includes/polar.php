@@ -907,7 +907,7 @@ if (!function_exists('polar_config')) {
             'startTime' => $start->format(DATE_ATOM),
             'endTime'   => $end->format(DATE_ATOM),
             'stages'    => $stages,
-        ]);
+        ], false);       // Polar's hypnogram: every wake is Polar's own interruption, kept as awake
 
         if ($records === []) {
             return null;
@@ -1072,6 +1072,83 @@ if (!function_exists('polar_config')) {
                 $out[] = ['type' => 'metric', 'metric_code' => 'respiratory_rate', 'external_id' => 'polar:recharge:' . $date . ':breathing',
                           'value' => round(60000 / $interval, 1), 'recorded_at' => $at, 'data_origin' => 'polar'];
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * 46.0: skin temperature (`temperature_measurement:read`) — each night's
+     * mean of the samples taken during it, at the end of the night, as the
+     * Huidtemperatuur card reads it. A sensor Polar names as core (a body
+     * temperature, about 37 °C) is not a skin temperature and is left out;
+     * so is a reading outside any night: that is not the night's figure.
+     *
+     * @param list<array{night_of: string, started_at: string, ended_at: string}> $nights
+     */
+    function polar_map_temperature(array $data, array $nights): array
+    {
+        $sums = [];
+
+        foreach ((array) ($data['temperatureMeasurementPeriod'] ?? []) as $period) {
+            $kind = strtoupper((string) ($period['measurementType'] ?? '') . ' ' . (string) ($period['sensorLocation'] ?? ''));
+            if (str_contains($kind, 'CORE')) {
+                continue;
+            }
+            $start = is_string($period['startTime'] ?? null) ? strtotime($period['startTime']) : false;
+            if ($start === false) {
+                continue;
+            }
+            foreach ((array) ($period['temperatureMeasurementSamples'] ?? []) as $sample) {
+                $celsius = polar_number($sample['temperatureCelsius'] ?? null);
+                $delta   = polar_number($sample['recordingTimeDeltaMilliseconds'] ?? null);
+                if ($celsius === null || $delta === null || $celsius < 20 || $celsius > 42) {
+                    continue;
+                }
+                $at = $start + (int) floor($delta / 1000);
+                foreach ($nights as $night) {
+                    if ($at >= strtotime($night['started_at']) && $at < strtotime($night['ended_at'])) {
+                        $sums[$night['night_of']][0] = ($sums[$night['night_of']][0] ?? 0) + $celsius;
+                        $sums[$night['night_of']][1] = ($sums[$night['night_of']][1] ?? 0) + 1;
+                        $sums[$night['night_of']][2] = $night['ended_at'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        $out = [];
+        foreach ($sums as $date => [$sum, $n, $end]) {
+            $out[] = ['type' => 'metric', 'metric_code' => 'skin_temp', 'external_id' => 'polar:skin-temp:' . $date,
+                      'value' => round($sum / $n, 2), 'recorded_at' => $end, 'data_origin' => 'polar'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * 46.0: SpO2 spot checks (`tests:read`, Polar's SpO2 test) — a passed
+     * test's blood oxygen, at the moment it was taken. A test Polar did not
+     * pass (poor contact, movement) says nothing and is left out. Polar's
+     * other tests (orthostatic, ECG, fitness, jumps) have no place in Ownify.
+     */
+    function polar_map_spo2(array $data): array
+    {
+        $out = [];
+
+        foreach ((array) ($data['tests'] ?? $data['data']['tests'] ?? []) as $test) {
+            $spo2 = (array) ($test['spo2TestResult'] ?? []);
+            if ($spo2 === [] || !str_contains(strtoupper((string) ($spo2['testStatus'] ?? '')), 'PASSED')) {
+                continue;
+            }
+            $value = polar_number($spo2['bloodOxygenPercent'] ?? null);
+            $at    = polar_local_time(is_string($spo2['testTime'] ?? null) ? $spo2['testTime'] : ($test['startTime'] ?? null),
+                                      is_numeric($spo2['timeZoneOffsetMinutes'] ?? null) ? (int) $spo2['timeZoneOffsetMinutes'] : null);
+            if ($value === null || $value < 50 || $value > 100 || $at === null) {
+                continue;
+            }
+            $out[] = ['type' => 'metric', 'metric_code' => 'spo2', 'external_id' => 'polar:spo2:' . substr($at, 0, 19),
+                      'value' => $value, 'recorded_at' => $at, 'data_origin' => 'polar'];
         }
 
         return $out;
@@ -1265,6 +1342,39 @@ if (!function_exists('polar_config')) {
             }
         }
 
+        /* ---- 46.0: skin temperature and SpO2 spot checks — only asked for
+                with the scopes the connection was made with; one made before
+                46.0 is asked to connect again for them, and the rest is
+                synced as always. Polar refusing one is the same: a reason to
+                connect again, not a failed sync. */
+        $granted = $row['scopes'] === null ? null : array_values(array_filter(explode(' ', (string) $row['scopes'])));
+        $allowed = static fn (string $scope): bool => $granted === null || in_array($scope, $granted, true);
+        $reconnectFor = [];
+
+        if ($allowed('temperature_measurement:read')) {
+            $temps = polar_get($ctx, '/temperature-measurements', ['from' => $from, 'to' => $to]);
+            if ($temps['status'] === 'forbidden') {
+                $reconnectFor[] = 'temperature';
+            } else {
+                $note('huidtemperatuur', $temps['status']);
+                array_push($records, ...polar_map_temperature($temps['data'], $nightRecords));
+            }
+        } else {
+            $reconnectFor[] = 'temperature';
+        }
+
+        if ($allowed('tests:read')) {
+            $tests = polar_get($ctx, '/tests/list', ['from' => $from, 'to' => $to]);
+            if ($tests['status'] === 'forbidden') {
+                $reconnectFor[] = 'tests';
+            } else {
+                $note('SpO2-metingen', $tests['status']);
+                array_push($records, ...polar_map_spo2($tests['data']));
+            }
+        } else {
+            $reconnectFor[] = 'tests';
+        }
+
         array_push($records, ...$trainingHeart);
 
         /* ---- import: one door in, as every source */
@@ -1294,8 +1404,14 @@ if (!function_exists('polar_config')) {
             $message = 'Niet alles kon worden opgehaald (' . implode(', ', array_keys($failed)) . '). Het wordt later opnieuw geprobeerd.';
         }
 
+        /* Everything came through that the connection allows; only the newer
+           data needs the connection made again. Said, but not a problem. */
+        if ($message === null && $reconnectFor !== []) {
+            $message = 'Polar is gesynchroniseerd. Koppel Polar opnieuw om ook je huidtemperatuur en SpO2-metingen te delen.';
+        }
+
         $everything = count($failed) + count($forbidden) >= 6 && $records === [];
-        $status     = $message === null ? 'ok' : ($everything ? 'failed' : 'partial');
+        $status     = $message === null || $failed === [] && $forbidden === [] && !$ctx['limited'] ? 'ok' : ($everything ? 'failed' : 'partial');
 
         integration_note_sync($userId, 'polar', $status, $message);
 

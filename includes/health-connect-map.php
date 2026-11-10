@@ -54,6 +54,19 @@ if (!defined('HC_STAGE_AWAKE')) {
     define('HC_STAGE_AWAKE_IN_BED', 7);
 }
 
+/**
+ * 46.0: Ownify's own stage, beyond Health Connect's: restlessness — a brief
+ * awakening inside sleep (Fitbit's "short awakenings", which it writes to
+ * Health Connect as awake stages of a minute or two) or Google's RESTLESS.
+ * It is part of the sleep, never time awake.
+ */
+if (!defined('OWNIFY_STAGE_RESTLESS')) {
+    define('OWNIFY_STAGE_RESTLESS', 8);
+    /* The longest awake period that is a brief awakening: Fitbit's own
+       threshold for its short awakenings (3 minutes or less). */
+    define('OWNIFY_BRIEF_WAKE_SECONDS', 180);
+}
+
 if (!function_exists('health_connect_map')) {
 
     /**
@@ -177,7 +190,7 @@ if (!function_exists('health_connect_map')) {
 
     /* --------------------------------------------------------------- sleep */
 
-    function health_connect_sleep(string $id, array $r): array
+    function health_connect_sleep(string $id, array $r, bool $briefWakesAreRestless = true): array
     {
         $start = $r['startTime'] ?? null;
         $end   = $r['endTime'] ?? null;
@@ -205,8 +218,16 @@ if (!function_exists('health_connect_map')) {
                                      or REM
              1 awake, 7 awake in bed awake in bed: time in bed, not sleep
              3 out of bed            neither asleep nor in bed
-             0 unknown               says nothing, and is left out */
-        $minutes = [
+             0 unknown               says nothing, and is left out
+           and Ownify's own:
+             8 restless              46.0: a brief awakening inside sleep —
+                                     an awake period of at most 3 minutes
+                                     between two periods of sleep (Fitbit
+                                     writes its short awakenings this way;
+                                     Fitbit and Google count them as sleep),
+                                     or Google's RESTLESS. Part of the
+                                     sleep, never time awake. */
+        $seconds = [
             HC_STAGE_LIGHT        => 0,
             HC_STAGE_DEEP         => 0,
             HC_STAGE_REM          => 0,
@@ -214,43 +235,74 @@ if (!function_exists('health_connect_map')) {
             HC_STAGE_AWAKE        => 0,
             HC_STAGE_AWAKE_IN_BED => 0,
             HC_STAGE_OUT_OF_BED   => 0,
+            OWNIFY_STAGE_RESTLESS => 0,
         ];
+        $sleepKinds = [HC_STAGE_LIGHT, HC_STAGE_DEEP, HC_STAGE_REM, HC_STAGE_SLEEPING, OWNIFY_STAGE_RESTLESS];
 
         $awakenings = 0;
         $detailed   = false;     // any light, deep or REM stage
         $periods    = [];        // each stage as recorded, for the Slaap timeline (sleep_stages)
+        $parsed     = [];
 
         foreach ($r['stages'] ?? [] as $stage) {
             $from = strtotime((string) ($stage['startTime'] ?? ''));
             $to   = strtotime((string) ($stage['endTime'] ?? ''));
             $kind = (int) ($stage['stage'] ?? 0);
 
-            if ($from === false || $to === false || $to <= $from || !array_key_exists($kind, $minutes)) {
+            if ($from === false || $to === false || $to <= $from || !array_key_exists($kind, $seconds)) {
                 continue;
             }
 
-            $periods[] = ['stage' => $kind, 'started_at' => (string) $stage['startTime'], 'ended_at' => (string) $stage['endTime']];
+            $parsed[] = ['from' => $from, 'to' => $to, 'kind' => $kind, 'start' => (string) $stage['startTime'], 'end' => (string) $stage['endTime']];
+        }
 
-            $minutes[$kind] += (int) round(($to - $from) / 60);
+        usort($parsed, static fn (array $a, array $b): int => $a['from'] <=> $b['from']);
 
-            if (in_array($kind, [HC_STAGE_LIGHT, HC_STAGE_DEEP, HC_STAGE_REM], true)) {
+        /* A brief awakening: an awake period of at most 3 minutes with sleep
+           right before and right after it (within a minute). One at the
+           start or end of the night is lying awake, and stays awake. */
+        if ($briefWakesAreRestless) {
+            foreach ($parsed as $i => $p) {
+                if ($p['kind'] !== HC_STAGE_AWAKE || $p['to'] - $p['from'] > OWNIFY_BRIEF_WAKE_SECONDS) {
+                    continue;
+                }
+                $before = $parsed[$i - 1] ?? null;
+                $after  = $parsed[$i + 1] ?? null;
+                if ($before !== null && $after !== null
+                    && in_array($before['kind'], $sleepKinds, true) && in_array($after['kind'], $sleepKinds, true)
+                    && $p['from'] - $before['to'] <= 60 && $after['from'] - $p['to'] <= 60) {
+                    $parsed[$i]['kind'] = OWNIFY_STAGE_RESTLESS;
+                }
+            }
+        }
+
+        foreach ($parsed as $p) {
+            $periods[] = ['stage' => $p['kind'], 'started_at' => $p['start'], 'ended_at' => $p['end']];
+
+            /* Seconds first, minutes once at the end: rounding every period
+               of a minute or two to whole minutes made a night's dozens of
+               short periods add up to many minutes too many. */
+            $seconds[$p['kind']] += $p['to'] - $p['from'];
+
+            if (in_array($p['kind'], [HC_STAGE_LIGHT, HC_STAGE_DEEP, HC_STAGE_REM], true)) {
                 $detailed = true;
             }
 
-            if ($kind === HC_STAGE_AWAKE) {
+            if ($p['kind'] === HC_STAGE_AWAKE) {
                 $awakenings++;
             }
         }
 
-        $asleep = $minutes[HC_STAGE_LIGHT] + $minutes[HC_STAGE_DEEP] + $minutes[HC_STAGE_REM]
-                + $minutes[HC_STAGE_SLEEPING];
+        $minutes = array_map(static fn (int $s): int => (int) round($s / 60), $seconds);
+
+        $asleep = (int) round(array_sum(array_map(static fn (int $k): int => $seconds[$k], $sleepKinds)) / 60);
 
         /* Stages that hold no sleep at all (only awake, out of bed or unknown)
            do not describe this sleep, so they are not believed over its own
            times: the session is kept as one without a breakdown, rather than
            as a night of zero minutes. */
         if ($asleep > 0) {
-            $awake = $minutes[HC_STAGE_AWAKE] + $minutes[HC_STAGE_AWAKE_IN_BED];
+            $awake = (int) round(($seconds[HC_STAGE_AWAKE] + $seconds[HC_STAGE_AWAKE_IN_BED]) / 60);
             $inBed = $asleep + $awake;
 
             $record['duration_minutes']    = $asleep;

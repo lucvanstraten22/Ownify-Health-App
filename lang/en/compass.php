@@ -5,9 +5,8 @@ declare(strict_types=1);
 return [
 
     /* ---- config/compass.php — Scorekompas */
-    'Scorekompas' => 'Score Compass',
-    'Open het Scorekompas' => 'Open the Score Compass',
-    'Het Scorekompas beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.' => 'The Score Compass describes what happened in your own data, not why. You are only compared with yourself.',
+    'Open de Gezondheidsscore' => 'Open the Health score',
+    'De Gezondheidsscore beschrijft wat er in je eigen gegevens gebeurde, niet waarom. Je wordt alleen met jezelf vergeleken.' => 'The Health score describes what happened in your own data, not why. You are only compared with yourself.',
     'Stijgend' => 'Rising',
     'Stabiel' => 'Stable',
     'Dalend' => 'Falling',
@@ -89,7 +88,6 @@ return [
     '%1$s, van %2$s naar %3$s' => '%1$s, from %2$s to %3$s',
 
     /* ---- 38.0: the factors of the Health Score */
-    'Hoe je Gezondheidsscore is opgebouwd en wat er verandert.' => 'How your Health score is built up and what is changing.',
     'Sociale jetlag' => 'Social jetlag',
     'Nog geen nacht op een vrije dag én op een werkdag' => 'No night on both a free day and a work day yet',
     'Nog te weinig nachten met tijd in bed' => 'Too few nights with time in bed yet',

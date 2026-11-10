@@ -198,7 +198,7 @@ return [
     'Tijd in bed: hoe lang je per nacht in bed lag, van naar bed gaan tot opstaan.' => 'Time in bed: how long you lay in bed each night, from going to bed to getting up.',
     'Wakker liggen telt mee, dus het is meestal iets langer dan je slaaptijd.' => 'Time lying awake counts too, so it is usually a little longer than your sleep.',
     'Regelmaat: een score van 0 tot 100 voor hoe gelijk je bedtijd en opstaantijd de afgelopen dagen waren.' => 'Regularity: a score from 0 to 100 for how alike your bedtime and wake time were over the past days.',
-    'Een vast ritme telt mee in je slaapscore; het is hetzelfde deel als in het Scorekompas.' => 'A steady rhythm counts towards your sleep score; it is the same part as in the Score compass.',
+    'Een vast ritme telt mee in je slaapscore; het is hetzelfde deel als in je Gezondheidsscore.' => 'A steady rhythm counts towards your sleep score; it is the same part as in your Health score.',
     'Het zuurstofgehalte van je bloed: hoeveel procent van je rode bloedcellen zuurstof meedraagt.' => 'The oxygen level of your blood: what percentage of your red blood cells carries oxygen.',
     'Je horloge of ring meet het met licht door je huid, meestal tijdens de slaap.' => 'Your watch or ring measures it with light through your skin, usually while you sleep.',
     'Een meting aan de pols kan tot zo\'n 2 procentpunt afwijken van een medische meting.' => 'A reading at the wrist can differ from a medical measurement by up to about 2 percentage points.',

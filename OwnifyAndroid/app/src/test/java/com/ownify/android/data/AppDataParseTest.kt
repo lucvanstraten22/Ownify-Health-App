@@ -301,7 +301,7 @@ class AppDataParseTest {
         val c = compass("compass-demo.json")
 
         assertTrue(c.available)
-        assertEquals("Scorekompas", c.title)
+        assertEquals("Gezondheidsscore", c.title)
         assertEquals("Overzicht", c.back)
         assertEquals(73, c.score)
         assertEquals("mid", c.band)

@@ -83,7 +83,7 @@ return [
     'Je gezondheidsscore rust voorlopig alleen op %1$s. %2$s telt mee zodra er 3 dagen van zijn.' => 'For now your health score rests only on %1$s. %2$s counts once there are 3 days of it.',
     'Je gezondheidsscore is nu %1$d: het gemiddelde van %2$s.' => 'Your health score is now %1$d: the average of %2$s.',
     'Je gezondheidsscore rust nu alleen op %s.' => 'Your health score now rests only on %s.',
-    'Bekijk de opbouw in het Scorekompas' => 'See how it is built in the Score Compass',
+    'Bekijk de opbouw van je Gezondheidsscore' => 'See how your Health score is built',
     'Geen nieuwe gegevens' => 'No new data',
     'Er zijn al een paar dagen geen nieuwe gegevens, dus je eerdere tellen nu niet mee. Je score komt terug zodra er weer gegevens binnenkomen.' => 'There has been no new data for a few days, so your earlier data does not count right now. Your score returns as soon as data comes in again.',
     'Laatste gegevens %s, telt nu niet mee' => 'Latest data %s, not counted right now',
@@ -96,5 +96,5 @@ return [
     'Gemiddeld dagcijfer %s' => 'Average daily rating %s',
     'Nog geen startpunt' => 'No starting point yet',
     'Daarvoor zijn 3 dagen met gegevens nodig. Zodra ze er zijn, verschijnt je eerste score hier.' => 'That takes 3 days with data. Once they are there, your first score appears here.',
-    'Bekijk je score in het Scorekompas' => 'See your score in the Score Compass',
+    'Bekijk je Gezondheidsscore' => 'See your Health score',
 ];

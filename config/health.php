@@ -132,15 +132,16 @@ return [
                 'night'  => 'Nacht van %1$s op %2$s',
                 'asleep' => 'geslapen',
                 'efficiency' => 'efficiënt',
-                /* The rows, top to bottom, and which of Health Connect's
-                   stages each draws: 1 awake; 7 awake in bed — lying awake,
-                   not an awakening (the minutes count it as awake, the
-                   awakenings do not) — as Rusteloosheid; 6 REM; 4 light;
+                /* The rows, top to bottom, and which stages each draws:
+                   1 awake and 7 awake in bed (lying awake) as Wakker; 8,
+                   Ownify's own restless stage (46.0: a brief awakening
+                   inside sleep, or Google's RESTLESS — part of the sleep,
+                   never time awake), as Rusteloosheid; 6 REM; 4 light;
                    5 deep. 2 (asleep, kind unknown) and 3 (out of bed) are on
                    no row: a gap, never guessed. */
                 'stages' => [
-                    ['key' => 'awake',    'label' => 'Wakker',        'kinds' => [1]],
-                    ['key' => 'restless', 'label' => 'Rusteloosheid', 'kinds' => [7]],
+                    ['key' => 'awake',    'label' => 'Wakker',        'kinds' => [1, 7]],
+                    ['key' => 'restless', 'label' => 'Rusteloosheid', 'kinds' => [8]],
                     ['key' => 'rem',      'label' => 'REM',           'kinds' => [6]],
                     ['key' => 'light',    'label' => 'Licht',         'kinds' => [4]],
                     ['key' => 'deep',     'label' => 'Diep',          'kinds' => [5]],
@@ -161,8 +162,9 @@ return [
                    with an arrow either side; 7 dagen to 1 jaar each night's
                    stages as one bar, stacked from Diep at the bottom to
                    Wakker at the top (the night's stored minutes;
-                   Rusteloosheid, stage 7, its own part from the recorded
-                   stages, taken out of Wakker's minutes, which include it). */
+                   Rusteloosheid, stage 8, its own part from the recorded
+                   stages — 46.0: no longer counted in Wakker, so nothing is
+                   taken out of it). */
                 'today'  => 'Vandaag',
                 'prev'   => 'Vorige nacht',
                 'next'   => 'Volgende nacht',
@@ -192,7 +194,7 @@ return [
                                     'Tijd in bed: hoe lang je per nacht in bed lag, van naar bed gaan tot opstaan.',
                                     'Wakker liggen telt mee, dus het is meestal iets langer dan je slaaptijd.',
                                     'Regelmaat: een score van 0 tot 100 voor hoe gelijk je bedtijd en opstaantijd de afgelopen dagen waren.',
-                                    'Een vast ritme telt mee in je slaapscore; het is hetzelfde deel als in het Scorekompas.',
+                                    'Een vast ritme telt mee in je slaapscore; het is hetzelfde deel als in je Gezondheidsscore.',
                                 ]],
                                 'series' => [
                                     ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars', 'format' => 'hours'],

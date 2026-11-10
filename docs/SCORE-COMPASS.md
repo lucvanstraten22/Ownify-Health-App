@@ -1,5 +1,9 @@
 # Scorekompas
 
+46.0: on screen this page is called **Gezondheidsscore**, with **Gezondheid**
+under it (`config/compass.php`, both apps); "Scorekompas" stays the name in
+the code and these documents.
+
 The Health Score explained. Overzicht's score card opens it, on the website
 and in the Android app alike, and says under the score where it is heading.
 It answers three questions:

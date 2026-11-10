@@ -719,7 +719,7 @@ if (!function_exists('google_health_config')) {
         return google_health_time($s['physicalTime'] ?? null, $s['utcOffset'] ?? null);
     }
 
-    /** Google's sleep stage as Health Connect's (which Ownify keeps); RESTLESS is "awake in bed", as Rusteloosheid. */
+    /** Google's sleep stage as Health Connect's (which Ownify keeps); RESTLESS is Ownify's own restless stage (46.0: part of the sleep, never time awake). */
     function google_health_sleep_stage(string $type): int
     {
         return match ($type) {
@@ -728,7 +728,7 @@ if (!function_exists('google_health_config')) {
             'LIGHT'    => 4,
             'DEEP'     => 5,
             'REM'      => 6,
-            'RESTLESS' => 7,
+            'RESTLESS' => 8,
             default    => 0,
         };
     }
@@ -827,6 +827,47 @@ if (!function_exists('google_health_config')) {
                     default                        => ['recordType' => 'RespiratoryRate', 'metadata' => $meta, 'time' => $at,
                                                        'rate' => google_health_number($payload['breathsPerMinute'] ?? null)],
                 }];
+            }
+
+            /* 46.0: Actieve minuten — the minutes Google counts as moderate or
+               vigorous (Fitbit's "fairly" and "very active"); light activity
+               is not an active minute, as on Training's card. Health Connect
+               has no such record, so it is Ownify's own, with its interval,
+               so a day counts each moment once. */
+            case 'active-minutes': {
+                $payload = (array) ($point['activeMinutes'] ?? []);
+                [$start, $end] = google_health_interval($payload);
+                if ($start === null || $end === null) {
+                    return null;
+                }
+                $minutes = null;
+                foreach ((array) ($payload['activeMinutesByActivityLevel'] ?? []) as $level) {
+                    if (in_array($level['activityLevel'] ?? '', ['MODERATE', 'VIGOROUS'], true)) {
+                        $minutes = ($minutes ?? 0) + (google_health_number($level['activeMinutes'] ?? null) ?? 0);
+                    }
+                }
+                if ($minutes === null) {
+                    return null;        // only light minutes: nothing active to count, not a 0
+                }
+                $records = health_connect_metric(google_health_id($type, $point, $start), 'active_minutes', (float) $minutes, $end,
+                    ['data_origin' => $origin, 'started_at' => $start]);
+                return $records === [] ? null : ['own' => $records[0]];
+            }
+
+            /* 46.0: the night's skin temperature — the mean of the samples
+               taken while asleep, in °C — filed in the morning, as the other
+               figures of a night. The baseline and deviation are Google's
+               own working and are not kept. */
+            case 'daily-sleep-temperature-derivations': {
+                $payload = (array) ($point['dailySleepTemperatureDerivations'] ?? []);
+                $date    = google_health_date($payload['date'] ?? null);
+                $celsius = google_health_number($payload['nightlyTemperatureCelsius'] ?? null);
+                if ($date === null || $celsius === null || $celsius < 20 || $celsius > 42) {
+                    return null;
+                }
+                $records = health_connect_metric('gh:' . $type . ':' . $date, 'skin_temp', $celsius, $date . 'T07:00:00',
+                    ['data_origin' => $origin]);
+                return $records === [] ? null : ['own' => $records[0]];
             }
 
             case 'hydration-log': {
@@ -962,6 +1003,11 @@ if (!function_exists('google_health_config')) {
             'height'                       => ['sample', 'lichaamsmaten'],
             'hydration-log'                => ['session_civil', 'water'],
             'nutrition-log'                => ['session_civil', 'voeding'],
+            /* 46.0: what Health Connect and Polar fill and Google has too —
+               all within the scopes already granted. (Floors Google offers
+               only as a rollup, not as a list of points: not read.) */
+            'active-minutes'               => ['interval', 'actieve minuten'],
+            'daily-sleep-temperature-derivations' => ['daily', 'huidtemperatuur'],
         ];
     }
 
@@ -1085,7 +1131,7 @@ if (!function_exists('google_health_config')) {
         /* The four that come minute by minute — a watch's heart rate alone
            is several hundred thousand points a month — start a week back
            the first time; everything else a month. */
-        $heavy     = ['steps', 'distance', 'active-energy-burned', 'heart-rate'];
+        $heavy     = ['steps', 'distance', 'active-energy-burned', 'heart-rate', 'active-minutes'];
         $heavyFrom = $first
             ? (new DateTimeImmutable('today'))->modify('-' . min($back, 7) . ' days')->format('Y-m-d')
             : $from;

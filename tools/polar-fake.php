@@ -236,6 +236,25 @@ switch ($path) {
             }
         }
         $answer(200, ['nightlyRechargeResults' => ['nightlyRechargeResults' => $out]]);
+
+    /* 46.0 */
+    case '/v4/data/temperature-measurements':
+        $out = [];
+        foreach ($data['temperature'] ?? [] as $period) {
+            if ($in(substr((string) $period['startTime'], 0, 10))) {
+                $out[] = $period;
+            }
+        }
+        $answer(200, ['temperatureMeasurementPeriod' => $out]);
+
+    case '/v4/data/tests/list':
+        $out = [];
+        foreach ($data['tests'] ?? [] as $test) {
+            if ($in(substr((string) $test['startTime'], 0, 10))) {
+                $out[] = $test;
+            }
+        }
+        $answer(200, ['tests' => $out]);
 }
 
 $answer(404, ['errorMessage' => 'not found']);

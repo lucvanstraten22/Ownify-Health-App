@@ -229,7 +229,7 @@ if (!function_exists('hydrate_sleep')) {
 
     /**
      * 7 dagen to 1 jaar: each night's minutes per stage (the night's own
-     * stored minutes; Rusteloosheid from its recorded periods, out of Wakker) as one bar, stacked from the first of
+     * stored minutes; Rusteloosheid from its recorded periods) as one bar, stacked from the first of
      * `period_stages` at the bottom — on Ownify's time axis, a week's or
      * month's the mean of its nights (area_chart()). In hours, as Tijd in
      * bed is; each stage's part of a bar given as [stage, top, bottom] in %
@@ -246,15 +246,15 @@ if (!function_exists('hydrate_sleep')) {
         $nights  = db_available() ? health_nights_on($userId, $yearAgo, $today) : [];
         $staged  = array_filter($nights, static fn (array $n): bool => $n['deep'] !== null || $n['light'] !== null || $n['rem'] !== null);
 
-        /* Rusteloosheid (stage 7, awake in bed) has no stored minutes: its
-           recorded periods, per night. The stored awake minutes include it,
-           so Wakker is what is left. A night without recorded periods keeps
-           Wakker as stored and has no Rusteloosheid part — never guessed. */
+        /* Rusteloosheid (stage 8, 46.0) has no stored minutes: its recorded
+           periods, per night. It is part of the sleep and not in the stored
+           awake minutes, so Wakker stays as stored. A night without recorded
+           periods has no Rusteloosheid part — never guessed. */
         $restless = [];
         if ($staged !== [] && db_available()) {
             foreach (db_all(
                 'SELECT st.sleep_session_id AS id,
-                        SUM(CASE WHEN st.stage = 7 THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) AS seconds
+                        SUM(CASE WHEN st.stage = 8 THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) AS seconds
                    FROM sleep_stages st
                    JOIN sleep_sessions s ON s.id = st.sleep_session_id
                   WHERE s.user_id = ? AND s.night_of BETWEEN ? AND ?
@@ -272,9 +272,6 @@ if (!function_exists('hydrate_sleep')) {
             }
             $minutes = array_sum(array_map(static fn (int $id): float => $restless[$id], $parts));
             $staged[$date]['restless'] = round($minutes);
-            if ($night['awake'] !== null) {
-                $staged[$date]['awake'] = max(0.0, (float) $night['awake'] - round($minutes));
-            }
         }
         $first   = $staged === [] ? null : (string) min(array_keys($staged));
 

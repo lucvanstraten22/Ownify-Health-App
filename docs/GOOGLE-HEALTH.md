@@ -41,6 +41,20 @@ or a step means the same whichever way it arrived:
 | `daily-resting-heart-rate`, `daily-heart-rate-variability`, `daily-oxygen-saturation`, `daily-respiratory-rate` | the day's figure, filed in the morning |
 | `weight`, `body-fat`, `height` | Lichaamsmaten |
 | `hydration-log`, `nutrition-log` | water, and meals with their nutrients |
+| `active-minutes` (46.0) | Actieve minuten: the minutes Google counts as moderate or vigorous, with their intervals (light minutes are not active minutes) |
+| `daily-sleep-temperature-derivations` (46.0) | Huidtemperatuur: the night's mean skin temperature while asleep, filed in the morning |
+
+**Not read, on purpose (46.0 audit).** `floors` exists but Google offers it
+only as a rollup, not as a list of points. `vo2-max` and `run-vo2-max` (VO2
+max was taken out of Ownify), `basal-energy-burned`, `altitude`,
+`time-in-heart-rate-zone`, `daily-heart-rate-zones` (Ownify works the zones
+out from the heart rate itself), `sedentary-period`, `activity-level`, and
+the per-sample `heart-rate-variability`, `oxygen-saturation` and
+`respiratory-rate-sleep-summary` (the daily figures are read already): no
+place in Ownify, or a second copy of what is there. ECG, irregular rhythm,
+blood glucose, moods, symptoms and the reproductive-health types need
+scopes Ownify does not ask for and have no place in it. All of the above is
+in the scopes already granted, so the new types need no new consent.
 
 Every record keeps Google's own id: fetching a day again rewrites it. A
 point Google got from Health Connect is left out for a person who also syncs
