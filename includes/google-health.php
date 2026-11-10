@@ -514,10 +514,15 @@ if (!function_exists('google_health_config')) {
      * the token once on a 401, retries once on a server error, stops the
      * whole sync on a 429 or a refused refresh.
      *
-     * @param array $ctx {user_id, token, requests, limited, revoked, budget}
+     * With `$each`, every page is handed to it as it arrives and nothing is
+     * kept (44.2): a month of a watch's heart rate is hundreds of thousands
+     * of points, which held at once ran PHP out of memory.
+     *
+     * @param array $ctx {user_id, token, requests, limited, revoked, budget, deadline}
+     * @param ?callable(list<array>): void $each
      * @return array{status: string, points: list<array>}  status: ok | forbidden | limited | revoked | error
      */
-    function google_health_list(array &$ctx, string $type, string $filter, int $pageSize = 1000): array
+    function google_health_list(array &$ctx, string $type, string $filter, int $pageSize = 1000, ?callable $each = null): array
     {
         $points = [];
         $token  = null;
@@ -527,7 +532,7 @@ if (!function_exists('google_health_config')) {
             if ($ctx['limited'] || $ctx['revoked']) {
                 return ['status' => $ctx['revoked'] ? 'revoked' : 'limited', 'points' => $points];
             }
-            if ($ctx['requests'] >= $ctx['budget']) {
+            if ($ctx['requests'] >= $ctx['budget'] || microtime(true) > ($ctx['deadline'] ?? INF)) {
                 $ctx['limited'] = true;
                 return ['status' => 'limited', 'points' => $points];
             }
@@ -541,12 +546,16 @@ if (!function_exists('google_health_config')) {
                 return ['status' => $page['status'], 'points' => $points];
             }
 
-            foreach ((array) ($page['data']['dataPoints'] ?? []) as $point) {
-                if (is_array($point)) {
-                    $points[] = $point;
-                }
-            }
+            $list = array_values(array_filter((array) ($page['data']['dataPoints'] ?? []), 'is_array'));
             $token = is_string($page['data']['nextPageToken'] ?? null) && $page['data']['nextPageToken'] !== '' ? $page['data']['nextPageToken'] : null;
+            unset($page);
+
+            if ($each !== null) {
+                $each($list);
+            } else {
+                array_push($points, ...$list);
+            }
+            unset($list);
         } while ($token !== null);
 
         return ['status' => 'ok', 'points' => $points];
@@ -929,62 +938,6 @@ if (!function_exists('google_health_config')) {
         return null;
     }
 
-    /**
-     * The heart-rate samples (heart-rate data points) as Ownify's minutes,
-     * one record per day and device — and each night's mean of them, the
-     * sleep card's "Hartslag in slaap".
-     *
-     * @param list<array> $points
-     * @param array<string, array{0: string, 1: string}> $nights night_of => [start, end] (ISO 8601)
-     * @return list<array> Ownify records
-     */
-    function google_health_heart(array $points, array $nights): array
-    {
-        $byDay   = [];
-        $samples = [];
-
-        foreach ($points as $point) {
-            $payload = (array) ($point['heartRate'] ?? []);
-            $at      = google_health_sample_time($payload);
-            $bpm     = google_health_number($payload['beatsPerMinute'] ?? null);
-            if ($at === null || $bpm === null || $bpm <= 0 || $bpm > 260) {
-                continue;
-            }
-            $origin = google_health_origin($point);
-            $byDay[substr($at, 0, 10) . '|' . $origin][] = ['time' => $at, 'beatsPerMinute' => $bpm];
-            $samples[] = [strtotime($at), $bpm];
-        }
-
-        $out = [];
-        foreach ($byDay as $key => $list) {
-            [$day, $origin] = explode('|', $key, 2);
-            $minutes = health_connect_heart_minutes($list);
-            if ($minutes !== []) {
-                $out[] = ['type' => 'heart_rate', 'external_id' => 'gh:heart-rate:' . $day . ':' . substr(hash('sha256', $origin), 0, 8),
-                          'data_origin' => $origin, 'minutes' => $minutes];
-            }
-        }
-
-        foreach ($nights as $night => [$start, $end]) {
-            $a = strtotime($start);
-            $b = strtotime($end);
-            $sum = 0.0;
-            $n   = 0;
-            foreach ($samples as [$at, $bpm]) {
-                if ($at >= $a && $at < $b) {
-                    $sum += $bpm;
-                    $n++;
-                }
-            }
-            if ($n > 0) {
-                $out[] = ['type' => 'metric', 'metric_code' => 'sleeping_hr', 'external_id' => 'gh:sleep-hr:' . $night,
-                          'value' => round($sum / $n, 1), 'recorded_at' => $end, 'data_origin' => 'google_health'];
-            }
-        }
-
-        return $out;
-    }
-
     /* ================================================================= sync */
 
     /**
@@ -1027,6 +980,20 @@ if (!function_exists('google_health_config')) {
         };
     }
 
+    /** "128M" / "1G" / "512K" / "-1" (PHP's shorthand) in bytes. */
+    function google_health_bytes(string $value): int
+    {
+        $value = trim($value);
+        $n     = (int) $value;
+
+        return match (strtoupper(substr($value, -1))) {
+            'G'     => $n * 1024 * 1024 * 1024,
+            'M'     => $n * 1024 * 1024,
+            'K'     => $n * 1024,
+            default => $n,
+        };
+    }
+
     function google_health_syncing(?array $row): bool
     {
         return $row !== null && !empty($row['sync_started_at'])
@@ -1036,9 +1003,18 @@ if (!function_exists('google_health_config')) {
     /**
      * Fetches and imports. `$trigger`: connect | manual | schedule.
      *
+     * `$early` (44.2): called once, with no arguments, when the sync is still
+     * running `$earlyAfter` seconds in — sync.php answers the app then and
+     * lets the rest run on the server, so a pull never waits on Google past
+     * the app's own patience.
+     *
+     * A run that dies (out of memory, out of time) no longer leaves
+     * "Bezig met synchroniseren" behind for a quarter of an hour: a shutdown
+     * guard clears it and says the sync failed.
+     *
      * @return array{ok: bool, status: string, message: string, written: int, requests: int}
      */
-    function google_health_sync(int $userId, string $trigger = 'manual'): array
+    function google_health_sync(int $userId, string $trigger = 'manual', ?callable $early = null, float $earlyAfter = 8.0): array
     {
         require_once __DIR__ . '/health-connect-map.php';
         require_once __DIR__ . '/health-import.php';
@@ -1049,6 +1025,14 @@ if (!function_exists('google_health_config')) {
             return ['ok' => false, 'status' => 'disconnected', 'message' => 'Google Health is niet gekoppeld.', 'written' => 0, 'requests' => 0];
         }
 
+        /* One page from Google is up to 5,000 points, some 5 MB of JSON —
+           decoded, a good part of PHP's usual 128 MB. More room where the
+           host allows it; the sync never holds more than a page and a chunk. */
+        $limit = (string) ini_get('memory_limit');
+        if (function_exists('ini_set') && $limit !== '-1' && google_health_bytes($limit) < 512 * 1024 * 1024) {
+            @ini_set('memory_limit', '512M');
+        }
+
         $lock = 'ownify_google_health_' . $userId;
         if ((int) db_value('SELECT GET_LOCK(?, 0)', [$lock]) !== 1) {
             return ['ok' => false, 'status' => 'busy', 'message' => 'Google Health wordt al gesynchroniseerd.', 'written' => 0, 'requests' => 0];
@@ -1056,15 +1040,33 @@ if (!function_exists('google_health_config')) {
 
         db_run("UPDATE user_integrations SET sync_started_at = NOW() WHERE user_id = ? AND provider = 'google_health'", [$userId]);
 
+        $finished = false;
+        register_shutdown_function(static function () use (&$finished, $userId): void {
+            if ($finished) {
+                return;
+            }
+            $error = error_get_last();
+            error_log('[google-health] sync for user ' . $userId . ' stopped before it finished'
+                . (is_array($error) ? ': ' . mb_substr((string) $error['message'], 0, 200) : ''));
+            try {
+                db_run("UPDATE user_integrations SET sync_started_at = NULL WHERE user_id = ? AND provider = 'google_health'", [$userId]);
+                integration_note_sync($userId, 'google_health', 'failed',
+                    'De synchronisatie met Google Health werd afgebroken. Het wordt later opnieuw geprobeerd.');
+            } catch (Throwable $e) {
+                /* nothing more to do on the way out */
+            }
+        });
+
         try {
-            return google_health_sync_run($userId, $row, $trigger);
+            return google_health_sync_run($userId, $row, $trigger, $early, $earlyAfter);
         } finally {
+            $finished = true;
             db_run("UPDATE user_integrations SET sync_started_at = NULL WHERE user_id = ? AND provider = 'google_health'", [$userId]);
             db_value('SELECT RELEASE_LOCK(?)', [$lock]);
         }
     }
 
-    function google_health_sync_run(int $userId, array $row, string $trigger): array
+    function google_health_sync_run(int $userId, array $row, string $trigger, ?callable $early = null, float $earlyAfter = 8.0): array
     {
         $config = google_health_config();
         $first  = $row['last_sync_at'] === null;
@@ -1072,53 +1074,147 @@ if (!function_exists('google_health_config')) {
             ? $config['initial_days']
             : min(90, max($config['overlap_days'], (int) floor((time() - strtotime((string) $row['last_sync_at'])) / 86400) + $config['overlap_days']));
         $from   = (new DateTimeImmutable('today'))->modify('-' . $back . ' days')->format('Y-m-d');
+        $began  = microtime(true);
 
+        /* At most two and a half minutes with Google per run: what is left
+           comes the next time (a scheduled run, a pull) rather than the
+           server ending the run halfway. */
         $ctx = ['user_id' => $userId, 'token' => null, 'requests' => 0, 'limited' => false, 'revoked' => false,
-                'budget' => $first ? 300 : 120];
+                'budget' => $first ? 400 : 160, 'deadline' => $began + 150];
+
+        /* The four that come minute by minute — a watch's heart rate alone
+           is several hundred thousand points a month — start a week back
+           the first time; everything else a month. */
+        $heavy     = ['steps', 'distance', 'active-energy-burned', 'heart-rate'];
+        $heavyFrom = $first
+            ? (new DateTimeImmutable('today'))->modify('-' . min($back, 7) . ' days')->format('Y-m-d')
+            : $from;
+
+        $answered = false;
+        $answerEarly = static function () use (&$answered, $early, $earlyAfter, $began): void {
+            if ($early !== null && !$answered && microtime(true) - $began >= $earlyAfter) {
+                $answered = true;
+                $early();
+            }
+        };
+        /* Still alive: Instellingen keeps saying "Bezig met synchroniseren". */
+        $tick = static function () use ($answerEarly, $userId): void {
+            db_run("UPDATE user_integrations SET sync_started_at = NOW() WHERE user_id = ? AND provider = 'google_health'", [$userId]);
+            $answerEarly();
+        };
 
         /* What Google got from Health Connect arrives through the Ownify
            app already, for a person who syncs Health Connect too. */
         $viaPhone  = integration_get($userId, 'google_health_connect');
         $skipPhone = $viaPhone !== null && in_array($viaPhone['status'], ['connected', 'error'], true);
 
-        $hc        = [];
-        $own       = [];
-        $heart     = [];
         $failed    = [];
         $forbidden = [];
         $devices   = [];
+        $nights    = [];
+        $heart     = [];          // origin => minute (Y-m-d H:i:00) => [sum, n]
+        $written   = 0;
+        $any       = false;
+
+        $keep = static function (array $point) use ($skipPhone, &$devices): bool {
+            if ($skipPhone && ($point['dataSource']['platform'] ?? null) === 'HEALTH_CONNECT') {
+                return false;
+            }
+            /* The connection is named after the watches and trackers, not a
+               phone that wrote to Health Connect. */
+            $name = trim((string) ($point['dataSource']['device']['displayName'] ?? ''));
+            if ($name !== '' && ($point['dataSource']['platform'] ?? null) !== 'HEALTH_CONNECT') {
+                $devices[$name] = true;
+            }
+            return true;
+        };
+
+        $import = static function (array $records) use ($userId, &$written, &$failed, &$any): void {
+            if ($records === []) {
+                return;
+            }
+            $any = true;
+            $imported = health_import_records($userId, 'google_health', $records);
+            $written += (int) ($imported['written'] ?? 0);
+            if (empty($imported['ok'])) {
+                $failed['opslaan'] = true;
+            }
+        };
+
+        /* A type's records, saved: Health Connect's shape through its own
+           mapping; the nights kept for the heart rate during them. */
+        $flush = static function (array &$hc, array &$own) use ($import, &$nights, &$ctx): void {
+            $records = $own;
+            if ($hc !== []) {
+                foreach (health_connect_map($hc)['records'] as $record) {
+                    if (($record['type'] ?? null) === 'sleep' && isset($record['started_at'], $record['ended_at'])) {
+                        /* A night is filed under the morning it ended, on its own clock. */
+                        $nights[substr((string) $record['ended_at'], 0, 10)] = [(string) $record['started_at'], (string) $record['ended_at']];
+                    }
+                    $records[] = $record;
+                }
+            }
+            $hc  = [];
+            $own = [];
+            if (!$ctx['revoked']) {
+                $import($records);
+            }
+        };
 
         foreach (google_health_types() as $type => [$kind, $category]) {
-            $answer = google_health_list($ctx, $type, google_health_filter($type, $kind, $from),
-                in_array($type, ['exercise', 'sleep'], true) ? 25 : 10000);
+            $hc  = [];
+            $own = [];
+
+            $each = static function (array $points) use ($type, $keep, $flush, $answerEarly, &$hc, &$own, &$heart): void {
+                $answerEarly();
+                foreach ($points as $point) {
+                    if (!$keep($point)) {
+                        continue;
+                    }
+                    if ($type === 'heart-rate') {
+                        /* Straight into minutes: never the samples themselves. */
+                        $payload = (array) ($point['heartRate'] ?? []);
+                        $at      = google_health_sample_time($payload);
+                        $bpm     = google_health_number($payload['beatsPerMinute'] ?? null);
+                        if ($at === null || $bpm === null || $bpm <= 0 || $bpm > 260) {
+                            continue;
+                        }
+                        $minute = substr($at, 0, 10) . ' ' . substr($at, 11, 5) . ':00';
+                        $origin = google_health_origin($point);
+                        $heart[$origin][$minute][0] = ($heart[$origin][$minute][0] ?? 0) + $bpm;
+                        $heart[$origin][$minute][1] = ($heart[$origin][$minute][1] ?? 0) + 1;
+                        continue;
+                    }
+                    $mapped = google_health_map_point($type, $point);
+                    if (isset($mapped['hc'])) {
+                        $hc[] = $mapped['hc'];
+                    } elseif (isset($mapped['own'])) {
+                        $own[] = $mapped['own'];
+                    }
+                }
+                /* A long day of minutes is saved as it comes, not held. */
+                if (count($hc) + count($own) >= 5000) {
+                    $flush($hc, $own);
+                }
+            };
+
+            $answer = google_health_list($ctx, $type, google_health_filter($type, $kind, in_array($type, $heavy, true) ? $heavyFrom : $from),
+                in_array($type, ['exercise', 'sleep'], true) ? 25 : 10000, $each);
 
             if ($answer['status'] === 'forbidden') {
                 $forbidden[$category] = true;
-            } elseif ($answer['status'] !== 'ok') {
+            } elseif ($answer['status'] !== 'ok' && $answer['status'] !== 'limited') {
                 $failed[$category] = true;
             }
 
-            foreach ($answer['points'] as $point) {
-                if ($skipPhone && ($point['dataSource']['platform'] ?? null) === 'HEALTH_CONNECT') {
-                    continue;
-                }
-                /* The connection is named after the watches and trackers, not a
-                   phone that wrote to Health Connect. */
-                $name = trim((string) ($point['dataSource']['device']['displayName'] ?? ''));
-                if ($name !== '' && ($point['dataSource']['platform'] ?? null) !== 'HEALTH_CONNECT') {
-                    $devices[$name] = true;
-                }
-                if ($type === 'heart-rate') {
-                    $heart[] = $point;
-                    continue;
-                }
-                $mapped = google_health_map_point($type, $point);
-                if (isset($mapped['hc'])) {
-                    $hc[] = $mapped['hc'];
-                } elseif (isset($mapped['own'])) {
-                    $own[] = $mapped['own'];
-                }
+            $flush($hc, $own);
+
+            if ($type === 'heart-rate' && $heart !== [] && !$ctx['revoked']) {
+                $import(google_health_heart_records($heart, $nights));
+                $heart = [];
             }
+
+            $tick();
 
             if ($ctx['revoked'] || $ctx['limited']) {
                 break;
@@ -1130,27 +1226,6 @@ if (!function_exists('google_health_config')) {
                 [mb_substr(implode(', ', array_keys($devices)), 0, 191), $userId]);
         }
 
-        /* Health Connect's shape through its own mapping; then the nights,
-           for the heart rate during them. */
-        $mapped  = health_connect_map($hc)['records'];
-        $nights  = [];
-        foreach ($mapped as $record) {
-            /* A night is filed under the morning it ended, on its own clock. */
-            if (($record['type'] ?? null) === 'sleep' && isset($record['started_at'], $record['ended_at'])) {
-                $nights[substr((string) $record['ended_at'], 0, 10)] = [(string) $record['started_at'], (string) $record['ended_at']];
-            }
-        }
-        $records = array_merge($own, $mapped, google_health_heart($heart, $nights));
-
-        $written = 0;
-        if ($records !== [] && !$ctx['revoked']) {
-            $imported = health_import_records($userId, 'google_health', $records);
-            $written  = (int) ($imported['written'] ?? 0);
-            if (!$imported['ok']) {
-                $failed['opslaan'] = true;
-            }
-        }
-
         if ($ctx['revoked']) {
             return ['ok' => false, 'status' => 'revoked', 'message' => 'De toegang tot Google Health is verlopen of ingetrokken. Koppel Google Health opnieuw.',
                     'written' => $written, 'requests' => $ctx['requests']];
@@ -1158,7 +1233,7 @@ if (!function_exists('google_health_config')) {
 
         $message = null;
         if ($ctx['limited']) {
-            $message = 'Google beperkt het aantal verzoeken even. De rest wordt bij de volgende synchronisatie opgehaald.';
+            $message = 'Nog niet alles is opgehaald. De rest volgt bij de volgende synchronisatie.';
         } elseif ($forbidden !== []) {
             $message = 'Google gaf geen toegang tot ' . implode(', ', array_keys($forbidden))
                 . '. Koppel Google Health opnieuw en sta alle gegevens toe.';
@@ -1166,8 +1241,16 @@ if (!function_exists('google_health_config')) {
             $message = 'Niet alles kon worden opgehaald (' . implode(', ', array_keys($failed)) . '). Het wordt later opnieuw geprobeerd.';
         }
 
-        $status = $message === null ? 'ok' : (($records === [] && count($failed) + count($forbidden) >= 10) ? 'failed' : 'partial');
-        integration_note_sync($userId, 'google_health', $status, $message);
+        $status = $message === null ? 'ok' : ((!$any && count($failed) + count($forbidden) >= 10) ? 'failed' : 'partial');
+
+        /* A first sync cut short starts over from its first day next time,
+           rather than from now: what was not fetched yet is not skipped. */
+        if ($first && $ctx['limited']) {
+            integration_note_sync($userId, 'google_health', $status, $message);
+            db_run("UPDATE user_integrations SET last_sync_at = NULL WHERE user_id = ? AND provider = 'google_health'", [$userId]);
+        } else {
+            integration_note_sync($userId, 'google_health', $status, $message);
+        }
 
         return [
             'ok'       => $status !== 'failed',
@@ -1176,6 +1259,51 @@ if (!function_exists('google_health_config')) {
             'written'  => $written,
             'requests' => $ctx['requests'],
         ];
+    }
+
+    /**
+     * The heart rate, gathered into minutes per device as it arrived
+     * (google_health_sync_run), as Ownify's records: one per day and device —
+     * and each night's mean, the sleep card's "Hartslag in slaap".
+     *
+     * @param array<string, array<string, array{0: float, 1: int}>> $heart origin => minute => [sum, n]
+     * @param array<string, array{0: string, 1: string}> $nights night => [start, end] (ISO 8601)
+     * @return list<array> Ownify records
+     */
+    function google_health_heart_records(array $heart, array $nights): array
+    {
+        $out    = [];
+        $ranges = [];
+        foreach ($nights as $night => [$start, $end]) {
+            $ranges[$night] = [substr($start, 0, 10) . ' ' . substr($start, 11, 5) . ':00', substr($end, 0, 10) . ' ' . substr($end, 11, 5) . ':00', 0.0, 0];
+        }
+
+        foreach ($heart as $origin => $minutes) {
+            ksort($minutes);
+            $byDay = [];
+            foreach ($minutes as $minute => [$sum, $n]) {
+                $byDay[substr($minute, 0, 10)][] = ['at' => $minute, 'bpm' => round($sum / $n, 1), 'n' => $n];
+                foreach ($ranges as $night => $range) {
+                    if ($minute >= $range[0] && $minute < $range[1]) {
+                        $ranges[$night][2] += $sum;
+                        $ranges[$night][3] += $n;
+                    }
+                }
+            }
+            foreach ($byDay as $day => $list) {
+                $out[] = ['type' => 'heart_rate', 'external_id' => 'gh:heart-rate:' . $day . ':' . substr(hash('sha256', (string) $origin), 0, 8),
+                          'data_origin' => (string) $origin, 'minutes' => $list];
+            }
+        }
+
+        foreach ($ranges as $night => [, $end, $sum, $n]) {
+            if ($n > 0) {
+                $out[] = ['type' => 'metric', 'metric_code' => 'sleeping_hr', 'external_id' => 'gh:sleep-hr:' . $night,
+                          'value' => round($sum / $n, 1), 'recorded_at' => $nights[$night][1], 'data_origin' => 'google_health'];
+            }
+        }
+
+        return $out;
     }
 
     /**

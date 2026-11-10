@@ -24,9 +24,10 @@ refresh token), and disconnecting also withdraws Ownify's access at Google.
 
 ## What is read
 
-Every hour (cron), right after connecting, and on a pull to sync: the first
-time **30 days** back, after that from the last sync with three days'
-overlap. Each data type is listed with Google's own filter
+Every half hour (cron), right after connecting, and on a pull to sync: the
+first time **30 days** back (steps, distance, active calories and heart rate,
+which come minute by minute, **7 days**), after that from the last sync with
+three days' overlap. Each data type is listed with Google's own filter
 (`users/me/dataTypes/{type}/dataPoints`) and becomes the same records Health
 Connect gives, through the same mapping (`health_connect_map()`), so a night
 or a step means the same whichever way it arrived:
@@ -81,6 +82,38 @@ connection is named after the watches and trackers the data came from.
 
 Until 5 is done, Instellingen says *Deze koppeling is op de server nog niet
 ingesteld.* — never the old *nog niet beschikbaar in Ownify*.
+
+## How a sync runs (44.2)
+
+What the live site showed before 44.2 (`.github/workflows/google-health-probe.yml`,
+a read-only look run by hand): Google answered every type, but no sync ever
+finished. A page is up to 5,000 points, some 2–5 MB of JSON. A week of a
+Fitbit's heart rate is about 120,000 samples, and a month several hundred
+thousand. The sync held all of them at once and PHP stopped at its 128 MB:
+nothing stored, and *Bezig met synchroniseren* left behind for a quarter of
+an hour each time.
+
+Now:
+
+- **Page by page.** Each page is mapped and saved as it arrives, in chunks of
+  at most 5,000 records. Heart rate goes straight into minutes and never
+  keeps the samples. A month of a watch fits in about 40 MB.
+- **A time limit of its own.** At most 150 seconds with Google per run. What
+  is left comes next time. A first sync cut short starts over from its first
+  day rather than skipping anything.
+- **A pull answers within 8 seconds** (`sync.php`). It gives the result when
+  the sync is done by then. Otherwise it gives `status: "running"` and the
+  sync carries on on the server. The app waits at most 15 seconds, and a
+  longer wait read as *Synchroniseren mislukt*. A pull while a sync is
+  already running is not a failure either.
+- **The status stays true.** The sync renews *Bezig met synchroniseren* as it
+  goes. A run that dies anyway (out of memory, out of time) is caught by a
+  shutdown guard: the status is cleared and the source says the sync was cut
+  short.
+
+Google Health and Health Connect (the Ownify Android app) stay separate. A
+point Google got from Health Connect (`platform: HEALTH_CONNECT`) is left out
+for a person who also syncs Health Connect.
 
 ## Testing mode, and what it means
 

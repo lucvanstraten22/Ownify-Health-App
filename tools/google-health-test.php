@@ -260,8 +260,11 @@ check('synced', $r['ok'] && $r['status'] === 'ok', json_encode($r));
 $gets = array_filter($calls, static fn ($c) => $c[0] === 'GET');
 check('every data type asked for', count($gets) === count(google_health_types()), (string) count($gets));
 $filters = array_map(static function ($c) { parse_str((string) parse_url($c[1], PHP_URL_QUERY), $x); return $x['filter'] ?? ''; }, $gets);
-check('30 days back, with Google\'s own filters', (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'steps.interval.start_time >= "' . (new DateTimeImmutable('today'))->modify('-30 days')->format('Y-m-d')))
-    && (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'sleep.interval.end_time >= '))
+$ago = static fn (int $n): string => (new DateTimeImmutable('today'))->modify('-' . $n . ' days')->format('Y-m-d');
+check('30 days back (the minute-by-minute four a week), with Google\'s own filters',
+    (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'steps.interval.start_time >= "' . $ago(7)))
+    && (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'heart_rate.sample_time.physical_time >= "' . $ago(7)))
+    && (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'sleep.interval.end_time >= "' . $ago(30)))
     && (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'daily_resting_heart_rate.date >= '))
     && (bool) array_filter($filters, static fn ($f) => str_starts_with($f, 'exercise.interval.civil_start_time >= ')), implode(' | ', $filters));
 
