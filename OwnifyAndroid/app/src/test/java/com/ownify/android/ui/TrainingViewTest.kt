@@ -42,7 +42,7 @@ import org.robolectric.annotation.Config
  * a server builds from forty days of Health Connect records
  * (training-view.json) — the latest sessions beside the sessions per day,
  * four charts two by two, the heart rate over a day (back over seven) or a
- * period with its four zones, HRV and Hartbelasting; a session's own page.
+ * period with its four zones, Hartbelasting; a session's own page.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36], qualifiers = "+w412dp-h915dp-port-420dpi")
@@ -109,13 +109,13 @@ class TrainingViewTest {
     }
 
     @Test
-    fun `the view as the server sends it - sessions, seven charts, seven days and four periods of heart rate, four zones`() {
+    fun `the view as the server sends it - sessions, six charts, seven days and four periods of heart rate, four zones`() {
         val view = data().health.area("training")!!.view as TrainingView
         assertEquals(listOf("Hardlopen", "Fietsen", "Krachttraining", "Hardlopen"), view.sessions.items.map { it.label })
-        assertEquals(listOf("sessions", "steps", "energy", "floors", "active_minutes", "hrv", "training_load"), view.charts.map { it.id })
+        assertEquals(listOf("sessions", "steps", "energy", "floors", "active_minutes", "training_load"), view.charts.map { it.id })
         assertEquals("sessions", view.perDay)
         assertEquals(listOf("steps", "energy", "floors", "active_minutes"), view.grid)
-        assertEquals(listOf("hrv", "training_load"), view.lower)
+        assertEquals(listOf("training_load"), view.lower)
         assertEquals(listOf("Vandaag", "Gisteren", "Eergisteren", "5 oktober", "4 oktober", "3 oktober", "2 oktober"), view.heart.days.map { it.title })
         assertFalse("a day without heart rate is empty, never made up", view.heart.days[4].hasData)
         assertEquals(listOf("d0", "7", "30", "90", "365"), view.heart.options.map { it.first })
@@ -128,12 +128,12 @@ class TrainingViewTest {
     }
 
     @Test
-    fun `the Training page - sessions and sessions per day, four charts, the heart rate, HRV and Hartbelasting`() {
+    fun `the Training page - sessions and sessions per day, four charts, the heart rate and Hartbelasting`() {
         show()
         text("Recente trainingen").assertExists()
         button("Open Hardlopen van vandaag").assertExists()
         button("Open Krachttraining van 6 okt").assertExists()
-        for (title in listOf("Trainingen per dag", "Stappen + Afstand", "Actieve + Totale calorieën", "Verdiepingen", "Actieve minuten", "HRV", "Hartbelasting")) {
+        for (title in listOf("Trainingen per dag", "Stappen + Afstand", "Actieve + Totale calorieën", "Verdiepingen", "Actieve minuten", "Hartbelasting")) {
             button("Open $title").assertExists()
         }
         text("Hartslag").assertExists()

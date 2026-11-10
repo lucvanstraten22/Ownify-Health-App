@@ -11,7 +11,7 @@ Training ──┬── the score                              (unchanged)
            ├── Stappen + Afstand  │ Actieve + Totale calorieën
            │   Verdiepingen       │ Actieve minuten
            ├── Hartslag            Vandaag | 7 dagen | 30 dagen | 90 dagen | 1 jaar
-           ├── HRV                │ Hartbelasting
+           ├── Hartbelasting        across the page (45.1: HRV is on Slaap only)
            ├── Conditie en herstel what no chart shows (rusthartslag, herstel)
            └── Verloop             the training score over time (unchanged)
 ```
@@ -79,7 +79,6 @@ with the chart large over 7 dagen, 30 dagen, 90 dagen and 1 jaar.
 | Actieve + Totale calorieën | total as bars, active as a line, on one height (both kcal), its levels named | the same |
 | Verdiepingen | a line with dots | the same |
 | Actieve minuten | a line with dots | each day's `active_minutes` |
-| HRV | a line with dots | each day's HRV (the same value Slaap shows) |
 | Hartbelasting | a line with dots | each day's `training_load` |
 
 **Actieve minuten and Hartbelasting are empty for a Health Connect user.**

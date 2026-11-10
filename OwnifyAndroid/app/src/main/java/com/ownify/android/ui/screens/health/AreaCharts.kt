@@ -113,12 +113,14 @@ fun AreaChartsGrid(area: String, charts: List<AreaChart>) {
     SubcomposeLayout(Modifier.fillMaxWidth()) { constraints ->
         val gap = Ownify.Space3.roundToPx()
         val w = (constraints.maxWidth - gap) / 2
+        // A chart alone in its grid (Training's Hartbelasting) is as wide as the cards around it, as tall as a row of squares.
+        val cw = if (charts.size == 1) constraints.maxWidth else w
         val pad = Ownify.Space4.roundToPx()
         val axis = with(density) { (Ownify.FsCaption.toPx() * 2.5f) }.toInt() + Ownify.Space1.roundToPx()
         val rest = 2 * pad + 2 + Ownify.Space3.roundToPx() + MiniPlotMin.roundToPx() + axis
         val heads = charts.mapIndexed { i, chart ->
             subcompose("head$i") { MiniHead(chart, accent) }.firstOrNull()
-                ?.measure(Constraints(maxWidth = (w - 2 * pad - 2).coerceAtLeast(0)))?.height ?: 0
+                ?.measure(Constraints(maxWidth = (cw - 2 * pad - 2).coerceAtLeast(0)))?.height ?: 0
         }
         val placed = ArrayList<Triple<androidx.compose.ui.layout.Placeable, Int, Int>>()
         var y = 0
@@ -128,7 +130,7 @@ fun AreaChartsGrid(area: String, charts: List<AreaChart>) {
                 val i = r * 2 + k
                 val card = subcompose("card$i") {
                     AreaChartMini(chart, accent, with(density) { h.toDp() }) { shell.openDetail(Detail.AreaChart(area, chart.id)) }
-                }.first().measure(Constraints.fixed(w, h))
+                }.first().measure(Constraints.fixed(cw, h))
                 placed += Triple(card, k * (w + gap), y)
             }
             y += h + gap

@@ -333,7 +333,7 @@ check('a stretch two apps both cover: each moment once, 3000 — not 6000', $win
 section('8. The charts');
 
 $charts = array_column($view['charts'], null, 'id');
-check('seven charts, in their order', array_keys($charts) === ['sessions', 'steps', 'energy', 'floors', 'active_minutes', 'hrv', 'training_load']);
+check('six charts, in their order — no HRV, that is Slaap\'s', array_keys($charts) === ['sessions', 'steps', 'energy', 'floors', 'active_minutes', 'training_load']);
 $steps = [];
 foreach ($charts['steps']['periods'][0]['points'] as $p) {
     $steps[$p[0]] = $p[3];

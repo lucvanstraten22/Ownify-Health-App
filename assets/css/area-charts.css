@@ -2,7 +2,7 @@
    area-charts.css — an area's charts over time (lib/area-charts.php,
    docs/CHARTS.md): small, two by two, on the area's page
    (components/area-chart.php), each opening a page of its own with the same
-   chart large (pages/area-chart.php). Slaap's four, Training's seven. The
+   chart large (pages/area-chart.php). Slaap's four, Training's six. The
    charts are the Verloop's (health.css, compass.css, goals.css); only what
    the small card and its bars add is here, in the area's colour (its
    data-accent). Every colour is the theme's.
@@ -29,6 +29,10 @@
     grid-auto-rows: minmax(calc((100cqw - var(--space-3)) / 2), auto);
     gap: var(--space-3);
 }
+
+/* A chart alone in its grid (Training's Hartbelasting) is as wide as the
+   cards above and under it, as tall as a row of squares. */
+.area-charts > .area-chart:only-child { grid-column: 1 / -1; }
 
 /* The series' colours: a line alone in the area's colour; beside bars, its
    lighter shade over them. */

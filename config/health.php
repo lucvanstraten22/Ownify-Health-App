@@ -407,11 +407,12 @@ return [
             /* The charts, small on the page and each large on a page of its
                own — Ownify's area charts (lib/area-charts.php). `sessions` is
                the top section's right half; then the four two by two; then
-               HRV and Hartbelasting under the heart rate. */
+               Hartbelasting across the page under the heart rate (45.1: HRV
+               is Slaap's, not shown here twice). */
             'layout' => [
                 'per_day' => 'sessions',
                 'grid'    => ['steps', 'energy', 'floors', 'active_minutes'],
-                'lower'   => ['hrv', 'training_load'],
+                'lower'   => ['training_load'],
             ],
             'charts' => [
                 'sessions'       => ['title' => 'Trainingen per dag',
@@ -455,14 +456,6 @@ return [
                                     'Health Connect stuurt deze waarde niet; de grafiek vult zich als een andere bron dat doet.',
                                 ]],
                                      'series' => [['key' => 'active_minutes', 'label' => 'Actieve minuten', 'unit' => 'min', 'kind' => 'line', 'decimals' => 0]]],
-                'hrv'            => ['title' => 'HRV',
-                                'about' => ['name' => 'HRV', 'points' => [
-                                    'Hartslagvariabiliteit: hoeveel de tijd tussen twee hartslagen van slag tot slag verschilt, in milliseconden.',
-                                    'Gemeten in rust, meestal tijdens de nacht; dezelfde waarde als op Slaap.',
-                                    'In je score vergelijkt Ownify het met je eigen waarden van de 60 dagen ervoor, niet met die van anderen.',
-                                    'Hoe goed een horloge HRV meet, verschilt sterk per apparaat.',
-                                ]],
-                                     'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
                 'training_load'  => ['title' => 'Hartbelasting',
                                 'about' => ['name' => 'Hartbelasting', 'points' => [
                                     'Een waarde van je bron voor hoe zwaar je hart die dag werkte tijdens inspanning.',

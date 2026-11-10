@@ -7,7 +7,7 @@
  *   2  Stappen + Afstand, Actieve + Totale calorieën, Verdiepingen and
  *      Actieve minuten, two by two
  *   3  the heart rate, across the page
- *   4  HRV and Hartbelasting, side by side
+ *   4  Hartbelasting, across the page (alone in its grid)
  *
  * Every chart but the heart rate is one of Ownify's area charts
  * (components/area-chart.php), opening its own page large.
