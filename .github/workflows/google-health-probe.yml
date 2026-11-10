@@ -11,6 +11,11 @@ on:
         required: true
         default: true
         type: boolean
+      sync:
+        description: 'Run one real sync per Google Health connection (as the scheduled run does)'
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: ownify-production
@@ -28,4 +33,5 @@ jobs:
           SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
           SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
           PROBE_API: ${{ inputs.api && '1' || '0' }}
+          PROBE_SYNC: ${{ inputs.sync && '1' || '0' }}
         run: bash .github/scripts/google-health-probe.sh

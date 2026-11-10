@@ -16,7 +16,8 @@
 #   3. it is removed over SFTP as well, whatever happened.
 #
 # Writes nothing to the database except what any sync does when the access
-# token has run out (a refreshed token, stored as always).
+# token has run out (a refreshed token, stored as always) — and, with
+# PROBE_SYNC=1, one real sync per connection, exactly as the scheduled run.
 #
 # Needs: jq, and SFTP_SERVER SFTP_USERNAME SFTP_PRIVATE_KEY SFTP_REMOTE_PATH;
 #        optional SFTP_PORT (22), PUBLIC_URL (https://ownify.acits.nl), PROBE_API.
@@ -30,6 +31,7 @@ for v in SFTP_SERVER SFTP_USERNAME SFTP_PRIVATE_KEY SFTP_REMOTE_PATH; do
 done
 public_url="${PUBLIC_URL:-https://ownify.acits.nl}"
 api="${PROBE_API:-0}"
+sync="${PROBE_SYNC:-0}"
 
 work="$(mktemp -d)"
 root="${SFTP_REMOTE_PATH%/}"
@@ -64,7 +66,7 @@ if (!hash_equals('$token', (string) (\$_SERVER['HTTP_X_OWNIFY_PROBE'] ?? ''))) {
 @unlink(__FILE__);
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
-@set_time_limit(170);
+@set_time_limit(900);
 require __DIR__ . '/includes/bootstrap.php';
 require_once __DIR__ . '/includes/integrations.php';
 require_once __DIR__ . '/includes/google-health.php';
@@ -161,13 +163,32 @@ if ('$api' === '1' && \$first !== null) {
         }
     }
 }
+/* One real sync per Google Health connection, as the scheduled run does
+   (PROBE_SYNC=1): how it went, never what it fetched. */
+if ('$sync' === '1') {
+    \$out['sync'] = [];
+    foreach (db_all("SELECT user_id FROM user_integrations WHERE provider = 'google_health' AND status IN ('connected', 'error')") as \$i => \$p) {
+        \$t = microtime(true);
+        \$r = google_health_sync((int) \$p['user_id'], 'schedule');
+        \$row = integration_get((int) \$p['user_id'], 'google_health');
+        \$out['sync'][] = ['connection' => \$i + 1, 'status' => \$r['status'], 'message' => \$r['message'], 'written' => \$r['written'],
+            'requests' => \$r['requests'], 'seconds' => round(microtime(true) - \$t, 1), 'peak_mb' => round(memory_get_peak_usage(true) / 1048576),
+            'memory_limit' => ini_get('memory_limit'), 'after' => array_intersect_key((array) \$row, array_flip(['last_sync_at', 'sync_started_at', 'last_sync_status', 'last_error']))];
+    }
+    \$src = db_value("SELECT id FROM data_sources WHERE code = 'google_health'");
+    \$out['stored_after_sync'] = [
+        'metrics'  => (int) db_value('SELECT COUNT(*) FROM health_metrics WHERE source_id = ?', [\$src]),
+        'sleep'    => (int) db_value('SELECT COUNT(*) FROM sleep_sessions WHERE source_id = ?', [\$src]),
+        'workouts' => (int) db_value('SELECT COUNT(*) FROM workouts WHERE source_id = ?', [\$src]),
+    ];
+}
 echo json_encode(\$out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 PHP
 
 printf 'put "%s" "%s/%s"\n' "$work/probe.php" "$root" "$name" > "$work/b-put"
 sftp_run "$work/b-put" > /dev/null 2>&1 || fail "Could not put the one-time probe in the web root."
 
-code="$(curl -sS -o "$work/answer.json" -w '%{http_code}' --max-time 180 \
+code="$(curl -sS -o "$work/answer.json" -w '%{http_code}' --max-time 900 \
     -H "X-Ownify-Probe: $token" "$public_url/$name" || echo 000)"
 echo "HTTP $code"
 cat "$work/answer.json" || true
