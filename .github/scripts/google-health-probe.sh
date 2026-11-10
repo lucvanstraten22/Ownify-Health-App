@@ -116,6 +116,42 @@ foreach (db_all("SELECT COALESCE(ds.code, 'none') AS source, COUNT(*) AS nights,
     \$out['stored_sleep_last_30_days'][] = \$r + ['stage_minutes_per_night_with_stages' => \$per];
 }
 
+/* Health Connect nights (numbers only): do awake periods overlap the sleep
+   stages (Fitbit's short awakenings), and are any periods reversed? */
+\$hcSrc = db_value("SELECT id FROM data_sources WHERE code = 'google_health_connect'");
+if (\$hcSrc !== null) {
+    \$out['hc_stage_check_last_30_days'] = db_one(
+        "SELECT COUNT(*) AS periods,
+                SUM(st.ended_at <= st.started_at) AS reversed_or_empty,
+                SUM(st.stage = 1) AS awake_periods,
+                SUM(st.stage = 1 AND TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) <= 300) AS awake_periods_up_to_5_min,
+                ROUND(SUM(CASE WHEN st.stage = 1 AND st.ended_at > st.started_at THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) / 60 / COUNT(DISTINCT s.id)) AS awake_minutes_per_night_forward,
+                COUNT(DISTINCT s.id) AS nights
+           FROM sleep_stages st JOIN sleep_sessions s ON s.id = st.sleep_session_id
+          WHERE s.source_id = ? AND s.night_of >= CURDATE() - INTERVAL 30 DAY", [\$hcSrc]);
+    \$out['hc_awake_overlapping_sleep'] = db_one(
+        "SELECT COUNT(DISTINCT a.id) AS awake_periods_inside_a_sleep_stage,
+                ROUND(SUM(TIMESTAMPDIFF(SECOND, GREATEST(a.started_at, b.started_at), LEAST(a.ended_at, b.ended_at))) / 60) AS overlapping_minutes,
+                COUNT(DISTINCT a.sleep_session_id) AS nights_with_overlap
+           FROM sleep_stages a
+           JOIN sleep_stages b ON b.sleep_session_id = a.sleep_session_id AND b.stage IN (2, 4, 5, 6)
+                              AND b.started_at < a.ended_at AND a.started_at < b.ended_at
+           JOIN sleep_sessions s ON s.id = a.sleep_session_id
+          WHERE a.stage = 1 AND a.ended_at > a.started_at AND s.source_id = ? AND s.night_of >= CURDATE() - INTERVAL 30 DAY", [\$hcSrc]);
+    \$out['hc_nights_sample'] = db_all(
+        "SELECT s.night_of, s.duration_minutes AS asleep, s.awake_minutes AS awake, s.time_in_bed_minutes AS in_bed,
+                TIMESTAMPDIFF(MINUTE, s.started_at, s.ended_at) AS span, s.awakenings,
+                (SELECT COUNT(*) FROM sleep_stages x WHERE x.sleep_session_id = s.id AND x.stage = 1) AS awake_periods,
+                (SELECT ROUND(SUM(TIMESTAMPDIFF(SECOND, x.started_at, x.ended_at)) / 60) FROM sleep_stages x WHERE x.sleep_session_id = s.id AND x.stage = 1) AS awake_period_minutes,
+                (SELECT COUNT(*) FROM sleep_stages x WHERE x.sleep_session_id = s.id AND x.ended_at <= x.started_at) AS reversed,
+                (SELECT ROUND(SUM(TIMESTAMPDIFF(SECOND, x.started_at, x.ended_at)) / 60) FROM sleep_stages x WHERE x.sleep_session_id = s.id AND x.stage IN (4,5,6)) AS staged_sleep_minutes
+           FROM sleep_sessions s WHERE s.source_id = ? AND s.night_of >= CURDATE() - INTERVAL 10 DAY ORDER BY s.night_of DESC, s.started_at", [\$hcSrc]);
+    \$gSrc = db_value("SELECT id FROM data_sources WHERE code = 'google_health'");
+    \$out['google_nights_sample'] = \$gSrc === null ? null : db_all(
+        "SELECT night_of, duration_minutes AS asleep, awake_minutes AS awake, time_in_bed_minutes AS in_bed, TIMESTAMPDIFF(MINUTE, started_at, ended_at) AS span
+           FROM sleep_sessions WHERE source_id = ? AND night_of >= CURDATE() - INTERVAL 10 DAY ORDER BY night_of DESC, started_at", [\$gSrc]);
+}
+
 /* PHP's error log: the last lines about Google Health, and every fatal error. */
 \$log = (string) ini_get('error_log');
 foreach (array_merge(\$log !== '' ? [\$log] : [], (array) @glob(dirname(__DIR__) . '/logs/*error*.log')) as \$candidate) {
