@@ -1,0 +1,31 @@
+name: Add Android Google client
+
+# Run by hand (Actions → Add Android Google client → Run workflow): adds one
+# Android OAuth client id to google.android_client_ids in the live
+# config/auth.local.php, keeps the previous file as a backup beside it, and
+# reports what the site then loads (.github/scripts/android-client-add.sh).
+on:
+  workflow_dispatch:
+    inputs:
+      client_id:
+        description: 'Android OAuth client id (…apps.googleusercontent.com)'
+        required: true
+        type: string
+
+concurrency:
+  group: ownify-production
+  cancel-in-progress: false
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add the client id on the live site
+        env:
+          SFTP_SERVER: ${{ secrets.SFTP_SERVER }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+          CLIENT_ID: ${{ inputs.client_id }}
+        run: bash .github/scripts/android-client-add.sh
