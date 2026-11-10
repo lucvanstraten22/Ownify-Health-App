@@ -775,10 +775,20 @@ if (!function_exists('google_signin_config')) {
             return $out('error', t('Gebruik het Google-account dat aan je Ownify-account is gekoppeld.'));
         }
 
+        /* Fresh: Google was asked to sign the person in again (prompt=login,
+           max_age=0). Google's ID tokens carry no auth_time (it is not among
+           the claims its OpenID configuration supports), so requiring one
+           failed every confirmation (45.0): when it is there it must be
+           fresh; when it is not, the token itself must have been issued just
+           now — for this flow, whose state and nonce are this session's and
+           used once, as the app's confirmation checks it
+           (account_reauth_google_token()). */
         $authTime = $claims['auth_time'] ?? null;
+        $issued   = $claims['iat'] ?? null;
+        $fresh    = static fn (mixed $at): bool => is_int($at) && $at >= time() - ACCOUNT_REAUTH_SECONDS && $at <= time() + GOOGLE_SIGNIN_LEEWAY;
 
-        if (!is_int($authTime) || $authTime < time() - ACCOUNT_REAUTH_SECONDS || $authTime > time() + GOOGLE_SIGNIN_LEEWAY) {
-            error_log('[google-signin] reauth without a fresh auth_time');
+        if ($authTime !== null ? !$fresh($authTime) : !$fresh($issued)) {
+            error_log('[google-signin] reauth without a fresh sign-in at Google');
             return $out('error', t('Bevestigen met Google is niet gelukt. Probeer het opnieuw.'));
         }
 

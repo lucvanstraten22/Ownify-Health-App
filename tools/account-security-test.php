@@ -367,6 +367,7 @@ $claims = [
     'iat' => time(), 'exp' => time() + 3600,
 ];
 if (isset($code['auth_time'])) { $claims['auth_time'] = $code['auth_time']; }
+if (isset($code['iat'])) { $claims['iat'] = $code['iat']; }
 $input = $b64(json_encode(['alg' => 'RS256', 'kid' => 'test-key', 'typ' => 'JWT'])) . '.' . $b64(json_encode($claims));
 openssl_sign($input, $signature, openssl_pkey_get_private((string) file_get_contents(__DIR__ . '/google-key.pem')), OPENSSL_ALGO_SHA256);
 header('Content-Type: application/json');
@@ -687,9 +688,14 @@ check('a password typed at Google 15 minutes ago: no confirmation', web($hana, '
 $start = web($hana, '/api/auth/reauth.php', ['action' => 'google', 'purpose' => 'delete']);
 google_back($hana, (string) $start['body']['redirect'], ['sub' => 'someone-else-' . $run, 'email' => 'x@gmail.invalid', 'auth_time' => time()]);
 check('another Google account: no confirmation', web($hana, '/api/profile/delete.php', ['confirm' => 'verwijderen'])['status'] === 403);
+/* 45.0: Google's ID tokens carry no auth_time (not among the claims its
+   OpenID configuration supports); the token's own issue time then counts. */
 $start = web($hana, '/api/auth/reauth.php', ['action' => 'google', 'purpose' => 'delete']);
-$back  = google_back($hana, (string) $start['body']['redirect'], ['sub' => $hana['sub'], 'email' => $hana['email'], 'auth_time' => time()]);
-check('its own Google account, just now: back to the app', $back['status'] === 303);
+google_back($hana, (string) $start['body']['redirect'], ['sub' => $hana['sub'], 'email' => $hana['email'], 'iat' => time() - 900]);
+check('as Google sends it (no auth_time), a token issued 15 minutes ago: no confirmation', web($hana, '/api/profile/delete.php', ['confirm' => 'verwijderen'])['status'] === 403);
+$start = web($hana, '/api/auth/reauth.php', ['action' => 'google', 'purpose' => 'delete']);
+$back  = google_back($hana, (string) $start['body']['redirect'], ['sub' => $hana['sub'], 'email' => $hana['email']]);
+check('its own Google account, just now, as Google sends it (no auth_time): back to the app', $back['status'] === 303);
 $gone = web($hana, '/api/profile/delete.php', ['confirm' => 'verwijderen']);
 check('then deleted: 200, the account is gone', $gone['status'] === 200 && db_value('SELECT id FROM users WHERE id = ?', [$hana['id']]) === null, summary($gone));
 

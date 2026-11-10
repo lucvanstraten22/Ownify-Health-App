@@ -103,7 +103,7 @@ object CredentialManagerGoogle : GoogleIdTokens {
                 GoogleIdResult.Failed
             }
         } catch (e: GetCredentialCancellationException) {
-            GoogleIdResult.Cancelled
+            cancelled(e.errorMessage)
         } catch (e: NoCredentialException) {
             GoogleIdResult.NoAccount
         } catch (e: GetCredentialProviderConfigurationException) {
@@ -118,6 +118,17 @@ object CredentialManagerGoogle : GoogleIdTokens {
             GoogleIdResult.Failed
         }
     }
+
+    /**
+     * 45.0: a "cancellation" is not always the person. Closing the chooser is;
+     * but when an account has been chosen and Google then refuses this build
+     * (Play services' status 16 — mostly no Android OAuth client for this
+     * package and the key the APK is signed with, docs/APP-AUTH.md) Credential
+     * Manager reports that as a cancellation too, with Google's "16: …" as its
+     * message. Before, that also went back to the panel without a word.
+     */
+    internal fun cancelled(message: CharSequence?): GoogleIdResult =
+        if (message?.toString()?.trimStart()?.startsWith("16:") == true) GoogleIdResult.Failed else GoogleIdResult.Cancelled
 
     override suspend fun signedOut(context: Context) {
         try {

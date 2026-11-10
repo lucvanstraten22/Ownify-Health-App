@@ -1282,23 +1282,8 @@
     box-shadow: var(--focus-halo);
 }
 
-.goal-search__clear {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(var(--fill), calc(0.08 * var(--fill-k)));
-    color: var(--text-secondary);
-    transform: translateY(-50%);
-}
+/* .goal-search__clear: components.css, shared with a password field's eye (45.0). */
 
-.goal-search__clear .icon { width: 14px; height: 14px; }
-.goal-search__clear[hidden] { display: none; }
 
 .goal-bubbles {
     display: flex;
@@ -1311,8 +1296,15 @@
 
 .goal-list__label { margin-top: var(--space-4); }
 
-/* A short list, scrolled on its own: about five rows in view. */
+/* A short list, scrolled on its own: about five rows in view. The glass
+   (and its rim, components.css) is the box; the list inside it scrolls, so
+   the rim stays on the whole box rather than scrolling away with the first
+   rows (45.0). */
 .goal-list {
+    border-radius: var(--radius-md);
+}
+
+.goal-list__scroll {
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -1320,7 +1312,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: var(--space-1);
-    border-radius: var(--radius-md);
+    border-radius: inherit;
     scrollbar-width: thin;
 }
 

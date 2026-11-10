@@ -62,7 +62,13 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
 
     <div class="account__scrim" data-account-close></div>
 
+    <?php /* The eye in every password field, on every screen that has this
+             panel (password-reveal.js): drawn once, here. */ ?>
+    <template data-password-icons><span data-icon="eye"><?= icon('eye') ?></span><span data-icon="eye-off"><?= icon('eye-off') ?></span></template>
+
     <div class="account__panel card" role="dialog" aria-modal="true" aria-labelledby="account-title">
+        <?php /* The glass and its rim stay put; what is in it scrolls (45.0). */ ?>
+        <div class="account__scroll">
 
         <div class="account__head">
             <?php if ($signedIn): ?>
@@ -248,14 +254,8 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                     <?php endif; ?>
                 </div>
 
-                <?php if ($canRegister): ?>
-                    <div class="account__field" data-account-only="register" hidden>
-                        <label class="account__label" for="account-password-confirm"><?= e(t('Herhaal wachtwoord')) ?></label>
-                        <input class="account__input" type="password" id="account-password-confirm" name="password_confirm"
-                               minlength="8" autocomplete="new-password">
-                    </div>
-                <?php endif; ?>
-
+                <?php /* No repeat field when registering (45.0): the eye in the
+                         field shows what was typed. Changing a password keeps it. */ ?>
                 <button type="submit" class="btn account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
             </form>
 
@@ -371,5 +371,6 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             </form>
         </div>
 
+        </div>
     </div>
 </div>

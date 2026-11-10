@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 44.2'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 45.0'],
             ],
         ],
     ],
@@ -175,7 +175,7 @@ return [
                         ['key' => 'avatar',     'label' => 'Profielfoto',     'edit' => true, 'kind' => 'image', 'opens' => 'account'],
                         ['key' => 'username',   'label' => 'Gebruikersnaam',  'edit' => true, 'opens' => 'account'],
                         /* Both names, in one editor (settings_field_input()). */
-                        ['key' => 'name',       'label' => 'Voor- en achternaam wijzigen', 'edit' => true],
+                        ['key' => 'name',       'label' => 'Voor- en achternaam', 'edit' => true],
                         /* Chosen in the setup a new account starts with; what
                            Overzicht puts first (docs/FIRST-DAYS.md). Left out
                            until migration 016 can keep it. */
@@ -519,7 +519,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 44.2'],
+                        ['label' => 'Versie',  'value' => 'Beta 45.0'],
                     ],
                 ],
 

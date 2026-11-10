@@ -240,14 +240,13 @@ private fun ColumnScope.EmailForm(
     val working = auth is OwnifyAuthState.Working
     // The password lives only in this field while it is on screen: never saved, never logged.
     var password by remember { mutableStateOf("") }
-    var repeat by remember { mutableStateOf("") }
     // Registering with e-mail closed (Release A, 28.0): the form makes way for
     // one line, as on the website, and Google stays below it.
     val closed = register && OwnifyConnection.emailRegistration == false
 
     fun submit() {
         focus.clearFocus()
-        if (register) OwnifyConnection.register(context, username, email, password, repeat)
+        if (register) OwnifyConnection.register(context, username, email, password)
         else OwnifyConnection.login(context, username, password)
     }
 
@@ -294,7 +293,7 @@ private fun ColumnScope.EmailForm(
                 enabled = !working,
                 password = true,
                 label = tr("Wachtwoord"),
-                keyboard = KeyboardOptions(imeAction = if (register) ImeAction.Next else ImeAction.Done),
+                keyboard = KeyboardOptions(imeAction = ImeAction.Done),
                 actions = KeyboardActions(onDone = { submit() })
             )
             // Release B: Wachtwoord vergeten, under the password, as on the website.
@@ -307,19 +306,8 @@ private fun ColumnScope.EmailForm(
                 }
             }
         }
-        if (register) {
-            Column {
-                FieldLabel(tr("Herhaal wachtwoord"))
-                JInput(
-                    repeat, { repeat = it.take(MAX_PASSWORD) },
-                    enabled = !working,
-                    password = true,
-                    label = tr("Herhaal wachtwoord"),
-                    keyboard = KeyboardOptions(imeAction = ImeAction.Done),
-                    actions = KeyboardActions(onDone = { submit() })
-                )
-            }
-        }
+        // 45.0: no repeat field when registering — the eye in the field shows
+        // what was typed (the website's account panel does the same).
     }
 
     if (!closed) Btn(

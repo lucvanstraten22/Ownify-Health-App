@@ -137,6 +137,14 @@ The chosen piece inside the glass — the tab bar's lozenge, a segment — is
 `--lg-chosen` / `--lg-chosen-edge` (`drawChosenGlass`). White Mode follows
 through `--glint-k`, `--pane-body` and `--shade`; nothing is written twice.
 
+**Glass that scrolls (45.0).** The rim is drawn over the glass's own box
+(`::after`, `inset: 0`; `liquidGlass` on Android). So a glass block never
+scrolls itself: its content scrolls in an element inside it — `.wizard__body`,
+`.ch-sheet__body`, `.account__scroll`, `.goal-list__scroll`, and on Android
+the `verticalScroll` after `panelGlass`/`glass` in the modifier chain. A
+glass element with `overflow: auto` of its own draws its rim around the
+first screenful only, and the rim then scrolls away with the content.
+
 **Under the finger (41.0).** Every press elsewhere settles to 97 %
 (`.press`, `Modifier.press`). A glass control instead grows while it is
 held — 8 % (`--glass-grow`, `Ownify.GlassGrow`) on a spring with a touch of

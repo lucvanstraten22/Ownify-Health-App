@@ -199,10 +199,13 @@ fun GlassRound(
     size: Dp = 44.dp,
     enabled: Boolean = true,
     longPressLabel: String? = null,
-    onLongPress: (() -> Unit)? = null
+    onLongPress: (() -> Unit)? = null,
+    /** 45.0: a button inside a field (a password's eye) leaves the field focused, its keyboard up. */
+    keepFocus: Boolean = false
 ) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
+        val tap = if (keepFocus) onClick else blurring(onClick)
         Box(
             modifier
                 .glassPress(interaction, CircleShape, enabled = enabled)
@@ -217,7 +220,7 @@ fun GlassRound(
                             enabled = enabled,
                             role = if (chosen != null) Role.RadioButton else Role.Button,
                             onLongClick = onLongPress,
-                            onClick = blurring(onClick)
+                            onClick = tap
                         )
                         .clearAndSetSemantics {
                             contentDescription = label

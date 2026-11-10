@@ -106,7 +106,7 @@ return [
     'Bevestig eerst dat je je gegevens wilt wissen.' => 'First confirm that you want to delete your data.',
     'gegevens' => 'data',
     'Het bestand kon niet worden bewaard.' => 'The file could not be saved.',
-    'Voor- en achternaam wijzigen' => 'Change first and last name',
+    'Voor- en achternaam' => 'First and last name',
     'Gegevens wissen' => 'Delete data',
     'De app schermt je gegevens af, niet de database zelf: wie beheerderstoegang tot de server heeft, kan de tabellen lezen. Dat geldt voor elke app.' => 'The app shields your data, not the database itself: anyone with administrator access to the server can read the tables. That is true of every app.',
     'Er worden nog geen meldingen verstuurd. Dit zijn de soorten die er komen.' => 'No notifications are sent yet. These are the kinds that will come.',

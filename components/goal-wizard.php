@@ -75,7 +75,8 @@ $steps = $copy['steps'];
                 </div>
 
                 <p class="wizard__label goal-list__label" data-wizard-list-label><?= e($copy['suggested']) ?></p>
-                <div class="glass goal-list" data-wizard-list role="radiogroup" aria-label="<?= e($copy['results']) ?>"></div>
+                <?php /* The glass and its rim stay put; the list in it scrolls (45.0). */ ?>
+                <div class="glass goal-list"><div class="goal-list__scroll" data-wizard-list role="radiogroup" aria-label="<?= e($copy['results']) ?>"></div></div>
                 <p class="wizard__hint goal-list__empty" data-wizard-empty hidden><?= e($copy['no_results']) ?></p>
                 <p class="wizard__hint goal-list__custom" data-wizard-custom-hint aria-live="polite" hidden><?= e($copy['custom_category']) ?></p>
             </section>

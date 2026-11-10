@@ -44,6 +44,12 @@ if ($wait !== null) {
     api_fail(auth_throttle_message($wait), 429);
 }
 
+/* 45.0: registering has no repeat field any more (the eye in the field
+   shows what was typed); a client that still sends one is held to it. */
+$repeat = is_string($_POST['password_confirm'] ?? null) && $_POST['password_confirm'] !== ''
+    ? $_POST['password_confirm']
+    : (string) ($_POST['password'] ?? '');
+
 if (account_email_registration_pending()) {
     require_once dirname(__DIR__, 2) . '/includes/account-flows.php';
 
@@ -51,7 +57,7 @@ if (account_email_registration_pending()) {
         $email,
         (string) ($_POST['password'] ?? ''),
         (string) ($_POST['username'] ?? ''),
-        (string) ($_POST['password_confirm'] ?? '')
+        $repeat
     );
 
     if (!$result['ok']) {
@@ -67,7 +73,7 @@ $result = auth_register_email(
     $email,
     (string) ($_POST['password'] ?? ''),
     (string) ($_POST['username'] ?? ''),
-    (string) ($_POST['password_confirm'] ?? '')
+    $repeat
 );
 
 if (!$result['ok']) {

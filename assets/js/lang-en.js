@@ -58,6 +58,8 @@ window.OWNIFY_LANG = {
     "Vul een waarde in.": "Enter a value.",
     "Vul eerst een waarde in.": "Enter a value first.",
     "Vul je wachtwoord in om dit te bevestigen.": "Enter your password to confirm this.",
+    "Wachtwoord tonen": "Show password",
+    "Wachtwoord verbergen": "Hide password",
     "Weigeren": "Decline",
     "keer": "times",
     "u": "h"

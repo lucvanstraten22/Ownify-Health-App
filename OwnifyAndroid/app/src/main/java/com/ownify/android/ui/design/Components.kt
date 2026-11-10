@@ -12,6 +12,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.geometry.CornerRadius
 import com.ownify.android.i18n.OwnifyFormat
 import com.ownify.android.i18n.trf
+import com.ownify.android.i18n.tr
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -1093,6 +1095,8 @@ fun JInput(
     label: String? = null
 ) {
     var focused by remember { mutableStateOf(false) }
+    // 45.0: a password field's eye — what was typed, shown or hidden.
+    var shown by rememberSaveable { mutableStateOf(false) }
     val shape = RoundedCornerShape(50)
     val border = if (focused) Ownify.HealthStrong else Ownify.GlassBorderSoft
     val fill = if (focused) Ownify.fill(0.07f) else Ownify.fill(0.05f)
@@ -1113,7 +1117,7 @@ fun JInput(
         cursorBrush = SolidColor(Ownify.TextPrimary),
         keyboardOptions = if (password) keyboard.copy(keyboardType = KeyboardType.Password) else keyboard,
         keyboardActions = actions,
-        visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = if (password && !shown) PasswordVisualTransformation() else VisualTransformation.None,
         decorationBox = { inner ->
             Box(
                 Modifier
@@ -1138,10 +1142,25 @@ fun JInput(
                     .cssPadding(PaddingValues(horizontal = Ownify.Space4), border = 1.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                if (value.isEmpty() && placeholder.isNotEmpty()) {
-                    T(placeholder, style.copy(color = Ownify.TextMuted), maxLines = 1)
+                // A password leaves the eye its room, as the search field leaves its cross.
+                Box(if (password) Modifier.padding(end = 28.dp) else Modifier, contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty() && placeholder.isNotEmpty()) {
+                        T(placeholder, style.copy(color = Ownify.TextMuted), maxLines = 1)
+                    }
+                    inner()
                 }
-                inner()
+                if (password) {
+                    // `.password-field__toggle`: the search's in-field round button, 6 from the edge;
+                    // a tap shows or hides, and the field keeps its focus and its keyboard.
+                    GlassRound(
+                        if (shown) OwnifyIcons.eyeOff else OwnifyIcons.eye,
+                        if (shown) tr("Wachtwoord verbergen") else tr("Wachtwoord tonen"),
+                        { shown = !shown },
+                        Modifier.align(Alignment.CenterEnd).offset(x = 10.dp),
+                        size = 32.dp,
+                        keepFocus = true
+                    )
+                }
             }
         }
     )

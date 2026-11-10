@@ -32,7 +32,7 @@
     var main     = panel.querySelector('[data-account-view="main"]');
     var back     = panel.querySelector('[data-friends-back]');
     var title    = panel.querySelector('#account-title');
-    var sheet    = panel.querySelector('.account__panel');
+    var sheet    = panel.querySelector('.account__scroll');   // what scrolls in the panel (45.0)
     var opener   = panel.querySelector('[data-friends-open]');
     var addBtn   = view.querySelector('[data-friends-add]');
     var form     = view.querySelector('[data-friends-search]');

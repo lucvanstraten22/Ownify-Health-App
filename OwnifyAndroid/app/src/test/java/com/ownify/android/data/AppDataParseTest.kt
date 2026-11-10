@@ -215,7 +215,7 @@ class AppDataParseTest {
         // Voor- en achternaam: one row, one editor with both names, saved together.
         val name = fields.single { it.key == "name" }
         assertEquals("editable", name.state)
-        assertEquals("Voor- en achternaam wijzigen", name.label)
+        assertEquals("Voor- en achternaam", name.label)
         assertEquals("fields", name.input!!.type)
         assertEquals(listOf("first_name", "last_name"), name.input!!.inputs.map { it.name })
         assertEquals(listOf(false, true), name.input!!.inputs.map { it.optional })

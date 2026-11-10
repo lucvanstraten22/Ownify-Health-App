@@ -67,7 +67,7 @@ if (account_email_registration_pending()) {
         $email,
         $password,
         $username,
-        is_string($input['password_confirm'] ?? null) ? $input['password_confirm'] : ''
+        is_string($input['password_confirm'] ?? null) && $input['password_confirm'] !== '' ? $input['password_confirm'] : $password
     );
 
     if (!$result['ok']) {

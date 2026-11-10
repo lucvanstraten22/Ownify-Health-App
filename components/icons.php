@@ -119,6 +119,11 @@ if (!function_exists('icon')) {
                 // clear a field — a small cross
                 'close'    => '<path d="M7 7l10 10M17 7 7 17"/>',
 
+                // a password field's eye (45.0): shown — the open eye; hidden — the same eye, struck through
+                'eye'      => '<path d="M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.8"/>',
+                'eye-off'  => '<path d="M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.8"/>'
+                    . '<path d="M4.6 4.6 19.4 19.4"/>',
+
                 // conversations — one speech bubble, its tail on the left
                 'chat'     => '<path d="M7.6 4.6h8.8a2.8 2.8 0 0 1 2.8 2.8v6.2a2.8 2.8 0 0 1-2.8 2.8h-5.2l-4 3.2v-3.2h-.2A2.6 2.6 0 0 1 4.8 13.6V7.4a2.8 2.8 0 0 1 2.8-2.8Z"/>',
 

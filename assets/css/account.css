@@ -26,15 +26,30 @@
     transition: opacity var(--transition-fast);
 }
 
+/* The panel is the glass, with its rim (components.css); it does not scroll
+   itself, or the rim — drawn over the panel's box — would scroll away with
+   the first screenful (45.0). What is in it scrolls, as the wizard's body
+   and a challenge sheet's do. */
 .account__panel {
     position: relative;
+    display: flex;
+    flex-direction: column;
     width: min(100%, 25rem);
     max-height: 100%;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    padding: 0;
+    overflow: hidden;
     opacity: 0;
     transform: scale(0.96);
     transition: var(--panel-out);
+}
+
+.account__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: var(--space-5);               /* the card's own padding (.card) */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: inherit;
 }
 
 .account.is-open .account__scrim { opacity: 1; }

@@ -191,4 +191,6 @@ return [
     'Was jij dat? Log dan in met Google.' => 'Was that you? Then sign in with Google.',
     'Was jij dat? Log dan in met je gebruikersnaam of e-mailadres. Weet je je wachtwoord niet meer, kies dan een nieuw.' => 'Was that you? Then sign in with your username or email address. If you’ve forgotten your password, choose a new one.',
     'Was jij dit niet? Dan hoef je niets te doen. Je account en je wachtwoord zijn niet gewijzigd.' => 'Wasn’t this you? Then you don’t need to do anything. Your account and your password haven’t changed.',
+    'Wachtwoord tonen' => 'Show password',
+    'Wachtwoord verbergen' => 'Hide password',
 ];

@@ -276,6 +276,23 @@ object OwnifyIcons {
         )
     }
 
+    /** `eye` (45.0): a password field's "show" */
+    val eye: ImageVector by lazy {
+        icon("eye", null,
+            "M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z",
+            "M9.2 12a2.8 2.8 0 1 0 5.6 0a2.8 2.8 0 1 0 -5.6 0Z"
+        )
+    }
+
+    /** `eye-off` (45.0): a password field's "hide" — the same eye, struck through */
+    val eyeOff: ImageVector by lazy {
+        icon("eye-off", null,
+            "M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z",
+            "M9.2 12a2.8 2.8 0 1 0 5.6 0a2.8 2.8 0 1 0 -5.6 0Z",
+            "M4.6 4.6 19.4 19.4"
+        )
+    }
+
     /** `chat` */
     val chat: ImageVector by lazy {
         icon("chat", null,

@@ -61,6 +61,7 @@ $welcome = $data['welcome'];
     <?php component('phone-simulator', $data); ?>
 
     <script src="<?= e(asset('assets/js/account.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/password-reveal.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>
 </body>
 </html>
