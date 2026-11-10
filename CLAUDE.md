@@ -95,3 +95,8 @@ by 10.0):
 Every commit title starts with the new version number, then the
 description: `10.1 Show the version in commit titles`.
 The next version is 45.1 for a small update, or 46.0 for a big one.
+
+Only a big update gets a new Android APK: a push to `main` that lands on a
+new `XX.0` makes `.github/workflows/android-apk.yml` build, sign (the existing
+release key, never a new one) and publish it as GitHub Release `vXX.0`, which
+Obtainium and the app's update check follow. A small update builds no APK.

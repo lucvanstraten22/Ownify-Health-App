@@ -415,6 +415,13 @@ toast and shown on the phone's card with a button to its APK, which opens in
 the browser: nothing is downloaded or installed by the app, and the request
 carries only the app's name and version.
 
+Since 45.0 there is a release — and so an update for the app and for
+Obtainium — only for a major version (`XX.0`): a push to `main` whose
+versionName is a new `XX.0` builds and publishes it once, signed with the
+existing release key (checked: SHA-1 `90:9E:C6:…:31:E4`, package
+`com.ownify.android`), and only with a versionCode higher than the last
+release's. Small updates (`XX.1`, `XX.2` …) build no APK.
+
 The workflow takes the version from `app/build.gradle.kts` — the tag is
 `v<versionName>`, the file `Ownify-<versionName>.apk`, the title
 `Ownify <versionName> (Build <versionCode>)` — and a second build of the same
@@ -520,8 +527,9 @@ migration 028 removes its catalogue row wherever nothing refers to it).
 ## What you still have to do outside the code
 
 - **Release the Android app.** Ownify is not published on Google Play: it is
-  a signed APK on GitHub Releases — run *Build Ownify Android Release*
-  (`android-apk.yml`), and the app finds it (*Updates*). Health Connect works
+  a signed APK on GitHub Releases — *Build Ownify Android Release*
+  (`android-apk.yml`) publishes one by itself for every major version
+  (`XX.0`, *Updates*), and the app finds it. Health Connect works
   the same for an app installed this way. The declaration below is kept as
   the record of what is read and why; it would only be needed for a store.
 - **Set `OWNIFY_APP_KEY`** on the server — `docs/DATABASE.md`, *Where to put it

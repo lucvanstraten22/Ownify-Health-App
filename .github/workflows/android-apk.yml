@@ -1,13 +1,61 @@
 name: Build Ownify Android Release
 
+# 45.0: a signed APK is built and published as a GitHub Release (what
+# Obtainium and the app's own update check follow) only for a major version:
+# the app's versionName (app/build.gradle.kts) is a whole number, XX.0.
+# A push to main that lands on a new XX.0 builds it once; a small update
+# (XX.1, XX.2 …) builds nothing. Run by hand, it builds the current XX.0
+# again and replaces its APK — never a small version.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: ownify-android-release
+  cancel-in-progress: false
+
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.decide.outputs.build }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Only a major version, once
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          NAME=$(sed -n 's/.*OWNIFY_VERSION_NAME") ?: "\([0-9.]*\)".*/\1/p' OwnifyAndroid/app/build.gradle.kts)
+          CODE=$(sed -n 's/.*OWNIFY_VERSION_CODE")?.toIntOrNull() ?: \([0-9]*\).*/\1/p' OwnifyAndroid/app/build.gradle.kts)
+          test -n "$NAME" && test -n "$CODE"
+          build=true
+          if ! printf '%s' "$NAME" | grep -Eq '^[0-9]+\.0$'; then
+            echo "Version $NAME is a small update: no APK."; build=false
+          elif [ "$EVENT" = push ] && gh release view "v$NAME" > /dev/null 2>&1; then
+            echo "v$NAME is already released: no new APK."; build=false
+          fi
+          if [ "$build" = true ]; then
+            # Obtainium and Android install an update only with a higher versionCode.
+            LAST=$(gh release list --exclude-drafts --limit 50 --json name,tagName \
+              --jq "[.[] | select(.tagName != \"v$NAME\") | .name | capture(\"\\\\(Build (?<n>[0-9]+)\\\\)\").n | tonumber] | max // 0")
+            if [ "$CODE" -le "$LAST" ]; then
+              echo "::error::versionCode $CODE is not higher than the last release's ($LAST)."; exit 1
+            fi
+            echo "Building $NAME (versionCode $CODE, last release $LAST)."
+          fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   build-release:
+    needs: gate
+    if: needs.gate.outputs.build == 'true'
     runs-on: ubuntu-latest
 
     defaults:
@@ -28,6 +76,7 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::No signing key (ANDROID_KEYSTORE_BASE64)."; exit 1; }
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ownify-release.jks"
 
       # 43.0: the app's own version (app/build.gradle.kts), so the release's tag
@@ -51,6 +100,18 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
+
+      # The existing key and package, never another: an APK signed otherwise
+      # cannot update the installed app (Obtainium refuses it too).
+      - name: Check package and signing key
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          TOOLS="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          SHA1=$("$TOOLS/apksigner" verify --print-certs "$APK" | sed -n 's/.*certificate SHA-1 digest: //p' | head -1)
+          PKG=$("$TOOLS/aapt2" dump packagename "$APK")
+          echo "package $PKG, signing key SHA-1 $SHA1"
+          test "$SHA1" = "909ec6ae01b9ee51bf1cdc14f52a534ecdcb31e4" || { echo "::error::Not signed with the Ownify release key."; exit 1; }
+          test "$PKG" = "com.ownify.android" || { echo "::error::Package is not com.ownify.android."; exit 1; }
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
