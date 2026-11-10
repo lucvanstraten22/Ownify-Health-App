@@ -268,21 +268,48 @@ if (!function_exists('hydrate_training')) {
         $bucket = max(1, (int) $cfg['bucket']);
         $first  = $now->modify('-' . ($count - 1) . ' day')->format('Y-m-d');
 
-        /* Each day's five-minute means: the mean of the minutes in each. */
-        $buckets = [];
+        /* 47.0: each day's own minutes, not five-minute means — the
+           stored minute (heart_rate_minutes: the mean of a minute's samples)
+           is the finest Ownify keeps. A day has up to 1,440 of them; a
+           phone's chart has about 300 points of width, so of each five
+           minutes the lowest and the highest minute are kept, at their own
+           times (min-max decimation): every peak and every dip exactly as
+           measured, nothing averaged away, at a fifth of the points. */
+        $slots = [];
         foreach (health_heart_minutes($userId, $first . ' 00:00:00', $now->modify('+1 day')->format('Y-m-d') . ' 00:00:00') as $at => $bpm) {
-            $date = substr($at, 0, 10);
-            $b    = intdiv((int) substr($at, 11, 2) * 60 + (int) substr($at, 14, 2), $bucket);
-            $buckets[$date][$b][0] = ($buckets[$date][$b][0] ?? 0.0) + $bpm;
-            $buckets[$date][$b][1] = ($buckets[$date][$b][1] ?? 0) + 1;
+            $date   = substr($at, 0, 10);
+            $minute = (int) substr($at, 11, 2) * 60 + (int) substr($at, 14, 2);
+            $b      = intdiv($minute, $bucket);
+            $slot   = $slots[$date][$b] ?? null;
+            if ($slot === null) {
+                $slots[$date][$b] = [[$minute, $bpm], [$minute, $bpm]];
+                continue;
+            }
+            if ($bpm < $slot[0][1]) { $slots[$date][$b][0] = [$minute, $bpm]; }
+            if ($bpm > $slot[1][1]) { $slots[$date][$b][1] = [$minute, $bpm]; }
+        }
+
+        /* Each day's points in time order: a slot's low and high minute, or
+           its one minute when they are the same. */
+        $points = [];
+        foreach ($slots as $date => $day) {
+            ksort($day);
+            $points[$date] = [];
+            foreach ($day as [$low, $high]) {
+                if ($low[0] === $high[0]) {
+                    $points[$date][] = $low;
+                } else {
+                    array_push($points[$date], ...($low[0] < $high[0] ? [$low, $high] : [$high, $low]));
+                }
+            }
         }
 
         /* One height for the whole week, so a day's zones stand where the
-           next day's do. */
+           next day's do — out of the very values drawn, so nothing is cut. */
         $all = [];
-        foreach ($buckets as $day) {
-            foreach ($day as [$sum, $n]) {
-                $all[] = $sum / $n;
+        foreach ($points as $day) {
+            foreach ($day as [, $bpm]) {
+                $all[] = (float) $bpm;
             }
         }
         $range = hydrate_training_bpm_range($all);
@@ -290,7 +317,7 @@ if (!function_exists('hydrate_training')) {
         $days = [];
         for ($d = 0; $d < $count; $d++) {
             $date   = $now->modify("-{$d} day")->format('Y-m-d');
-            $days[] = hydrate_training_heart_day($cfg, $zones, $date, $d, $buckets[$date] ?? [], $bucket, $range);
+            $days[] = hydrate_training_heart_day($cfg, $zones, $date, $d, $points[$date] ?? [], $range);
         }
 
         /* 7 dagen to 1 jaar: each day's average, as Ownify's area charts
@@ -358,17 +385,17 @@ if (!function_exists('hydrate_training')) {
     }
 
     /**
-     * One day, 00:00 to 24:00: each five minutes with a heart rate a point
-     * at its middle, a line through the points no more than `break` minutes
-     * apart, a dot where a point stands alone; the hours under it every
-     * `hours`; the zones' bounds at their heights.
+     * One day, 00:00 to 24:00: its minutes as hydrate_training_heart() kept
+     * them, each a point at its own minute, a line straight from one to the
+     * next where they are no more than `break` minutes apart — no curve, no
+     * averaging: what was measured — a dot where a point stands alone; the
+     * hours under it every `hours`; the zones' bounds at their heights.
      *
-     * @param array<int,array{0: float, 1: int}> $buckets  five minutes => [sum, count]
-     * @param array{0: float, 1: float, 2: float} $range    the week's low, high and step
+     * @param list<array{0: int, 1: float}> $minutes  [minute of the day, bpm], in time order
+     * @param array{0: float, 1: float, 2: float} $range the week's low, high and step
      */
-    function hydrate_training_heart_day(array $cfg, array $zones, string $date, int $back, array $buckets, int $bucket, array $range): array
+    function hydrate_training_heart_day(array $cfg, array $zones, string $date, int $back, array $minutes, array $range): array
     {
-        ksort($buckets);
         [$low, $high, $step] = $range;
         $y = static fn (float $v): float => area_chart_y($v, $low, $high);
 
@@ -376,10 +403,9 @@ if (!function_exists('hydrate_training')) {
         $values = [];
         $points = [];
         $zone   = [];
-        foreach ($buckets as $b => [$sum, $n]) {
-            $v        = $sum / $n;
-            $minute   = $b * $bucket;
-            $xs[]     = round(($minute + $bucket / 2) / 1440 * 100, 3);
+        foreach ($minutes as [$minute, $bpm]) {
+            $v        = (float) $bpm;
+            $xs[]     = round(($minute + 0.5) / 1440 * 100, 3);
             $values[] = $v;
             $z        = hydrate_training_zone($zones, $v);
             $zone[]   = $z;
@@ -387,7 +413,7 @@ if (!function_exists('hydrate_training')) {
         }
 
         $gap = ((int) $cfg['break']) / 1440 * 100;
-        [$ys, $paths] = area_chart_line($xs, $values, $y, $gap);
+        [$ys, $paths] = area_chart_line($xs, $values, $y, $gap, true);
 
         $ticks = [];
         for ($h = 0; $h < 24; $h += max(1, (int) $cfg['hours'])) {
@@ -438,8 +464,11 @@ if (!function_exists('hydrate_training')) {
             return [40.0, 160.0, 40.0];
         }
 
-        $min  = min($values) - 4;
-        $max  = max($values) + 4;
+        /* 47.0: room above the highest value in proportion to it (at least
+           5 bpm, 4% of it at a sprint's 190), and below the lowest: a peak
+           and its line never touch the edge, whatever the values. */
+        $min  = min($values) - max(4.0, 0.03 * min($values));
+        $max  = max($values) + max(5.0, 0.04 * max($values));
         $step = $max - $min > 100 ? 40.0 : ($max - $min > 40 ? 20.0 : 10.0);
         $low  = max(0.0, floor($min / $step) * $step);
         $high = ceil($max / $step) * $step;
@@ -614,7 +643,8 @@ if (!function_exists('hydrate_training')) {
         }
 
         $gap = 180 / $span * 100;                   // three minutes without one break the line
-        [$ys, $paths] = area_chart_line($xs, $values, static fn (float $v): float => area_chart_y($v, $low, $high), $gap);
+        /* 47.0: straight from minute to minute, as measured — no curve. */
+        [$ys, $paths] = area_chart_line($xs, $values, static fn (float $v): float => area_chart_y($v, $low, $high), $gap, true);
 
         return [
             'title'    => (string) $copy['heart_title'],

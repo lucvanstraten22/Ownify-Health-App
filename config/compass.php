@@ -31,7 +31,7 @@ declare(strict_types=1);
 return [
 
     'title'    => 'Gezondheidsscore',
-    'lede'     => 'Gezondheid',
+    'lede'     => 'Hoe het met je gezondheid gaat en wat er verandert.',
     'back'     => 'Overzicht',
     /* The Overzicht card opens the compass; this ends its spoken label. */
     'open'     => 'Open de Gezondheidsscore',

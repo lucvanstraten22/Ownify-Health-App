@@ -489,7 +489,7 @@ return [
                 'yesterday' => 'Gisteren',
                 'before'    => 'Eergisteren',
                 'days'   => 7,
-                'bucket' => 5,                      // minutes per point of a day
+                'bucket' => 5,                      // 47.0: minutes in which the lowest and highest minute are kept (min-max)
                 'break'  => 20,                     // minutes without a value that break the line
                 'hours'  => 3,                      // hours between the times under a day
                 'hint'   => 'Tik of schuif over de grafiek om je hartslag te zien.',
@@ -497,7 +497,7 @@ return [
                 'empty'  => 'Nog geen hartslag gemeten.',
                 'prev'   => 'Vorige dag',
                 'next'   => 'Volgende dag',
-                'aria_day' => 'Hartslag op %s, per 5 minuten',
+                'aria_day' => 'Hartslag op %s, minuut voor minuut',
                 /* Four zones (docs/TRAINING.md), a visual layer only: the
                    values are never changed by them. With a resting heart
                    rate (the median of the last `resting_days` days' resting

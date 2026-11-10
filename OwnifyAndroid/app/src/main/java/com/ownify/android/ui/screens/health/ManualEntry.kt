@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelSpec
+
 import com.ownify.android.ui.design.glassPress
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
@@ -229,16 +232,18 @@ fun ManualEntryPage(entry: ManualEntry, kind: String, scroll: ScrollState) {
                     }
                     EntryField(copy["start"].orEmpty()) { TimeControl(draft.start, copy["start"].orEmpty()) { draft.start = it } }
                     EntryField(copy["duration"].orEmpty(), unit = common["minutes"]) {
-                        JInput(
+                        WheelInput(
                             draft.minutes, { draft.minutes = it.filter(Char::isDigit).take(4) },
+                            WheelSpec(kind = "duration", min = 1.0, max = 1440.0, start = 30.0),
                             modifier = Modifier.weight(1f),
                             label = copy["duration"],
                             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
                         )
                     }
                     EntryField(copy["kcal"].orEmpty(), unit = common["kcal"]) {
-                        JInput(
+                        WheelInput(
                             draft.kcal, { draft.kcal = it.filter(Char::isDigit).take(5) },
+                            WheelSpec(min = 0.0, max = 5000.0, step = 10.0, start = 300.0, unit = common["kcal"].orEmpty()),
                             modifier = Modifier.weight(1f),
                             placeholder = common["optional"].orEmpty(),
                             label = copy["kcal"],

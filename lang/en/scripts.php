@@ -11,4 +11,6 @@ return [
     'Vriendverzoek sturen' => 'Send friend request',
     'Van %1$s t/m %2$s · nog %3$s' => 'From %1$s to %2$s · %3$s to go',
     'Opgeslagen. Je nieuwe voortgang verschijnt zodra de pagina ververst.' => 'Saved. Your new progress appears once the page refreshes.',
+    // 47.0: the wheel (assets/js/wheel-picker.js) — the keyboard back, for an exact value.
+    'Typen' => 'Type',
 ];

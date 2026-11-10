@@ -279,6 +279,7 @@ foreach ($data['navigation'] as $position => $item) {
     <script src="<?= e(asset('assets/js/notices.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/hero-ring.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/dashboard.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/wheel-picker.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/interactions.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/chart-axis.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/navigation-core.js')) ?>" defer></script>

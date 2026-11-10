@@ -178,9 +178,9 @@ internal object IngestPayload {
         interval("SleepSession", r, r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset)
             .put("stages", JSONArray(r.stages.map { stage ->
                 JSONObject()
-                    // Stages carry no offset of their own; they share the session's.
-                    .put("startTime", time(stage.startTime, r.startZoneOffset))
-                    .put("endTime", time(stage.endTime, r.endZoneOffset))
+                    // Stages carry no offset of their own: each moment its own (47.0).
+                    .put("startTime", time(stage.startTime, stageOffset(r, stage.startTime)))
+                    .put("endTime", time(stage.endTime, stageOffset(r, stage.endTime)))
                     .put("stage", stage.stage)
             }))
 
@@ -357,6 +357,25 @@ internal object IngestPayload {
     }
 
     private val TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+
+    /**
+     * The offset at [instant] inside sleep session [r]. A stage has no offset
+     * of its own, and a night across a change to or from summer time starts
+     * on one offset and ends on another: before 47.0 every stage's start had
+     * the night's first and every end its last, so in October a stage after
+     * 03:00 ended before it began on the clock. The phone's own zone is
+     * asked when it is the one the night was recorded in (its offsets at the
+     * night's start and end are the record's); otherwise, a night in another
+     * zone, the start's. The moment itself is right either way.
+     */
+    fun stageOffset(r: SleepSessionRecord, instant: Instant): ZoneOffset? =
+        stageOffset(r.startTime, r.startZoneOffset, r.endTime, r.endZoneOffset, instant, ZoneId.systemDefault())
+
+    fun stageOffset(start: Instant, startOffset: ZoneOffset?, end: Instant, endOffset: ZoneOffset?, instant: Instant, zone: ZoneId): ZoneOffset? {
+        if (startOffset == null || endOffset == null || startOffset == endOffset) return startOffset ?: endOffset
+        val rules = zone.rules
+        return if (rules.getOffset(start) == startOffset && rules.getOffset(end) == endOffset) rules.getOffset(instant) else startOffset
+    }
 
     /**
      * A name for the exercise type number, e.g. 56 -> "running": the public

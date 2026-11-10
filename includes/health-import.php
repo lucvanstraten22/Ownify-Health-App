@@ -283,10 +283,18 @@ if (!function_exists('health_import_records')) {
 
     /**
      * The session's stages, period by period (sleep_stages, migration 018):
-     * replaced as a whole, as the session itself is. Each period on the
-     * session's own clock, as its start and end are stored. Nothing is
-     * worked out from them here — the minutes per stage on the session are
-     * what the night, the score and the points read.
+     * replaced as a whole, as the session itself is. Nothing is worked out
+     * from them here — the minutes per stage on the session are what the
+     * night, the score and the points read.
+     *
+     * Every period on the night's start clock (47.0): the UTC offset the
+     * session started in, for the whole night, whatever offset a source gave
+     * a period. A night across a change to or from summer time (Europe/
+     * Amsterdam: the last Sunday of March and of October, at 02:00/03:00)
+     * so never jumps an hour inside it: its periods stay in order, the
+     * repeated hour in October is not two hours on the same clock, and their
+     * lengths are what they were. health_sleep_stage_periods() reads them
+     * back with the same offset; the labels are local time (docs/SLEEP.md).
      *
      * @param array<int,array{stage: int, started_at: string, ended_at: string}> $stages
      */
@@ -309,6 +317,8 @@ if (!function_exists('health_import_records')) {
 
         db_run('DELETE FROM sleep_stages WHERE sleep_session_id = ?', [(int) $session]);
 
+        $clock = new DateTimeZone($start->format('P'));
+        $rows  = [];
         foreach ($stages as $stage) {
             $from = health_import_time($stage['started_at'] ?? null);
             $to   = health_import_time($stage['ended_at'] ?? null);
@@ -318,9 +328,15 @@ if (!function_exists('health_import_records')) {
                 continue;
             }
 
+            $rows[] = [$from->getTimestamp(), $kind, $from->setTimezone($clock)->format('Y-m-d H:i:s'), $to->setTimezone($clock)->format('Y-m-d H:i:s')];
+        }
+
+        /* In the order they happened, so the rows' own order is the night's. */
+        usort($rows, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
+        foreach ($rows as [, $kind, $from, $to]) {
             db_run(
                 'INSERT INTO sleep_stages (sleep_session_id, stage, started_at, ended_at) VALUES (?, ?, ?, ?)',
-                [(int) $session, $kind, $from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')]
+                [(int) $session, $kind, $from, $to]
             );
         }
     }

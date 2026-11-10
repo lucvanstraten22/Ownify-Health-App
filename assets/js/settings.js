@@ -733,6 +733,7 @@
                     box.step = '1';
                     box.value = spec[part[0]] || '';
                     box.setAttribute('aria-label', part[0] === 'feet' ? T.t('Voet') : T.t('Inch'));
+                    if (window.OwnifyWheel) { window.OwnifyWheel.attach(box, { kind: 'number', min: part[2], max: part[3], 'default': part[0] === 'feet' ? 5 : 7, unit: part[1] }); }
                     var unitEl = document.createElement('span');
                     unitEl.className = 'field-editor__unit';
                     unitEl.textContent = part[1];
@@ -763,6 +764,8 @@
             if (spec.step) { input.step = spec.step; }
             // A decimal keypad for a weight, a plain one for a year.
             if (spec.type === 'number') { input.inputMode = 'decimal'; }
+            // 47.0: picked on a wheel, typed with Typen (assets/js/wheel-picker.js).
+            if (spec.type === 'number' && spec.wheel && window.OwnifyWheel) { window.OwnifyWheel.attach(input, spec.wheel); }
 
             /* A unit belongs beside the number, not in a label above it. */
             if (spec.unit) {

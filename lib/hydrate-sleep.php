@@ -254,7 +254,7 @@ if (!function_exists('hydrate_sleep')) {
         if ($staged !== [] && db_available()) {
             foreach (db_all(
                 'SELECT st.sleep_session_id AS id,
-                        SUM(CASE WHEN st.stage = 8 THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) AS seconds
+                        SUM(CASE WHEN st.stage = 8 AND st.ended_at > st.started_at THEN TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at) ELSE 0 END) AS seconds
                    FROM sleep_stages st
                    JOIN sleep_sessions s ON s.id = st.sleep_session_id
                   WHERE s.user_id = ? AND s.night_of BETWEEN ? AND ?

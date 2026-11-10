@@ -21,8 +21,9 @@ $today = $data['area']['rating_today'] ?? null;
 
     <div class="goal-entry">
         <label class="sr-only" for="nutrition-rating-value"><?= e($copy['label']) ?></label>
-        <input class="wizard__input goal-entry__input" type="number" min="1" max="10" step="1"
+        <input class="wizard__input goal-entry__input" type="text" autocomplete="off"
                inputmode="numeric" id="nutrition-rating-value" data-rating-value
+               data-wheel="<?= e(json_encode(['kind' => 'number', 'min' => 1, 'max' => 10, 'default' => $today ?? 7])) ?>"
                placeholder="<?= e($copy['placeholder']) ?>"
                value="<?= $today === null ? '' : e((string) $today) ?>">
         <button type="button" class="btn press" data-rating-save><?= e($copy['button']) ?></button>

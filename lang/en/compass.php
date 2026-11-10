@@ -137,4 +137,5 @@ return [
     '%s actieve dagen per week' => '%s active days a week',
     'Gemiddeld %d slagen per minuut' => '%d beats per minute on average',
     '%1$d van %2$d zware dagen gevolgd door een rustige dag' => '%1$d of %2$d hard days followed by an easy day',
+    'Hoe het met je gezondheid gaat en wat er verandert.' => 'How your health is doing and what is changing.',
 ];

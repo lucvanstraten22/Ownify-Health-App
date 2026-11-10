@@ -1,4 +1,8 @@
 package com.ownify.android.ui.screens.goals
+
+import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelSpec
+import com.ownify.android.ui.design.Wheel
 import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.Panes
 import com.ownify.android.ui.design.liquidGlass
@@ -719,8 +723,9 @@ private fun TargetRow(draft: Draft, goals: Goals, m: GoalMeasurement, label: Str
     Column {
         FieldLabel(label)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            JInput(
+            WheelInput(
                 draft.target, { draft.target = it.take(16) },
+                unitOf(draft.unit, draft, goals).let { u -> Wheel.around(OwnifyFormat.parseNumber(draft.target.ifEmpty { placeholder(draft, goals, m) }), u.decimals, u.label) },
                 modifier = Modifier.weight(1f),
                 placeholder = placeholder(draft, goals, m),
                 label = label,
@@ -772,8 +777,9 @@ private fun PeriodRow(draft: Draft, goals: Goals, m: GoalMeasurement) {
     Column {
         FieldLabel(words.target("period"))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            JInput(
+            WheelInput(
                 draft.frequency, { draft.frequency = it.filter(Char::isDigit).take(3) },
+                WheelSpec(min = 1.0, max = 31.0, start = OwnifyFormat.parseNumber(draft.frequency.ifEmpty { placeholder(draft, goals, m) }) ?: 3.0),
                 modifier = Modifier.width(80.dp),
                 placeholder = placeholder(draft, goals, m),
                 label = words.target("period"),
@@ -877,8 +883,9 @@ private fun Baseline(draft: Draft, goals: Goals) {
         else -> Column {
             FieldLabel(words["baseline_label"])
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                JInput(
+                WheelInput(
                     draft.baselineTyped, { draft.baselineTyped = it.take(16) },
+                    Wheel.around(OwnifyFormat.parseNumber(draft.baselineTyped), unit.decimals, unit.label),
                     modifier = Modifier.weight(1f),
                     label = words["baseline_label"],
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)

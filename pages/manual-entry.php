@@ -80,10 +80,12 @@ $attr = static fn (string $key): string => 'id="' . e($id . '-' . $key) . '" nam
                             <?php $field('start', $copy['start'],
                                 '<input class="wizard__input wizard__input--number" type="time" ' . $attr('start') . ' value="18:00" required>'); ?>
                             <?php $field('minutes', $copy['duration'],
-                                '<input class="wizard__input wizard__input--number" type="number" inputmode="numeric" min="1" max="1440" step="1" ' . $attr('minutes') . ' value="30" required>',
+                                '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" autocomplete="off" ' . $attr('minutes') . ' value="30" required'
+                                . ' data-wheel="' . e(json_encode(['kind' => 'duration', 'min' => 1, 'max' => 1440, 'default' => 30])) . '">',
                                 $common['minutes']); ?>
                             <?php $field('kcal', $copy['kcal'],
-                                '<input class="wizard__input wizard__input--number" type="number" inputmode="numeric" min="0" max="20000" step="1" ' . $attr('kcal') . ' placeholder="' . e($common['optional']) . '">',
+                                '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" autocomplete="off" ' . $attr('kcal') . ' placeholder="' . e($common['optional']) . '"'
+                                . ' data-wheel="' . e(json_encode(['kind' => 'number', 'min' => 0, 'max' => 5000, 'step' => 10, 'default' => 300, 'unit' => $common['kcal'] ?? 'kcal'])) . '">',
                                 $common['kcal']); ?>
                         <?php endif; ?>
                     </div>

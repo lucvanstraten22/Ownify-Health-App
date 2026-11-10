@@ -215,6 +215,7 @@ defaults:
 
 | What | Why |
 | --- | --- |
+| The wheel (47.0) is the system's `NumberPicker` in a system dialog, its value put in the field on Klaar (Typen, Annuleren beside it); the website's floats from the field in the Liquid Glass and writes the value as it turns | the web has no native picker for a number or a duration, so it draws its own; the app uses Android's own, in the dialog `TimePickerDialog` already uses for a clock time, and Android's pickers commit on OK (docs/THEME.md "The wheel") |
 | Pairing with a code lives in the sign-in panel ("Koppel met een code") and a paired-only phone sees the welcome screen with its sync status | the website has no pairing form (it hands out codes); pairing must keep working in the app |
 | Health Connect card in Apparaten & Gezondheid shows this phone's permissions, background access, last sync and how the last sync went | Android-only; the website's card is read-only for a phone source. Since 19.0 neither app has a "Nu synchroniseren" button: the phone syncs hourly and when access changes (WorkManager), a cloud source after connecting and hourly |
 | Pull to sync (all five pages) also syncs this phone's Health Connect (OwnifySync.pull), and its tick is Android's own haptic (`GESTURE_THRESHOLD_ACTIVATE` / `CONFIRM`) | a browser cannot reach the phone's Health Connect, and has only `navigator.vibrate` (none in Safari): the website asks the cloud sources and refreshes, and says "Bijgewerkt" when nothing gave new data |

@@ -150,6 +150,7 @@ $source  = $connect['source'];
                                            <?= isset($input['max']) ? 'max="' . e((string) $input['max']) . '"' : '' ?>
                                            <?= isset($input['step']) ? 'step="' . e((string) $input['step']) . '"' : '' ?>
                                            <?= $input['type'] === 'number' ? 'inputmode="decimal"' : '' ?>
+                                           <?= isset($input['wheel']) ? 'data-wheel="' . e(json_encode($input['wheel'], JSON_UNESCAPED_UNICODE)) . '"' : '' ?>
                                            aria-describedby="<?= e($id) ?>-reason">
                                     <?php if (($input['unit'] ?? '') !== ''): ?>
                                         <span class="wizard__suffix"><?= e($input['unit']) ?></span>
@@ -238,6 +239,7 @@ $source  = $connect['source'];
     <?php /* A wide screen: this page as a phone shows it, in an iPhone. */ ?>
     <?php component('phone-simulator', $data); ?>
 
+    <script src="<?= e(asset('assets/js/wheel-picker.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/goal-wizard.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/setup.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/phone-sim.js')) ?>" defer></script>

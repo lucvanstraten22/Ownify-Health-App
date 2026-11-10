@@ -243,3 +243,12 @@
    A session's own page
    -------------------------------------------------------------------------- */
 .training-session-page__time { font-variant-numeric: tabular-nums; }
+
+/* 47.0: a day's hours where they fit. Eight times "00:00" do not fit side
+   by side under a phone-wide chart (the first was drawn over "03:00"): there,
+   every six hours, still evenly spaced, as the Android app has it on a
+   narrow phone. */
+.heart-chart__chart { container-type: inline-size; }
+@container (max-width: 480px) {
+    [data-heart-day] .chart__axis .chart__tick:nth-child(even) { display: none; }
+}

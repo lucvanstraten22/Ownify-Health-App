@@ -1,4 +1,8 @@
 package com.ownify.android.ui.screens.settings
+
+import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelSpec
+import androidx.compose.ui.focus.FocusRequester
 import com.ownify.android.ui.design.NoteTone
 import com.ownify.android.ui.design.note
 
@@ -256,17 +260,19 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                 "date" -> DateControl(input, value, field.label) { value = it }
                 "feet_inches" -> {
                     // Feet and inches side by side, as the website's editor.
-                    val first = rememberFocusOnOpen()
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                        JInput(
+                        // 47.0: on the wheel, as the website's (Wheel.kt).
+                        WheelInput(
                             feet, { feet = it.filter(Char::isDigit).take(1) },
-                            modifier = Modifier.weight(1f).focusRequester(first),
+                            WheelSpec(min = 2.0, max = 8.0, start = 5.0, unit = "ft"),
+                            modifier = Modifier.weight(1f),
                             label = tr("Voet"),
                             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
                         )
                         T("ft", OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary))
-                        JInput(
+                        WheelInput(
                             inches, { inches = it.filter(Char::isDigit).take(2) },
+                            WheelSpec(min = 0.0, max = 11.0, start = 7.0, unit = "in"),
                             modifier = Modifier.weight(1f),
                             label = tr("Inch"),
                             keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
@@ -277,9 +283,16 @@ fun FieldEditor(overlay: Overlay.EditField, data: AppData) {
                 }
                 else -> {
                     // open(): the field takes focus, so the keyboard is there.
-                    val first = rememberFocusOnOpen()
+                    // A measurement is picked on the wheel (47.0): no keyboard on opening.
+                    val first = if (input.wheel == null) rememberFocusOnOpen() else remember { FocusRequester() }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                        JInput(
+                        if (input.wheel != null) WheelInput(
+                            value, { value = it.take(input.maxLength ?: 120) }, input.wheel,
+                            modifier = Modifier.weight(1f), focus = first,
+                            label = field.label,
+                            keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                            actions = KeyboardActions(onDone = { if (!saving) save() })
+                        ) else JInput(
                             value, { value = it.take(input.maxLength ?: 120) },
                             modifier = Modifier.weight(1f).focusRequester(first),
                             label = field.label,

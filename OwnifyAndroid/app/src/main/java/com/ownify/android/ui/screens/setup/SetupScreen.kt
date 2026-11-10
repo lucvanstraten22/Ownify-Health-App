@@ -1,5 +1,8 @@
 package com.ownify.android.ui.screens.setup
 
+import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelSpec
+
 import com.ownify.android.ui.design.note
 
 import com.ownify.android.i18n.tr
@@ -513,9 +516,10 @@ private fun ProfileField(field: SetupField, value: String, onChange: (String, St
             }
             input.type == "date" -> DateControl(input, value, field.label) { onChange(field.key, it) }
             else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                JInput(
+                WheelInput(
                     value,
                     { onChange(field.key, it.filter { c -> c.isDigit() || c == ',' || c == '.' }.take(6)) },
+                    input.wheel ?: WheelSpec(),
                     modifier = Modifier.weight(1f),
                     label = field.label,
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),

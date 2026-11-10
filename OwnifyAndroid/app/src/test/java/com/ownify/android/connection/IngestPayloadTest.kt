@@ -136,4 +136,31 @@ class IngestPayloadTest {
         val huge = listOf(JSONObject().put("pad", "x".repeat(1000)), JSONObject().put("n", 1))
         assertEquals(listOf(1, 1), IngestPayload.batches(huge, size = 500, bytes = 350).map { it.length() })
     }
+
+    @Test
+    fun `sleep stages across a change of summer time - each moment its own offset (47_0)`() {
+        val ams = java.time.ZoneId.of("Europe/Amsterdam")
+        val cest = java.time.ZoneOffset.ofHours(2)
+        val cet = java.time.ZoneOffset.ofHours(1)
+        fun at(utc: String) = java.time.Instant.parse(utc)
+        fun offset(start: String, so: java.time.ZoneOffset, end: String, eo: java.time.ZoneOffset, instant: String) =
+            IngestPayload.stageOffset(at(start), so, at(end), eo, at(instant), ams)
+
+        // 25 October 2026: 23:00 CEST to 07:00 CET. Before 47.0 a stage end
+        // after the change got +01:00 and its start +02:00.
+        val oct = listOf("2026-10-24T21:00:00Z", "2026-10-25T06:00:00Z")
+        assertEquals("02:10 CEST", cest, offset(oct[0], cest, oct[1], cet, "2026-10-25T00:10:00Z"))
+        assertEquals("02:20 CET, the hour again", cet, offset(oct[0], cest, oct[1], cet, "2026-10-25T01:20:00Z"))
+        assertEquals("2026-10-25T02:20:00+01:00", IngestPayload.time(at("2026-10-25T01:20:00Z"), cet))
+
+        // 29 March 2026: 23:00 CET to 07:00 CEST.
+        val mar = listOf("2026-03-28T22:00:00Z", "2026-03-29T05:00:00Z")
+        assertEquals("01:30 CET", cet, offset(mar[0], cet, mar[1], cest, "2026-03-29T00:30:00Z"))
+        assertEquals("03:30 CEST", cest, offset(mar[0], cet, mar[1], cest, "2026-03-29T01:30:00Z"))
+
+        // A night on one offset, or in another zone than the phone's: as it was.
+        assertEquals(cet, offset("2026-11-07T22:00:00Z", cet, "2026-11-08T06:00:00Z", cet, "2026-11-08T01:00:00Z"))
+        val ny = java.time.ZoneOffset.ofHours(-4)
+        assertEquals(ny, offset("2026-11-01T03:00:00Z", ny, "2026-11-01T11:00:00Z", java.time.ZoneOffset.ofHours(-5), "2026-11-01T08:00:00Z"))
+    }
 }

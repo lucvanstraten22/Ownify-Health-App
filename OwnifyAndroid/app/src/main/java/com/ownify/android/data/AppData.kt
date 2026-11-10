@@ -2342,7 +2342,8 @@ data class Goal(
                 entry = o.obj("entry")?.let {
                     GoalEntry(
                         it.str("kind").orEmpty(), it.str("label").orEmpty(), it.str("note"),
-                        it.str("button"), it.str("placeholder"), it.bool("done"), it.str("undo"), it.str("unit")
+                        it.str("button"), it.str("placeholder"), it.bool("done"), it.str("undo"), it.str("unit"),
+                        com.ownify.android.ui.design.WheelSpec.parse(it.optJSONObject("wheel"))
                     )
                 },
                 sourceList = o.arr("source_list").map {
@@ -2381,7 +2382,9 @@ data class GoalEntry(
     val placeholder: String?,
     val done: Boolean,
     val undo: String?,
-    val unit: String?
+    val unit: String?,
+    /** 47.0: the wheel its number is picked on (hydrate_goal_wheel()). */
+    val wheel: com.ownify.android.ui.design.WheelSpec? = null
 )
 
 data class GoalSourceLine(val key: String, val label: String, val note: String, val icon: String, val accent: String)
@@ -2800,7 +2803,9 @@ data class FieldInput(
     val feet: String = "",
     val inches: String = "",
     /** Several boxes saved together (`fields`: Voor- en achternaam), each posted under its own name. */
-    val inputs: List<FieldPart> = emptyList()
+    val inputs: List<FieldPart> = emptyList(),
+    /** 47.0: a measurement's wheel (lib/settings.php). */
+    val wheel: com.ownify.android.ui.design.WheelSpec? = null
 ) {
     companion object {
         fun parse(o: JSONObject) = FieldInput(
@@ -2808,7 +2813,8 @@ data class FieldInput(
             o.int("maxlength"), o.text("min"), o.text("max"),
             o.obj("options").stringMap().entries.map { it.key to it.value },
             o.str("post_unit").orEmpty(), o.text("feet").orEmpty(), o.text("inches").orEmpty(),
-            o.arr("inputs").map(FieldPart::parse)
+            o.arr("inputs").map(FieldPart::parse),
+            com.ownify.android.ui.design.WheelSpec.parse(o.optJSONObject("wheel"))
         )
     }
 }

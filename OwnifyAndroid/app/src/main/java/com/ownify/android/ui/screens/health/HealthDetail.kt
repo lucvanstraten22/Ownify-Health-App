@@ -1,4 +1,7 @@
 package com.ownify.android.ui.screens.health
+
+import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelSpec
 import com.ownify.android.ui.design.well
 import com.ownify.android.i18n.trf
 import com.ownify.android.i18n.tr
@@ -218,9 +221,10 @@ private fun NutritionRating(area: Area, copy: RatingCopy) {
 
         // .goal-entry: the number and its button on one line.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            JInput(
+            WheelInput(
                 value, { value = it.filter(Char::isDigit).take(4) },
-                modifier = Modifier.weight(1f).focusRequester(field),
+                WheelSpec(min = 1.0, max = 10.0, start = value.toDoubleOrNull() ?: 7.0),
+                modifier = Modifier.weight(1f), focus = field,
                 placeholder = copy.placeholder,
                 label = copy.label,
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),

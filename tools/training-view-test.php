@@ -236,8 +236,8 @@ check('today and the six days before it, named: Vandaag, Gisteren, Eergisteren, 
 check('00:00 to 24:00, the hours every three, never "Vandaag" under it',
     array_column($d1['axis'], 'label') === ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00']
     && $d1['axis'][0]['x'] == 0 && $d1['axis'][4]['x'] == 50, json_encode($d1['axis']));
-check('each five minutes with a heart rate a point in the middle of them: 01:00 at 4,34%, six in all',
-    $d1['x'][0] == round(62.5 / 1440 * 100, 3) && count($d1['x']) === 6, json_encode($d1['x']));
+check('each measured minute at its own time, not a five-minute mean: 01:00 at 4,20%, six in all',
+    $d1['x'][0] == round(60.5 / 1440 * 100, 3) && count($d1['x']) === 6, json_encode($d1['x']));
 check('  the reading: its time, its zone and its bpm', $d1['points'][2] === ['10:00', 'Zone 1', null, '72 bpm'], json_encode($d1['points'][2]));
 check('a line through the points no more than twenty minutes apart: 10:00, 10:05, 10:10 — one curve',
     count($d1['lines'][0]['line']) === 1, json_encode($d1['lines'][0]['line']));

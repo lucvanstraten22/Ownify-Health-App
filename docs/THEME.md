@@ -365,6 +365,32 @@ app each remember their own.
   and the bars, the window behind the app and — on Android 13 and later — the
   next start's splash follow it.
 
+## The wheel (47.0)
+
+A number or a duration picked as a phone picks one, the same on both apps:
+
+- **A clock time is the platform's own picker**: `<input type="time">` on
+  the web (an iPhone's wheel, Android's dialog), `TimePickerDialog` in the
+  app. Nothing of ours.
+- **A number or a duration** — nothing native exists for these on the web,
+  so `assets/js/wheel-picker.js`: the one Liquid Glass floating from the
+  field (`--lg-body-thick`, `--lg-shadow-float`), a column per part (hours
+  and minutes; the whole and one decimal), native scroll with snapping for
+  the phone's own momentum, a Well band (`--fill` 0.07) on the picked row,
+  the value in the field as it turns. Typen (a glass chip) gives the
+  keyboard back for an exact value; Klaar (the green glass) closes it. On a
+  computer the field can be typed in all along.
+- **In the app** it is the system's own `NumberPicker`, a column per part,
+  in the system dialog `TimePickerDialog` uses (`ui/design/Wheel.kt`
+  `WheelInput`): Klaar, Typen, Annuleren.
+- Where it is: Training invoeren (Duur from 30 min, Verbrande calorieën),
+  the Voeding rating (1–10), a goal's new value and the goal wizard's
+  numbers (in the unit on screen, with its decimals), lengte and gewicht in
+  Instellingen and the first-run setup (from 170 cm, 70 kg; feet and inches
+  each a column). A spec beside the field says its range, step, decimals
+  and start (`data-wheel`, `wheel` in the JSON). Values are stored as
+  before: minutes, the person's unit converted once where it is saved.
+
 ## Adding something
 
 - Use a token or a role. Never write `rgba(255, 255, 255, …)`, `#000` or the

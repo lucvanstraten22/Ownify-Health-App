@@ -172,6 +172,7 @@ $height = 96.0;
                                 <input class="wizard__input goal-entry__input" type="text" inputmode="decimal"
                                        id="goal-value-<?= e($id) ?>" autocomplete="off" enterkeyhint="done"
                                        data-goal-value="<?= e($id) ?>"
+                                       <?= isset($entry['wheel']) ? 'data-wheel="' . e(json_encode($entry['wheel'], JSON_UNESCAPED_UNICODE)) . '"' : '' ?>
                                        placeholder="<?= e($entry['placeholder'] ?? $entry['label']) ?>">
                                 <button type="button" class="glass glass--cta goal-entry__save press" data-goal-save="<?= e($id) ?>">
                                     <?= e($entry['button'] ?? $copy['manual_save'] ?? t('Opslaan')) ?>

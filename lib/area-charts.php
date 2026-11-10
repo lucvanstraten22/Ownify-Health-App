@@ -447,7 +447,7 @@ if (!function_exists('area_charts')) {
      *
      * @return array{0: list<?float>, 1: list<string>}
      */
-    function area_chart_line(array $x, array $values, callable $y, ?float $gap = null): array
+    function area_chart_line(array $x, array $values, callable $y, ?float $gap = null, bool $straight = false): array
     {
         $ys   = [];
         $runs = [];
@@ -470,7 +470,14 @@ if (!function_exists('area_charts')) {
         }
         if ($run !== []) { $runs[] = $run; }
 
-        return [$ys, array_values(array_map('goal_chart_monotone', array_filter($runs, static fn ($r) => count($r) > 1)))];
+        /* $straight (47.0, measured series such as heart rate minute by
+           minute): straight from point to point — a curve between two
+           readings would draw values nobody measured. */
+        $draw = $straight
+            ? static fn (array $run): string => 'M' . implode(' L', array_map(static fn (array $p): string => round($p[0], 2) . ' ' . round($p[1], 2), $run))
+            : 'goal_chart_monotone';
+
+        return [$ys, array_values(array_map($draw, array_filter($runs, static fn ($r) => count($r) > 1)))];
     }
 
     /**

@@ -98,15 +98,17 @@
     --training: #C97867;
     --training-light: #D99586;
 
-    /* The heart rate's four zones (docs/TRAINING.md): quiet grey low, the
-       Training colour higher, its clearest, brightest orange at the top —
-       zone 3 is the Training colour itself. Graphics only, and never alone:
-       a zone is always named beside its colour. Mirrored in OwnifyTheme.kt
+    /* The heart rate's four zones (docs/TRAINING.md), 47.0: the intensity
+       spectrum every sports watch uses — calm blue, green, amber, red — so
+       each zone is told apart at a glance (the warm greys and oranges before
+       were too close), at least 3:1 on every ground, and apart for every
+       kind of colour vision. Graphics only, and never alone: a zone is
+       always named beside its colour. Mirrored in OwnifyTheme.kt
        (Ownify.zone). */
-    --zone-1: #8B8789;
-    --zone-2: #A9867F;
-    --zone-3: var(--training);
-    --zone-4: #E8845E;
+    --zone-1: #9CBBD8;
+    --zone-2: #4FAE84;
+    --zone-3: #E6B64A;
+    --zone-4: #E5544A;
 
     /* --- score colours ---------------------------------------------------
        HOW HIGH a score is — the same for every category. Which band a
@@ -1026,10 +1028,11 @@ button {
     --ring-tail: var(--health);
     --attention: #7A6731;
 
-    /* The zones on white: the grey and the top orange deeper, to 3:1. */
-    --zone-1: #9A9597;
-    --zone-2: #B98A80;
-    --zone-4: #D66A44;
+    /* The zones on white: the same four, deeper, to 3:1. */
+    --zone-1: #5B8DB8;
+    --zone-2: #2C8A60;
+    --zone-3: #A87A10;
+    --zone-4: #A8301F;
 
     /* The same three tiers, with the contrast the dark theme gives them:
        secondary 6.7–7.3:1, muted 5.0–5.5:1, faint (graphics only) ~3.3:1. */

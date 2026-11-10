@@ -506,6 +506,7 @@
         input.setAttribute('data-wizard-field', field);
         input.value = value;
         input.placeholder = placeholder(m);
+        wheel(input, unitOf(draft.unit), value || placeholder(m));
         row.appendChild(input);
 
         if (withUnit) { row.appendChild(unitSelect(m)); }
@@ -530,6 +531,20 @@
         var key = draft.variant === 'period' ? 'period' : draft.type;
         var notes = m.suggestion && m.suggestion.notes;
         return (notes && notes[key]) || '';
+    }
+
+    /**
+     * 47.0: a goal's number on the wheel (assets/js/wheel-picker.js), in the
+     * unit on screen with its decimals (one column of them at most), from
+     * what is typed or suggested; up to three times that, Typen beyond it.
+     */
+    function wheel(input, unit, around) {
+        if (!window.OwnifyWheel) { return; }
+        var start = T.parseNumber(around);
+        window.OwnifyWheel.attach(input, {
+            kind: 'number', min: 0, max: Math.max(10, Math.ceil((start || 10) * 3)), step: 1,
+            decimals: Math.min(unit.decimals, 1), 'default': start === null ? 1 : start, unit: unit.label
+        });
     }
 
     /** The placeholder in the unit on screen: 75 kg is 165 lb. */
@@ -582,6 +597,7 @@
         input.setAttribute('data-wizard-field', 'frequency');
         input.value = draft.frequency;
         input.placeholder = placeholder(m);
+        if (window.OwnifyWheel) { window.OwnifyWheel.attach(input, { kind: 'number', min: 1, max: 31, 'default': T.parseNumber(draft.frequency || placeholder(m)) || 3 }); }
         row.appendChild(input);
         row.appendChild(el('span', 'goal-row__word', m.count || T.t('keer')));
         row.appendChild(el('span', 'goal-row__word goal-row__word--quiet', words.per));
@@ -733,6 +749,7 @@
         input.autocomplete = 'off';
         input.setAttribute('data-wizard-field', 'baseline');
         input.value = draft.baselineTyped;
+        wheel(input, unit, draft.baselineTyped || (current() ? placeholder(current()) : ""));
         line.appendChild(input);
         line.appendChild(el('span', 'goal-row__word', unit.label));
         wrap.appendChild(line);

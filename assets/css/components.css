@@ -2044,7 +2044,8 @@ a.settings-row { color: inherit; text-decoration: none; }
         border-color var(--transition-fast);
 }
 
-:is(.glass.press:not(.goal-type, :disabled, [aria-disabled="true"]), .pill.press, .account__close.press, .ai-round.press):active {
+/* Not the floating +: its press keeps it on the right edge (.fab:active, below). */
+:is(.glass.press:not(.goal-type, .fab, :disabled, [aria-disabled="true"]), .pill.press, .account__close.press, .ai-round.press):active {
     transform: scale(var(--glass-grow));
     box-shadow: var(--lg-shadow), var(--lg-glint-lit);
     transition-duration: var(--glass-spring-dur), var(--press-in), var(--transition-fast), var(--transition-fast);
@@ -2135,3 +2136,106 @@ a.settings-row { color: inherit; text-decoration: none; }
 
 /* The field leaves the button the same room the search field does. */
 .password-field > input { padding-right: 44px; }
+
+/* --------------------------------------------------------------------------
+   The wheel (47.0, assets/js/wheel-picker.js, docs/THEME.md)
+   --------------------------------------------------------------------------
+   A number or a duration picked as a phone picks one: the one Liquid Glass,
+   floating from the field it fills, its columns turning under the finger,
+   the middle row a Well band. Native scroll with snapping, so it has the
+   phone's own momentum. The app: ui/design/Wheel.kt. */
+.wheel {
+    --wheel-row: 36px;
+
+    position: fixed;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--lg-face), var(--lg-body-thick);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow-float), var(--lg-glint);
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity var(--transition-fast), transform var(--glass-spring-dur) var(--glass-spring);
+}
+
+.wheel.is-open { opacity: 1; transform: none; }
+.wheel.is-closing { opacity: 0; transform: scale(0.98); transition-duration: var(--transition-fast); }
+
+.wheel__columns {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.wheel__column {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.wheel__list {
+    height: calc(var(--wheel-row) * 5);
+    min-width: 3.2em;
+    padding-block: calc(var(--wheel-row) * 2);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    touch-action: pan-y;
+    -webkit-mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
+    mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent);
+    outline: none;
+    border-radius: var(--radius-sm);
+}
+
+.wheel__list::-webkit-scrollbar { display: none; }
+.wheel__list:focus-visible { box-shadow: 0 0 0 2px var(--health-strong); }
+
+.wheel__item {
+    height: var(--wheel-row);
+    display: grid;
+    place-items: center;
+    scroll-snap-align: center;
+    font-size: var(--fs-title);
+    letter-spacing: var(--tracking-title);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+}
+
+.wheel__unit {
+    font-size: var(--fs-subhead);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* The row the wheel stands on. */
+.wheel__band {
+    position: absolute;
+    inset: calc(var(--wheel-row) * 2) 0 auto;
+    height: var(--wheel-row);
+    border-radius: var(--radius-sm);
+    background: rgba(var(--fill), calc(0.07 * var(--fill-k)));
+    pointer-events: none;
+}
+
+.wheel__foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wheel, .wheel.is-closing { transform: none; transition: opacity var(--transition-fast); }
+}
+:root[data-motion="reduce"] .wheel, :root[data-motion="reduce"] .wheel.is-closing { transform: none; transition: opacity var(--transition-fast); }

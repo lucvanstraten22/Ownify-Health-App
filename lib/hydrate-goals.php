@@ -139,6 +139,21 @@ if (!function_exists('hydrate_goals')) {
      * kept — so a Mijlpaal, a daily Streak, a Streak per week and an Optellen
      * read as the four different things they are.
      */
+    /**
+     * 47.0: the wheel a goal's new value is picked on (assets/js/wheel-picker.js,
+     * the app's ui/design/Wheel.kt), in the unit on screen with one column of
+     * decimals at most, starting at $start and going up to three times it.
+     */
+    function hydrate_goal_wheel(array $unit, float $start): array
+    {
+        $decimals = min(1, (int) ($unit['decimals'] ?? 0));
+
+        return [
+            'kind' => 'number', 'min' => 0, 'max' => (int) max(10, ceil(abs($start) * 3)), 'step' => 1,
+            'decimals' => $decimals, 'default' => round($start, $decimals), 'unit' => (string) $unit['label'],
+        ];
+    }
+
     function hydrate_goal_words(array $row, array $progress, array $measurement, array $unit, DateTimeImmutable $today): array
     {
         $type     = (string) $row['goal_type'];
@@ -182,6 +197,7 @@ if (!function_exists('hydrate_goals')) {
                         'button'      => t('Opslaan'),
                         'placeholder' => tf('In %s', $unit['label']),
                         'unit'        => $unit['label'],
+                        'wheel'       => hydrate_goal_wheel($unit, goal_from_stored((float) ($progress['current'] ?? $baseline), $unit)),
                         'note'        => t('Je laatste meting telt.'),
                     ];
                 }
@@ -199,6 +215,7 @@ if (!function_exists('hydrate_goals')) {
                         'button'      => t('Toevoegen'),
                         'placeholder' => tf('In %s', $unit['label']),
                         'unit'        => $unit['label'],
+                        'wheel'       => hydrate_goal_wheel($unit, max(1.0, round(goal_from_stored((float) $target, $unit) / 10))),
                         'note'        => t('Elke invoer telt op bij je totaal.'),
                     ];
                 }

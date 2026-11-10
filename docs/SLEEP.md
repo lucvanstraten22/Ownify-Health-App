@@ -17,6 +17,35 @@ Slaap ──┬── the score                    (unchanged)
 Nothing here is a new calculation, and nothing is advice. Every value is
 one Ownify already recorded. A day without one is a gap, never a 0.
 
+## A night across a change of summer time (47.0)
+
+Europe/Amsterdam goes to summer time on the last Sunday of March (02:00
+becomes 03:00) and back on the last Sunday of October (03:00 becomes
+02:00, so 02:00–03:00 happens twice). A night across either:
+
+- **the stages are kept on the night's start clock**
+  (`health_import_sleep_stages()`): the UTC offset the session started in,
+  for every period of the night, whatever offset a source gave it. So a
+  night never jumps an hour inside it, its periods stay in order, the hour
+  that comes twice is not two hours on one clock, and their lengths (also
+  `TIMESTAMPDIFF` in SQL) are exact. `health_sleep_stage_periods()` reads
+  them back with the same offset; the timeline's labels are local time
+  (02:40–02:20 across the October change, 01:30–03:30 across March's).
+- **The app** sends each stage's start and end with the offset of its own
+  moment (`IngestPayload.stageOffset()`). Before 47.0 every start had the
+  night's first offset and every end its last: in October a stage after
+  03:00 ended before it began on the clock and fell off the timeline.
+- **Nights stored before 47.0** are not changed in the database. When one
+  crosses a change and its periods, read as stored, cannot be (one ending
+  before it starts, two on top of each other, one outside the night), it is
+  read the way it was written — the app's ends on the night's last offset,
+  or Google Health's each on its own local clock — if exactly one of those
+  makes a night that can be (and reaches its end). A night that could be
+  read either way is shown as stored: nothing is guessed. The minutes per
+  stage, the score and the morning a night is filed under were always
+  worked out from the real moments and were never wrong.
+- `tools/sleep-dst-test.php` covers both changes of 2026.
+
 ## Slaapverloop — the night, and the nights over a period (40.1)
 
 Training's heart-rate switch, arrows and swipe (`training.js`,

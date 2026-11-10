@@ -118,7 +118,7 @@ return [
     'Nog geen hartslag gemeten.' => 'No heart rate measured yet.',
     'Vorige dag' => 'Previous day',
     'Volgende dag' => 'Next day',
-    'Hartslag op %s, per 5 minuten' => 'Heart rate on %s, per 5 minutes',
+    'Hartslag op %s, minuut voor minuut' => 'Heart rate on %s, minute by minute',
     'Op basis van je rusthartslag (%1$d bpm) en maximale hartslag (%2$d bpm).' => 'Based on your resting heart rate (%1$d bpm) and maximum heart rate (%2$d bpm).',
     'Op basis van je maximale hartslag (%d bpm).' => 'Based on your maximum heart rate (%d bpm).',
     'Zones volgen zodra je geboortedatum of een training met hartslag bekend is.' => 'Zones follow once your date of birth or a workout with heart rate is known.',

@@ -101,10 +101,15 @@ One day on the clock, not a span of days (docs/CHARTS.md):
 
 - **always the whole day**, 00:00 at the left edge, 24:00 at the right —
   never from the first measurement;
-- **a point per five minutes** that had a heart rate: the mean of its
-  minutes, at the middle of the five; a line through points no more than
+- **the measured minutes themselves** (47.0): per five minutes the lowest
+  and the highest minute, each at its own time and with its own bpm — no
+  mean of means, so a peak or a dip is drawn as it was; straight lines
+  between them (no smoothing curve); a line through points no more than
   20 minutes apart, a dot where one stands alone, a gap where none was
   measured;
+- **its height from what is drawn**, with room above and below in
+  proportion (at least 5 bpm above, 4 below), so nothing is ever cut off —
+  a run at 197 bpm has its levels to 200;
 - **the hours** every three: 00:00, 03:00 … 21:00;
 - **the day's name above it** — Vandaag, Gisteren, Eergisteren, 5 oktober —
   never under it;
@@ -164,9 +169,10 @@ based on ("Op basis van je rusthartslag (55 bpm) en maximale hartslag
 (183 bpm).").
 
 **How they show**: the line takes each zone's colour where it runs through
-it — quiet grey in zone 1, through a greyed Training colour and the
-Training colour, to the clearest, brightest Training orange in zone 4
-(`--zone-1` … `--zone-4`, Ownify.zone()); a faint band marks zones 2 to 4
+it — since 47.0 the intensity spectrum of a sports watch: calm blue in
+zone 1, green, amber, red in zone 4 (`--zone-1` … `--zone-4`,
+Ownify.zone(); on white the same four, deeper, each at least 3:1 on the
+ground and apart for colour-blind eyes too); a faint band marks zones 2 to 4
 behind it; the zones are named with their ranges under the chart; and the
 reading names the zone with the time and the bpm ("14:35 · Zone 3 ·
 Hartslag 142 bpm"), so no zone is told by colour alone.

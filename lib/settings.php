@@ -569,6 +569,16 @@ if (!function_exists('settings_field_input')) {
         $input['value'] = $raw === null ? '' : (string) $raw;
         $input['unit']  = isset($field['unit']) ? units_label((string) $field['unit']) : '';
 
+        /* 47.0: a measurement is picked on the wheel (assets/js/wheel-picker.js),
+           from a sensible start when nothing is stored: 170 cm, 70 kg. */
+        if ($input['type'] === 'number') {
+            $start = ['height' => units_out(170, 'cm'), 'weight' => units_out(70, 'kg')][$key] ?? $input['min'];
+            $input['wheel'] = [
+                'kind' => 'number', 'min' => $input['min'], 'max' => $input['max'], 'step' => 1,
+                'decimals' => (float) $input['step'] < 1 ? 1 : 0, 'default' => round((float) $start), 'unit' => $input['unit'],
+            ];
+        }
+
         /* A measurement starts from its stored value, shown in the person's
            units, and says which unit comes back (`<key>_unit`), so the
            endpoint converts exactly once. */
