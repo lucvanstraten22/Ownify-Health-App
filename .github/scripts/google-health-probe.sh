@@ -100,6 +100,22 @@ foreach (\$rows as \$i => \$r) {
     'workouts' => (int) db_value('SELECT COUNT(*) FROM workouts WHERE source_id = ?', [\$src]),
 ];
 
+/* Stored nights of the last 30 days per source, averages only (no person): how
+   much of each stage, and what was stored as awake. */
+\$out['stored_sleep_last_30_days'] = [];
+foreach (db_all("SELECT COALESCE(ds.code, 'none') AS source, COUNT(*) AS nights, ROUND(AVG(s.awake_minutes)) AS awake_stored,
+                        ROUND(AVG(s.duration_minutes)) AS asleep, ROUND(AVG(s.time_in_bed_minutes)) AS in_bed, ROUND(AVG(s.efficiency_pct), 1) AS efficiency
+                   FROM sleep_sessions s LEFT JOIN data_sources ds ON ds.id = s.source_id
+                  WHERE s.night_of >= CURDATE() - INTERVAL 30 DAY GROUP BY ds.code") as \$r) {
+    \$per = [];
+    foreach (db_all("SELECT st.stage, ROUND(SUM(TIMESTAMPDIFF(SECOND, st.started_at, st.ended_at)) / 60 / COUNT(DISTINCT s.id)) AS minutes_per_night
+                       FROM sleep_stages st JOIN sleep_sessions s ON s.id = st.sleep_session_id LEFT JOIN data_sources ds ON ds.id = s.source_id
+                      WHERE s.night_of >= CURDATE() - INTERVAL 30 DAY AND COALESCE(ds.code, 'none') = ? GROUP BY st.stage", [\$r['source']]) as \$x) {
+        \$per['stage_' . \$x['stage']] = (int) \$x['minutes_per_night'];
+    }
+    \$out['stored_sleep_last_30_days'][] = \$r + ['stage_minutes_per_night_with_stages' => \$per];
+}
+
 /* PHP's error log: the last lines about Google Health, and every fatal error. */
 \$log = (string) ini_get('error_log');
 foreach (array_merge(\$log !== '' ? [\$log] : [], (array) @glob(dirname(__DIR__) . '/logs/*error*.log')) as \$candidate) {
@@ -146,6 +162,34 @@ if ('$api' === '1' && \$first !== null) {
                 \$mapped = 0;
                 foreach (array_slice(\$points, 0, 50) as \$p) { if (is_array(\$p) && google_health_map_point(\$type, \$p) !== null) { \$mapped++; } }
                 \$entry['mapped_of_first_50'] = \$type === 'heart-rate' ? 'n/a' : \$mapped;
+                /* Sleep: Google's own sums per night, numbers only (restless vs awake). */
+                if (\$type === 'sleep') {
+                    \$entry['nights'] = [];
+                    foreach (array_slice(\$points, 0, 14) as \$p) {
+                        \$sl = (array) (\$p['sleep'] ?? []);
+                        \$sum = (array) (\$sl['summary'] ?? []);
+                        \$own = [];
+                        foreach ((array) (\$sl['stages'] ?? []) as \$st) {
+                            \$a = strtotime((string) (\$st['startTime'] ?? '')); \$b = strtotime((string) (\$st['endTime'] ?? ''));
+                            if (\$a && \$b) { \$k = (string) (\$st['type'] ?? '?'); \$own[\$k] = (\$own[\$k] ?? 0) + (int) round((\$b - \$a) / 60); }
+                        }
+                        \$short = 0;
+                        foreach ((array) (\$sl['shortAwakenings'] ?? []) as \$st) {
+                            \$a = strtotime((string) (\$st['startTime'] ?? '')); \$b = strtotime((string) (\$st['endTime'] ?? ''));
+                            if (\$a && \$b) { \$short += (int) round((\$b - \$a) / 60); }
+                        }
+                        \$entry['nights'][] = [
+                            'type' => \$sl['type'] ?? null, 'stages_status' => \$sl['metadata']['stagesStatus'] ?? null,
+                            'nap' => \$sl['metadata']['nap'] ?? null, 'main' => \$sl['metadata']['mainSleep'] ?? null,
+                            'platform' => \$p['dataSource']['platform'] ?? null,
+                            'google_minutes' => array_intersect_key(\$sum, array_flip(['minutesAsleep', 'minutesAwake', 'minutesInSleepPeriod', 'minutesToFallAsleep', 'minutesAfterWakeUp'])),
+                            'google_stages' => array_map(static fn (\$x) => [\$x['type'] ?? '?', \$x['minutes'] ?? null, \$x['count'] ?? null], (array) (\$sum['stagesSummary'] ?? [])),
+                            'stage_minutes_from_segments' => \$own,
+                            'short_awakenings' => ['count' => count((array) (\$sl['shortAwakenings'] ?? [])), 'minutes' => \$short],
+                            'out_of_bed_segments' => count((array) (\$sl['outOfBedSegments'] ?? [])),
+                        ];
+                    }
+                }
                 /* The shape of one point, keys only, two levels deep. */
                 if (isset(\$points[0]) && is_array(\$points[0])) {
                     \$shape = [];
@@ -160,6 +204,27 @@ if ('$api' === '1' && \$first !== null) {
                 ];
             }
             \$out['api'][\$type] = \$entry;
+        }
+        /* Types Ownify does not read yet: do they answer for this account and these scopes? Counts only. */
+        \$out['api_not_read'] = [];
+        foreach (['floors' => 'interval', 'active-minutes' => 'interval', 'active-zone-minutes' => 'interval', 'basal-energy-burned' => 'interval',
+                  'altitude' => 'interval', 'time-in-heart-rate-zone' => 'interval', 'sedentary-period' => 'interval',
+                  'heart-rate-variability' => 'sample', 'oxygen-saturation' => 'sample', 'respiratory-rate-sleep-summary' => 'sample',
+                  'daily-sleep-temperature-derivations' => 'daily', 'daily-heart-rate-zones' => 'daily', 'activity-level' => 'daily'] as \$type => \$kind) {
+            \$url = rtrim(google_health_config()['api_base'], '/') . '/users/me/dataTypes/' . rawurlencode(\$type) . '/dataPoints?'
+                . http_build_query(['filter' => google_health_filter(\$type, \$kind, \$from), 'pageSize' => 1000], '', '&', PHP_QUERY_RFC3986);
+            \$res = google_health_http('GET', \$url, ['Authorization: Bearer ' . \$access['token'], 'Accept: application/json'], null, 60);
+            if (\$res === null) { \$out['api_not_read'][\$type] = ['http' => 0]; continue; }
+            \$data = json_decode(\$res['body'], true);
+            \$pts = (array) (\$data['dataPoints'] ?? []);
+            \$e = ['http' => \$res['status'], 'points' => count(\$pts), 'more_pages' => !empty(\$data['nextPageToken'])];
+            if (isset(\$pts[0]) && is_array(\$pts[0])) {
+                \$shape = [];
+                foreach (\$pts[0] as \$k => \$v) { \$shape[\$k] = is_array(\$v) ? array_keys(\$v) : gettype(\$v); }
+                \$e['shape'] = \$shape;
+            }
+            if (\$res['status'] !== 200) { \$e['error'] = [\$data['error']['status'] ?? null, mb_substr((string) (\$data['error']['message'] ?? ''), 0, 200)]; }
+            \$out['api_not_read'][\$type] = \$e;
         }
     }
 }
