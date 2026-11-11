@@ -251,7 +251,6 @@ class ChallengesFlowTest {
         waitFor("Wat tellen jullie?")
         button("Volgende").assertIsNotEnabled()
         bubble("Slaap").performClick()
-        waitFor("Nachten van 7 uur")
         waitFor("Uren slaap")
         bubble("Slaap").performClick()
         // 49.1: what a goal can count, found as in the goal wizard.

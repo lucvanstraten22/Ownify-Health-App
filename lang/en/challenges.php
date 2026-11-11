@@ -217,6 +217,7 @@ return [
     '%d gekozen' => '%d chosen',
     'Nog niemand gekozen — je kunt ook straks de code delen.' => 'Nobody chosen yet — you can also share the code afterwards.',
     'Bezig…' => 'Working…',
+    'Uren slaap · 1 week' => 'Hours of sleep · 1 week',
     /* ---- 50.0: more to count, the goal wizard's Periode */
     '%s actieve kcal' => '%s active kcal',
     'actieve calorieën' => 'active calories',

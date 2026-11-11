@@ -86,6 +86,9 @@ return [
             'many'   => '%s nachten van 7 uur',
             'what'   => 'nachten van 7 uur',
             'versus' => 'Wie slaapt het vaakst 7 uur?',
+            /* 49.3: no longer offered for a new challenge (Uren slaap is);
+               challenges that count it go on. */
+            'retired' => true,
             'step'   => 10,
             'per_week' => 25,
         ],
@@ -258,7 +261,7 @@ return [
         'ideas' => [
             ['kind' => 'together', 'metric' => 'workouts',     'title' => 'Samen trainen',              'sub' => 'Samen naar één doel · 1 week'],
             ['kind' => 'versus',   'metric' => 'steps',        'title' => 'Wie zet de meeste stappen?', 'sub' => 'Ieder voor zich · 1 week'],
-            ['kind' => 'together', 'metric' => 'sleep_nights', 'title' => 'Samen goed slapen',          'sub' => 'Nachten van 7 uur · 1 week'],
+            ['kind' => 'together', 'metric' => 'sleep_hours',  'title' => 'Samen goed slapen',          'sub' => 'Uren slaap · 1 week'],
         ],
     ],
 

@@ -1369,26 +1369,6 @@
         }
       },
       {
-        "category": "sleep",
-        "label": "Nachten van 7 uur",
-        "icon": "moon",
-        "accent": "sleep",
-        "unit": "",
-        "one": "%s nacht van 7 uur",
-        "many": "%s nachten van 7 uur",
-        "what": "nachten van 7 uur",
-        "versus": "Wie slaapt het vaakst 7 uur?",
-        "step": 10,
-        "per_week": 25,
-        "key": "sleep_nights",
-        "unit_shown": "",
-        "targets": {
-          "1w": 30,
-          "2w": 50,
-          "month": 100
-        }
-      },
-      {
         "category": "activity",
         "label": "Actieve calorieën",
         "icon": "pulse",

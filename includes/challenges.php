@@ -1233,7 +1233,7 @@ if (!function_exists('challenges_available')) {
         }
 
         return [
-            'metrics' => array_values(challenge_metrics()),
+            'metrics' => array_values(array_filter(challenge_metrics(), static fn (array $m): bool => empty($m['retired']))),
             'categories' => array_values(array_filter(
                 array_map(static fn (string $key, array $c): array => ['key' => $key] + $c, array_keys($copy['categories']), $copy['categories']),
                 static fn (array $c): bool => (bool) array_filter(challenge_metrics(), static fn (array $m): bool => $m['category'] === $c['key'])

@@ -574,6 +574,9 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                 }
                 2 -> {
                     StepHead(w("step2_title"), w("step2_lede"))
+                    // 49.3: the name first, then Samen or Wedstrijd.
+                    FieldLabel(w("name"), Modifier.padding(top = Ownify.Space4))
+                    JInput(name, { name = it.take(60) }, placeholder = suggested, label = w("name"))
                     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                         ch.kinds.forEach { k ->
                             val example = if (k.key == "versus") metric?.versus.orEmpty()
@@ -581,8 +584,6 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                             TypeCard(k.label, k.hint, example, chosen = kind == k.key, enabled = true) { kind = k.key }
                         }
                     }
-                    FieldLabel(w("name"), Modifier.padding(top = Ownify.Space5))
-                    JInput(name, { name = it.take(60) }, placeholder = suggested, label = w("name"))
                 }
                 3 -> {
                     StepHead(w("step3_title"), w("step3_lede"))

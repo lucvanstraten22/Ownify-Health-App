@@ -692,15 +692,16 @@
         function stepKind() {
             var metric = metricOf(draft.metric);
             return head(2)
-                + '<div class="goal-types" role="radiogroup">' + D.kinds.map(function (k) {
+                + '<label class="wizard__label" for="cw-name">' + esc(cc.name) + '</label>'
+                + '<input class="wizard__input" type="text" id="cw-name" maxlength="60" autocomplete="off" enterkeyhint="done" data-cw-name'
+                + ' placeholder="' + esc(suggestName(draft)) + '" value="' + esc(draft.name) + '">'
+                + '<div class="goal-types ch-gap" role="radiogroup">' + D.kinds.map(function (k) {
                     var example = k.key === 'versus' ? metric.versus : format(D.preview.together, amount(metric, suggestTarget(draft)));
                     return '<button type="button" class="glass goal-type press" role="radio" aria-checked="' + (draft.kind === k.key) + '" data-cw-kind="' + esc(k.key) + '">'
                         + '<span class="goal-type__label">' + esc(k.label) + '</span><span class="goal-type__hint">' + esc(k.hint) + '</span>'
                         + '<span class="goal-type__example">' + esc(example) + '</span></button>';
-                }).join('') + '</div>'
-                + '<label class="wizard__label wizard__label--spaced" for="cw-name">' + esc(cc.name) + '</label>'
-                + '<input class="wizard__input" type="text" id="cw-name" maxlength="60" autocomplete="off" enterkeyhint="done" data-cw-name'
-                + ' placeholder="' + esc(suggestName(draft)) + '" value="' + esc(draft.name) + '">';
+                }).join('') + '</div>';
+
         }
 
         function dateButton(which, label, value) {
