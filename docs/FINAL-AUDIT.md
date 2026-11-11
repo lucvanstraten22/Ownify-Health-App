@@ -325,3 +325,26 @@ reviewer briefs, ready to launch. Nothing in the app was changed.
 
 Next: Phase 2, nine parallel read-only reviewers + one consolidation.
 Settings: **Effort XHigh, Ultracode ON**.
+
+## Phase 2 — running
+
+Started with Effort XHigh, Ultracode ON (user's go, with extra rules: desktop
+out of scope; investigate the missing name/photo on Android and the missing
+name in the web popup, do not fix; concrete evidence per finding; VERIFIED /
+HYPOTHESIS / PREFERENCE kept apart; deduplicate in the merge; strictly
+read-only; use every relevant uploaded skill).
+
+Skills check before Phase 2: available and used — apple-design (lenses
+1–6), dataviz (4), mobile-native, improve-animations (audit only), break-ui
+(map + worst-case reasoning only; its toggle needs code/data changes →
+Phase 4), animation-vocabulary (5). **`review-animations` and `prototype`
+are enabled on the account but can only be started by the user**
+(`/anthropic-skills:review-animations`, `/anthropic-skills:prototype`);
+Phase 2 does not depend on them; Phase 3 (prototype) and Phase 4
+(review-animations) will.
+
+Shared brief: `docs/audit/BRIEF.md`. Outputs: `docs/audit/lens-1-typography.md`,
+`lens-2-spacing.md`, `lens-3-components.md`, `lens-4-charts.md`,
+`lens-5-ux.md`, `lens-6-parity.md`, `lens-7-performance.md`,
+`lens-8-deadcode-web.md`, `lens-9-android-db.md`; merge →
+`docs/audit/CONSOLIDATED.md`.
