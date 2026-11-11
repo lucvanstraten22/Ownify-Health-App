@@ -130,6 +130,9 @@ return [
             'many'   => '%s dagen met 10.000 stappen',
             'what'   => 'dagen met 10.000 stappen',
             'versus' => 'Wie haalt het vaakst 10.000 stappen?',
+            /* 49.5: no longer offered for a new challenge (Stappen is, with
+               the number the group chooses); running ones go on. */
+            'retired' => true,
             'step'   => 5,
             'per_week' => 15,
         ],
