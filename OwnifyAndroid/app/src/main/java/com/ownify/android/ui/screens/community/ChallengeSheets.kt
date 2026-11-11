@@ -546,9 +546,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
         Column(Modifier.fillMaxWidth()) {
             if (step == 3 && period.calendar != null) {
                 CalendarStep(period, w, ch.durations, period.bounds(), onChange = moved)
-                return@Column
-            }
-            when (step) {
+            } else when (step) {
                 1 -> {
                     StepHead(w("step1_title"), w("step1_lede"))
                     // The goal wizard's step 1: the search field, the groups as bubbles, the list.

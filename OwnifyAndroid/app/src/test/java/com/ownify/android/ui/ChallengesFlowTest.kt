@@ -115,6 +115,10 @@ class ChallengesFlowTest {
     private fun button(text: String): SemanticsNodeInteraction =
         compose.onAllNodes(hasText(text, substring = true) and hasClickAction()).onLast()
 
+    /** A category bubble: its exact word, not a row whose subtitle names it. */
+    private fun bubble(text: String): SemanticsNodeInteraction =
+        compose.onAllNodes(hasText(text) and hasClickAction()).onFirst()
+
     /** Signed in, on Community. */
     private fun community() {
         show()
@@ -246,10 +250,10 @@ class ChallengesFlowTest {
         waitFor("Stap 1 van 3 · Wat")
         waitFor("Wat tellen jullie?")
         button("Volgende").assertIsNotEnabled()
-        button("Slaap").performClick()
+        bubble("Slaap").performClick()
         waitFor("Nachten van 7 uur")
         waitFor("Uren slaap")
-        button("Slaap").performClick()
+        bubble("Slaap").performClick()
         // 49.1: what a goal can count, found as in the goal wizard.
         compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextInput("water")
         waitFor("Dagen met 2 liter water")
@@ -300,7 +304,7 @@ class ChallengesFlowTest {
         button("Volgende").performClick()
         compose.onNode(hasContentDescription("Samen naar") and hasSetTextAction()).performTextReplacement("150")
         // The goal wizard's dates: a looptijd, and the calendar for the start, then the end.
-        button("1 maand").performScrollTo().performClick()
+        bubble("1 maand").performClick()
         compose.onAllNodes(hasClickAction() and hasContentDescription("Start", substring = true)).onFirst().performClick()
         waitFor("Kies de startdatum")
         button("Gereed").performClick()
