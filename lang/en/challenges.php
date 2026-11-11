@@ -202,4 +202,19 @@ return [
     'Code %s gekopieerd' => 'Code %s copied',
     'Er ging iets mis. Probeer het nog eens.' => 'Something went wrong. Please try again.',
 
+    // 49.0: the challenge wizard.
+    'Alleen wat jullie gekoppelde bronnen meten — nooit iets wat iemand intypt.' => 'Only what your connected sources measure — never anything someone types in.',
+    'Samen of tegen elkaar?' => 'Together or against each other?',
+    'Tel samen op naar één doel, of kijk wie het meest haalt.' => 'Add up together towards one target, or see who does the most.',
+    'Hoeveel en hoe lang?' => 'How much and how long?',
+    'Een doel dat in de tijd past, voor iedereen samen.' => 'A target that fits the time, for everyone together.',
+    'Uit jullie gekoppelde bronnen' => 'From your connected sources',
+    'Te kiezen' => 'To choose from',
+    'Zo ziet je uitdaging eruit. Met terug pas je elke stap aan.' => 'This is your challenge. Go back to change any step.',
+    'Wie nodig je uit?' => 'Who are you inviting?',
+    'Zoek een vriend' => 'Search for a friend',
+    'Geen vriend met die naam.' => 'No friend with that name.',
+    '%d gekozen' => '%d chosen',
+    'Nog niemand gekozen — je kunt ook straks de code delen.' => 'Nobody chosen yet — you can also share the code afterwards.',
+    'Bezig…' => 'Working…',
 ];

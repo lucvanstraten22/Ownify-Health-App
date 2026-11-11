@@ -31,7 +31,7 @@ $payload = [
     ), 'review', 'id'),
     'icons'   => array_combine(
         $names = ['plus', 'hash', 'check', 'copy', 'share', 'chevron-down', 'shield', 'calendar', 'flag', 'target',
-                  'dumbbell', 'bolt', 'pulse', 'moon', 'user-plus', 'trash'],
+                  'dumbbell', 'bolt', 'pulse', 'moon', 'user-plus', 'trash', 'chevron-left', 'search', 'close'],
         array_map(static fn (string $name): string => icon($name), $names)
     ),
     'solid'   => array_combine(

@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.testing.SynchronousExecutor
@@ -175,7 +176,10 @@ class ChallengesFlowTest {
         waitFor("Samen goed slapen")
 
         compose.onAllNodes(hasText("Wie zet de meeste stappen?") and hasClickAction()).onLast().performScrollTo().performClick()
-        waitFor("Wie de meeste stappen haalt")
+        // 49.0: the wizard opens on step 1 with Stappen chosen; on through Wedstrijd to the review and the invitations.
+        waitFor("Stap 1 van 3 · Wat")
+        repeat(4) { button("Volgende").performClick(); compose.waitForIdle() }
+        waitFor("Wie nodig je uit?")
         button("Uitdaging maken").assertIsEnabled().performClick()
         waitFor("Je uitdaging staat klaar")
 
@@ -231,7 +235,7 @@ class ChallengesFlowTest {
     }
 
     @Test
-    fun `Nieuwe uitdaging - nothing to make until it counts something, then its code, and the request the website sends`() {
+    fun `Nieuwe uitdaging - the goal wizard's steps, the review, then friends to invite, and the request the website sends`() {
         server.challengeReplies["create.php"] = 200 to JSONObject()
             .put("ok", true).put("id", 99).put("code", "48213").put("name", "Wie zet de meeste stappen?")
             .put("invited", 1).put("share_text", "Doe mee met “Wie zet de meeste stappen?” in Ownify: vul code 48213 in bij Community › Uitdagingen.")
@@ -239,18 +243,31 @@ class ChallengesFlowTest {
         community()
 
         compose.onAllNodes(hasText("Nieuwe uitdaging") and hasClickAction()).onFirst().performScrollTo().performClick()
-        // The form's labels are small caps, as on the website.
-        waitFor("WAT TELLEN JULLIE?")
-        button("Kies eerst wat jullie tellen").assertIsNotEnabled()
-
-        button("Wedstrijd").performClick()
+        waitFor("Stap 1 van 3 · Wat")
+        waitFor("Wat tellen jullie?")
+        button("Volgende").assertIsNotEnabled()
+        button("Slaap").performClick()
+        waitFor("Nachten van 7 uur")
+        button("Slaap").performClick()
         button("Stappen").performScrollTo().performClick()
-        waitFor("Wie zet de meeste stappen?")
-        waitFor("Wie de meeste stappen haalt")
-        val friend = compose.onAllNodes(hasText("lotte") and hasClickAction()).onLast()
-        friend.performScrollTo().performClick()
-        waitFor("1 uitgenodigd")
+        button("Volgende").assertIsEnabled().performClick()
 
+        waitFor("Stap 2 van 3 · Soort")
+        button("Wedstrijd").performClick()
+        button("Volgende").performClick()
+        waitFor("Stap 3 van 3 · Instellen")
+        assertTrue("a Wedstrijd has no target to set", gone("SAMEN NAAR"))
+        button("Volgende").performClick()
+
+        waitFor("Klopt alles?")
+        waitFor("Wie zet de meeste stappen?")
+        button("Volgende").performClick()
+
+        waitFor("Wie nodig je uit?")
+        compose.onNode(hasContentDescription("Zoek een vriend") and hasSetTextAction()).performTextInput("lot")
+        compose.waitForIdle()
+        compose.onAllNodes(hasText("lotte") and hasClickAction()).onLast().performClick()
+        waitFor("1 GEKOZEN")
         button("Uitdaging maken").assertIsEnabled().performClick()
         waitFor("Je uitdaging staat klaar")
         compose.onNode(hasContentDescription("4 8 2 1 3")).assertExists()
@@ -265,16 +282,17 @@ class ChallengesFlowTest {
     }
 
     @Test
-    fun `Nieuwe uitdaging - Samen suggests a target and steps it, in what is shown`() {
+    fun `Nieuwe uitdaging - Samen suggests a target per length, set on the wheel, in what is shown`() {
         server.challengeReplies["create.php"] = 200 to """{"ok":true,"id":98,"code":"11111","name":"Samen 150 km in een week","invited":0,"share_text":"…"}"""
         challenges()
 
         button("Nieuwe uitdaging").performClick()
         button("Afstand").performScrollTo().performClick()
+        button("Volgende").performClick()
         waitFor("Samen 100 km in een week")
-        compose.onNode(hasContentDescription("Meer") and hasClickAction()).performScrollTo().performClick()
-        compose.onNode(hasContentDescription("Meer") and hasClickAction()).performClick()
-        waitFor("Samen 150 km in een week")
+        button("Volgende").performClick()
+        compose.onNode(hasContentDescription("Samen naar") and hasSetTextAction()).performTextReplacement("150")
+        repeat(2) { button("Volgende").performClick(); compose.waitForIdle() }
         button("Uitdaging maken").performClick()
         waitFor("Je uitdaging staat klaar")
 

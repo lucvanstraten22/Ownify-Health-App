@@ -1,4 +1,19 @@
 package com.ownify.android.ui.screens.community
+
+import com.ownify.android.ui.screens.goals.WizardFrame
+import com.ownify.android.ui.screens.goals.WizardOption
+import com.ownify.android.ui.screens.goals.WizardReview
+import com.ownify.android.ui.screens.goals.StepHead
+import com.ownify.android.ui.screens.goals.TypeCard
+import com.ownify.android.ui.design.WheelField
+import com.ownify.android.ui.design.WheelSpec
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.ownify.android.ui.design.GlassChip
+import com.ownify.android.ui.screens.account.FieldLabel
+import com.ownify.android.data.ChallengeMetric
 import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.CardStyle
@@ -447,18 +462,25 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     val scope = rememberCoroutineScope()
     val ch = data.challenges
     val copy = ch.copy["create"]
+    val w = { key: String -> copy[key].orEmpty() }
     // An idea on Uitdagingen comes with its kind and metric chosen (challenges.js create(preset)).
     var kind by remember { mutableStateOf(overlay.kind?.takeIf { it == "together" || it == "versus" } ?: "together") }
     var metricKey by remember { mutableStateOf(overlay.metric?.takeIf { ch.metric(it) != null }) }
+    var group by remember { mutableStateOf<String?>(null) }
     var touched by remember { mutableStateOf(false) }
     var length by remember { mutableStateOf("1w") }
     var target by remember { mutableStateOf(ch.metric(metricKey)?.let { it.targets[length] ?: it.step } ?: 0.0) }
     var from by remember { mutableStateOf("today") }
     var name by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf("") }
     val invite = remember { mutableStateListOf<Int>() }
+    var step by remember { mutableIntStateOf(1) }
+    var direction by remember { mutableIntStateOf(1) }
     var busy by remember { mutableStateOf(false) }
     var made by remember { mutableStateOf<JSONObject?>(null) }
-    val close = { shell.close(overlay) }
+    val body = rememberScrollState()
+    val entry = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(step) { body.scrollTo(0) }
 
     made?.let { answer -> MadeSheet(overlay, data, answer); return }
 
@@ -472,138 +494,141 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
         kind == "versus" -> metric.versus
         else -> String.format(java.util.Locale.ROOT, ch.length(length)?.namePattern ?: "%s", amount(target))
     }
+    val groupOf = { m: ChallengeMetric -> if (m.accent == "sleep") "sleep" else "move" }
+    val complete = when (step) { 1 -> metric != null; 3 -> kind != "together" || target > 0; else -> true }
 
-    SheetFrame(
-        overlay,
-        title = copy["title"].orEmpty(),
-        head = { SheetHead(copy["title"].orEmpty(), close) },
-        foot = {
-            Btn(
-                if (metric == null) copy["pick_first"].orEmpty() else copy["make"].orEmpty(),
-                enabled = metric != null && !busy,
-                modifier = Modifier.fillMaxWidth(),
-                look = PrimaryLook,
-                onClick = {
-                    busy = true
-                    scope.launch {
-                        val body = JSONObject()
-                            .put("kind", kind)
-                            .put("metric", metricKey)
-                            .put("length", length)
-                            .put("from", from)
-                            .put("name", name.trim())
-                            .put("target_unit", if (data.i18n.units == "imperial") "mi" else "km")
-                            .put("invite", JSONArray(invite.toList()))
-                        if (kind == "together") body.put("target", target)
-                        when (val outcome = OwnifyActions.json(context, "api/challenges/create.php", body, tr("De uitdaging kon niet worden gemaakt."))) {
-                            is Outcome.Done -> made = outcome.body
-                            is Outcome.Refused -> { busy = false; OwnifyToast.show(outcome.message) }
-                            Outcome.SignedOut -> Unit
-                        }
-                    }
-                }
-            )
-        }
-    ) {
-        // The preview: what it will be, as it is filled in.
-        val accent = Accent.of(metric?.accent ?: "health")
-        val kindLabel = ch.kinds.firstOrNull { it.key == kind }?.label.orEmpty()
-        val period = ch.length(length)?.periods?.get(from).orEmpty()
-        val line = when {
-            metric == null -> copy["preview_empty"].orEmpty()
-            kind == "together" -> String.format(java.util.Locale.ROOT, ch.preview["together"] ?: "%s", amount(target))
-            else -> String.format(java.util.Locale.ROOT, ch.preview["versus"] ?: "%s", metric.what)
-        }
-        val people = ch.friends.filter { it.id in invite }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .cardSurface(RoundedCornerShape(Ownify.RadiusMd), CardStyle.Default, LocalGround.current, LocalGraphicsContext.current.shadowContext)
-                .padding(Ownify.Space4)
-                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-            verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
-        ) {
-            KindLine(metric?.icon ?: "flag", kindLabel + (metric?.let { " · " + it.label } ?: ""), accent)
-            T(name.trim().ifEmpty { if (metric != null) suggested else copy["preview_name"].orEmpty() }, JStyle.Subtitle)
-            T("$line · $period", JStyle.Lede)
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Row {
-                    (listOfNotNull(ch.you) + people.take(4)).forEachIndexed { i, p ->
-                        Box(Modifier.offset(x = (-5).dp * i)) { ChallengeAvatar(p, 30.dp, pending = !p.you, ring = true) }
-                    }
-                }
-                T(
-                    if (invite.isEmpty()) ch.preview["alone"].orEmpty() else trn(invite.size, "%d uitgenodigd", "%d uitgenodigd"),
-                    JStyle.Footnote,
-                    Modifier.weight(1f),
-                    align = TextAlign.End
-                )
-            }
-        }
-
-        Label(copy["kind_label"].orEmpty())
-        RangeSwitch(ch.kinds.map { it.key to it.label }, kind, { kind = it }, wide = true, label = copy["kind_label"])
-        T(ch.kinds.firstOrNull { it.key == kind }?.hint.orEmpty(), JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
-
-        Label(copy["metric"].orEmpty())
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Ownify.Space2), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            ch.metrics.forEach { m ->
-                MetricChip(m.label, m.icon, Accent.of(m.accent), selected = metricKey == m.key) {
-                    metricKey = m.key
-                    if (!touched) target = m.targets[length] ?: m.step
-                }
-            }
-        }
-
-        if (kind == "together" && metric != null) {
-            Label(copy["target"].orEmpty())
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                Btn("−", enabled = target > metric.step, contentDescription = copy["less"], onClick = { target = maxOf(metric.step, target - metric.step); touched = true }) {
-                    T("−", OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
-                }
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
-                    T(OwnifyFormat.number(target), OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold, tabular = true), Modifier.alignByBaseline(), maxLines = 1)
-                    T(" " + String.format(java.util.Locale.ROOT, metric.many, "").trim(), OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.alignByBaseline(), maxLines = 1)
-                }
-                Btn("+", contentDescription = copy["more"], onClick = { target += metric.step; touched = true }) {
-                    T("+", OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
-                }
-            }
-        }
-
-        Label(copy["length"].orEmpty())
-        RangeSwitch(ch.lengths.map { it.key to it.label }, length, { l ->
-            length = l
-            val m = metric
-            if (m != null && !touched) target = m.targets[l] ?: m.step
-        }, wide = true, label = copy["length"])
-        RangeSwitch(ch.from, from, { from = it }, Modifier.padding(top = Ownify.Space2), wide = true, label = copy["length"])
-
-        Label(copy["name"].orEmpty())
-        JInput(
-            name,
-            { name = it.take(60) },
-            placeholder = if (metric != null) suggested else copy["name_example"].orEmpty(),
-            label = copy["name"]
-        )
-
-        Label(copy["friends"].orEmpty())
-        T(copy["friends_hint"].orEmpty(), JStyle.Footnote, Modifier.padding(bottom = Ownify.Space3))
-        if (ch.friends.isEmpty()) {
-            T(copy["no_friends"].orEmpty(), JStyle.Footnote)
-        } else {
-            FlowRow(Modifier.fillMaxWidth(), maxItemsInEachRow = 4) {
-                ch.friends.forEach { friend ->
-                    val id = friend.id ?: return@forEach
-                    PickPerson(friend, selected = id in invite, Modifier.weight(1f)) {
-                        if (id in invite) invite.remove(id) else invite.add(id)
-                    }
-                }
-                // Keep a short last row in the grid's columns.
-                repeat((4 - ch.friends.size % 4) % 4) { Box(Modifier.weight(1f)) }
+    fun make() {
+        busy = true
+        scope.launch {
+            val payload = JSONObject()
+                .put("kind", kind).put("metric", metricKey).put("length", length).put("from", from).put("name", name.trim())
+                .put("target_unit", if (data.i18n.units == "imperial") "mi" else "km")
+                .put("invite", JSONArray(invite.toList()))
+            if (kind == "together") payload.put("target", target)
+            when (val outcome = OwnifyActions.json(context, "api/challenges/create.php", payload, tr("De uitdaging kon niet worden gemaakt."))) {
+                is Outcome.Done -> made = outcome.body
+                is Outcome.Refused -> { busy = false; OwnifyToast.show(outcome.message) }
+                Outcome.SignedOut -> Unit
             }
         }
     }
+    fun go(to: Int, dir: Int) { direction = dir; step = to }
+
+    // 49.0: the goal wizard's frame and steps, for a group — 1 to 3 in the bars, Controleren and Uitnodigen after them.
+    WizardFrame(
+        overlay, w("title"), w("close"), w("back"),
+        count = when (step) { 4 -> w("review_label"); 5 -> w("invite_label"); else -> trf("Stap %1\$d van %2\$d", step, 3) + " · " + w("step${step}_label") },
+        lit = minOf(step, 3), steps = 3, scroll = body, stepKey = "step-$step",
+        direction = direction, entry = entry, showFoot = true, error = null,
+        cta = if (busy) w("making") else if (step == 5) w("make") else w("next"),
+        ctaEnabled = complete && !busy, saving = busy,
+        onClose = { if (!busy) shell.close(overlay) },
+        onBack = { if (!busy) { if (step == 1) shell.close(overlay) else go(step - 1, -1) } },
+        onForward = { if (complete) { if (step == 5) make() else go(step + 1, 1) } }
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            when (step) {
+                1 -> {
+                    StepHead(w("step1_title"), w("step1_lede"))
+                    FlowRow(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        listOf("move", "sleep").forEach { g -> GlassChip(w(g), chosen = group == g, onClick = { group = if (group == g) null else g }) }
+                    }
+                    FieldLabel(w("list_label"), Modifier.padding(top = Ownify.Space4))
+                    WizardList {
+                        ch.metrics.filter { group == null || groupOf(it) == group }.forEach { m ->
+                            WizardOption(m.label, w(groupOf(m)) + " · " + w("auto"), chosen = metricKey == m.key, onClick = {
+                                metricKey = m.key
+                                if (!touched) target = m.targets[length] ?: m.step
+                            }, accent = Accent.of(m.accent).color, icon = OwnifyIcons.named(m.icon))
+                        }
+                    }
+                }
+                2 -> {
+                    StepHead(w("step2_title"), w("step2_lede"))
+                    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        ch.kinds.forEach { k ->
+                            val example = if (k.key == "versus") metric?.versus.orEmpty()
+                                else String.format(java.util.Locale.ROOT, ch.preview["together"] ?: "%s", amount(metric?.targets?.get(length) ?: target))
+                            TypeCard(k.label, k.hint, example, chosen = kind == k.key, enabled = true) { kind = k.key }
+                        }
+                    }
+                    FieldLabel(w("name"), Modifier.padding(top = Ownify.Space5))
+                    JInput(name, { name = it.take(60) }, placeholder = suggested, label = w("name"))
+                }
+                3 -> {
+                    StepHead(w("step3_title"), w("step3_lede"))
+                    val m = metric ?: return@Column
+                    if (kind == "together") {
+                        FieldLabel(w("target"), Modifier.padding(top = Ownify.Space4))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                            val unit = String.format(java.util.Locale.ROOT, m.many, "").trim()
+                            WheelField(
+                                OwnifyFormat.number(target, 0, grouping = false),
+                                { v -> OwnifyFormat.parseNumber(v)?.let { target = it; touched = true } },
+                                WheelSpec(min = m.step, max = (m.targets["month"] ?: m.step * 10) * 4, step = m.step, start = target, unit = unit),
+                                Modifier.weight(1f), w("target")
+                            )
+                            T(unit, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), maxLines = 1)
+                        }
+                    }
+                    FieldLabel(w("length"), Modifier.padding(top = Ownify.Space5))
+                    RangeSwitch(ch.lengths.map { it.key to it.label }, length, { l ->
+                        length = l
+                        if (!touched) target = m.targets[l] ?: m.step
+                    }, wide = true, label = w("length"))
+                    RangeSwitch(ch.from, from, { from = it }, Modifier.padding(top = Ownify.Space2), wide = true, label = w("length"))
+                    T(ch.length(length)?.periods?.get(from).orEmpty(), JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
+                }
+                4 -> {
+                    StepHead(w("review_title"), w("review_lede"))
+                    val m = metric ?: return@Column
+                    Box(Modifier.padding(top = Ownify.Space4)) {
+                        WizardReview(buildList {
+                            add(w("step1_label") to m.label)
+                            add(w("kind_label") to ch.kinds.firstOrNull { it.key == kind }?.label.orEmpty())
+                            add(w("name") to name.trim().ifEmpty { suggested })
+                            if (kind == "together") add(w("target") to amount(target))
+                            add(w("period") to ch.length(length)?.periods?.get(from).orEmpty())
+                        })
+                    }
+                }
+                else -> {
+                    StepHead(w("invite_title"), w("friends_hint"))
+                    if (ch.friends.isEmpty()) {
+                        T(w("no_friends"), JStyle.Footnote, Modifier.padding(top = Ownify.Space4))
+                    } else {
+                        Box(Modifier.padding(top = Ownify.Space4)) {
+                            JInput(query, { query = it.take(40) }, placeholder = w("search"), label = w("search"))
+                        }
+                        FieldLabel(if (invite.isEmpty()) w("none_picked") else w("picked").replace("%d", invite.size.toString()), Modifier.padding(top = Ownify.Space4))
+                        val shown = ch.friends.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+                        if (shown.isEmpty()) T(w("no_match"), JStyle.Footnote) else WizardList {
+                            shown.forEach { f ->
+                                val id = f.id ?: return@forEach
+                                val on = id in invite
+                                WizardOption(f.name, ch.copy["invite"]?.get(if (on) "picked" else "pick").orEmpty(), chosen = on,
+                                    onClick = { if (on) invite.remove(id) else invite.add(id) }, role = Role.Checkbox,
+                                    mark = { ChallengeAvatar(f, 30.dp) })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** `.goal-list`: the wizard's short list in the glass, scrolled on its own. */
+@Composable
+private fun WizardList(content: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .glass(RoundedCornerShape(Ownify.RadiusMd))
+            .heightIn(max = 250.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(4.dp)
+    ) { content() }
 }
 
 /** `.ch-label`: a field's small caps. */

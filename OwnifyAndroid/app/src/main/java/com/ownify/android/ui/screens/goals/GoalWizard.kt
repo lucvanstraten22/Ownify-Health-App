@@ -234,63 +234,76 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
         if (step == REVIEW) finish() else go(if (step == STEPS) REVIEW else step + 1, 1)
     }
 
-    OverlayFrame(overlay, title = words["title"], maxWidth = 416.dp, onDismiss = ::close) { panelModifier ->
+    WizardFrame(
+        overlay, words["title"], words["close"], words["back"],
+        count = if (step == REVIEW) words.review.label
+            else trf("Stap %1\$d van %2\$d", step, STEPS) + " · " + words.steps.getOrNull(step - 1)?.label.orEmpty(),
+        lit = minOf(step, STEPS), steps = STEPS, scroll = body, stepKey = if (draft.calendar != null) "calendar-" + draft.calendar else "step-$step",
+        direction = direction, entry = entry, showFoot = draft.calendar == null, error = error,
+        cta = if (saving) words["creating"] else if (step == REVIEW) words["create"] else words["next"],
+        ctaEnabled = complete(step, draft, goals) && !saving, saving = saving,
+        onClose = ::close, onBack = ::back, onForward = ::forward
+    ) {
+        if (draft.calendar != null) {
+            CalendarStep(draft, goals)
+        } else {
+            when (step) {
+                1 -> MeasureStep(draft, goals)
+                2 -> DefinitionStep(draft, goals)
+                3 -> SetupStep(draft, goals)
+                else -> ReviewStep(draft, goals)
+            }
+        }
+    }
+}
+
+/**
+ * The goal wizard's frame (components/goal-wizard.php), also the challenge
+ * wizard's (49.0): the title and its close, the three bars and the count —
+ * a review or invitation screen fills all three without a number — the
+ * screen sliding in, and back with the one way forward.
+ */
+@Composable
+internal fun WizardFrame(
+    overlay: Overlay, title: String, closeLabel: String, backLabel: String,
+    count: String, lit: Int, steps: Int, scroll: androidx.compose.foundation.ScrollState, stepKey: String,
+    direction: Int, entry: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>, showFoot: Boolean, error: String?,
+    cta: String, ctaEnabled: Boolean, saving: Boolean,
+    onClose: () -> Unit, onBack: () -> Unit, onForward: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    OverlayFrame(overlay, title = title, maxWidth = 416.dp, onDismiss = onClose) { panelModifier ->
         Box(panelModifier.panelGlass().cssPadding(border = 1.dp)) {
             Column(Modifier.padding(Ownify.Space5)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                    T(words["title"], JStyle.Eyebrow, Modifier.weight(1f).semantics { heading() })
-                    RoundButton(OwnifyIcons.chevronDown, words["close"], ::close)
+                    T(title, JStyle.Eyebrow, Modifier.weight(1f).semantics { heading() })
+                    RoundButton(OwnifyIcons.chevronDown, closeLabel, onClose)
                 }
-
-                // Steps 1 to 3; the review fills all three and says so, without a number.
                 Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
                     Row(Modifier.fillMaxWidth().clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
-                        for (n in 1..STEPS) {
-                            val lit by animateColorAsState(
-                                if (n <= minOf(step, STEPS)) Ownify.Health else Ownify.fill(0.10f),
+                        for (n in 1..steps) {
+                            val on by animateColorAsState(
+                                if (n <= lit) Ownify.Health else Ownify.fill(0.10f),
                                 tween(Ownify.SlowMs, easing = Ownify.EaseOut),
                                 label = "bar"
                             )
-                            Box(Modifier.weight(1f).height(3.dp).clip(RoundedCornerShape(50)).background(lit))
+                            Box(Modifier.weight(1f).height(3.dp).clip(RoundedCornerShape(50)).background(on))
                         }
                     }
-                    T(
-                        if (step == REVIEW) words.review.label
-                        else trf("Stap %1\$d van %2\$d", step, STEPS) + " · " + words.steps.getOrNull(step - 1)?.label.orEmpty(),
-                        JStyle.Tiny,
-                        Modifier.padding(top = Ownify.Space2).semantics { liveRegion = LiveRegionMode.Polite }
-                    )
+                    T(count, JStyle.Tiny, Modifier.padding(top = Ownify.Space2).semantics { liveRegion = LiveRegionMode.Polite })
                 }
-
-                // `.goal-wizard .wizard__body`: 10 dp of room each side (the panel's
-                // padding, borrowed) and 14 below, so the glass's shadows and the
-                // chips' 48 dp touch areas are never cut off where it scrolls.
                 Box(
                     Modifier
                         .padding(top = Ownify.Space4)
                         .weight(1f, fill = false)
                         .heightIn(min = 272.dp)
                         .bleed(BodyBleed)
-                        .verticalScroll(body)
+                        .verticalScroll(scroll)
                         .padding(start = BodyBleed, end = BodyBleed, top = 2.dp, bottom = 14.dp)
                 ) {
-                    key(if (draft.calendar != null) "calendar-" + draft.calendar else "step-$step") {
-                        StepIn(direction, entry) {
-                            if (draft.calendar != null) {
-                                CalendarStep(draft, goals)
-                            } else {
-                                when (step) {
-                                    1 -> MeasureStep(draft, goals)
-                                    2 -> DefinitionStep(draft, goals)
-                                    3 -> SetupStep(draft, goals)
-                                    else -> ReviewStep(draft, goals)
-                                }
-                            }
-                        }
-                    }
+                    key(stepKey) { StepIn(direction, entry) { content() } }
                 }
-
-                if (draft.calendar == null) {
+                if (showFoot) {
                     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
                         Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
                         error?.let {
@@ -306,14 +319,8 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                         ) {
-                            GlassRound(OwnifyIcons.chevronLeft, words["back"], ::back, enabled = !saving)
-                            GlassCta(
-                                if (saving) words["creating"] else if (step == REVIEW) words["create"] else words["next"],
-                                onClick = ::forward,
-                                modifier = Modifier.weight(1f),
-                                enabled = complete(step, draft, goals) && !saving,
-                                loading = saving
-                            )
+                            GlassRound(OwnifyIcons.chevronLeft, backLabel, onBack, enabled = !saving)
+                            GlassCta(cta, onClick = onForward, modifier = Modifier.weight(1f), enabled = ctaEnabled, loading = saving)
                         }
                     }
                 }
@@ -383,7 +390,7 @@ internal fun StepIn(
 }
 
 @Composable
-private fun StepHead(title: String, lede: String) {
+internal fun StepHead(title: String, lede: String) {
     T(title, JStyle.Subtitle, Modifier.semantics { heading() })
     T(lede, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
 }
@@ -496,9 +503,31 @@ internal fun matches(m: GoalMeasurement, query: String, goals: Goals): Boolean {
 @Composable
 private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
     val words = goals.wizard
-    val chosen = draft.measurement == m.code
     val category = if (m.custom) goals.category(draft.category) else goals.category(m.category)
-    val accent = Accent.of(category?.accent ?: "health").color
+    // In Voorgesteld, why: where the person is and what is suggested.
+    val reason = m.suggestionReason.takeIf { draft.query.isBlank() && draft.category == null && m.suggested != null && it.isNotEmpty() }
+    WizardOption(
+        m.label,
+        if (m.custom) m.hint else reason ?: (category?.label.orEmpty() + " · " + (if (isAuto(m, goals)) words["auto"] else words["manual"])),
+        chosen = draft.measurement == m.code,
+        onClick = { choose(m, draft, goals) },
+        accent = Accent.of(category?.accent ?: "health").color,
+        icon = if (m.custom) OwnifyIcons.sparkle else OwnifyIcons.named(category?.icon)
+    )
+}
+
+/**
+ * `.goal-option`: a row in the wizard's glass list — its icon tile (or
+ * [mark], a friend's circle), its label and a line under it; chosen in the
+ * Health fill. Measurements; also what a challenge counts and whom it
+ * invites (49.0, [role] Checkbox).
+ */
+@Composable
+internal fun WizardOption(
+    label: String, meta: String, chosen: Boolean, onClick: () -> Unit,
+    accent: Color = Ownify.Health, icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    role: Role = Role.RadioButton, mark: (@Composable () -> Unit)? = null
+) {
     val interaction = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(Ownify.RadiusSm)
     InButton {
@@ -509,28 +538,21 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
                 .clip(shape)
                 .background(if (chosen) Ownify.HealthFill else Color.Transparent)
                 .border(1.dp, if (chosen) Ownify.HealthEdge else Color.Transparent, shape)
-                .clickable(interaction, indication = null, role = Role.RadioButton, onClick = blurring { choose(m, draft, goals) })
+                .clickable(interaction, indication = null, role = role, onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) { selected = chosen }
                 .padding(start = Ownify.Space2, end = Ownify.Space3, top = Ownify.Space1, bottom = Ownify.Space1),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            Box(
+            if (mark != null) mark() else Box(
                 Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(Ownify.mix(accent, 0.16f, Color.Transparent)),
                 contentAlignment = Alignment.Center
             ) {
-                (if (m.custom) OwnifyIcons.sparkle else OwnifyIcons.named(category?.icon))?.let { JIcon(it, size = 15.dp, color = accent) }
+                icon?.let { JIcon(it, size = 15.dp, color = accent) }
             }
             Column(Modifier.weight(1f)) {
-                T(m.label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-                // In Voorgesteld, why: where the person is and what is suggested.
-                val reason = m.suggestionReason.takeIf { draft.query.isBlank() && draft.category == null && m.suggested != null && it.isNotEmpty() }
-                T(
-                    if (m.custom) m.hint else reason ?: (category?.label.orEmpty() + " · " + (if (isAuto(m, goals)) words["auto"] else words["manual"])),
-                    OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted),
-                    maxLines = 1,
-                    ellipsis = true
-                )
+                T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                T(meta, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1, ellipsis = true)
             }
         }
     }
@@ -598,7 +620,7 @@ private fun DefinitionStep(draft: Draft, goals: Goals) {
 
 /** `.goal-type`: a glass card — its name, what it is, an example for this measurement. */
 @Composable
-private fun TypeCard(label: String, hint: String, example: String, chosen: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun TypeCard(label: String, hint: String, example: String, chosen: Boolean, enabled: Boolean, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         Column(
@@ -1073,6 +1095,12 @@ private fun ReviewStep(draft: Draft, goals: Goals) {
         add(words.summary("tracking") to if (isAuto(m, goals)) words["tracking_auto"] else words["tracking_manual"])
     }
 
+    WizardReview(rows)
+}
+
+/** `.goal-review`: the review's rows in the glass — the term in small caps, the answer at the end. */
+@Composable
+internal fun WizardReview(rows: List<Pair<String, String>>) {
     Column(
         Modifier
             .fillMaxWidth()

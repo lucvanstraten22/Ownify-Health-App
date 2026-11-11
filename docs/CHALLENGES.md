@@ -132,6 +132,26 @@ digit looks it up and the found challenge appears in the same sheet), Bekijken,
 Vrienden uitnodigen and Uitdaging verlaten. Dragged down by its grip, or a tap
 outside, closes it; with reduced motion it only fades.
 
+### Nieuwe uitdaging (49.0)
+
+The goal wizard's frame and pieces (components/goal-wizard.php; the app's
+`WizardFrame`, `WizardOption`, `TypeCard`, `WizardReview` in GoalWizard.kt),
+five screens, the indicator counting only the first three:
+
+1. **Wat** — what is counted: Beweging / Slaap bubbles over the glass list
+   of the five metrics (only what connected sources sync).
+2. **Soort** — Samen or Wedstrijd as the goal wizard's type cards, each with
+   its example, and the name (its suggestion as placeholder).
+3. **Instellen** — Samen's target on the wheel in the metric's own step
+   (10 trainingen, 50.000 stappen, 25 km …, suggested per length), 1 week /
+   2 weken / 1 maand, from today or Monday, and the dates it gives.
+4. **Controleren** — everything at a glance; back changes any step.
+5. **Uitnodigen** — a search over the friends and their glass list, each
+   chosen or not (the Health fill, as a chosen measurement); then
+   Uitdaging maken sends it all to `create.php`, and the code sheet follows.
+
+The ideas on an empty Uitdagingen open it with their kind and metric chosen.
+
 ## The endpoints
 
 All take the website's session and CSRF token, or the app's account token

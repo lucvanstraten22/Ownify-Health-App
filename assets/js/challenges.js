@@ -558,159 +558,236 @@
             }).join('') + '</div>';
     }
 
-    function create(preset) {
-        var draft = { kind: 'together', metric: null, target: 0, touched: false, length: '1w', from: 'today', name: '', invite: [] };
-        var cc = C.create;
+    /**
+     * Nieuwe uitdaging (49.0): the goal wizard's steps and look
+     * (components/goal-wizard.php) for a group — 1 Wat, 2 Soort, 3 Instellen
+     * in the indicator; Controleren and Uitnodigen after them, outside it,
+     * as the goal wizard's review is. Each screen ends in its back button and
+     * the one way forward; back keeps every answer. Sent as before
+     * (api/challenges/create.php), then the code sheet (made()).
+     */
+    var wiz = null;
 
-        /* A way to begin on an empty Uitdagingen comes with its kind and metric. */
+    function wizardShell() {
+        if (wiz) { return wiz; }
+        var cc = C.create;
+        var root = document.createElement('div');
+        root.className = 'wizard goal-wizard challenge-wizard';
+        root.setAttribute('data-overlay', '');
+        root.hidden = true;
+        root.innerHTML = '<div class="wizard__scrim" data-cw-close></div>'
+            + '<div class="wizard__panel card" role="dialog" aria-modal="true" aria-labelledby="cw-title">'
+            + '<div class="wizard__head"><h2 class="card__eyebrow" id="cw-title">' + esc(cc.title) + '</h2>'
+            + '<button type="button" class="account__close press" data-cw-close aria-label="' + esc(cc.close) + '">' + icon('chevron-down') + '</button></div>'
+            + '<div class="wizard__progress"><ol class="wizard__bars" role="list" aria-hidden="true">'
+            + '<li class="wizard__bar" data-cw-bar="1"></li><li class="wizard__bar" data-cw-bar="2"></li><li class="wizard__bar" data-cw-bar="3"></li></ol>'
+            + '<p class="wizard__count" data-cw-count aria-live="polite"></p></div>'
+            + '<div class="wizard__body" data-cw-body></div>'
+            + '<div class="wizard__foot goal-wizard__foot"><div class="goal-wizard__nav">'
+            + '<button type="button" class="glass glass--round press" data-cw-back aria-label="' + esc(cc.back) + '">' + icon('chevron-left') + '</button>'
+            + '<button type="button" class="glass glass--cta goal-wizard__next press" data-cw-next><span class="goal-wizard__spinner" aria-hidden="true"></span><span data-cw-next-label></span></button>'
+            + '</div></div></div>';
+        document.body.appendChild(root);
+        wiz = { root: root, body: root.querySelector('[data-cw-body]'), count: root.querySelector('[data-cw-count]'),
+            next: root.querySelector('[data-cw-next]'), label: root.querySelector('[data-cw-next-label]') };
+        return wiz;
+    }
+
+    function create(preset) {
+        var cc = C.create;
+        var w = wizardShell();
+        var draft = { step: 1, group: null, kind: 'together', metric: null, target: 0, touched: false, length: '1w', from: 'today', name: '', invite: [], query: '' };
+        var saving = false;
+        var STEPS = 3;
+
         if (preset && (preset.kind === 'together' || preset.kind === 'versus')) { draft.kind = preset.kind; }
         if (preset && preset.metric && metricOf(preset.metric)) {
             draft.metric = preset.metric;
             draft.target = metricOf(draft.metric).targets[draft.length];
         }
 
-        function preview() {
-            var metric = metricOf(draft.metric);
-            var period = lengthOf(draft.length).periods[draft.from];
-            var kind = draft.kind === 'versus' ? D.kinds[1] : D.kinds[0];
-            var name = draft.name.trim() || (metric ? suggestName(draft) : cc.preview_name);
-            var line = !metric ? cc.preview_empty
-                : draft.kind === 'together' ? format(D.preview.together, amount(metric, draft.target))
-                : format(D.preview.versus, metric.what);
-            var invited = draft.invite.length;
-            var people = D.friends.filter(function (f) { return draft.invite.indexOf(f.id) !== -1; });
+        var groupOf = function (m) { return m.accent === 'sleep' ? 'sleep' : 'move'; };
+        var head = function (n) { return '<h3 class="wizard__title" tabindex="-1">' + esc(cc['step' + n + '_title'] || n) + '</h3><p class="wizard__lede">' + esc(cc['step' + n + '_lede'] || '') + '</p>'; };
 
-            return '<div class="ch-preview" data-accent="' + esc(metric ? metric.accent : 'health') + '">'
-                + '<span class="ch-kind">' + icon(metric ? metric.icon : 'target') + '<span>' + esc(kind.label + (metric ? ' · ' + metric.label : '')) + '</span></span>'
-                + '<span class="ch-preview__name">' + esc(name) + '</span>'
-                + '<span class="ch-preview__line">' + esc(line + ' · ' + period) + '</span>'
-                + '<span class="ch-foot"><span class="ch-faces" aria-hidden="true">'
-                + avatar(D.you || { you: true, initial: '', accent: 'health' })
-                + people.slice(0, 4).map(function (p) { return avatar(p, 0, true); }).join('')
-                + '</span><span>' + esc(invited ? T.tn(invited, '%d uitgenodigd', '%d uitgenodigd') : D.preview.alone) + '</span></span></div>';
+        function row(attrs, accent, mark, label, meta, chosen, role) {
+            return '<button type="button" class="goal-option press" role="' + role + '" aria-checked="' + chosen + '" ' + attrs
+                + (accent ? ' data-accent="' + esc(accent) + '"' : '') + '>'
+                + '<span class="goal-option__icon" aria-hidden="true">' + mark + '</span>'
+                + '<span class="goal-option__text"><span class="goal-option__label">' + esc(label) + '</span>'
+                + '<span class="goal-option__meta">' + esc(meta) + '</span></span></button>';
         }
 
-        function friendsGrid() {
-            if (!D.friends.length) { return '<p class="ch-hint">' + esc(cc.no_friends) + '</p>'; }
-            return '<div class="ch-pick">' + D.friends.map(function (f) {
-                var on = draft.invite.indexOf(f.id) !== -1;
-                return '<button type="button" class="ch-pick__person press" data-pick="' + f.id + '" aria-pressed="' + on + '">'
-                    + avatar(f, 44) + (on ? '<span class="ch-pick__check" aria-hidden="true">' + icon('check') + '</span>' : '')
-                    + '<span class="ch-pick__name">' + esc(f.name) + '</span></button>';
-            }).join('') + '</div>';
-        }
-
-        function paint() {
-            var metric = metricOf(draft.metric);
-            var kindHint = draft.kind === 'versus' ? D.kinds[1].hint : D.kinds[0].hint;
-
-            var html = head(cc.title)
-                + '<div class="ch-sheet__body ch-create">'
-                + '<div class="ch-preview-host" data-preview aria-live="polite">' + preview() + '</div>'
-
-                + '<p class="ch-label">' + esc(cc.kind_label) + '</p>'
-                + segmented('kind', draft.kind, D.kinds, cc.kind_label)
-                + '<p class="ch-hint">' + esc(kindHint) + '</p>'
-
-                + '<p class="ch-label">' + esc(cc.metric) + '</p>'
-                + '<div class="ch-chips" role="group" aria-label="' + esc(cc.metric) + '">' + D.metrics.map(function (m) {
-                    var on = draft.metric === m.key;
-                    return '<button type="button" class="glass glass--chip ch-chip press" data-metric="' + esc(m.key) + '" data-accent="' + esc(m.accent) + '" aria-pressed="' + on + '">'
-                        + icon(m.icon) + '<span>' + esc(m.label) + '</span></button>';
+        function stepWhat() {
+            var shown = D.metrics.filter(function (m) { return !draft.group || groupOf(m) === draft.group; });
+            return head(1)
+                + '<div class="goal-bubbles" role="group">' + ['move', 'sleep'].map(function (g) {
+                    return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-group="' + g + '" aria-pressed="' + (draft.group === g) + '">' + esc(cc[g]) + '</button>';
                 }).join('') + '</div>'
-
-                + (draft.kind === 'together' && metric
-                    ? '<p class="ch-label">' + esc(cc.target) + '</p>'
-                        + '<div class="ch-stepper">'
-                        + '<button type="button" class="btn press ch-icon-btn" data-step="-1" aria-label="' + esc(cc.less) + '"' + (draft.target <= metric.step ? ' disabled' : '') + '>−</button>'
-                        + '<span class="ch-stepper__value" aria-live="polite"><b>' + esc(T.number(draft.target, 0)) + '</b> '
-                        + esc(format(metric.many, '').trim()) + '</span>'
-                        + '<button type="button" class="btn press ch-icon-btn" data-step="1" aria-label="' + esc(cc.more) + '">+</button></div>'
-                    : '')
-
-                + '<p class="ch-label">' + esc(cc.length) + '</p>'
-                + segmented('length', draft.length, D.lengths, cc.length)
-                + '<div class="ch-gap">' + segmented('from', draft.from, D.from, cc.length) + '</div>'
-
-                + '<p class="ch-label"><label for="ch-name">' + esc(cc.name) + '</label></p>'
-                + '<input class="ch-input" id="ch-name" type="text" maxlength="60" autocomplete="off" enterkeyhint="done"'
-                + ' placeholder="' + esc(metric ? suggestName(draft) : cc.name_example) + '" value="' + esc(draft.name) + '" data-name>'
-
-                + '<p class="ch-label">' + esc(cc.friends) + '</p>'
-                + '<p class="ch-hint ch-hint--tight">' + esc(cc.friends_hint) + '</p>'
-                + friendsGrid()
-                + '</div>'
-
-                + '<div class="ch-sheet__foot">'
-                + '<button type="button" class="btn btn--primary press ch-wide" data-make' + (metric ? '' : ' disabled') + '>'
-                + esc(metric ? cc.make : cc.pick_first) + '</button></div>';
-
-            var body = content.querySelector('.ch-sheet__body');
-            var y = body ? body.scrollTop : 0;
-            var active = document.activeElement;
-            var activeKey = active && active.closest && active.closest('.ch-sheet__body')
-                ? (active.getAttribute('data-metric') || active.getAttribute('data-kind') || active.getAttribute('data-length')
-                    || active.getAttribute('data-from') || active.getAttribute('data-pick') || active.getAttribute('data-step'))
-                : null;
-
-            if (!sheetOpen) { show(html); } else { content.innerHTML = html; }
-
-            body = content.querySelector('.ch-sheet__body');
-            if (body) { body.scrollTop = y; }
-
-            /* The control that was tapped keeps the focus across the repaint. */
-            if (activeKey !== null) {
-                var again = content.querySelector('[data-metric="' + activeKey + '"], [data-kind="' + activeKey + '"], [data-length="' + activeKey + '"],'
-                    + ' [data-from="' + activeKey + '"], [data-pick="' + activeKey + '"], [data-step="' + activeKey + '"]');
-                if (again && !again.disabled) { again.focus({ preventScroll: true }); }
-            }
-
-            var name = content.querySelector('[data-name]');
-            name.addEventListener('input', function () {
-                draft.name = name.value;
-                content.querySelector('[data-preview]').innerHTML = preview();
-            });
+                + '<p class="wizard__label goal-list__label">' + esc(cc.list_label) + '</p>'
+                + '<div class="glass goal-list"><div class="goal-list__scroll" role="radiogroup" aria-label="' + esc(cc.metric) + '">'
+                + shown.map(function (m) {
+                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, cc[groupOf(m)] + ' · ' + cc.auto, draft.metric === m.key, 'radio');
+                }).join('') + '</div></div>';
         }
 
-        paint();
+        function stepKind() {
+            var metric = metricOf(draft.metric);
+            return head(2)
+                + '<div class="goal-types" role="radiogroup">' + D.kinds.map(function (k) {
+                    var example = k.key === 'versus' ? metric.versus : format(D.preview.together, amount(metric, metric.targets[draft.length]));
+                    return '<button type="button" class="glass goal-type press" role="radio" aria-checked="' + (draft.kind === k.key) + '" data-cw-kind="' + esc(k.key) + '">'
+                        + '<span class="goal-type__label">' + esc(k.label) + '</span><span class="goal-type__hint">' + esc(k.hint) + '</span>'
+                        + '<span class="goal-type__example">' + esc(example) + '</span></button>';
+                }).join('') + '</div>'
+                + '<label class="wizard__label wizard__label--spaced" for="cw-name">' + esc(cc.name) + '</label>'
+                + '<input class="wizard__input" type="text" id="cw-name" maxlength="60" autocomplete="off" enterkeyhint="done" data-cw-name'
+                + ' placeholder="' + esc(suggestName(draft)) + '" value="' + esc(draft.name) + '">';
+        }
 
-        content.onclick = function (event) {
-            var t = event.target.closest('button');
-            if (!t || !content.contains(t) || t.disabled) { return; }
+        function stepSetup() {
+            var metric = metricOf(draft.metric);
+            var html = head(3);
+            if (draft.kind === 'together') {
+                html += '<label class="wizard__label" for="cw-target">' + esc(cc.target) + '</label>'
+                    + '<div class="goal-row"><input class="wizard__input goal-row__number" type="text" id="cw-target" data-cw-target value="' + esc(T.number(draft.target, 0, false)) + '">'
+                    + '<span class="goal-row__word">' + esc(format(metric.many, '').trim()) + '</span></div>';
+            }
+            return html
+                + '<p class="wizard__label wizard__label--spaced">' + esc(cc.length) + '</p>' + segmented('cw-length', draft.length, D.lengths, cc.length)
+                + '<div class="ch-gap">' + segmented('cw-from', draft.from, D.from, cc.length) + '</div>'
+                + '<p class="wizard__hint">' + esc(lengthOf(draft.length).periods[draft.from]) + '</p>';
+        }
 
-            if (t.hasAttribute('data-kind')) { draft.kind = t.getAttribute('data-kind'); paint(); return; }
-            if (t.hasAttribute('data-metric')) {
-                draft.metric = t.getAttribute('data-metric');
+        function stepReview() {
+            var metric = metricOf(draft.metric);
+            var kind = draft.kind === 'versus' ? D.kinds[1] : D.kinds[0];
+            var rows = [[cc.step1_label, metric.label], [cc.kind_label, kind.label], [cc.name, draft.name.trim() || suggestName(draft)]];
+            if (draft.kind === 'together') { rows.push([cc.target, amount(metric, draft.target)]); }
+            rows.push([cc.period, lengthOf(draft.length).periods[draft.from]]);
+            return '<h3 class="wizard__title" tabindex="-1">' + esc(cc.review_title) + '</h3><p class="wizard__lede">' + esc(cc.review_lede) + '</p>'
+                + '<dl class="glass goal-review">' + rows.map(function (r) {
+                    return '<div class="goal-review__row"><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>';
+                }).join('') + '</dl>';
+        }
+
+        function stepInvite() {
+            var q = draft.query.trim().toLowerCase();
+            var shown = D.friends.filter(function (f) { return !q || String(f.name).toLowerCase().indexOf(q) !== -1; });
+            var list = !D.friends.length ? '<p class="wizard__hint">' + esc(cc.no_friends) + '</p>'
+                : (shown.length
+                    ? '<div class="glass goal-list"><div class="goal-list__scroll" role="group" aria-label="' + esc(cc.friends) + '">'
+                        + shown.map(function (f) {
+                            var on = draft.invite.indexOf(f.id) !== -1;
+                            return row('data-cw-friend="' + f.id + '"', null, avatar(f, 30), f.name, on ? C.invite.picked : C.invite.pick, on, 'checkbox');
+                        }).join('') + '</div></div>'
+                    : '<p class="wizard__hint goal-list__empty">' + esc(cc.no_match) + '</p>');
+            return '<h3 class="wizard__title" tabindex="-1">' + esc(cc.invite_title) + '</h3><p class="wizard__lede">' + esc(cc.friends_hint) + '</p>'
+                + (D.friends.length ? '<div class="goal-search">' + icon('search').replace('<svg', '<svg class="goal-search__icon"')
+                    + '<input class="goal-search__input" type="search" data-cw-search enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(cc.search) + '" aria-label="' + esc(cc.search) + '" value="' + esc(draft.query) + '"></div>' : '')
+                + '<p class="wizard__label goal-list__label" aria-live="polite">' + esc(draft.invite.length ? T.tf(cc.picked, draft.invite.length) : cc.none_picked) + '</p>'
+                + list;
+        }
+
+        function complete() {
+            if (draft.step === 1) { return !!draft.metric; }
+            if (draft.step === 3) { return draft.kind !== 'together' || draft.target > 0; }
+            return true;
+        }
+
+        function paint(direction) {
+            var s = draft.step;
+            w.body.innerHTML = '<section class="wizard__step is-active">'
+                + (s === 1 ? stepWhat() : s === 2 ? stepKind() : s === 3 ? stepSetup() : s === 'review' ? stepReview() : stepInvite()) + '</section>';
+            var reached = typeof s === 'number' ? s : STEPS;
+            Array.prototype.forEach.call(w.root.querySelectorAll('[data-cw-bar]'), function (b) { b.classList.toggle('is-done', Number(b.getAttribute('data-cw-bar')) <= reached); });
+            w.count.textContent = s === 'review' ? cc.review_label : s === 'invite' ? cc.invite_label : T.tf('Stap %1$d van %2$d', s, STEPS) + ' · ' + cc['step' + s + '_label'];
+            w.label.textContent = saving ? cc.making : s === 'invite' ? cc.make : cc.next;
+            w.next.classList.toggle('is-final', s === 'invite');
+            w.next.disabled = !complete() || saving;
+            var target = w.body.querySelector('[data-cw-target]');
+            if (target && window.OwnifyWheel) {
+                var m = metricOf(draft.metric);
+                window.OwnifyWheel.attach(target, { kind: 'number', min: m.step, max: m.targets.month * 4, step: m.step, 'default': draft.target, unit: format(m.many, '').trim() });
+            }
+            if (direction) {
+                var section = w.body.querySelector('.wizard__step');
+                if (section.animate) { section.animate([{ opacity: 0, transform: 'translateX(' + (direction * 14) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }); }
+                var title = w.body.querySelector('.wizard__title');
+                if (title) { title.focus({ preventScroll: true }); }
+                w.body.scrollTop = 0;
+            }
+        }
+
+        function go(to, direction) { draft.step = to; paint(direction); }
+        function close() {
+            if (saving) { return; }
+            w.root.classList.remove('is-open');
+            window.setTimeout(function () { w.root.hidden = true; }, 200);
+        }
+
+        w.root.onclick = function (event) {
+            var t = event.target, hit;
+            if (t.closest('[data-cw-close]')) { close(); return; }
+            if (t.closest('[data-cw-back]')) {
+                if (saving) { return; }
+                if (draft.step === 1) { close(); return; }
+                go({ 2: 1, 3: 2, review: 3, invite: 'review' }[draft.step], -1);
+                return;
+            }
+            if (t.closest('[data-cw-next]')) {
+                if (!complete()) { return; }
+                if (draft.step === 'invite') { make(); return; }
+                go({ 1: 2, 2: 3, 3: 'review', review: 'invite' }[draft.step], 1);
+                return;
+            }
+            if ((hit = t.closest('[data-cw-group]'))) { var g = hit.getAttribute('data-cw-group'); draft.group = draft.group === g ? null : g; paint(0); return; }
+            if ((hit = t.closest('[data-cw-metric]'))) {
+                draft.metric = hit.getAttribute('data-cw-metric');
                 if (!draft.touched) { draft.target = metricOf(draft.metric).targets[draft.length]; }
-                paint();
+                paint(0);
                 return;
             }
-            if (t.hasAttribute('data-step')) {
-                var metric = metricOf(draft.metric);
-                draft.target = Math.max(metric.step, draft.target + Number(t.getAttribute('data-step')) * metric.step);
-                draft.touched = true;
-                paint();
+            if ((hit = t.closest('[data-cw-kind]'))) { draft.kind = hit.getAttribute('data-cw-kind'); paint(0); return; }
+            if ((hit = t.closest('[data-cw-length]'))) {
+                draft.length = hit.getAttribute('data-cw-length');
+                if (!draft.touched) { draft.target = metricOf(draft.metric).targets[draft.length]; }
+                paint(0);
                 return;
             }
-            if (t.hasAttribute('data-length')) {
-                draft.length = t.getAttribute('data-length');
-                if (draft.metric && !draft.touched) { draft.target = metricOf(draft.metric).targets[draft.length]; }
-                paint();
-                return;
-            }
-            if (t.hasAttribute('data-from')) { draft.from = t.getAttribute('data-from'); paint(); return; }
-            if (t.hasAttribute('data-pick')) {
-                var id = Number(t.getAttribute('data-pick'));
+            if ((hit = t.closest('[data-cw-from]'))) { draft.from = hit.getAttribute('data-cw-from'); paint(0); return; }
+            if ((hit = t.closest('[data-cw-friend]'))) {
+                var id = Number(hit.getAttribute('data-cw-friend'));
                 var at = draft.invite.indexOf(id);
                 if (at === -1) { draft.invite.push(id); } else { draft.invite.splice(at, 1); }
-                paint();
+                var y = w.body.querySelector('.goal-list__scroll') ? w.body.querySelector('.goal-list__scroll').scrollTop : 0;
+                paint(0);
+                if (w.body.querySelector('.goal-list__scroll')) { w.body.querySelector('.goal-list__scroll').scrollTop = y; }
+            }
+        };
+        w.root.oninput = function (event) {
+            var t = event.target;
+            if (t.hasAttribute('data-cw-name')) { draft.name = t.value; return; }
+            if (t.hasAttribute('data-cw-target')) {
+                var n = T.parseNumber(t.value);
+                draft.target = n === null ? 0 : Math.round(n);
+                draft.touched = true;
+                w.next.disabled = !complete();
                 return;
             }
-            if (t.hasAttribute('data-make')) { make(t); }
+            if (t.hasAttribute('data-cw-search')) {
+                draft.query = t.value;
+                var pos = t.selectionStart;
+                paint(0);
+                var again = w.body.querySelector('[data-cw-search]');
+                again.focus();
+                try { again.setSelectionRange(pos, pos); } catch (e) { /* type=search */ }
+            }
         };
 
-        function make(button) {
-            button.disabled = true;
+        function make() {
+            saving = true;
+            w.root.classList.add('is-saving');
+            paint(0);
             post('api/challenges/create.php', {
                 kind: draft.kind,
                 metric: draft.metric,
@@ -721,16 +798,17 @@
                 name: draft.name.trim(),
                 invite: draft.invite
             }).then(function (answer) {
-                if (!answer.ok) {
-                    button.disabled = false;
-                    toast(failed(answer));
-                    return;
-                }
-
-                content.onclick = null;
+                saving = false;
+                w.root.classList.remove('is-saving');
+                if (!answer.ok) { paint(0); toast(failed(answer)); return; }
+                close();
                 made(answer);
             });
         }
+
+        w.root.hidden = false;
+        window.requestAnimationFrame(function () { w.root.classList.add('is-open'); });
+        go(draft.metric ? 1 : 1, 0);
     }
 
     /** The new challenge's code, to copy or share — and the way to it. */
