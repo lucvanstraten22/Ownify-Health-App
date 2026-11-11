@@ -141,11 +141,11 @@
 
     function unitOf(code) {
         if (code === 'custom') {
-            return { code: null, label: draft.customUnit.trim(), one: draft.customUnit.trim(), factor: 1, decimals: 2, attached: false };
+            return { code: null, label: draft.customUnit.trim(), one: draft.customUnit.trim(), factor: 1, decimals: 2, attached: false, wheel: [1, 1000, 1] };
         }
         var u = copy.goal_units[code];
-        if (!u) { return { code: code, label: '', one: '', factor: 1, decimals: 2, attached: false }; }
-        return { code: code, label: u.label, one: u.one || u.label, factor: Number(u.factor), decimals: Number(u.decimals), attached: !!u.attached };
+        if (!u) { return { code: code, label: '', one: '', factor: 1, decimals: 2, attached: false, wheel: [1, 1000, 1] }; }
+        return { code: code, label: u.label, one: u.one || u.label, factor: Number(u.factor), decimals: Number(u.decimals), attached: !!u.attached, wheel: u.wheel };
     }
 
     /** The unit a measurement starts in: Imperiaal's own where it has one. */
@@ -534,17 +534,13 @@
     }
 
     /**
-     * 47.0: a goal's number on the wheel (assets/js/wheel-picker.js), in the
-     * unit on screen with its decimals (one column of them at most), from
-     * what is typed or suggested; up to three times that, Typen beyond it.
+     * 48.0: a goal's number on the wheel (assets/js/wheel-picker.js), in the
+     * unit on screen and its steps (config/goals.php `wheel`: 500 steps,
+     * 0,5 km …), from what is typed or suggested.
      */
     function wheel(input, unit, around) {
         if (!window.OwnifyWheel) { return; }
-        var start = T.parseNumber(around);
-        window.OwnifyWheel.attach(input, {
-            kind: 'number', min: 0, max: Math.max(10, Math.ceil((start || 10) * 3)), step: 1,
-            decimals: Math.min(unit.decimals, 1), 'default': start === null ? 1 : start, unit: unit.label
-        });
+        window.OwnifyWheel.attach(input, window.OwnifyWheel.forUnit(unit, T.parseNumber(around)));
     }
 
     /** The placeholder in the unit on screen: 75 kg is 165 lb. */

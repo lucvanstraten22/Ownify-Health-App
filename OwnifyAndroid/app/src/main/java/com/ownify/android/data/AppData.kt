@@ -2126,12 +2126,15 @@ data class GoalUnit(
     val canonical: String?,
     val factor: Double,
     val decimals: Int,
-    val attached: Boolean
+    val attached: Boolean,
+    /** 48.0: [from, to, step] of its wheel (config/goals.php `wheel`). */
+    val wheel: List<Double> = listOf(1.0, 1000.0, 1.0)
 ) {
     companion object {
         fun parse(code: String, o: JSONObject) = GoalUnit(
             code, o.str("label").orEmpty(), o.str("one") ?: o.str("label").orEmpty(), o.str("canonical"),
-            o.num("factor") ?: 1.0, o.int("decimals") ?: 0, o.bool("attached")
+            o.num("factor") ?: 1.0, o.int("decimals") ?: 0, o.bool("attached"),
+            o.optJSONArray("wheel")?.let { a -> (0 until a.length()).map { a.optDouble(it) } }?.takeIf { it.size == 3 } ?: listOf(1.0, 1000.0, 1.0)
         )
 
         /** An Eigen gewoonte's own word, counted as typed. */
@@ -2805,7 +2808,9 @@ data class FieldInput(
     /** Several boxes saved together (`fields`: Voor- en achternaam), each posted under its own name. */
     val inputs: List<FieldPart> = emptyList(),
     /** 47.0: a measurement's wheel (lib/settings.php). */
-    val wheel: com.ownify.android.ui.design.WheelSpec? = null
+    val wheel: com.ownify.android.ui.design.WheelSpec? = null,
+    /** 48.0: where a date's wheel starts when none is given (a birth date: 30 years back). */
+    val start: String = ""
 ) {
     companion object {
         fun parse(o: JSONObject) = FieldInput(
@@ -2814,7 +2819,8 @@ data class FieldInput(
             o.obj("options").stringMap().entries.map { it.key to it.value },
             o.str("post_unit").orEmpty(), o.text("feet").orEmpty(), o.text("inches").orEmpty(),
             o.arr("inputs").map(FieldPart::parse),
-            com.ownify.android.ui.design.WheelSpec.parse(o.optJSONObject("wheel"))
+            com.ownify.android.ui.design.WheelSpec.parse(o.optJSONObject("wheel")),
+            o.text("default").orEmpty()
         )
     }
 }

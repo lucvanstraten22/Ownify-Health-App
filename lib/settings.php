@@ -545,7 +545,8 @@ if (!function_exists('settings_field_input')) {
                                               'value' => (string) ($profile['raw']['last_name'] ?? '')],
                                           ]],
             'date_of_birth'           => ['type' => 'date', 'max' => date('Y-m-d'),
-                                          'min' => date('Y-m-d', strtotime('-120 years'))],
+                                          'min' => date('Y-m-d', strtotime('-120 years')),
+                                          'default' => date('Y-m-d', strtotime('-30 years'))],     // the wheel's start when none is given
             'gender'                  => ['type' => 'choice', 'options' => [
                                              'female'     => t('Vrouw'),
                                              'male'       => t('Man'),
@@ -574,8 +575,8 @@ if (!function_exists('settings_field_input')) {
         if ($input['type'] === 'number') {
             $start = ['height' => units_out(170, 'cm'), 'weight' => units_out(70, 'kg')][$key] ?? $input['min'];
             $input['wheel'] = [
-                'kind' => 'number', 'min' => $input['min'], 'max' => $input['max'], 'step' => 1,
-                'decimals' => (float) $input['step'] < 1 ? 1 : 0, 'default' => round((float) $start), 'unit' => $input['unit'],
+                'kind' => 'number', 'min' => $input['min'], 'max' => $input['max'],
+                'step' => $key === 'weight' ? 0.1 : 0.5, 'default' => round((float) $start), 'unit' => $input['unit'],      // 48.0: 72,5 kg; 182,5 cm
             ];
         }
 

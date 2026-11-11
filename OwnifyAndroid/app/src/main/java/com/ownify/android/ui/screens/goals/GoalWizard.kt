@@ -725,7 +725,7 @@ private fun TargetRow(draft: Draft, goals: Goals, m: GoalMeasurement, label: Str
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
             WheelInput(
                 draft.target, { draft.target = it.take(16) },
-                unitOf(draft.unit, draft, goals).let { u -> Wheel.around(OwnifyFormat.parseNumber(draft.target.ifEmpty { placeholder(draft, goals, m) }), u.decimals, u.label) },
+                Wheel.forUnit(unitOf(draft.unit, draft, goals), OwnifyFormat.parseNumber(draft.target.ifEmpty { placeholder(draft, goals, m) })),
                 modifier = Modifier.weight(1f),
                 placeholder = placeholder(draft, goals, m),
                 label = label,
@@ -885,7 +885,7 @@ private fun Baseline(draft: Draft, goals: Goals) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                 WheelInput(
                     draft.baselineTyped, { draft.baselineTyped = it.take(16) },
-                    Wheel.around(OwnifyFormat.parseNumber(draft.baselineTyped), unit.decimals, unit.label),
+                    Wheel.forUnit(unit, OwnifyFormat.parseNumber(draft.baselineTyped)),
                     modifier = Modifier.weight(1f),
                     label = words["baseline_label"],
                     keyboard = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)

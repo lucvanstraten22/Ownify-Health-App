@@ -140,18 +140,19 @@ if (!function_exists('hydrate_goals')) {
      * read as the four different things they are.
      */
     /**
-     * 47.0: the wheel a goal's new value is picked on (assets/js/wheel-picker.js,
-     * the app's ui/design/Wheel.kt), in the unit on screen with one column of
-     * decimals at most, starting at $start and going up to three times it.
+     * 48.0: the wheel a goal's new value is picked on (assets/js/wheel-picker.js
+     * forUnit(), the app's Wheel.forUnit()): the unit's own steps
+     * (config/goals.php `wheel`), starting at $start; a total above its top
+     * gets room up to twice where it starts.
      */
     function hydrate_goal_wheel(array $unit, float $start): array
     {
-        $decimals = min(1, (int) ($unit['decimals'] ?? 0));
+        [$min, $max, $step] = $unit['wheel'] ?? [0.0, 1000.0, 1.0];
+        if ($start * 1.5 > $max) {
+            $max = ceil($start * 2 / $step) * $step;
+        }
 
-        return [
-            'kind' => 'number', 'min' => 0, 'max' => (int) max(10, ceil(abs($start) * 3)), 'step' => 1,
-            'decimals' => $decimals, 'default' => round($start, $decimals), 'unit' => (string) $unit['label'],
-        ];
+        return ['kind' => 'number', 'min' => $min, 'max' => $max, 'step' => $step, 'default' => $start, 'unit' => (string) $unit['label']];
     }
 
     function hydrate_goal_words(array $row, array $progress, array $measurement, array $unit, DateTimeImmutable $today): array

@@ -2138,20 +2138,18 @@ a.settings-row { color: inherit; text-decoration: none; }
 .password-field > input { padding-right: 44px; }
 
 /* --------------------------------------------------------------------------
-   The wheel (47.0, assets/js/wheel-picker.js, docs/THEME.md)
+   The wheel (48.0, assets/js/wheel-picker.js, docs/THEME.md)
    --------------------------------------------------------------------------
-   A number or a duration picked as a phone picks one: the one Liquid Glass,
+   Every number, duration, time of day and date: the one Liquid Glass,
    floating from the field it fills, its columns turning under the finger,
-   the middle row a Well band. Native scroll with snapping, so it has the
-   phone's own momentum. The app: ui/design/Wheel.kt. */
+   the middle row a Well band. No buttons: a tap outside closes it. Native
+   scroll with snapping, so it has the phone's own momentum. The app:
+   ui/design/Wheel.kt. */
 .wheel {
     --wheel-row: 36px;
 
     position: fixed;
     z-index: 90;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
     padding: var(--space-3);
     border-radius: var(--radius-md);
     background: var(--lg-face), var(--lg-body-thick);
@@ -2229,13 +2227,25 @@ a.settings-row { color: inherit; text-decoration: none; }
     pointer-events: none;
 }
 
-.wheel__foot {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2);
+.wheel__column--wide .wheel__list { min-width: 4.2em; }
+
+/* hours : minutes */
+.wheel__sep {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    font-size: var(--fs-title);
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
     .wheel, .wheel.is-closing { transform: none; transition: opacity var(--transition-fast); }
 }
 :root[data-motion="reduce"] .wheel, :root[data-motion="reduce"] .wheel.is-closing { transform: none; transition: opacity var(--transition-fast); }
+
+/* A select on the wheel: its glass is tapped, the native menu never opens. */
+.glass--select.is-wheel { cursor: pointer; }
+.glass--select.is-wheel select { pointer-events: none; }
+.wheel--list .wheel__column, .wheel--list .wheel__list { flex: 1; }
+.wheel--list .wheel__item { padding-inline: var(--space-2); white-space: nowrap; }

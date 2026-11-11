@@ -1,10 +1,10 @@
 package com.ownify.android.ui.screens.health
 
 import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelField
 import com.ownify.android.ui.design.WheelSpec
 
 import com.ownify.android.ui.design.glassPress
-import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -288,38 +288,10 @@ private fun EntryField(label: String, note: String? = null, unit: String? = null
     }
 }
 
-/**
- * A time of day, as a phone's browser asks for one: the pill shows it, a tap
- * opens the system's time picker, in the phone's own 12 or 24 hours. The
- * time itself is always "HH:MM".
- */
+/** A time of day on the wheel (48.0): hours : minutes, "HH:MM" — as the website's. */
 @Composable
 private fun TimeControl(value: String, label: String, onPick: (String) -> Unit) {
-    InButton {
-        val context = LocalContext.current
-        val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(50)
-        val minutes = EntryDraft.clockMinutes(value)
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 44.dp)
-                .background(Ownify.fill(0.05f), shape)
-                .border(1.dp, Ownify.GlassBorderSoft, shape)
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = label) {
-                    TimePickerDialog(
-                        OwnifyThemeStore.dialogContext(context),
-                        { _, h, m -> onPick("%02d:%02d".format(h, m)) },
-                        (minutes ?: 0) / 60, (minutes ?: 0) % 60, DateFormat.is24HourFormat(context)
-                    ).show()
-                }
-                .semantics { contentDescription = "$label: $value" }
-                .padding(horizontal = Ownify.Space4),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            T(value, OwnifyType.style(Ownify.FsBody, color = Ownify.TextPrimary, tabular = true))
-        }
-    }
+    WheelField(value, onPick, WheelSpec.clock(value.ifEmpty { "12:00" }), Modifier.fillMaxWidth(), label)
 }
 
 /**

@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -269,7 +267,7 @@ fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, e
 
 /**
  * `.glass--select`: the chosen option and a chevron in the glass; a tap
- * opens the short list. Always there — also with one option, so a unit reads
+ * opens the wheel with its choices (48.0). Always there — also with one option, so a unit reads
  * the same whatever can be chosen.
  */
 @Composable
@@ -306,30 +304,9 @@ fun GlassSelect(
                 }
                 JIcon(OwnifyIcons.chevronDown, size = 14.dp, color = Ownify.TextMuted)
             }
-            DropdownMenu(
-                expanded = open,
-                onDismissRequest = { open = false },
-                shape = RoundedCornerShape(Ownify.RadiusSm),
-                containerColor = Ownify.TipSurfaceSolid,
-                shadowElevation = 8.dp
-            ) {
-                options.forEach { (key, text) ->
-                    DropdownMenuItem(
-                        text = {
-                            T(
-                                text,
-                                OwnifyType.style(Ownify.FsBody, if (key == selected) FontWeight.SemiBold else FontWeight.Normal,
-                                    if (key == selected) Ownify.Health else Ownify.TextPrimary)
-                            )
-                        },
-                        onClick = {
-                            open = false
-                            onSelect(key)
-                        },
-                        modifier = Modifier.semantics { this.selected = key == selected }
-                    )
-                }
-            }
+            // 48.0: the wheel, one column of the choices — chosen when it closes.
+            if (open) WheelPopup(WheelSpec.list(options), selected ?: options.firstOrNull()?.first.orEmpty(), 240.dp,
+                onValue = onSelect, onClose = { open = false }, commitOnClose = true)
         }
     }
 }

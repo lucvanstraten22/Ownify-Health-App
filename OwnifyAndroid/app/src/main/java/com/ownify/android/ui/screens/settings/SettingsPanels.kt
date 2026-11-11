@@ -1,12 +1,12 @@
 package com.ownify.android.ui.screens.settings
 
 import com.ownify.android.ui.design.WheelInput
+import com.ownify.android.ui.design.WheelField
 import com.ownify.android.ui.design.WheelSpec
 import androidx.compose.ui.focus.FocusRequester
 import com.ownify.android.ui.design.NoteTone
 import com.ownify.android.ui.design.note
 
-import android.app.DatePickerDialog
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -638,38 +638,12 @@ private fun ChoiceControl(input: FieldInput, value: String, onChoose: (String) -
 }
 
 /**
- * A date, as a phone's browser asks for one: the field shows it, a tap opens
- * the system's date picker, between the earliest and latest the server allows.
+ * A date on the wheel (48.0): day, month, year, between the earliest and
+ * latest the server allows; shown as 10 nov 2026, kept as "YYYY-MM-DD".
  */
 @Composable
 internal fun DateControl(input: FieldInput, value: String, label: String, onPick: (String) -> Unit) {
-    InButton {
-        val context = LocalContext.current
-        val interaction = remember { MutableInteractionSource() }
-        val shape = RoundedCornerShape(50)
-        val date = runCatching { LocalDate.parse(value) }.getOrNull()
-        val shown = date?.let { "%02d-%02d-%04d".format(it.dayOfMonth, it.monthValue, it.year) }
-
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 44.dp)
-                .clip(shape)
-                .background(Ownify.fill(0.05f))
-                .border(1.dp, Ownify.GlassBorderSoft, shape)
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = label) {
-                    val start = date ?: LocalDate.now().minusYears(30)
-                    DatePickerDialog(OwnifyThemeStore.dialogContext(context), { _, y, m, d -> onPick(LocalDate.of(y, m + 1, d).toString()) }, start.year, start.monthValue - 1, start.dayOfMonth).apply {
-                        input.min?.let { runCatching { datePicker.minDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
-                        input.max?.let { runCatching { datePicker.maxDate = LocalDate.parse(it).toEpochDay() * 86_400_000L } }
-                    }.show()
-                }
-                .padding(horizontal = Ownify.Space4),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            T(shown ?: "dd-mm-jjjj", OwnifyType.style(Ownify.FsBody, color = if (shown != null) Ownify.TextPrimary else Ownify.TextFaint, tabular = true))
-        }
-    }
+    WheelField(value, onPick, WheelSpec.date(input.min, input.max, input.start.ifEmpty { null }), Modifier.fillMaxWidth(), label)
 }
 
 // ------------------------------------------------------ the confirmation

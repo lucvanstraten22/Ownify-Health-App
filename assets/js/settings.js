@@ -752,7 +752,8 @@
 
             var input = document.createElement('input');
             input.className = 'field-editor__input';
-            input.type = spec.type === 'number' ? 'number' : spec.type;
+            // 48.0: a date is turned on the wheel, never the browser's calendar.
+            input.type = spec.type === 'number' ? 'number' : spec.type === 'date' ? 'text' : spec.type;
             input.value = spec.value || '';
             /* A name that may be left empty shows what empty gives back. */
             if (spec.placeholder) { input.placeholder = spec.placeholder; }
@@ -766,6 +767,9 @@
             if (spec.type === 'number') { input.inputMode = 'decimal'; }
             // 47.0: picked on a wheel, typed with Typen (assets/js/wheel-picker.js).
             if (spec.type === 'number' && spec.wheel && window.OwnifyWheel) { window.OwnifyWheel.attach(input, spec.wheel); }
+            if (spec.type === 'date' && window.OwnifyWheel) {
+                window.OwnifyWheel.attach(input, { kind: 'date', min: spec.min, max: spec.max, 'default': spec['default'] });
+            }
 
             /* A unit belongs beside the number, not in a label above it. */
             if (spec.unit) {
@@ -791,7 +795,7 @@
                 control.appendChild(line);
             }
 
-            return function () { return input.value.trim(); };
+            return function () { return (window.OwnifyWheel ? window.OwnifyWheel.value(input) : input.value).trim(); };
         }
 
         function openEditor(trigger) {

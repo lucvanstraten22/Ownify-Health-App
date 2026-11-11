@@ -2,6 +2,7 @@ package com.ownify.android.ui.screens.goals
 
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.Wheel
+import com.ownify.android.ui.design.WheelSpec
 import com.ownify.android.ui.design.NoteTone
 import com.ownify.android.ui.design.note
 
@@ -451,7 +452,7 @@ private fun ManualEntry(goal: Goal, entry: GoalEntry, copy: Map<String, String>)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                 WheelInput(
                     value, { value = it.take(16) },
-                    entry.wheel ?: Wheel.around(null, 1, entry.unit.orEmpty()),
+                    entry.wheel ?: WheelSpec(min = 1.0, max = 1000.0, unit = entry.unit.orEmpty()),
                     modifier = Modifier.weight(1f), focus = field,
                     placeholder = entry.placeholder ?: entry.label,
                     label = entry.label,

@@ -141,7 +141,7 @@ $source  = $connect['source'];
                                 <div class="wizard__row">
                                     <input class="wizard__input<?= $input['type'] === 'number' ? ' wizard__input--number' : '' ?>"
                                            id="<?= e($id) ?>" name="<?= e($field['key']) ?>"
-                                           type="<?= e($input['type']) ?>"
+                                           type="<?= e($input['type'] === 'date' ? 'text' : $input['type']) ?>"
                                            data-setup-field="<?= e($field['key']) ?>"
                                            data-endpoint="<?= e($input['endpoint']) ?>"
                                            value="<?= e((string) $input['value']) ?>"
@@ -150,7 +150,8 @@ $source  = $connect['source'];
                                            <?= isset($input['max']) ? 'max="' . e((string) $input['max']) . '"' : '' ?>
                                            <?= isset($input['step']) ? 'step="' . e((string) $input['step']) . '"' : '' ?>
                                            <?= $input['type'] === 'number' ? 'inputmode="decimal"' : '' ?>
-                                           <?= isset($input['wheel']) ? 'data-wheel="' . e(json_encode($input['wheel'], JSON_UNESCAPED_UNICODE)) . '"' : '' ?>
+                                           <?php $wheel = $input['wheel'] ?? ($input['type'] === 'date' ? ['kind' => 'date', 'min' => $input['min'] ?? null, 'max' => $input['max'] ?? null, 'default' => $input['default'] ?? null] : null); ?>
+                                           <?= $wheel !== null ? 'data-wheel="' . e(json_encode($wheel, JSON_UNESCAPED_UNICODE)) . '"' : '' ?>
                                            aria-describedby="<?= e($id) ?>-reason">
                                     <?php if (($input['unit'] ?? '') !== ''): ?>
                                         <span class="wizard__suffix"><?= e($input['unit']) ?></span>

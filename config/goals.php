@@ -72,35 +72,39 @@ return [
      * never depends on the unit somebody chose to see it in.
      *
      * `label`/`one`: the word, and its singular where it has one;
-     * `attached`: written against the number ("85%"); `decimals`: at most.
+     * `attached`: written against the number ("85%"); `decimals`: at most;
+     * `wheel` (48.0): [from, to, step] of the wheel a figure in this unit is
+     * picked on (assets/js/wheel-picker.js, Wheel.kt) — steps that make
+     * sense for it: 500 steps, 0,5 km, 50 kcal, 0,1 kg. A total above `to`
+     * (a month of running) gets room up to twice where it starts.
      */
     'goal_units' => [
-        'kg'       => ['label' => 'kg',            'canonical' => 'kg',       'factor' => 1.0,                'decimals' => 1],
-        'lb'       => ['label' => 'lb',            'canonical' => 'kg',       'factor' => 0.45359237,         'decimals' => 1],
-        'cm'       => ['label' => 'cm',            'canonical' => 'cm',       'factor' => 1.0,                'decimals' => 1],
-        'in'       => ['label' => 'inch',          'canonical' => 'cm',       'factor' => 2.54,               'decimals' => 1],
-        'km'       => ['label' => 'km',            'canonical' => 'km',       'factor' => 1.0,                'decimals' => 1],
-        'mi'       => ['label' => 'mi',            'canonical' => 'km',       'factor' => 1.609344,           'decimals' => 1],
-        'min'      => ['label' => 'min',           'canonical' => 'min',      'factor' => 1.0,                'decimals' => 0],
-        'h'        => ['label' => 'uur',           'canonical' => 'min',      'factor' => 60.0,               'decimals' => 1],
-        'l'        => ['label' => 'liter',         'canonical' => 'l',        'factor' => 1.0,                'decimals' => 1],
-        'ml'       => ['label' => 'ml',            'canonical' => 'l',        'factor' => 0.001,              'decimals' => 0],
-        'floz'     => ['label' => 'fl oz',         'canonical' => 'l',        'factor' => 0.0295735295625,    'decimals' => 0],
-        'kcal'     => ['label' => 'kcal',          'canonical' => 'kcal',     'factor' => 1.0,                'decimals' => 0],
-        'kj'       => ['label' => 'kJ',            'canonical' => 'kcal',     'factor' => 0.239005736137667,  'decimals' => 0],
-        'g'        => ['label' => 'g',             'canonical' => 'g',        'factor' => 1.0,                'decimals' => 0],
-        'mg'       => ['label' => 'mg',            'canonical' => 'mg',       'factor' => 1.0,                'decimals' => 0],
-        'pct'      => ['label' => '%',             'canonical' => 'pct',      'factor' => 1.0,                'decimals' => 1, 'attached' => true],
-        'bpm'      => ['label' => 'bpm',           'canonical' => 'bpm',      'factor' => 1.0,                'decimals' => 0],
-        'ms'       => ['label' => 'ms',            'canonical' => 'ms',       'factor' => 1.0,                'decimals' => 0],
-        'score10'  => ['label' => '/10',           'canonical' => 'score10',  'factor' => 1.0,                'decimals' => 1, 'attached' => true],
-        'steps'    => ['label' => 'stappen',       'one' => 'stap',      'canonical' => 'steps',    'factor' => 1.0, 'decimals' => 0],
-        'floors'   => ['label' => 'verdiepingen',  'one' => 'verdieping', 'canonical' => 'floors', 'factor' => 1.0, 'decimals' => 0],
-        'sessions' => ['label' => 'trainingen',    'one' => 'training',  'canonical' => 'sessions', 'factor' => 1.0, 'decimals' => 0],
-        'times'    => ['label' => 'keer',          'canonical' => 'times',    'factor' => 1.0,                'decimals' => 0],
-        'pages'    => ['label' => "pagina's",      'one' => 'pagina',    'canonical' => 'pages',    'factor' => 1.0, 'decimals' => 0],
-        'glasses'  => ['label' => 'glazen',        'one' => 'glas',      'canonical' => 'glasses',  'factor' => 1.0, 'decimals' => 0],
-        'reps'     => ['label' => 'herhalingen',   'one' => 'herhaling', 'canonical' => 'reps',     'factor' => 1.0, 'decimals' => 0],
+        'kg'       => ['label' => 'kg',            'canonical' => 'kg',       'factor' => 1.0,                'decimals' => 1, 'wheel' => [20, 250, 0.1]],
+        'lb'       => ['label' => 'lb',            'canonical' => 'kg',       'factor' => 0.45359237,         'decimals' => 1, 'wheel' => [45, 550, 0.1]],
+        'cm'       => ['label' => 'cm',            'canonical' => 'cm',       'factor' => 1.0,                'decimals' => 1, 'wheel' => [1, 250, 0.5]],
+        'in'       => ['label' => 'inch',          'canonical' => 'cm',       'factor' => 2.54,               'decimals' => 1, 'wheel' => [1, 100, 0.5]],
+        'km'       => ['label' => 'km',            'canonical' => 'km',       'factor' => 1.0,                'decimals' => 1, 'wheel' => [0.5, 200, 0.5]],
+        'mi'       => ['label' => 'mi',            'canonical' => 'km',       'factor' => 1.609344,           'decimals' => 1, 'wheel' => [0.5, 125, 0.5]],
+        'min'      => ['label' => 'min',           'canonical' => 'min',      'factor' => 1.0,                'decimals' => 0, 'wheel' => [5, 600, 5]],
+        'h'        => ['label' => 'uur',           'canonical' => 'min',      'factor' => 60.0,               'decimals' => 1, 'wheel' => [0.5, 24, 0.5]],
+        'l'        => ['label' => 'liter',         'canonical' => 'l',        'factor' => 1.0,                'decimals' => 1, 'wheel' => [0.1, 6, 0.1]],
+        'ml'       => ['label' => 'ml',            'canonical' => 'l',        'factor' => 0.001,              'decimals' => 0, 'wheel' => [50, 6000, 50]],
+        'floz'     => ['label' => 'fl oz',         'canonical' => 'l',        'factor' => 0.0295735295625,    'decimals' => 0, 'wheel' => [4, 200, 4]],
+        'kcal'     => ['label' => 'kcal',          'canonical' => 'kcal',     'factor' => 1.0,                'decimals' => 0, 'wheel' => [50, 6000, 50]],
+        'kj'       => ['label' => 'kJ',            'canonical' => 'kcal',     'factor' => 0.239005736137667,  'decimals' => 0, 'wheel' => [200, 25000, 200]],
+        'g'        => ['label' => 'g',             'canonical' => 'g',        'factor' => 1.0,                'decimals' => 0, 'wheel' => [5, 500, 5]],
+        'mg'       => ['label' => 'mg',            'canonical' => 'mg',       'factor' => 1.0,                'decimals' => 0, 'wheel' => [10, 1000, 10]],
+        'pct'      => ['label' => '%',             'canonical' => 'pct',      'factor' => 1.0,                'decimals' => 1, 'attached' => true, 'wheel' => [1, 100, 0.5]],
+        'bpm'      => ['label' => 'bpm',           'canonical' => 'bpm',      'factor' => 1.0,                'decimals' => 0, 'wheel' => [30, 220, 1]],
+        'ms'       => ['label' => 'ms',            'canonical' => 'ms',       'factor' => 1.0,                'decimals' => 0, 'wheel' => [10, 200, 1]],
+        'score10'  => ['label' => '/10',           'canonical' => 'score10',  'factor' => 1.0,                'decimals' => 1, 'attached' => true, 'wheel' => [1, 10, 0.5]],
+        'steps'    => ['label' => 'stappen',       'one' => 'stap',      'canonical' => 'steps',    'factor' => 1.0, 'decimals' => 0, 'wheel' => [500, 50000, 500]],
+        'floors'   => ['label' => 'verdiepingen',  'one' => 'verdieping', 'canonical' => 'floors', 'factor' => 1.0, 'decimals' => 0, 'wheel' => [1, 100, 1]],
+        'sessions' => ['label' => 'trainingen',    'one' => 'training',  'canonical' => 'sessions', 'factor' => 1.0, 'decimals' => 0, 'wheel' => [1, 30, 1]],
+        'times'    => ['label' => 'keer',          'canonical' => 'times',    'factor' => 1.0,                'decimals' => 0, 'wheel' => [1, 50, 1]],
+        'pages'    => ['label' => "pagina's",      'one' => 'pagina',    'canonical' => 'pages',    'factor' => 1.0, 'decimals' => 0, 'wheel' => [5, 1000, 5]],
+        'glasses'  => ['label' => 'glazen',        'one' => 'glas',      'canonical' => 'glasses',  'factor' => 1.0, 'decimals' => 0, 'wheel' => [1, 20, 1]],
+        'reps'     => ['label' => 'herhalingen',   'one' => 'herhaling', 'canonical' => 'reps',     'factor' => 1.0, 'decimals' => 0, 'wheel' => [5, 500, 5]],
     ],
 
     /* ------------------------------------------------------- measurements */

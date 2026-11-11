@@ -32,6 +32,11 @@ $field = static function (string $key, string $label, string $input, ?string $un
     </div>
 <?php };
 $attr = static fn (string $key): string => 'id="' . e($id . '-' . $key) . '" name="' . e($key) . '" data-entry-field="' . e($key) . '"';
+/* 48.0: a date and a time of day on the wheel (assets/js/wheel-picker.js) —
+   a date up to today, a year back at most; a time "HH:MM". */
+$wheel = static fn (string $kind, ?string $start = null): string => e(json_encode($kind === 'date'
+    ? ['kind' => 'date', 'min' => (new DateTimeImmutable($today))->modify('-1 year')->format('Y-m-d'), 'max' => $today]
+    : ['kind' => 'clock', 'default' => $start]));
 ?>
 <article class="detail manual-entry" data-detail="<?= e($id) ?>" data-detail-parent="<?= e($kind) ?>" data-accent="<?= e($kind) ?>"
          data-manual-entry="<?= e($kind) ?>" data-today="<?= e($today) ?>"
@@ -60,15 +65,15 @@ $attr = static fn (string $key): string => 'id="' . e($id . '-' . $key) . '" nam
                     <div class="manual-entry__fields">
                         <?php if ($kind === 'sleep'): ?>
                             <?php $field('date', $copy['date'],
-                                '<input class="wizard__input" type="date" ' . $attr('date') . ' value="' . e($today) . '" max="' . e($today) . '" required aria-describedby="' . e($id) . '-date-note">',
+                                '<input class="wizard__input" type="text" ' . $attr('date') . ' value="' . e($today) . '" data-wheel="' . $wheel('date') . '" required aria-describedby="' . e($id) . '-date-note">',
                                 null, $copy['date_note']); ?>
                             <?php $field('bedtime', $copy['bedtime'],
-                                '<input class="wizard__input wizard__input--number" type="time" ' . $attr('bedtime') . ' value="23:00" required>'); ?>
+                                '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" ' . $attr('bedtime') . ' value="23:00" required data-wheel="' . $wheel('clock', '23:00') . '">'); ?>
                             <?php $field('wakeup', $copy['wakeup'],
-                                '<input class="wizard__input wizard__input--number" type="time" ' . $attr('wakeup') . ' value="07:00" required>'); ?>
+                                '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" ' . $attr('wakeup') . ' value="07:00" required data-wheel="' . $wheel('clock', '07:00') . '">'); ?>
                         <?php else: ?>
                             <?php $field('date', $common['date'],
-                                '<input class="wizard__input" type="date" ' . $attr('date') . ' value="' . e($today) . '" max="' . e($today) . '" required>'); ?>
+                                '<input class="wizard__input" type="text" ' . $attr('date') . ' value="' . e($today) . '" data-wheel="' . $wheel('date') . '" required>'); ?>
                             <?php
                             $options = '';
                             foreach ($copy['types'] as $type) {
@@ -78,7 +83,7 @@ $attr = static fn (string $key): string => 'id="' . e($id . '-' . $key) . '" nam
                                 '<span class="glass glass--select manual-entry__select"><select ' . $attr('type') . ' required>' . $options . '</select>' . icon('chevron-down') . '</span>');
                             ?>
                             <?php $field('start', $copy['start'],
-                                '<input class="wizard__input wizard__input--number" type="time" ' . $attr('start') . ' value="18:00" required>'); ?>
+                                '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" ' . $attr('start') . ' value="18:00" required data-wheel="' . $wheel('clock', '18:00') . '">'); ?>
                             <?php $field('minutes', $copy['duration'],
                                 '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" autocomplete="off" ' . $attr('minutes') . ' value="30" required'
                                 . ' data-wheel="' . e(json_encode(['kind' => 'duration', 'min' => 1, 'max' => 1440, 'default' => 30])) . '">',

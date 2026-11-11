@@ -57,6 +57,11 @@
 
     /* ------------------------------------------------------- the two pages */
 
+    /* A field's value for the form: a date on the wheel keeps "YYYY-MM-DD" beside what it shows. */
+    function valueOf(input) {
+        return window.OwnifyWheel ? window.OwnifyWheel.value(input) : input.value;
+    }
+
     function minutesOf(value) {
         var m = /^(\d{1,2}):(\d{2})$/.exec(value || '');
         return m ? Number(m[1]) * 60 + Number(m[2]) : null;
@@ -76,7 +81,7 @@
         var line = page.querySelector('[data-entry-span]');
         if (!line) { return; }
 
-        var date = page.querySelector('[data-entry-field="date"]').value;
+        var date = valueOf(page.querySelector('[data-entry-field="date"]'));
         var bed = minutesOf(page.querySelector('[data-entry-field="bedtime"]').value);
         var wake = minutesOf(page.querySelector('[data-entry-field="wakeup"]').value);
         var parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date || '');
@@ -121,7 +126,7 @@
 
             var fields = {};
             Array.prototype.forEach.call(form.querySelectorAll('[data-entry-field]'), function (input) {
-                fields[input.getAttribute('data-entry-field')] = (input.value || '').trim();
+                fields[input.getAttribute('data-entry-field')] = (valueOf(input) || '').trim();
             });
 
             busy = true;

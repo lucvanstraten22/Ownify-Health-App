@@ -200,12 +200,14 @@
 
     /* ----------------------------------------------------- 3 · over jou */
 
+    /* 48.0: a date on the wheel keeps "YYYY-MM-DD" beside what it shows. */
+    function wheelValue(field) { return window.OwnifyWheel ? window.OwnifyWheel.value(field) : field.value; }
     var fields = Array.prototype.slice.call(root.querySelectorAll('[data-setup-field]'));
 
     /** The fields with something new in them. */
     function changed() {
         return fields.filter(function (field) {
-            var value = field.value.trim();
+            var value = wheelValue(field).trim();
             return value !== '' && value !== (field.getAttribute('data-initial') || '');
         });
     }
@@ -234,7 +236,7 @@
         changed().forEach(function (field) {
             var endpoint = field.getAttribute('data-endpoint');
             byEndpoint[endpoint] = byEndpoint[endpoint] || {};
-            byEndpoint[endpoint][field.getAttribute('data-setup-field')] = field.value.trim();
+            byEndpoint[endpoint][field.getAttribute('data-setup-field')] = wheelValue(field).trim();
         });
 
         var endpoints = Object.keys(byEndpoint);
@@ -255,7 +257,7 @@
                         /* Saved: not sent again if the person comes back here. */
                         Object.keys(byEndpoint[endpoint]).forEach(function (key) {
                             var field = root.querySelector('[data-setup-field="' + key + '"]');
-                            if (field) { field.setAttribute('data-initial', field.value.trim()); }
+                            if (field) { field.setAttribute('data-initial', wheelValue(field).trim()); }
                         });
                     }
                     return result;

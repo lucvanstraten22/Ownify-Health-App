@@ -365,31 +365,42 @@ app each remember their own.
   and the bars, the window behind the app and — on Android 13 and later — the
   next start's splash follow it.
 
-## The wheel (47.0)
+## The wheel (48.0)
 
-A number or a duration picked as a phone picks one, the same on both apps:
+Every number, duration, time of day, date and list in Ownify is picked on
+one wheel, the same on both apps — no native picker anywhere (no
+`<input type="time|date">`, no select menu, no system dialog):
 
-- **A clock time is the platform's own picker**: `<input type="time">` on
-  the web (an iPhone's wheel, Android's dialog), `TimePickerDialog` in the
-  app. Nothing of ours.
-- **A number or a duration** — nothing native exists for these on the web,
-  so `assets/js/wheel-picker.js`: the one Liquid Glass floating from the
-  field (`--lg-body-thick`, `--lg-shadow-float`), a column per part (hours
-  and minutes; the whole and one decimal), native scroll with snapping for
-  the phone's own momentum, a Well band (`--fill` 0.07) on the picked row,
-  the value in the field as it turns. Typen (a glass chip) gives the
-  keyboard back for an exact value; Klaar (the green glass) closes it. On a
-  computer the field can be typed in all along.
-- **In the app** it is the system's own `NumberPicker`, a column per part,
-  in the system dialog `TimePickerDialog` uses (`ui/design/Wheel.kt`
-  `WheelInput`): Klaar, Typen, Annuleren.
-- Where it is: Training invoeren (Duur from 30 min, Verbrande calorieën),
-  the Voeding rating (1–10), a goal's new value and the goal wizard's
-  numbers (in the unit on screen, with its decimals), lengte and gewicht in
-  Instellingen and the first-run setup (from 170 cm, 70 kg; feet and inches
-  each a column). A spec beside the field says its range, step, decimals
-  and start (`data-wheel`, `wheel` in the JSON). Values are stored as
-  before: minutes, the person's unit converted once where it is saved.
+- **The look**: the one thick Liquid Glass floating from the field
+  (`--lg-body-thick`, `--lg-shadow-float`; the app's `Panes.Panel`), a
+  column per part, native scroll with snapping for the phone's own momentum,
+  a Well band (`--fill` 0.07) on the picked row. **No buttons**: the value
+  is in the field as it turns, and a tap anywhere outside closes the wheel
+  — and only closes it (the tap does nothing beneath it). Escape/Enter close
+  it from the keyboard; on a computer a number or a time can be typed too.
+- **The kinds**: a number (`kind: number`, `min`, `max`, `step`, `unit`); a
+  duration (hours | minutes, with u and min); a time of day (HH : MM, one
+  ":" between them, no units, per minute, 24 hours); a date (day · month ·
+  year — month · day · year in English —, its days following the month,
+  turned back when past the last allowed day; shown as 10 nov 2026, kept as
+  YYYY-MM-DD: `OwnifyWheel.value()`); a list (one column of a select's
+  choices, chosen when the wheel closes, as a menu is).
+- **Steps that make sense** (config/goals.php `wheel`, read by
+  `forUnit()` on the web and `Wheel.forUnit()` in the app): steps 500–50.000
+  per 500, km 0,5–200 per 0,5, kcal per 50, kg per 0,1 (the whole and its
+  tenth two columns), min per 5, uur per 0,5, liter per 0,1, ml per 50,
+  g per 5, mg per 10, % per 0,5, bpm and ms per 1, /10 per 0,5,
+  pagina's and herhalingen per 5. A total above the top (a month's
+  trainingen) gets room up to twice where it starts. A column is never longer
+  than 400 rows: a longer range turns in bigger steps.
+- Where it is: Slaap/Training invoeren (Datum, Activiteit, Naar bed,
+  Opgestaan, Begintijd, Duur from 30 min, Verbrande calorieën), the Voeding
+  rating, a goal's new value and the goal wizard's numbers, unit and period,
+  lengte, gewicht and geboortedatum in Instellingen and the first-run setup.
+  Values are stored as before: minutes, ISO dates, "HH:MM", the person's
+  unit converted once where it is saved.
+- The app: `ui/design/Wheel.kt` (`WheelField`, `WheelPopup`; GlassSelect,
+  TimeControl and DateControl use it), with a light haptic tick per row.
 
 ## Adding something
 

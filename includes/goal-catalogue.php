@@ -125,6 +125,7 @@ if (!function_exists('goal_catalogue')) {
             'decimals'  => (int) $unit['decimals'],
             'canonical' => (string) $unit['canonical'],
             'factor'    => (float) $unit['factor'],
+            'wheel'     => array_map('floatval', $unit['wheel'] ?? [0, 1000, 1]),
         ];
     }
 
@@ -134,7 +135,7 @@ if (!function_exists('goal_catalogue')) {
         $word = trim($word);
 
         return ['code' => null, 'label' => $word, 'one' => $word, 'attached' => false,
-                'decimals' => 2, 'canonical' => null, 'factor' => 1.0];
+                'decimals' => 2, 'canonical' => null, 'factor' => 1.0, 'wheel' => [1.0, 1000.0, 1.0]];
     }
 
     /** The unit a goal row is shown and typed in: its chosen one, or its own word. */
