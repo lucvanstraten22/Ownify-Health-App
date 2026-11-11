@@ -1490,26 +1490,6 @@
       },
       {
         "category": "nutrition",
-        "label": "Dagen met 2 liter water",
-        "icon": "calendar",
-        "accent": "nutrition",
-        "unit": "",
-        "one": "%s dag met 2 liter water",
-        "many": "%s dagen met 2 liter water",
-        "what": "dagen met 2 liter water",
-        "versus": "Wie drinkt het vaakst 2 liter water?",
-        "step": 5,
-        "per_week": 15,
-        "key": "water_days",
-        "unit_shown": "",
-        "targets": {
-          "1w": 15,
-          "2w": 30,
-          "month": 60
-        }
-      },
-      {
-        "category": "nutrition",
         "label": "Eiwit",
         "icon": "utensils",
         "accent": "nutrition",

@@ -182,6 +182,9 @@ return [
             'many'   => '%s dagen met 2 liter water',
             'what'   => 'dagen met 2 liter water',
             'versus' => 'Wie drinkt het vaakst 2 liter water?',
+            /* 49.4: no longer offered for a new challenge (Water is, with
+               the litres the group chooses); running ones go on. */
+            'retired' => true,
             'step'   => 5,
             'per_week' => 15,
         ],

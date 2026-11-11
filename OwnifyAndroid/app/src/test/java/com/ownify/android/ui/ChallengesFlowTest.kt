@@ -255,7 +255,7 @@ class ChallengesFlowTest {
         bubble("Slaap").performClick()
         // 49.1: what a goal can count, found as in the goal wizard.
         compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextInput("water")
-        waitFor("Dagen met 2 liter water")
+        waitFor("Water")
         assertTrue("the search leaves the rest out", gone("Stappen"))
         compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextReplacement("")
         button("Stappen").performScrollTo().performClick()
