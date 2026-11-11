@@ -189,7 +189,139 @@ implementation), roadmap P1/P2/P3.
 5. Phase 2 may use the parallel reviewers, kept clearly separate; mind the
    weekly limit, but never skip a needed quality check.
 
+## Phase 1 — evidence set (done)
+
+Where: `$SCRATCH/audit/` (session scratchpad, not in git — it holds a test
+account's data; nothing personal). `$SCRATCH` =
+`/tmp/claude-0/-home-user-Health-App/ed16b8ae-9bd3-5924-8d5f-adc273350a39/scratchpad`.
+
+- `audit/cap.js` — every rail page and every detail (all 88 `[data-detail]`
+  pages reached), scrolled screen by screen, PNG + a metrics JSON per shot
+  (each visible text: font size/weight/line height/tracking/colour/box; each
+  card/glass/button/field block: box, padding, margin, radius, background,
+  border, shadow, backdrop filter, gap).
+- `audit/pop.js` — popups, sheets, wizards, wheel, auth screens, empty account.
+- `audit/live.js` — the live site's signed-out screens (welcome, login,
+  forgot password, register), read-only, no login: the local harness has no
+  mail or Google configured, so its login popup differs from the real one.
+- Test data: `ownify_e2e` user dev_jij filled with 120 days through the app's
+  own import (`audit/fill.php`: 1,531 records → 2,307 metrics, 114 nights
+  with stages, 64 workouts, heart-rate minutes, nutrition, weight, caffeine).
+  dev_lisa stays empty for the empty states. Dump before the fill:
+  `audit/ownify_e2e-before-fill.sql` (local test DB only).
+
+Sets (853 screenshots in all, each with a metrics/layout JSON):
+
+| Set | What |
+|---|---|
+| `web/phone-dark`, `web/phone-light` | 393×852 @2x, all 5 rail pages + all 88 detail pages, scrolled (204 shots each) |
+| `web/small-dark` | 320×640, 20 key views (66 shots) |
+| `web/en-phone-dark` | English + imperial, 17 key views (45 shots); the account was set back to "follow the device" afterwards |
+| `web/desktop-*`, `web/tablet-dark`, `web/wide-dark` | ≥768 px: the iPhone frame (one shot each; see observation 10) |
+| `web/pop-phone-dark`, `web/pop-phone-light` | auth screens, account (+ photo picked/uploaded, + name), friends, add friend, devices, pairing, OwnifyAI, goal wizard 1–2, challenge wizard 1–5 + calendar, code sheet, clock wheel, empty account (dev_lisa) pages and details |
+| `web/live` | live site signed out: welcome, login, forgot password, register — phone + desktop, both themes |
+| `web/a11y` | `a11y.json` (touch targets + accessible names on 13 views, keyboard order), focus-ring crops, reduced-motion and more-contrast variants |
+| `android/dark`, `android/light` | 111 screens each through `ScreenshotCapture` (412×915 dp @2.625) from dev_jij's real `api/app/state.php` (`android/state-dev_jij.json`; dev_lisa as the free/empty account), each with a layout dump in dp |
+
+Test account changes (local `ownify_e2e` only, kept for Phase 2–8): dev_jij
+got 120 days of data, the name "Jasper van der Veen" and a test photo.
+`ownify_e2e-before-fill.sql` restores the database as it was.
+
+Not testable here, and why: real Health Connect / Polar / Google sync
+(no device, fake services only); real e-mail; the Android app on a device
+(no emulator: Robolectric renders the real Compose UI, but touch feel,
+system bars and real fonts rendering can differ slightly); the live site
+signed in (no account to use there).
+
+### Early observations (raw; Phase 2 verifies and widens them)
+
+1. Login popup (live): heading "Inloggen" ≈ the underlined "Wachtwoord
+   vergeten?" link in size and weight; the field labels are small caps,
+   smaller than the link; the heading repeats the button text "Inloggen";
+   the primary "Inloggen" button is the neutral glass, not the green action.
+2. Account popup, photo row: native file input in a pill — "Bestand kiezen"
+   chip + "Geen bestand..." wrapping to two lines in body size, larger than
+   the "Uploaden" button text; Uploaden looks enabled before a file is picked.
+3. Account popup, Vrienden: a flat filled row ("2 vrienden ›") unlike the
+   glass rows and pills around it.
+4. Detail pages, back pill: after opening, a thick double ring around the
+   "‹ Gezondheid" pill (focus ring on the pill the detail focuses).
+5. Slaap detail: the floating "+" overlaps the SpO₂ card's day labels
+   ("Di Wo"); "Tijd in bed + Regelmaat" card shows one dot and "— 93".
+6. Local harness differs from live where mail/Google are not configured
+   (no "Wachtwoord vergeten?", "Google is nog niet gekoppeld."): live
+   screenshots are the reference for those screens.
+7. Touch targets under 44 px (a11y.json): the OwnifyAI handle "OwnifyAI
+   openen — of veeg omhoog" 128×40 on every page; the range switch options
+   (7/30/90 dagen, 1 jaar) 75×34; Doelen's Actief/Afgerond 177×34; "Primair
+   doel ›" 101×22; the Gezondheidsscore heading link 211×32.
+8. Keyboard order on Overzicht is sensible (skip link first), but "Nog 8
+   dagen" (a locked insight's progress) is a tab stop of its own.
+9. Doelen says "Nog geen doelen" while dev_jij has a goal page `goal-1`
+   (finished/ended goal?) — check what the empty state means then.
+10. ≥ 768 px the website is only ever the phone inside an iPhone frame
+    (components/phone-simulator.php, an iframe of the page): desktop, tablet
+    and wide shots are that frame; there is no separate desktop layout to
+    audit, only the frame's own presentation.
+12. Account popup (web): the real name (first/last name set) is not shown —
+    only username and "Lid sinds"; the photo is. Android's account sheet
+    showed neither photo nor name from the same state — check whether it
+    reads them. Example 3's "thick elements" beside the header are not in
+    the popup: likely Instellingen → Account's header (reviewer 3).
+11. Goal wizard step 3 (dates) was not reached by script (step 2 needs a
+    target typed); its calendar is the same component as the challenge
+    wizard's, which was captured (`chwiz-3-calendar`).
+
+## Phase 2 — reviewer briefs (ready to launch)
+
+Every reviewer: read-only (no edits to the repository, no commits, no
+database writes), works from the evidence set and the code, and writes its
+findings to `docs/audit/lens-N-<name>.md` in this format, one finding per
+block:
+
+```
+### N.k Title
+- Where: page/component · file:line (web) · file:line (Android)
+- Problem: what is wrong, with the measured numbers from the metrics JSON
+- Why: objective defect / usability issue / design preference (say which)
+- Proposal: the fix, using existing tokens/components; NEW CONVENTION if it needs one
+- Affects: every other place with the same pattern
+- Complexity: S / M / L · Risk: what could break
+```
+
+Shared context for all: CLAUDE.md, docs/THEME.md (the approved system),
+the evidence set (paths above; `_index.json` per set; metrics JSON beside
+each PNG), web code (pages/, components/, assets/css, assets/js), Android
+code (OwnifyAndroid/app/src/main/java/com/ownify/android/ui). Never change
+anything; never propose a new font. Distinguish platform-legitimate
+differences from inconsistencies.
+
+| Lens | Scope (and only this) | Must cover explicitly |
+|---|---|---|
+| 1 Typography & hierarchy | sizes/weights/line heights/tracking/colour roles of every heading, title, label, value, link, button text; hierarchy logic per screen | the login popup; every popup heading vs its links and labels; section titles vs card titles; `--fs-*` steps actually used vs THEME.md |
+| 2 Spacing & alignment | gaps between headings/content, cards, sections; paddings inside components; icon–text gaps; edge insets; responsive at 320 | measured gap tables per page from the metrics; unexplained differences between equivalent stacks |
+| 3 Components, actions & icons | cards/glass/wells/rows/notes/slots, buttons vs links vs bubbles vs glass actions, inputs, uploads, switches, icon set (meaning map, filled vs outline, sizes) | examples 1–5 from the request (photo upload, friends row, profile header, privacy repetition, data-management button hierarchy); destructive actions |
+| 4 Charts | every chart on both apps vs docs/CHARTS.md and each other: lines, markers, grid, axes, fills, tooltips, empty data, labels, scales, widths, animation | which line charts show markers and why; the FAB overlapping chart labels; one-dot charts |
+| 5 UX, states, motion, a11y | flows and destinations, feedback, empty/loading/error/success, hover/focus/pressed/disabled, motion timing/easing, reduced motion, contrast, targets, labels | `web/a11y/a11y.json`; the double ring on the back pill; empty account (`pop-*/empty-*`) |
+| 6 Web ↔ Android parity & terminology | same screen side by side (`web/phone-*` vs `android/*`), wording, naming of the same concept, OwnifyAndroid/docs/PARITY.md accuracy | terms used for the same thing in different places (e.g. Gezondheidsscore/score, Instellingen names) |
+| 7 Performance (static) | request count/size per page, duplicate fetches, payload of api/app/state.php, heavy PHP per request, N+1 queries, CSS/JS weight and unused rules, caching headers, images | measured numbers only where measured; theoretical items marked so (Phase 5 measures) |
+| 8 Dead code — web/backend | unused PHP functions, endpoints, components, CSS selectors, JS, config keys, assets, tools, docs that describe removed features | proof of non-use per item (grep across web + Android + cron + routes + dynamic includes); uncertain items listed separately |
+| 9 Dead code — Android + database | unused Kotlin/composables/resources; every table/column/index in schema.sql vs queries in PHP; orphan risks | which tables hold personal data (input for Phase 7's map); redundant indexes |
+
+After the reviewers: one consolidation pass (me) into
+`docs/audit/CONSOLIDATED.md` — duplicates merged, one canonical pattern per
+component type, conflicts settled — which is the input for Phase 3.
+
 ## Progress log
 
 - Phase 0 done (this document). Checkpoint 0 answered.
 - Phase 1 started (Effort High, Ultracode OFF).
+- Phase 1 done: evidence set complete (see the table above). **Checkpoint 1.**
+
+## Checkpoint 1 — before Phase 2
+
+Done: the evidence set for both apps; twelve early observations; the nine
+reviewer briefs, ready to launch. Nothing in the app was changed.
+
+Next: Phase 2, nine parallel read-only reviewers + one consolidation.
+Settings: **Effort XHigh, Ultracode ON**.
