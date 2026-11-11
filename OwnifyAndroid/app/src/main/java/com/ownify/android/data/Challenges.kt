@@ -30,7 +30,15 @@ data class Challenges(
     /** Vanaf vandaag, Vanaf ma 19 okt. */
     val from: List<Pair<String, String>>,
     /** "%s samen", "Wie de meeste %s haalt", "Alleen jij, tot iemand meedoet". */
-    val preview: Map<String, String>
+    val preview: Map<String, String>,
+    /** 49.1: step 1's groups (key to label), in order. */
+    val categories: List<Pair<String, String>> = emptyList(),
+    /** 49.1: step 3's Periode — the goal wizard's looptijden and how far a start and an end may go. */
+    val durations: List<GoalSpan> = emptyList(),
+    val startWithin: Int = 90,
+    val longest: Int = 366,
+    /** "Samen %s in een maand" per looptijd; `days` has a %d. */
+    val namePatterns: Map<String, String> = emptyMap()
 ) {
     fun view(id: Int): ChallengeView? = running.firstOrNull { it.id == id } ?: ended.firstOrNull { it.id == id }
 
@@ -55,7 +63,12 @@ data class Challenges(
             kinds = o.arr("kinds").map { ChallengeKind(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("hint").orEmpty()) },
             lengths = o.arr("lengths").map(ChallengeLength::parse),
             from = o.arr("from").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
-            preview = o.obj("preview").stringMap()
+            preview = o.obj("preview").stringMap(),
+            categories = o.arr("categories").map { (it.str("key") ?: return@map null) to it.str("label").orEmpty() },
+            durations = o.arr("durations").map { d -> GoalSpan(d.str("key") ?: return@map null, d.str("label").orEmpty(), d.int("days") ?: 0, d.int("months") ?: 0) },
+            startWithin = o.obj("dates")?.int("start_within") ?: 90,
+            longest = o.obj("dates")?.int("longest") ?: 366,
+            namePatterns = o.obj("name_patterns").stringMap()
         )
     }
 }
@@ -328,8 +341,15 @@ data class ChallengeMetric(
     val what: String,
     val versus: String,
     val step: Double,
-    val targets: Map<String, Double>
+    val targets: Map<String, Double>,
+    /** 49.1: its group in step 1, its unit ('km', 'l' or none) and the suggested target per week. */
+    val category: String = "activity",
+    val unit: String = "",
+    val perWeek: Double = 0.0
 ) {
+    /** Litres, km and hours keep a decimal; the rest is whole. */
+    val decimals: Int get() = if (unit.isNotEmpty() || key == "sleep_hours") 1 else 0
+
     companion object {
         fun parse(o: JSONObject): ChallengeMetric? {
             val key = o.str("key") ?: return null
@@ -344,7 +364,10 @@ data class ChallengeMetric(
                 what = o.str("what").orEmpty(),
                 versus = o.str("versus").orEmpty(),
                 step = o.num("step") ?: 1.0,
-                targets = buildMap { targets?.keys()?.forEach { k -> targets.num(k)?.let { put(k, it) } } }
+                targets = buildMap { targets?.keys()?.forEach { k -> targets.num(k)?.let { put(k, it) } } },
+                category = o.str("category") ?: "activity",
+                unit = o.str("unit").orEmpty(),
+                perWeek = o.num("per_week") ?: 0.0
             )
         }
     }

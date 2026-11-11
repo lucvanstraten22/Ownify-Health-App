@@ -138,19 +138,50 @@ The goal wizard's frame and pieces (components/goal-wizard.php; the app's
 `WizardFrame`, `WizardOption`, `TypeCard`, `WizardReview` in GoalWizard.kt),
 five screens, the indicator counting only the first three:
 
-1. **Wat** — what is counted: Beweging / Slaap bubbles over the glass list
-   of the five metrics (only what connected sources sync).
+1. **Wat** — what is counted, found as in the goal wizard: the search field,
+   the categories as bubbles (Activiteit, Training, Slaap, Voeding), the
+   glass list (only what connected sources sync — see *More to count* below).
 2. **Soort** — Samen or Wedstrijd as the goal wizard's type cards, each with
    its example, and the name (its suggestion as placeholder).
 3. **Instellen** — Samen's target on the wheel in the metric's own step
-   (10 trainingen, 50.000 stappen, 25 km …, suggested per length), 1 week /
-   2 weken / 1 maand, from today or Monday, and the dates it gives.
+   (10 trainingen, 50.000 stappen, 25 km …), and since 49.1 the goal
+   wizard's Periode: Start → Einde on Ownify's calendar, or a looptijd
+   (1 week … 1 jaar). A start is today or later, within 90 days; an end
+   after it, at most 366 days on (`dates` in config/challenges.php). The
+   suggested target is `per_week` for each week of those dates, until the
+   target is changed by hand.
 4. **Controleren** — everything at a glance; back changes any step.
 5. **Uitnodigen** — a search over the friends and their glass list, each
    chosen or not (the Health fill, as a chosen measurement); then
    Uitdaging maken sends it all to `create.php`, and the code sheet follows.
 
 The ideas on an empty Uitdagingen open it with their kind and metric chosen.
+
+### More to count (49.1, migration 031)
+
+Fourteen metrics instead of five — the goal measurements a group can add up,
+from synced data only:
+
+| Category | Metrics |
+|---|---|
+| Activiteit | Stappen, Afstand, Actieve minuten, Actieve calorieën, Verdiepingen, Dagen met 10.000 stappen |
+| Training | Trainingen, Trainingsminuten |
+| Slaap | Nachten van 7 uur, Uren slaap |
+| Voeding | Water (litres or fl oz), Dagen met 2 liter water, Eiwit, Vezels |
+
+Left out on purpose: body measurements and heart rates (weight, body fat,
+waist, resting heart rate, HRV — a sum means nothing and "the most" is not
+better), sleep efficiency (an average), calories, sugar, fat, saturated fat,
+sodium and carbohydrates (more is not better, so a group total or a contest
+would push the wrong way), and the voedingsbeoordeling and meditation (typed
+in by hand, and a challenge never counts what somebody types).
+
+`challenges.metric` was an ENUM of the first five; migration 031 makes it a
+`VARCHAR(32)`. Until it is imported, `challenge_metrics_ready()` is false and
+only the first five are offered; nothing else changes.
+
+`create.php` takes `start_date` and `end_date` (YYYY-MM-DD); without them
+the older `length` and `from` still work, for app versions before 49.1.
 
 ## The endpoints
 
@@ -159,7 +190,7 @@ All take the website's session and CSRF token, or the app's account token
 
 | Endpoint | Does |
 |---|---|
-| `api/challenges/create.php` | `kind`, `metric`, `target` + `target_unit` (Samen), `length`, `from`, `name`, `invite[]` → `{ id, code, name, invited, share_text }` |
+| `api/challenges/create.php` | `kind`, `metric`, `target` + `target_unit` (Samen: `km`/`mi`, `l`/`floz`), `start_date` + `end_date` (or before 49.1 `length` + `from`), `name`, `invite[]` → `{ id, code, name, invited, share_text }` |
 | `api/challenges/lookup.php` | `code` → `found` with its `review`, or `member` (you are in it), or `none` / `ended` / `wait` (429) with an `error` |
 | `api/challenges/join.php` | `challenge_id` (an invitation you have) or `code` → `joined` or `member` |
 | `api/challenges/respond.php` | `challenge_id`, `action` `decline` or `leave` |

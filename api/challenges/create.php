@@ -4,7 +4,8 @@
  * chosen friends and answers with its five-digit code.
  *
  *   kind         together | versus
- *   metric       workouts | steps | active_minutes | distance | sleep_nights
+ *   metric       a key of config/challenges.php → metrics (14 since 49.1, migration 031)
+ *   start_date, end_date   YYYY-MM-DD (49.1); before it length + from
  *   target       Samen only: the shared target, in what the reader sees
  *   target_unit  km | mi (afstand only), which unit `target` was typed in
  *   length       1w | 2w | month
@@ -41,6 +42,10 @@ $result = challenge_create($userId, [
     'target_unit' => $input['target_unit'] ?? 'km',
     'length'      => $input['length'] ?? null,
     'from'        => $input['from'] ?? null,
+] + array_filter([
+    'start_date'  => isset($input['start_date']) ? (string) $input['start_date'] : null,
+    'end_date'    => isset($input['end_date']) ? (string) $input['end_date'] : null,
+], static fn ($v): bool => $v !== null) + [
     'name'        => (string) ($input['name'] ?? ''),
     'invite'      => is_array($invite) ? $invite : [],
 ]);

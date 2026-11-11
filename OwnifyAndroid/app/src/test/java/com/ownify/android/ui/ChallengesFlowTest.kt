@@ -248,7 +248,13 @@ class ChallengesFlowTest {
         button("Volgende").assertIsNotEnabled()
         button("Slaap").performClick()
         waitFor("Nachten van 7 uur")
+        waitFor("Uren slaap")
         button("Slaap").performClick()
+        // 49.1: what a goal can count, found as in the goal wizard.
+        compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextInput("water")
+        waitFor("Dagen met 2 liter water")
+        assertTrue("the search leaves the rest out", gone("Stappen"))
+        compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextReplacement("")
         button("Stappen").performScrollTo().performClick()
         button("Volgende").assertIsEnabled().performClick()
 
@@ -275,8 +281,9 @@ class ChallengesFlowTest {
         val sent = server.requestsTo("create.php").single().body
         assertEquals("versus", sent.getString("kind"))
         assertEquals("steps", sent.getString("metric"))
-        assertEquals("1w", sent.getString("length"))
-        assertEquals("today", sent.getString("from"))
+        // A week from today unless chosen otherwise: the goal wizard's Periode.
+        assertEquals(java.time.LocalDate.now().toString(), sent.getString("start_date"))
+        assertEquals(java.time.LocalDate.now().plusDays(6).toString(), sent.getString("end_date"))
         assertEquals(1, sent.getJSONArray("invite").length())
         assertTrue("a Wedstrijd has no target", !sent.has("target"))
     }
@@ -292,6 +299,14 @@ class ChallengesFlowTest {
         waitFor("Samen 100 km in een week")
         button("Volgende").performClick()
         compose.onNode(hasContentDescription("Samen naar") and hasSetTextAction()).performTextReplacement("150")
+        // The goal wizard's dates: a looptijd, and the calendar for the start, then the end.
+        button("1 maand").performScrollTo().performClick()
+        compose.onAllNodes(hasClickAction() and hasContentDescription("Start", substring = true)).onFirst().performClick()
+        waitFor("Kies de startdatum")
+        button("Gereed").performClick()
+        waitFor("Kies de einddatum")
+        button("Gereed").performClick()
+        waitFor("Stap 3 van 3 · Instellen")
         repeat(2) { button("Volgende").performClick(); compose.waitForIdle() }
         button("Uitdaging maken").performClick()
         waitFor("Je uitdaging staat klaar")
@@ -300,6 +315,9 @@ class ChallengesFlowTest {
         assertEquals("together", sent.getString("kind"))
         assertEquals(150.0, sent.getDouble("target"), 0.0)
         assertEquals("km", sent.getString("target_unit"))
+        val today = java.time.LocalDate.now()
+        assertEquals(today.toString(), sent.getString("start_date"))
+        assertEquals(today.plusMonths(1).minusDays(1).toString(), sent.getString("end_date"))
     }
 
     @Test

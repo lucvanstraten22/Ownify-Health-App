@@ -41,6 +41,7 @@ require_once __DIR__ . '/friends.php';
 require_once __DIR__ . '/leaderboard.php';
 require_once __DIR__ . '/health-totals.php';
 require_once __DIR__ . '/health-signals.php';
+require_once __DIR__ . '/goal-catalogue.php';
 require_once __DIR__ . '/auth-throttle.php';
 require_once dirname(__DIR__) . '/lib/community.php';
 
@@ -57,6 +58,13 @@ if (!function_exists('challenges_available')) {
 
     /** A night that counts: at least 7 hours asleep. */
     define('CHALLENGE_NIGHT_MINUTES', 420);
+
+    /** Dagen met 10.000 stappen, and Dagen met 2 liter water (49.1). */
+    define('CHALLENGE_STEP_DAY', 10000);
+    define('CHALLENGE_WATER_DAY', 2.0);
+
+    /** The five a challenge could count before migration 031. */
+    define('CHALLENGE_FIRST_METRICS', ['workouts', 'steps', 'active_minutes', 'distance', 'sleep_nights']);
 
     /** Finished challenges the Uitdagingen page keeps showing. */
     define('CHALLENGE_ENDED_SHOWN', 10);
@@ -92,10 +100,23 @@ if (!function_exists('challenges_available')) {
      */
     function challenge_metrics(): array
     {
-        $copy = challenge_copy();
-        $out  = [];
+        $copy  = challenge_copy();
+        $out   = [];
+        $ready = challenge_metrics_ready();
 
         foreach ($copy['metrics'] as $key => $metric) {
+            if (!$ready && !in_array($key, CHALLENGE_FIRST_METRICS, true)) {
+                continue;
+            }
+            if ($metric['unit'] === 'l' && units_imperial()) {
+                /* Water in fluid ounces: what is shown, and a stepper and
+                   target that are round in them. */
+                $metric['one']  = t('%s fl oz water');
+                $metric['many'] = t('%s fl oz water');
+                $metric['what'] = t('fl oz water');
+                $metric['step'] = 200;
+                $metric['per_week'] = 1600;
+            }
             if ($metric['unit'] === 'km') {
                 $unit = units_label('km');
                 $metric['one']  = '%s ' . $unit;
@@ -104,7 +125,12 @@ if (!function_exists('challenges_available')) {
             }
 
             $metric['key']      = $key;
-            $metric['unit_shown'] = $metric['unit'] === 'km' ? units_label('km') : '';
+            $metric['unit_shown'] = match ($metric['unit']) {
+                'km'    => units_label('km'),
+                'l'     => units_imperial() ? 'fl oz' : 'l',
+                default => '',
+            };
+            $metric['category'] = $metric['category'] ?? 'activity';
             $metric['targets']  = [];
 
             foreach ($copy['lengths'] as $length => $spec) {
@@ -120,6 +146,45 @@ if (!function_exists('challenges_available')) {
     function challenge_metric(string $key): ?array
     {
         return challenge_metrics()[$key] ?? null;
+    }
+
+    /**
+     * Whether challenges.metric takes any key (migration 031). Until then
+     * only the first five are offered; nothing else changes.
+     */
+    function challenge_metrics_ready(): bool
+    {
+        static $ready = null;
+
+        if ($ready === null) {
+            try {
+                $type  = db_one(
+                    "SELECT DATA_TYPE AS t FROM information_schema.columns
+                      WHERE table_schema = DATABASE() AND table_name = 'challenges' AND column_name = 'metric'"
+                );
+                $ready = $type !== null && strtolower((string) $type['t']) === 'varchar';
+            } catch (Throwable $e) {
+                $ready = false;
+            }
+        }
+
+        return $ready;
+    }
+
+    /** A stored value as it is shown: km or mi, litres or fl oz, the rest as it is. */
+    function challenge_shown(string $metric, float $value): float
+    {
+        return match (challenge_copy()['metrics'][$metric]['unit'] ?? '') {
+            'km'    => (float) units_out($value, 'km'),
+            'l'     => units_imperial() ? $value / 0.0295735295625 : $value,
+            default => $value,
+        };
+    }
+
+    /** Whether a metric is shown with a decimal when it is small (km, litres, hours). */
+    function challenge_has_decimals(string $metric): bool
+    {
+        return in_array(challenge_copy()['metrics'][$metric]['unit'] ?? '', ['km', 'l'], true) || $metric === 'sleep_hours';
     }
 
     function challenge_round_to(float $value, float $step): float
@@ -168,6 +233,41 @@ if (!function_exists('challenges_available')) {
         return [$start, $end];
     }
 
+    /**
+     * The first and last day as chosen in step 3 (49.1): the goal wizard's
+     * Start → Einde. The start is today or later, within `start_within`
+     * days; the end after the start, at most `longest` days on. Null for
+     * dates that do not fit.
+     *
+     * @return array{0: DateTimeImmutable, 1: DateTimeImmutable}|null
+     */
+    function challenge_dates_chosen(string $start, string $end, DateTimeImmutable $today): ?array
+    {
+        $limits = challenge_copy()['dates'];
+        $s = DateTimeImmutable::createFromFormat('!Y-m-d', $start);
+        $e = DateTimeImmutable::createFromFormat('!Y-m-d', $end);
+
+        if ($s === false || $e === false || $s->format('Y-m-d') !== $start || $e->format('Y-m-d') !== $end) {
+            return null;
+        }
+        if ($s < $today || challenge_days_between($today, $s) > (int) $limits['start_within']) {
+            return null;
+        }
+        if ($e <= $s || challenge_days_between($s, $e) + 1 > (int) $limits['longest']) {
+            return null;
+        }
+
+        return [$s, $e];
+    }
+
+    /** The target a new Samen challenge suggests for its dates: `per_week` for each week of them. */
+    function challenge_suggest_target(array $metric, DateTimeImmutable $start, DateTimeImmutable $end): float
+    {
+        $days = challenge_days_between($start, $end) + 1;
+
+        return challenge_round_to((float) $metric['per_week'] * $days / 7, (float) $metric['step']);
+    }
+
     /** "1 okt – 30 nov" / "Oct 1 – Nov 30". */
     function challenge_period_text(DateTimeImmutable $start, DateTimeImmutable $end): string
     {
@@ -187,8 +287,8 @@ if (!function_exists('challenges_available')) {
     /** A value as it is shown, without its unit: "16", "41.280", "293", "8,4". */
     function challenge_value_text(string $metric, float $value): string
     {
-        if ($metric === 'distance') {
-            $shown = (float) units_out($value, 'km');
+        if (challenge_has_decimals($metric)) {
+            $shown = challenge_shown($metric, $value);
 
             return i18n_number_trim($shown, abs($shown) >= 100 ? 0 : 1);
         }
@@ -201,7 +301,7 @@ if (!function_exists('challenges_available')) {
     {
         $spec  = challenge_metric($metric);
         $text  = challenge_value_text($metric, $value);
-        $shown = $metric === 'distance' ? round((float) units_out($value, 'km'), 1) : round($value);
+        $shown = challenge_has_decimals($metric) ? round(challenge_shown($metric, $value), 1) : round($value);
 
         return sprintf($shown == 1 ? $spec['one'] : $spec['many'], $text);
     }
@@ -226,7 +326,7 @@ if (!function_exists('challenges_available')) {
     }
 
     /** The name a challenge gets when it is not given one. */
-    function challenge_suggest_name(string $kind, string $metric, float $target, string $length): string
+    function challenge_suggest_name(string $kind, string $metric, float $target, string $length, ?array $dates = null): string
     {
         $spec = challenge_metric($metric);
 
@@ -240,10 +340,33 @@ if (!function_exists('challenges_available')) {
 
         $amount = sprintf($spec['many'], challenge_value_text($metric, $target));
 
+        if ($dates !== null) {
+            return sprintf(challenge_name_pattern($dates[0], $dates[1]), $amount);
+        }
+
         return match ($length) {
             '2w'    => tf('Samen %s in 2 weken', $amount),
             'month' => tf('Samen %s in een maand', $amount),
             default => tf('Samen %s in een week', $amount),
+        };
+    }
+
+    /**
+     * "Samen %s in een maand": the name pattern for a period, %s the amount.
+     * A looptijd has its words; other dates their number of days.
+     */
+    function challenge_name_pattern(DateTimeImmutable $start, DateTimeImmutable $end): string
+    {
+        $days = challenge_days_between($start, $end) + 1;
+
+        return match (goal_duration_of($start, $end) ?? ($days === 14 ? '2w' : '')) {
+            'week'     => t('Samen %s in een week'),
+            '2w'       => t('Samen %s in 2 weken'),
+            'month'    => t('Samen %s in een maand'),
+            'quarter'  => t('Samen %s in 3 maanden'),
+            'halfyear' => t('Samen %s in een half jaar'),
+            'year'     => t('Samen %s in een jaar'),
+            default    => str_replace('%d', (string) $days, t('Samen %s in %d dagen')),
         };
     }
 
@@ -286,7 +409,36 @@ if (!function_exists('challenges_available')) {
             case 'steps':
             case 'active_minutes':
             case 'distance':
+            case 'active_energy':
+            case 'floors':
+            case 'water':
+            case 'protein':
+            case 'fibre':
                 $out = health_metric_totals($userId, $metric, $from, $to);
+                break;
+
+            case 'step_days':
+            case 'water_days':
+                [$source, $bar] = $metric === 'step_days' ? ['steps', (float) CHALLENGE_STEP_DAY] : ['water', CHALLENGE_WATER_DAY];
+                foreach (health_metric_totals($userId, $source, $from, $to) as $day => $total) {
+                    if ($total >= $bar) {
+                        $out[$day] = 1.0;
+                    }
+                }
+                break;
+
+            case 'workout_minutes':
+                foreach (db_all(
+                    "SELECT DATE(w.started_at) AS d, SUM(w.duration_seconds) / 60 AS v
+                       FROM workouts w
+                  LEFT JOIN data_sources s ON s.id = w.source_id
+                      WHERE w.user_id = ? AND DATE(w.started_at) BETWEEN ? AND ?
+                        AND (s.code IS NULL OR s.code <> 'manual')
+                   GROUP BY DATE(w.started_at)",
+                    [$userId, $from, $to]
+                ) as $row) {
+                    $out[(string) $row['d']] = round((float) $row['v'], 1);
+                }
                 break;
 
             case 'workouts':
@@ -304,6 +456,7 @@ if (!function_exists('challenges_available')) {
                 break;
 
             case 'sleep_nights':
+            case 'sleep_hours':
                 $nights = health_nights_from_rows(db_all(
                     "SELECT ss.id, ss.night_of, ss.started_at, ss.ended_at, ss.duration_minutes,
                             ss.time_in_bed_minutes, ss.efficiency_pct, ss.awakenings, ss.awake_minutes,
@@ -317,6 +470,12 @@ if (!function_exists('challenges_available')) {
                 ));
 
                 foreach ($nights as $night) {
+                    if ($metric === 'sleep_hours') {
+                        if ((float) $night['minutes'] > 0) {
+                            $out[(string) $night['date']] = round((float) $night['minutes'] / 60, 2);
+                        }
+                        continue;
+                    }
                     if ((float) $night['minutes'] >= CHALLENGE_NIGHT_MINUTES) {
                         $out[(string) $night['date']] = 1.0;
                     }
@@ -675,7 +834,7 @@ if (!function_exists('challenges_available')) {
             $done    = max(0, min($length, challenge_days_between($start, $today)));
             $expected = $target * $done / max(1, $length);
             $diff    = $total - $expected;
-            $diffRounded = $metric === 'distance' ? round((float) units_out(abs($diff), 'km'), 1) : round(abs($diff));
+            $diffRounded = challenge_has_decimals($metric) ? round(challenge_shown($metric, abs($diff)), 1) : round(abs($diff));
 
             $pace = match (true) {
                 $state === 'upcoming'  => tf('Begint %s', challenge_day_text($start)),
@@ -1068,8 +1227,31 @@ if (!function_exists('challenges_available')) {
             ];
         }
 
+        $durations = [];
+        foreach (goal_catalogue()['durations'] as $key => $span) {
+            $durations[] = ['key' => $key] + $span;
+        }
+
         return [
             'metrics' => array_values(challenge_metrics()),
+            'categories' => array_values(array_filter(
+                array_map(static fn (string $key, array $c): array => ['key' => $key] + $c, array_keys($copy['categories']), $copy['categories']),
+                static fn (array $c): bool => (bool) array_filter(challenge_metrics(), static fn (array $m): bool => $m['category'] === $c['key'])
+            )),
+            /* 49.1: the goal wizard's Periode — Start → Einde, or a looptijd. */
+            'today'     => $today->format('Y-m-d'),
+            'week_start' => week_start(),
+            'durations' => $durations,
+            'dates'     => $copy['dates'],
+            'name_patterns' => [
+                'week'     => t('Samen %s in een week'),
+                '2w'       => t('Samen %s in 2 weken'),
+                'month'    => t('Samen %s in een maand'),
+                'quarter'  => t('Samen %s in 3 maanden'),
+                'halfyear' => t('Samen %s in een half jaar'),
+                'year'     => t('Samen %s in een jaar'),
+                'days'     => t('Samen %s in %d dagen'),
+            ],
             'kinds'   => array_map(static fn (string $key, array $kind): array => ['key' => $key] + $kind,
                 array_keys($copy['kinds']), $copy['kinds']),
             'lengths' => array_values($lengths),
@@ -1140,7 +1322,14 @@ if (!function_exists('challenges_available')) {
         if ($spec === null) {
             return ['ok' => false, 'error' => 'Kies wat jullie tellen.'];
         }
-        if (!isset($copy['lengths'][$length]) || !in_array($from, ['today', 'monday'], true)) {
+        /* 49.1: the dates as chosen; before it a length from today or Monday. */
+        $chosen = null;
+        if (isset($input['start_date']) || isset($input['end_date'])) {
+            $chosen = challenge_dates_chosen((string) ($input['start_date'] ?? ''), (string) ($input['end_date'] ?? ''), $today);
+            if ($chosen === null) {
+                return ['ok' => false, 'error' => 'Kies een start vanaf vandaag en een einde daarna.'];
+            }
+        } elseif (!isset($copy['lengths'][$length]) || !in_array($from, ['today', 'monday'], true)) {
             return ['ok' => false, 'error' => 'Kies hoe lang de uitdaging duurt.'];
         }
 
@@ -1156,8 +1345,11 @@ if (!function_exists('challenges_available')) {
             if ($metric === 'distance') {
                 $unit   = ($input['target_unit'] ?? 'km') === 'mi' ? 'mi' : 'km';
                 $target = units_canonical($typed, $unit)[0];
+            } elseif ($spec['unit'] === 'l') {
+                $target = in_array($input['target_unit'] ?? '', ['floz', 'mi'], true) || (!isset($input['target_unit']) && units_imperial())
+                    ? $typed * 0.0295735295625 : round($typed, 1);
             } else {
-                $target = round($typed);
+                $target = $metric === 'sleep_hours' ? round($typed, 1) : round($typed);
             }
 
             if ($target < 1 || $target > (float) $spec['step'] * 2000) {
@@ -1169,11 +1361,11 @@ if (!function_exists('challenges_available')) {
             return ['ok' => false, 'error' => tf('Je doet al aan %d uitdagingen mee. Maak er een nieuwe als er een afgelopen is.', CHALLENGE_RUNNING_MAX)];
         }
 
-        [$start, $end] = challenge_dates($length, $from, $today);
+        [$start, $end] = $chosen ?? challenge_dates($length, $from, $today);
 
         $name = challenge_clean_name((string) ($input['name'] ?? ''));
         if ($name === '') {
-            $name = challenge_clean_name(challenge_suggest_name($kind, $metric, $target ?? 0.0, $length));
+            $name = challenge_clean_name(challenge_suggest_name($kind, $metric, $target ?? 0.0, $length, $chosen));
         }
 
         $code = challenge_new_code($today);

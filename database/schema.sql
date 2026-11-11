@@ -1064,7 +1064,7 @@ CREATE TABLE `challenges` (
     `code`        CHAR(5) NULL COMMENT 'Five digits; works until the challenge is over. NULL once handed to a newer challenge',
     `creator_id`  BIGINT UNSIGNED NULL COMMENT 'NULL once that account is deleted; the challenge goes on for the others',
     `kind`        ENUM('together','versus') NOT NULL COMMENT 'Samen: one shared target. Wedstrijd: the most wins',
-    `metric`      ENUM('workouts','steps','active_minutes','distance','sleep_nights') NOT NULL,
+    `metric`      VARCHAR(32) NOT NULL COMMENT 'A key of config/challenges.php → metrics (031)',
     `target`      DECIMAL(12,3) NULL COMMENT 'Samen only, stored units: workouts, steps, minutes, km, nights',
     `name`        VARCHAR(60) NOT NULL,
     `start_date`  DATE NOT NULL,

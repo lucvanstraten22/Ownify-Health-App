@@ -5,6 +5,18 @@ import com.ownify.android.ui.screens.goals.WizardOption
 import com.ownify.android.ui.screens.goals.WizardReview
 import com.ownify.android.ui.screens.goals.StepHead
 import com.ownify.android.ui.screens.goals.TypeCard
+import com.ownify.android.ui.screens.goals.CalendarStep
+import com.ownify.android.ui.screens.goals.Dates
+import com.ownify.android.ui.screens.goals.PeriodBounds
+import com.ownify.android.ui.screens.goals.PeriodState
+import com.ownify.android.ui.screens.goals.dateText
+import com.ownify.android.ui.screens.goals.durationEnd
+import com.ownify.android.ui.screens.goals.fold
+import com.ownify.android.data.Challenges
+import androidx.compose.runtime.Stable
+import androidx.compose.ui.text.input.ImeAction
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import com.ownify.android.ui.design.WheelField
 import com.ownify.android.ui.design.WheelSpec
 import androidx.compose.runtime.mutableIntStateOf
@@ -467,10 +479,11 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     var kind by remember { mutableStateOf(overlay.kind?.takeIf { it == "together" || it == "versus" } ?: "together") }
     var metricKey by remember { mutableStateOf(overlay.metric?.takeIf { ch.metric(it) != null }) }
     var group by remember { mutableStateOf<String?>(null) }
+    var find by remember { mutableStateOf("") }
     var touched by remember { mutableStateOf(false) }
-    var length by remember { mutableStateOf("1w") }
-    var target by remember { mutableStateOf(ch.metric(metricKey)?.let { it.targets[length] ?: it.step } ?: 0.0) }
-    var from by remember { mutableStateOf("today") }
+    // 49.1: the goal wizard's Periode — Start → Einde on its calendar, or a looptijd; a week from today to begin with.
+    val period = remember { ChallengePeriod(ch) }
+    var target by remember { mutableStateOf(ch.metric(metricKey)?.let { suggestTarget(it, period) } ?: 0.0) }
     var name by remember { mutableStateOf("") }
     var query by remember { mutableStateOf("") }
     val invite = remember { mutableStateListOf<Int>() }
@@ -480,29 +493,33 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     var made by remember { mutableStateOf<JSONObject?>(null) }
     val body = rememberScrollState()
     val entry = remember { androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(step) { body.scrollTo(0) }
+    LaunchedEffect(step, period.calendar) { body.scrollTo(0) }
 
     made?.let { answer -> MadeSheet(overlay, data, answer); return }
 
     val metric = ch.metric(metricKey)
     fun amount(value: Double): String {
         val m = metric ?: return ""
-        return String.format(java.util.Locale.ROOT, if (value == 1.0) m.one else m.many, OwnifyFormat.number(value))
+        val text = if (m.decimals > 0) OwnifyFormat.numberTrim(value, 1) else OwnifyFormat.number(value)
+        return String.format(java.util.Locale.ROOT, if (value == 1.0) m.one else m.many, text)
     }
     val suggested = when {
         metric == null -> ""
         kind == "versus" -> metric.versus
-        else -> String.format(java.util.Locale.ROOT, ch.length(length)?.namePattern ?: "%s", amount(target))
+        else -> String.format(java.util.Locale.ROOT, period.namePattern(), String.format(java.util.Locale.ROOT, metric.many,
+            if (metric.decimals > 0) OwnifyFormat.numberTrim(target, 1) else OwnifyFormat.number(target)))
     }
-    val groupOf = { m: ChallengeMetric -> if (m.accent == "sleep") "sleep" else "move" }
-    val complete = when (step) { 1 -> metric != null; 3 -> kind != "together" || target > 0; else -> true }
+    val categoryOf = { key: String -> ch.categories.firstOrNull { it.first == key }?.second ?: key }
+    val complete = when (step) { 1 -> metric != null; 3 -> (kind != "together" || target > 0) && period.end!! > period.start; else -> true }
+    val moved = { if (!touched) metric?.let { target = suggestTarget(it, period) } }
 
     fun make() {
         busy = true
         scope.launch {
             val payload = JSONObject()
-                .put("kind", kind).put("metric", metricKey).put("length", length).put("from", from).put("name", name.trim())
-                .put("target_unit", if (data.i18n.units == "imperial") "mi" else "km")
+                .put("kind", kind).put("metric", metricKey).put("name", name.trim())
+                .put("start_date", period.start.toString()).put("end_date", period.end.toString())
+                .put("target_unit", if (data.i18n.units == "imperial") (if (metric?.unit == "l") "floz" else "mi") else (if (metric?.unit == "l") "l" else "km"))
                 .put("invite", JSONArray(invite.toList()))
             if (kind == "together") payload.put("target", target)
             when (val outcome = OwnifyActions.json(context, "api/challenges/create.php", payload, tr("De uitdaging kon niet worden gemaakt."))) {
@@ -518,27 +535,41 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     WizardFrame(
         overlay, w("title"), w("close"), w("back"),
         count = when (step) { 4 -> w("review_label"); 5 -> w("invite_label"); else -> trf("Stap %1\$d van %2\$d", step, 3) + " · " + w("step${step}_label") },
-        lit = minOf(step, 3), steps = 3, scroll = body, stepKey = "step-$step",
-        direction = direction, entry = entry, showFoot = true, error = null,
+        lit = minOf(step, 3), steps = 3, scroll = body, stepKey = if (period.calendar != null) "calendar-" + period.calendar else "step-$step",
+        direction = direction, entry = entry, showFoot = period.calendar == null, error = null,
         cta = if (busy) w("making") else if (step == 5) w("make") else w("next"),
         ctaEnabled = complete && !busy, saving = busy,
         onClose = { if (!busy) shell.close(overlay) },
-        onBack = { if (!busy) { if (step == 1) shell.close(overlay) else go(step - 1, -1) } },
+        onBack = { if (!busy) { if (period.calendar != null) period.calendar = null else if (step == 1) shell.close(overlay) else go(step - 1, -1) } },
         onForward = { if (complete) { if (step == 5) make() else go(step + 1, 1) } }
     ) {
         Column(Modifier.fillMaxWidth()) {
+            if (step == 3 && period.calendar != null) {
+                CalendarStep(period, w, ch.durations, period.bounds(), onChange = moved)
+                return@Column
+            }
             when (step) {
                 1 -> {
                     StepHead(w("step1_title"), w("step1_lede"))
-                    FlowRow(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                        listOf("move", "sleep").forEach { g -> GlassChip(w(g), chosen = group == g, onClick = { group = if (group == g) null else g }) }
+                    // The goal wizard's step 1: the search field, the groups as bubbles, the list.
+                    Box(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
+                        JInput(find, { find = it.take(40) }, placeholder = w("find"), label = w("find"),
+                            keyboard = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Search))
+                    }
+                    FlowRow(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
+                        verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+                        ch.categories.forEach { (key, label) -> GlassChip(label, chosen = group == key, onClick = { group = if (group == key) null else key }) }
                     }
                     FieldLabel(w("list_label"), Modifier.padding(top = Ownify.Space4))
-                    WizardList {
-                        ch.metrics.filter { group == null || groupOf(it) == group }.forEach { m ->
-                            WizardOption(m.label, w(groupOf(m)) + " · " + w("auto"), chosen = metricKey == m.key, onClick = {
+                    val words = fold(find).split(Regex("\\s+")).filter { it.isNotEmpty() }
+                    val shown = ch.metrics.filter { m ->
+                        (group == null || m.category == group) && fold(m.label + " " + m.what + " " + categoryOf(m.category)).let { hay -> words.all { it in hay } }
+                    }
+                    if (shown.isEmpty()) T(w("no_metric"), JStyle.Footnote) else WizardList {
+                        shown.forEach { m ->
+                            WizardOption(m.label, categoryOf(m.category) + " · " + w("auto"), chosen = metricKey == m.key, onClick = {
                                 metricKey = m.key
-                                if (!touched) target = m.targets[length] ?: m.step
+                                if (!touched) target = suggestTarget(m, period)
                             }, accent = Accent.of(m.accent).color, icon = OwnifyIcons.named(m.icon))
                         }
                     }
@@ -548,7 +579,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                     Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                         ch.kinds.forEach { k ->
                             val example = if (k.key == "versus") metric?.versus.orEmpty()
-                                else String.format(java.util.Locale.ROOT, ch.preview["together"] ?: "%s", amount(metric?.targets?.get(length) ?: target))
+                                else String.format(java.util.Locale.ROOT, ch.preview["together"] ?: "%s", amount(metric?.let { suggestTarget(it, period) } ?: target))
                             TypeCard(k.label, k.hint, example, chosen = kind == k.key, enabled = true) { kind = k.key }
                         }
                     }
@@ -562,22 +593,19 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                         FieldLabel(w("target"), Modifier.padding(top = Ownify.Space4))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                             val unit = String.format(java.util.Locale.ROOT, m.many, "").trim()
+                            val top = maxOf(m.step * 40, suggestTarget(m, period) * 4)
                             WheelField(
-                                OwnifyFormat.number(target, 0, grouping = false),
-                                { v -> OwnifyFormat.parseNumber(v)?.let { target = it; touched = true } },
-                                WheelSpec(min = m.step, max = (m.targets["month"] ?: m.step * 10) * 4, step = m.step, start = target, unit = unit),
+                                OwnifyFormat.number(target, m.decimals, grouping = false),
+                                { v -> OwnifyFormat.parseNumber(v)?.let { target = if (m.decimals > 0) Math.round(it * 10) / 10.0 else Math.round(it).toDouble(); touched = true } },
+                                WheelSpec(min = m.step, max = Math.round(top / m.step) * m.step, step = m.step, start = target, unit = unit),
                                 Modifier.weight(1f), w("target")
                             )
                             T(unit, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), maxLines = 1)
                         }
                     }
-                    FieldLabel(w("length"), Modifier.padding(top = Ownify.Space5))
-                    RangeSwitch(ch.lengths.map { it.key to it.label }, length, { l ->
-                        length = l
-                        if (!touched) target = m.targets[l] ?: m.step
-                    }, wide = true, label = w("length"))
-                    RangeSwitch(ch.from, from, { from = it }, Modifier.padding(top = Ownify.Space2), wide = true, label = w("length"))
-                    T(ch.length(length)?.periods?.get(from).orEmpty(), JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
+                    Box(Modifier.padding(top = if (kind == "together") Ownify.Space5 else Ownify.Space4)) {
+                        Dates(period, w, ch.durations, onChange = moved)
+                    }
                 }
                 4 -> {
                     StepHead(w("review_title"), w("review_lede"))
@@ -588,7 +616,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                             add(w("kind_label") to ch.kinds.firstOrNull { it.key == kind }?.label.orEmpty())
                             add(w("name") to name.trim().ifEmpty { suggested })
                             if (kind == "together") add(w("target") to amount(target))
-                            add(w("period") to ch.length(length)?.periods?.get(from).orEmpty())
+                            add(w("period") to dateText(period.start) + " – " + dateText(period.end!!))
                         })
                     }
                 }
@@ -616,6 +644,40 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
             }
         }
     }
+}
+
+/**
+ * Nieuwe uitdaging's Periode (49.1): the goal wizard's [PeriodState], from
+ * today to a week on to begin with. A start is today or later, within
+ * `start_within` days; an end after it, at most `longest` days on.
+ */
+@Stable
+internal class ChallengePeriod(private val ch: Challenges) : PeriodState {
+    override var start by mutableStateOf(LocalDate.now())
+    override var end by mutableStateOf<LocalDate?>(
+        ch.durations.firstOrNull { it.key == "week" }?.let { durationEnd(LocalDate.now(), it) } ?: LocalDate.now().plusDays(6)
+    )
+    override var duration by mutableStateOf<String?>("week")
+    override var calendar by mutableStateOf<String?>(null)
+
+    fun bounds(today: LocalDate = LocalDate.now()) = PeriodBounds(
+        today..today.plusDays(ch.startWithin.toLong()),
+        { s -> s.plusDays(1)..s.plusDays(ch.longest - 1L) }
+    )
+
+    val days: Long get() = ChronoUnit.DAYS.between(start, end ?: start) + 1
+
+    /** "Samen %s in een maand": a looptijd's words, else its days. */
+    fun namePattern(): String {
+        val key = duration ?: if (days == 14L) "2w" else null
+        return key?.let { ch.namePatterns[it] } ?: (ch.namePatterns["days"] ?: "%s").replace("%d", days.toString())
+    }
+}
+
+/** The target a Samen challenge suggests: `per_week` for each week of its dates, on the stepper. */
+internal fun suggestTarget(m: ChallengeMetric, period: ChallengePeriod): Double {
+    val raw = m.perWeek * period.days / 7.0
+    return maxOf(m.step, Math.round(raw / m.step) * m.step)
 }
 
 /** `.goal-list`: the wizard's short list in the glass, scrolled on its own. */

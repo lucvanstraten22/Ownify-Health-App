@@ -25,6 +25,7 @@ return [
 
     'metrics' => [
         'workouts' => [
+            'category' => 'training',
             'label'  => 'Trainingen',
             'icon'   => 'dumbbell',
             'accent' => 'training',
@@ -37,6 +38,7 @@ return [
             'per_week' => 20,
         ],
         'steps' => [
+            'category' => 'activity',
             'label'  => 'Stappen',
             'icon'   => 'bolt',
             'accent' => 'training',
@@ -49,6 +51,7 @@ return [
             'per_week' => 250000,
         ],
         'active_minutes' => [
+            'category' => 'activity',
             'label'  => 'Actieve minuten',
             'icon'   => 'pulse',
             'accent' => 'training',
@@ -61,6 +64,7 @@ return [
             'per_week' => 1000,
         ],
         'distance' => [
+            'category' => 'activity',
             'label'  => 'Afstand',
             'icon'   => 'flag',
             'accent' => 'training',
@@ -73,6 +77,7 @@ return [
             'per_week' => 100,
         ],
         'sleep_nights' => [
+            'category' => 'sleep',
             'label'  => 'Nachten van 7 uur',
             'icon'   => 'moon',
             'accent' => 'sleep',
@@ -84,6 +89,134 @@ return [
             'step'   => 10,
             'per_week' => 25,
         ],
+        /* 50.0 (migration 031): what a goal can count too, where a group
+           can add it up — synced only, never typed in. */
+        'active_energy' => [
+            'category' => 'activity',
+            'label'  => 'Actieve calorieën',
+            'icon'   => 'pulse',
+            'accent' => 'training',
+            'unit'   => '',
+            'one'    => '%s actieve kcal',
+            'many'   => '%s actieve kcal',
+            'what'   => 'actieve calorieën',
+            'versus' => 'Wie verbrandt de meeste actieve calorieën?',
+            'step'   => 1000,
+            'per_week' => 10000,
+        ],
+        'floors' => [
+            'category' => 'activity',
+            'label'  => 'Verdiepingen',
+            'icon'   => 'arrow-up',
+            'accent' => 'training',
+            'unit'   => '',
+            'one'    => '%s verdieping',
+            'many'   => '%s verdiepingen',
+            'what'   => 'verdiepingen',
+            'versus' => 'Wie loopt de meeste trappen?',
+            'step'   => 50,
+            'per_week' => 300,
+        ],
+        'step_days' => [
+            'category' => 'activity',
+            'label'  => 'Dagen met 10.000 stappen',
+            'icon'   => 'calendar',
+            'accent' => 'training',
+            'unit'   => '',
+            'one'    => '%s dag met 10.000 stappen',
+            'many'   => '%s dagen met 10.000 stappen',
+            'what'   => 'dagen met 10.000 stappen',
+            'versus' => 'Wie haalt het vaakst 10.000 stappen?',
+            'step'   => 5,
+            'per_week' => 15,
+        ],
+        'workout_minutes' => [
+            'category' => 'training',
+            'label'  => 'Trainingsminuten',
+            'icon'   => 'dumbbell',
+            'accent' => 'training',
+            'unit'   => '',
+            'one'    => '%s trainingsminuut',
+            'many'   => '%s trainingsminuten',
+            'what'   => 'trainingsminuten',
+            'versus' => 'Wie traint het langst?',
+            'step'   => 60,
+            'per_week' => 600,
+        ],
+        'sleep_hours' => [
+            'category' => 'sleep',
+            'label'  => 'Uren slaap',
+            'icon'   => 'moon',
+            'accent' => 'sleep',
+            'unit'   => '',
+            'one'    => '%s uur slaap',
+            'many'   => '%s uur slaap',
+            'what'   => 'uren slaap',
+            'versus' => 'Wie slaapt het meest?',
+            'step'   => 50,
+            'per_week' => 200,
+        ],
+        'water' => [
+            'category' => 'nutrition',
+            'label'  => 'Water',
+            'icon'   => 'utensils',
+            'accent' => 'nutrition',
+            'unit'   => 'l',
+            'one'    => '%s liter water',
+            'many'   => '%s liter water',
+            'what'   => 'liters water',
+            'versus' => 'Wie drinkt het meeste water?',
+            'step'   => 5,
+            'per_week' => 50,
+        ],
+        'water_days' => [
+            'category' => 'nutrition',
+            'label'  => 'Dagen met 2 liter water',
+            'icon'   => 'calendar',
+            'accent' => 'nutrition',
+            'unit'   => '',
+            'one'    => '%s dag met 2 liter water',
+            'many'   => '%s dagen met 2 liter water',
+            'what'   => 'dagen met 2 liter water',
+            'versus' => 'Wie drinkt het vaakst 2 liter water?',
+            'step'   => 5,
+            'per_week' => 15,
+        ],
+        'protein' => [
+            'category' => 'nutrition',
+            'label'  => 'Eiwit',
+            'icon'   => 'utensils',
+            'accent' => 'nutrition',
+            'unit'   => '',
+            'one'    => '%s gram eiwit',
+            'many'   => '%s gram eiwit',
+            'what'   => 'gram eiwit',
+            'versus' => 'Wie eet de meeste eiwitten?',
+            'step'   => 500,
+            'per_week' => 3000,
+        ],
+        'fibre' => [
+            'category' => 'nutrition',
+            'label'  => 'Vezels',
+            'icon'   => 'utensils',
+            'accent' => 'nutrition',
+            'unit'   => '',
+            'one'    => '%s gram vezels',
+            'many'   => '%s gram vezels',
+            'what'   => 'gram vezels',
+            'versus' => 'Wie eet de meeste vezels?',
+            'step'   => 100,
+            'per_week' => 800,
+        ],
+    ],
+
+    /* The groups of step 1, in this order — the goal wizard's categories
+       (config/goals.php), those a challenge can count. */
+    'categories' => [
+        'activity'  => ['label' => 'Activiteit'],
+        'training'  => ['label' => 'Training'],
+        'sleep'     => ['label' => 'Slaap'],
+        'nutrition' => ['label' => 'Voeding'],
     ],
 
     'kinds' => [
@@ -95,6 +228,15 @@ return [
         '1w'    => ['label' => '1 week', 'weeks' => 1],
         '2w'    => ['label' => '2 weken', 'weeks' => 2],
         'month' => ['label' => '1 maand', 'weeks' => 4],
+    ],
+
+    /* 49.1: the goal wizard's dates (Periode: Start → Einde, or a
+       looptijd) — a challenge starts today or later, within `start_within`
+       days, and lasts at most `longest` days. The looptijden are the goal
+       wizard's (config/goals.php → durations). */
+    'dates' => [
+        'start_within' => 90,
+        'longest'      => 366,
     ],
 
     /* The Uitdagingen page. */
@@ -196,7 +338,7 @@ return [
         'step2_lede'   => 'Tel samen op naar één doel, of kijk wie het meest haalt.',
         'step3_label'  => 'Instellen',
         'step3_title'  => 'Hoeveel en hoe lang?',
-        'step3_lede'   => 'Een doel dat in de tijd past, voor iedereen samen.',
+        'step3_lede'   => 'Kies het doel en de periode, net als bij een eigen doel.',
         'move'         => 'Beweging',
         'sleep'        => 'Slaap',
         'auto'         => 'Uit jullie gekoppelde bronnen',
@@ -215,6 +357,18 @@ return [
         'back'         => 'Terug',
         'close'        => 'Sluiten',
         'making'       => 'Bezig…',
+        /* 49.1: step 1 searches, step 3 has the goal wizard's Periode. */
+        'find'         => 'Zoek wat jullie tellen',
+        'no_metric'    => 'Niets gevonden. Probeer een ander woord.',
+        'dates_label'  => 'Periode',
+        'start'        => 'Start',
+        'end'          => 'Einde',
+        'calendar_done'=> 'Gereed',
+        'calendar_prev'=> 'Vorige maand',
+        'calendar_next'=> 'Volgende maand',
+        'pick_start'   => 'Kies de startdatum',
+        'pick_end'     => 'Kies de einddatum',
+        'durations_label' => 'Of kies een looptijd',
     ],
 
     /* Vrienden uitnodigen, from a challenge. */

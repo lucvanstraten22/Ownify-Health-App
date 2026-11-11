@@ -22,6 +22,13 @@ $payload = [
     'lengths' => $challenges['lengths'],
     'from'    => $challenges['from'],
     'preview' => $challenges['preview'],
+    /* 49.1: step 1's groups and step 3's Periode. */
+    'categories'    => $challenges['categories'] ?? [],
+    'today'         => $challenges['today'] ?? null,
+    'week_start'    => $challenges['week_start'] ?? 'monday',
+    'durations'     => $challenges['durations'] ?? [],
+    'dates'         => $challenges['dates'] ?? null,
+    'name_patterns' => $challenges['name_patterns'] ?? [],
     'friends' => $challenges['friends'],
     'you'     => $challenges['you'] ?? null,
     'units'   => units_system(),
@@ -31,7 +38,8 @@ $payload = [
     ), 'review', 'id'),
     'icons'   => array_combine(
         $names = ['plus', 'hash', 'check', 'copy', 'share', 'chevron-down', 'shield', 'calendar', 'flag', 'target',
-                  'dumbbell', 'bolt', 'pulse', 'moon', 'user-plus', 'trash', 'chevron-left', 'search', 'close'],
+                  'dumbbell', 'bolt', 'pulse', 'moon', 'user-plus', 'trash', 'chevron-left', 'search', 'close',
+                  'chevron-right', 'arrow-up', 'utensils'],
         array_map(static fn (string $name): string => icon($name), $names)
     ),
     'solid'   => array_combine(

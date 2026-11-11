@@ -533,29 +533,62 @@
         return null;
     }
 
-    function lengthOf(key) {
-        for (var i = 0; i < D.lengths.length; i++) { if (D.lengths[i].key === key) { return D.lengths[i]; } }
-        return D.lengths[0];
-    }
+    /** Litres, km and hours keep a decimal; the rest is whole. */
+    function decimalsOf(metric) { return metric.unit || metric.key === 'sleep_hours' ? 1 : 0; }
 
     function amount(metric, value) {
-        return format(value === 1 ? metric.one : metric.many, T.number(value, 0));
+        var text = decimalsOf(metric) ? T.numberTrim(value, 1) : T.number(value, 0);
+        return format(value === 1 ? metric.one : metric.many, text);
+    }
+
+    /* ------------------------------------------------ dates (49.1) */
+    /* The goal wizard's Periode (assets/js/goal-wizard.js): Start → Einde
+       on Ownify's own calendar, or a looptijd. */
+
+    function day(d) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setHours(0, 0, 0, 0); return x; }
+    function dayAfter(d, n) { return day(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)); }
+    function addMonths(d, months) {
+        var index = d.getFullYear() * 12 + d.getMonth() + months;
+        var year = Math.floor(index / 12), month = index - year * 12;
+        return new Date(year, month, Math.min(d.getDate(), new Date(year, month + 1, 0).getDate()));
+    }
+    function parseDay(text) { var p = String(text).split('-'); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+    function isoDay(d) {
+        var m = d.getMonth() + 1, x = d.getDate();
+        return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (x < 10 ? '0' : '') + x;
+    }
+    function sameDay(a, b) { return !!a && !!b && isoDay(a) === isoDay(b); }
+    function spanDays(a, b) { return Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 86400000) + 1; }
+    function durationEnd(start, key) {
+        var span = null;
+        (D.durations || []).forEach(function (d) { if (d.key === key) { span = d; } });
+        if (!span) { return null; }
+        return dayAfter(span.months ? addMonths(start, span.months) : dayAfter(start, span.days || 0), -1);
+    }
+    function durationOf(start, end) {
+        var found = null;
+        (D.durations || []).forEach(function (d) { if (!found && sameDay(durationEnd(start, d.key), end)) { found = d.key; } });
+        return found;
+    }
+    function todayDay() { return D.today ? parseDay(D.today) : day(new Date()); }
+    function dayText(d) { return d.getFullYear() === todayDay().getFullYear() ? T.date(d, 'day_mon') : T.date(d, 'day_mon_year'); }
+    function periodText(draft) { return dayText(draft.start) + ' – ' + dayText(draft.end); }
+
+    function suggestTarget(draft) {
+        var m = metricOf(draft.metric);
+        if (!m) { return 0; }
+        var weeks = spanDays(draft.start, draft.end) / 7;
+        return Math.max(m.step, Math.round(m.per_week * weeks / m.step) * m.step);
     }
 
     function suggestName(draft) {
         var metric = metricOf(draft.metric);
         if (!metric) { return ''; }
         if (draft.kind === 'versus') { return metric.versus; }
-        return format(lengthOf(draft.length).name_pattern, format(metric.many, T.number(draft.target, 0)));
-    }
-
-    function segmented(name, value, options, label) {
-        return '<div class="range-switch range-switch--wide" role="group" aria-label="' + esc(label) + '">'
-            + options.map(function (option) {
-                var on = option.key === value;
-                return '<button type="button" class="range-switch__option' + (on ? ' is-active' : '') + '" data-' + name + '="' + esc(option.key) + '"'
-                    + ' aria-pressed="' + on + '">' + esc(option.label) + '</button>';
-            }).join('') + '</div>';
+        var p = D.name_patterns || {};
+        var days = spanDays(draft.start, draft.end);
+        var pattern = p[durationOf(draft.start, draft.end) || (days === 14 ? '2w' : '')] || String(p.days || '%s').replace('%d', String(days));
+        return format(pattern, format(metric.many, decimalsOf(metric) ? T.numberTrim(draft.target, 1) : T.number(draft.target, 0)));
     }
 
     /**
@@ -596,18 +629,27 @@
     function create(preset) {
         var cc = C.create;
         var w = wizardShell();
-        var draft = { step: 1, group: null, kind: 'together', metric: null, target: 0, touched: false, length: '1w', from: 'today', name: '', invite: [], query: '' };
+        var start = todayDay();
+        var draft = { step: 1, category: null, find: '', kind: 'together', metric: null, target: 0, touched: false,
+            start: start, end: durationEnd(start, 'week') || dayAfter(start, 6), duration: 'week', calendar: null,
+            name: '', invite: [], query: '' };
         var saving = false;
         var STEPS = 3;
+        var view = null;   // the calendar's month on screen
 
         if (preset && (preset.kind === 'together' || preset.kind === 'versus')) { draft.kind = preset.kind; }
         if (preset && preset.metric && metricOf(preset.metric)) {
             draft.metric = preset.metric;
-            draft.target = metricOf(draft.metric).targets[draft.length];
+            draft.target = suggestTarget(draft);
         }
 
-        var groupOf = function (m) { return m.accent === 'sleep' ? 'sleep' : 'move'; };
+        var categoryLabel = function (key) {
+            var label = key;
+            (D.categories || []).forEach(function (c) { if (c.key === key) { label = c.label; } });
+            return label;
+        };
         var head = function (n) { return '<h3 class="wizard__title" tabindex="-1">' + esc(cc['step' + n + '_title'] || n) + '</h3><p class="wizard__lede">' + esc(cc['step' + n + '_lede'] || '') + '</p>'; };
+        var fold = function (text) { return String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); };
 
         function row(attrs, accent, mark, label, meta, chosen, role) {
             return '<button type="button" class="goal-option press" role="' + role + '" aria-checked="' + chosen + '" ' + attrs
@@ -617,24 +659,41 @@
                 + '<span class="goal-option__meta">' + esc(meta) + '</span></span></button>';
         }
 
+        function search(attr, value, placeholder) {
+            return '<div class="goal-search">' + icon('search').replace('<svg', '<svg class="goal-search__icon"')
+                + '<input class="goal-search__input" type="search" ' + attr + ' enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="'
+                + esc(placeholder) + '" aria-label="' + esc(placeholder) + '" value="' + esc(value) + '"></div>';
+        }
+
+        function metricList() {
+            var words = fold(draft.find).split(/\s+/).filter(Boolean);
+            var shown = D.metrics.filter(function (m) {
+                if (draft.category && m.category !== draft.category) { return false; }
+                var hay = fold(m.label + ' ' + m.what + ' ' + categoryLabel(m.category));
+                return words.every(function (word) { return hay.indexOf(word) !== -1; });
+            });
+            if (!shown.length) { return '<p class="wizard__hint goal-list__empty">' + esc(cc.no_metric) + '</p>'; }
+            return '<div class="glass goal-list"><div class="goal-list__scroll" role="radiogroup" aria-label="' + esc(cc.metric) + '">'
+                + shown.map(function (m) {
+                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, categoryLabel(m.category) + ' · ' + cc.auto, draft.metric === m.key, 'radio');
+                }).join('') + '</div></div>';
+        }
+
         function stepWhat() {
-            var shown = D.metrics.filter(function (m) { return !draft.group || groupOf(m) === draft.group; });
             return head(1)
-                + '<div class="goal-bubbles" role="group">' + ['move', 'sleep'].map(function (g) {
-                    return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-group="' + g + '" aria-pressed="' + (draft.group === g) + '">' + esc(cc[g]) + '</button>';
+                + search('data-cw-find', draft.find, cc.find)
+                + '<div class="goal-bubbles" role="group">' + (D.categories || []).map(function (c) {
+                    return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-category="' + esc(c.key) + '" aria-pressed="' + (draft.category === c.key) + '">' + esc(c.label) + '</button>';
                 }).join('') + '</div>'
                 + '<p class="wizard__label goal-list__label">' + esc(cc.list_label) + '</p>'
-                + '<div class="glass goal-list"><div class="goal-list__scroll" role="radiogroup" aria-label="' + esc(cc.metric) + '">'
-                + shown.map(function (m) {
-                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, cc[groupOf(m)] + ' · ' + cc.auto, draft.metric === m.key, 'radio');
-                }).join('') + '</div></div>';
+                + '<div data-cw-list>' + metricList() + '</div>';
         }
 
         function stepKind() {
             var metric = metricOf(draft.metric);
             return head(2)
                 + '<div class="goal-types" role="radiogroup">' + D.kinds.map(function (k) {
-                    var example = k.key === 'versus' ? metric.versus : format(D.preview.together, amount(metric, metric.targets[draft.length]));
+                    var example = k.key === 'versus' ? metric.versus : format(D.preview.together, amount(metric, suggestTarget(draft)));
                     return '<button type="button" class="glass goal-type press" role="radio" aria-checked="' + (draft.kind === k.key) + '" data-cw-kind="' + esc(k.key) + '">'
                         + '<span class="goal-type__label">' + esc(k.label) + '</span><span class="goal-type__hint">' + esc(k.hint) + '</span>'
                         + '<span class="goal-type__example">' + esc(example) + '</span></button>';
@@ -644,18 +703,99 @@
                 + ' placeholder="' + esc(suggestName(draft)) + '" value="' + esc(draft.name) + '">';
         }
 
+        function dateButton(which, label, value) {
+            return '<button type="button" class="glass goal-date press" data-cw-date="' + which + '" aria-label="' + esc(label + ': ' + value) + '">'
+                + '<span class="goal-date__label">' + esc(label) + '</span><span class="goal-date__value">' + esc(value) + '</span></button>';
+        }
+
         function stepSetup() {
             var metric = metricOf(draft.metric);
             var html = head(3);
             if (draft.kind === 'together') {
                 html += '<label class="wizard__label" for="cw-target">' + esc(cc.target) + '</label>'
-                    + '<div class="goal-row"><input class="wizard__input goal-row__number" type="text" id="cw-target" data-cw-target value="' + esc(T.number(draft.target, 0, false)) + '">'
+                    + '<div class="goal-row"><input class="wizard__input goal-row__number" type="text" id="cw-target" data-cw-target value="'
+                    + esc(decimalsOf(metric) ? T.numberTrim(draft.target, 1, false) : T.number(draft.target, 0, false)) + '">'
                     + '<span class="goal-row__word">' + esc(format(metric.many, '').trim()) + '</span></div>';
             }
             return html
-                + '<p class="wizard__label wizard__label--spaced">' + esc(cc.length) + '</p>' + segmented('cw-length', draft.length, D.lengths, cc.length)
-                + '<div class="ch-gap">' + segmented('cw-from', draft.from, D.from, cc.length) + '</div>'
-                + '<p class="wizard__hint">' + esc(lengthOf(draft.length).periods[draft.from]) + '</p>';
+                + '<div class="goal-field goal-dates-field"><p class="wizard__label' + (draft.kind === 'together' ? ' wizard__label--spaced' : '') + '">' + esc(cc.dates_label) + '</p>'
+                + '<div class="goal-dates">' + dateButton('start', cc.start, dayText(draft.start))
+                + '<span class="goal-dates__to" aria-hidden="true">' + icon('chevron-right') + '</span>'
+                + dateButton('end', cc.end, dayText(draft.end)) + '</div>'
+                + '<div class="goal-bubbles goal-durations" role="group" aria-label="' + esc(cc.durations_label) + '">'
+                + (D.durations || []).map(function (d) {
+                    return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-duration="' + esc(d.key) + '" aria-pressed="' + (draft.duration === d.key) + '">' + esc(d.label) + '</button>';
+                }).join('') + '</div></div>';
+        }
+
+        /* The goal wizard's calendar, over step 3: the start, then the end. */
+        function bounds() {
+            var now = todayDay();
+            var limits = D.dates || { start_within: 90, longest: 366 };
+            if (draft.calendar === 'start') { return { min: now, max: dayAfter(now, limits.start_within) }; }
+            return { min: dayAfter(draft.start, 1), max: dayAfter(draft.start, limits.longest - 1) };
+        }
+
+        function stepCalendar() {
+            var range = bounds();
+            var first = D.week_start === 'sunday' ? 0 : 1;
+            var lead = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() - first + 7) % 7;
+            var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+            var weekdays = '';
+            for (var i = 0; i < 7; i++) { weekdays += '<li>' + esc(T.weekday((first + i) % 7, true)) + '</li>'; }
+            var grid = '';
+            for (var cell = 0; cell < lead + days; cell++) {
+                if (cell % 7 === 0) { grid += (cell ? '</div>' : '') + '<div class="goal-calendar__row" role="row">'; }
+                if (cell < lead) { grid += '<span class="goal-calendar__gap" role="gridcell"></span>'; continue; }
+                var d = new Date(view.getFullYear(), view.getMonth(), cell - lead + 1);
+                var isStart = sameDay(d, draft.start), isEnd = sameDay(d, draft.end);
+                var cls = 'goal-calendar__day press' + (isStart ? ' is-start' : '') + (isEnd ? ' is-end' : '')
+                    + (d > draft.start && d < draft.end ? ' is-between' : '') + (sameDay(d, todayDay()) ? ' is-today' : '');
+                grid += '<button type="button" class="' + cls + '" role="gridcell" data-cw-day="' + isoDay(d) + '"'
+                    + ' aria-label="' + esc(T.date(d, 'weekday_day_month') + ' ' + d.getFullYear()) + '"'
+                    + ' aria-selected="' + (draft.calendar === 'start' ? isStart : isEnd) + '"'
+                    + (d < range.min || d > range.max ? ' disabled' : '') + '>' + d.getDate() + '</button>';
+            }
+            grid += '</div>';
+            var prevOff = new Date(view.getFullYear(), view.getMonth(), 0) < range.min;
+            var nextOff = new Date(view.getFullYear(), view.getMonth() + 1, 1) > range.max;
+            return '<div class="goal-calendar" role="dialog" aria-modal="false" aria-labelledby="cw-calendar-title">'
+                + '<div class="goal-calendar__head"><p class="goal-calendar__title wizard__title" id="cw-calendar-title" tabindex="-1">' + esc(draft.calendar === 'start' ? cc.pick_start : cc.pick_end) + '</p>'
+                + '<div class="goal-calendar__nav">'
+                + '<button type="button" class="glass glass--round glass--small press" data-cw-month="-1" aria-label="' + esc(cc.calendar_prev) + '"' + (prevOff ? ' disabled' : '') + '>' + icon('chevron-left') + '</button>'
+                + '<p class="goal-calendar__month" aria-live="polite">' + esc(T.date(view, 'month_year')) + '</p>'
+                + '<button type="button" class="glass glass--round glass--small press" data-cw-month="1" aria-label="' + esc(cc.calendar_next) + '"' + (nextOff ? ' disabled' : '') + '>' + icon('chevron-right') + '</button>'
+                + '</div></div>'
+                + '<ol class="goal-calendar__weekdays" role="list" aria-hidden="true">' + weekdays + '</ol>'
+                + '<div class="goal-calendar__grid" role="grid">' + grid + '</div>'
+                + '<button type="button" class="glass glass--cta goal-calendar__done press" data-cw-calendar-done>' + esc(cc.calendar_done) + '</button></div>';
+        }
+
+        function openCalendar(which) {
+            draft.calendar = which;
+            var chosen = which === 'start' ? draft.start : draft.end;
+            view = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
+            paint(1);
+        }
+
+        function pickDay(text) {
+            var d = parseDay(text);
+            if (draft.calendar === 'start') {
+                draft.start = d;
+                var kept = draft.duration && durationEnd(d, draft.duration);
+                if (kept) { draft.end = kept; } else if (draft.end <= d) { draft.end = dayAfter(d, 6); draft.duration = durationOf(d, draft.end); }
+            } else {
+                draft.end = d;
+                draft.duration = durationOf(draft.start, d);
+            }
+            datesMoved();
+            paint(0);
+            var again = w.body.querySelector('[data-cw-day="' + text + '"]');
+            if (again) { again.focus({ preventScroll: true }); }
+        }
+
+        function datesMoved() {
+            if (!draft.touched && draft.metric) { draft.target = suggestTarget(draft); }
         }
 
         function stepReview() {
@@ -663,7 +803,7 @@
             var kind = draft.kind === 'versus' ? D.kinds[1] : D.kinds[0];
             var rows = [[cc.step1_label, metric.label], [cc.kind_label, kind.label], [cc.name, draft.name.trim() || suggestName(draft)]];
             if (draft.kind === 'together') { rows.push([cc.target, amount(metric, draft.target)]); }
-            rows.push([cc.period, lengthOf(draft.length).periods[draft.from]]);
+            rows.push([cc.period, periodText(draft)]);
             return '<h3 class="wizard__title" tabindex="-1">' + esc(cc.review_title) + '</h3><p class="wizard__lede">' + esc(cc.review_lede) + '</p>'
                 + '<dl class="glass goal-review">' + rows.map(function (r) {
                     return '<div class="goal-review__row"><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>';
@@ -671,8 +811,8 @@
         }
 
         function stepInvite() {
-            var q = draft.query.trim().toLowerCase();
-            var shown = D.friends.filter(function (f) { return !q || String(f.name).toLowerCase().indexOf(q) !== -1; });
+            var q = fold(draft.query.trim());
+            var shown = D.friends.filter(function (f) { return !q || fold(f.name).indexOf(q) !== -1; });
             var list = !D.friends.length ? '<p class="wizard__hint">' + esc(cc.no_friends) + '</p>'
                 : (shown.length
                     ? '<div class="glass goal-list"><div class="goal-list__scroll" role="group" aria-label="' + esc(cc.friends) + '">'
@@ -682,22 +822,23 @@
                         }).join('') + '</div></div>'
                     : '<p class="wizard__hint goal-list__empty">' + esc(cc.no_match) + '</p>');
             return '<h3 class="wizard__title" tabindex="-1">' + esc(cc.invite_title) + '</h3><p class="wizard__lede">' + esc(cc.friends_hint) + '</p>'
-                + (D.friends.length ? '<div class="goal-search">' + icon('search').replace('<svg', '<svg class="goal-search__icon"')
-                    + '<input class="goal-search__input" type="search" data-cw-search enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="' + esc(cc.search) + '" aria-label="' + esc(cc.search) + '" value="' + esc(draft.query) + '"></div>' : '')
-                + '<p class="wizard__label goal-list__label" aria-live="polite">' + esc(draft.invite.length ? T.tf(cc.picked, draft.invite.length) : cc.none_picked) + '</p>'
+                + (D.friends.length ? search('data-cw-search', draft.query, cc.search) : '')
+                + '<p class="wizard__label goal-list__label" aria-live="polite">' + esc(draft.invite.length ? String(cc.picked).replace('%d', draft.invite.length) : cc.none_picked) + '</p>'
                 + list;
         }
 
         function complete() {
             if (draft.step === 1) { return !!draft.metric; }
-            if (draft.step === 3) { return draft.kind !== 'together' || draft.target > 0; }
+            if (draft.step === 3) { return (draft.kind !== 'together' || draft.target > 0) && draft.end > draft.start; }
             return true;
         }
 
         function paint(direction) {
             var s = draft.step;
+            var calendarOpen = s === 3 && draft.calendar;
             w.body.innerHTML = '<section class="wizard__step is-active">'
-                + (s === 1 ? stepWhat() : s === 2 ? stepKind() : s === 3 ? stepSetup() : s === 'review' ? stepReview() : stepInvite()) + '</section>';
+                + (calendarOpen ? stepCalendar() : s === 1 ? stepWhat() : s === 2 ? stepKind() : s === 3 ? stepSetup() : s === 'review' ? stepReview() : stepInvite()) + '</section>';
+            w.root.querySelector('.wizard__foot').hidden = !!calendarOpen;
             var reached = typeof s === 'number' ? s : STEPS;
             Array.prototype.forEach.call(w.root.querySelectorAll('[data-cw-bar]'), function (b) { b.classList.toggle('is-done', Number(b.getAttribute('data-cw-bar')) <= reached); });
             w.count.textContent = s === 'review' ? cc.review_label : s === 'invite' ? cc.invite_label : T.tf('Stap %1$d van %2$d', s, STEPS) + ' · ' + cc['step' + s + '_label'];
@@ -707,7 +848,8 @@
             var target = w.body.querySelector('[data-cw-target]');
             if (target && window.OwnifyWheel) {
                 var m = metricOf(draft.metric);
-                window.OwnifyWheel.attach(target, { kind: 'number', min: m.step, max: m.targets.month * 4, step: m.step, 'default': draft.target, unit: format(m.many, '').trim() });
+                var top = Math.max(m.step * 40, suggestTarget(draft) * 4);
+                window.OwnifyWheel.attach(target, { kind: 'number', min: m.step, max: Math.round(top / m.step) * m.step, step: m.step, 'default': draft.target, unit: format(m.many, '').trim() });
             }
             if (direction) {
                 var section = w.body.querySelector('.wizard__step');
@@ -721,6 +863,7 @@
         function go(to, direction) { draft.step = to; paint(direction); }
         function close() {
             if (saving) { return; }
+            draft.calendar = null;
             w.root.classList.remove('is-open');
             window.setTimeout(function () { w.root.hidden = true; }, 200);
         }
@@ -740,28 +883,48 @@
                 go({ 1: 2, 2: 3, 3: 'review', review: 'invite' }[draft.step], 1);
                 return;
             }
-            if ((hit = t.closest('[data-cw-group]'))) { var g = hit.getAttribute('data-cw-group'); draft.group = draft.group === g ? null : g; paint(0); return; }
+            if ((hit = t.closest('[data-cw-category]'))) { var c = hit.getAttribute('data-cw-category'); draft.category = draft.category === c ? null : c; paint(0); return; }
             if ((hit = t.closest('[data-cw-metric]'))) {
                 draft.metric = hit.getAttribute('data-cw-metric');
-                if (!draft.touched) { draft.target = metricOf(draft.metric).targets[draft.length]; }
+                if (!draft.touched) { draft.target = suggestTarget(draft); }
+                var scroll = w.body.querySelector('.goal-list__scroll'), y = scroll ? scroll.scrollTop : 0;
                 paint(0);
+                if (w.body.querySelector('.goal-list__scroll')) { w.body.querySelector('.goal-list__scroll').scrollTop = y; }
                 return;
             }
             if ((hit = t.closest('[data-cw-kind]'))) { draft.kind = hit.getAttribute('data-cw-kind'); paint(0); return; }
-            if ((hit = t.closest('[data-cw-length]'))) {
-                draft.length = hit.getAttribute('data-cw-length');
-                if (!draft.touched) { draft.target = metricOf(draft.metric).targets[draft.length]; }
+            if ((hit = t.closest('[data-cw-date]'))) { openCalendar(hit.getAttribute('data-cw-date')); return; }
+            if ((hit = t.closest('[data-cw-duration]'))) {
+                draft.duration = hit.getAttribute('data-cw-duration');
+                draft.end = durationEnd(draft.start, draft.duration);
+                datesMoved();
                 paint(0);
                 return;
             }
-            if ((hit = t.closest('[data-cw-from]'))) { draft.from = hit.getAttribute('data-cw-from'); paint(0); return; }
+            if ((hit = t.closest('[data-cw-month]'))) {
+                view = new Date(view.getFullYear(), view.getMonth() + Number(hit.getAttribute('data-cw-month')), 1);
+                paint(0);
+                return;
+            }
+            if ((hit = t.closest('[data-cw-day]'))) { if (!hit.disabled) { pickDay(hit.getAttribute('data-cw-day')); } return; }
+            if (t.closest('[data-cw-calendar-done]')) {
+                if (draft.calendar === 'start') {
+                    draft.calendar = 'end';
+                    view = new Date(draft.end.getFullYear(), draft.end.getMonth(), 1);
+                    paint(1);
+                } else {
+                    draft.calendar = null;
+                    paint(-1);
+                }
+                return;
+            }
             if ((hit = t.closest('[data-cw-friend]'))) {
                 var id = Number(hit.getAttribute('data-cw-friend'));
                 var at = draft.invite.indexOf(id);
                 if (at === -1) { draft.invite.push(id); } else { draft.invite.splice(at, 1); }
-                var y = w.body.querySelector('.goal-list__scroll') ? w.body.querySelector('.goal-list__scroll').scrollTop : 0;
+                var y2 = w.body.querySelector('.goal-list__scroll') ? w.body.querySelector('.goal-list__scroll').scrollTop : 0;
                 paint(0);
-                if (w.body.querySelector('.goal-list__scroll')) { w.body.querySelector('.goal-list__scroll').scrollTop = y; }
+                if (w.body.querySelector('.goal-list__scroll')) { w.body.querySelector('.goal-list__scroll').scrollTop = y2; }
             }
         };
         w.root.oninput = function (event) {
@@ -769,9 +932,15 @@
             if (t.hasAttribute('data-cw-name')) { draft.name = t.value; return; }
             if (t.hasAttribute('data-cw-target')) {
                 var n = T.parseNumber(t.value);
-                draft.target = n === null ? 0 : Math.round(n);
+                var m = metricOf(draft.metric);
+                draft.target = n === null ? 0 : (decimalsOf(m) ? Math.round(n * 10) / 10 : Math.round(n));
                 draft.touched = true;
                 w.next.disabled = !complete();
+                return;
+            }
+            if (t.hasAttribute('data-cw-find')) {
+                draft.find = t.value;
+                w.body.querySelector('[data-cw-list]').innerHTML = metricList();
                 return;
             }
             if (t.hasAttribute('data-cw-search')) {
@@ -783,8 +952,12 @@
                 try { again.setSelectionRange(pos, pos); } catch (e) { /* type=search */ }
             }
         };
+        w.root.onkeydown = function (event) {
+            if (event.key === 'Escape' && draft.calendar) { event.stopPropagation(); draft.calendar = null; paint(-1); }
+        };
 
         function make() {
+            var metric = metricOf(draft.metric);
             saving = true;
             w.root.classList.add('is-saving');
             paint(0);
@@ -792,9 +965,9 @@
                 kind: draft.kind,
                 metric: draft.metric,
                 target: draft.kind === 'together' ? draft.target : null,
-                target_unit: D.units === 'imperial' ? 'mi' : 'km',
-                length: draft.length,
-                from: draft.from,
+                target_unit: D.units === 'imperial' ? (metric.unit === 'l' ? 'floz' : 'mi') : (metric.unit === 'l' ? 'l' : 'km'),
+                start_date: isoDay(draft.start),
+                end_date: isoDay(draft.end),
                 name: draft.name.trim(),
                 invite: draft.invite
             }).then(function (answer) {
@@ -808,7 +981,7 @@
 
         w.root.hidden = false;
         window.requestAnimationFrame(function () { w.root.classList.add('is-open'); });
-        go(draft.metric ? 1 : 1, 0);
+        go(1, 0);
     }
 
     /** The new challenge's code, to copy or share — and the way to it. */
