@@ -58,6 +58,7 @@ import com.ownify.android.data.Research
 import com.ownify.android.data.ResearchCopy
 import com.ownify.android.data.ResearchDetail
 import com.ownify.android.i18n.tr
+import com.ownify.android.i18n.trf
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.DetailColumn
 import com.ownify.android.ui.app.LocalShell
@@ -155,10 +156,11 @@ fun ResearchEvidence(evidences: List<Evidence?>, modifier: Modifier = Modifier) 
  * publication, Beperkingen beside it, the PDF; Bewijskracht last.
  */
 @Composable
-fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: ScrollState) {
+fun ResearchDetailPage(research: Research, detail: ResearchDetail, scroll: ScrollState, backTo: String? = null) {
     val copy = research.copy
     val source = detail.source
-    DetailColumn(scroll, back = tr("Terug"), backAria = tr("Terug")) {
+    // Opened over whatever showed its chip: the pill names that page (50.0), as every back pill names its own.
+    DetailColumn(scroll, back = backTo ?: tr("Terug"), backAria = if (backTo != null) trf("Terug naar %s", backTo) else tr("Terug")) {
         PageIntro(copy.title, detail.statement, Modifier.reveal())
 
         // 1. Samenvatting onderzoek: one point a sentence, in the approved words.

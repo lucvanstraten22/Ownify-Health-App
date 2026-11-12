@@ -608,11 +608,18 @@ button {
     touch-action: manipulation;
 }
 
+/* The one focus ring, for whoever moves with a keyboard (50.0): on every
+   control, the glass ones too. It follows the control's own corners — the
+   rule never changes a control's shape. */
 :focus-visible {
     outline: 2px solid rgba(var(--ink), 0.55);
     outline-offset: 3px;
-    border-radius: var(--radius-sm);
 }
+
+/* A page, a dialog or a title that only a script can focus is not a
+   control: it takes focus so it is read out, and shows no ring. */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible { outline: none; }
 
 /* ==========================================================================
    Page shell

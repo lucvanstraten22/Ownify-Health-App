@@ -79,6 +79,7 @@ import com.ownify.android.ui.design.TickLabel
 import com.ownify.android.ui.design.JCard
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.OwnifyIcons
+import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.cssPadding
@@ -289,7 +290,7 @@ private fun Plot(goal: Goal, chart: GoalChart, description: String) {
 /** The grid, the target, the fading wash, the line drawn on, and the dots. */
 @Composable
 private fun PlotDrawing(chart: GoalChart, accent: Color, reading: Int) {
-    val still = LocalStillMotion.current
+    val still = LocalStillMotion.current || LocalReducedMotion.current   // "Animaties uit" too (50.0)
     val view = LocalView.current
     val draw = remember { Animatable(if (still) 1f else 0f) }
     var seen by remember { mutableStateOf(still) }

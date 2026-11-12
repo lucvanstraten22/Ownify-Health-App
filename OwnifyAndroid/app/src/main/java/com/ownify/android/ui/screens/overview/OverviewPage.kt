@@ -233,7 +233,7 @@ private fun HealthScoreCard(data: AppData) {
             align = TextAlign.Center
         )
 
-        // The pillars wait until the score ring has wholly arrived (none moves without a score).
+        // The pillars start with the score ring (50.0), so the whole arrival is about 2.5 s.
         // Slaap, Voeding, Training: each opens its own page (32.2).
         val contributors = data.overview.contributors
         PillarRings(
@@ -631,7 +631,7 @@ fun Skeleton(modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = Rou
 }
 
 /**
- * `.fab` on Overzicht: "Terug naar je dagscore", on the column's right edge
+ * `.fab` on Overzicht: "Terug naar je Gezondheidsscore", on the column's right edge
  * above the tab bar, once the page is more than 360 dp down.
  */
 @Composable
@@ -660,7 +660,7 @@ private fun ScrollTop(scroll: ScrollState) {
                         .clickable(interaction, indication = null, role = Role.Button, enabled = show) {
                             scope.launch { scroll.animateScrollTo(0) }
                         }
-                        .semantics { contentDescription = tr("Terug naar je dagscore") }
+                        .semantics { contentDescription = tr("Terug naar je Gezondheidsscore") }
                 )
                 .glassPress(interaction, CircleShape)
                 .size(44.dp)

@@ -59,7 +59,7 @@ return [
         'sleep'     => ['label' => 'Slaap',            'icon' => 'moon',     'accent' => 'sleep'],
         'nutrition' => ['label' => 'Voeding',          'icon' => 'utensils', 'accent' => 'nutrition'],
         'training'  => ['label' => 'Training',         'icon' => 'dumbbell', 'accent' => 'training'],
-        'activity'  => ['label' => 'Activiteit',       'icon' => 'bolt',     'accent' => 'training'],
+        'activity'  => ['label' => 'Beweging',         'icon' => 'bolt',     'accent' => 'training'],
         'body'      => ['label' => 'Lichaam',          'icon' => 'ruler',    'accent' => 'nutrition'],
         'recovery'  => ['label' => 'Herstel & balans', 'icon' => 'heart',    'accent' => 'health'],
     ],

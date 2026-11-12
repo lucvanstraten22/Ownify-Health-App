@@ -1193,8 +1193,8 @@
         window.requestAnimationFrame(function () { root.classList.add('is-open'); });
         carry();
         enter(root.querySelector('.wizard__step.is-active'), 1, null);
-        var first = root.querySelector('[data-wizard-category]');
-        if (first) { first.focus({ preventScroll: true }); }
+        /* The dialog itself, by its name — not its first option (50.0). */
+        if (window.AppNav && window.AppNav.focusLayer) { window.AppNav.focusLayer(root.querySelector('[role="dialog"]')); }
     }
 
     function close(saved) {

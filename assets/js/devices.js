@@ -31,8 +31,8 @@
         // One frame before the class, so the transition has a start state.
         window.requestAnimationFrame(function () { popup.classList.add('is-open'); });
 
-        var add = popup.querySelector('[data-devices-add]');
-        if (add) { add.focus({ preventScroll: true }); }
+        /* The dialog itself, by its name — not its first button (50.0). */
+        if (window.AppNav && window.AppNav.focusLayer) { window.AppNav.focusLayer(popup); }
     }
 
     function close(returnFocus) {

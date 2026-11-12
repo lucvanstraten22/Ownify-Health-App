@@ -561,7 +561,7 @@ return [
             'label' => 'Google Health',
             'icon'  => 'rings',
             'note'  => 'Fitbit en Pixel Watch, via je Google-account',
-            'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag', 'Voeding', 'Lichaamsmaten'],
+            'categories' => ['Slaap', 'Beweging', 'Training', 'Hartslag', 'Voeding', 'Lichaamsmaten'],
         ],
         [
             'key'      => 'health_connect',
@@ -569,7 +569,7 @@ return [
             'label' => 'Health Connect',
             'icon'  => 'pulse',
             'note'  => 'Android — Google Health Connect',
-            'categories' => ['Slaap', 'Activiteit', 'Training', 'Hartslag'],
+            'categories' => ['Slaap', 'Beweging', 'Training', 'Hartslag'],
         ],
         [
             'key'      => 'polar',

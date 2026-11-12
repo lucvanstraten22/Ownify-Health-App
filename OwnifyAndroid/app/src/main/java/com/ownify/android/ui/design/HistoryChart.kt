@@ -173,7 +173,8 @@ fun HistoryPlot(
     gutterEnd: Dp = 0.dp,
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
-    val still = LocalStillMotion.current
+    // "Animaties uit" and the device's reduced motion too (50.0): the line stands drawn, it is not drawn on.
+    val still = LocalStillMotion.current || LocalReducedMotion.current
     val view = LocalView.current
     val owned = LocalOwnedAreas.current
     val scope = rememberCoroutineScope()

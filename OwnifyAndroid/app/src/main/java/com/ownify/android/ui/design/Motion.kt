@@ -261,7 +261,7 @@ fun Modifier.reveal(): Modifier {
  */
 @Composable
 fun rememberPlayOnSight(): Pair<Boolean, Modifier> {
-    val still = LocalStillMotion.current
+    val still = LocalStillMotion.current || LocalReducedMotion.current   // "Animaties uit": shown at once (50.0)
     val view = LocalView.current
     var play by remember { mutableStateOf(still) }
 

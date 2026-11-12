@@ -41,7 +41,9 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
 
         <header class="app-header detail__top" data-header>
             <div class="shell detail__bar">
-                <button type="button" class="pill pill--back press" data-detail-close aria-label="<?= e(t('Terug')) ?>">
+                <?php /* Opened over whatever showed its chip: the pill names that page (50.0, detail-layer.js). */ ?>
+                <button type="button" class="pill pill--back press" data-detail-close aria-label="<?= e(t('Terug')) ?>"
+                        data-back-names="<?= e(t('Terug naar %s')) ?>">
                     <?= icon('chevron-left', 'pill__icon') ?>
                     <span class="pill__label"><?= e(t('Terug')) ?></span>
                 </button>

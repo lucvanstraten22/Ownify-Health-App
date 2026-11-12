@@ -172,6 +172,9 @@ class ShellState(
 
     val currentPage: String get() = pageIds[index]
 
+    /** On another tab than Overzicht, where one is: system back goes there first (50.0). */
+    val awayFromHome: Boolean get() = HOME in pageIds && currentPage != HOME
+
     /** Each page keeps its own scroll, so leaving it and coming back finds it where it was. */
     val scrolls: Map<String, ScrollState> = pageIds.associateWith { ScrollState(0) }
 
@@ -649,6 +652,10 @@ class ShellState(
         if (detail != null && detailShown) settleDetail(1f)
     }
 
+    companion object {
+        /** Overzicht: the page the app opens on, and the one system back returns to. */
+        const val HOME = "overview"
+    }
 }
 
 /**

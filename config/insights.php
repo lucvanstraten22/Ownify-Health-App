@@ -297,7 +297,7 @@ return [
         'empty' => [
             'sleep'     => ['title' => 'Slaap',    'body' => 'Hier verschijnt een inzicht zodra er genoeg nachten zijn gemeten en je leeftijd bekend is.'],
             'nutrition' => ['title' => 'Voeding',  'body' => 'Hier verschijnt een inzicht zodra je een paar dagen volledig hebt gelogd.'],
-            'training'  => ['title' => 'Beweging', 'body' => 'Hier verschijnt een inzicht zodra er een week aan stappen of trainingen binnen is.'],
+            'training'  => ['title' => 'Training', 'body' => 'Hier verschijnt een inzicht zodra er een week aan stappen of trainingen binnen is.'],
         ],
         'subtitle_empty' => 'Verschijnt zodra er genoeg gegevens zijn',
         'subtitle'       => 'Uit je eigen gegevens, met het onderzoek erbij',

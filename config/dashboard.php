@@ -97,7 +97,7 @@ return [
             'caption_collecting' => 'Nog geen score',
             /* Instead, when there is data but none of it is recent enough. */
             'caption_expired'    => 'Geen recente gegevens',
-            'description' => 'Je score bundelt slaap, voeding en beweging over de afgelopen 7 dagen.',
+            'description' => 'Je score bundelt slaap, voeding en training over de afgelopen 7 dagen.',
             'empty_hint'  => 'Verbind een bron om je gezondheidsscore te berekenen.',
         ],
 

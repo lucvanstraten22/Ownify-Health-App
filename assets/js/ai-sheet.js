@@ -122,10 +122,10 @@
     }
 
     function focusEntry(open) {
-        var target = open
-            ? sheet.querySelector('[data-ai-close]')
-            : deck.querySelector('[data-ai-open]');
+        /* Open: the sheet itself, by its name — not its close button (50.0). */
+        if (open) { nav.focusLayer(sheet); return; }
 
+        var target = deck.querySelector('[data-ai-open]');
         if (target && typeof target.focus === 'function') {
             target.focus({ preventScroll: true });
         }

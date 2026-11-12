@@ -16,10 +16,14 @@
     'use strict';
 
     var TAU = Math.PI * 2;
-    var TRAVEL = 2500;          /* the head's way to the score */
+    /* The arrival is about 2.5 s in all (50.0; it was 3.5 s, and 5.2 s until
+       the pillars stood): 1.8 s on the way, 0.7 s to finish. It plays on every
+       load of the most-seen screen, so it is the app's one long moment and no
+       longer than that. */
+    var TRAVEL = 1800;          /* the head's way to the score */
     var SETTLE = 320;           /* the colour filling in behind it */
     var RIPPLE = 700;
-    var BLOOM = 1000;
+    var BLOOM = 700;
     var reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     /* -------------------------------------------------------------- colour */
@@ -296,25 +300,16 @@
 
     function shown(ring) { return ring && ring.__heroRing ? ring.__heroRing.shown : null; }
 
-    /** How long (ms) until the score ring in [root] has wholly arrived: 0 when none is moving. */
-    function remaining(root) {
-        var ring = root.querySelector('.score-ring.has-canvas');
-        var state = ring && ring.__heroRing;
-        if (!state || !state.moving) { return 0; }
-        var end = state.start + state.duration + Math.max(SETTLE, RIPPLE, BLOOM);
-        return Math.max(0, end - performance.now());
-    }
-
     /**
      * The three pillar rings under the score (components/health-score.php):
-     * each arc drawn to its data-progress. Played (animate), they start once
-     * the big ring has wholly arrived — never while it moves — one after
-     * another, each over 1.5 s; otherwise, and with reduced motion, they are
-     * simply there.
+     * each arc drawn to its data-progress. Played (animate), they start with
+     * the big ring (50.0) — one after another, 90 ms apart, each over 1.5 s,
+     * so the three stand before the ring has finished; otherwise, and with
+     * reduced motion, they are simply there.
      */
     function pillars(root, animate) {
         var still = !animate || reduceQuery.matches;
-        var wait = still ? 0 : remaining(root);
+        var wait = 0;
         Array.prototype.forEach.call(root.querySelectorAll('[data-pillar]'), function (arc, i) {
             var length = 2 * Math.PI * (arc.r && arc.r.baseVal ? arc.r.baseVal.value : 16);
             var target = clamp01(parseFloat(arc.getAttribute('data-progress')) || 0);

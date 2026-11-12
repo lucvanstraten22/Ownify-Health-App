@@ -196,9 +196,9 @@ class GoalSuggestionFlowTest {
         assertTrue("steps first, then sleep", top("Stappen") < top("Slaapduur"))
 
         // A category's list is the category, not the suggestion.
-        tap("Activiteit")
+        tap("Beweging")
         assertFalse("a category: no reasons", shows("Nu 8.300 · optimaal 10.000 stappen"))
-        assertTrue("a category: its own meta", shows("Activiteit · "))
+        assertTrue("a category: its own meta", shows("Beweging · "))
     }
 
     @Test

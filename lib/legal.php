@@ -161,12 +161,14 @@ if (!function_exists('legal_documents')) {
             $project = legal_android_projects()[$i];
             foreach ($byLicence as $licence => $points) {
                 $used[$licence] = true;
-                $text = [sprintf((string) $c['licence'], $names[$licence] ?? $licence)];
+                /* Short eyebrows (50.0): a section is headed by the project's name alone;
+                   how many packages stands with its licence, in the text. */
+                $text = [sprintf((string) $c['licence'], $names[$licence] ?? $licence) . ' · ' . tn(count($points), ...(array) $c['packages'])];
                 if ($project['copyright'] !== null) {
                     $text[] = $project['copyright'];
                 }
                 $sections[] = legal_section([
-                    'title'  => (string) $c['app'] . ' · ' . t($project['name']) . ' · ' . tn(count($points), ...(array) $c['packages']),
+                    'title'  => t($project['name']),
                     'text'   => $text,
                     'points' => $points,
                     'link'   => ['label' => (string) $c['source'], 'href' => $project['source']],
@@ -184,14 +186,14 @@ if (!function_exists('legal_documents')) {
         foreach ($files as $licence => $path) {
             if (isset($used[$licence]) && is_file($path)) {
                 $sections[] = legal_section([
-                    'title'   => (string) $c['texts'] . ' · ' . $names[$licence],
+                    'title'   => (string) $names[$licence],
                     'licence' => legal_reflow((string) file_get_contents($path)),
                 ]);
             }
         }
         if (isset($used['Android-SDK-License'])) {
             $sections[] = legal_section([
-                'title' => (string) $c['texts'] . ' · ' . $names['Android-SDK-License'],
+                'title' => (string) $names['Android-SDK-License'],
                 'text'  => [(string) $c['sdk_note']],
                 'link'  => ['label' => (string) $c['source'], 'href' => 'https://developer.android.com/studio/terms'],
             ]);

@@ -23,6 +23,7 @@ return [
     'Een training die je niet hebt opgenomen, of die niet is doorgekomen.' => 'A workout you did not record, or that did not come through.',
     'Als je hartslag in die tijd is gemeten, komt die bij de training. Staat er op dat tijdstip al een training, dan wordt deze niet opgeslagen.' => 'If your heart rate was measured during that time, it is added to the workout. If there is already a workout at that time, this one is not saved.',
     'Begintijd' => 'Start time',
+    'Soort training' => 'Type of workout',
     'Verbrande calorieën' => 'Calories burned',
     'Training opgeslagen' => 'Workout saved',
     'Andere training' => 'Other workout',

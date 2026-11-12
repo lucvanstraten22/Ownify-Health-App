@@ -85,7 +85,7 @@ return [
     'Terug naar Gezondheid' => 'Back to Health',
     'Terug naar Instellingen' => 'Back to Settings',
     'Terug naar account' => 'Back to account',
-    'Terug naar je dagscore' => 'Back to your daily score',
+    'Terug naar je Gezondheidsscore' => 'Back to your Health score',
     'Uploaden' => 'Upload',
     'Vandaag afgevinkt' => 'Ticked off today',
     'Verstuurd' => 'Sent',

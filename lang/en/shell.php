@@ -24,7 +24,7 @@ return [
     'Nog geen gegevens' => 'No data yet',
     'Nog geen score' => 'No score yet',
     'Geen recente gegevens' => 'No recent data',
-    'Je score bundelt slaap, voeding en beweging over de afgelopen 7 dagen.' => 'Your score combines sleep, nutrition and activity over the past 7 days.',
+    'Je score bundelt slaap, voeding en training over de afgelopen 7 dagen.' => 'Your score combines sleep, nutrition and training over the past 7 days.',
     'Verbind een bron om je gezondheidsscore te berekenen.' => 'Connect a source to calculate your health score.',
     'Voeding' => 'Nutrition',
     'Primair doel' => 'Primary goal',

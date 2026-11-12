@@ -156,7 +156,7 @@ class AppDataParseTest {
 
         // Doelen (config/goals.php, lib/goals.php): the six categories, the
         // catalogue, Actief and Afgerond.
-        assertEquals(listOf("Slaap", "Voeding", "Training", "Activiteit", "Lichaam", "Herstel & balans"), data.goals.categories.map { it.label })
+        assertEquals(listOf("Slaap", "Voeding", "Training", "Beweging", "Lichaam", "Herstel & balans"), data.goals.categories.map { it.label })
         assertEquals(listOf("active" to "Actief", "completed" to "Afgerond"), data.goals.views)
         val steps = data.goals.measurement("steps")!!
         assertEquals(listOf("milestone", "streak", "accumulate"), steps.types)

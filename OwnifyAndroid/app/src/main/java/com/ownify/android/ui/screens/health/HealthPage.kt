@@ -78,6 +78,7 @@ import com.ownify.android.ui.design.OwnifyIcons
 import com.ownify.android.ui.design.Legend
 import com.ownify.android.ui.design.LegendItem
 import com.ownify.android.ui.design.LocalScreen
+import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.Meter
 import com.ownify.android.ui.design.PageIntro
@@ -436,7 +437,7 @@ private fun Chart(
 ) {
     val trend = data.health.trend
     val viewBox = Size(trend.width, trend.height)
-    val still = LocalStillMotion.current
+    val still = LocalStillMotion.current || LocalReducedMotion.current   // "Animaties uit" too (50.0)
     val view = LocalView.current
     val draw = remember { Animatable(if (still) 1f else 0f) }
     var seen by remember { mutableStateOf(still) }

@@ -222,7 +222,7 @@ return [
     /* The groups of step 1, in this order — the goal wizard's categories
        (config/goals.php), those a challenge can count. */
     'categories' => [
-        'activity'  => ['label' => 'Activiteit'],
+        'activity'  => ['label' => 'Beweging'],
         'training'  => ['label' => 'Training'],
         'sleep'     => ['label' => 'Slaap'],
         'nutrition' => ['label' => 'Voeding'],

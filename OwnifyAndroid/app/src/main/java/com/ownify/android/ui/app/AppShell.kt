@@ -182,6 +182,9 @@ fun AppShell(source: AppData, screens: ShellScreens, onShell: ((ShellState) -> U
     }
 
     // System back: a panel, then the sheet. A detail page follows the back gesture.
+    // With nothing in front, back on another tab goes to Overzicht first (50.0), as the
+    // platform's own tab bars do; only from Overzicht does it leave the app.
+    BackHandler(enabled = !shell.overlayOpen && !shell.aiOpen && !(shell.detail != null && shell.detailShown) && shell.awayFromHome) { shell.goTo(ShellState.HOME) }
     BackHandler(enabled = shell.overlayOpen || shell.aiOpen) { shell.back() }
     PredictiveBackHandler(enabled = !shell.overlayOpen && !shell.aiOpen && shell.detail != null && shell.detailShown) { progress ->
         try {

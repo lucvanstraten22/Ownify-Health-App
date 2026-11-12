@@ -1944,10 +1944,8 @@ a.settings-row { color: inherit; text-decoration: none; }
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, calc(0.08 * var(--glint-k)));
 }
 
-.glass:focus-visible {
-    outline: none;
-    box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo);
-}
+/* A glass control's focus is the one ring of every control (theme.css,
+   50.0); the green halo measured 1.4:1 against the ground. */
 
 /* The size of a Health Connect data chip (.chip): its padding and its 1px
    edge (the glass draws its rim inside, so the edge is padding here), its type. */
@@ -2342,7 +2340,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 .split--caution > .split__part:last-child { color: var(--attention); }
 
 .split__part:active { transform: scale(0.97); transition-duration: var(--press-in); }
-.split__part:focus-visible { outline: none; box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); z-index: 1; }
+.split__part:focus-visible { z-index: 1; }   /* the one ring (theme.css), over its neighbour */
 .split__part:disabled,
 .split__part[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; transform: none; }
 .split__part .icon { width: 18px; height: 18px; flex: none; }

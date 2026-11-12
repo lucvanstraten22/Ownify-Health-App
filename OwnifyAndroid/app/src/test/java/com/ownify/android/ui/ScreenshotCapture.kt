@@ -618,7 +618,7 @@ class ScreenshotCapture {
     @Test fun noticeMeldingen() = detail("settings", Detail.SettingsPage("notifications"), "notice-meldingen")
     @Test fun devices() = panel(Overlay.Devices, "devices")
     /**
-     * The three steps and the review: Activiteit, Stappen; a suggested name
+     * The three steps and the review: Beweging, Stappen; a suggested name
      * and Streak; 8.000 a day for three months. On an account with a free
      * goal slot.
      */
@@ -629,7 +629,7 @@ class ScreenshotCapture {
         compose.runOnUiThread { shell.open(Overlay.Wizard) }
         settle()
         shoot("wizard-1")
-        tap("Activiteit")
+        tap("Beweging")
         tap("Stappen")
         shoot("wizard-1b")
         tap("Volgende")

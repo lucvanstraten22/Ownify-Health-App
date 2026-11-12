@@ -554,14 +554,15 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                         verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
                         ch.categories.forEach { (key, label) -> GlassChip(label, chosen = group == key, onClick = { group = if (group == key) null else key }) }
                     }
-                    FieldLabel(w("list_label"), Modifier.padding(top = Ownify.Space4))
+                    // Where they come from, said once here — not on every row (50.0).
+                    FieldLabel(w("list_label") + " · " + w("auto"), Modifier.padding(top = Ownify.Space4))
                     val words = fold(find).split(Regex("\\s+")).filter { it.isNotEmpty() }
                     val shown = ch.metrics.filter { m ->
                         (group == null || m.category == group) && fold(m.label + " " + m.what + " " + categoryOf(m.category)).let { hay -> words.all { it in hay } }
                     }
                     if (shown.isEmpty()) T(w("no_metric"), JStyle.Footnote) else WizardList {
                         shown.forEach { m ->
-                            WizardOption(m.label, categoryOf(m.category) + " · " + w("auto"), chosen = metricKey == m.key, onClick = {
+                            WizardOption(m.label, categoryOf(m.category), chosen = metricKey == m.key, onClick = {
                                 metricKey = m.key
                                 if (!touched) target = suggestTarget(m, period)
                             }, accent = Accent.of(m.accent).color, icon = OwnifyIcons.named(m.icon))
@@ -623,7 +624,9 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                         Box(Modifier.padding(top = Ownify.Space4)) {
                             JInput(query, { query = it.take(40) }, placeholder = w("search"), label = w("search"))
                         }
-                        FieldLabel(if (invite.isEmpty()) w("none_picked") else w("picked").replace("%d", invite.size.toString()), Modifier.padding(top = Ownify.Space4))
+                        // A count is a label; the sentence for "nobody yet" is a hint, in sentence case (50.0).
+                        if (invite.isEmpty()) T(w("none_picked"), JStyle.Footnote, Modifier.padding(top = Ownify.Space4, bottom = Ownify.Space2))
+                        else FieldLabel(w("picked").replace("%d", invite.size.toString()), Modifier.padding(top = Ownify.Space4))
                         val shown = ch.friends.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
                         if (shown.isEmpty()) T(w("no_match"), JStyle.Footnote) else WizardList {
                             shown.forEach { f ->

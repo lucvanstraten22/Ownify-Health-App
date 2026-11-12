@@ -57,8 +57,11 @@ window.AppNav = (function () {
 
     var api = {
         deck: deck,
-        /* Kept up to date: the setting can change while the page is open. */
-        reduceMotion: reduceQuery.matches,
+        /* Read live (50.0): the device's setting or the account's "Animaties
+           uit" can change while the page is open, and the next gesture
+           already follows it — no reload (matchMedia hears both:
+           document-head.php). */
+        get reduceMotion() { return reduceQuery.matches; },
         duration: 280,
 
         /**
@@ -71,6 +74,18 @@ window.AppNav = (function () {
         fadeIn: function (el) {
             if (!api.reduceMotion || !el || typeof el.animate !== 'function') { return; }
             el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+        },
+
+        /**
+         * Focus on open (50.0): the layer itself — the detail page, the
+         * dialog — not a control inside it. A screen reader reads its name
+         * and a keyboard's next Tab is its first control, but no control
+         * wears a focus ring it was never given by the person.
+         */
+        focusLayer: function (el) {
+            if (!el || typeof el.focus !== 'function') { return; }
+            if (!el.hasAttribute('tabindex')) { el.setAttribute('tabindex', '-1'); }
+            el.focus({ preventScroll: true });
         },
 
         /** Shared, so every controller can read what the others are doing. */
@@ -170,13 +185,6 @@ window.AppNav = (function () {
             return completes ? base + toward : base;
         }
     };
-
-    function onReduceChange(event) { api.reduceMotion = event.matches; }
-    if (typeof reduceQuery.addEventListener === 'function') {
-        reduceQuery.addEventListener('change', onReduceChange);
-    } else if (typeof reduceQuery.addListener === 'function') {
-        reduceQuery.addListener(onReduceChange);
-    }
 
     if (!deck) { return api; }
 

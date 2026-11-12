@@ -93,7 +93,18 @@ object OwnifyScreens {
                 Detail.Leaderboard -> LeaderboardDetail(data)
                 Detail.Challenges -> ChallengesDetail(data, scroll)
                 is Detail.Challenge -> data.challenges.view(detail.id)?.let { ChallengeDetail(data, it, detail.overList, scroll) }
-                is Detail.Research -> data.research.detail(detail.id)?.let { ResearchDetailPage(data.research, it, scroll) }
+                is Detail.Research -> data.research.detail(detail.id)?.let {
+                    // Its back pill names the page it returns to (50.0, detail-layer.js nameBack()).
+                    val backTo = when (val over = detail.over) {
+                        null -> data.navigation.firstOrNull { tab -> tab.id == LocalShell.current.currentPage }?.label
+                        is Detail.HealthArea -> data.health.area(over.id)?.label
+                        Detail.ScoreCompass -> data.compass.title
+                        Detail.Insights -> tr("Inzichten")
+                        is Detail.InsightPage -> tr("Inzicht")
+                        else -> null
+                    }
+                    ResearchDetailPage(data.research, it, scroll, backTo?.takeIf { name -> name.isNotBlank() })
+                }
                 Detail.Insights -> InsightsPage(data.correlations, scroll)
                 is Detail.InsightPage -> data.correlations.detail(detail.id)?.let { InsightDetailPage(data.correlations, it, scroll) }
                 is Detail.LegalPage -> data.legal.document(detail.id)?.let { LegalDocumentPage(data.legal, it, scroll) }

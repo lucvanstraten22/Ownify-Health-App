@@ -47,7 +47,14 @@
             panel.querySelectorAll('input, button:not([data-account-close])'),
             function (control) { return control.getClientRects().length > 0; }
         )[0];
-        if (first) { first.focus({ preventScroll: true }); }
+        /* A form opens on its first field; anything else on the dialog itself (50.0). */
+        if (first && first.tagName === 'INPUT') { first.focus({ preventScroll: true }); }
+        else { focusDialog(); }
+    }
+
+    function focusDialog() {
+        var dialog = panel.querySelector('[role="dialog"]') || panel;
+        if (window.AppNav && window.AppNav.focusLayer) { window.AppNav.focusLayer(dialog); }
     }
 
     function close() {
@@ -340,7 +347,9 @@
         var first = target ? Array.prototype.filter.call(target.querySelectorAll('input, button'), function (control) {
             return control.getClientRects().length > 0;
         })[0] : null;
-        if (first && !panel.hidden) { first.focus({ preventScroll: true }); }
+        if (first && !panel.hidden) {
+            if (first.tagName === 'INPUT') { first.focus({ preventScroll: true }); } else { focusDialog(); }
+        }
     }
 
     function status(selector, message) {

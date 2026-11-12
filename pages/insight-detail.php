@@ -27,7 +27,7 @@ $labels = $data['correlations']['labels'];
 $id     = $d['id'];
 ?>
 <article class="detail settings-detail insights-detail" data-detail="<?= e($id) ?>" data-detail-parent="insights" data-accent="<?= e($d['accent']) ?>"
-         aria-label="<?= e($d['title']) ?>" aria-hidden="true" inert>
+         aria-label="<?= e($d['title']) ?>" data-detail-name="<?= e(t('Inzicht')) ?>" aria-hidden="true" inert>
 
     <div class="screen__scroll" data-scroller>
 

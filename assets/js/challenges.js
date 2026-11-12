@@ -153,10 +153,11 @@
         /* After the sheet has arrived: a field that opens the keyboard
            mid-rise makes the page jump. */
         window.setTimeout(function () {
+            /* Where the sheet asks for it; otherwise the sheet itself (50.0). */
             var target = (focusSelector && content.querySelector(focusSelector))
-                || content.querySelector('[data-sheet-focus]')
-                || content.querySelector('button:not([disabled]), input');
+                || content.querySelector('[data-sheet-focus]');
             if (target && target.focus) { target.focus({ preventScroll: true }); }
+            else if (window.AppNav && window.AppNav.focusLayer) { window.AppNav.focusLayer(panel); }
         }, reduce.matches ? 0 : 180);
     }
 
@@ -674,7 +675,7 @@
             if (!shown.length) { return '<p class="wizard__hint goal-list__empty">' + esc(cc.no_metric) + '</p>'; }
             return '<div class="glass goal-list"><div class="goal-list__scroll" role="radiogroup" aria-label="' + esc(cc.metric) + '">'
                 + shown.map(function (m) {
-                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, categoryLabel(m.category) + ' · ' + cc.auto, draft.metric === m.key, 'radio');
+                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, categoryLabel(m.category), draft.metric === m.key, 'radio');
                 }).join('') + '</div></div>';
         }
 
@@ -684,7 +685,8 @@
                 + '<div class="goal-bubbles" role="group">' + (D.categories || []).map(function (c) {
                     return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-category="' + esc(c.key) + '" aria-pressed="' + (draft.category === c.key) + '">' + esc(c.label) + '</button>';
                 }).join('') + '</div>'
-                + '<p class="wizard__label goal-list__label">' + esc(cc.list_label) + '</p>'
+                /* Where they come from, said once here — not on every row (50.0). */
+                + '<p class="wizard__label goal-list__label">' + esc(cc.list_label + ' · ' + cc.auto) + '</p>'
                 + '<div data-cw-list>' + metricList() + '</div>';
         }
 
@@ -780,7 +782,8 @@
                     : '<p class="wizard__hint goal-list__empty">' + esc(cc.no_match) + '</p>');
             return '<h3 class="wizard__title" tabindex="-1">' + esc(cc.invite_title) + '</h3><p class="wizard__lede">' + esc(cc.friends_hint) + '</p>'
                 + (D.friends.length ? search('data-cw-search', draft.query, cc.search) : '')
-                + '<p class="wizard__label goal-list__label" aria-live="polite">' + esc(draft.invite.length ? String(cc.picked).replace('%d', draft.invite.length) : cc.none_picked) + '</p>'
+                /* A count is a label; the sentence for "nobody yet" is a hint, in sentence case (50.0). */
+                + '<p class="' + (draft.invite.length ? 'wizard__label' : 'wizard__hint') + ' goal-list__label" aria-live="polite">' + esc(draft.invite.length ? String(cc.picked).replace('%d', draft.invite.length) : cc.none_picked) + '</p>'
                 + list;
         }
 

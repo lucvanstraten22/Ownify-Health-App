@@ -81,6 +81,9 @@
 
     nav.onRefresh(refresh);
 
+    /* How many details stand open, one over another (back-layers.js). */
+    nav.detailDepth = function () { return (current && shown ? 1 : 0) + parents.length; };
+
     /* ------------------------------------------------------------- motion */
 
     /**
@@ -132,10 +135,9 @@
             nav.refresh();
 
             if (moveFocus) {
-                var target2 = opening
-                    ? (current && current.querySelector('[data-detail-close]'))
-                    : opener;
-                if (target2 && target2.focus) { target2.focus({ preventScroll: true }); }
+                /* Open: the page itself, by its name — never its back pill (50.0). */
+                if (opening) { nav.focusLayer(current); }
+                else if (opener && opener.focus) { opener.focus({ preventScroll: true }); }
             }
         }, nav.duration + 40);
     }
@@ -170,6 +172,7 @@
         current = detail;
         current.classList.add('is-current');   // the one the stylesheet lifts off the rail
         opener = trigger || null;
+        nameBack(detail);
 
         // Every detail starts at the top, never where it was left.
         if (!returning) {
@@ -178,6 +181,34 @@
         }
 
         settle(1, true);
+    }
+
+    /**
+     * A detail that opens over whatever showed it (research, `*`) has no
+     * fixed way back: its pill names the page it returns to (50.0) — the
+     * detail under it, or the tab it was opened from — as every other back
+     * pill names its own ("‹ Gezondheid").
+     */
+    function nameBack(detail) {
+        var pill = detail.querySelector('[data-back-names]');
+        if (!pill) { return; }
+
+        var under = parents.length ? parents[parents.length - 1].detail : null;
+        var name  = '';
+        if (under) {
+            var by = under.getAttribute('aria-labelledby');
+            var el = by ? document.getElementById(by) : null;
+            name = under.getAttribute('data-detail-name') || under.getAttribute('aria-label') || (el ? el.textContent : '');
+        } else {
+            var tab = document.querySelector('[data-nav][aria-current="page"] .tab__label, [data-nav].is-active .tab__label');
+            name = tab ? tab.textContent : '';
+        }
+        name = (name || '').replace(/\s+/g, ' ').trim();
+        if (!name) { return; }
+
+        var label = pill.querySelector('.pill__label');
+        if (label) { label.textContent = name; }
+        pill.setAttribute('aria-label', pill.getAttribute('data-back-names').replace('%s', name));
     }
 
     function close(moveFocus) {

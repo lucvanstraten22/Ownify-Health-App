@@ -160,8 +160,8 @@ check('six categories, in the same order',
     $dbCategories === array_keys($catalogue['categories']) && count($dbCategories) === 6,
     implode(',', $dbCategories) . ' vs ' . implode(',', array_keys($catalogue['categories'])));
 
-check('the categories are named Slaap, Voeding, Training, Activiteit, Lichaam, Herstel & balans',
-    array_column($catalogue['categories'], 'label') === ['Slaap', 'Voeding', 'Training', 'Activiteit', 'Lichaam', 'Herstel & balans'],
+check('the categories are named Slaap, Voeding, Training, Beweging, Lichaam, Herstel & balans',
+    array_column($catalogue['categories'], 'label') === ['Slaap', 'Voeding', 'Training', 'Beweging', 'Lichaam', 'Herstel & balans'],
     implode(', ', array_column($catalogue['categories'], 'label')));
 
 $dbUnits = [];

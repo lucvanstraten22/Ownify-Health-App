@@ -1270,7 +1270,7 @@
       },
       "categories": {
         "activity": {
-          "label": "Activiteit"
+          "label": "Beweging"
         },
         "training": {
           "label": "Training"
@@ -1569,7 +1569,7 @@
     "categories": [
       {
         "key": "activity",
-        "label": "Activiteit"
+        "label": "Beweging"
       },
       {
         "key": "training",

@@ -29,19 +29,19 @@ import kotlin.math.sin
  * faint where it starts and at its brightest at 100 — the gradient belongs to
  * the circle, so a higher score reaches further into the light. The light it
  * gives off grows with the score and, from 80 up, blooms once as it arrives.
- * It arrives as a light over 2.5 s: a bright head with a fading tail, the
+ * It arrives as a light, about 2.5 s in all (50.0: 1.8 s on the way, 0.7 s to finish): a bright head with a fading tail, the
  * colour filling in behind it, one ripple where it stops; a small light stays
  * at the tip. Reduced motion: it is simply there.
  */
 
-private const val TRAVEL = 2500f
+private const val TRAVEL = 1800f
 private const val SETTLE = 320f
 private const val RIPPLE = 700f
-private const val BLOOM = 1000f
+private const val BLOOM = 700f
 private const val TOTAL = TRAVEL + BLOOM
 
-/** The whole arrival, in ms: what the pillar rings wait for (hero-ring.js `remaining`). */
-const val HeroArrivalMs = 3500
+/** How long the pillar rings wait for the big ring, in ms: they start with it (50.0, hero-ring.js `pillars`). */
+const val HeroArrivalMs = 0
 
 /** Where the arrival is: the ring's share now, and the moments after it. */
 class HeroArrival(val shown: Float, val elapsed: Float, val moving: Boolean, val target: Float) {

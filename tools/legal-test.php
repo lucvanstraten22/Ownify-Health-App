@@ -117,7 +117,8 @@ check('every artifact with a known licence', $unknown === [], implode(', ', arra
 
 $listed = [];
 foreach ($sections as $s) {
-    if (str_starts_with($s['title'], 'Android-app · ')) {
+    /* An app section is headed by its project's name alone (50.0: short eyebrows). */
+    if (in_array($s['title'], array_map(static fn ($p) => t($p['name']), legal_android_projects()), true)) {
         foreach ($s['points'] as $p) {
             $listed[] = $p;
         }
@@ -130,12 +131,12 @@ check('every artifact shown once, under its project', $listed === $expected, cou
 
 $texts = array_column(array_filter($sections, static fn ($s) => $s['licence'] !== null), 'licence', 'title');
 $used  = array_unique(array_column($artifacts, 'licence'));
-check('Apache 2.0 in full', isset($texts['Licentieteksten · Apache License 2.0']) && str_contains($texts['Licentieteksten · Apache License 2.0'], 'TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION'));
-check('LGPL 2.1 in full (PHPMailer\'s own copy)', isset($texts['Licentieteksten · GNU Lesser General Public License 2.1']) && str_contains($texts['Licentieteksten · GNU Lesser General Public License 2.1'], 'GNU LESSER GENERAL PUBLIC LICENSE'));
+check('Apache 2.0 in full', isset($texts['Apache License 2.0']) && str_contains($texts['Apache License 2.0'], 'TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION'));
+check('LGPL 2.1 in full (PHPMailer\'s own copy)', isset($texts['GNU Lesser General Public License 2.1']) && str_contains($texts['GNU Lesser General Public License 2.1'], 'GNU LESSER GENERAL PUBLIC LICENSE'));
 foreach (['BSD-3-Clause' => 'Redistribution and use in source and binary forms', 'MIT' => 'Permission is hereby granted, free of charge'] as $id => $phrase) {
     if (in_array($id, $used, true)) {
         $name = legal_licence_names()[$id];
-        check("$name in full", str_contains($texts['Licentieteksten · ' . $name] ?? '', $phrase));
+        check("$name in full", str_contains($texts[$name] ?? '', $phrase));
     }
 }
 if (in_array('Android-SDK-License', $used, true)) {
