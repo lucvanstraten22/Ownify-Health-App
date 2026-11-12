@@ -388,10 +388,11 @@ object Ownify {
 
     /**
      * `--action`, `--action-ink`: the one way forward (50.0, the owner's
-     * Solid · Jade · Deep · Grey-green) — a flat, solid fill, the same in both
-     * themes, its label white at 8.4:1. Not glass ([solidAction]).
+     * Solid) — a flat, solid fill, its label white: Jade · Deep · Grey-green
+     * in Dark Mode (8.4:1), Jade · Dark · Grey-green in White Mode (5.6:1).
+     * Not glass ([solidAction]).
      */
-    val Action = Color(0xFF3F5247)
+    val Action: Color get() = if (light) Color(0xFF586C60) else Color(0xFF3F5247)
     val ActionInk = Color.White
 
     /** `--zone-N`: heart-rate zone [n] (1–4), blue, green, amber, red; null-safe outside 1–4. */

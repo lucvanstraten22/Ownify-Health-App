@@ -131,10 +131,11 @@
     --attention: #C6B275;
     /* The one way forward (50.0, the owner's choice: Solid, Jade · Deep ·
        Grey-green, oklch(0.42 0.03 160)): a flat, solid fill of the app's
-       green, deep and nearly grey, with a white label at 8.4:1 — the same in
-       both themes. Not glass: everything that floats is, so the step to take
-       is the one solid thing. A faint top edge, a neutral shadow, no glow.
-       Mirrored in OwnifyTheme.kt (Ownify.Action, ActionInk). */
+       green, deep and nearly grey, with a white label at 8.4:1. White Mode
+       takes it one step lighter (Jade · Dark · Grey-green, below). Not glass:
+       everything that floats is, so the step to take is the one solid thing.
+       A faint top edge, a neutral shadow, no glow. Mirrored in
+       OwnifyTheme.kt (Ownify.Action, ActionInk). */
     --action: #3F5247;
     --action-ink: #FFFFFF;
     --action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -1046,6 +1047,10 @@ button {
        green, the grey tile, the missed day — keeps its exact value. */
     --score-mid: #7D910B;
     --score-low: #AC8032;
+
+    /* The one way forward on white (50.0, the owner's choice): Jade · Dark ·
+       Grey-green, oklch(0.51 0.03 160), its label still white (5.6:1). */
+    --action: #586C60;
 
     /* The score ring on white: pale where it starts, deepest at 100. */
     --ring-from: color-mix(in oklab, var(--health) 42%, #ffffff);

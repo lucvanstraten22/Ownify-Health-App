@@ -183,10 +183,11 @@ floats or leads is the glass — except the one way forward, which is solid:
 | cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`), or the gold forward half of a split (`.split--caution`) | `BtnLook.Caution` (`Final`) | only the irreversible yes: the step that deletes, wipes or leaves for good (N2, 50.0). The button that opens that step is neutral — the bin icon for deleting and wiping, the leave icon for leaving, none for disconnecting — and the question stands in the one attention Note above the yes. "Vriend verwijderen" and "Account verwijderen" keep their own looks |
 
 **The solid primary** (50.0, the owner's pick from the button prototypes:
-Solid · Jade · Deep · Grey-green, `oklch(0.42 0.03 160)` = `#3F5247`). Not
-glass: everything that floats is, so the step to take is the one solid
-thing on the screen. A flat fill, the same in both themes, with a white
-label (8.4:1); a faint white top edge, a neutral two-step shadow, no
+Solid · Jade · Deep · Grey-green, `oklch(0.42 0.03 160)` = `#3F5247`, in
+Dark Mode; one step lighter in White Mode, Jade · Dark · Grey-green,
+`oklch(0.51 0.03 160)` = `#586C60`). Not glass: everything that floats is,
+so the step to take is the one solid thing on the screen. A flat fill with
+a white label (8.4:1 in Dark, 5.6:1 in White); a faint white top edge, a neutral two-step shadow, no
 gradient, no rim, no green glow. Held, it grows on the glass's spring as
 every glass control does. Not to be taken yet (`:disabled`), it is plain
 glass with the muted ink — never a faded green. The app's green
