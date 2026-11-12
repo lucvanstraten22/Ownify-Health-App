@@ -266,6 +266,10 @@ foreach ($data['navigation'] as $position => $item) {
     component('settings-pairing', $data);
     component('account-modal', $data);
     component('devices-popup', $data);
+    ?>
+    <?php /* The one toast (`.ch-toast`): what an action did, for a moment — always on the page (50.0). */ ?>
+    <div class="ch-toast" role="status" aria-live="polite" data-challenge-toast></div>
+    <?php
     if (!empty($data['challenges']['available'])) {
         component('challenge-sheet', $data);
     }

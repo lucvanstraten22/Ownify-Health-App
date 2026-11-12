@@ -65,10 +65,10 @@ $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
 
     <?php if (!$isSet): ?>
         <div class="goal__action">
-            <?php /* Doelen is a real page now, so the button goes there. */ ?>
-            <button type="button" class="btn btn--ghost press"
-                    <?= empty($goal['cta']['enabled']) ? 'disabled' : 'data-nav="goals"' ?>><?= e($goal['cta']['label']) ?></button>
-            <span class="goal__note"><?= e($goal['cta']['note']) ?></span>
+            <?php /* B15 (50.0): the goal wizard itself, not a detour through Doelen. */ ?>
+            <button type="button" class="btn btn--primary press"
+                    <?= empty($goal['cta']['enabled']) ? 'disabled' : 'data-goal-add' ?>><?= e($goal['cta']['label']) ?></button>
+            <?php if (($goal['cta']['note'] ?? '') !== ''): ?><span class="goal__note"><?= e($goal['cta']['note']) ?></span><?php endif; ?>
         </div>
     <?php endif; ?>
 

@@ -122,6 +122,10 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
     <?php if (!has_value($overall['value'])): ?>
         <?php /* B8: connect a source (device), or wait a few days (calendar). */ ?>
         <p class="card__hint"><?= icon($overall['empty_icon'] ?? 'device', 'card__hint-icon') ?><?= e($overall['empty_hint']) ?></p>
+        <?php /* B15 (50.0): no source yet — the one way to connect one, right here (Apparaten). */ ?>
+        <?php if (($overall['empty_icon'] ?? 'device') === 'device'): ?>
+            <button type="button" class="text-link score-ring__connect press" data-devices-open><?= e(t('Apparaat koppelen')) ?><?= icon('chevron-right', 'text-link__icon') ?></button>
+        <?php endif; ?>
     <?php endif; ?>
 
 </section>

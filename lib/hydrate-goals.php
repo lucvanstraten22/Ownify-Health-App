@@ -352,9 +352,17 @@ if (!function_exists('hydrate_dashboard_goal')) {
      * The Overzicht page's goal card, filled from the user's primary goal.
      * Without one it stays the "no goal yet" design.
      */
-    function hydrate_dashboard_goal(array $card, ?array $primary): array
+    function hydrate_dashboard_goal(array $card, ?array $primary, ?array $onlyEnded = null): array
     {
         if ($primary === null) {
+            /* Only finished goals (B15, 50.0): the card says what Doelen says
+               — no active goal, the finished ones under Afgerond — not "Nog
+               geen doel ingesteld" to someone who has set one. */
+            if ($onlyEnded !== null) {
+                $card['headline']     = (string) $onlyEnded['title'];
+                $card['description']  = (string) $onlyEnded['body'];
+                $card['cta']['label'] = (string) $onlyEnded['cta'];
+            }
             return $card;
         }
 

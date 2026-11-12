@@ -1151,6 +1151,10 @@ a.settings-row { color: inherit; text-decoration: none; }
    its words do, as every card. */
 .card > .text-link:last-child { margin-bottom: calc(-1 * var(--space-2)); }
 
+/* The empty score's way to a source (B15, 50.0): under its sentence,
+   centred as the sentence is, above the card's own way in. */
+.score-ring__connect { display: flex; position: relative; z-index: 2; margin: 0 auto calc(-1 * var(--space-2)); }
+
 .text-link:focus-visible {
     outline: 2px solid rgba(var(--ink), 0.55);
     outline-offset: 2px;

@@ -58,8 +58,6 @@ $payload = [
     </div>
 </div>
 
-<div class="ch-toast" role="status" aria-live="polite" data-challenge-toast></div>
-
 <script type="application/json" data-challenges-data><?=
     json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)
 ?></script>

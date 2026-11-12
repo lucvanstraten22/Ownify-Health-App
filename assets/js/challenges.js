@@ -27,6 +27,25 @@
 (function () {
     'use strict';
 
+    /* -------------------------------------------------------------- toast */
+
+    /* The one toast (`.ch-toast`, index.php): what an action did, for a
+       moment — anyone's to use (settings.js after a save, 50.0), as the
+       app's OwnifyToast. Ready even when challenges are not. */
+    var toastEl = document.querySelector('[data-challenge-toast]');
+    var toastTimer = null;
+
+    function toast(text) {
+        if (!toastEl || !text) { return; }
+        toastEl.textContent = text;
+        toastEl.classList.remove('is-on');
+        void toastEl.offsetWidth;
+        toastEl.classList.add('is-on');
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-on'); }, 2600);
+    }
+    window.OwnifyToast = { show: toast };
+
     var sheetEl = document.querySelector('[data-challenge-sheet]');
     var dataEl = document.querySelector('[data-challenges-data]');
     if (!sheetEl || !dataEl) { return; }
@@ -36,7 +55,6 @@
     var panel = sheetEl.querySelector('[data-sheet-panel]');
     var content = sheetEl.querySelector('[data-sheet-content]');
     var grab = sheetEl.querySelector('[data-sheet-grab]');
-    var toastEl = document.querySelector('[data-challenge-toast]');
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     var D = read();
@@ -104,18 +122,6 @@
     }
 
     /* -------------------------------------------------------------- toast */
-
-    var toastTimer = null;
-
-    function toast(text) {
-        if (!toastEl || !text) { return; }
-        toastEl.textContent = text;
-        toastEl.classList.remove('is-on');
-        void toastEl.offsetWidth;
-        toastEl.classList.add('is-on');
-        window.clearTimeout(toastTimer);
-        toastTimer = window.setTimeout(function () { toastEl.classList.remove('is-on'); }, 2600);
-    }
 
     /* -------------------------------------------------------------- sheet */
 

@@ -72,6 +72,12 @@
             nav.pages.goToId('settings');
             nav.details.open(reopen);
         }
+        /* What the last save did, carried through its reload (A13, 50.0):
+           the toast, as the app shows it. */
+        var told = null;
+        try { told = sessionStorage.getItem('ownify-said'); sessionStorage.removeItem('ownify-said'); } catch (e) { told = null; }
+        if (told && window.OwnifyToast) { window.setTimeout(function () { window.OwnifyToast.show(told); }, 400); }
+
         /* After Gegevens wissen: the line that says it is done. */
         var said = null;
         try { said = JSON.parse(sessionStorage.getItem('ownify-action-said') || 'null'); sessionStorage.removeItem('ownify-action-said'); } catch (e) { said = null; }
@@ -919,6 +925,8 @@
                         var head   = source && source.querySelector('[data-integration-toggle]');
                         if (screen) { sessionStorage.setItem('ownify-reopen', screen.getAttribute('data-detail')); }
                         if (head) { sessionStorage.setItem('ownify-reopen-source', head.getAttribute('aria-controls')); }
+                        /* What was done, said once the page is back (A13, 50.0) — as the app's toast. */
+                        if (result.message) { sessionStorage.setItem('ownify-said', String(result.message)); }
                     } catch (e) { /* private mode */ }
                     window.location.reload();
                 });

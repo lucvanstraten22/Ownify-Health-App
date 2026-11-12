@@ -131,7 +131,9 @@ return [
         /* A goal exists but has nothing measured against it yet — true the
            moment one is created, and until something is recorded. */
         'pending'     => 'Je voortgang verschijnt zodra je iets vastlegt voor dit doel.',
-        'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => 'Opent de Doelen-pagina'],
+        /* B15 (50.0): the button opens the goal wizard itself, so it needs no
+           note to explain an extra step. */
+        'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => ''],
         /* `at`: where each stop sits on the bar, in percent, and the progress
            at which it is reached — the same number, so a dot lights as the
            fill passes it. */

@@ -210,7 +210,11 @@ if (!function_exists('app_page_data')) {
         };
 
         /* The Overzicht page's goal card follows whichever goal is primary. */
-        $data['goal'] = hydrate_dashboard_goal($data['goal'], $data['goals']['primary'] ?? null);
+        $data['goal'] = hydrate_dashboard_goal(
+            $data['goal'],
+            $data['goals']['primary'] ?? null,
+            ($data['goals']['completed'] ?? []) !== [] && ($data['goals']['active'] ?? []) === [] ? ($data['goals']['empty']['only_ended'] ?? null) : null
+        );
 
         /* Ownify AI at a glance — consent, whether it can answer, today's
            limit — so the sheet opens on the right screen. The conversations

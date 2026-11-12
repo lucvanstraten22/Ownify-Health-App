@@ -82,9 +82,12 @@ import com.ownify.android.data.Insights
 import com.ownify.android.data.Recommendation
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.LocalShell
+import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.app.PageColumn
 import com.ownify.android.ui.app.dockClearance
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.BtnLook
+import com.ownify.android.ui.design.TextLink
 import com.ownify.android.ui.design.CardHint
 import com.ownify.android.ui.design.CardStyle
 import com.ownify.android.ui.design.Chip
@@ -248,6 +251,10 @@ private fun HealthScoreCard(data: AppData) {
         )
 
         if (empty) CardHint(overall.emptyHint, icon = OwnifyIcons.named(overall.emptyIcon) ?: OwnifyIcons.device, textAlign = TextAlign.Center)
+        // B15 (50.0): no source yet — the one way to connect one, right here (Apparaten).
+        if (empty && overall.emptyIcon == "device") {
+            TextLink(tr("Apparaat koppelen"), onClick = { shell.open(Overlay.Devices) }, modifier = Modifier.align(Alignment.CenterHorizontally))
+        }
     }
 }
 
@@ -348,8 +355,9 @@ private fun GoalProgressCard(goal: GoalCard, primaryId: String?) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
             ) {
-                Btn(goal.ctaLabel, onClick = { shell.tab("goals") }, enabled = goal.ctaEnabled)
-                T(goal.ctaNote, JStyle.Footnote, Modifier.weight(1f))
+                // B15 (50.0): the goal wizard itself, the way forward — not a detour through Doelen.
+                Btn(goal.ctaLabel, onClick = { shell.open(Overlay.Wizard) }, enabled = goal.ctaEnabled, look = BtnLook.Primary)
+                if (goal.ctaNote.isNotBlank()) T(goal.ctaNote, JStyle.Footnote, Modifier.weight(1f))
             }
         }
     }
