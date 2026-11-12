@@ -1037,7 +1037,8 @@ fun RangeSwitch(
                         }
                         .hitArea(
                             Modifier
-                                .selectable(selected = active, enabled = !off, role = Role.RadioButton, onClick = blurring { onSelect(key) }),
+                                // No highlight of its own: the moving glass is the option's feedback (as before 50.0).
+                                .selectable(selected = active, interactionSource = null, indication = null, enabled = !off, role = Role.RadioButton, onClick = blurring { onSelect(key) }),
                             across = false
                         )
                         .alpha(if (off) 0.45f else 1f)
