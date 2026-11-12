@@ -548,8 +548,10 @@
     letter-spacing: var(--tracking-small);
 }
 
+/* Not to be taken yet (50.0, Phase 5): every action the same muted glass —
+   its glass kept, its words in the muted ink, nothing faded. */
 .btn:disabled {
-    opacity: 0.45;
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -597,9 +599,10 @@
 
 .btn--primary::before { content: none; }
 
-/* Not to be taken yet: no longer the solid thing, the plain glass instead. */
-.btn--primary:disabled {
-    opacity: 1;
+/* Not to be taken yet: no longer the solid thing or the gold yes, the plain
+   glass instead — the same muted glass as every disabled action. */
+.btn--primary:disabled,
+.btn--caution:disabled {
     background: var(--lg-face), var(--lg-body);
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
@@ -607,7 +610,7 @@
     color: var(--text-muted);
 }
 
-.btn--caution:disabled { opacity: 0.5; }
+.btn--caution:disabled::before { content: none; }
 
 /* Every control drawn smaller than --hit-min takes taps over at least that
    much: an invisible margin, centred on it, as far as it falls short — none
@@ -2171,7 +2174,7 @@ a.settings-row { color: inherit; text-decoration: none; }
 .password-field__toggle .icon,
 .friends__go .icon { width: 14px; height: 14px; }
 .friends__go { cursor: pointer; }
-.friends__go:disabled { opacity: 0.45; cursor: default; }
+.friends__go:disabled { color: var(--text-muted); cursor: default; }
 .goal-search__clear[hidden],
 .password-field__toggle[hidden] { display: none; }
 
@@ -2391,7 +2394,9 @@ a.settings-row { color: inherit; text-decoration: none; }
 .split__part:active { transform: scale(0.97); transition-duration: var(--press-in); }
 .split__part:focus-visible { z-index: 1; }   /* the one ring (theme.css), over its neighbour */
 .split__part:disabled,
-.split__part[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; transform: none; }
+.split__part[aria-disabled="true"],
+.split--caution > .split__part:last-child:disabled,
+.split--menu > .split__part:last-child:disabled { color: var(--text-muted); cursor: not-allowed; transform: none; }
 .split__part .icon { width: 18px; height: 18px; flex: none; }
 
 /* The dropdown: the value takes 85 %, the chevron the rest. */

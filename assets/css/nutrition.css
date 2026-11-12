@@ -145,8 +145,6 @@
     font-weight: 600;
 }
 
-.nutrition-daynav .glass:disabled { opacity: 0.35; }
-
 .nutrition-day__grid {
     display: grid;
     gap: var(--space-4);

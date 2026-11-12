@@ -155,10 +155,10 @@ fun GlassChip(
         ) {
             T(
                 text,
-                OwnifyType.style(Ownify.FsCaption, if (chosen) FontWeight.SemiBold else FontWeight.SemiBold, if (chosen) Ownify.TextPrimary else Ownify.TextSecondary),
+                OwnifyType.style(Ownify.FsCaption, if (chosen) FontWeight.SemiBold else FontWeight.SemiBold, if (!enabled) Ownify.TextMuted else if (chosen) Ownify.TextPrimary else Ownify.TextSecondary),
                 Modifier
+                    // Disabled: the muted glass (`.glass:disabled`, 50.0 Phase 5), nothing faded.
                     .glassPress(interaction, shape, enabled = enabled && onClick != null)
-                    .alpha(if (enabled) 1f else 0.5f)
                     .glass(shape, GlassLook(chosen = chosen, shadow = 7.dp, lift = 2.dp))
                     .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
                 maxLines = 1
@@ -232,7 +232,6 @@ fun GlassRound(
             modifier
                 .glassPress(interaction, CircleShape, enabled = enabled)
                 .size(size)
-                .alpha(if (enabled) 1f else 0.5f)
                 .glass(CircleShape, GlassLook(chosen = chosen == true))
                 .hitArea(
                     Modifier
@@ -255,7 +254,8 @@ fun GlassRound(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            JIcon(icon, size = if (size < 40.dp) 16.dp else 18.dp, color = if (chosen == true) Ownify.Health else Ownify.TextSecondary)
+            // Disabled: the muted glass (`.glass:disabled`, 50.0 Phase 5), nothing faded.
+            JIcon(icon, size = if (size < 40.dp) 16.dp else 18.dp, color = if (!enabled) Ownify.TextMuted else if (chosen == true) Ownify.Health else Ownify.TextSecondary)
         }
     }
 }

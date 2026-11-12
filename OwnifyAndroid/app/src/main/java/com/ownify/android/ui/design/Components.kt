@@ -466,24 +466,24 @@ fun Pill(
 
 /**
  * What a button looks like beyond `.btn`: its border and fill (the confirm's
- * yes, the wizard's next), and how far it fades while disabled.
+ * yes, the wizard's next). Disabled, every look is the same muted glass
+ * (50.0, Phase 5): see [Btn].
  */
 data class BtnLook(
     val border: Color = Ownify.GlassBorder,
     val fill: Color = Ownify.Glass,
     val text: Color = Ownify.TextPrimary,
-    val disabledAlpha: Float = 0.45f,
     /** Drawn in the Liquid Glass instead of [fill] and [border]. */
     val glass: GlassLook? = null
 ) {
     companion object {
         /** `.btn--primary`: the one way forward — the solid `--action`, its label white (50.0). */
         val Primary: BtnLook
-            get() = BtnLook(text = Ownify.ActionInk, glass = GlassLook(cta = true), disabledAlpha = 1f)
+            get() = BtnLook(text = Ownify.ActionInk, glass = GlassLook(cta = true))
 
-        /** `.btn--caution`: leave, remove, delete, wipe — the attention gold in the glass. */
+        /** `.btn--caution`: only the irreversible yes — the attention gold in the glass. */
         val Caution: BtnLook
-            get() = BtnLook(glass = GlassLook(caution = true), disabledAlpha = 0.5f)
+            get() = BtnLook(glass = GlassLook(caution = true))
 
         /** The step that cannot be undone: the cautious action (gold since 25.0). */
         val Final: BtnLook
@@ -493,9 +493,11 @@ data class BtnLook(
 
 /**
  * `.btn`: a capsule at least 44 high, 16 either side, `--glass` over the
- * glass border, 13/600; disabled at 45%. [BtnLook.Primary] is the solid
- * `--action` (plain glass and the muted ink while disabled); [BtnLook.Caution]
- * the Liquid Glass with the gold in it.
+ * glass border, 13/600. [BtnLook.Primary] is the solid `--action`;
+ * [BtnLook.Caution] the Liquid Glass with the gold in it. Not to be taken
+ * yet, every one is the muted glass (`.btn:disabled`, 50.0 Phase 5): its own
+ * glass — the solid and the gold ones the plain Liquid Glass — with the
+ * muted ink, nothing faded.
  */
 @Composable
 fun Btn(
@@ -515,10 +517,11 @@ fun Btn(
         SplitBtn(side, label, onClick, modifier, enabled, icon, look.glass?.caution == true, contentDescription)
         return
     }
-    // Not to be taken yet, the solid way forward is the plain glass (`.btn--primary:disabled`).
-    val idle = !enabled && look.glass?.cta == true
-    val glassLook = if (idle) GlassLook() else look.glass
-    val ink = if (idle) Ownify.TextMuted else look.text
+    // Not to be taken yet: the muted glass. The solid way forward and the
+    // gold yes are the plain glass then (`.btn--primary:disabled`,
+    // `.btn--caution:disabled`); the neutral button keeps its own.
+    val glassLook = if (!enabled && look.glass != null) GlassLook() else look.glass
+    val ink = if (enabled) look.text else Ownify.TextMuted
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val shape = RoundedCornerShape(50)
@@ -530,7 +533,6 @@ fun Btn(
                         .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
                 )
                 .press(interaction, enabled = enabled)
-                .alpha(if (enabled) 1f else look.disabledAlpha)
                 .heightIn(min = 44.dp)
                 .then(
                     if (glassLook != null) Modifier.glass(shape, glassLook).padding(horizontal = Ownify.Space4)

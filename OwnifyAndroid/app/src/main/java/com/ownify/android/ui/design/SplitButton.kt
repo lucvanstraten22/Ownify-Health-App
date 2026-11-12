@@ -19,7 +19,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -57,7 +56,7 @@ fun SplitRow(back: @Composable (Modifier) -> Unit, forward: @Composable (Modifie
 /** [Btn] inside a [SplitRow]: the half for [side], its words in the split's ink. */
 @Composable
 internal fun SplitBtn(side: SplitSide, label: String, onClick: () -> Unit, modifier: Modifier, enabled: Boolean, icon: ImageVector?, caution: Boolean, contentDescription: String?) {
-    val ink = if (side == SplitSide.Forward && caution) Ownify.Attention else Ownify.TextPrimary
+    val ink = if (!enabled) Ownify.TextMuted else if (side == SplitSide.Forward && caution) Ownify.Attention else Ownify.TextPrimary
     Half(if (side == SplitSide.Back) LeftShape else RightShape, modifier.semantics { if (contentDescription != null) this.contentDescription = contentDescription }, enabled, onClick, Alignment.Center) {
         CompositionLocalProvider(LocalSplitSide provides null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -129,7 +128,7 @@ fun SplitMenu(
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Half(LeftShape, Modifier.weight(0.85f).fillMaxHeight(), enabled, onClick, Alignment.CenterStart) {
-            T(value, OwnifyType.style(Ownify.FsInput, color = Ownify.TextPrimary), maxLines = 2)
+            T(value, OwnifyType.style(Ownify.FsInput, color = if (enabled) Ownify.TextPrimary else Ownify.TextMuted), maxLines = 2)
         }
         Half(RightShape, Modifier.weight(0.15f).fillMaxHeight(), enabled, onClick, Alignment.Center, padded = false) {
             JIcon(chevron, size = 14.dp, color = Ownify.TextMuted)
@@ -140,7 +139,7 @@ fun SplitMenu(
 @Composable
 private fun SplitHalf(part: SplitPart, ink: Color, shape: RoundedCornerShape, modifier: Modifier, minHeight: Dp, textSize: TextUnit) {
     Half(shape, modifier, part.enabled, part.onClick, Alignment.Center, minHeight = minHeight) {
-        ChromeText { T(part.label, OwnifyType.style(textSize, FontWeight.SemiBold, ink), maxLines = 2, align = TextAlign.Center) }
+        ChromeText { T(part.label, OwnifyType.style(textSize, FontWeight.SemiBold, if (part.enabled) ink else Ownify.TextMuted), maxLines = 2, align = TextAlign.Center) }
     }
 }
 
@@ -160,8 +159,8 @@ private fun Half(
         Box(
             modifier
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
+                // Disabled: the same glass, its words in the muted ink (the callers), nothing faded.
                 .press(interaction, enabled = enabled)
-                .alpha(if (enabled) 1f else 0.45f)
                 .heightIn(min = minHeight)
                 .glass(shape)
                 .then(if (padded) Modifier.padding(horizontal = Ownify.Space4, vertical = 6.dp) else Modifier),
