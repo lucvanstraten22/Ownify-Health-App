@@ -49,7 +49,8 @@ Environments:
 - **WAMP**: a self-hosted Windows runner mirrors `main` into
   `C:\wamp64\www\Ownify` (`update-wamp.yml`), with its own database.
 - **This sandbox**: no access to either database. Local MariaDB with two dev
-  databases (`g7`, `ownify_e2e`, both migrated to 031), a PHP dev server
+  databases (`g7`, `ownify_e2e`; correction from Phase 2: only `ownify_e2e`
+  is fully migrated to 031 — `g7` has 030/031 but none of 027–029), a PHP dev server
   harness with fake Google/Polar (`scratchpad/up.sh`, 127.0.0.1:8080),
   Chromium + Playwright for the web, Gradle/Robolectric for Android
   (no emulator; screens can be rendered to PNG through Robolectric's native
@@ -317,6 +318,7 @@ component type, conflicts settled — which is the input for Phase 3.
 - Phase 0 done (this document). Checkpoint 0 answered.
 - Phase 1 started (Effort High, Ultracode OFF).
 - Phase 1 done: evidence set complete (see the table above). **Checkpoint 1.**
+- Phase 2 done (XHigh; Ultracode ON, then OFF after the usage limit): `docs/audit/CONSOLIDATED.md`. **Checkpoint 2.**
 
 ## Checkpoint 1 — before Phase 2
 
@@ -348,3 +350,59 @@ Shared brief: `docs/audit/BRIEF.md`. Outputs: `docs/audit/lens-1-typography.md`,
 `lens-5-ux.md`, `lens-6-parity.md`, `lens-7-performance.md`,
 `lens-8-deadcode-web.md`, `lens-9-android-db.md`; merge →
 `docs/audit/CONSOLIDATED.md`.
+
+Run note: the parallel run hit the usage limit twice. On the user's
+instruction ("ultracode off") the rest of Phase 2 ran sequentially with
+Effort XHigh and no agents. Every reviewer wrote at least partial findings,
+each with its own "Not checked" list. The gaps that mattered were then filled
+by hand: DB checks, the mobile-native checklist, break-ui limits, terminology,
+Android state keys, 320 px wraps and visual composites.
+
+## Phase 2 — done
+
+Result: `docs/audit/CONSOLIDATED.md`, with 106 findings plus one evidence
+task (C-E1), deduplicated and grouped by shared pattern (G1–G18). Each
+finding names its canonical implementation, its status (VERIFIED /
+HYPOTHESIS / PREFERENCE) and its lens references, and is ranked:
+
+- **P1:** 19 items
+- **P2:** 47, plus the P2 halves of C46 and C59
+- **P3:** the rest
+
+Owner's question, part A:
+
+- **Android photo:** a test-harness bug. The server URL had no trailing
+  slash, so the image URL was malformed and the app showed the placeholder.
+  This is not the app, the data or sync.
+- **Real name:** absent from the popup by design on both apps. It is shown
+  in Instellingen › Account.
+
+Corrections made while merging:
+
+- **Touch targets:** observation 7 was mostly false positives (`::after`
+  hit areas, and cards that are targets as a whole).
+- **Avatars:** none are committed to git.
+- **`g7`:** lacks 027–029.
+- **Artefacts:** the capture and fixture artefacts are listed so they are not
+  counted as defects.
+
+Nothing in the app, the databases or the servers was changed.
+
+## Checkpoint 2 — before Phase 3
+
+Waiting for the owner on:
+
+- the decisions in CONSOLIDATED.md §4 (title and card-head sizes, the
+  destructive rule, button labels, the account popup's job, the privacy
+  wording, the icons, the chart conventions, web back, the Overzicht
+  arrival, terminology, the Phase 6 UNCERTAIN items);
+- approval or rejection of the NEW CONVENTION items in §5;
+- a screenshot of example 3's "thick elements".
+
+Next: Phase 3, proposals and prototypes for the approved groups.
+
+- It needs the user to start `/anthropic-skills:prototype`.
+- Phase 4 will need `/anthropic-skills:review-animations`.
+
+Recommended settings for Phase 3: **Effort Max, Ultracode OFF** (sequential,
+usage-aware).
