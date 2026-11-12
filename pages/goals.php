@@ -64,11 +64,12 @@ $copy = goals_script_copy($goals);
 
                     <div class="card goals-empty is-empty reveal" data-goals-empty <?= $hasAny ? 'hidden' : '' ?>>
                         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
-                        <h2 class="goals-empty__title"><?= e($goals['empty']['active']['title']) ?></h2>
-                        <p class="goals-empty__body"><?= e($goals['empty']['active']['body']) ?></p>
-                        <button type="button" class="btn press goals-empty__cta" data-goal-add>
+                        <?php $emptyCopy = ($goals['completed'] ?? []) !== [] ? $goals['empty']['only_ended'] : $goals['empty']['active']; ?>
+                        <h2 class="goals-empty__title"><?= e($emptyCopy['title']) ?></h2>
+                        <p class="goals-empty__body"><?= e($emptyCopy['body']) ?></p>
+                        <button type="button" class="btn btn--primary press goals-empty__cta" data-goal-add>
                             <?= icon('plus', 'goals-empty__cta-icon') ?>
-                            <?= e($goals['empty']['active']['cta']) ?>
+                            <?= e($emptyCopy['cta']) ?>
                         </button>
                     </div>
 

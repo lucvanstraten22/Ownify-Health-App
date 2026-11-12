@@ -2042,6 +2042,8 @@ data class Goals(
     val durations: List<GoalSpan>,
     val labels: Map<String, String>,
     val emptyActive: GoalsEmpty,
+    /** Actief is empty but goals have ended (`empty.only_ended`, B15). */
+    val emptyOnlyEnded: GoalsEmpty,
     val emptyCompleted: GoalsEmpty,
     val detail: Map<String, String>,
     val wizard: WizardCopy,
@@ -2093,6 +2095,7 @@ data class Goals(
                 durations = o.obj("durations").entries { key, d -> GoalSpan(key, d.str("label").orEmpty(), d.int("days") ?: 0, d.int("months") ?: 0) },
                 labels = o.obj("labels").stringMap(),
                 emptyActive = GoalsEmpty.parse(empty.obj("active")),
+                emptyOnlyEnded = GoalsEmpty.parse(empty.obj("only_ended") ?: empty.obj("active")),
                 emptyCompleted = GoalsEmpty.parse(empty.obj("completed")),
                 detail = o.obj("detail").stringMap(),
                 wizard = WizardCopy(o.obj("wizard") ?: JSONObject()),

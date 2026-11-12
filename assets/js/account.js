@@ -315,6 +315,12 @@
         if (flash) { flash.hidden = true; }
 
         var target = panel.querySelector('[data-account-step="' + name + '"]');
+
+        /* One title per step (A1): the panel head names the step it shows. */
+        var head = panel.querySelector('[data-account-title]');
+        if (head) {
+            head.textContent = (target && target.getAttribute('data-step-title')) || head.getAttribute('data-title-' + mode) || head.textContent;
+        }
         var first = target ? Array.prototype.filter.call(target.querySelectorAll('input, button'), function (control) {
             return control.getClientRects().length > 0;
         })[0] : null;

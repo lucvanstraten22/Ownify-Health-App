@@ -73,6 +73,7 @@ import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.app.PageColumn
 import com.ownify.android.ui.design.BoxShadow
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.CardStyle
 import com.ownify.android.ui.design.Chip
 import com.ownify.android.ui.design.Disclaimer
@@ -150,7 +151,7 @@ private fun ActiveView(data: AppData, board: Board, onAdd: () -> Unit) {
 
     // Every slot is in the column whether or not it holds a card, as on the website.
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        if (!any) EmptyCard(goals.emptyActive, OwnifyIcons.solidChart, if (board.canAdd) onAdd else null)
+        if (!any) EmptyCard(if (goals.completed.isNotEmpty()) goals.emptyOnlyEnded else goals.emptyActive, OwnifyIcons.solidChart, if (board.canAdd) onAdd else null)
         if (any) Eyebrow(labels["primary"].orEmpty())
 
         Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -242,7 +243,7 @@ private fun EmptyCard(copy: GoalsEmpty, icon: androidx.compose.ui.graphics.vecto
                 align = TextAlign.Center
             )
             if (onAdd != null && !copy.cta.isNullOrEmpty()) {
-                Btn(copy.cta, onClick = onAdd, icon = OwnifyIcons.plus, modifier = Modifier.padding(top = Ownify.Space5))
+                Btn(copy.cta, onClick = onAdd, icon = OwnifyIcons.plus, look = BtnLook.Primary, modifier = Modifier.padding(top = Ownify.Space5))
             }
         }
     }

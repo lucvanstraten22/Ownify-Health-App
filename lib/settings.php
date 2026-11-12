@@ -125,6 +125,11 @@ if (!function_exists('settings_prepare')) {
         $aiOn     = $userId !== null && db_available() && ai_consented($userId);
         $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
 
+        /* Phase 3 prototype (D6): the friend-request switch, moved here. */
+        require_once dirname(__DIR__) . '/includes/friends.php';
+        $settings = settings_set_toggle($settings, 'privacy', 'allow_requests',
+            $userId !== null && db_available() && friend_requests_allowed($userId));
+
         /* Insights are Ownify's own sentences (30.1): nothing about them
            goes to Gemini, so Privacy has no switch for them. */
 

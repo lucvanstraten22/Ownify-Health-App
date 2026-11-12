@@ -1,5 +1,11 @@
 package com.ownify.android.ui.screens.goals
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import com.ownify.android.ui.design.WheelPopup
+import com.ownify.android.ui.design.SplitSide
+import com.ownify.android.ui.design.SplitHalf
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.WheelSpec
 import com.ownify.android.ui.design.Wheel
@@ -212,7 +218,7 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
         step = to
     }
 
-    LaunchedEffect(step, draft.calendar) { body.scrollTo(0) }
+    LaunchedEffect(step) { body.scrollTo(0) }
 
     fun finish() {
         if (saving) return
@@ -253,15 +259,13 @@ fun GoalWizard(overlay: Overlay, data: AppData) {
         overlay, words["title"], words["close"], words["back"],
         count = if (step == REVIEW) words.review.label
             else trf("Stap %1\$d van %2\$d", step, STEPS) + " · " + words.steps.getOrNull(step - 1)?.label.orEmpty(),
-        lit = minOf(step, STEPS), steps = STEPS, scroll = body, stepKey = if (draft.calendar != null) "calendar-" + draft.calendar else "step-$step",
-        direction = direction, entry = entry, showFoot = draft.calendar == null, error = error,
+        lit = minOf(step, STEPS), steps = STEPS, scroll = body, stepKey = "step-$step",
+        direction = direction, entry = entry, showFoot = true, error = error,
         cta = if (saving) words["creating"] else if (step == REVIEW) words["create"] else words["next"],
         ctaEnabled = complete(step, draft, goals) && !saving, saving = saving,
         onClose = ::close, onBack = ::back, onForward = ::forward
     ) {
-        if (draft.calendar != null) {
-            CalendarStep(draft, { goals.wizard[it] }, goals.durations, goalBounds())
-        } else {
+        run {
             when (step) {
                 1 -> MeasureStep(draft, goals)
                 2 -> DefinitionStep(draft, goals)
@@ -292,7 +296,7 @@ internal fun WizardFrame(
             Column(Modifier.padding(Ownify.Space5)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
                     T(title, JStyle.Eyebrow, Modifier.weight(1f).semantics { heading() })
-                    RoundButton(OwnifyIcons.chevronDown, closeLabel, onClose)
+                    RoundButton(OwnifyIcons.close, closeLabel, onClose)
                 }
                 Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
                     Row(Modifier.fillMaxWidth().clearAndSetSemantics { }, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
@@ -934,16 +938,48 @@ private fun Baseline(draft: Draft, goals: Goals) {
     }
 }
 
-/** The period: start and end, and the five looptijden under them. */
+/**
+ * The period (50.0): Start | Einde as one split button, each half its label
+ * over its date; a tap turns the date wheel under it ([PeriodState.calendar]
+ * names the half it is open on). The five looptijden under it.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun Dates(draft: PeriodState, words: (String) -> String, durations: List<GoalSpan>, onChange: () -> Unit = {}) {
+internal fun Dates(draft: PeriodState, words: (String) -> String, durations: List<GoalSpan>, bounds: PeriodBounds = goalBounds(), onChange: () -> Unit = {}) {
     Column {
         FieldLabel(words("dates_label"))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            DateButton(words("start"), dateText(draft.start), Modifier.weight(1f)) { draft.calendar = "start" }
-            JIcon(OwnifyIcons.chevronRight, size = 14.dp, color = Ownify.TextFaint)
-            DateButton(words("end"), draft.end?.let(::dateText) ?: words("end_choose"), Modifier.weight(1f), empty = draft.end == null) { draft.calendar = "end" }
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).semantics { contentDescription = words("dates_label") },
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            listOf("start", "end").forEach { which ->
+                val value = if (which == "start") dateText(draft.start) else draft.end?.let(::dateText) ?: words("end_choose")
+                val empty = which == "end" && draft.end == null
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    SplitHalf(
+                        if (which == "start") SplitSide.Back else SplitSide.Forward,
+                        onClick = { draft.calendar = which },
+                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = words(which) + ": " + value
+                    ) {
+                        Column {
+                            T(words(which), JStyle.Caption, uppercase = true)
+                            T(value, OwnifyType.style(Ownify.FsBody, if (empty) FontWeight.Normal else FontWeight.SemiBold, Ownify.TextPrimary, tabular = true), maxLines = 1)
+                        }
+                    }
+                    if (draft.calendar == which) {
+                        val range = if (which == "start") bounds.start else bounds.endAfter(draft.start)
+                        val at = (if (which == "start") draft.start else draft.end ?: range.start).coerceIn(range.start, range.endInclusive)
+                        WheelPopup(
+                            WheelSpec.date(range.start.toString(), range.endInclusive.toString()), at.toString(), 240.dp,
+                            onValue = { text ->
+                                runCatching { LocalDate.parse(text) }.getOrNull()?.let { d -> pick(draft, durations, d); onChange() }
+                            },
+                            onClose = { draft.calendar = null }, commitOnClose = true
+                        )
+                    }
+                }
+            }
         }
         FlowRow(
             Modifier.fillMaxWidth().padding(top = Ownify.Space3).semantics { contentDescription = words("durations_label") },
@@ -961,124 +997,13 @@ internal fun Dates(draft: PeriodState, words: (String) -> String, durations: Lis
     }
 }
 
-@Composable
-private fun DateButton(label: String, value: String, modifier: Modifier, empty: Boolean = false, onClick: () -> Unit) {
-    InButton {
-        val interaction = remember { MutableInteractionSource() }
-        Column(
-            modifier
-                .glassPress(interaction, RoundedCornerShape(Ownify.RadiusSm))
-                .heightIn(min = 50.dp)
-                .glass(RoundedCornerShape(Ownify.RadiusSm))
-                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
-                .semantics(mergeDescendants = true) { contentDescription = "$label: $value" }
-                .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2)
-        ) {
-            T(label, JStyle.Caption, uppercase = true)
-            T(
-                value,
-                OwnifyType.style(Ownify.FsBody, if (empty) FontWeight.Normal else FontWeight.SemiBold, if (empty) Ownify.TextSecondary else Ownify.TextPrimary, tabular = true),
-                maxLines = 1
-            )
-        }
-    }
-}
+// ===================================================================== period
 
-// =================================================================== calendar
-
-/**
- * The calendar over the step: the start first, then — after Gereed — the end
- * (goal-wizard.js openCalendar()). A start is today or up to a year back; an
- * end after the start, from today, up to three years on.
- */
 /** A goal's start: up to a year back; its end after it, from today, up to three years on. */
 internal fun goalBounds(today: LocalDate = LocalDate.now()) = PeriodBounds(
     today.minusDays(365)..today,
     { start -> maxOf(start.plusDays(1), today)..start.plusMonths(36) }
 )
-
-@Composable
-internal fun CalendarStep(draft: PeriodState, words: (String) -> String, durations: List<GoalSpan>, bounds: PeriodBounds, onChange: () -> Unit = {}) {
-    val mode = draft.calendar ?: return
-    val today = LocalDate.now()
-    val selected = if (mode == "start") draft.start else draft.end ?: draft.start.plusDays(1)
-    var month by remember(mode) { mutableStateOf(selected.withDayOfMonth(1)) }
-    val range = if (mode == "start") bounds.start else bounds.endAfter(draft.start)
-    val min = range.start
-    val max = range.endInclusive
-
-    T(if (mode == "start") words("pick_start") else words("pick_end"), JStyle.Subtitle, Modifier.semantics { heading() })
-    Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3), verticalAlignment = Alignment.CenterVertically) {
-        GlassRound(OwnifyIcons.chevronLeft, words("calendar_prev"), { month = month.minusMonths(1) }, size = 34.dp, enabled = month.minusDays(1) >= min)
-        T(
-            OwnifyFormat.date(month, "month_year").replaceFirstChar { it.uppercase() },
-            OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold),
-            Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
-            align = TextAlign.Center
-        )
-        GlassRound(OwnifyIcons.chevronRight, words("calendar_next"), { month = month.plusMonths(1) }, size = 34.dp, enabled = month.plusMonths(1) <= max)
-    }
-    Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3).clearAndSetSemantics { }) {
-        OwnifyPreferences.weekInitials().forEach {
-            T(it, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tracking = Ownify.TrackingWide), Modifier.weight(1f), align = TextAlign.Center)
-        }
-    }
-    val first = OwnifyPreferences.weekFirstDay(month)
-    val last = month.plusMonths(1).minusDays(1)
-    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space2)) {
-        var day = first
-        while (day <= last) {
-            Row(Modifier.fillMaxWidth()) {
-                repeat(7) {
-                    val d = day
-                    if (d.month != month.month) Box(Modifier.weight(1f).height(42.dp))
-                    else DayCell(d, draft, mode, enabled = d in min..max, today = today, modifier = Modifier.weight(1f)) { pick(draft, durations, d); onChange() }
-                    day = day.plusDays(1)
-                }
-            }
-        }
-    }
-    GlassCta(words("calendar_done"), onClick = {
-        if (mode == "start") draft.calendar = "end" else draft.calendar = null
-    }, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4))
-}
-
-@Composable
-private fun DayCell(d: LocalDate, draft: PeriodState, mode: String, enabled: Boolean, today: LocalDate, modifier: Modifier, onClick: () -> Unit) {
-    val isStart = d == draft.start
-    val isEnd = d == draft.end
-    val chosen = if (mode == "start") isStart else isEnd
-    val between = draft.end != null && d > draft.start && d < draft.end
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .height(42.dp)
-            .background(if (between) Ownify.HealthWash else Color.Transparent)
-            .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics {
-                contentDescription = OwnifyFormat.date(d, "weekday_day_month") + " " + d.year
-                selected = chosen
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(if (chosen) Ownify.HealthEdge else if (isStart || isEnd) Ownify.HealthFill else Color.Transparent)
-                .border(if (chosen) 1.5.dp else 1.dp, if (chosen) Ownify.Health else if (isStart || isEnd) Ownify.HealthStrong else Color.Transparent, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            T(
-                d.dayOfMonth.toString(),
-                OwnifyType.style(Ownify.FsSubhead, if (chosen || isStart || isEnd) FontWeight.SemiBold else FontWeight.Normal,
-                    if (enabled) Ownify.TextPrimary else Ownify.TextFaint, tabular = true),
-                Modifier.alpha(if (enabled) 1f else 0.5f)
-            )
-            if (d == today) Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(4.dp).clip(CircleShape).background(Ownify.Health))
-        }
-    }
-}
 
 private fun pick(draft: PeriodState, durations: List<GoalSpan>, d: LocalDate) {
     if (draft.calendar == "start") {

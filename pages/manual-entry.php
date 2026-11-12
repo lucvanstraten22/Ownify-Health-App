@@ -80,7 +80,7 @@ $wheel = static fn (string $kind, ?string $start = null): string => e(json_encod
                                 $options .= '<option value="' . e($type['value']) . '">' . e($type['label']) . '</option>';
                             }
                             $field('type', $copy['activity'],
-                                '<span class="glass glass--select manual-entry__select"><select ' . $attr('type') . ' required>' . $options . '</select>' . icon('chevron-down') . '</span>');
+                                '<span class="split split--menu manual-entry__select"><span class="split__part"><select ' . $attr('type') . ' required>' . $options . '</select></span><span class="split__part" aria-hidden="true">' . icon('chevron-down') . '</span></span>');
                             ?>
                             <?php $field('start', $copy['start'],
                                 '<input class="wizard__input wizard__input--number" type="text" inputmode="numeric" ' . $attr('start') . ' value="18:00" required data-wheel="' . $wheel('clock', '18:00') . '">'); ?>
@@ -105,9 +105,9 @@ $wheel = static fn (string $kind, ?string $start = null): string => e(json_encod
 
                 <div class="manual-entry__foot reveal">
                     <p class="wizard__error" role="alert" data-entry-error hidden></p>
-                    <div class="goal-confirm__row">
-                        <button type="button" class="btn press" data-detail-close><?= e($common['cancel']) ?></button>
-                        <button type="button" class="glass glass--cta press" data-entry-save
+                    <div class="goal-confirm__row split" role="group">
+                        <button type="button" class="split__part" data-detail-close><?= e($common['cancel']) ?></button>
+                        <button type="button" class="split__part" data-entry-save
                                 data-saving="<?= e($common['saving']) ?>" data-offline="<?= e($common['offline']) ?>"
                                 data-endpoint="<?= e($kind === 'sleep' ? 'api/health/sleep-entry.php' : 'api/health/training-entry.php') ?>"><?= e($common['save']) ?></button>
                     </div>

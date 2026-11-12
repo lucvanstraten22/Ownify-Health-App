@@ -75,7 +75,7 @@ $alone = count($preview['rows']) <= 1;
                             <?php else: ?>
                                 <li class="cm-podium__col is-open" style="--step: <?= ['1' => 84, '2' => 64, '3' => 50][(string) $place] ?>px">
                                     <button type="button" class="cm-podium__add press" data-account-open data-friends-add-open
-                                            aria-label="<?= e(t('Vriend toevoegen')) ?>"><?= icon('plus') ?></button>
+                                            aria-label="<?= e(t('Vriend toevoegen')) ?>"><?= icon('user-plus') ?></button>
                                     <span class="cm-podium__step"><?= (int) $place ?></span>
                                 </li>
                             <?php endif; ?>

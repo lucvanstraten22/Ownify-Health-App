@@ -83,10 +83,10 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                      account. Otherwise it names the one flow it is on. */ ?>
             <h2 class="card__eyebrow" id="account-title"
                 <?php if ($flows): ?>data-account-title data-title-login="<?= e($titles['login']) ?>" data-title-register="<?= e($titles['register']) ?>"<?php endif; ?>>
-                <?= e($flows ? ($registration !== null ? $titles['register'] : $titles['login']) : 'Account') ?>
+                <?= e($pending !== null ? t('Kies je gebruikersnaam') : ($flows ? ($registration !== null ? t('Bevestig je e-mailadres') : $titles['login']) : t('Account'))) ?>
             </h2>
             <button type="button" class="account__close press" data-account-close aria-label="<?= e(t('Sluiten')) ?>">
-                <?= icon('chevron-down') ?>
+                <?= icon('close') ?>
             </button>
         </div>
 
@@ -176,7 +176,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
             </div>
 
             <form class="account__form" data-account-form="logout">
-                <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Uitloggen')) ?></button>
+                <button type="submit" class="btn press account__logout"><?= e(t('Uitloggen')) ?></button>
             </form>
 
             </div>
@@ -189,8 +189,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                      already vouched for who this is; the identity waits in the
                      server session, and the account only exists once this
                      form is accepted. */ ?>
-            <div class="account__step" data-account-step="google-username">
-                <p class="account__username"><?= e(t('Kies je gebruikersnaam')) ?></p>
+            <div class="account__step" data-account-step="google-username" data-step-title="<?= e(t('Kies je gebruikersnaam')) ?>">
                 <p class="account__meta">
                     <?= e(tf('Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.', (string) $pending['email'])) ?>
                 </p>
@@ -204,11 +203,11 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                         <p class="account__hint"><?= e(t('3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.')) ?></p>
                     </div>
 
-                    <button type="submit" class="btn account__submit press"><?= e(t('Account aanmaken')) ?></button>
+                    <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Account aanmaken')) ?></button>
                 </form>
 
                 <form class="account__form" data-account-form="google-cancel">
-                    <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Annuleren')) ?></button>
+                    <button type="submit" class="btn press account__logout"><?= e(t('Annuleren')) ?></button>
                 </form>
 
                 <p class="account__hint account__hint--centred">
@@ -249,14 +248,14 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                            minlength="8" autocomplete="current-password" required>
                     <?php if ($accountMail): ?>
                         <p class="account__hint" data-account-only="login">
-                            <a class="account__link" href="?wachtwoord-vergeten" data-account-forgot><?= e(t('Wachtwoord vergeten?')) ?></a>
+                            <a class="quiet-link" href="?wachtwoord-vergeten" data-account-forgot><?= e(t('Wachtwoord vergeten?')) ?></a>
                         </p>
                     <?php endif; ?>
                 </div>
 
                 <?php /* No repeat field when registering (45.0): the eye in the
                          field shows what was typed. Changing a password keeps it. */ ?>
-                <button type="submit" class="btn account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
+                <button type="submit" class="btn btn--primary account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
             </form>
 
             <?php /* Google is secondary: a small mark, no label. It is a
@@ -286,21 +285,20 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 <?php /* A registration waiting for its link (docs/ACCOUNT-SECURITY.md
                          §3). A taken address shows exactly the same. Nothing is
                          signed in until the link is used. */ ?>
-                <div class="account__step" data-account-step="verify" <?= $registration === null ? 'hidden' : '' ?>>
-                    <p class="account__username"><?= e(t('Bevestig je e-mailadres')) ?></p>
+                <div class="account__step" data-account-step="verify" data-step-title="<?= e(t('Bevestig je e-mailadres')) ?>" <?= $registration === null ? 'hidden' : '' ?>>
                     <p class="account__meta" data-verify-line
                        data-template="<?= e(t('We hebben een link gestuurd naar %s. Open die link om je account af te maken.')) ?>">
                         <?= $registration !== null ? e(tf('We hebben een link gestuurd naar %s. Open die link om je account af te maken.', (string) $registration['email_masked'])) : '' ?>
                     </p>
 
                     <form class="account__form" data-account-form="verify-check">
-                        <button type="submit" class="btn account__submit press"><?= e(t('Ik heb bevestigd')) ?></button>
+                        <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Ik heb bevestigd')) ?></button>
                     </form>
                     <form class="account__form" data-account-form="verify-resend">
-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Stuur opnieuw')) ?></button>
+                        <button type="submit" class="btn press account__logout"><?= e(t('Stuur opnieuw')) ?></button>
                     </form>
                     <form class="account__form" data-account-form="verify-cancel">
-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Ander adres gebruiken')) ?></button>
+                        <button type="submit" class="btn press account__logout"><?= e(t('Ander adres gebruiken')) ?></button>
                     </form>
 
                     <p class="account__hint account__hint--centred" data-verify-status role="status" hidden></p>
@@ -310,8 +308,7 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                 </div>
 
                 <?php /* Wachtwoord vergeten (§7B): one answer, whatever the address. */ ?>
-                <div class="account__step" data-account-step="forgot" hidden>
-                    <p class="account__username"><?= e(t('Wachtwoord vergeten')) ?></p>
+                <div class="account__step" data-account-step="forgot" data-step-title="<?= e(t('Wachtwoord vergeten')) ?>" hidden>
                     <p class="account__meta" data-forgot-line role="status"
                        data-ask="<?= e(t('Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen.')) ?>"><?= e(t('Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen.')) ?></p>
 
@@ -321,10 +318,10 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                             <input class="account__input" type="email" id="account-forgot-email" name="email"
                                    autocomplete="email" spellcheck="false" autocapitalize="none" required>
                         </div>
-                        <button type="submit" class="btn account__submit press"><?= e(t('Stuur link')) ?></button>
+                        <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Stuur link')) ?></button>
                     </form>
                     <form class="account__form" data-account-form="forgot-back">
-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Terug naar inloggen')) ?></button>
+                        <button type="submit" class="btn press account__logout"><?= e(t('Terug naar inloggen')) ?></button>
                     </form>
                 </div>
 
@@ -363,11 +360,11 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                     </div>
                     <p class="account__hint"><?= e(t('Minimaal 8 tekens.')) ?></p>
                 </div>
-                <button type="submit" class="btn account__submit press" data-link-submit></button>
+                <button type="submit" class="btn btn--primary account__submit press" data-link-submit></button>
             </form>
 
             <form class="account__form" data-account-form="link-done" hidden>
-                <button type="submit" class="btn account__submit press"><?= e(t('Doorgaan')) ?></button>
+                <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Doorgaan')) ?></button>
             </form>
         </div>
 

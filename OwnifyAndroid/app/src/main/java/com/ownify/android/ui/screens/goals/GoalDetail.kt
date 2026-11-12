@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.goals
 
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.Wheel
 import com.ownify.android.ui.design.WheelSpec
@@ -646,18 +647,21 @@ private fun Manage(data: AppData, goal: Goal, copy: Map<String, String>) {
                         .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
                 ) {
                     T(copy["delete_confirm"].orEmpty(), OwnifyType.style(Ownify.FsSubhead))
-                    Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                        Btn(copy["delete_no"].orEmpty(), onClick = { confirming = false }, modifier = Modifier.weight(1f))
-                        Btn(
-                            copy["delete_yes"].orEmpty(),
-                            onClick = {
-                                confirming = false
-                                GoalBoard.delete(context, goal.id)
-                            },
-                            modifier = Modifier.weight(1f),
-                            look = BtnLook.Caution
-                        )
-                    }
+                    SplitRow(
+                        { Btn(copy["delete_no"].orEmpty(), onClick = { confirming = false }, modifier = it) },
+                        {
+                            Btn(
+                                copy["delete_yes"].orEmpty(),
+                                onClick = {
+                                    confirming = false
+                                    GoalBoard.delete(context, goal.id)
+                                },
+                                modifier = it,
+                                look = BtnLook.Caution
+                            )
+                        },
+                        Modifier.padding(top = Ownify.Space3)
+                    )
                 }
             }
         }

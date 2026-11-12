@@ -125,8 +125,8 @@ object JStyle {
     /** `.card--hero .score-ring__label`: the name under a hero's ring. */
     val HeroLabel: TextStyle get() = OwnifyType.style(Ownify.FsTitle, FontWeight.Bold)
 
-    /** `.card__eyebrow` (its own -0.01em). */
-    val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold)
+    /** `.card__eyebrow`: every card head and panel title, Headline 17/600 (D1). */
+    val Eyebrow: TextStyle get() = OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold)
 
     /** `.card__caption`, `.settings-eyebrow`: small caps, spaced. */
     val Caption: TextStyle get() = OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted, tracking = Ownify.TrackingWide)
@@ -505,6 +505,12 @@ fun Btn(
     contentDescription: String? = null,
     content: (@Composable RowScope.() -> Unit)? = null
 ) {
+    // Inside a SplitRow (50.0) the button is that half of the split.
+    val side = LocalSplitSide.current
+    if (side != null) {
+        SplitBtn(side, label, onClick, modifier, enabled, icon, look.glass?.caution == true, contentDescription)
+        return
+    }
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val shape = RoundedCornerShape(50)

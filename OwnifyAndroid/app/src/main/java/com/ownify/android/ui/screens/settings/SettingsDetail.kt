@@ -1,4 +1,7 @@
 package com.ownify.android.ui.screens.settings
+import com.ownify.android.ui.design.NoteTone
+import com.ownify.android.ui.design.note
+import com.ownify.android.ui.design.SplitRow
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.Dispatchers
@@ -971,7 +974,8 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
                         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                     ) {
                         Column(Modifier.weight(1f)) {
-                            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
+                            // A working action reads as live, not as the dimmed switches (B4).
+                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextPrimary))
                             if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                         }
                         Toggle(item.on, dimmed = true)
@@ -1080,7 +1084,6 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
     var busy by remember { mutableStateOf(false) }
     var said by remember { mutableStateOf<String?>(null) }
     var failed by remember { mutableStateOf(false) }
-    val look = if (item.danger) BtnLook.Final else BtnLook()
 
     /* Gegevens downloaden: the export, once fetched, waits here while the
        person picks where it goes (the system's own save dialog). */
@@ -1159,20 +1162,25 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
                     )
                 }
             }
-            if (!asking) Btn(item.confirm, onClick = { if (item.direct) go() else asking = true }, enabled = !busy, look = look)
+            // B4: the trigger is the neutral button, the bin for what deletes; the gold is for the last yes.
+            if (!asking) Btn(item.confirm, onClick = { if (item.direct) go() else asking = true }, enabled = !busy, icon = if (item.danger) OwnifyIcons.trash else null)
         }
 
         if (asking) {
-            Column(Modifier.fillMaxWidth().padding(top = Ownify.Space3)) {
-                Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
-                T(item.question, OwnifyType.style(Ownify.FsSubhead), Modifier.padding(top = Ownify.Space3))
-                Row(
-                    Modifier.fillMaxWidth().padding(top = Ownify.Space3),
-                    horizontalArrangement = Arrangement.spacedBy(Ownify.Space2, Alignment.End)
-                ) {
-                    Btn(item.cancel, onClick = { asking = false }, enabled = !busy)
-                    Btn(item.confirm, enabled = !busy, look = look, onClick = { go() })
-                }
+            // The one confirm container: the attention Note, as the goal's (B4).
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = Ownify.Space3)
+                    .note(NoteTone.Attention)
+                    .cssPadding(PaddingValues(Ownify.Space4), border = 1.dp)
+            ) {
+                T(item.question, OwnifyType.style(Ownify.FsSubhead))
+                SplitRow(
+                    { Btn(item.cancel, onClick = { asking = false }, enabled = !busy, modifier = it) },
+                    { Btn(item.confirm, enabled = !busy, look = if (item.danger) BtnLook.Caution else BtnLook(), modifier = it, onClick = { go() }) },
+                    Modifier.padding(top = Ownify.Space3)
+                )
             }
         }
     }

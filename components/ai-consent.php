@@ -27,9 +27,9 @@ $declined = $ai['declined'];
 
     <p class="ai-consent__error" data-ai-consent-error role="alert" hidden></p>
 
-    <div class="ai-consent__actions">
-        <button type="button" class="btn btn--primary press" data-ai-consent="accept"><?= e($consent['accept']) ?></button>
-        <button type="button" class="btn press" data-ai-consent="decline"><?= e($consent['decline']) ?></button>
+    <div class="ai-consent__actions split" role="group">
+        <button type="button" class="split__part" data-ai-consent="decline"><?= e($consent['decline']) ?></button>
+        <button type="button" class="split__part" data-ai-consent="accept"><?= e($consent['accept']) ?></button>
     </div>
     <p class="ai-consent__footer"><?= e($consent['footer']) ?></p>
 </section>

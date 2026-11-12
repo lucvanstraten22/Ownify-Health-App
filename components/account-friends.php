@@ -35,7 +35,7 @@ $notes = [
     <section class="friends__section" aria-label="<?= e(t('Vriend toevoegen')) ?>">
         <button type="button" class="btn press friends__add" data-friends-add
                 aria-expanded="false" aria-controls="friends-search">
-            <?= icon('plus', 'friends__add-icon') ?>
+            <?= icon('user-plus', 'friends__add-icon') ?>
             <span><?= e(t('Vriend toevoegen')) ?></span>
         </button>
 

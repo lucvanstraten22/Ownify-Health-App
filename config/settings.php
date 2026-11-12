@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 49.5'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 50.0'],
             ],
         ],
     ],
@@ -212,7 +212,7 @@ return [
                 ['type' => 'insight', 'slot' => 'body'],
 
                 ['type' => 'note', 'icon' => 'lock',
-                 'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar. Lengte en gewicht bewaren hun verloop: elke wijziging komt erbij, de vorige verdwijnt niet.'],
+                 'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar.'],
             ],
         ],
 
@@ -240,8 +240,14 @@ return [
                    settings_prepare(). */
                 [
                     'type'  => 'toggles',
-                    'title' => 'Ranglijst',
+                    'title' => 'Community',
                     'items' => [
+                        ['key' => 'allow_requests', 'label' => 'Vriendverzoeken toestaan',
+                         'note_on'  => 'Anderen kunnen je een vriendverzoek sturen.',
+                         'note_off' => 'Niemand kan je een nieuw verzoek sturen.',
+                         'on' => true],
+                        ['label' => 'Meedoen aan ranglijsten', 'value' => 'Altijd',
+                         'note' => 'Iedereen met een account staat op de ranglijsten.'],
                         ['key' => 'leaderboard_avatar', 'label' => 'Profielfoto op de ranglijst',
                          'note_on'  => 'Anderen zien je profielfoto naast je naam.',
                          'note_off' => 'Op de ranglijst staat je initiaal in plaats van je foto.',
@@ -255,7 +261,7 @@ return [
                 [
                     'type'  => 'toggles',
                     'title' => 'OwnifyAI',
-                    'lede'  => 'OwnifyAI open je door omhoog te vegen; het is gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
+                    'lede'  => 'OwnifyAI is gemaakt met Google Gemini, via de gratis Gemini API. Google kan wat binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen.',
                     'items' => [
                         ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
                          'note_on'  => 'Bij elke vraag gaan je profiel, scores, doelen en een samenvatting van twee weken naar Gemini, en per onderwerp meer, zoals slaap, voeding of training.',
@@ -264,18 +270,7 @@ return [
                     ],
                 ],
 
-                ['type' => 'note', 'icon' => 'info',
-                 'text' => 'Ownify gebruikt de gratis Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gesprekken worden in je Ownify-account bewaard, tot je ze wist.'],
 
-                [
-                    'type'  => 'toggles',
-                    'title' => 'Later instelbaar',
-                    'lede'  => 'Deze keuzes komen er zodra er iets te delen valt.',
-                    'items' => [
-                        ['label' => 'Profiel vindbaar',        'note' => 'Anderen kunnen je op gebruikersnaam vinden', 'on' => true],
-                        ['label' => 'Meedoen aan ranglijsten', 'note' => 'Zonder dit verschijn je nergens',           'on' => true],
-                    ],
-                ],
 
                 /* Buttons that each do one thing (pages/settings-detail.php
                    `actions`, settings.js; SettingsDetail.kt on Android). A
@@ -304,7 +299,7 @@ return [
                          'fields'   => ['confirm' => 'wissen'],
                          'danger'   => true],
                         ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
-                         'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
+                         'note'     => 'Je gesprekken blijven in je Ownify-account bewaard tot je ze hier wist, op al je apparaten. Andere gegevens blijven staan.',
                          'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
                          'confirm'  => 'Wissen',
                          'cancel'   => 'Annuleren',
@@ -519,7 +514,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 49.5'],
+                        ['label' => 'Versie',  'value' => 'Beta 50.0'],
                     ],
                 ],
 
@@ -531,7 +526,7 @@ return [
                     'items' => [
                         ['id' => 'privacy',  'icon' => 'shield', 'label' => 'Privacyverklaring'],
                         ['id' => 'terms',    'icon' => 'info',   'label' => 'Voorwaarden'],
-                        ['id' => 'licenses', 'icon' => 'copy',   'label' => 'Licenties'],
+                        ['id' => 'licenses', 'icon' => 'info',   'label' => 'Licenties'],
                     ],
                 ],
 

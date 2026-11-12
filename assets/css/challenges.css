@@ -10,7 +10,7 @@
 /* --------------------------------------------------------------------------
    Community — two windows: Ranglijst on a podium, Uitdagingen as a stack
    -------------------------------------------------------------------------- */
-.cm-dest { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); }
+.cm-dest { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
 
 /* The card's head is the way in: the whole row is the control. */
 .cm-head {
@@ -394,7 +394,7 @@
     color: var(--text-muted);
 }
 
-.ch-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.ch-list { display: flex; flex-direction: column; gap: var(--space-3); }
 
 /* A challenge you are in. Samen: the bar in everybody's pieces and who
    brought what. Wedstrijd: the top three against the leader. */
@@ -403,7 +403,7 @@
     flex-direction: column;
     gap: var(--space-3);
     width: 100%;
-    padding: var(--space-4);
+    padding: var(--space-5);
     font: inherit;
     color: inherit;
     text-align: left;
@@ -676,7 +676,8 @@
 
 .ch-row { width: calc(100% + 2 * var(--space-2)); margin-inline: calc(-1 * var(--space-2)); }
 
-.ch-leave { align-self: center; color: var(--text-muted); }
+.ch-leave { align-self: stretch; justify-content: flex-start; gap: var(--space-3); padding-inline: var(--space-4); }
+.ch-leave__icon { width: 17px; height: 17px; flex: none; color: var(--text-muted); }
 
 /* --------------------------------------------------------------------------
    The bottom sheet: the floating glass, rising from the bottom edge, its

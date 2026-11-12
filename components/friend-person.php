@@ -47,9 +47,9 @@ $status = match ($kind) {
     </span>
 
     <?php if ($kind === 'incoming'): ?>
-        <span class="friend__actions friend__actions--wide" data-friend-actions>
-            <button type="button" class="btn press" data-friend-action="accept"><?= e(t('Accepteren')) ?></button>
-            <button type="button" class="btn press" data-friend-action="decline"><?= e(t('Weigeren')) ?></button>
+        <span class="friend__actions friend__actions--wide split" role="group" data-friend-actions>
+            <button type="button" class="split__part" data-friend-action="decline"><?= e(t('Weigeren')) ?></button>
+            <button type="button" class="split__part" data-friend-action="accept"><?= e(t('Accepteren')) ?></button>
         </span>
     <?php elseif ($kind === 'friend'): ?>
         <span class="friend__actions" data-friend-actions>
@@ -60,9 +60,9 @@ $status = match ($kind) {
                  answer comes first, under the thumb that just tapped. */ ?>
         <span class="friend__confirm" data-friend-confirm hidden>
             <span class="friend__confirm-text"><?= e(tf('%s verwijderen uit je vrienden?', $name)) ?></span>
-            <span class="friend__actions friend__actions--wide">
-                <button type="button" class="btn press" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
-                <button type="button" class="btn btn--caution press" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
+            <span class="friend__actions friend__actions--wide split split--caution" role="group">
+                <button type="button" class="split__part" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
+                <button type="button" class="split__part" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
             </span>
         </span>
     <?php else: ?>

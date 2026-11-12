@@ -532,4 +532,7 @@ return [
     '%1$d keer per %2$s' => '%1$d times per %2$s',
     'vanaf %s' => 'from %s',
     '%1$s t/m %2$s' => '%1$s to %2$s',
+    'Geen actieve doelen' => 'No active goals',
+    'Je afgeronde doelen staan onder Afgerond, met hun eindstand.' => 'Your finished goals are under Completed, with their final standing.',
+    'Nieuw doel instellen' => 'Set a new goal',
 ];

@@ -71,7 +71,7 @@ foreach ($page['blocks'] as $block) {
 
                     <?php if ($block['type'] === 'identity'): ?>
 
-                        <section class="card settings-hero reveal">
+                        <section class="card card--hero settings-hero reveal">
                             <span class="settings-hero__avatar" aria-hidden="true">
                                 <?php if (!empty($profile['avatar'])): ?>
                                     <img src="<?= e($profile['avatar']) ?>" alt="">
@@ -340,6 +340,15 @@ foreach ($page['blocks'] as $block) {
 
                             <div class="card settings-card">
                                 <?php foreach ($block['items'] as $item): ?>
+                                    <?php if (isset($item['value'])): ?>
+                                    <div class="settings-toggle settings-toggle--live settings-toggle--value">
+                                        <span class="settings-toggle__text">
+                                            <span class="settings-toggle__label"><?= e($item['label']) ?></span>
+                                            <span class="settings-toggle__note"><?= e($item['note'] ?? '') ?></span>
+                                        </span>
+                                        <span class="settings-field__value"><?= e($item['value']) ?></span>
+                                    </div>
+                                    <?php continue; endif; ?>
                                     <?php if (!empty($item['key'])): ?>
                                     <?php /* A switch that saves: the account's own value, and the note
                                               that goes with it (settings_prepare()); settings.js saves it. */ ?>
@@ -397,15 +406,15 @@ foreach ($page['blocks'] as $block) {
                                                 <span class="settings-toggle__label"><?= e($item['label']) ?></span>
                                                 <span class="settings-toggle__note" data-setting-action-note role="status"><?= e($item['note'] ?? '') ?></span>
                                             </span>
-                                            <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' btn--caution' : '' ?>"
-                                                    data-setting-action-go><?= e($item['confirm']) ?></button>
+                                            <button type="button" class="btn press settings-action__go"
+                                                    data-setting-action-go><?= !empty($item['danger']) ? icon('trash', 'settings-action__icon') : '' ?><?= e($item['confirm']) ?></button>
                                         </div>
                                         <?php if (empty($item['direct'])): ?>
                                         <div class="settings-action__confirm" data-setting-action-confirm hidden>
                                             <p class="settings-action__question"><?= e($item['question']) ?></p>
-                                            <div class="settings-action__buttons">
-                                                <button type="button" class="btn press" data-setting-action-no><?= e($item['cancel']) ?></button>
-                                                <button type="button" class="btn btn--caution press settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
+                                            <div class="settings-action__buttons split<?= !empty($item['danger']) ? ' split--caution' : '' ?>" role="group">
+                                                <button type="button" class="split__part" data-setting-action-no><?= e($item['cancel']) ?></button>
+                                                <button type="button" class="split__part settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
                                             </div>
                                         </div>
                                         <?php endif; ?>

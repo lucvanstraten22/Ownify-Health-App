@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.assistant
 
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.glassPress
 import com.ownify.android.ui.design.liquidGlass
 
@@ -274,7 +275,7 @@ private fun SheetTop(ai: AiCopy, view: AiView) {
                 .background(Ownify.ink(0.20f), RoundedCornerShape(50))
         )
         Box(Modifier.width(screen.shell).padding(top = Ownify.Space2), contentAlignment = Alignment.Center) {
-            RoundGlass(OwnifyIcons.chevronDown, ai.closeAria, Modifier.align(Alignment.CenterStart), onClick = shell::closeAi)
+            RoundGlass(OwnifyIcons.close, ai.closeAria, Modifier.align(Alignment.CenterStart), onClick = shell::closeAi)
             Island(ai, enabled = view == AiView.Chat, Modifier.widthIn(max = screen.shell - 100.dp)) {
                 if (OwnifyAssistant.historyOpen) OwnifyAssistant.historyOpen = false
                 else OwnifyAssistant.openHistory(context, ai)
@@ -496,7 +497,7 @@ private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
         Column(Modifier.width(screen.shell).padding(top = Ownify.Space2, bottom = Ownify.Space5), horizontalAlignment = Alignment.CenterHorizontally) {
             AiLogo(56.dp, 56.dp)
-            T(consent.title, JStyle.Section, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
+            T(consent.title, JStyle.Subtitle, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
             T(consent.intro, JStyle.Lede, Modifier.padding(top = Ownify.Space2), align = TextAlign.Center)
 
             JCard(
@@ -515,10 +516,11 @@ private fun ConsentScreen(ai: AiCopy, modifier: Modifier) {
                 T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.Attention), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
             }
 
-            Row(Modifier.fillMaxWidth().padding(top = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                Btn(consent.accept, onClick = { OwnifyAssistant.decide(context, ai, accept = true) }, Modifier.weight(1f), enabled = !busy, look = PrimaryLook)
-                Btn(consent.decline, onClick = { OwnifyAssistant.decide(context, ai, accept = false) }, Modifier.weight(1f), enabled = !busy)
-            }
+            SplitRow(
+                { Btn(consent.decline, onClick = { OwnifyAssistant.decide(context, ai, accept = false) }, it, enabled = !busy) },
+                { Btn(consent.accept, onClick = { OwnifyAssistant.decide(context, ai, accept = true) }, it, enabled = !busy) },
+                Modifier.padding(top = Ownify.Space5)
+            )
             T(consent.footer, JStyle.Footnote, Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
         }
     }
@@ -783,10 +785,11 @@ private fun ActionCard(ai: AiCopy, messageId: Long, action: AiAction) {
             T(action.summary, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
         }
         if (action.pending) {
-            Row(Modifier.padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                Btn(action.confirm, onClick = { OwnifyAssistant.resolve(context, ai, messageId, confirm = true) }, enabled = !busy, look = PrimaryLook)
-                Btn(action.decline, onClick = { OwnifyAssistant.resolve(context, ai, messageId, confirm = false) }, enabled = !busy)
-            }
+            SplitRow(
+                { Btn(action.decline, onClick = { OwnifyAssistant.resolve(context, ai, messageId, confirm = false) }, enabled = !busy, modifier = it) },
+                { Btn(action.confirm, onClick = { OwnifyAssistant.resolve(context, ai, messageId, confirm = true) }, enabled = !busy, modifier = it) },
+                Modifier.padding(top = Ownify.Space3)
+            )
         } else {
             action.status?.let {
                 T(

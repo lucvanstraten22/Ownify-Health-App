@@ -41,7 +41,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
          data-compass-history aria-labelledby="compass-trend-title">
     <div class="card__head">
         <div class="card__head-group">
-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
+            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('rings') ?></span>
             <h2 class="card__eyebrow" id="compass-trend-title"><?= e($trend['title']) ?></h2>
         </div>
         <?php foreach ($periods as $period): ?>

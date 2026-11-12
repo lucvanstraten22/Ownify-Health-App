@@ -144,9 +144,10 @@
 }
 
 .card__eyebrow {
-    font-size: var(--fs-body);
+    font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: var(--tracking-body);
+    line-height: var(--lh-headline);
+    letter-spacing: var(--tracking-headline);
     color: var(--text-primary);
 }
 
@@ -2249,3 +2250,130 @@ a.settings-row { color: inherit; text-decoration: none; }
 .glass--select.is-wheel select { pointer-events: none; }
 .wheel--list .wheel__column, .wheel--list .wheel__list { flex: 1; }
 .wheel--list .wheel__item { padding-inline: var(--space-2); white-space: nowrap; }
+
+
+/* The quiet link (N1): recovery and side paths, Subhead in secondary ink,
+   underlined (Android: QuietLink). */
+.quiet-link {
+    font-size: var(--fs-subhead);
+    font-weight: 400;
+    letter-spacing: var(--tracking-small);
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--ink), 0.35);
+    text-underline-offset: 3px;
+}
+
+/* C38: "Vandaag" on the page-title line, as every other page's title. */
+.card--hero > .card__head {
+    padding-inline: var(--space-2);
+    margin-top: calc(-1 * (var(--space-1) + 1px));
+}
+
+/* ==========================================================================
+   The split button (50.0, the owner's pick: "Quiet + Joined"). Two actions
+   side by side as one block across the width: two halves of the neutral
+   Liquid Glass meeting at a 2 px seam, the inner corners at the small radius.
+   Both halves read in the one full ink; only the step that cannot be undone
+   reads gold. The way back sits left, the way forward right. .split--menu is a dropdown: the value 85 %, the chevron 15 %.
+   Android: SplitButton / SplitMenu (ui/design/SplitButton.kt).
+   ========================================================================== */
+/* The doubled class outranks the containers it is put on (.confirm__row,
+   .friend__actions…), whose own two-button layouts it replaces. */
+.split.split {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: normal;
+    gap: 2px;
+    width: 100%;
+    min-height: var(--hit-min);
+}
+
+.split__part {
+    position: relative;
+    isolation: isolate;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--hit-min);
+    margin: 0;
+    padding: 6px var(--space-4);
+    border: 0;
+    border-radius: var(--radius-sm) var(--radius-pill) var(--radius-pill) var(--radius-sm);
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-subhead);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: var(--tracking-small);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: transform var(--press-out) var(--ease-out-strong);
+}
+
+.split__part:first-child { border-radius: var(--radius-pill) var(--radius-sm) var(--radius-sm) var(--radius-pill); }
+
+.split__part::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+}
+
+.split--caution > .split__part:last-child { color: var(--attention); }
+
+.split__part:active { transform: scale(0.97); transition-duration: var(--press-in); }
+.split__part:focus-visible { outline: none; box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); z-index: 1; }
+.split__part:disabled,
+.split__part[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; transform: none; }
+.split__part .icon { width: 18px; height: 18px; flex: none; }
+
+/* The dropdown: the value takes 85 %, the chevron the rest. */
+.split--menu > .split__part:first-child { flex: 0 0 85%; justify-content: flex-start; }
+.split--menu > .split__part:last-child { flex: 1 1 auto; padding-inline: 0; color: var(--text-secondary); }
+
+/* A select in the dropdown: the value is the select itself, drawn plain. */
+.split--menu select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    min-height: var(--hit-min);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-input);
+    font-weight: 400;
+    letter-spacing: var(--tracking-body);
+    cursor: pointer;
+}
+
+.split--menu select:focus-visible { outline: none; }
+.split--menu:focus-within > .split__part:first-child { box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); }
+.split--menu option { color: initial; background: initial; }
+.split--menu .icon { width: 14px; height: 14px; color: var(--text-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+    .split__part:active { transform: none; }
+}

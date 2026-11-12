@@ -1,11 +1,11 @@
 package com.ownify.android.ui.screens.community
 
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.screens.goals.WizardFrame
 import com.ownify.android.ui.screens.goals.WizardOption
 import com.ownify.android.ui.screens.goals.WizardReview
 import com.ownify.android.ui.screens.goals.StepHead
 import com.ownify.android.ui.screens.goals.TypeCard
-import com.ownify.android.ui.screens.goals.CalendarStep
 import com.ownify.android.ui.screens.goals.Dates
 import com.ownify.android.ui.screens.goals.PeriodBounds
 import com.ownify.android.ui.screens.goals.PeriodState
@@ -224,10 +224,8 @@ private fun ColumnScope.Done(title: String, line: String) {
 
 @Composable
 private fun TwoButtons(left: @Composable (Modifier) -> Unit, right: @Composable (Modifier) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        left(Modifier.weight(1f))
-        right(Modifier.weight(1f))
-    }
+    // The split button (50.0): the way back left, the way forward right.
+    SplitRow(left, right)
 }
 
 /**
@@ -493,7 +491,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     var made by remember { mutableStateOf<JSONObject?>(null) }
     val body = rememberScrollState()
     val entry = remember { androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(step, period.calendar) { body.scrollTo(0) }
+    LaunchedEffect(step) { body.scrollTo(0) }
 
     made?.let { answer -> MadeSheet(overlay, data, answer); return }
 
@@ -535,8 +533,8 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
     WizardFrame(
         overlay, w("title"), w("close"), w("back"),
         count = when (step) { 4 -> w("review_label"); 5 -> w("invite_label"); else -> trf("Stap %1\$d van %2\$d", step, 3) + " · " + w("step${step}_label") },
-        lit = minOf(step, 3), steps = 3, scroll = body, stepKey = if (period.calendar != null) "calendar-" + period.calendar else "step-$step",
-        direction = direction, entry = entry, showFoot = period.calendar == null, error = null,
+        lit = minOf(step, 3), steps = 3, scroll = body, stepKey = "step-$step",
+        direction = direction, entry = entry, showFoot = true, error = null,
         cta = if (busy) w("making") else if (step == 5) w("make") else w("next"),
         ctaEnabled = complete && !busy, saving = busy,
         onClose = { if (!busy) shell.close(overlay) },
@@ -544,9 +542,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
         onForward = { if (complete) { if (step == 5) make() else go(step + 1, 1) } }
     ) {
         Column(Modifier.fillMaxWidth()) {
-            if (step == 3 && period.calendar != null) {
-                CalendarStep(period, w, ch.durations, period.bounds(), onChange = moved)
-            } else when (step) {
+            when (step) {
                 1 -> {
                     StepHead(w("step1_title"), w("step1_lede"))
                     // The goal wizard's step 1: the search field, the groups as bubbles, the list.
@@ -603,7 +599,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                         }
                     }
                     Box(Modifier.padding(top = if (kind == "together") Ownify.Space5 else Ownify.Space4)) {
-                        Dates(period, w, ch.durations, onChange = moved)
+                        Dates(period, w, ch.durations, period.bounds(), onChange = moved)
                     }
                 }
                 4 -> {
@@ -807,10 +803,11 @@ private fun MadeSheet(overlay: Overlay, data: AppData, answer: JSONObject) {
             }
             T(copy["made_hint"].orEmpty(), JStyle.Footnote, Modifier.widthIn(max = 280.dp), align = TextAlign.Center)
         }
-        Row(Modifier.fillMaxWidth().padding(top = Ownify.Space4), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            Btn(copy["copy"].orEmpty(), onClick = { copyCode(context, code) }, modifier = Modifier.weight(1f), icon = OwnifyIcons.copy)
-            Btn(copy["share"].orEmpty(), onClick = { shareCode(context, answer.optString("share_text"), code) }, modifier = Modifier.weight(1f), icon = OwnifyIcons.share)
-        }
+        SplitRow(
+            { Btn(copy["copy"].orEmpty(), onClick = { copyCode(context, code) }, modifier = it, icon = OwnifyIcons.copy) },
+            { Btn(copy["share"].orEmpty(), onClick = { shareCode(context, answer.optString("share_text"), code) }, modifier = it, icon = OwnifyIcons.share) },
+            Modifier.padding(top = Ownify.Space4)
+        )
     }
 }
 

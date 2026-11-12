@@ -593,6 +593,12 @@ return [
             'body'  => 'Stel je eerste doel in — één ding waar je aan werkt. Je voortgang verschijnt hier zodra je begint.',
             'cta'   => 'Eerste doel instellen',
         ],
+        // Actief is empty, but goals have ended (B15): say where they went.
+        'only_ended' => [
+            'title' => 'Geen actieve doelen',
+            'body'  => 'Je afgeronde doelen staan onder Afgerond, met hun eindstand.',
+            'cta'   => 'Nieuw doel instellen',
+        ],
         'completed' => [
             'title' => 'Nog niets afgerond',
             'body'  => 'Doelen die je behaalt of waarvan de periode voorbij is, blijven hier staan met hun eindstand.',

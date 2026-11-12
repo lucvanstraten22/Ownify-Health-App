@@ -650,9 +650,10 @@
 
 .ai-consent__title {
     margin-top: var(--space-4);
-    font-size: var(--fs-title);
+    font-size: var(--fs-headline);
     font-weight: 600;
-    letter-spacing: var(--tracking-title);
+    line-height: var(--lh-headline);
+    letter-spacing: var(--tracking-headline);
 }
 
 .ai-consent__intro {

@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.research
 
+import com.ownify.android.ui.design.SplitRow
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
@@ -286,12 +287,19 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
         }
 
         if (pdf.readable && address != null) {
-            BasisRow(basis = 160.dp, gap = Ownify.Space2, modifier = Modifier.padding(top = Ownify.Space3)) {
-                Btn(copy.readPdf, onClick = {
-                    reading = true
-                    attempt++
-                }, look = BtnLook.Primary)
-                if (pdf.hosted) Btn(copy.downloadPdf, onClick = { download(context, address, source.code + ".pdf") })
+            val read: () -> Unit = {
+                reading = true
+                attempt++
+            }
+            // Hosted: Downloaden | Lezen, the split button (50.0); otherwise the one way to read it.
+            if (pdf.hosted) {
+                SplitRow(
+                    { Btn(copy.downloadPdf, onClick = { download(context, address, source.code + ".pdf") }, modifier = it) },
+                    { Btn(copy.readPdf, onClick = read, modifier = it) },
+                    Modifier.padding(top = Ownify.Space3)
+                )
+            } else {
+                Btn(copy.readPdf, onClick = read, look = BtnLook.Primary, modifier = Modifier.padding(top = Ownify.Space3))
             }
         }
         // "Bekijk de publicatie": the text link (38.0, a button before), its words in line with the eyebrow's.

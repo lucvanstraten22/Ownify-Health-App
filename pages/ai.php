@@ -63,7 +63,7 @@ $view    = match ($session['consent'] ?? 'unknown') {
             <div class="ai-top__row shell">
                 <button type="button" class="ai-glass ai-round press"
                         data-ai-close aria-label="<?= e($ai['close']['aria']) ?>" title="<?= e($ai['close']['label']) ?>">
-                    <?= icon('chevron-down', 'ai-round__icon') ?>
+                    <?= icon('close', 'ai-round__icon') ?>
                 </button>
 
                 <button type="button" class="ai-glass ai-island press" data-ai-history

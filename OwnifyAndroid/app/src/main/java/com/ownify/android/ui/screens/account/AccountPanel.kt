@@ -1,4 +1,5 @@
 package com.ownify.android.ui.screens.account
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.NoticePlace
 import com.ownify.android.ui.design.notice
 import com.ownify.android.ui.design.insetRow
@@ -753,13 +754,13 @@ private fun PersonRow(
     }
 }
 
-/** Accepteren / Weigeren, side by side under the name (`.friend__actions--wide`). */
+/** Weigeren | Accepteren under the name: the split button (`.friend__actions--wide.split`). */
 @Composable
 private fun AnswerButtons(busy: Boolean, onAccept: () -> Unit, onDecline: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        Btn(tr("Accepteren"), onClick = onAccept, enabled = !busy, modifier = Modifier.weight(1f))
-        Btn(tr("Weigeren"), onClick = onDecline, enabled = !busy, modifier = Modifier.weight(1f))
-    }
+    SplitRow(
+        { Btn(tr("Weigeren"), onClick = onDecline, enabled = !busy, modifier = it) },
+        { Btn(tr("Accepteren"), onClick = onAccept, enabled = !busy, modifier = it) }
+    )
 }
 
 /** `.friend__confirm`: the one step between a tap and a friendship gone; the safe answer first. */
@@ -773,10 +774,10 @@ private fun RemoveConfirm(name: String, busy: Boolean, onCancel: () -> Unit, onR
         verticalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         T(trf("%s verwijderen uit je vrienden?", name), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
-        Row(horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-            Btn(tr("Annuleren"), onClick = onCancel, enabled = !busy, modifier = Modifier.weight(1f))
-            Btn(tr("Verwijderen"), onClick = onRemove, enabled = !busy, modifier = Modifier.weight(1f), look = BtnLook.Final)
-        }
+        SplitRow(
+            { Btn(tr("Annuleren"), onClick = onCancel, enabled = !busy, modifier = it) },
+            { Btn(tr("Verwijderen"), onClick = onRemove, enabled = !busy, modifier = it, look = BtnLook.Final) }
+        )
     }
 }
 

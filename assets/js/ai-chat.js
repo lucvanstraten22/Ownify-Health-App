@@ -414,9 +414,10 @@
 
         if (action.state === 'pending') {
             var buttons = document.createElement('div');
-            buttons.className = 'ai-action__buttons';
+            buttons.className = 'ai-action__buttons split';
+            buttons.setAttribute('role', 'group');
 
-            [['confirm', action.confirm, 'btn btn--primary press'], ['decline', action.decline, 'btn press']].forEach(function (b) {
+            [['decline', action.decline, 'split__part'], ['confirm', action.confirm, 'split__part']].forEach(function (b) {
                 var button = document.createElement('button');
                 button.type = 'button';
                 button.className = b[2];

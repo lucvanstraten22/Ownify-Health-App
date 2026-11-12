@@ -1,5 +1,7 @@
 package com.ownify.android.ui.screens
 
+import com.ownify.android.ui.design.SplitButton
+import com.ownify.android.ui.design.SplitPart
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -148,38 +150,17 @@ fun WelcomeScreen(
 
         // .welcome__actions — the tab bar's footprint, split in two.
         Rise(260) {
-            Row(
-                Modifier
+            // 50.0: the split button, at the tab bar's height, Body text.
+            SplitButton(
+                back = SplitPart(login, onLogin),
+                forward = SplitPart(register, onRegister),
+                modifier = Modifier
                     .width(min(screen.width * 0.94f, 440.dp))
                     .padding(bottom = insets.calculateBottomPadding() + Ownify.DockGap),
-                horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-            ) {
-                WelcomeButton(login, primary = false, onClick = onLogin, modifier = Modifier.weight(1f))
-                WelcomeButton(register, primary = true, onClick = onRegister, modifier = Modifier.weight(1f))
-            }
+                minHeight = Ownify.TabbarHeight,
+                textSize = Ownify.FsBody
+            )
         }
-    }
-}
-
-/** One of the two ways on: a pane of the tab bar's glass, 54 high; Registreren takes the app's green. */
-@Composable
-private fun WelcomeButton(label: String, primary: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    val interaction = remember { MutableInteractionSource() }
-    Pane(
-        modifier
-            .press(interaction)
-            .height(Ownify.TabbarHeight)
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick),
-        style = if (primary) Panes.WelcomePrimary else Panes.WelcomeButton,
-        shape = RoundedCornerShape(50),
-        primary = primary
-    ) {
-        T(
-            label,
-            OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold),
-            Modifier.padding(horizontal = Ownify.Space4),
-            maxLines = 1
-        )
     }
 }
 

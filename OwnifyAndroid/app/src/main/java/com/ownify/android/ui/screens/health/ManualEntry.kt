@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.health
 
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.WheelField
 import com.ownify.android.ui.design.WheelSpec
@@ -228,7 +229,7 @@ fun ManualEntryPage(entry: ManualEntry, kind: String, scroll: ScrollState) {
                         DateControl(dateInput, draft.date, common["date"].orEmpty()) { draft.date = it }
                     }
                     EntryField(copy["activity"].orEmpty()) {
-                        GlassSelect(entry.types, draft.type, { draft.type = it }, copy["activity"].orEmpty(), Modifier.fillMaxWidth())
+                        GlassSelect(entry.types, draft.type, { draft.type = it }, copy["activity"].orEmpty(), Modifier.fillMaxWidth(), split = true)
                     }
                     EntryField(copy["start"].orEmpty()) { TimeControl(draft.start, copy["start"].orEmpty()) { draft.start = it } }
                     EntryField(copy["duration"].orEmpty(), unit = common["minutes"]) {
@@ -266,11 +267,10 @@ fun ManualEntryPage(entry: ManualEntry, kind: String, scroll: ScrollState) {
                 T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error), Modifier.fillMaxWidth().padding(bottom = Ownify.Space3)
                     .semantics { liveRegion = LiveRegionMode.Assertive }, align = androidx.compose.ui.text.style.TextAlign.Center)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                Btn(common["cancel"].orEmpty(), onClick = { shell.back() }, modifier = Modifier.weight(1f))
-                GlassCta(if (saving) common["saving"].orEmpty() else common["save"].orEmpty(), onClick = ::save,
-                    modifier = Modifier.weight(1f), loading = saving)
-            }
+            SplitRow(
+                { Btn(common["cancel"].orEmpty(), onClick = { shell.back() }, modifier = it) },
+                { Btn(if (saving) common["saving"].orEmpty() else common["save"].orEmpty(), onClick = { if (!saving) save() }, modifier = it, enabled = !saving) }
+            )
         }
     }
 }
@@ -331,8 +331,9 @@ fun RemoveTraining(entry: ManualEntry?, session: TrainingSession) {
                 if (!session.manual) {
                     T(copy["imported"].orEmpty(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space2))
                 }
-                Row(Modifier.fillMaxWidth().padding(top = Ownify.Space3), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    Btn(copy["no"].orEmpty(), onClick = { confirming = false }, modifier = Modifier.weight(1f))
+                SplitRow(
+                    { Btn(copy["no"].orEmpty(), onClick = { confirming = false }, modifier = it) },
+                    {
                     Btn(
                         copy["yes"].orEmpty(),
                         onClick = {
@@ -349,11 +350,13 @@ fun RemoveTraining(entry: ManualEntry?, session: TrainingSession) {
                                 removing = false
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = it,
                         enabled = !removing,
                         look = BtnLook.Caution
                     )
-                }
+                    },
+                    Modifier.padding(top = Ownify.Space3)
+                )
             }
         }
         error?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.Error), Modifier.semantics { liveRegion = LiveRegionMode.Assertive }) }

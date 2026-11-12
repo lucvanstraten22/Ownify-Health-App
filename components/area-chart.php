@@ -56,7 +56,8 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                     <?php foreach ($series as $k => $s): if (($latest['texts'][$k] ?? null) === null) { continue; } ?>
                         <span class="area-chart__pair">
                             <?php if (count($series) > 1): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
-                            <span class="area-chart__value"><?= e($latest['texts'][$k] ?? '—') ?></span>
+                            <?php $txt = (string) ($latest['texts'][$k] ?? '—'); $unitAt = (preg_match('/^([\d.,:\s\x{2212}-]*\d)\s?([^\d\s][^\d]*)$/u', $txt, $um) && $um[2] !== '%') ? $um : null; ?>
+                            <span class="area-chart__value"><?php if ($unitAt): ?><?= e($unitAt[1]) ?><span class="area-chart__unit"><?= e($unitAt[2]) ?></span><?php else: ?><?= e($txt) ?><?php endif; ?></span>
                             <?php if ($k === 0 && !empty($latest['of'])): ?><span class="area-chart__of"><?= e($latest['of']) ?></span><?php endif; ?>
                         </span>
                     <?php endforeach; ?>

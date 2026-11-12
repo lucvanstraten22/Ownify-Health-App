@@ -35,9 +35,9 @@ declare(strict_types=1);
 
         <p class="field-editor__error" role="alert" data-editor-error hidden></p>
 
-        <div class="confirm__row">
-            <button type="button" class="btn press" data-editor-close><?= e(t('Annuleren')) ?></button>
-            <button type="submit" class="btn btn--primary press" data-editor-save><?= e(t('Opslaan')) ?></button>
+        <div class="confirm__row split" role="group">
+            <button type="button" class="split__part" data-editor-close><?= e(t('Annuleren')) ?></button>
+            <button type="submit" class="split__part" data-editor-save><?= e(t('Opslaan')) ?></button>
         </div>
 
     </form>

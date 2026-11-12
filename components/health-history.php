@@ -61,7 +61,12 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
          data-health-history aria-labelledby="health-history-title-<?= e($suffix) ?>">
     <div class="card__head health-history__head">
         <div class="card__head-group">
-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
+            <?php $look = ['sleep' => 'moon', 'nutrition' => 'utensils', 'training' => 'dumbbell'][$only ?? ''] ?? null; ?>
+            <?php if ($look !== null): ?>
+            <span class="icon-tile icon-tile--solid" data-accent="<?= e($categories[0]['accent']) ?>" aria-hidden="true"><?= icon_solid($look) ?></span>
+            <?php else: ?>
+            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('rings') ?></span>
+            <?php endif; ?>
             <h2 class="card__eyebrow" id="health-history-title-<?= e($suffix) ?>"><?= e($history['title']) ?></h2>
         </div>
 

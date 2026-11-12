@@ -261,7 +261,7 @@ fun PanelHead(
     ) {
         if (leading != null) leading()
         T(title, JStyle.Eyebrow, Modifier.weight(1f).semantics { heading() })
-        RoundButton(OwnifyIcons.chevronDown, closeLabel, onClose)
+        RoundButton(OwnifyIcons.close, closeLabel, onClose)
     }
 }
 

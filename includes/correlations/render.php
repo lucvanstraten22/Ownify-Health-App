@@ -167,9 +167,9 @@ if (!function_exists('corr_hydrate')) {
     function corr_look(string $area): array
     {
         return match ($area) {
-            'sleep'     => ['icon' => 'pulse', 'accent' => 'sleep'],
+            'sleep'     => ['icon' => 'moon', 'accent' => 'sleep'],
             'nutrition' => ['icon' => 'utensils', 'accent' => 'nutrition'],
-            default     => ['icon' => 'bolt', 'accent' => 'training'],
+            default     => ['icon' => 'dumbbell', 'accent' => 'training'],
         };
     }
 

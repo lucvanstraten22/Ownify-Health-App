@@ -14,7 +14,7 @@
  * OwnifyWheel.attach(input, spec); OwnifyWheel.forUnit(unit, start) makes a
  * goal unit's spec from its `wheel` (config/goals.php). A date field shows
  * the date as a person reads it and keeps "YYYY-MM-DD" for the form:
- * OwnifyWheel.value(input). The Android app draws the same (ui/design/Wheel.kt).
+ * OwnifyWheel.value(input); OwnifyWheel.set(input, "YYYY-MM-DD") puts one in. The Android app draws the same (ui/design/Wheel.kt).
  */
 (function () {
     'use strict';
@@ -404,7 +404,7 @@
     function attachSelect(select) {
         if (select._wheelOn || select.multiple) { return select; }
         select._wheelOn = true;
-        var anchor = select.closest('.glass--select') || select;
+        var anchor = select.closest('.glass--select, .split--menu') || select;
         select._wheelAnchor = anchor;
         anchor.classList.add('is-wheel');
         select.setAttribute('aria-haspopup', 'dialog');
@@ -465,5 +465,6 @@
     }
 
     window.OwnifyWheel = { attach: attach, scan: scan, value: value, forUnit: forUnit, columns: columns, written: written,
+        set: function (input, text) { set(input, specOf(input), text); },
         close: close, ROW: ROW };
 })();

@@ -53,7 +53,6 @@
     var ideas     = root.querySelector('[data-wizard-ideas]');
     var setup     = root.querySelector('[data-wizard-setup]');
     var review    = root.querySelector('[data-wizard-review]');
-    var calendar  = root.querySelector('[data-wizard-calendar]');
 
     var step = 1;               // 1, 2, 3 or 'review'
     var lastFocus = null;
@@ -80,7 +79,6 @@
             start: today(),
             end: null,
             duration: null,
-            calendar: null          // 'start' | 'end' while the calendar is open
         };
     }
 
@@ -759,13 +757,12 @@
         var wrap = el('div', 'goal-field goal-dates-field');
         wrap.appendChild(el('p', 'wizard__label', words.dates_label));
 
-        var row = el('div', 'goal-dates');
-        row.appendChild(dateButton('start', words.start, dateText(draft.start)));
-        var arrow = el('span', 'goal-dates__to');
-        arrow.setAttribute('aria-hidden', 'true');
-        arrow.innerHTML = iconMarkup('chevron-right');
-        row.appendChild(arrow);
-        row.appendChild(dateButton('end', words.end, draft.end ? dateText(draft.end) : words.end_choose));
+        // Start | Einde: the split button (50.0); each half turns the date wheel.
+        var row = el('div', 'goal-dates split');
+        row.setAttribute('role', 'group');
+        row.setAttribute('aria-label', words.dates_label);
+        row.appendChild(dateButton('start', words.start));
+        row.appendChild(dateButton('end', words.end));
         wrap.appendChild(row);
 
         var bubbles = el('div', 'goal-bubbles goal-durations');
@@ -782,144 +779,43 @@
         return wrap;
     }
 
-    function dateButton(which, label, value) {
-        var b = el('button', 'glass goal-date press');
-        b.type = 'button';
-        b.setAttribute('data-wizard-date', which);
-        b.setAttribute('aria-label', label + ': ' + value);
-        b.appendChild(el('span', 'goal-date__label', label));
-        b.appendChild(el('span', 'goal-date__value' + (which === 'end' && !draft.end ? ' is-empty' : ''), value));
-        return b;
-    }
-
-    function chooseDuration(key) {
-        draft.duration = key;
-        draft.end = durationEnd(draft.start, key);
-        refreshDates();
-    }
-
-    /** After the start or the end moved: the buttons, the bubbles, the baseline. */
-    function refreshDates() {
-        var start = setup.querySelector('[data-wizard-date="start"]');
-        var end = setup.querySelector('[data-wizard-date="end"]');
-        if (start) {
-            start.querySelector('.goal-date__value').textContent = dateText(draft.start);
-            start.setAttribute('aria-label', words.start + ': ' + dateText(draft.start));
+    function dateButton(which, label) {
+        var half = el('label', 'split__part goal-date');
+        half.appendChild(el('span', 'goal-date__label', label));
+        var input = el('input', 'goal-date__value');
+        input.type = 'text';
+        input.setAttribute('data-wizard-date', which);
+        input.setAttribute('aria-label', label);
+        if (which === 'end') { input.placeholder = words.end_choose; }
+        half.appendChild(input);
+        if (window.OwnifyWheel) {
+            input._wheelAnchor = half;
+            window.OwnifyWheel.attach(input, dateSpec(which));
+            window.OwnifyWheel.set(input, dateValue(which));
+            input.addEventListener('change', function () { pickDate(which, window.OwnifyWheel.value(input)); });
         }
-        if (end) {
-            var v = end.querySelector('.goal-date__value');
-            v.textContent = draft.end ? dateText(draft.end) : words.end_choose;
-            v.classList.toggle('is-empty', !draft.end);
-            end.setAttribute('aria-label', words.end + ': ' + v.textContent);
-        }
-        each('[data-wizard-duration]', function (b) {
-            b.setAttribute('aria-pressed', b.getAttribute('data-wizard-duration') === draft.duration ? 'true' : 'false');
-        }, setup);
-        if (draft.type === 'milestone') {
-            loadBaseline();
-            renderBaseline();
-        }
-        validateSetup();
+        return half;
     }
 
-    /* ------------------------------------------------------------ calendar */
-
-    var view = null;    // the month on screen
-
-    function openCalendar(which) {
-        draft.calendar = which;
-        var selected = which === 'start' ? draft.start : (draft.end || dayAfter(draft.start, 1));
-        view = new Date(selected.getFullYear(), selected.getMonth(), 1);
-        paintCalendar();
-
-        var section = root.querySelector('.wizard__step.is-active');
-        if (section) { section.hidden = true; }
-        calendar.hidden = false;
-        foot.hidden = true;
-        body.scrollTop = 0;
-        enter(calendar, 1, carry());
-        var chosen = calendar.querySelector('[aria-selected="true"]') || calendar.querySelector('[data-calendar-day]:not([disabled])');
-        if (chosen) { chosen.focus({ preventScroll: true }); }
+    function dateValue(which) {
+        return which === 'start' ? iso(draft.start) : (draft.end ? iso(draft.end) : '');
     }
 
-    function closeCalendar() {
-        draft.calendar = null;
-        calendar.hidden = true;
-        foot.hidden = false;
-        var section = root.querySelector('[data-wizard-step="3"]');
-        section.hidden = false;
-        enter(section, -1, carry());
-        refreshDates();
-        var back = setup.querySelector('[data-wizard-date="end"]');
-        if (back) { back.focus({ preventScroll: true }); }
-    }
-
-    function bounds() {
+    /** Where each date may go: the start within the past year, the end after it. */
+    function dateSpec(which) {
         var now = today();
-        if (draft.calendar === 'start') { return { min: dayAfter(now, -365), max: now }; }
+        if (which === 'start') { return { kind: 'date', min: iso(dayAfter(now, -365)), max: iso(now) }; }
         var min = dayAfter(draft.start, 1);
         if (min < now) { min = now; }
-        return { min: min, max: addMonths(draft.start, 36) };
+        return { kind: 'date', min: iso(min), max: iso(addMonths(draft.start, 36)) };
     }
 
-    function weekStartsSunday() { return copy.week_start === 'sunday'; }
-
-    function paintCalendar() {
-        var range = bounds();
-        calendar.querySelector('[data-calendar-title]').textContent = draft.calendar === 'start' ? words.pick_start : words.pick_end;
-        calendar.querySelector('[data-calendar-month]').textContent = T.date(view, 'month_year');
-
-        var prev = calendar.querySelector('[data-calendar-prev]');
-        var next = calendar.querySelector('[data-calendar-next]');
-        prev.disabled = new Date(view.getFullYear(), view.getMonth(), 0) < range.min;
-        next.disabled = new Date(view.getFullYear(), view.getMonth() + 1, 1) > range.max;
-
-        var weekdays = calendar.querySelector('[data-calendar-weekdays]');
-        weekdays.innerHTML = '';
-        var first = weekStartsSunday() ? 0 : 1;
-        for (var i = 0; i < 7; i++) { weekdays.appendChild(el('li', null, T.weekday((first + i) % 7, true))); }
-
-        var grid = calendar.querySelector('[data-calendar-grid]');
-        grid.innerHTML = '';
-        var lead = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() - first + 7) % 7;
-        var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-        var rowEl = null;
-
-        for (var cell = 0; cell < lead + days; cell++) {
-            if (cell % 7 === 0) {
-                rowEl = el('div', 'goal-calendar__row');
-                rowEl.setAttribute('role', 'row');
-                grid.appendChild(rowEl);
-            }
-            if (cell < lead) {
-                var gap = el('span', 'goal-calendar__gap');
-                gap.setAttribute('role', 'gridcell');
-                rowEl.appendChild(gap);
-                continue;
-            }
-            var d = new Date(view.getFullYear(), view.getMonth(), cell - lead + 1);
-            var b = el('button', 'goal-calendar__day press', String(d.getDate()));
-            b.type = 'button';
-            b.setAttribute('role', 'gridcell');
-            b.setAttribute('data-calendar-day', iso(d));
-            b.setAttribute('aria-label', T.date(d, 'weekday_day_month') + ' ' + d.getFullYear());
-            var isStart = sameDay(d, draft.start);
-            var isEnd = sameDay(d, draft.end);
-            var selected = draft.calendar === 'start' ? isStart : isEnd;
-            b.setAttribute('aria-selected', selected ? 'true' : 'false');
-            if (isStart) { b.classList.add('is-start'); }
-            if (isEnd) { b.classList.add('is-end'); }
-            if (draft.end && d > draft.start && d < draft.end) { b.classList.add('is-between'); }
-            if (sameDay(d, today())) { b.classList.add('is-today'); }
-            b.disabled = d < range.min || d > range.max;
-            rowEl.appendChild(b);
-        }
-    }
-
-    function pickDay(text) {
+    /** A date turned on the wheel: the start carries its looptijd along; an end finds its looptijd. */
+    function pickDate(which, text) {
+        if (!text) { return; }
         var parts = text.split('-');
         var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        if (draft.calendar === 'start') {
+        if (which === 'start') {
             draft.start = d;
             if (draft.duration) {
                 draft.end = durationEnd(d, draft.duration);
@@ -934,22 +830,32 @@
                 return false;
             });
         }
-        paintCalendar();
-        var again = calendar.querySelector('[data-calendar-day="' + text + '"]');
-        if (again) { again.focus({ preventScroll: true }); }
+        refreshDates();
     }
 
-    function calendarDone() {
-        if (draft.calendar === 'start') {
-            /* On to the end date, from the start just chosen. */
-            draft.calendar = 'end';
-            var selected = draft.end || dayAfter(draft.start, 1);
-            view = new Date(selected.getFullYear(), selected.getMonth(), 1);
-            paintCalendar();
-            enter(calendar, 1, carry());
-            return;
+    function chooseDuration(key) {
+        draft.duration = key;
+        draft.end = durationEnd(draft.start, key);
+        refreshDates();
+    }
+
+    /** After the start or the end moved: the buttons, the bubbles, the baseline. */
+    function refreshDates() {
+        if (window.OwnifyWheel) {
+            each('[data-wizard-date]', function (input) {
+                var which = input.getAttribute('data-wizard-date');
+                input._wheel = dateSpec(which);
+                window.OwnifyWheel.set(input, dateValue(which));
+            }, setup);
         }
-        closeCalendar();
+        each('[data-wizard-duration]', function (b) {
+            b.setAttribute('aria-pressed', b.getAttribute('data-wizard-duration') === draft.duration ? 'true' : 'false');
+        }, setup);
+        if (draft.type === 'milestone') {
+            loadBaseline();
+            renderBaseline();
+        }
+        validateSetup();
     }
 
     /* ---------------------------------------------------------- checking */
@@ -1117,7 +1023,6 @@
             section.classList.toggle('is-active', isActive);
             if (isActive) { arriving = section; }
         });
-        calendar.hidden = true;
         foot.hidden = false;
         enter(arriving, direction, from);
 
@@ -1161,7 +1066,6 @@
 
     function backward() {
         if (saving) { return; }
-        if (draft.calendar) { closeCalendar(); return; }
         if (step === 1) { close(); return; }
         go(step === 'review' ? STEPS : step - 1, -1);
     }
@@ -1342,12 +1246,7 @@
             return;
         }
         if ((hit = t.closest('[data-wizard-duration]'))) { chooseDuration(hit.getAttribute('data-wizard-duration')); return; }
-        if ((hit = t.closest('[data-wizard-date]'))) { openCalendar(hit.getAttribute('data-wizard-date')); return; }
 
-        if ((hit = t.closest('[data-calendar-day]'))) { pickDay(hit.getAttribute('data-calendar-day')); return; }
-        if (t.closest('[data-calendar-prev]')) { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); paintCalendar(); return; }
-        if (t.closest('[data-calendar-next]')) { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); paintCalendar(); return; }
-        if (t.closest('[data-calendar-done]')) { calendarDone(); return; }
     });
 
     root.addEventListener('input', function (event) {
@@ -1421,15 +1320,14 @@
     });
 
     root.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' && event.target.matches && event.target.matches('input')) {
+        if (event.key === 'Enter' && event.target.matches && event.target.matches('input:not([data-wizard-date])')) {
             event.preventDefault();
-            if (!nextBtn.disabled && !draft.calendar) { forward(); }
+            if (!nextBtn.disabled) { forward(); }
         }
     });
 
     document.addEventListener('keydown', function (event) {
         if (event.key !== 'Escape' || root.hidden) { return; }
-        if (draft.calendar) { closeCalendar(); return; }
         close();
     });
 

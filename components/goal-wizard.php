@@ -36,7 +36,7 @@ $steps = $copy['steps'];
         <div class="wizard__head">
             <h2 class="card__eyebrow" id="wizard-title"><?= e($copy['title']) ?></h2>
             <button type="button" class="account__close press" data-wizard-close
-                    aria-label="<?= e($copy['close']) ?>"><?= icon('chevron-down') ?></button>
+                    aria-label="<?= e($copy['close']) ?>"><?= icon('close') ?></button>
         </div>
 
         <!-- Steps 1 to 3; the review fills all three and says so. -->
@@ -117,23 +117,6 @@ $steps = $copy['steps'];
                 <p class="wizard__lede"><?= e($copy['review']['lede']) ?></p>
                 <dl class="glass goal-review" data-wizard-review></dl>
             </section>
-
-            <!-- The calendar: over the step, start then end. -->
-            <div class="goal-calendar" data-wizard-calendar hidden role="dialog" aria-modal="false" aria-labelledby="goal-calendar-title">
-                <div class="goal-calendar__head">
-                    <p class="goal-calendar__title" id="goal-calendar-title" data-calendar-title></p>
-                    <div class="goal-calendar__nav">
-                        <button type="button" class="glass glass--round glass--small press" data-calendar-prev
-                                aria-label="<?= e($copy['calendar_prev']) ?>"><?= icon('chevron-left') ?></button>
-                        <p class="goal-calendar__month" data-calendar-month aria-live="polite"></p>
-                        <button type="button" class="glass glass--round glass--small press" data-calendar-next
-                                aria-label="<?= e($copy['calendar_next']) ?>"><?= icon('chevron-right') ?></button>
-                    </div>
-                </div>
-                <ol class="goal-calendar__weekdays" role="list" aria-hidden="true" data-calendar-weekdays></ol>
-                <div class="goal-calendar__grid" role="grid" data-calendar-grid></div>
-                <button type="button" class="glass glass--cta goal-calendar__done press" data-calendar-done><?= e($copy['calendar_done']) ?></button>
-            </div>
 
         </div>
 

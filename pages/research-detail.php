@@ -114,15 +114,15 @@ $byline = implode(' · ', array_filter([$source['authors'] ?: $source['organisat
                     </div>
 
                     <?php if ($pdf['mode'] !== 'link' && $pdf['href']): ?>
-                        <div class="research-detail__actions" data-research-pdf="<?= e($pdf['mode']) ?>">
+                        <div class="research-detail__actions<?= $pdf['mode'] === 'hosted' ? ' split' : '' ?>"<?= $pdf['mode'] === 'hosted' ? ' role="group"' : '' ?> data-research-pdf="<?= e($pdf['mode']) ?>">
+                            <?php if ($pdf['mode'] === 'hosted'): ?>
+                                <a class="split__part" href="<?= e($pdf['href']) ?>" download><?= e($copy['download_pdf']) ?></a>
+                            <?php endif; ?>
                             <?php /* A link the browser can always follow; research.js reads it
                                      inside the page instead, where that works. */ ?>
-                            <a class="btn btn--primary press" href="<?= e($pdf['href']) ?>" target="_blank" rel="noopener noreferrer"
+                            <a class="<?= $pdf['mode'] === 'hosted' ? 'split__part' : 'btn btn--primary press' ?>" href="<?= e($pdf['href']) ?>" target="_blank" rel="noopener noreferrer"
                                data-research-read="<?= $pdf['embed'] ? 'inline' : 'browser' ?>"
                                data-label-inline="<?= e($copy['read_pdf']) ?>" data-label-browser="<?= e($copy['open_pdf']) ?>"><?= e($pdf['embed'] ? $copy['read_pdf'] : $copy['open_pdf']) ?></a>
-                            <?php if ($pdf['mode'] === 'hosted'): ?>
-                                <a class="btn press" href="<?= e($pdf['href']) ?>" download><?= e($copy['download_pdf']) ?></a>
-                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                     <?php /* "Bekijk de publicatie": the text link (38.0, a button before). */ ?>

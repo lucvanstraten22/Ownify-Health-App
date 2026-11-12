@@ -112,8 +112,8 @@ $versus = $view['kind'] === 'versus';
                 <p class="ch-note reveal"><?= e($view['note']) ?></p>
 
                 <?php if ($view['can_leave']): ?>
-                    <button type="button" class="btn btn--link press ch-leave reveal" data-challenge-leave="<?= $id ?>">
-                        <?= e($detail['leave']) ?>
+                    <button type="button" class="btn press ch-leave reveal" data-challenge-leave="<?= $id ?>">
+                        <?= icon('logout', 'ch-leave__icon') ?><?= e($detail['leave']) ?>
                     </button>
                 <?php endif; ?>
 

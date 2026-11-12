@@ -42,12 +42,12 @@ $welcome = $data['welcome'];
             <p class="welcome__subtitle"><?= e($welcome['subtitle']) ?></p>
         </div>
 
-        <div class="welcome__actions">
-            <button type="button" class="welcome__button press"
+        <div class="welcome__actions split" role="group">
+            <button type="button" class="split__part"
                     data-account-open="login" aria-haspopup="dialog">
                 <?= e($welcome['login']) ?>
             </button>
-            <button type="button" class="welcome__button welcome__button--primary press"
+            <button type="button" class="split__part"
                     data-account-open="register" aria-haspopup="dialog">
                 <?= e($welcome['register']) ?>
             </button>

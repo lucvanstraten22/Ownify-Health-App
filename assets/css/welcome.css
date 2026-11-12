@@ -87,61 +87,10 @@
     margin-bottom: calc(var(--safe-bottom) + var(--dock-gap));
 }
 
-/* One pane of glass per button: the header buttons' recipe, at the tab
-   bar's height. */
-.welcome__button {
-    position: relative;
-    isolation: isolate;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: var(--tabbar-height);
-    padding-inline: var(--space-4);
-    border-radius: var(--radius-pill);
-    background: var(--lg-face), var(--lg-body);
-    -webkit-backdrop-filter: var(--lg-filter);
-    backdrop-filter: var(--lg-filter);
-    box-shadow: var(--lg-shadow), var(--lg-glint);
-    color: var(--text-primary);
-    font-size: var(--fs-body);
-    font-weight: 600;
-    letter-spacing: var(--tracking-body);
-    white-space: nowrap;
-}
-
-/* The primary way on for somebody new takes the app's own green — the same
-   tint as the goal wizard's next step. */
-.welcome__button--primary {
-    background: var(--lg-face), var(--lg-green), var(--lg-body);
-}
-
-/* The rim: a hairline that catches the light, as on the tab bar. */
-.welcome__button::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--pane-rim);
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-}
-
-.welcome__button--primary::after { background: var(--lg-green-rim); }
-
-.welcome__button:focus-visible {
-    outline: 2px solid rgba(var(--ink), 0.55);
-    outline-offset: 3px;
-    border-radius: var(--radius-pill);
-}
+/* 50.0: the two ways on are one split button (components.css .split), kept
+   at the tab bar's footprint: its width, its height, Body text. */
+.welcome__actions.split { width: min(94vw, 27.5rem); }
+.welcome__actions .split__part { min-height: var(--tabbar-height); font-size: var(--fs-body); }
 
 /* --------------------------------------------------------------------------
    Arrival — the logo, the name and the buttons settle in once.

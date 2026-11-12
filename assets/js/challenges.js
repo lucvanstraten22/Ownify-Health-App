@@ -128,7 +128,7 @@
         return '<div class="ch-sheet__head">'
             + '<h2 class="ch-sheet__title" id="ch-sheet-title">' + esc(title) + '</h2>'
             + '<button type="button" class="ch-sheet__close press" data-sheet-close aria-label="' + esc(C.review.close) + '">'
-            + icon('chevron-down') + '</button></div>';
+            + icon('close') + '</button></div>';
     }
 
     /** Puts content in the sheet; opens it if it is not open yet. */
@@ -472,11 +472,11 @@
 
         show(head(r.title)
             + '<div class="ch-sheet__body">' + reviewBody(r) + '</div>'
-            + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
+            + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
             + (invited
-                ? '<button type="button" class="btn press" data-review-decline>' + esc(C.review.decline) + '</button>'
-                : '<button type="button" class="btn press" data-sheet-close>' + esc(C.review.later) + '</button>')
-            + '<button type="button" class="btn btn--primary press" data-review-join data-sheet-focus>' + esc(C.review.join) + '</button>'
+                ? '<button type="button" class="split__part" data-review-decline>' + esc(C.review.decline) + '</button>'
+                : '<button type="button" class="split__part" data-sheet-close>' + esc(C.review.later) + '</button>')
+            + '<button type="button" class="split__part" data-review-join data-sheet-focus>' + esc(C.review.join) + '</button>'
             + '</div></div>');
 
         var join = content.querySelector('[data-review-join]');
@@ -500,9 +500,9 @@
                     + '<span class="ch-done__mark" aria-hidden="true">' + icon('check') + '</span>'
                     + '<h2 class="ch-sheet__title" id="ch-sheet-title">' + esc(C.review.joined_title) + '</h2>'
                     + '<p class="ch-hint">' + esc(r.joined) + '</p></div>'
-                    + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
-                    + '<button type="button" class="btn press" data-sheet-close>' + esc(C.review.close) + '</button>'
-                    + '<button type="button" class="btn btn--primary press" data-review-see data-sheet-focus>' + esc(C.review.see) + '</button>'
+                    + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
+                    + '<button type="button" class="split__part" data-sheet-close>' + esc(C.review.close) + '</button>'
+                    + '<button type="button" class="split__part" data-review-see data-sheet-focus>' + esc(C.review.see) + '</button>'
                     + '</div></div>');
 
                 content.querySelector('[data-review-see]').addEventListener('click', function () {
@@ -611,7 +611,7 @@
         root.innerHTML = '<div class="wizard__scrim" data-cw-close></div>'
             + '<div class="wizard__panel card" role="dialog" aria-modal="true" aria-labelledby="cw-title">'
             + '<div class="wizard__head"><h2 class="card__eyebrow" id="cw-title">' + esc(cc.title) + '</h2>'
-            + '<button type="button" class="account__close press" data-cw-close aria-label="' + esc(cc.close) + '">' + icon('chevron-down') + '</button></div>'
+            + '<button type="button" class="account__close press" data-cw-close aria-label="' + esc(cc.close) + '">' + icon('close') + '</button></div>'
             + '<div class="wizard__progress"><ol class="wizard__bars" role="list" aria-hidden="true">'
             + '<li class="wizard__bar" data-cw-bar="1"></li><li class="wizard__bar" data-cw-bar="2"></li><li class="wizard__bar" data-cw-bar="3"></li></ol>'
             + '<p class="wizard__count" data-cw-count aria-live="polite"></p></div>'
@@ -631,11 +631,10 @@
         var w = wizardShell();
         var start = todayDay();
         var draft = { step: 1, category: null, find: '', kind: 'together', metric: null, target: 0, touched: false,
-            start: start, end: durationEnd(start, 'week') || dayAfter(start, 6), duration: 'week', calendar: null,
+            start: start, end: durationEnd(start, 'week') || dayAfter(start, 6), duration: 'week',
             name: '', invite: [], query: '' };
         var saving = false;
         var STEPS = 3;
-        var view = null;   // the calendar's month on screen
 
         if (preset && (preset.kind === 'together' || preset.kind === 'versus')) { draft.kind = preset.kind; }
         if (preset && preset.metric && metricOf(preset.metric)) {
@@ -704,9 +703,10 @@
 
         }
 
-        function dateButton(which, label, value) {
-            return '<button type="button" class="glass goal-date press" data-cw-date="' + which + '" aria-label="' + esc(label + ': ' + value) + '">'
-                + '<span class="goal-date__label">' + esc(label) + '</span><span class="goal-date__value">' + esc(value) + '</span></button>';
+        /* Start | Einde: the split button (50.0); each half turns the date wheel (wired in paint). */
+        function dateButton(which, label) {
+            return '<label class="split__part goal-date"><span class="goal-date__label">' + esc(label) + '</span>'
+                + '<input class="goal-date__value" type="text" data-cw-date="' + which + '" aria-label="' + esc(label) + '"></label>';
         }
 
         function stepSetup() {
@@ -720,68 +720,26 @@
             }
             return html
                 + '<div class="goal-field goal-dates-field"><p class="wizard__label' + (draft.kind === 'together' ? ' wizard__label--spaced' : '') + '">' + esc(cc.dates_label) + '</p>'
-                + '<div class="goal-dates">' + dateButton('start', cc.start, dayText(draft.start))
-                + '<span class="goal-dates__to" aria-hidden="true">' + icon('chevron-right') + '</span>'
-                + dateButton('end', cc.end, dayText(draft.end)) + '</div>'
+                + '<div class="goal-dates split" role="group" aria-label="' + esc(cc.dates_label) + '">' + dateButton('start', cc.start)
+                + dateButton('end', cc.end) + '</div>'
                 + '<div class="goal-bubbles goal-durations" role="group" aria-label="' + esc(cc.durations_label) + '">'
                 + (D.durations || []).map(function (d) {
                     return '<button type="button" class="glass glass--chip goal-bubble press" data-cw-duration="' + esc(d.key) + '" aria-pressed="' + (draft.duration === d.key) + '">' + esc(d.label) + '</button>';
                 }).join('') + '</div></div>';
         }
 
-        /* The goal wizard's calendar, over step 3: the start, then the end. */
-        function bounds() {
+        /** Where each date may go: the start within the next weeks, the end within the longest run. */
+        function dateSpec(which) {
             var now = todayDay();
             var limits = D.dates || { start_within: 90, longest: 366 };
-            if (draft.calendar === 'start') { return { min: now, max: dayAfter(now, limits.start_within) }; }
-            return { min: dayAfter(draft.start, 1), max: dayAfter(draft.start, limits.longest - 1) };
+            if (which === 'start') { return { kind: 'date', min: isoDay(now), max: isoDay(dayAfter(now, limits.start_within)) }; }
+            return { kind: 'date', min: isoDay(dayAfter(draft.start, 1)), max: isoDay(dayAfter(draft.start, limits.longest - 1)) };
         }
 
-        function stepCalendar() {
-            var range = bounds();
-            var first = D.week_start === 'sunday' ? 0 : 1;
-            var lead = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() - first + 7) % 7;
-            var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-            var weekdays = '';
-            for (var i = 0; i < 7; i++) { weekdays += '<li>' + esc(T.weekday((first + i) % 7, true)) + '</li>'; }
-            var grid = '';
-            for (var cell = 0; cell < lead + days; cell++) {
-                if (cell % 7 === 0) { grid += (cell ? '</div>' : '') + '<div class="goal-calendar__row" role="row">'; }
-                if (cell < lead) { grid += '<span class="goal-calendar__gap" role="gridcell"></span>'; continue; }
-                var d = new Date(view.getFullYear(), view.getMonth(), cell - lead + 1);
-                var isStart = sameDay(d, draft.start), isEnd = sameDay(d, draft.end);
-                var cls = 'goal-calendar__day press' + (isStart ? ' is-start' : '') + (isEnd ? ' is-end' : '')
-                    + (d > draft.start && d < draft.end ? ' is-between' : '') + (sameDay(d, todayDay()) ? ' is-today' : '');
-                grid += '<button type="button" class="' + cls + '" role="gridcell" data-cw-day="' + isoDay(d) + '"'
-                    + ' aria-label="' + esc(T.date(d, 'weekday_day_month') + ' ' + d.getFullYear()) + '"'
-                    + ' aria-selected="' + (draft.calendar === 'start' ? isStart : isEnd) + '"'
-                    + (d < range.min || d > range.max ? ' disabled' : '') + '>' + d.getDate() + '</button>';
-            }
-            grid += '</div>';
-            var prevOff = new Date(view.getFullYear(), view.getMonth(), 0) < range.min;
-            var nextOff = new Date(view.getFullYear(), view.getMonth() + 1, 1) > range.max;
-            return '<div class="goal-calendar" role="dialog" aria-modal="false" aria-labelledby="cw-calendar-title">'
-                + '<div class="goal-calendar__head"><p class="goal-calendar__title wizard__title" id="cw-calendar-title" tabindex="-1">' + esc(draft.calendar === 'start' ? cc.pick_start : cc.pick_end) + '</p>'
-                + '<div class="goal-calendar__nav">'
-                + '<button type="button" class="glass glass--round glass--small press" data-cw-month="-1" aria-label="' + esc(cc.calendar_prev) + '"' + (prevOff ? ' disabled' : '') + '>' + icon('chevron-left') + '</button>'
-                + '<p class="goal-calendar__month" aria-live="polite">' + esc(T.date(view, 'month_year')) + '</p>'
-                + '<button type="button" class="glass glass--round glass--small press" data-cw-month="1" aria-label="' + esc(cc.calendar_next) + '"' + (nextOff ? ' disabled' : '') + '>' + icon('chevron-right') + '</button>'
-                + '</div></div>'
-                + '<ol class="goal-calendar__weekdays" role="list" aria-hidden="true">' + weekdays + '</ol>'
-                + '<div class="goal-calendar__grid" role="grid">' + grid + '</div>'
-                + '<button type="button" class="glass glass--cta goal-calendar__done press" data-cw-calendar-done>' + esc(cc.calendar_done) + '</button></div>';
-        }
-
-        function openCalendar(which) {
-            draft.calendar = which;
-            var chosen = which === 'start' ? draft.start : draft.end;
-            view = new Date(chosen.getFullYear(), chosen.getMonth(), 1);
-            paint(1);
-        }
-
-        function pickDay(text) {
+        function pickDay(which, text) {
+            if (!text) { return; }
             var d = parseDay(text);
-            if (draft.calendar === 'start') {
+            if (which === 'start') {
                 draft.start = d;
                 var kept = draft.duration && durationEnd(d, draft.duration);
                 if (kept) { draft.end = kept; } else if (draft.end <= d) { draft.end = dayAfter(d, 6); draft.duration = durationOf(d, draft.end); }
@@ -791,8 +749,6 @@
             }
             datesMoved();
             paint(0);
-            var again = w.body.querySelector('[data-cw-day="' + text + '"]');
-            if (again) { again.focus({ preventScroll: true }); }
         }
 
         function datesMoved() {
@@ -836,10 +792,17 @@
 
         function paint(direction) {
             var s = draft.step;
-            var calendarOpen = s === 3 && draft.calendar;
             w.body.innerHTML = '<section class="wizard__step is-active">'
-                + (calendarOpen ? stepCalendar() : s === 1 ? stepWhat() : s === 2 ? stepKind() : s === 3 ? stepSetup() : s === 'review' ? stepReview() : stepInvite()) + '</section>';
-            w.root.querySelector('.wizard__foot').hidden = !!calendarOpen;
+                + (s === 1 ? stepWhat() : s === 2 ? stepKind() : s === 3 ? stepSetup() : s === 'review' ? stepReview() : stepInvite()) + '</section>';
+            if (window.OwnifyWheel) {
+                Array.prototype.forEach.call(w.body.querySelectorAll('[data-cw-date]'), function (input) {
+                    var which = input.getAttribute('data-cw-date');
+                    input._wheelAnchor = input.closest('.goal-date');
+                    window.OwnifyWheel.attach(input, dateSpec(which));
+                    window.OwnifyWheel.set(input, isoDay(which === 'start' ? draft.start : draft.end));
+                    input.addEventListener('change', function () { pickDay(which, window.OwnifyWheel.value(input)); });
+                });
+            }
             var reached = typeof s === 'number' ? s : STEPS;
             Array.prototype.forEach.call(w.root.querySelectorAll('[data-cw-bar]'), function (b) { b.classList.toggle('is-done', Number(b.getAttribute('data-cw-bar')) <= reached); });
             w.count.textContent = s === 'review' ? cc.review_label : s === 'invite' ? cc.invite_label : T.tf('Stap %1$d van %2$d', s, STEPS) + ' · ' + cc['step' + s + '_label'];
@@ -864,7 +827,6 @@
         function go(to, direction) { draft.step = to; paint(direction); }
         function close() {
             if (saving) { return; }
-            draft.calendar = null;
             w.root.classList.remove('is-open');
             window.setTimeout(function () { w.root.hidden = true; }, 200);
         }
@@ -894,29 +856,11 @@
                 return;
             }
             if ((hit = t.closest('[data-cw-kind]'))) { draft.kind = hit.getAttribute('data-cw-kind'); paint(0); return; }
-            if ((hit = t.closest('[data-cw-date]'))) { openCalendar(hit.getAttribute('data-cw-date')); return; }
             if ((hit = t.closest('[data-cw-duration]'))) {
                 draft.duration = hit.getAttribute('data-cw-duration');
                 draft.end = durationEnd(draft.start, draft.duration);
                 datesMoved();
                 paint(0);
-                return;
-            }
-            if ((hit = t.closest('[data-cw-month]'))) {
-                view = new Date(view.getFullYear(), view.getMonth() + Number(hit.getAttribute('data-cw-month')), 1);
-                paint(0);
-                return;
-            }
-            if ((hit = t.closest('[data-cw-day]'))) { if (!hit.disabled) { pickDay(hit.getAttribute('data-cw-day')); } return; }
-            if (t.closest('[data-cw-calendar-done]')) {
-                if (draft.calendar === 'start') {
-                    draft.calendar = 'end';
-                    view = new Date(draft.end.getFullYear(), draft.end.getMonth(), 1);
-                    paint(1);
-                } else {
-                    draft.calendar = null;
-                    paint(-1);
-                }
                 return;
             }
             if ((hit = t.closest('[data-cw-friend]'))) {
@@ -952,9 +896,6 @@
                 again.focus();
                 try { again.setSelectionRange(pos, pos); } catch (e) { /* type=search */ }
             }
-        };
-        w.root.onkeydown = function (event) {
-            if (event.key === 'Escape' && draft.calendar) { event.stopPropagation(); draft.calendar = null; paint(-1); }
         };
 
         function make() {
@@ -1000,9 +941,9 @@
             + '<span class="ch-ticket__code" aria-label="' + esc(digits.join(' ')) + '">'
             + digits.map(function (d) { return '<span aria-hidden="true">' + esc(d) + '</span>'; }).join('') + '</span>'
             + '<span class="ch-ticket__hint">' + esc(cc.made_hint) + '</span></div>'
-            + '<div class="ch-row-btns">'
-            + '<button type="button" class="btn press" data-made-copy>' + icon('copy') + '<span>' + esc(cc.copy) + '</span></button>'
-            + '<button type="button" class="btn press" data-made-share>' + icon('share') + '<span>' + esc(cc.share) + '</span></button>'
+            + '<div class="ch-row-btns split" role="group">'
+            + '<button type="button" class="split__part" data-made-copy>' + icon('copy') + '<span>' + esc(cc.copy) + '</span></button>'
+            + '<button type="button" class="split__part" data-made-share>' + icon('share') + '<span>' + esc(cc.share) + '</span></button>'
             + '</div></div>'
             + '<div class="ch-sheet__foot"><button type="button" class="btn btn--primary press ch-wide" data-made-open data-sheet-focus>' + esc(cc.open) + '</button></div>');
 
@@ -1039,9 +980,9 @@
                     }).join('') + '</ul>'
                     : '<p class="ch-note">' + esc(ci.none) + '</p>')
                 + '</div>'
-                + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
-                + '<button type="button" class="btn press" data-sheet-close>' + esc(ci.cancel) + '</button>'
-                + '<button type="button" class="btn btn--primary press" data-invite-send' + (chosen.length ? '' : ' disabled') + '>'
+                + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
+                + '<button type="button" class="split__part" data-sheet-close>' + esc(ci.cancel) + '</button>'
+                + '<button type="button" class="split__part" data-invite-send' + (chosen.length ? '' : ' disabled') + '>'
                 + esc(chosen.length > 1 ? T.tf('%d uitnodigen', chosen.length) : ci.send) + '</button></div></div>';
 
             var focusKey = document.activeElement && document.activeElement.getAttribute
@@ -1086,9 +1027,9 @@
 
         show(head(cd.leave_title)
             + '<div class="ch-sheet__body"><p class="ch-hint ch-hint--top">' + esc(cd.leave_body) + '</p></div>'
-            + '<div class="ch-sheet__foot"><div class="ch-row-btns">'
-            + '<button type="button" class="btn press" data-sheet-close data-sheet-focus>' + esc(cd.cancel) + '</button>'
-            + '<button type="button" class="btn btn--caution press" data-leave-yes>' + esc(cd.leave_confirm) + '</button>'
+            + '<div class="ch-sheet__foot"><div class="ch-row-btns split split--caution" role="group">'
+            + '<button type="button" class="split__part" data-sheet-close data-sheet-focus>' + esc(cd.cancel) + '</button>'
+            + '<button type="button" class="split__part" data-leave-yes>' + esc(cd.leave_confirm) + '</button>'
             + '</div></div>');
 
         var yes = content.querySelector('[data-leave-yes]');

@@ -26,9 +26,9 @@ if (!function_exists('insights_render')) {
     function insights_slot_look(string $slot): array
     {
         return match ($slot) {
-            'sleep'     => ['icon' => 'pulse', 'accent' => 'sleep'],
+            'sleep'     => ['icon' => 'moon', 'accent' => 'sleep'],
             'nutrition' => ['icon' => 'utensils', 'accent' => 'nutrition'],
-            'training'  => ['icon' => 'bolt', 'accent' => 'training'],
+            'training'  => ['icon' => 'dumbbell', 'accent' => 'training'],
             default     => ['icon' => 'sparkle', 'accent' => 'neutral'],
         };
     }

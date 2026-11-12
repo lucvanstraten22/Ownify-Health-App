@@ -90,9 +90,9 @@ $suffix  = $session['detail'];
                             <?php if (empty($session['manual'])): ?>
                                 <p class="goal-confirm__text manual-entry__imported"><?= e($remove['imported']) ?></p>
                             <?php endif; ?>
-                            <div class="goal-confirm__row">
-                                <button type="button" class="btn press" data-entry-action="remove-cancel"><?= e($remove['no']) ?></button>
-                                <button type="button" class="btn btn--caution press" data-entry-action="remove-confirm"><?= e($remove['yes']) ?></button>
+                            <div class="goal-confirm__row split split--caution" role="group">
+                                <button type="button" class="split__part" data-entry-action="remove-cancel"><?= e($remove['no']) ?></button>
+                                <button type="button" class="split__part" data-entry-action="remove-confirm"><?= e($remove['yes']) ?></button>
                             </div>
                         </div>
                         <p class="wizard__error" role="alert" data-entry-error hidden></p>

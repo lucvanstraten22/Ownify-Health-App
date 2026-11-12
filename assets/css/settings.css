@@ -21,7 +21,7 @@
 
 .settings-block__lede {
     margin-top: calc(-1 * var(--space-1));
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
     padding-inline: var(--space-2);
     font-size: var(--fs-subhead);
     color: var(--text-muted);
@@ -693,6 +693,7 @@
    padding as the choice lists beside them, so their text starts on one line,
    and the same label and value as every other row in Settings. */
 .card.settings-rows { padding: var(--space-3) var(--space-4); }
+.settings-rows .metric-row:last-child { padding-bottom: 0; }
 
 .settings-rows .metric-row__label {
     font-size: var(--fs-body);
@@ -1060,16 +1061,24 @@
 
 .settings-action__go {
     flex: none;
-    min-height: 36px;
+    gap: var(--space-2);
     cursor: pointer;
 }
 
+.settings-action__icon { width: 16px; height: 16px; flex: none; color: var(--text-muted); }
+
+/* A working action reads as live, not as the dimmed switches above it. */
+.settings-action .settings-toggle__label { color: var(--text-primary); }
+
 .settings-action__go[hidden] { display: none; }
 
+/* The one confirm container: the attention Note, as the goal's. */
 .settings-action__confirm {
     margin-top: var(--space-3);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--glass-hairline);
+    padding: var(--space-4);
+    border: 1px solid var(--attention-edge);
+    border-radius: var(--radius-md);
+    background: var(--attention-wash);
 }
 
 .settings-action__confirm[hidden] { display: none; }
@@ -1081,13 +1090,13 @@
 }
 
 .settings-action__buttons {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
     margin-top: var(--space-3);
 }
 
-.settings-action__buttons .btn { min-height: 38px; cursor: pointer; }
+.settings-action__buttons .btn { cursor: pointer; }
 
 .settings-action .settings-toggle__note.is-error { color: var(--attention); }
 

@@ -526,9 +526,9 @@ $height = 96.0;
 
                             <div class="goal-confirm" data-goal-confirm hidden>
                                 <p class="goal-confirm__text"><?= e($copy['delete_confirm']) ?></p>
-                                <div class="goal-confirm__row">
-                                    <button type="button" class="btn press" data-goal-action="delete-cancel"><?= e($copy['delete_no']) ?></button>
-                                    <button type="button" class="btn btn--caution press" data-goal-action="delete-confirm"><?= e($copy['delete_yes']) ?></button>
+                                <div class="goal-confirm__row split split--caution" role="group">
+                                    <button type="button" class="split__part" data-goal-action="delete-cancel"><?= e($copy['delete_no']) ?></button>
+                                    <button type="button" class="split__part" data-goal-action="delete-confirm"><?= e($copy['delete_yes']) ?></button>
                                 </div>
                             </div>
 

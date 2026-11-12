@@ -81,6 +81,7 @@ import com.ownify.android.ui.app.PanelColumn
 import com.ownify.android.ui.app.PanelHead
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.JInput
 import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.T
@@ -127,10 +128,12 @@ fun SignedOutPanel(overlay: Overlay.Account, notice: String?, link: OwnifyLink? 
     val googleStep = OwnifyConnection.googleStep
     val pendingStep = OwnifyConnection.pendingStep
     val title = when {
-        googleStep != null -> tr("Account")
-        pendingStep != null -> tr("Registreren")
+        // One title per step, in the panel head (A1): the step names itself.
+        googleStep != null -> tr("Kies je gebruikersnaam")
+        pendingStep != null -> tr("Bevestig je e-mailadres")
         flow == "register" -> tr("Registreren")
         flow == "pair" -> tr("Koppelen")
+        flow == "forgot" -> tr("Wachtwoord vergeten")
         else -> tr("Inloggen")
     }
 
@@ -314,6 +317,7 @@ private fun ColumnScope.EmailForm(
         if (register) tr("Account aanmaken") else tr("Inloggen"),
         onClick = { submit() },
         enabled = !working && OwnifyConnection.canSignIn,
+        look = BtnLook.Primary,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 
@@ -411,7 +415,6 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     }
 
     // .account__username, .account__meta
-    T(tr("Kies je gebruikersnaam"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         trf("Google heeft %s bevestigd. Kies nog een gebruikersnaam; daarna is je account klaar.", step.email),
         JStyle.Meta,
@@ -438,6 +441,7 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
         tr("Account aanmaken"),
         onClick = { submit() },
         enabled = !working,
+        look = BtnLook.Primary,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
     Btn(
@@ -486,7 +490,6 @@ private fun ColumnScope.VerifyStep(step: PendingStep, onCancelled: () -> Unit) {
     }
 
     // .account__username, .account__meta
-    T(tr("Bevestig je e-mailadres"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         trf("We hebben een link gestuurd naar %s. Open die link om je account af te maken.", step.emailMasked),
         JStyle.Meta,
@@ -499,6 +502,7 @@ private fun ColumnScope.VerifyStep(step: PendingStep, onCancelled: () -> Unit) {
         tr("Ik heb bevestigd"),
         onClick = { OwnifyConnection.checkPending(context) },
         enabled = !working,
+        look = BtnLook.Primary,
         modifier = Modifier.fillMaxWidth()
     )
     Btn(
@@ -540,7 +544,6 @@ private fun ColumnScope.ForgotForm(onBack: () -> Unit) {
         OwnifyConnection.forgotPassword(email)
     }
 
-    T(tr("Wachtwoord vergeten"), OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold))
     T(
         answer ?: tr("Vul het e-mailadres van je account in. Je krijgt een e-mail met een link om een nieuw wachtwoord te kiezen."),
         JStyle.Meta,
@@ -563,6 +566,7 @@ private fun ColumnScope.ForgotForm(onBack: () -> Unit) {
             tr("Stuur link"),
             onClick = { submit() },
             enabled = !working,
+            look = BtnLook.Primary,
             modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
         )
     }
@@ -655,6 +659,7 @@ private fun ColumnScope.PairingForm(onBack: () -> Unit) {
         if (pairing) tr("Koppelen…") else tr("Koppelen"),
         onClick = { submit() },
         enabled = !pairing,
+        look = BtnLook.Primary,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 

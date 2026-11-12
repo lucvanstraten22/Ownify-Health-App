@@ -271,4 +271,9 @@ return [
     'Voeding vanaf %s' => 'Nutrition from %s',
     'Onbekend tijdstip.' => 'Unknown time.',
     'De database is nog niet bijgewerkt voor deze instelling (migratie 026).' => 'The database has not been updated for this setting yet (migration 026).',
+    'Iedereen met een account staat op de ranglijsten.' => 'Everyone with an account is on the leaderboards.',
+    'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar.' => 'Your data is in your own account and only you can see it.',
+    'Je gesprekken blijven in je Ownify-account bewaard tot je ze hier wist, op al je apparaten. Andere gegevens blijven staan.' => 'Your conversations stay in your Ownify account until you clear them here, on all your devices. Other data stays.',
+    'Niemand kan je een nieuw verzoek sturen.' => 'No one can send you a new request.',
+    'OwnifyAI is gemaakt met Google Gemini, via de gratis Gemini API. Google kan wat binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen.' => 'OwnifyAI is made with Google Gemini, through the free Gemini API. Google may use what comes in to improve its products, and Google staff may read it.',
 ];

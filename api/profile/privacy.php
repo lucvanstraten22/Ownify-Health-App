@@ -13,6 +13,10 @@
  *                        the account's data to Google Gemini. The same answer
  *                        as the one given in the assistant (api/ai/consent.php).
  *
+ *   allow_requests       "Vriendverzoeken toestaan", 1 or 0 (50.0: the switch
+ *                        moved to Privacy › Community). The friends setting
+ *                        itself (includes/friends.php), as api/friends/settings.php.
+ *
  *   ai_insights_consent  No longer exists (30.1): insights are Ownify's own
  *                        sentences and nothing about them goes to Gemini. An
  *                        older app that still sends it is told so (410).
@@ -24,6 +28,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/includes/leaderboard.php';
 require_once dirname(__DIR__, 2) . '/includes/ai/config.php';
+require_once dirname(__DIR__, 2) . '/includes/friends.php';
 
 api_require_post();
 api_require_database();
@@ -50,6 +55,27 @@ if (array_key_exists('ai_consent', $_POST)) {
         'message'    => $allowed
             ? t('OwnifyAI staat aan.')
             : t('OwnifyAI staat uit. Er gaat niets naar Gemini.'),
+    ]);
+}
+
+if (array_key_exists('allow_requests', $_POST)) {
+    $value = (string) $_POST['allow_requests'];
+
+    if ($value !== '0' && $value !== '1') {
+        api_fail('Kies aan of uit.', 422);
+    }
+
+    $result = friend_set_requests_allowed($userId, $value === '1');
+
+    if (!$result['ok']) {
+        api_fail($result['error'], 503);
+    }
+
+    api_ok([
+        'allow_requests' => friend_requests_allowed($userId),
+        'message'        => $value === '1'
+            ? t('Anderen kunnen je een vriendverzoek sturen.')
+            : t('Niemand kan je nu een nieuw vriendverzoek sturen.'),
     ]);
 }
 

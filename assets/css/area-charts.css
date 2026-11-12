@@ -12,7 +12,7 @@
 .area-chart {
     --area: var(--accent);
     --area-light: var(--accent-light);
-    --bar: color-mix(in srgb, var(--accent) 58%, transparent);
+    --bar: color-mix(in srgb, var(--accent) 75%, transparent);
 }
 
 /* --------------------------------------------------------------------------
@@ -203,7 +203,10 @@
     background: var(--accent);
 }
 
-.area-chart__key[data-tone="light"] { height: 2.5px; width: 10px; }
+.area-chart__key[data-tone="light"] { border-radius: 50%; }
+
+/* D12: the unit after its number, small and grey (% stays with it). */
+.area-chart__unit { margin-left: 2px; font-size: var(--fs-subhead); font-weight: 400; color: var(--text-muted); }
 
 /* The week fills what the square leaves. */
 .area-chart--mini .area-chart__chart {

@@ -276,10 +276,20 @@ fun GlassSelect(
     selected: String?,
     onSelect: (String) -> Unit,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    split: Boolean = false
 ) {
     var open by remember { mutableStateOf(false) }
     val current = options.firstOrNull { it.first == selected }?.second ?: options.firstOrNull()?.second.orEmpty()
+    // A full-width dropdown is the split's (`.split--menu`, 50.0): the value 85 %, the chevron 15 %.
+    if (split) {
+        Box(modifier) {
+            SplitMenu(current, { open = true }, contentDescription = "$label: $current")
+            if (open) WheelPopup(WheelSpec.list(options), selected ?: options.firstOrNull()?.first.orEmpty(), 240.dp,
+                onValue = onSelect, onClose = { open = false }, commitOnClose = true)
+        }
+        return
+    }
     InButton {
         val interaction = remember { MutableInteractionSource() }
         Box(modifier) {

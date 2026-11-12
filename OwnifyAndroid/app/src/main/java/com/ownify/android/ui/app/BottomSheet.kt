@@ -222,7 +222,7 @@ fun SheetHead(title: String, onClose: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         T(title, JStyle.Subtitle, Modifier.weight(1f).semantics { heading() })
-        RoundButton(OwnifyIcons.chevronDown, tr("Sluiten"), onClose)
+        RoundButton(OwnifyIcons.close, tr("Sluiten"), onClose)
     }
 }
 

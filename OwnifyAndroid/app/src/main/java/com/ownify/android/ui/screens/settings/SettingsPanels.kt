@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.settings
 
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.WheelField
 import com.ownify.android.ui.design.WheelSpec
@@ -141,10 +142,8 @@ private fun ConfirmBody(text: String, modifier: Modifier = Modifier, align: Text
 /** `.confirm__row`: two equal answers, 24 below what they answer. */
 @Composable
 private fun ConfirmRow(first: @Composable (Modifier) -> Unit, second: @Composable (Modifier) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        first(Modifier.weight(1f))
-        second(Modifier.weight(1f))
-    }
+    // The split button (50.0): the way back left, the way forward right.
+    SplitRow(first, second, Modifier.padding(top = Ownify.Space5))
 }
 
 // ----------------------------------------------------------- the editor
