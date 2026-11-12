@@ -87,7 +87,8 @@ fun ReadingBar(share: Float, reading: String, play: Boolean, modifier: Modifier 
         content = {
             // `.insight-lock`: 8 above and below the 6 dp bar, so a finger finds it.
             Box(Modifier.fillMaxWidth().padding(vertical = barTop)) {
-                Meter(share = value, play = play, accent = accent, height = 6.dp, emptyHeight = 6.dp,
+                // Nothing yet (0 %): the dashed line of an empty bar, as the web draws it (C72, 50.0).
+                Meter(share = value.takeIf { it > 0f }, play = play, accent = accent, height = 6.dp, emptyHeight = 6.dp,
                     modifier = Modifier.semantics { contentDescription = reading })
             }
             if (shown || alpha > 0f) ReadingBubble(reading, Modifier.graphicsLayer { this.alpha = alpha }, wrap = true, tag = InsightReadingTag)

@@ -1377,12 +1377,13 @@
 }
 
 .goal-option__label {
-    font-size: var(--fs-subhead);
+    /* Body, as `.goal-type__label` (C69, 50.0): one size of choice row in every step. */
+    font-size: var(--fs-body);
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    letter-spacing: var(--tracking-small);
+    letter-spacing: var(--tracking-body);
 }
 
 .goal-option__meta {

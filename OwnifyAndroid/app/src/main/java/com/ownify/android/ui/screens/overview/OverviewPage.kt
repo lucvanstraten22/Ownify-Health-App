@@ -326,7 +326,7 @@ private fun GoalProgressCard(goal: GoalCard, primaryId: String?) {
                 if (primaryId != null) shell.openDetail(Detail.GoalPage(primaryId)) else shell.tab("goals")
             }
     ) {
-        CompactHead(OwnifyIcons.solidChart, goal.title)
+        CompactHead(OwnifyIcons.solidChart, goal.title, chevron = true)
 
         // .goal__headline
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -567,7 +567,7 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
                         T(item.body, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
                         if (combined) {
                             // Its label, and "only your own data" where no research is behind it.
-                            T(listOfNotNull(item.tierLabel.takeIf { it.isNotEmpty() }, item.own).joinToString(" · "), JStyle.Tiny, Modifier.padding(top = Ownify.Space2))
+                            T(listOfNotNull(item.tierLabel.takeIf { it.isNotEmpty() }, item.own).joinToString(" · "), JStyle.Meta, Modifier.padding(top = Ownify.Space2))   // 13, as the web (C71)
                         } else if (!empty) {
                             ResearchEvidence(item.evidence)
                         }
@@ -602,7 +602,7 @@ private fun RecommendationCard(rec: Recommendation) {
  * the body.
  */
 @Composable
-fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral, dimmed: Boolean = false) {
+fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral, dimmed: Boolean = false, chevron: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,
@@ -610,7 +610,11 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
     ) {
         IconTile(icon, color = Color.White, background = tile, border = tile)
         Column(Modifier.weight(1f)) {
-            T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
+            // A card that opens says so with the title's chevron (`.card__open-chevron`, C70, 50.0).
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
+                T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
+                if (chevron) JIcon(OwnifyIcons.chevronRight, size = 15.dp, color = Ownify.TextMuted)
+            }
             if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }
     }

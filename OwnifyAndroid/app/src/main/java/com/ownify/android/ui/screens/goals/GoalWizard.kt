@@ -570,8 +570,9 @@ internal fun WizardOption(
                 icon?.let { JIcon(it, size = 15.dp, color = accent) }
             }
             Column(Modifier.weight(1f)) {
-                T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-                T(meta, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1, ellipsis = true)
+                // A row's label at Body, its meta at Subhead (C69, 50.0): one size of choice row in every step.
+                T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                T(meta, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), maxLines = 1, ellipsis = true)
             }
         }
     }

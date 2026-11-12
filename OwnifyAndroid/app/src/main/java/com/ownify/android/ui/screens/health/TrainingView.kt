@@ -201,7 +201,7 @@ private fun SessionsCard(sessions: TrainingSessions, modifier: Modifier) {
                                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                     T("${item.date} · ${item.time}", OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted, tabular = true), Modifier.padding(end = Ownify.Space2), maxLines = 1)
                                     item.duration?.let {
-                                        T(it, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true), maxLines = 1)
+                                        T(it, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextSecondary, tabular = true), maxLines = 1)   // 13, as the web (C68)
                                     }
                                 }
                             }

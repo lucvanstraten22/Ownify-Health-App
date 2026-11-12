@@ -91,7 +91,9 @@ class ScreenshotCapture {
 
     private val out = System.getProperty("ownify.shots").orEmpty()
     private val state = System.getProperty("ownify.state").orEmpty()
-    private val server = System.getProperty("ownify.server").orEmpty()
+    /* The server's address always ends in "/" (A16, 50.0): without it the app's
+       relative API paths drop the address's last segment. */
+    private val server = System.getProperty("ownify.server").orEmpty().let { if (it.isEmpty() || it.endsWith("/")) it else "$it/" }
     private val stateFree = System.getProperty("ownify.state.free").orEmpty()
 
     private lateinit var shell: ShellState
@@ -493,10 +495,20 @@ class ScreenshotCapture {
         assumeTrue("no training sessions in this state", id != null)
         detail("health", Detail.TrainingSession(id!!), "training-session", 760)
     }
-    @Test fun goal301() = detail("goals", Detail.GoalPage("301"), "goal-301", 760, 1520, 2280)
-    @Test fun goal303() = detail("goals", Detail.GoalPage("303"), "goal-303", 760, 1520)
-    @Test fun goal302() = detail("goals", Detail.GoalPage("302"), "goal-302", 760, 1520)
-    @Test fun goal300() = detail("goals", Detail.GoalPage("300"), "goal-300", 760)
+    /* The account's own goals, in Doelen's order (A16, 50.0): their ids come
+       from the state, not from a fixture's 300–303, so a real account's goals
+       are shot too. The shot keeps its place in the list for its name. */
+    private fun goalId(i: Int): String? = data().goals.let { (it.active + it.completed).getOrNull(i)?.id }
+    private fun goal(i: Int, vararg scrolls: Int) {
+        val id = goalId(i)
+        assumeTrue("no goal $i on this account", id != null)
+        detail("goals", Detail.GoalPage(id!!), "goal-${i + 1}", *scrolls)
+    }
+
+    @Test fun goalFirst() = goal(0, 760, 1520, 2280)
+    @Test fun goalSecond() = goal(1, 760, 1520)
+    @Test fun goalThird() = goal(2, 760, 1520)
+    @Test fun goalFourth() = goal(3, 760)
     @Test fun settingsAccount() = detail("settings", Detail.SettingsPage("account"), "settings-account", 760, 1520)
     @Test fun settingsDevices() = detail("settings", Detail.SettingsPage("devices"), "settings-devices", 600)
     /** Gezondheid's pull to sync, each stage: pulled, past the point (a finger still on it), syncing, done, failed. */

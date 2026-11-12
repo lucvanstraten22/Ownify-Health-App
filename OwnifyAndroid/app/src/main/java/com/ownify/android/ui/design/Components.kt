@@ -817,7 +817,7 @@ fun PillarRings(items: List<LegendItem>, play: Boolean, modifier: Modifier = Mod
                         item.value?.toString() ?: "—",
                         OwnifyType.style(
                             Ownify.FsBody,
-                            if (item.value == null) FontWeight.Normal else FontWeight.SemiBold,
+                            if (item.value == null) FontWeight.Normal else FontWeight.Bold,   // a number takes 700, as the web (C68)
                             if (item.value == null) Ownify.TextMuted else Ownify.TextPrimary,
                             lineHeight = 1.em, tabular = true
                         )

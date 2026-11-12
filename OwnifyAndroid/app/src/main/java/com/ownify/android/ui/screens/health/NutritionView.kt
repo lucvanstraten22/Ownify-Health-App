@@ -548,7 +548,7 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
             T(m.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.weight(1f))
             T(
                 m.head,
-                OwnifyType.style(Ownify.FsBody, if (m.logged) FontWeight.SemiBold else FontWeight.Normal, if (m.logged) Ownify.TextPrimary else Ownify.TextMuted, tabular = true)
+                OwnifyType.style(Ownify.FsBody, if (m.logged) FontWeight.Bold else FontWeight.Normal, if (m.logged) Ownify.TextPrimary else Ownify.TextMuted, tabular = true)   // 700, as the web (C68)
             )
             if (m.logged) JIcon(OwnifyIcons.chevronRight, Modifier.rotate(turn), size = 14.dp, color = Ownify.TextFaint)
         }
@@ -593,7 +593,7 @@ private fun MacroRow(m: NutritionMacro, open: Boolean, fromRing: Int, evidence: 
                                             d.extra?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), maxLines = 1) }
                                             if (d.verdict != null && d.verdictText != null) Bubble(d.verdictText, d.verdict)
                                         } else {
-                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted), maxLines = 1)
+                                            T(d.verdictText.orEmpty(), OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), maxLines = 1)   // 13, as the web (C68)
                                         }
                                     }
                                     // 31.0 (D9): why sugar has no verdict (free sugars, NUT-01).
@@ -622,12 +622,11 @@ private fun Bubble(text: String, verdict: String) {
         "high" -> GlassLook(caution = true, shadow = 7.dp, lift = 2.dp)
         else -> GlassLook(shadow = 7.dp, lift = 2.dp)
     }
-    val strong = verdict == "in" || verdict == "high"
     T(
         text,
         OwnifyType.style(
             Ownify.FsCaption,
-            if (strong) FontWeight.SemiBold else FontWeight.Normal,
+            FontWeight.SemiBold,   // every bubble at 600, the neutral one too — a `.glass--chip` (C68)
             when (verdict) { "in" -> Ownify.TextPrimary; "high" -> Ownify.Attention; else -> Ownify.TextSecondary }
         ),
         Modifier
