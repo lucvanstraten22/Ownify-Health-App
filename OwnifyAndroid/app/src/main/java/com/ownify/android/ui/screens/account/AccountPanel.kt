@@ -1,4 +1,5 @@
 package com.ownify.android.ui.screens.account
+import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.NoticePlace
 import com.ownify.android.ui.design.notice
@@ -149,119 +150,87 @@ fun AccountPanel(overlay: Overlay.Account, data: AppData) {
                 onClose = { shell.close(overlay) },
                 leading = if (friends) ({ RoundButton(OwnifyIcons.chevronLeft, tr("Terug naar account"), { page = "main" }) }) else null
             )
-            if (friends) FriendsView(data, searchFirst = addFriend) else AccountView(data, onFriends = { page = "friends" }, focusFirst = focusFirst)
+            if (friends) FriendsView(data, searchFirst = addFriend) else AccountView(
+                data, onFriends = { page = "friends" },
+                onAccount = {
+                    // Instellingen first, then its Account screen on top of it.
+                    shell.close(overlay)
+                    shell.goTo("settings")
+                    shell.openDetail(Detail.SettingsPage("account"))
+                },
+                focusFirst = focusFirst
+            )
         }
     }
 }
 
 // ---------------------------------------------------------------- account
 
+/**
+ * B5 (50.0, the owner's pick "List"): the popup is a summary — you as the
+ * first row (photo, username, real name), which opens Instellingen › Account
+ * where everything about you is changed; Vrienden with its count and red
+ * dot; Uitloggen with its icon (components/account-modal.php).
+ */
 @Composable
-private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusFirst: FocusRequester?) {
+private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, onAccount: () -> Unit, focusFirst: FocusRequester?) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val focus = LocalFocusManager.current
     val auth = data.auth
-    var error by remember { mutableStateOf<String?>(null) }
-    var username by rememberSaveable(auth.username) { mutableStateOf(auth.username.orEmpty()) }
-    var savingName by remember { mutableStateOf(false) }
-    var picked by remember { mutableStateOf<Uri?>(null) }
-    var uploading by remember { mutableStateOf(false) }
     val signingOut = OwnifyConnection.auth is OwnifyAuthState.Working
     val friendCount = data.community.friends.size
-    val requestCount = data.community.pending.size
+    val profile = data.settings.profile
+    val realName = listOfNotNull(profile.firstName, profile.lastName).joinToString(" ").trim()
+    val username = auth.username.orEmpty()
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) picked = uri
-    }
-
-    fun saveName() {
-        focus.clearFocus()
-        error = null
-        savingName = true
-        scope.launch {
-            val outcome = OwnifyActions.form(context, "api/profile/username.php", mapOf("username" to username), tr("Er ging iets mis."))
-            savingName = false
-            if (outcome is Outcome.Refused) error = outcome.message
-        }
-    }
-
-    // .account__error — one line for the whole panel, above everything.
-    error?.let { ErrorBox(it, Modifier.padding(bottom = Ownify.Space4)) }
-
-    // .account__identity
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-    ) {
-        AvatarCircle(auth.avatar, 52.dp, 22.dp)
-        Column(Modifier.weight(1f)) {
-            T(auth.username.orEmpty(), JStyle.Subtitle)
-            T(tr("Lid sinds") + " " + memberSince(auth.createdAt), JStyle.Meta, Modifier.padding(top = Ownify.Space1))
-        }
-    }
-
-    // Gebruikersnaam — 24 below the identity (its margin and the form's collapse).
-    FieldLabel(tr("Gebruikersnaam"), Modifier.padding(top = Ownify.Space5))
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        JInput(
-            username, { username = it.take(30) },
-            modifier = Modifier.weight(1f).then(if (focusFirst != null) Modifier.focusRequester(focusFirst) else Modifier),
-            label = tr("Gebruikersnaam"),
-            keyboard = KeyboardOptions(
-                capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
-                keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done
-            ),
-            actions = KeyboardActions(onDone = { if (!savingName) saveName() })
-        )
-        Btn(tr("Opslaan"), onClick = ::saveName, enabled = !savingName)
-    }
-
-    // Profielfoto
-    FieldLabel(tr("Profielfoto"), Modifier.padding(top = Ownify.Space4))
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        FileField(
-            picked?.let { fileName(context, it) },
-            onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-            modifier = Modifier.weight(1f)
-        )
-        Btn(tr("Uploaden"), enabled = !uploading, onClick = {
-            error = null
-            uploading = true
-            scope.launch {
-                val outcome = upload(context, picked)
-                uploading = false
-                when (outcome) {
-                    is Outcome.Done -> {
-                        // form.reset(): the field is empty again, the new picture everywhere.
-                        picked = null
-                        Avatars.forget()
-                    }
-                    is Outcome.Refused -> error = outcome.message
-                    Outcome.SignedOut -> Unit
-                }
-            }
-        })
-    }
-    FieldHint(tr("JPG, PNG of WebP, maximaal 3 MB."))
-
-    // Vrienden: a field-shaped button that says where things stand.
-    FieldLabel(tr("Vrienden"), Modifier.padding(top = Ownify.Space4))
+    MeRow(auth.avatar, username, realName, onAccount, focusFirst)
     NavField(
-        text = if (friendCount == 0) tr("Nog geen vrienden") else trn(friendCount, "%d vriend", "%d vrienden"),
-        badge = if (requestCount > 0) trn(requestCount, "%d verzoek", "%d verzoeken") else null,
+        text = tr("Vrienden"),
+        value = if (friendCount == 0) tr("Nog geen") else OwnifyFormat.number(friendCount.toDouble(), 0),
+        notice = "friends",
         onClick = onFriends,
-        label = tr("Vrienden")
+        label = tr("Vrienden"),
+        modifier = Modifier.padding(top = Ownify.Space3)
     )
 
-    // Uitloggen: the form's 16 and the button's own 16.
+    // Uitloggen: the form's 16 and the button's own 16, its icon as in Instellingen.
     Btn(
         tr("Uitloggen"),
         onClick = { OwnifyConnection.logout(context) },
         enabled = !signingOut,
+        icon = OwnifyIcons.logout,
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space6)
     )
+}
+
+/** `.account__me`: you, as a Row a little taller than a plain one, with a friend's 40 photo. */
+@Composable
+private fun MeRow(avatar: String?, username: String, realName: String, onClick: () -> Unit, focus: FocusRequester?) {
+    InButton {
+        val interaction = remember { MutableInteractionSource() }
+        val pressed by interaction.collectIsPressedAsState()
+        val fill by animateColorAsState(if (pressed) Ownify.fill(0.08f) else Ownify.InsetFill, tween(Ownify.FastMs, easing = Ownify.Ease), label = "me")
+        Row(
+            Modifier
+                .press(interaction)
+                .fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .clip(RoundedCornerShape(Ownify.RadiusSm))
+                .background(fill)
+                .then(if (focus != null) Modifier.focusRequester(focus) else Modifier)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
+                .semantics(mergeDescendants = true) { contentDescription = trf("%s — Account openen", username) }
+                .padding(horizontal = Ownify.Space3),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+        ) {
+            AvatarCircle(avatar, 40.dp, 18.dp)
+            Column(Modifier.weight(1f)) {
+                T(username, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
+                if (realName.isNotEmpty()) T(realName, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
+            }
+            JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextMuted)
+        }
+    }
 }
 
 /**
@@ -269,7 +238,7 @@ private fun ColumnScope.AccountView(data: AppData, onFriends: () -> Unit, focusF
  * file as `avatar`. Nothing picked sends the empty field a browser sends,
  * and the server says what it says to that.
  */
-private suspend fun upload(context: Context, uri: Uri?): Outcome {
+internal suspend fun upload(context: Context, uri: Uri?): Outcome {
     val path = "api/profile/avatar.php"
     if (uri == null) {
         return OwnifyActions.upload(context, path, "avatar", "", "application/octet-stream", ByteArray(0), tr("Er ging iets mis."))
@@ -385,7 +354,7 @@ private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = M
 
 /** `.account__nav`: the text, a badge when requests wait, and a chevron; `.08` while pressed. */
 @Composable
-private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: String) {
+private fun NavField(text: String, value: String?, onClick: () -> Unit, label: String, notice: String? = null, modifier: Modifier = Modifier) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val pressed by interaction.collectIsPressedAsState()
@@ -395,7 +364,7 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
             label = "nav"
         )
         Row(
-            Modifier
+            modifier
                 .press(interaction)
                 .fillMaxWidth()
                 .heightIn(min = Ownify.RowMin)
@@ -403,16 +372,16 @@ private fun NavField(text: String, badge: String?, onClick: () -> Unit, label: S
                 .clip(RoundedCornerShape(Ownify.RadiusSm))
                 .background(fill)
                 .clickable(interaction, indication = null, role = Role.Button, onClick = blurring(onClick))
-                .semantics(mergeDescendants = true) { contentDescription = "$label: $text${badge?.let { ", $it" }.orEmpty()}" }
+                .semantics(mergeDescendants = true) { contentDescription = "$label${value?.let { ": $it" }.orEmpty()}" }
                 .padding(horizontal = Ownify.Space3),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
         ) {
-            // .account__nav-text: the line, and the badge pushed to its end (margin-left: auto).
-            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                T(text, OwnifyType.style(Ownify.FsBody), Modifier.weight(1f, fill = badge != null), maxLines = 1, ellipsis = true)
-                if (badge != null) Badge(badge)
+            // .account__nav-text, its red dot beside the word; the value at the end (.settings-row__value).
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                T(text, OwnifyType.style(Ownify.FsBody), if (notice != null) Modifier.notice(notice, NoticePlace.Beside) else Modifier, maxLines = 1, ellipsis = true)
             }
+            if (value != null) T(value, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), maxLines = 1)
             JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextMuted)
         }
     }
@@ -476,10 +445,6 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     var busySearch by remember { mutableStateOf(false) }
     var found by remember { mutableStateOf<Found?>(null) }
     val rows = remember { mutableStateMapOf<String, RowState>() }
-    // The switch moves at once and settles on the server's answer (setToggle()).
-    var shownAllowed by remember { mutableStateOf<Boolean?>(null) }
-    var toggleBusy by remember { mutableStateOf(false) }
-    var toggleError by remember { mutableStateOf<String?>(null) }
 
     // Somebody may have asked, or answered, since the pages were read.
     LaunchedEffect(Unit) { OwnifyAppState.refresh(context) }
@@ -633,58 +598,20 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
     }
 
     // --------------------------------------------- Vriendverzoeken toestaan
-    val allowed = shownAllowed ?: community.allowRequests
-    val shape = RoundedCornerShape(Ownify.RadiusSm)
-    Row(
-        Modifier
-            .padding(top = Ownify.Space5)
-            .fillMaxWidth()
-            .alpha(if (toggleBusy) 0.7f else 1f)
-            .heightIn(min = Ownify.RowMin)
-            .insetRow(shape)
-            .clickable(enabled = !toggleBusy, role = Role.Switch) {
-                val before = allowed
-                shownAllowed = !before
-                toggleError = null
-                toggleBusy = true
-                scope.launch {
-                    val outcome = OwnifyActions.form(
-                        context, "api/friends/settings.php",
-                        mapOf("allow_requests" to if (before) "0" else "1"),
-                        tr("Dit kon niet worden opgeslagen."), reload = false
-                    )
-                    toggleBusy = false
-                    when (outcome) {
-                        is Outcome.Done -> {
-                            shownAllowed = outcome.body.optBoolean("allow_requests", !before)
-                            OwnifyAppState.refresh(context)
-                        }
-                        is Outcome.Refused -> {
-                            shownAllowed = before
-                            toggleError = outcome.message
-                        }
-                        Outcome.SignedOut -> Unit
-                    }
-                }
-            }
-            .semantics(mergeDescendants = true) { toggleableState = ToggleableState(allowed) }
-            .cssPadding(PaddingValues(Ownify.Space3), border = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-    ) {
-        InButton {
-            Column(Modifier.weight(1f)) {
-                T(tr("Vriendverzoeken toestaan"), OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
-                T(
-                    toggleError ?: if (allowed) tr("Anderen kunnen je een vriendverzoek sturen.")
-                    else tr("Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven."),
-                    OwnifyType.style(Ownify.FsSubhead, color = if (toggleError != null) Ownify.Attention else Ownify.TextMuted),
-                    Modifier.padding(top = 2.dp)
-                )
-            }
-        }
-        Toggle(allowed)
-    }
+    // D6 (50.0): the switch lives in Instellingen › Privacy › Community; this
+    // row says how it stands and opens it (components/account-friends.php).
+    val shell = LocalShell.current
+    NavField(
+        text = tr("Vriendverzoeken toestaan"),
+        value = if (community.allowRequests) tr("Aan") else tr("Uit"),
+        onClick = {
+            shell.closeAll()
+            shell.goTo("settings")
+            shell.openDetail(Detail.SettingsPage("privacy"))
+        },
+        label = tr("Vriendverzoeken toestaan"),
+        modifier = Modifier.padding(top = Ownify.Space5)
+    )
 
     // --------------------------------------------------------------- Vrienden
     FieldLabel(tr("Vrienden") + " (${community.friends.size})", Modifier.padding(top = Ownify.Space5))

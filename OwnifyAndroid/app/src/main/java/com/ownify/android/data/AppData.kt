@@ -2641,7 +2641,8 @@ sealed interface SettingsBlock {
                         ToggleItem(
                             it.str("label").orEmpty(), it.str("note"), it.bool("on"), it.str("key"), it.str("note_on"), it.str("note_off"),
                             // Only the app's own endpoints, as a relative path — never anywhere else.
-                            it.str("endpoint")?.takeIf { e -> e.matches(Regex("^api/[a-z0-9/_-]+\\.php$")) }
+                            it.str("endpoint")?.takeIf { e -> e.matches(Regex("^api/[a-z0-9/_-]+\\.php$")) },
+                            it.text("value")
                         )
                     }
                 )
@@ -2758,7 +2759,9 @@ data class ToggleItem(
     val key: String? = null,
     val noteOn: String? = null,
     val noteOff: String? = null,
-    val endpoint: String? = null
+    val endpoint: String? = null,
+    /** A setting that is not a choice (50.0: "Meedoen aan ranglijsten: Altijd"): its value, no switch. */
+    val value: String? = null
 )
 
 /** A profile field: `state` is "editable" (true), "once", "locked" or "derived". */

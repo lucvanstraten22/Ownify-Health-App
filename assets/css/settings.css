@@ -163,6 +163,12 @@
 .settings-identity__avatar img,
 .settings-hero__avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+/* B6 (50.0): the header photo is the control; "Foto wijzigen" under it. */
+.settings-hero__photo { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.settings-hero:has(input[data-settings-photo]:focus-visible) .settings-hero__photo { box-shadow: var(--focus-halo); }
+.settings-hero__change { margin-top: var(--space-2); cursor: pointer; }
+.settings-hero__error { color: var(--attention); }
+
 .settings-identity__text { min-width: 0; }
 
 .settings-identity__name {

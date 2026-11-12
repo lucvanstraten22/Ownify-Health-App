@@ -113,70 +113,46 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
         <?php if ($signedIn): ?>
 
             <?php
-            /* The Vrienden button says where things stand without opening it. */
+            /* The Vrienden row says where things stand without opening it. */
             $friendCount  = count($data['community']['friends'] ?? []);
-            $requestCount = count($data['community']['pending'] ?? []);
             ?>
             <div class="account__view" data-account-view="main">
 
-            <div class="account__identity">
-                <span class="account__avatar" data-account-avatar>
+            <?php /* B5 (50.0, the owner's pick "List"): the popup is a summary — you
+                     as the first row (photo, username, real name), which opens
+                     Instellingen › Account where everything is changed; Vrienden
+                     with its count and red dot; Uitloggen. */
+            $realName = trim(((string) ($user['first_name'] ?? '')) . ' ' . ((string) ($user['last_name'] ?? '')));
+            ?>
+            <button type="button" class="account__nav account__me press" data-account-goto="settings-account"
+                    aria-label="<?= e(tf('%s — Account openen', (string) $user['username'])) ?>">
+                <span class="account__avatar friend__avatar" data-account-avatar aria-hidden="true">
                     <?php if (!empty($user['avatar_path'])): ?>
                         <img src="<?= e($user['avatar_path']) ?>" alt="">
                     <?php else: ?>
                         <?= icon('user') ?>
                     <?php endif; ?>
                 </span>
-                <div class="account__identity-text">
-                    <p class="account__username" data-account-username><?= e($user['username']) ?></p>
-                    <p class="account__meta"><?= e(t('Lid sinds')) ?> <?= e(i18n_date(new DateTimeImmutable((string) $user['created_at']), 'day_mon_year')) ?></p>
-                </div>
-            </div>
-
-            <form class="account__form" data-account-form="username" novalidate>
-                <label class="account__label" for="account-username"><?= e(t('Gebruikersnaam')) ?></label>
-                <div class="account__row">
-                    <input class="account__input" type="text" id="account-username" name="username"
-                           value="<?= e($user['username']) ?>" minlength="3" maxlength="30"
-                           autocomplete="username" spellcheck="false" required>
-                    <button type="submit" class="btn press"><?= e(t('Opslaan')) ?></button>
-                </div>
-            </form>
-
-            <form class="account__form" data-account-form="avatar" novalidate>
-                <label class="account__label" for="account-avatar"><?= e(t('Profielfoto')) ?></label>
-                <div class="account__row">
-                    <?php /* The browser's own file control, hidden behind the same field
-                             the app draws: a "Bestand kiezen" pill and the chosen
-                             name (account.js keeps the name). */ ?>
-                    <label class="account__file">
-                        <input class="account__file-input" type="file" id="account-avatar" name="avatar"
-                               accept="image/jpeg,image/png,image/webp" required data-account-file>
-                        <span class="account__file-button" aria-hidden="true"><?= e(t('Bestand kiezen')) ?></span>
-                        <span class="account__file-name" data-account-file-name
-                              data-empty="<?= e(t('Geen bestand gekozen')) ?>"><?= e(t('Geen bestand gekozen')) ?></span>
-                    </label>
-                    <button type="submit" class="btn press"><?= e(t('Uploaden')) ?></button>
-                </div>
-                <p class="account__hint"><?= e(t('JPG, PNG of WebP, maximaal 3 MB.')) ?></p>
-            </form>
+                <span class="friend__text">
+                    <span class="friend__name" data-account-username><?= e($user['username']) ?></span>
+                    <?php if ($realName !== ''): ?><span class="friend__status"><?= e($realName) ?></span><?php endif; ?>
+                </span>
+                <?= icon('chevron-right', 'account__nav-icon') ?>
+            </button>
 
             <div class="account__form">
-                <p class="account__label" id="account-friends-label"><?= e(t('Vrienden')) ?></p>
                 <button type="button" class="account__nav press" data-friends-open
-                        aria-labelledby="account-friends-label account-friends-summary">
-                    <span class="account__nav-text" id="account-friends-summary" data-friends-summary>
-                        <span><?= e($friendCount === 0 ? t('Nog geen vrienden') : $friendCount . ($friendCount === 1 ? ' vriend' : ' vrienden')) ?></span>
-                        <?php if ($requestCount > 0): ?>
-                            <span class="account__badge"><?= e($requestCount . ($requestCount === 1 ? ' verzoek' : ' verzoeken')) ?></span>
-                        <?php endif; ?>
+                        aria-label="<?= e(t('Vrienden')) ?>">
+                    <span class="account__nav-summary" data-friends-summary>
+                        <span class="account__nav-text"><span><?= e(t('Vrienden')) ?></span><?= notice_dot('friends', 'beside') ?></span>
+                        <span class="settings-row__value"><?= $friendCount === 0 ? e(t('Nog geen')) : e(i18n_number($friendCount)) ?></span>
                     </span>
                     <?= icon('chevron-right', 'account__nav-icon') ?>
                 </button>
             </div>
 
             <form class="account__form" data-account-form="logout">
-                <button type="submit" class="btn press account__logout"><?= e(t('Uitloggen')) ?></button>
+                <button type="submit" class="btn settings-logout press account__logout"><?= icon('logout', 'settings-logout__icon') ?><?= e(t('Uitloggen')) ?></button>
             </form>
 
             </div>

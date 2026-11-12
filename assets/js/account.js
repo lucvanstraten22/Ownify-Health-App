@@ -63,6 +63,22 @@
         if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
     }
 
+    /* B5: the popup is a summary; your row opens Instellingen › Account,
+       where everything about you is changed. */
+    panel.addEventListener('click', function (event) {
+        var goto = event.target.closest('[data-account-goto]');
+        if (!goto) { return; }
+        event.preventDefault();
+        var detail = goto.getAttribute('data-account-goto');
+        close();
+        var tab = document.querySelector('[data-nav="settings"]');
+        if (tab) { tab.click(); }
+        window.setTimeout(function () {
+            var opener = document.querySelector('[data-detail-open="' + detail + '"]');
+            if (opener) { opener.click(); }
+        }, 260);
+    });
+
     /* The account button in the app's header, and the opening screen's
        Inloggen and Registreren. */
     document.addEventListener('click', function (event) {

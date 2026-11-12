@@ -23,11 +23,6 @@ $incoming  = $community['pending'] ?? [];
 $sent      = $community['sent'] ?? [];
 $friends   = $community['friends'] ?? [];
 $allowed   = !empty($community['allow_requests']);
-
-$notes = [
-    'on'  => t('Anderen kunnen je een vriendverzoek sturen.'),
-    'off' => t('Niemand kan je een nieuw vriendverzoek sturen. Je vrienden blijven.'),
-];
 ?>
 <div class="account__view friends" data-account-view="friends" hidden>
 
@@ -80,14 +75,12 @@ $notes = [
     </section>
 
     <!-- ---------------------------------------- Vriendverzoeken toestaan -->
-    <button type="button" class="account__toggle" role="switch" data-friends-toggle
-            aria-checked="<?= $allowed ? 'true' : 'false' ?>"
-            data-note-on="<?= e($notes['on']) ?>" data-note-off="<?= e($notes['off']) ?>">
-        <span class="account__toggle-text">
-            <span class="account__toggle-label"><?= e(t('Vriendverzoeken toestaan')) ?></span>
-            <span class="account__toggle-note" data-friends-toggle-note><?= e($allowed ? $notes['on'] : $notes['off']) ?></span>
-        </span>
-        <span class="switch<?= $allowed ? ' is-on' : '' ?>" aria-hidden="true"><span class="switch__knob"></span></span>
+    <?php /* D6 (50.0): the switch lives in Instellingen › Privacy › Community;
+             this row says how it stands and opens it. */ ?>
+    <button type="button" class="account__nav press" data-account-goto="settings-privacy">
+        <span class="account__nav-text"><span><?= e(t('Vriendverzoeken toestaan')) ?></span></span>
+        <span class="settings-row__value"><?= e($allowed ? t('Aan') : t('Uit')) ?></span>
+        <?= icon('chevron-right', 'account__nav-icon') ?>
     </button>
 
     <!-- --------------------------------------------------------- Vrienden -->

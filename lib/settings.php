@@ -335,7 +335,7 @@ if (!function_exists('settings_profile')) {
             'height' => null, 'weight' => null, 'activity_level' => null, 'member_since' => null,
 
             'raw' => [
-                'first_name' => null, 'last_name' => null, 'date_of_birth' => null,
+                'username' => null, 'first_name' => null, 'last_name' => null, 'date_of_birth' => null,
                 'gender' => null, 'height' => null, 'weight' => null,
             ],
         ];
@@ -361,6 +361,7 @@ if (!function_exists('settings_profile')) {
             'member_since'   => settings_member_since($user['created_at'] ?? null),
 
             'raw' => [
+                'username'      => $user['username'] ?? null,
                 'first_name'    => $user['first_name'] ?? null,
                 'last_name'     => $user['last_name'] ?? null,
                 'date_of_birth' => $user['date_of_birth'] ?? null,
@@ -538,6 +539,7 @@ if (!function_exists('settings_field_input')) {
 
         $input = match ($key) {
             'first_name', 'last_name' => ['type' => 'text', 'maxlength' => 60],
+            'username'                => ['type' => 'text', 'maxlength' => 30, 'autocomplete' => 'username'],
             /* Voor- en achternaam: both in one editor, saved together
                (api/profile/update.php takes the two at once). The first
                name is needed; a last name may stay empty. */
@@ -606,9 +608,11 @@ if (!function_exists('settings_field_input')) {
 
         /* Which endpoint saves it. The one-time fields go to their own, which
            is the one that refuses a second write. */
-        $input['endpoint'] = in_array($key, ['date_of_birth', 'gender'], true)
-            ? 'api/profile/onboarding.php'
-            : 'api/profile/update.php';
+        $input['endpoint'] = match (true) {
+            in_array($key, ['date_of_birth', 'gender'], true) => 'api/profile/onboarding.php',
+            $key === 'username'                               => 'api/profile/username.php',
+            default                                           => 'api/profile/update.php',
+        };
 
         return $input;
     }

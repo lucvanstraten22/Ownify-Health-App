@@ -193,4 +193,6 @@ return [
     'Was jij dit niet? Dan hoef je niets te doen. Je account en je wachtwoord zijn niet gewijzigd.' => 'Wasn’t this you? Then you don’t need to do anything. Your account and your password haven’t changed.',
     'Wachtwoord tonen' => 'Show password',
     'Wachtwoord verbergen' => 'Hide password',
+    '%s — Account openen' => '%s — Open account',
+    'Nog geen' => 'None yet',
 ];

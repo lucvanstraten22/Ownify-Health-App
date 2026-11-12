@@ -169,11 +169,10 @@ return [
                     'type'  => 'fields',
                     'title' => 'Profiel',
                     'fields' => [
-                        /* These two already have a working endpoint behind the
-                           account panel, so they open it rather than sitting
-                           dead next to fields that have nowhere to save to. */
-                        ['key' => 'avatar',     'label' => 'Profielfoto',     'edit' => true, 'kind' => 'image', 'opens' => 'account'],
-                        ['key' => 'username',   'label' => 'Gebruikersnaam',  'edit' => true, 'opens' => 'account'],
+                        /* 50.0: the photo is changed by tapping it in the header
+                           above (B6); the username opens the same editor as
+                           every other row (A3), saved by api/profile/username.php. */
+                        ['key' => 'username',   'label' => 'Gebruikersnaam',  'edit' => true],
                         /* Both names, in one editor (settings_field_input()). */
                         ['key' => 'name',       'label' => 'Voor- en achternaam', 'edit' => true],
                         /* Chosen in the setup a new account starts with; what

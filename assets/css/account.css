@@ -381,6 +381,15 @@
 
 .account__nav:active { background: rgba(var(--fill), calc(0.08 * var(--fill-k))); }
 
+/* B5 (50.0): you, as the popup's first row — a little taller than a plain
+   Row, the 40 px photo of a friend's row; the summary's parts lay out in
+   the Row itself, its count at the end as Instellingen' rows have it. */
+.account__me { min-height: 64px; gap: var(--space-3); margin-bottom: var(--space-3); }
+.account__me .friend__text { flex: 1; min-width: 0; }
+.account__nav-summary { display: contents; }
+.account__nav .settings-row__value { margin-left: auto; color: var(--text-secondary); font-size: var(--fs-subhead); }
+.account__nav .notice-dot { position: static; }
+
 .account__nav-text {
     display: flex;
     flex: 1;

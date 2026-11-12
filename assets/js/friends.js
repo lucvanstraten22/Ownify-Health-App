@@ -39,7 +39,6 @@
     var input    = form.querySelector('input[name="username"]');
     var errorBox = view.querySelector('[data-friends-search-error]');
     var result   = view.querySelector('[data-friends-result]');
-    var toggle   = view.querySelector('[data-friends-toggle]');
     var rowShape = view.querySelector('[data-friends-template]');
     var sentMark = view.querySelector('[data-friends-sent]');
 
@@ -352,43 +351,6 @@
             /* The leaderboards change at once; the lists a moment later, so
                "Jullie zijn nu vrienden." can be read before the row moves. */
             refresh({ lists: true, hold: 1100 });
-        });
-    });
-
-    /* ---------------------------------------------- Vriendverzoeken toestaan */
-
-    function setToggle(on) {
-        var mark = toggle.querySelector('.switch');
-        var note = toggle.querySelector('[data-friends-toggle-note]');
-
-        toggle.setAttribute('aria-checked', on ? 'true' : 'false');
-        if (mark) { mark.classList.toggle('is-on', on); }
-        if (note) {
-            note.textContent = toggle.getAttribute(on ? 'data-note-on' : 'data-note-off');
-            note.classList.remove('is-error');
-        }
-    }
-
-    toggle.addEventListener('click', function () {
-        var before = toggle.getAttribute('aria-checked') === 'true';
-
-        setToggle(!before);
-        toggle.disabled = true;
-
-        post('api/friends/settings.php', { allow_requests: before ? '0' : '1' }).then(function (answer) {
-            toggle.disabled = false;
-
-            if (!answer.ok) {
-                setToggle(before);
-                var note = toggle.querySelector('[data-friends-toggle-note]');
-                if (note) {
-                    note.textContent = answer.error || T.t('Dit kon niet worden opgeslagen.');
-                    note.classList.add('is-error');
-                }
-                return;
-            }
-
-            setToggle(!!answer.allow_requests);
         });
     });
 

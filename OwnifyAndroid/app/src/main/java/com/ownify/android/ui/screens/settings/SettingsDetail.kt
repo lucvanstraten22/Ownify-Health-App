@@ -1,4 +1,9 @@
 package com.ownify.android.ui.screens.settings
+import androidx.activity.result.PickVisualMediaRequest
+import com.ownify.android.ui.app.Avatars
+import com.ownify.android.ui.design.press
+import com.ownify.android.ui.screens.account.QuietLink
+import com.ownify.android.ui.screens.account.upload
 import com.ownify.android.ui.design.NoteTone
 import com.ownify.android.ui.design.note
 import com.ownify.android.ui.design.SplitRow
@@ -152,17 +157,47 @@ fun SettingsDetail(data: AppData, page: SettingsPage, scroll: ScrollState) {
     }
 }
 
-/** `.settings-hero`: the picture, the username, the name. */
+/**
+ * `.settings-hero`: the picture, the username, the name — on the ground, no
+ * card (D5). B6 (50.0): the picture is the control; a tap picks a new one,
+ * which uploads at once; "Foto wijzigen" under it says so.
+ */
 @Composable
 private fun IdentityHero(data: AppData) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val profile = data.settings.profile
     val name = listOfNotNull(profile.firstName, profile.lastName).joinToString(" ").trim()
-    JCard(Modifier.fillMaxWidth().reveal()) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            AvatarCircle(profile.avatar, 68.dp, 28.dp)
-            T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
-            T(name.ifEmpty { tr("Naam nog niet ingevuld") }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        error = null
+        busy = true
+        scope.launch {
+            when (val outcome = upload(context, uri)) {
+                is Outcome.Done -> { Avatars.forget(); OwnifyAppState.refresh(context) }
+                is Outcome.Refused -> error = outcome.message
+                Outcome.SignedOut -> Unit
+            }
+            busy = false
         }
+    }
+    val pick = { if (!busy) picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    Column(Modifier.fillMaxWidth().reveal().padding(vertical = Ownify.Space2), horizontalAlignment = Alignment.CenterHorizontally) {
+        val interaction = remember { MutableInteractionSource() }
+        AvatarCircle(
+            profile.avatar, 68.dp, 28.dp,
+            Modifier
+                .press(interaction)
+                .alpha(if (busy) 0.6f else 1f)
+                .clickable(interaction, indication = null, role = Role.Button, onClick = pick)
+                .semantics { contentDescription = tr("Foto wijzigen") }
+        )
+        T(profile.username ?: tr("Niet ingelogd"), OwnifyType.style(Ownify.FsTitle, FontWeight.SemiBold), Modifier.padding(top = Ownify.Space3), align = TextAlign.Center)
+        T(name.ifEmpty { tr("Naam nog niet ingevuld") }, JStyle.Meta, Modifier.padding(top = Ownify.Space1), align = TextAlign.Center)
+        QuietLink(tr("Foto wijzigen"), pick, Modifier.padding(top = Ownify.Space2), enabled = !busy)
+        error?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.Attention), Modifier.padding(top = Ownify.Space1), align = TextAlign.Center) }
     }
 }
 
@@ -956,6 +991,25 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
         InButton {
             SettingsCard {
                 block.items.forEachIndexed { i, item ->
+                    // A value, not a choice (`.settings-toggle--value`): the label, its note, the value.
+                    if (item.value != null) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .settingsRow(i > 0)
+                                .semantics(mergeDescendants = true) { }
+                                .cssPadding(if (narrow) Ownify.Space3 else Ownify.Space4, top = Ownify.Space3, bottom = Ownify.Space3, above = if (i > 0) 1.dp else 0.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
+                                if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
+                            }
+                            T(item.value, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
+                        }
+                        return@forEachIndexed
+                    }
                     if (item.key != null) {
                         LiveToggleRow(item, item.key, divided = i > 0)
                         return@forEachIndexed
@@ -974,8 +1028,7 @@ private fun TogglesBlock(block: SettingsBlock.Toggles) {
                         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
                     ) {
                         Column(Modifier.weight(1f)) {
-                            // A working action reads as live, not as the dimmed switches (B4).
-                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextPrimary))
+                            T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
                             if (!item.note.isNullOrEmpty()) T(item.note, JStyle.Footnote, Modifier.padding(top = 2.dp))
                         }
                         Toggle(item.on, dimmed = true)
@@ -1152,7 +1205,8 @@ private fun ActionRow(item: ActionItem, divided: Boolean) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
-                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextSecondary))
+                // A working action reads as live, not as the dimmed switches (B4).
+                T(item.label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal, Ownify.TextPrimary))
                 val note = said ?: item.note
                 if (!note.isNullOrEmpty()) {
                     T(

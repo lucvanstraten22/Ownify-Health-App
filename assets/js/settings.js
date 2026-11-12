@@ -924,6 +924,33 @@
                 });
         }
 
+        /* B6 (50.0): a photo picked from the Account header uploads at once
+           (the account panel's endpoint), then the page is read again. */
+        document.addEventListener('change', function (event) {
+            var picker = event.target.closest && event.target.closest('[data-settings-photo]');
+            if (!picker || !picker.files || !picker.files[0]) { return; }
+            var hero = picker.closest('.settings-hero');
+            var error = hero && hero.querySelector('[data-settings-photo-error]');
+            var body = new FormData();
+            body.append('csrf', csrf());
+            body.append('avatar', picker.files[0]);
+            if (error) { error.hidden = true; }
+            hero.classList.add('is-busy');
+            fetch('api/profile/avatar.php', { method: 'POST', body: body, credentials: 'same-origin' })
+                .then(function (response) { return response.json().catch(function () { return { ok: false }; }); })
+                .catch(function () { return { ok: false, error: T.t('Ownify is niet bereikbaar. Controleer je internetverbinding en probeer het opnieuw.') }; })
+                .then(function (result) {
+                    hero.classList.remove('is-busy');
+                    picker.value = '';
+                    if (!result || !result.ok) {
+                        if (error) { error.textContent = (result && result.error) || T.t('Opslaan is niet gelukt.'); error.hidden = false; }
+                        return;
+                    }
+                    try { sessionStorage.setItem('ownify-reopen', 'settings-account'); } catch (e) { /* private mode */ }
+                    window.location.reload();
+                });
+        });
+
         document.addEventListener('click', function (event) {
             var trigger = event.target.closest('[data-field-edit]');
             if (trigger) {

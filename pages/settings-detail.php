@@ -72,19 +72,26 @@ foreach ($page['blocks'] as $block) {
                     <?php if ($block['type'] === 'identity'): ?>
 
                         <section class="card card--hero settings-hero reveal">
-                            <span class="settings-hero__avatar" aria-hidden="true">
+                            <?php /* B6 (50.0): the photo is the control — a tap picks a new
+                                     one, which uploads at once (settings.js); "Foto wijzigen"
+                                     under it says so. JPG, PNG or WebP, at most 3 MB. */ ?>
+                            <label class="settings-hero__avatar settings-hero__photo press" for="settings-photo">
                                 <?php if (!empty($profile['avatar'])): ?>
-                                    <img src="<?= e($profile['avatar']) ?>" alt="">
+                                    <img src="<?= e($profile['avatar']) ?>" alt="" data-account-avatar>
                                 <?php else: ?>
                                     <?= icon('user') ?>
                                 <?php endif; ?>
-                            </span>
+                            </label>
+                            <input class="sr-only" type="file" id="settings-photo" accept="image/jpeg,image/png,image/webp"
+                                   aria-label="<?= e(t('Foto wijzigen')) ?>" data-settings-photo>
                             <p class="settings-hero__name">
                                 <?= e($profile['username'] ?? t('Niet ingelogd')) ?>
                             </p>
                             <p class="settings-hero__meta">
                                 <?= e(trim(((string) ($profile['first_name'] ?? '')) . ' ' . ((string) ($profile['last_name'] ?? ''))) ?: t('Naam nog niet ingevuld')) ?>
                             </p>
+                            <label class="quiet-link settings-hero__change" for="settings-photo"><?= e(t('Foto wijzigen')) ?></label>
+                            <p class="settings-hero__meta settings-hero__error" role="alert" data-settings-photo-error hidden></p>
                         </section>
 
                     <?php elseif ($block['type'] === 'fields'): ?>
