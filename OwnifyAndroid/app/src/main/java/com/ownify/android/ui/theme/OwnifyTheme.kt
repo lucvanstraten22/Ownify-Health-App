@@ -168,7 +168,7 @@ class OwnifyPalette(
             glassHairline = white(0.06f),
             scoreMid = Color(0xFFAECA0F),
             scoreLow = Color(0xFFC99A45),
-            attention = Color(0xFFBFA863),
+            attention = Color(0xFFC6B275),   // 4.5:1 on the darkest ground (50.0; #BFA863 gave 4.05)
             zones = listOf(Color(0xFF9CBBD8), Color(0xFF4FAE84), Color(0xFFE6B64A), Color(0xFFE5544A)),
             textPrimary = Color(0xFFF7F7F5),
             textSecondary = white(0.74f),
@@ -381,7 +381,7 @@ object Ownify {
     /**
      * The attention gold as the website writes out its washes and borders —
      * `rgba(191, 168, 99, a)` — in both themes: only text and icons take
-     * [Attention]'s deeper White Mode value. The washes behind a warning are
+     * [Attention]'s value (a little lighter in Dark Mode, deeper in White, for 4.5:1). The washes behind a warning are
      * [AttentionWash] … [AttentionStrong]; this is for the backdrop's glow.
      */
     val AttentionGold = Color(0xFFBFA863)

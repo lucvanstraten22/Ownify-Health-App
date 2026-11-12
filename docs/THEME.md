@@ -74,7 +74,7 @@ on white, so each is the same hue, deeper — the smallest change that reads:
 | --- | --- | --- | --- |
 | `--score-mid` | `#AECA0F` | `#7D910B` | 1.9:1 on white → 3.5:1 (a graphic: the score dot) |
 | `--score-low` | `#C99A45` | `#AC8032` | 2.6:1 on white → 3.6:1 (a graphic) |
-| `--attention` | `#BFA863` | `#7A6731` | 2.3:1 on white → 5.5:1; it is also small text (a warning, an error note), so 4.5:1 on every light ground. Its washes and borders keep the original gold |
+| `--attention` | `#C6B275` | `#7A6731` | 2.3:1 on white → 5.5:1; it is also small text (a warning, an error note), so 4.5:1 on every light ground — and on every dark one: Dark Mode's `#BFA863` gave 4.05:1, so since 50.0 it is the same hue, a little lighter (4.5:1). Its washes and borders keep the original gold `rgba(191, 168, 99, …)` |
 | `--error` | `#FF8B8B` | `#B03C35` | the wizard's, the editor's and the rating's red: 2.3:1 on white → 5.8:1 on a card |
 
 **The Gezondheidsscore ring on Overzicht and the Scorekompas** (since 18.1, `assets/js/hero-ring.js`

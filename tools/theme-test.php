@@ -18,9 +18,9 @@
  *   the tokens    the light block only sets tokens the dark one has, every role
  *                 is defined, and no stylesheet writes a white or black of its
  *                 own outside one
- *   contrast      in White Mode every text tier and the warning gold reach
+ *   contrast      in both themes every text tier and the warning gold reach
  *                 WCAG AA (4.5:1) on a card, in a well inside it and on the
- *                 ground — and never less than Dark Mode gives them; the error
+ *                 ground — White never less than Dark Mode gives them; the error
  *                 red on a card; the score colours, the app's green and the
  *                 faint tier 3:1 as graphics
  *   the page      the front door, served by PHP's built-in server: drawn in the
@@ -309,11 +309,10 @@ $theme = ['dark' => $darkTokens, 'light' => array_merge($darkTokens, $lightToken
 foreach (['text-primary', 'text-secondary', 'text-muted', 'attention'] as $token) {
     $l = worst($theme['light'], $token);
     $d = worst($theme['dark'], $token);
-    /* The text inks at AA in both themes (A14, N16, 50.0): Dark's muted ink
-       was documented at 4.2 and never guarded. The gold (--attention) is
-       held to AA in White Mode only, as before — Dark's 4.05 is reported to
-       the owner, not changed here (its colour stays as it is). */
-    $dark = $token === 'attention' ? true : $d >= 4.5;
+    /* The text inks and the gold at AA in both themes (A14, N16, 50.0):
+       Dark's muted ink was documented at 4.2 and its gold gave 4.05, and
+       neither was guarded. */
+    $dark = $d >= 4.5;
     check(sprintf('--%s: %.2f:1 at worst (AA; Dark Mode gives %.2f)', $token, $l, $d), $l >= 4.5 && $dark && $l >= $d);
 }
 

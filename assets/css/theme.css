@@ -123,9 +123,12 @@
        Not categories. Green is the app's positive state — connected, done,
        reached, the notification dot — and the accent of anything that
        belongs to no category. The warm gold asks for attention: warnings,
-       a confirmation that cannot be undone. */
+       a confirmation that cannot be undone. It is also small text, so it
+       reaches 4.5:1 on the darkest ground here too (50.0: #BFA863 gave
+       4.05) — the same hue, a little lighter; its washes and borders keep
+       the original gold (rgba(191, 168, 99, …)). */
     --health: #3C9E72;
-    --attention: #BFA863;
+    --attention: #C6B275;
     /* The solid tile of a card head that has no category: grey, not a colour. */
     --neutral: #6B6769;
     --accent: var(--health);
