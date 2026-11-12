@@ -319,6 +319,9 @@ component type, conflicts settled — which is the input for Phase 3.
 - Phase 1 started (Effort High, Ultracode OFF).
 - Phase 1 done: evidence set complete (see the table above). **Checkpoint 1.**
 - Phase 2 done (XHigh; Ultracode ON, then OFF after the usage limit): `docs/audit/CONSOLIDATED.md`. **Checkpoint 2.**
+- Checkpoint 2 answered: `docs/audit/OWNER-DECISIONS.md`.
+- Phase 3 done (Effort Max, Ultracode OFF, prototype skill started by the owner): `docs/audit/PHASE3-PLAN.md`,
+  the web prototype diff, the popup picker and the approval page. **Checkpoint 3.**
 
 ## Checkpoint 1 — before Phase 2
 
@@ -406,3 +409,98 @@ Next: Phase 3, proposals and prototypes for the approved groups.
 
 Recommended settings for Phase 3: **Effort Max, Ultracode OFF** (sequential,
 usage-aware).
+
+## Phase 3 — done
+
+Input: `CONSOLIDATED.md` and the owner's answers to Checkpoint 2
+(`docs/audit/OWNER-DECISIONS.md`; the decisions page
+[Ownify Owner Decisions](https://claude.ai/artifact/5Br5nXpVsdE4dHuXWocw42)).
+
+**The plan:** `docs/audit/PHASE3-PLAN.md`.
+
+- It is grouped by 14 shared patterns, not by page. Each item says which
+  list it is on.
+- It contains:
+  - nine interpretations found while prototyping, to confirm;
+  - the icon re-map table;
+  - what a build step (N15) involves;
+  - the three lists:
+    - **(a)** A1–A16, applied without asking;
+    - **(b)** B1–B16, for approval one by one;
+    - **(c)** eight items to leave alone, each with a reason.
+
+**The web prototype:**
+
+- Two scratch copies of the app ran side by side on the test account. They
+  live outside the repository, in the session scratchpad.
+- The approved changes went into the "after" copy only: 22 files, 45 diff
+  hunks.
+- The diff is kept as `docs/audit/PHASE3-WEB-PROTOTYPE.diff`. It is the draft
+  of the Phase 4 web work; it has no English strings and no Android side yet.
+- Real screenshots: 19 scenes, before and after, Dark and White, phone size,
+  at rest. That is 76 images.
+
+**The account-popup picker:**
+
+- [Account Popup Variants](https://claude.ai/artifact/JvF48zNv71nyK2PGg5PPo9),
+  published privately.
+- It offers three directions for D4: Centered, List and Tiles.
+- Each runs on the app's real stylesheets and icons, with working taps, a
+  theme toggle and keyboard flipping.
+- No direction is pre-picked.
+
+**The approval page:**
+
+- [Ownify Phase 3 Approvals](https://claude.ai/artifact/6CW7XvVX9SiA4Wneh6giA1),
+  published privately.
+- For each B item it shows before/after in both themes, with approve,
+  change, discuss and reject.
+- Every A and C item has an "object" or "change it anyway" flag.
+- Answers save with the page, so they can be read here from any laptop, and
+  can also be exported.
+
+**Skills:**
+
+- Used: `prototype` (started by the owner) and `apple-design` (the highest
+  authority).
+- The prototype skill's picker spec (`PICKER.md`) is not shipped in this
+  session. The picker follows the skill's own description instead: neutral
+  chrome, one variant at a time at full size, instant switching, keyboard
+  flipping.
+
+Nothing in the app, the databases or the servers was changed.
+
+## Checkpoint 3 — before Phase 4
+
+Waiting for the owner, on the approval page:
+
+- **B1–B16**, one by one: approve, change, discuss or reject. The nine
+  interpretations are part of the B items they touch.
+- **B5:** the popup direction, Centered, List or Tiles, chosen after trying
+  them in the picker.
+- **B9:** one warning icon (W1–W3) and one theme icon (T1–T3).
+- Any objection to an (a) item, or a "change it anyway" on a (c) item.
+- Optional: a screenshot of example 3's "thick elements". It was never sent,
+  and D5 went ahead without it.
+
+The page saves the answers but cannot notify this session. The owner says
+"done" in chat, and the answers are then read from the page and recorded in
+`docs/audit/PHASE3-APPROVALS.md` on this branch.
+
+Next: Phase 4, implementation on both apps of (a) and the approved part of
+(b) only, pattern by pattern:
+
+- targeted tests per change, with Android before/after screenshots;
+- versioned as decided in B16;
+- each step committed locally;
+- nothing pushed to `main` without the owner's explicit approval.
+
+After the B5 choice, the picker's scratch files are removed, as the prototype
+skill requires.
+
+- Phase 4 needs the owner to start `/anthropic-skills:review-animations`. It
+  reviews the motion changes: the arrival in B12, the sheets, and back.
+
+Recommended settings for Phase 4: **Effort High, Ultracode OFF**. The
+decisions are made and the web draft exists, so the work is careful but
+specified. It runs sequentially, usage-aware.

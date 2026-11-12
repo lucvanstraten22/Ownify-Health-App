@@ -1,0 +1,630 @@
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/ai.css after/assets/css/ai.css
+--- before/assets/css/ai.css	2026-11-04 06:35:40.148541176 +0000
++++ after/assets/css/ai.css	2026-11-12 08:30:04.569858045 +0000
+@@ -650,9 +650,10 @@
+ 
+ .ai-consent__title {
+     margin-top: var(--space-4);
+-    font-size: var(--fs-title);
++    font-size: var(--fs-headline);
+     font-weight: 600;
+-    letter-spacing: var(--tracking-title);
++    line-height: var(--lh-headline);
++    letter-spacing: var(--tracking-headline);
+ }
+ 
+ .ai-consent__intro {
+@@ -700,7 +701,9 @@
+     margin-top: var(--space-5);
+ }
+ 
+-.ai-consent__actions .btn { flex: 1 1 160px; max-width: 260px; cursor: pointer; }
++/* Phase 3 (D3): stacked, so the 15 px labels fit; the yes on top. */
++.ai-consent__actions { flex-direction: column; align-items: stretch; }
++.ai-consent__actions .btn { flex: none; width: 100%; max-width: none; cursor: pointer; }
+ 
+ .ai-consent__footer {
+     margin-top: var(--space-3);
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/area-charts.css after/assets/css/area-charts.css
+--- before/assets/css/area-charts.css	2026-11-10 17:01:36.768170412 +0000
++++ after/assets/css/area-charts.css	2026-11-12 08:19:53.618154121 +0000
+@@ -12,7 +12,7 @@
+ .area-chart {
+     --area: var(--accent);
+     --area-light: var(--accent-light);
+-    --bar: color-mix(in srgb, var(--accent) 58%, transparent);
++    --bar: color-mix(in srgb, var(--accent) 75%, transparent);
+ }
+ 
+ /* --------------------------------------------------------------------------
+@@ -203,7 +203,10 @@
+     background: var(--accent);
+ }
+ 
+-.area-chart__key[data-tone="light"] { height: 2.5px; width: 10px; }
++.area-chart__key[data-tone="light"] { border-radius: 50%; }
++
++/* D12: the unit after its number, small and grey (% stays with it). */
++.area-chart__unit { margin-left: 2px; font-size: var(--fs-subhead); font-weight: 400; color: var(--text-muted); }
+ 
+ /* The week fills what the square leaves. */
+ .area-chart--mini .area-chart__chart {
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/challenges.css after/assets/css/challenges.css
+--- before/assets/css/challenges.css	2026-11-04 13:36:05.869501172 +0000
++++ after/assets/css/challenges.css	2026-11-12 08:19:53.617550858 +0000
+@@ -10,7 +10,7 @@
+ /* --------------------------------------------------------------------------
+    Community — two windows: Ranglijst on a podium, Uitdagingen as a stack
+    -------------------------------------------------------------------------- */
+-.cm-dest { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); }
++.cm-dest { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
+ 
+ /* The card's head is the way in: the whole row is the control. */
+ .cm-head {
+@@ -394,7 +394,7 @@
+     color: var(--text-muted);
+ }
+ 
+-.ch-list { display: flex; flex-direction: column; gap: var(--space-2); }
++.ch-list { display: flex; flex-direction: column; gap: var(--space-3); }
+ 
+ /* A challenge you are in. Samen: the bar in everybody's pieces and who
+    brought what. Wedstrijd: the top three against the leader. */
+@@ -403,7 +403,7 @@
+     flex-direction: column;
+     gap: var(--space-3);
+     width: 100%;
+-    padding: var(--space-4);
++    padding: var(--space-5);
+     font: inherit;
+     color: inherit;
+     text-align: left;
+@@ -676,7 +676,8 @@
+ 
+ .ch-row { width: calc(100% + 2 * var(--space-2)); margin-inline: calc(-1 * var(--space-2)); }
+ 
+-.ch-leave { align-self: center; color: var(--text-muted); }
++.ch-leave { align-self: stretch; justify-content: flex-start; gap: var(--space-3); padding-inline: var(--space-4); }
++.ch-leave__icon { width: 17px; height: 17px; flex: none; color: var(--text-muted); }
+ 
+ /* --------------------------------------------------------------------------
+    The bottom sheet: the floating glass, rising from the bottom edge, its
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/components.css after/assets/css/components.css
+--- before/assets/css/components.css	2026-11-11 06:05:19.962494927 +0000
++++ after/assets/css/components.css	2026-11-12 08:19:53.612076007 +0000
+@@ -144,9 +144,10 @@
+ }
+ 
+ .card__eyebrow {
+-    font-size: var(--fs-body);
++    font-size: var(--fs-headline);
+     font-weight: 600;
+-    letter-spacing: var(--tracking-body);
++    line-height: var(--lh-headline);
++    letter-spacing: var(--tracking-headline);
+     color: var(--text-primary);
+ }
+ 
+@@ -2249,3 +2250,32 @@
+ .glass--select.is-wheel select { pointer-events: none; }
+ .wheel--list .wheel__column, .wheel--list .wheel__list { flex: 1; }
+ .wheel--list .wheel__item { padding-inline: var(--space-2); white-space: nowrap; }
++
++
++/* ---- Phase 3 prototype (D3, N1) ------------------------------------------
++   The one way forward and every full-width button read at Body; a button
++   beside a field stays Subhead. The quiet link: recovery and side paths,
++   Subhead in secondary ink, underlined (Android: QuietLink). */
++.btn--primary,
++.btn--caution,
++.account__submit,
++.account__logout,
++.settings-logout,
++.goal-manage__button,
++.ch-leave { font-size: var(--fs-body); letter-spacing: var(--tracking-body); }
++
++.quiet-link {
++    font-size: var(--fs-subhead);
++    font-weight: 400;
++    letter-spacing: var(--tracking-small);
++    color: var(--text-secondary);
++    text-decoration: underline;
++    text-decoration-color: rgba(var(--ink), 0.35);
++    text-underline-offset: 3px;
++}
++
++/* C38: "Vandaag" on the page-title line, as every other page's title. */
++.card--hero > .card__head {
++    padding-inline: var(--space-2);
++    margin-top: calc(-1 * (var(--space-1) + 1px));
++}
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/goals.css after/assets/css/goals.css
+--- before/assets/css/goals.css	2026-11-10 15:30:30.566876730 +0000
++++ after/assets/css/goals.css	2026-11-12 08:19:53.618729906 +0000
+@@ -13,7 +13,7 @@
+ .goals-intro {
+     display: flex;
+     flex-direction: column;
+-    gap: var(--space-2);
++    gap: var(--space-4);
+ }
+ 
+ .goals-intro__row {
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/css/settings.css after/assets/css/settings.css
+--- before/assets/css/settings.css	2026-11-06 16:43:42.824293413 +0000
++++ after/assets/css/settings.css	2026-11-12 08:19:53.617873305 +0000
+@@ -21,7 +21,7 @@
+ 
+ .settings-block__lede {
+     margin-top: calc(-1 * var(--space-1));
+-    margin-bottom: var(--space-3);
++    margin-bottom: var(--space-2);
+     padding-inline: var(--space-2);
+     font-size: var(--fs-subhead);
+     color: var(--text-muted);
+@@ -683,16 +683,20 @@
+     background: transparent;
+     border-radius: var(--radius-pill);
+     color: var(--text-secondary);
+-    font-size: var(--fs-caption);
++    font-size: var(--fs-subhead);
+     letter-spacing: var(--tracking-small);
+     font-weight: 600;
+     transition: color var(--transition-fast);
+ }
+ 
++/* The owner's exception (D2): removing a friend keeps its small link. */
++.friend__actions .btn--link { font-size: var(--fs-caption); }
++
+ /* "Nu in gebruik" and the other plain lists of values: the same inner
+    padding as the choice lists beside them, so their text starts on one line,
+    and the same label and value as every other row in Settings. */
+ .card.settings-rows { padding: var(--space-3) var(--space-4); }
++.settings-rows .metric-row:last-child { padding-bottom: 0; }
+ 
+ .settings-rows .metric-row__label {
+     font-size: var(--fs-body);
+@@ -1060,16 +1064,24 @@
+ 
+ .settings-action__go {
+     flex: none;
+-    min-height: 36px;
++    gap: var(--space-2);
+     cursor: pointer;
+ }
+ 
++.settings-action__icon { width: 16px; height: 16px; flex: none; color: var(--text-muted); }
++
++/* A working action reads as live, not as the dimmed switches above it. */
++.settings-action .settings-toggle__label { color: var(--text-primary); }
++
+ .settings-action__go[hidden] { display: none; }
+ 
++/* The one confirm container: the attention Note, as the goal's. */
+ .settings-action__confirm {
+     margin-top: var(--space-3);
+-    padding-top: var(--space-3);
+-    border-top: 1px solid var(--glass-hairline);
++    padding: var(--space-4);
++    border: 1px solid var(--attention-edge);
++    border-radius: var(--radius-md);
++    background: var(--attention-wash);
+ }
+ 
+ .settings-action__confirm[hidden] { display: none; }
+@@ -1081,13 +1093,13 @@
+ }
+ 
+ .settings-action__buttons {
+-    display: flex;
+-    justify-content: flex-end;
++    display: grid;
++    grid-template-columns: repeat(2, minmax(0, 1fr));
+     gap: var(--space-2);
+     margin-top: var(--space-3);
+ }
+ 
+-.settings-action__buttons .btn { min-height: 38px; cursor: pointer; }
++.settings-action__buttons .btn { cursor: pointer; }
+ 
+ .settings-action .settings-toggle__note.is-error { color: var(--attention); }
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/assets/js/challenges.js after/assets/js/challenges.js
+--- before/assets/js/challenges.js	2026-11-11 12:12:09.371309284 +0000
++++ after/assets/js/challenges.js	2026-11-12 08:30:59.729564620 +0000
+@@ -128,7 +128,7 @@
+         return '<div class="ch-sheet__head">'
+             + '<h2 class="ch-sheet__title" id="ch-sheet-title">' + esc(title) + '</h2>'
+             + '<button type="button" class="ch-sheet__close press" data-sheet-close aria-label="' + esc(C.review.close) + '">'
+-            + icon('chevron-down') + '</button></div>';
++            + icon('close') + '</button></div>';
+     }
+ 
+     /** Puts content in the sheet; opens it if it is not open yet. */
+@@ -611,7 +611,7 @@
+         root.innerHTML = '<div class="wizard__scrim" data-cw-close></div>'
+             + '<div class="wizard__panel card" role="dialog" aria-modal="true" aria-labelledby="cw-title">'
+             + '<div class="wizard__head"><h2 class="card__eyebrow" id="cw-title">' + esc(cc.title) + '</h2>'
+-            + '<button type="button" class="account__close press" data-cw-close aria-label="' + esc(cc.close) + '">' + icon('chevron-down') + '</button></div>'
++            + '<button type="button" class="account__close press" data-cw-close aria-label="' + esc(cc.close) + '">' + icon('close') + '</button></div>'
+             + '<div class="wizard__progress"><ol class="wizard__bars" role="list" aria-hidden="true">'
+             + '<li class="wizard__bar" data-cw-bar="1"></li><li class="wizard__bar" data-cw-bar="2"></li><li class="wizard__bar" data-cw-bar="3"></li></ol>'
+             + '<p class="wizard__count" data-cw-count aria-live="polite"></p></div>'
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/account-friends.php after/components/account-friends.php
+--- before/components/account-friends.php	2026-10-15 06:14:06.674149957 +0000
++++ after/components/account-friends.php	2026-11-12 08:19:53.616516582 +0000
+@@ -35,7 +35,7 @@
+     <section class="friends__section" aria-label="<?= e(t('Vriend toevoegen')) ?>">
+         <button type="button" class="btn press friends__add" data-friends-add
+                 aria-expanded="false" aria-controls="friends-search">
+-            <?= icon('plus', 'friends__add-icon') ?>
++            <?= icon('user-plus', 'friends__add-icon') ?>
+             <span><?= e(t('Vriend toevoegen')) ?></span>
+         </button>
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/account-modal.php after/components/account-modal.php
+--- before/components/account-modal.php	2026-11-12 08:15:25.766138502 +0000
++++ after/components/account-modal.php	2026-11-12 08:19:53.612076007 +0000
+@@ -86,7 +86,7 @@
+                 <?= e($flows ? ($registration !== null ? $titles['register'] : $titles['login']) : 'Account') ?>
+             </h2>
+             <button type="button" class="account__close press" data-account-close aria-label="<?= e(t('Sluiten')) ?>">
+-                <?= icon('chevron-down') ?>
++                <?= icon('close') ?>
+             </button>
+         </div>
+ 
+@@ -176,7 +176,7 @@
+             </div>
+ 
+             <form class="account__form" data-account-form="logout">
+-                <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Uitloggen')) ?></button>
++                <button type="submit" class="btn press account__logout"><?= e(t('Uitloggen')) ?></button>
+             </form>
+ 
+             </div>
+@@ -204,11 +204,11 @@
+                         <p class="account__hint"><?= e(t('3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.')) ?></p>
+                     </div>
+ 
+-                    <button type="submit" class="btn account__submit press"><?= e(t('Account aanmaken')) ?></button>
++                    <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Account aanmaken')) ?></button>
+                 </form>
+ 
+                 <form class="account__form" data-account-form="google-cancel">
+-                    <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Annuleren')) ?></button>
++                    <button type="submit" class="btn press account__logout"><?= e(t('Annuleren')) ?></button>
+                 </form>
+ 
+                 <p class="account__hint account__hint--centred">
+@@ -249,14 +249,14 @@
+                            minlength="8" autocomplete="current-password" required>
+                     <?php if ($accountMail): ?>
+                         <p class="account__hint" data-account-only="login">
+-                            <a class="account__link" href="?wachtwoord-vergeten" data-account-forgot><?= e(t('Wachtwoord vergeten?')) ?></a>
++                            <a class="quiet-link" href="?wachtwoord-vergeten" data-account-forgot><?= e(t('Wachtwoord vergeten?')) ?></a>
+                         </p>
+                     <?php endif; ?>
+                 </div>
+ 
+                 <?php /* No repeat field when registering (45.0): the eye in the
+                          field shows what was typed. Changing a password keeps it. */ ?>
+-                <button type="submit" class="btn account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
++                <button type="submit" class="btn btn--primary account__submit press" data-account-submit><?= e(t('Inloggen')) ?></button>
+             </form>
+ 
+             <?php /* Google is secondary: a small mark, no label. It is a
+@@ -294,13 +294,13 @@
+                     </p>
+ 
+                     <form class="account__form" data-account-form="verify-check">
+-                        <button type="submit" class="btn account__submit press"><?= e(t('Ik heb bevestigd')) ?></button>
++                        <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Ik heb bevestigd')) ?></button>
+                     </form>
+                     <form class="account__form" data-account-form="verify-resend">
+-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Stuur opnieuw')) ?></button>
++                        <button type="submit" class="btn press account__logout"><?= e(t('Stuur opnieuw')) ?></button>
+                     </form>
+                     <form class="account__form" data-account-form="verify-cancel">
+-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Ander adres gebruiken')) ?></button>
++                        <button type="submit" class="btn press account__logout"><?= e(t('Ander adres gebruiken')) ?></button>
+                     </form>
+ 
+                     <p class="account__hint account__hint--centred" data-verify-status role="status" hidden></p>
+@@ -321,10 +321,10 @@
+                             <input class="account__input" type="email" id="account-forgot-email" name="email"
+                                    autocomplete="email" spellcheck="false" autocapitalize="none" required>
+                         </div>
+-                        <button type="submit" class="btn account__submit press"><?= e(t('Stuur link')) ?></button>
++                        <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Stuur link')) ?></button>
+                     </form>
+                     <form class="account__form" data-account-form="forgot-back">
+-                        <button type="submit" class="btn btn--ghost press account__logout"><?= e(t('Terug naar inloggen')) ?></button>
++                        <button type="submit" class="btn press account__logout"><?= e(t('Terug naar inloggen')) ?></button>
+                     </form>
+                 </div>
+ 
+@@ -363,11 +363,11 @@
+                     </div>
+                     <p class="account__hint"><?= e(t('Minimaal 8 tekens.')) ?></p>
+                 </div>
+-                <button type="submit" class="btn account__submit press" data-link-submit></button>
++                <button type="submit" class="btn btn--primary account__submit press" data-link-submit></button>
+             </form>
+ 
+             <form class="account__form" data-account-form="link-done" hidden>
+-                <button type="submit" class="btn account__submit press"><?= e(t('Doorgaan')) ?></button>
++                <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Doorgaan')) ?></button>
+             </form>
+         </div>
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/area-chart.php after/components/area-chart.php
+--- before/components/area-chart.php	2026-10-22 06:43:37.432121470 +0000
++++ after/components/area-chart.php	2026-11-12 08:19:53.618307377 +0000
+@@ -56,7 +56,8 @@
+                     <?php foreach ($series as $k => $s): if (($latest['texts'][$k] ?? null) === null) { continue; } ?>
+                         <span class="area-chart__pair">
+                             <?php if (count($series) > 1): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
+-                            <span class="area-chart__value"><?= e($latest['texts'][$k] ?? '—') ?></span>
++                            <?php $txt = (string) ($latest['texts'][$k] ?? '—'); $unitAt = (preg_match('/^([\d.,:\s\x{2212}-]*\d)\s?([^\d\s][^\d]*)$/u', $txt, $um) && $um[2] !== '%') ? $um : null; ?>
++                            <span class="area-chart__value"><?php if ($unitAt): ?><?= e($unitAt[1]) ?><span class="area-chart__unit"><?= e($unitAt[2]) ?></span><?php else: ?><?= e($txt) ?><?php endif; ?></span>
+                             <?php if ($k === 0 && !empty($latest['of'])): ?><span class="area-chart__of"><?= e($latest['of']) ?></span><?php endif; ?>
+                         </span>
+                     <?php endforeach; ?>
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/compass-history.php after/components/compass-history.php
+--- before/components/compass-history.php	2026-10-15 06:14:06.674149957 +0000
++++ after/components/compass-history.php	2026-11-12 08:19:53.616234743 +0000
+@@ -41,7 +41,7 @@
+          data-compass-history aria-labelledby="compass-trend-title">
+     <div class="card__head">
+         <div class="card__head-group">
+-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
++            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('rings') ?></span>
+             <h2 class="card__eyebrow" id="compass-trend-title"><?= e($trend['title']) ?></h2>
+         </div>
+         <?php foreach ($periods as $period): ?>
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/goal-wizard.php after/components/goal-wizard.php
+--- before/components/goal-wizard.php	2026-11-10 15:24:26.271101023 +0000
++++ after/components/goal-wizard.php	2026-11-12 08:19:53.616635931 +0000
+@@ -36,7 +36,7 @@
+         <div class="wizard__head">
+             <h2 class="card__eyebrow" id="wizard-title"><?= e($copy['title']) ?></h2>
+             <button type="button" class="account__close press" data-wizard-close
+-                    aria-label="<?= e($copy['close']) ?>"><?= icon('chevron-down') ?></button>
++                    aria-label="<?= e($copy['close']) ?>"><?= icon('close') ?></button>
+         </div>
+ 
+         <!-- Steps 1 to 3; the review fills all three and says so. -->
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/components/health-history.php after/components/health-history.php
+--- before/components/health-history.php	2026-10-15 06:14:06.674149957 +0000
++++ after/components/health-history.php	2026-11-12 08:19:53.616059257 +0000
+@@ -61,7 +61,12 @@
+          data-health-history aria-labelledby="health-history-title-<?= e($suffix) ?>">
+     <div class="card__head health-history__head">
+         <div class="card__head-group">
+-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
++            <?php $look = ['sleep' => 'moon', 'nutrition' => 'utensils', 'training' => 'dumbbell'][$only ?? ''] ?? null; ?>
++            <?php if ($look !== null): ?>
++            <span class="icon-tile icon-tile--solid" data-accent="<?= e($categories[0]['accent']) ?>" aria-hidden="true"><?= icon_solid($look) ?></span>
++            <?php else: ?>
++            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('rings') ?></span>
++            <?php endif; ?>
+             <h2 class="card__eyebrow" id="health-history-title-<?= e($suffix) ?>"><?= e($history['title']) ?></h2>
+         </div>
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/config/settings.php after/config/settings.php
+--- before/config/settings.php	2026-11-11 12:14:02.847537468 +0000
++++ after/config/settings.php	2026-11-12 08:19:53.615406411 +0000
+@@ -212,7 +212,7 @@
+                 ['type' => 'insight', 'slot' => 'body'],
+ 
+                 ['type' => 'note', 'icon' => 'lock',
+-                 'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar. Lengte en gewicht bewaren hun verloop: elke wijziging komt erbij, de vorige verdwijnt niet.'],
++                 'text' => 'Je gegevens staan op je eigen account en zijn alleen voor jou zichtbaar.'],
+             ],
+         ],
+ 
+@@ -240,8 +240,14 @@
+                    settings_prepare(). */
+                 [
+                     'type'  => 'toggles',
+-                    'title' => 'Ranglijst',
++                    'title' => 'Community',
+                     'items' => [
++                        ['key' => 'allow_requests', 'label' => 'Vriendverzoeken toestaan',
++                         'note_on'  => 'Anderen kunnen je een vriendverzoek sturen.',
++                         'note_off' => 'Niemand kan je een nieuw verzoek sturen.',
++                         'on' => true],
++                        ['label' => 'Meedoen aan ranglijsten', 'value' => 'Altijd',
++                         'note' => 'Iedereen met een account staat op de ranglijsten.'],
+                         ['key' => 'leaderboard_avatar', 'label' => 'Profielfoto op de ranglijst',
+                          'note_on'  => 'Anderen zien je profielfoto naast je naam.',
+                          'note_off' => 'Op de ranglijst staat je initiaal in plaats van je foto.',
+@@ -255,7 +261,7 @@
+                 [
+                     'type'  => 'toggles',
+                     'title' => 'OwnifyAI',
+-                    'lede'  => 'OwnifyAI open je door omhoog te vegen; het is gemaakt met Google Gemini. Aanzetten is toestemming om je gegevens daarvoor te gebruiken.',
++                    'lede'  => 'OwnifyAI is gemaakt met Google Gemini, via de gratis Gemini API. Google kan wat binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen.',
+                     'items' => [
+                         ['key' => 'ai_consent', 'label' => 'Gegevens verwerken met Google Gemini',
+                          'note_on'  => 'Bij elke vraag gaan je profiel, scores, doelen en een samenvatting van twee weken naar Gemini, en per onderwerp meer, zoals slaap, voeding of training.',
+@@ -264,18 +270,7 @@
+                     ],
+                 ],
+ 
+-                ['type' => 'note', 'icon' => 'info',
+-                 'text' => 'Ownify gebruikt de gratis Gemini API. Google kan wat daar binnenkomt gebruiken om zijn producten te verbeteren, en medewerkers van Google kunnen het lezen. Je gesprekken worden in je Ownify-account bewaard, tot je ze wist.'],
+ 
+-                [
+-                    'type'  => 'toggles',
+-                    'title' => 'Later instelbaar',
+-                    'lede'  => 'Deze keuzes komen er zodra er iets te delen valt.',
+-                    'items' => [
+-                        ['label' => 'Profiel vindbaar',        'note' => 'Anderen kunnen je op gebruikersnaam vinden', 'on' => true],
+-                        ['label' => 'Meedoen aan ranglijsten', 'note' => 'Zonder dit verschijn je nergens',           'on' => true],
+-                    ],
+-                ],
+ 
+                 /* Buttons that each do one thing (pages/settings-detail.php
+                    `actions`, settings.js; SettingsDetail.kt on Android). A
+@@ -304,7 +299,7 @@
+                          'fields'   => ['confirm' => 'wissen'],
+                          'danger'   => true],
+                         ['key' => 'ai_clear_history', 'label' => 'OwnifyAI-gesprekken wissen',
+-                         'note'     => 'Verwijdert al je gesprekken met OwnifyAI, op al je apparaten. Andere gegevens blijven staan.',
++                         'note'     => 'Je gesprekken blijven in je Ownify-account bewaard tot je ze hier wist, op al je apparaten. Andere gegevens blijven staan.',
+                          'question' => 'Al je OwnifyAI-gesprekken wissen? Dit kun je niet ongedaan maken.',
+                          'confirm'  => 'Wissen',
+                          'cancel'   => 'Annuleren',
+@@ -531,7 +526,7 @@
+                     'items' => [
+                         ['id' => 'privacy',  'icon' => 'shield', 'label' => 'Privacyverklaring'],
+                         ['id' => 'terms',    'icon' => 'info',   'label' => 'Voorwaarden'],
+-                        ['id' => 'licenses', 'icon' => 'copy',   'label' => 'Licenties'],
++                        ['id' => 'licenses', 'icon' => 'info',   'label' => 'Licenties'],
+                     ],
+                 ],
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/includes/correlations/render.php after/includes/correlations/render.php
+--- before/includes/correlations/render.php	2026-11-04 19:04:38.431207691 +0000
++++ after/includes/correlations/render.php	2026-11-12 08:19:53.615930543 +0000
+@@ -167,9 +167,9 @@
+     function corr_look(string $area): array
+     {
+         return match ($area) {
+-            'sleep'     => ['icon' => 'pulse', 'accent' => 'sleep'],
++            'sleep'     => ['icon' => 'moon', 'accent' => 'sleep'],
+             'nutrition' => ['icon' => 'utensils', 'accent' => 'nutrition'],
+-            default     => ['icon' => 'bolt', 'accent' => 'training'],
++            default     => ['icon' => 'dumbbell', 'accent' => 'training'],
+         };
+     }
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/includes/insights/render.php after/includes/insights/render.php
+--- before/includes/insights/render.php	2026-11-04 18:22:32.336385586 +0000
++++ after/includes/insights/render.php	2026-11-12 08:19:53.615674064 +0000
+@@ -26,9 +26,9 @@
+     function insights_slot_look(string $slot): array
+     {
+         return match ($slot) {
+-            'sleep'     => ['icon' => 'pulse', 'accent' => 'sleep'],
++            'sleep'     => ['icon' => 'moon', 'accent' => 'sleep'],
+             'nutrition' => ['icon' => 'utensils', 'accent' => 'nutrition'],
+-            'training'  => ['icon' => 'bolt', 'accent' => 'training'],
++            'training'  => ['icon' => 'dumbbell', 'accent' => 'training'],
+             default     => ['icon' => 'sparkle', 'accent' => 'neutral'],
+         };
+     }
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/lib/settings.php after/lib/settings.php
+--- before/lib/settings.php	2026-11-11 06:05:19.967931790 +0000
++++ after/lib/settings.php	2026-11-12 08:19:53.615089316 +0000
+@@ -125,6 +125,11 @@
+         $aiOn     = $userId !== null && db_available() && ai_consented($userId);
+         $settings = settings_set_toggle($settings, 'privacy', 'ai_consent', $aiOn);
+ 
++        /* Phase 3 prototype (D6): the friend-request switch, moved here. */
++        require_once dirname(__DIR__) . '/includes/friends.php';
++        $settings = settings_set_toggle($settings, 'privacy', 'allow_requests',
++            $userId !== null && db_available() && friend_requests_allowed($userId));
++
+         /* Insights are Ownify's own sentences (30.1): nothing about them
+            goes to Gemini, so Privacy has no switch for them. */
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/pages/ai.php after/pages/ai.php
+--- before/pages/ai.php	2026-10-21 07:49:14.496720555 +0000
++++ after/pages/ai.php	2026-11-12 08:30:59.728879537 +0000
+@@ -63,7 +63,7 @@
+             <div class="ai-top__row shell">
+                 <button type="button" class="ai-glass ai-round press"
+                         data-ai-close aria-label="<?= e($ai['close']['aria']) ?>" title="<?= e($ai['close']['label']) ?>">
+-                    <?= icon('chevron-down', 'ai-round__icon') ?>
++                    <?= icon('close', 'ai-round__icon') ?>
+                 </button>
+ 
+                 <button type="button" class="ai-glass ai-island press" data-ai-history
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/pages/challenge-detail.php after/pages/challenge-detail.php
+--- before/pages/challenge-detail.php	2026-10-15 07:35:59.795506978 +0000
++++ after/pages/challenge-detail.php	2026-11-12 08:19:53.613271390 +0000
+@@ -112,8 +112,8 @@
+                 <p class="ch-note reveal"><?= e($view['note']) ?></p>
+ 
+                 <?php if ($view['can_leave']): ?>
+-                    <button type="button" class="btn btn--link press ch-leave reveal" data-challenge-leave="<?= $id ?>">
+-                        <?= e($detail['leave']) ?>
++                    <button type="button" class="btn press ch-leave reveal" data-challenge-leave="<?= $id ?>">
++                        <?= icon('logout', 'ch-leave__icon') ?><?= e($detail['leave']) ?>
+                     </button>
+                 <?php endif; ?>
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/pages/community.php after/pages/community.php
+--- before/pages/community.php	2026-11-03 21:07:40.308920898 +0000
++++ after/pages/community.php	2026-11-12 08:19:53.616382208 +0000
+@@ -75,7 +75,7 @@
+                             <?php else: ?>
+                                 <li class="cm-podium__col is-open" style="--step: <?= ['1' => 84, '2' => 64, '3' => 50][(string) $place] ?>px">
+                                     <button type="button" class="cm-podium__add press" data-account-open data-friends-add-open
+-                                            aria-label="<?= e(t('Vriend toevoegen')) ?>"><?= icon('plus') ?></button>
++                                            aria-label="<?= e(t('Vriend toevoegen')) ?>"><?= icon('user-plus') ?></button>
+                                     <span class="cm-podium__step"><?= (int) $place ?></span>
+                                 </li>
+                             <?php endif; ?>
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/pages/goals.php after/pages/goals.php
+--- before/pages/goals.php	2026-10-29 08:26:53.404122979 +0000
++++ after/pages/goals.php	2026-11-12 08:19:53.618477063 +0000
+@@ -64,11 +64,12 @@
+ 
+                     <div class="card goals-empty is-empty reveal" data-goals-empty <?= $hasAny ? 'hidden' : '' ?>>
+                         <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('chart') ?></span>
+-                        <h2 class="goals-empty__title"><?= e($goals['empty']['active']['title']) ?></h2>
+-                        <p class="goals-empty__body"><?= e($goals['empty']['active']['body']) ?></p>
+-                        <button type="button" class="btn press goals-empty__cta" data-goal-add>
++                        <?php $emptyCopy = ($goals['completed'] ?? []) !== [] ? ['title' => 'Geen actieve doelen', 'body' => 'Je afgeronde doelen staan onder Afgerond, met hun eindstand.', 'cta' => 'Nieuw doel instellen'] : $goals['empty']['active']; ?>
++                        <h2 class="goals-empty__title"><?= e($emptyCopy['title']) ?></h2>
++                        <p class="goals-empty__body"><?= e($emptyCopy['body']) ?></p>
++                        <button type="button" class="btn btn--primary press goals-empty__cta" data-goal-add>
+                             <?= icon('plus', 'goals-empty__cta-icon') ?>
+-                            <?= e($goals['empty']['active']['cta']) ?>
++                            <?= e($emptyCopy['cta']) ?>
+                         </button>
+                     </div>
+ 
+diff -ruN -x uploads -x '*.log' -x storage -x cache before/pages/settings-detail.php after/pages/settings-detail.php
+--- before/pages/settings-detail.php	2026-11-04 19:32:11.279664622 +0000
++++ after/pages/settings-detail.php	2026-11-12 08:30:04.569531211 +0000
+@@ -71,7 +71,7 @@
+ 
+                     <?php if ($block['type'] === 'identity'): ?>
+ 
+-                        <section class="card settings-hero reveal">
++                        <section class="card card--hero settings-hero reveal">
+                             <span class="settings-hero__avatar" aria-hidden="true">
+                                 <?php if (!empty($profile['avatar'])): ?>
+                                     <img src="<?= e($profile['avatar']) ?>" alt="">
+@@ -340,6 +340,15 @@
+ 
+                             <div class="card settings-card">
+                                 <?php foreach ($block['items'] as $item): ?>
++                                    <?php if (isset($item['value'])): ?>
++                                    <div class="settings-toggle settings-toggle--live settings-toggle--value">
++                                        <span class="settings-toggle__text">
++                                            <span class="settings-toggle__label"><?= e($item['label']) ?></span>
++                                            <span class="settings-toggle__note"><?= e($item['note'] ?? '') ?></span>
++                                        </span>
++                                        <span class="settings-field__value"><?= e($item['value']) ?></span>
++                                    </div>
++                                    <?php continue; endif; ?>
+                                     <?php if (!empty($item['key'])): ?>
+                                     <?php /* A switch that saves: the account's own value, and the note
+                                               that goes with it (settings_prepare()); settings.js saves it. */ ?>
+@@ -397,8 +406,8 @@
+                                                 <span class="settings-toggle__label"><?= e($item['label']) ?></span>
+                                                 <span class="settings-toggle__note" data-setting-action-note role="status"><?= e($item['note'] ?? '') ?></span>
+                                             </span>
+-                                            <button type="button" class="btn press settings-action__go<?= !empty($item['danger']) ? ' btn--caution' : '' ?>"
+-                                                    data-setting-action-go><?= e($item['confirm']) ?></button>
++                                            <button type="button" class="btn press settings-action__go"
++                                                    data-setting-action-go><?= !empty($item['danger']) ? icon('trash', 'settings-action__icon') : '' ?><?= e($item['confirm']) ?></button>
+                                         </div>
+                                         <?php if (empty($item['direct'])): ?>
+                                         <div class="settings-action__confirm" data-setting-action-confirm hidden>
