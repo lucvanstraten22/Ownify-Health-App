@@ -49,7 +49,7 @@ $config = [
             </svg>
             <?= icon('chevron-down', 'pull-sync__glyph pull-sync__arrow') ?>
             <?= icon('check', 'pull-sync__glyph pull-sync__check') ?>
-            <?= icon('info', 'pull-sync__glyph pull-sync__alert') ?>
+            <?= icon('warning', 'pull-sync__glyph pull-sync__alert') ?>
         </span>
         <span class="pull-sync__label" data-pull-label></span>
         <button type="button" class="pull-sync__retry press" data-pull-retry hidden><?= e(t('Opnieuw')) ?></button>

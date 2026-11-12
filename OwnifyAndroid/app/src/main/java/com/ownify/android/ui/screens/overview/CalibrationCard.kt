@@ -100,7 +100,7 @@ fun CalibrationCard(data: AppData) {
 private fun Tile(icon: String, accent: String) {
     val tint = Accent.of(accent).color
     OwnifyIcons.solid(icon)?.let {
-        IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = Color.White, background = tint, border = tint)
+        IconTile(it, size = 30.dp, radius = 10.dp, color = Color.White, background = tint, border = tint)
     }
 }
 

@@ -167,7 +167,7 @@ private fun HeroCard(area: Area) {
                 .widthIn(max = chWidth(JStyle.Lede, 34f)),
             align = TextAlign.Center
         )
-        if (empty) CardHint(area.empty, textAlign = TextAlign.Center)
+        if (empty) CardHint(area.empty, icon = OwnifyIcons.named(area.emptyIcon) ?: OwnifyIcons.device, textAlign = TextAlign.Center)
     }
 }
 

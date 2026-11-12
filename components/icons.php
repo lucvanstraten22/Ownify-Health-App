@@ -165,6 +165,12 @@ if (!function_exists('icon')) {
 
                 // about
                 'info'     => '<circle cx="12" cy="12" r="8.4"/><path d="M12 11.2v5.1"/><path d="M12 7.9v.1"/>',
+                // something went wrong — a triangle, the sign people know for
+                // "careful", never the info circle (50.0, B9: the owner's W1)
+                'warning'  => '<path d="M10.4 4.6 3.1 17.4a1.8 1.8 0 0 0 1.6 2.7h14.6a1.8 1.8 0 0 0 1.6-2.7L13.6 4.6a1.8 1.8 0 0 0-3.2 0Z"/><path d="M12 9.4v4.4"/><path d="M12 16.9h.01"/>',
+                // Thema & uiterlijk — light and dark, a circle half filled
+                // (50.0, B9: the owner's T1; the one filled shape in the set)
+                'theme'    => '<circle cx="12" cy="12" r="8.4"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" stroke="none"/>',
 
                 // sign out
                 'logout'   => '<path d="M9.8 20.4H5.8a1.8 1.8 0 0 1-1.8-1.8V5.4a1.8 1.8 0 0 1 1.8-1.8h4"/>'

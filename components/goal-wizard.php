@@ -124,7 +124,7 @@ $steps = $copy['steps'];
         <?php foreach ($goals['categories'] as $category): ?>
             <template data-wizard-icon="<?= e($category['icon']) ?>"><?= icon($category['icon']) ?></template>
         <?php endforeach; ?>
-        <template data-wizard-icon="custom"><?= icon('sparkle') ?></template>
+        <template data-wizard-icon="custom"><?= icon('flag') ?></template>
         <template data-wizard-icon="arrow-up"><?= icon('arrow-up') ?></template>
         <template data-wizard-icon="arrow-down"><?= icon('arrow-down') ?></template>
         <template data-wizard-icon="chevron-right"><?= icon('chevron-right') ?></template>

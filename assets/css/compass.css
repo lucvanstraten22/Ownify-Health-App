@@ -273,7 +273,7 @@
     border-radius: 10px;
 }
 
-.compass-cat__head .icon-tile .icon { width: 17px; height: 17px; }
+.compass-cat__head .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 
 .compass-cat__text {
     display: flex;

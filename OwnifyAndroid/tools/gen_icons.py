@@ -65,7 +65,10 @@ lines = []
 names = []
 for name, raw in entries:
     body = "".join(re.findall(r"'([^']*)'", raw))
-    paths = element_paths(body)
+    # A shape filled in the ink (fill="currentColor", 50.0: the theme icon's
+    # dark half) is marked "F:"; every other one is a line.
+    tags = re.findall(r"<(?:path|circle|rect)[^>]*/>", body)
+    paths = [("F:" if attrs(t).get("fill") == "currentColor" else "") + element_paths(t)[0] for t in tags]
     names.append(name)
     ident = camel(name)
     lines.append(f"    /** `{name}` */")
@@ -207,10 +210,11 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
     val width = if (optical != null) STROKE / optical.scale else STROKE
 
     for (data in paths) {{
+        val filled = data.startsWith("F:")
         builder.addPath(
-            pathData = addPathNodes(data),
-            fill = null,
-            stroke = SolidColor(Color.Black),
+            pathData = addPathNodes(data.removePrefix("F:")),
+            fill = if (filled) SolidColor(Color.Black) else null,
+            stroke = if (filled) null else SolidColor(Color.Black),
             strokeLineWidth = width,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round

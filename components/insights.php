@@ -43,7 +43,7 @@ $titleId  = 'insights-title' . ($slot === null ? '' : '-' . $slot);
         <?php /* The whole card opens Inzichten, as the goal card opens its goal (the button's ::after covers it). */ ?>
         <button type="button" class="cm-head card__head--compact" data-detail-open="<?= e($insights['open']['detail']) ?>"
                 aria-label="<?= e($insights['title'] . '. ' . $insights['open']['label']) ?>">
-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>
+            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('sparkle') ?></span>
             <span class="card__headings">
                 <span class="card__eyebrow" id="<?= e($titleId) ?>"><?= e($insights['title']) ?></span>
                 <span class="card__meta card__meta--small"><?= e($insights['subtitle']) ?></span>
@@ -52,7 +52,7 @@ $titleId  = 'insights-title' . ($slot === null ? '' : '-' . $slot);
         </button>
     <?php else: ?>
         <div class="card__head card__head--compact">
-            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>
+            <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('sparkle') ?></span>
             <div class="card__headings">
                 <h2 class="card__eyebrow" id="<?= e($titleId) ?>"><?= e($insights['title']) ?></h2>
                 <?php if ($slot === null): ?>

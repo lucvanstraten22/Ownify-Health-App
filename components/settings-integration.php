@@ -142,7 +142,7 @@ $needsRedo  = ($item['status'] ?? null) === 'revoked';
 
         <?php if (!empty($item['error'])): ?>
             <p class="integration__hint integration__hint--warn">
-                <?= icon('info', 'card__hint-icon') ?><?= e($item['error']) ?>
+                <?= icon('warning', 'card__hint-icon') ?><?= e($item['error']) ?>
             </p>
         <?php endif; ?>
 

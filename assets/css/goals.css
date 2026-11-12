@@ -250,7 +250,7 @@
 }
 
 .goal-card--secondary .icon-tile .icon,
-.goal-card--completed .icon-tile .icon { width: 17px; height: 17px; }
+.goal-card--completed .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 
 .goal-card--secondary .meter--goal { height: 8px; }
 .goal-card--secondary .goal-card__percent-value { font-size: var(--fs-large-title);

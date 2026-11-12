@@ -300,10 +300,10 @@ internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Mo
     val shell = LocalShell.current
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         ActionTile(page["create"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCreate()) }) {
-            NeutralTile(OwnifyIcons.plus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
+            NeutralTile(OwnifyIcons.plus, size = 30.dp, radius = 10.dp)
         }
         ActionTile(page["join"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCode) }) {
-            NeutralTile(OwnifyIcons.hash, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
+            NeutralTile(OwnifyIcons.hash, size = 30.dp, radius = 10.dp)
         }
     }
 }
@@ -873,7 +873,7 @@ private fun InviteRow(label: String, hint: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(OwnifyIcons.userPlus, size = 30.dp, radius = 10.dp, iconSize = 16.dp)
+        IconTile(OwnifyIcons.userPlus, size = 30.dp, radius = 10.dp)
         Column(Modifier.weight(1f)) {
             T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
             T(hint, JStyle.Meta)

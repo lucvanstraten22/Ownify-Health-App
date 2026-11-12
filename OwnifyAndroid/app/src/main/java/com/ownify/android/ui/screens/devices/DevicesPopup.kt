@@ -117,7 +117,7 @@ private fun DeviceRow(line: DeviceLine) {
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
         OwnifyIcons.named(line.icon)?.let {
-            IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (line.connected) Ownify.Health else Ownify.TextSecondary)
+            IconTile(it, size = 30.dp, radius = 10.dp, color = if (line.connected) Ownify.Health else Ownify.TextSecondary)
         }
         Column(Modifier.weight(1f)) {
             T(line.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)

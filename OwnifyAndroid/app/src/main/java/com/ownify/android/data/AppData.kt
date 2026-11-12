@@ -377,12 +377,13 @@ data class OverallScore(
     val max: Int,
     val caption: String,
     val description: String,
-    val emptyHint: String
+    val emptyHint: String,
+    val emptyIcon: String = "device"
 ) {
     companion object {
         fun parse(o: JSONObject?) = OverallScore(
             o.str("label").orEmpty(), o.int("value"), o.int("max") ?: 100,
-            o.str("caption").orEmpty(), o.str("description").orEmpty(), o.str("empty_hint").orEmpty()
+            o.str("caption").orEmpty(), o.str("description").orEmpty(), o.str("empty_hint").orEmpty(), o.str("empty_icon") ?: "device"
         )
     }
 }
@@ -1304,6 +1305,8 @@ data class Area(
     val score: Score,
     val summary: String,
     val empty: String,
+    /** The no-data hint's icon (B8): "device" to connect a source, "calendar" to wait a few days. */
+    val emptyIcon: String = "device",
     val rating: RatingCopy?,
     val ratingToday: Int?,
     val highlights: List<Metric>,
@@ -1325,6 +1328,7 @@ data class Area(
             score = Score(o.obj("score").int("value"), o.obj("score").int("max") ?: 100),
             summary = o.str("summary").orEmpty(),
             empty = o.str("empty").orEmpty(),
+            emptyIcon = o.str("empty_icon") ?: "device",
             rating = o.obj("rating")?.let {
                 RatingCopy(
                     it.str("title").orEmpty(), it.str("label").orEmpty(), it.str("placeholder").orEmpty(),

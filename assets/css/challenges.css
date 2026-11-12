@@ -187,7 +187,7 @@
     backdrop-filter: var(--lg-filter);
 }
 .ch-act .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
-.ch-act .icon-tile .icon { width: 16px; height: 16px; }
+.ch-act .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 .ch-act__label { min-width: 0; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-body); letter-spacing: var(--tracking-body); }
 .ch-act:focus-visible { outline: 2px solid var(--focus-ring, rgba(var(--ink), 0.5)); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
@@ -436,7 +436,7 @@
 }
 
 .icon-tile.ch-icon--sm { width: 30px; height: 30px; border-radius: 10px; }
-.icon-tile.ch-icon--sm .icon { width: 15px; height: 15px; }
+.icon-tile.ch-icon--sm .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 
 /* Nothing yet: the empty target and three ways to begin. */
 .ch-empty2 { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-4) var(--space-4); text-align: center; }

@@ -415,7 +415,7 @@ fun GoalCard(
                         // Solid, as Gezondheid's and Overzicht's tiles (31.3): the area's colour, the icon white.
                         OwnifyIcons.solid(model.icon)?.let {
                             if (primary) IconTile(it, color = androidx.compose.ui.graphics.Color.White, background = accent.color, border = accent.color, notice = model.notice)
-                            else IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = androidx.compose.ui.graphics.Color.White, background = accent.color, border = accent.color, notice = model.notice)
+                            else IconTile(it, size = 30.dp, radius = 10.dp, color = androidx.compose.ui.graphics.Color.White, background = accent.color, border = accent.color, notice = model.notice)
                         }
                         Column(Modifier.weight(1f)) {
                             T(model.categoryLabel, JStyle.Caption, uppercase = true, maxLines = 1, ellipsis = true)

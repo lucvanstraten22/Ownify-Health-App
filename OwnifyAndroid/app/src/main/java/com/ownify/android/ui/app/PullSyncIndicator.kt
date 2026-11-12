@@ -193,7 +193,7 @@ fun PullSyncIndicator(pull: PullSyncState, modifier: Modifier = Modifier) {
                 Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
                     when (phase) {
                         PullPhase.Done -> JIcon(OwnifyIcons.check, size = 13.dp, color = Ownify.Health)
-                        PullPhase.Failed -> JIcon(OwnifyIcons.info, size = 16.dp, color = Ownify.Attention)
+                        PullPhase.Failed -> JIcon(OwnifyIcons.warning, size = 16.dp, color = Ownify.Attention)
                         PullPhase.Syncing -> Spinner()
                         else -> {
                             Ring(p, if (phase == PullPhase.Armed) Ownify.Health else Ownify.TextSecondary)

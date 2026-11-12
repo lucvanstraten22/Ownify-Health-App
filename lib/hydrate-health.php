@@ -114,6 +114,7 @@ if (!function_exists('hydrate_health')) {
                     (string) $area['expired'],
                     score_compass_date((string) $result['last_input'])
                 );
+                $health['areas'][$areaKey]['empty_icon'] = 'calendar';   // B8: waiting for new data
                 continue;
             }
 
@@ -126,6 +127,7 @@ if (!function_exists('hydrate_health')) {
                     (string) $area['collecting'],
                     tn($needed, '%d dag', '%d dagen')
                 );
+                $health['areas'][$areaKey]['empty_icon'] = 'calendar';   // B8: a few more days
             }
         }
 

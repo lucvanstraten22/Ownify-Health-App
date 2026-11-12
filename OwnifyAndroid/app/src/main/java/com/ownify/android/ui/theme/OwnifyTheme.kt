@@ -499,6 +499,9 @@ object Ownify {
     /** Icon tiles keep about a third of their size: 36 → 12, 30 → 10 (theme.css). */
     val TileRadius = 12.dp
     val TileRadiusSmall = 10.dp
+    /** B10 (50.0, N4): one glyph size per tile size — the 36 tile 18, the 30 tile 16 (`--tile-glyph*`). */
+    val TileGlyph = 18.dp
+    val TileGlyphSmall = 16.dp
     val TileSmall = 30.dp
 
     // --- inside a card (theme.css --inset-fill, --slot-edge, --row-min) -----

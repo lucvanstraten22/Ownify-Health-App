@@ -56,7 +56,7 @@
 }
 
 .calibration-row .icon-tile .icon,
-.calibration-start .icon-tile .icon { width: 17px; height: 17px; }
+.calibration-start .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 
 .calibration-row__text,
 .calibration-start__text {

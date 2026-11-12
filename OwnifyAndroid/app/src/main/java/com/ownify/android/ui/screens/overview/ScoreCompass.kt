@@ -219,7 +219,7 @@ private fun CategoryHead(label: String, meta: String, icon: String?, accent: Str
     val tint = Accent.of(accent).color
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
         OwnifyIcons.solid(icon)?.let {
-            IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = Color.White, background = tint, border = tint)
+            IconTile(it, size = 30.dp, radius = 10.dp, color = Color.White, background = tint, border = tint)
         }
         Column(Modifier.weight(1f)) {
             T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
@@ -545,7 +545,7 @@ private fun Chart(trend: CompassTrend) {
 @Composable
 private fun ComparisonCard(comparison: CompassComparison) {
     JCard(Modifier.fillMaxWidth().reveal()) {
-        CompactHead(OwnifyIcons.solidPulse, comparison.title)
+        CompactHead(OwnifyIcons.solid("rings") ?: OwnifyIcons.rings, comparison.title)
         T(comparison.note, JStyle.Lede)
 
         Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {

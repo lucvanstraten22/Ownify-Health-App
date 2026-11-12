@@ -120,7 +120,8 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
     </ul>
 
     <?php if (!has_value($overall['value'])): ?>
-        <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e($overall['empty_hint']) ?></p>
+        <?php /* B8: connect a source (device), or wait a few days (calendar). */ ?>
+        <p class="card__hint"><?= icon($overall['empty_icon'] ?? 'device', 'card__hint-icon') ?><?= e($overall['empty_hint']) ?></p>
     <?php endif; ?>
 
 </section>

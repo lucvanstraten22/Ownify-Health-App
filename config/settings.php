@@ -90,7 +90,7 @@ return [
             'rows'  => [
                 /* "Voeding vanaf 20:00": the hour the dot appears (settings_prepare()). */
                 ['id' => 'notifications', 'icon' => 'bell',    'label' => 'Meldingen',         'value' => 'Voeding vanaf 20:00'],
-                ['id' => 'theme',         'icon' => 'moon',    'label' => 'Thema & uiterlijk', 'value' => 'Systeem'],
+                ['id' => 'theme',         'icon' => 'theme',    'label' => 'Thema & uiterlijk', 'value' => 'Systeem'],
                 ['id' => 'language',      'icon' => 'globe',   'label' => 'Taal',              'value' => 'Nederlands'],
                 /* Eenheden, Eerste dag van de week and Toegankelijkheid, together on one screen. */
                 ['id' => 'preferences',   'icon' => 'sliders', 'label' => 'Voorkeuren',        'value' => 'Metrisch · Maandag'],

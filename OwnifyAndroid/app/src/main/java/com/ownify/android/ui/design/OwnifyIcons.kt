@@ -247,14 +247,14 @@ object OwnifyIcons {
         )
     }
 
-    /** `arrow-down` */
-    /** The same as before — the Health Score's trend, unchanged (32.2). */
+    /** `dash` */
     val dash: ImageVector by lazy {
         icon("dash", null,
             "M6.4 12h11.2"
         )
     }
 
+    /** `arrow-down` */
     val arrowDown: ImageVector by lazy {
         icon("arrow-down", null,
             "M12 4.8v14M6.4 13.2 12 18.8l5.6-5.6"
@@ -276,7 +276,7 @@ object OwnifyIcons {
         )
     }
 
-    /** `eye` (45.0): a password field's "show" */
+    /** `eye` */
     val eye: ImageVector by lazy {
         icon("eye", null,
             "M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z",
@@ -284,7 +284,7 @@ object OwnifyIcons {
         )
     }
 
-    /** `eye-off` (45.0): a password field's "hide" — the same eye, struck through */
+    /** `eye-off` */
     val eyeOff: ImageVector by lazy {
         icon("eye-off", null,
             "M2.8 12s3.4-6.2 9.2-6.2 9.2 6.2 9.2 6.2-3.4 6.2-9.2 6.2S2.8 12 2.8 12Z",
@@ -388,6 +388,23 @@ object OwnifyIcons {
         )
     }
 
+    /** `warning` */
+    val warning: ImageVector by lazy {
+        icon("warning", null,
+            "M10.4 4.6 3.1 17.4a1.8 1.8 0 0 0 1.6 2.7h14.6a1.8 1.8 0 0 0 1.6-2.7L13.6 4.6a1.8 1.8 0 0 0-3.2 0Z",
+            "M12 9.4v4.4",
+            "M12 16.9h.01"
+        )
+    }
+
+    /** `theme` */
+    val theme: ImageVector by lazy {
+        icon("theme", null,
+            "M3.6 12a8.4 8.4 0 1 0 16.8 0a8.4 8.4 0 1 0 -16.8 0Z",
+            "F:M12 3.6a8.4 8.4 0 0 1 0 16.8Z"
+        )
+    }
+
     /** `logout` */
     val logout: ImageVector by lazy {
         icon("logout", null,
@@ -437,9 +454,12 @@ object OwnifyIcons {
         "copy" to copy,
         "share" to share,
         "arrow-up" to arrowUp,
+        "dash" to dash,
         "arrow-down" to arrowDown,
         "search" to search,
         "close" to close,
+        "eye" to eye,
+        "eye-off" to eyeOff,
         "chat" to chat,
         "check" to check,
         "pause" to pause,
@@ -452,6 +472,8 @@ object OwnifyIcons {
         "calendar" to calendar,
         "accessibility" to accessibility,
         "info" to info,
+        "warning" to warning,
+        "theme" to theme,
         "logout" to logout,
         "sync" to sync,
         )
@@ -594,10 +616,11 @@ private fun icon(name: String, optical: Optical?, vararg paths: String): ImageVe
     val width = if (optical != null) STROKE / optical.scale else STROKE
 
     for (data in paths) {
+        val filled = data.startsWith("F:")
         builder.addPath(
-            pathData = addPathNodes(data),
-            fill = null,
-            stroke = SolidColor(Color.Black),
+            pathData = addPathNodes(data.removePrefix("F:")),
+            fill = if (filled) SolidColor(Color.Black) else null,
+            stroke = if (filled) null else SolidColor(Color.Black),
             strokeLineWidth = width,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round

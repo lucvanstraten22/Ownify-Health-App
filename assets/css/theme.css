@@ -488,6 +488,9 @@
        it (components.css). Android's own minimum is 48 dp (OwnifyTheme.kt
        HitMin; PARITY.md). */
     --hit-min: 44px;
+    /* B10 (50.0, N4): one glyph size per tile size — the 36 tile 18, the 30 tile 16. */
+    --tile-glyph: 18px;
+    --tile-glyph-sm: 16px;
 
     /* The tab's interior. Every number here applies to all five tabs alike:
        the icons are normalised on their own grid instead, so nothing is

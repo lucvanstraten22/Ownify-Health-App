@@ -531,7 +531,7 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
         chosen = draft.measurement == m.code,
         onClick = { choose(m, draft, goals) },
         accent = Accent.of(category?.accent ?: "health").color,
-        icon = if (m.custom) OwnifyIcons.sparkle else OwnifyIcons.named(category?.icon)
+        icon = if (m.custom) OwnifyIcons.flag else OwnifyIcons.named(category?.icon)
     )
 }
 

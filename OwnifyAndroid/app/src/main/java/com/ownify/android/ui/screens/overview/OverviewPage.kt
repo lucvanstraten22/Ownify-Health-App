@@ -246,7 +246,7 @@ private fun HealthScoreCard(data: AppData) {
             }
         )
 
-        if (empty) CardHint(overall.emptyHint, textAlign = TextAlign.Center)
+        if (empty) CardHint(overall.emptyHint, icon = OwnifyIcons.named(overall.emptyIcon) ?: OwnifyIcons.device, textAlign = TextAlign.Center)
     }
 }
 
@@ -519,11 +519,11 @@ internal fun InsightsCard(insights: Insights, slot: String? = null) {
         if (opens) {
             // `.cm-head`: the card's name with a chevron, saying where it goes.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle) }
+                Box(Modifier.weight(1f)) { CompactHead(OwnifyIcons.solidSparkle, insights.title, meta = insights.subtitle) }
                 JIcon(OwnifyIcons.chevronRight, Modifier.padding(bottom = Ownify.Space4), size = 16.dp, color = Ownify.TextFaint)
             }
         } else {
-            CompactHead(OwnifyIcons.solidPulse, insights.title, meta = insights.subtitle.takeIf { slot == null })
+            CompactHead(OwnifyIcons.solidSparkle, insights.title, meta = insights.subtitle.takeIf { slot == null })
         }
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             items.forEach { item ->

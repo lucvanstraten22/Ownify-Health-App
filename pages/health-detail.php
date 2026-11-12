@@ -69,7 +69,7 @@ $ratio = score_ratio($score['value'], $score['max']);
                     <p class="card__lede"><?= e($area['summary']) ?></p>
 
                     <?php if (!has_value($score['value'])): ?>
-                        <p class="card__hint"><?= icon('lock', 'card__hint-icon') ?><?= e($area['empty']) ?></p>
+                        <p class="card__hint"><?= icon($area['empty_icon'] ?? 'device', 'card__hint-icon') ?><?= e($area['empty']) ?></p>
                     <?php endif; ?>
                 </section>
 

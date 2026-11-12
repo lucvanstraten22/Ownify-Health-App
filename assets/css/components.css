@@ -985,7 +985,7 @@
     color: var(--text-secondary);
 }
 
-.icon-tile .icon { width: 18px; height: 18px; }
+.icon-tile .icon { width: var(--tile-glyph); height: var(--tile-glyph); }
 
 .card--goal .icon-tile { color: var(--accent); }
 

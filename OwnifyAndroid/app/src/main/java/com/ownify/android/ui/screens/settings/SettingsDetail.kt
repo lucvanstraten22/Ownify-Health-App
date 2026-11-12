@@ -646,7 +646,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
         // .integration__head
         val head: @Composable () -> Unit = {
             OwnifyIcons.named(item.icon)?.let {
-                IconTile(it, size = 30.dp, radius = 10.dp, iconSize = 17.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary,
+                IconTile(it, size = 30.dp, radius = 10.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary,
                     notice = "source:" + item.provider.orEmpty())
             }
         }
@@ -741,7 +741,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                     }
 
                     if (!item.error.isNullOrEmpty()) {
-                        IntegrationHint(item.error, OwnifyIcons.info, warn = true)
+                        IntegrationHint(item.error, OwnifyIcons.warning, warn = true)
                     }
 
                     // This phone's own Health Connect, when this is it.
@@ -801,7 +801,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
                         }
                     }
                     if (thisPhone && connected) SyncResult()
-                    result?.let { IntegrationHint(it, OwnifyIcons.info, warn = true) }
+                    result?.let { IntegrationHint(it, OwnifyIcons.warning, warn = true) }
 
                     when {
                         !item.available && !connected && !item.blocked.isNullOrEmpty() -> IntegrationHint(item.blocked, OwnifyIcons.lock)
@@ -918,7 +918,7 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
                 }
             }
         }
-        problem?.let { IntegrationHint(it, OwnifyIcons.info, warn = true) }
+        problem?.let { IntegrationHint(it, OwnifyIcons.warning, warn = true) }
     }
 }
 

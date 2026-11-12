@@ -95,7 +95,7 @@ $comparison  = $compass['comparison'];
                 <?php /* 3 — Compared with yourself, and nobody else. */ ?>
                 <section class="card reveal compass-card" aria-labelledby="compass-self-title">
                     <div class="card__head card__head--compact">
-                        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('pulse') ?></span>
+                        <span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true"><?= icon_solid('rings') ?></span>
                         <h2 class="card__eyebrow" id="compass-self-title"><?= e($comparison['title']) ?></h2>
                     </div>
 

@@ -344,7 +344,7 @@ fun IconTile(
     modifier: Modifier = Modifier,
     size: Dp = 36.dp,
     radius: Dp = if (size < 34.dp) Ownify.TileRadiusSmall else Ownify.TileRadius,
-    iconSize: Dp = 18.dp,
+    iconSize: Dp = if (size < 34.dp) Ownify.TileGlyphSmall else Ownify.TileGlyph,
     color: Color = Ownify.TextSecondary,
     background: Color = Ownify.fill(0.065f),
     border: Color = Ownify.GlassHairline,

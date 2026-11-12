@@ -72,7 +72,7 @@
 }
 
 .devices__item .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
-.devices__item .icon-tile .icon { width: 17px; height: 17px; }
+.devices__item .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
 .devices__item.is-connected .icon-tile { color: var(--health); }
 
 .devices__text { min-width: 0; }
