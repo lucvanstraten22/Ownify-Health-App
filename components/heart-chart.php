@@ -35,12 +35,12 @@ $y      = static fn (array $p): string => (string) json_encode((object) ['heart'
             <h2 class="card__eyebrow" id="<?= e($suffix) ?>-title"><?= e($heart['title']) ?></h2>
         </div>
 
-        <div class="range-switch range-switch--wide health-history__switch heart-chart__switch" role="group" aria-label="<?= e($heart['switch']) ?>">
+        <div class="range-switch range-switch--wide health-history__switch heart-chart__switch" role="radiogroup" aria-label="<?= e($heart['switch']) ?>">
             <?php foreach ($heart['options'] as $option): ?>
                 <button type="button"
                         class="range-switch__option<?= $option['key'] === $heart['default'] ? ' is-active' : '' ?>"
                         data-range-option="<?= e($option['key']) ?>"
-                        aria-pressed="<?= $option['key'] === $heart['default'] ? 'true' : 'false' ?>"><?= e($option['label']) ?></button>
+                        role="radio" aria-checked="<?= $option['key'] === $heart['default'] ? 'true' : 'false' ?>"><?= e($option['label']) ?></button>
             <?php endforeach; ?>
         </div>
     </div>

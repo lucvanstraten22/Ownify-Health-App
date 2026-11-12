@@ -70,12 +70,12 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
             <h2 class="card__eyebrow" id="health-history-title-<?= e($suffix) ?>"><?= e($history['title']) ?></h2>
         </div>
 
-        <div class="range-switch range-switch--wide health-history__switch" role="group" aria-label="<?= e($history['switch']) ?>">
+        <div class="range-switch range-switch--wide health-history__switch" role="radiogroup" aria-label="<?= e($history['switch']) ?>">
             <?php foreach ($periods as $period): ?>
                 <button type="button"
                         class="range-switch__option<?= $period['key'] === $default ? ' is-active' : '' ?>"
                         data-range-option="<?= e($period['key']) ?>"
-                        aria-pressed="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
+                        role="radio" aria-checked="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
             <?php endforeach; ?>
         </div>
     </div>

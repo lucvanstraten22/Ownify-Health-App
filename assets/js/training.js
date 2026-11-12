@@ -56,7 +56,7 @@
             Array.prototype.forEach.call(card.querySelectorAll('[data-range-option]'), function (option) {
                 var on = option === today;
                 option.classList.toggle('is-active', on);
-                option.setAttribute('aria-pressed', on ? 'true' : 'false');
+                option.setAttribute('aria-checked', on ? 'true' : 'false');
             });
 
             var title = days[index].querySelector('.heart-chart__date');

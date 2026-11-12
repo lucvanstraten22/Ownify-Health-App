@@ -85,7 +85,7 @@
             Array.prototype.forEach.call(card.querySelectorAll('[data-range-option]'), function (option) {
                 var isActive = option.getAttribute('data-range-option') === rangeKey;
                 option.classList.toggle('is-active', isActive);
-                option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                option.setAttribute('aria-checked', isActive ? 'true' : 'false');
             });
         }
 

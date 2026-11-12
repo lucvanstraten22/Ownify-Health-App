@@ -216,7 +216,8 @@ private fun AssistantHandle(aria: String, onOpen: () -> Unit, hint: () -> Int, m
     }
     val on = pressed || lit
     val grip by animateDpAsState(if (on) 50.dp else 38.dp, tween(Ownify.FastMs, easing = Ownify.Ease), label = "grip")
-    val tone by animateColorAsState(if (on) Ownify.ink(0.42f) else Ownify.ink(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
+    // Meer contrast (A14, 50.0): the grip is the control's only mark, so it keeps its held strength.
+    val tone by animateColorAsState(if (on || Ownify.moreContrast) Ownify.ink(0.42f) else Ownify.ink(0.18f), tween(Ownify.FastMs, easing = Ownify.Ease), label = "tone")
     val rise = lift.value
 
     Box(

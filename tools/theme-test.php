@@ -309,7 +309,12 @@ $theme = ['dark' => $darkTokens, 'light' => array_merge($darkTokens, $lightToken
 foreach (['text-primary', 'text-secondary', 'text-muted', 'attention'] as $token) {
     $l = worst($theme['light'], $token);
     $d = worst($theme['dark'], $token);
-    check(sprintf('--%s: %.2f:1 at worst (AA; Dark Mode gives %.2f)', $token, $l, $d), $l >= 4.5 && $l >= $d);
+    /* The text inks at AA in both themes (A14, N16, 50.0): Dark's muted ink
+       was documented at 4.2 and never guarded. The gold (--attention) is
+       held to AA in White Mode only, as before — Dark's 4.05 is reported to
+       the owner, not changed here (its colour stays as it is). */
+    $dark = $token === 'attention' ? true : $d >= 4.5;
+    check(sprintf('--%s: %.2f:1 at worst (AA; Dark Mode gives %.2f)', $token, $l, $d), $l >= 4.5 && $dark && $l >= $d);
 }
 
 $card = grounds($theme['light'])['card'];

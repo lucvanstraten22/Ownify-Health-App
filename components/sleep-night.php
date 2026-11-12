@@ -44,12 +44,12 @@ $stages  = $night['stages'] ?? [];
         </div>
 
         <?php if (!empty($night['options'])): ?>
-            <div class="range-switch range-switch--wide health-history__switch heart-chart__switch" role="group" aria-label="<?= e($night['switch']) ?>">
+            <div class="range-switch range-switch--wide health-history__switch heart-chart__switch" role="radiogroup" aria-label="<?= e($night['switch']) ?>">
                 <?php foreach ($night['options'] as $i => $option): ?>
                     <button type="button"
                             class="range-switch__option<?= $option['key'] === $default ? ' is-active' : '' ?>"
                             data-range-option="<?= e($option['key']) ?>"<?= $i === 0 ? ' data-day-option' : '' ?>
-                            aria-pressed="<?= $option['key'] === $default ? 'true' : 'false' ?>"><?= e($option['label']) ?></button>
+                            role="radio" aria-checked="<?= $option['key'] === $default ? 'true' : 'false' ?>"><?= e($option['label']) ?></button>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

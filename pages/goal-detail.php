@@ -495,14 +495,14 @@ $height = 96.0;
                                      no one to hand it to, so it stays Primair. */
                             $alone = count($goals['active'] ?? []) < 2;
                             ?>
-                            <div class="range-switch range-switch--wide goal-priority" role="group"
+                            <div class="range-switch range-switch--wide goal-priority" role="radiogroup"
                                  aria-label="<?= e($copy['priority']) ?>" data-goal-priority-switch>
                                 <button type="button" class="range-switch__option<?= $goal['is_primary'] ? ' is-active' : '' ?>"
                                         data-goal-action="set-primary"
-                                        aria-pressed="<?= $goal['is_primary'] ? 'true' : 'false' ?>"><?= e($copy['priority_primary']) ?></button>
+                                        role="radio" aria-checked="<?= $goal['is_primary'] ? 'true' : 'false' ?>"><?= e($copy['priority_primary']) ?></button>
                                 <button type="button" class="range-switch__option<?= $goal['is_primary'] ? '' : ' is-active' ?>"
                                         data-goal-action="set-secondary"
-                                        aria-pressed="<?= $goal['is_primary'] ? 'false' : 'true' ?>"
+                                        role="radio" aria-checked="<?= $goal['is_primary'] ? 'false' : 'true' ?>"
                                         <?= $alone && $goal['is_primary'] ? 'disabled aria-disabled="true"' : '' ?>><?= e($copy['priority_secondary']) ?></button>
                             </div>
                             <?php if ($alone && $goal['is_primary']): ?>

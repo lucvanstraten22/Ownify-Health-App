@@ -54,12 +54,12 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
         <?php endforeach; ?>
     </div>
 
-    <div class="range-switch range-switch--wide compass-history__switch" role="group" aria-label="<?= e($trend['switch']) ?>">
+    <div class="range-switch range-switch--wide compass-history__switch" role="radiogroup" aria-label="<?= e($trend['switch']) ?>">
         <?php foreach ($periods as $period): ?>
             <button type="button"
                     class="range-switch__option<?= $period['key'] === $default ? ' is-active' : '' ?>"
                     data-range-option="<?= e($period['key']) ?>"
-                    aria-pressed="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
+                    role="radio" aria-checked="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
         <?php endforeach; ?>
     </div>
 

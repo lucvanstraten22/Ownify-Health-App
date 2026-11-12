@@ -37,14 +37,14 @@ $height = 120.0;
             <h2 class="card__eyebrow" id="trend-title-<?= e($suffix) ?>"><?= e($trend['title']) ?></h2>
         </div>
 
-        <div class="range-switch" role="group" aria-label="<?= e(t('Periode kiezen')) ?>">
+        <div class="range-switch" role="radiogroup" aria-label="<?= e(t('Periode kiezen')) ?>">
             <?php foreach ($trend['ranges'] as $rangeKey => $range):
                 $isFirst = $rangeKey === array_key_first($trend['ranges']);
                 ?>
                 <button type="button"
                         class="range-switch__option<?= $isFirst ? ' is-active' : '' ?>"
                         data-range-option="<?= e($rangeKey) ?>"
-                        aria-pressed="<?= $isFirst ? 'true' : 'false' ?>"><?= e($range['label']) ?></button>
+                        role="radio" aria-checked="<?= $isFirst ? 'true' : 'false' ?>"><?= e($range['label']) ?></button>
             <?php endforeach; ?>
         </div>
     </div>

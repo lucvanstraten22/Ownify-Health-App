@@ -606,6 +606,9 @@ button {
     background: none;
     cursor: pointer;
     touch-action: manipulation;
+    /* A long press on a control is a press, not a text selection (A14, 50.0). */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* The one focus ring, for whoever moves with a keyboard (50.0): on every

@@ -37,7 +37,7 @@
         Array.prototype.forEach.call(page.querySelectorAll('[' + attr + ']'), function (option) {
             var isActive = option.getAttribute(attr) === value;
             option.classList.toggle('is-active', isActive);
-            option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            option.setAttribute('aria-checked', isActive ? 'true' : 'false');
         });
     }
 

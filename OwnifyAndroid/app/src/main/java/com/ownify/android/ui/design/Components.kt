@@ -21,6 +21,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1005,7 +1007,9 @@ fun RangeSwitch(
                     drawContent()
                 }
                 .padding(3.dp)
-                .semantics { if (label != null) contentDescription = label },
+                // A radio group (A14, 50.0): announced as one choice among the options, not toggle buttons.
+                .semantics { if (label != null) contentDescription = label }
+                .selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             for ((key, text) in options) {
@@ -1033,8 +1037,7 @@ fun RangeSwitch(
                         }
                         .hitArea(
                             Modifier
-                                .clickable(enabled = !off, role = Role.Button, onClick = blurring { onSelect(key) })
-                                .semantics { this.selected = active },
+                                .selectable(selected = active, enabled = !off, role = Role.RadioButton, onClick = blurring { onSelect(key) }),
                             across = false
                         )
                         .alpha(if (off) 0.45f else 1f)

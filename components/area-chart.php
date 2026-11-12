@@ -77,12 +77,12 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
         <?php /* Its page is named by its title above the card; the card is the chart. */ ?>
         <h2 class="sr-only" id="<?= e($suffix) ?>-title"><?= e($chart['title']) ?></h2>
         <div class="card__head health-history__head area-chart__switch-row">
-            <div class="range-switch range-switch--wide health-history__switch" role="group" aria-label="<?= e($chart['switch']) ?>">
+            <div class="range-switch range-switch--wide health-history__switch" role="radiogroup" aria-label="<?= e($chart['switch']) ?>">
                 <?php foreach ($periods as $period): ?>
                     <button type="button"
                             class="range-switch__option<?= $period['key'] === $default ? ' is-active' : '' ?>"
                             data-range-option="<?= e($period['key']) ?>"
-                            aria-pressed="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
+                            role="radio" aria-checked="<?= $period['key'] === $default ? 'true' : 'false' ?>"><?= e($period['label']) ?></button>
                 <?php endforeach; ?>
             </div>
         </div>

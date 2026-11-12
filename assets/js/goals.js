@@ -62,7 +62,7 @@
         Array.prototype.forEach.call(page.querySelectorAll('[data-goal-view]'), function (option) {
             var isActive = option.getAttribute('data-goal-view') === key;
             option.classList.toggle('is-active', isActive);
-            option.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            option.setAttribute('aria-checked', isActive ? 'true' : 'false');
         });
     }
 
@@ -155,7 +155,7 @@
             Array.prototype.forEach.call(detail.querySelectorAll('[data-goal-priority-switch] [data-goal-action]'), function (option) {
                 var on = (option.getAttribute('data-goal-action') === 'set-primary') === isPrimary;
                 option.classList.toggle('is-active', on);
-                option.setAttribute('aria-pressed', on ? 'true' : 'false');
+                option.setAttribute('aria-checked', on ? 'true' : 'false');
             });
         }
     }

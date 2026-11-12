@@ -1610,6 +1610,10 @@ a.settings-row { color: inherit; text-decoration: none; }
     background: rgba(var(--ink), 0.42);
 }
 
+/* Meer contrast (A14, 50.0): the grip is a control's only mark, so it takes
+   the strength it has while held — about 3:1 on the ground. */
+:root[data-contrast="more"] .ai-handle__grip { background: rgba(var(--ink), 0.42); }
+
 /* 42.0 — the swipe-up hint (ai-sheet.js, docs/AI.md): the grip rises a
    little and settles, twice, taking on its pressed look on the way up —
    the width and tone above, nothing new. With reduced motion it only takes

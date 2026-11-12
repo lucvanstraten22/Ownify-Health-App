@@ -156,6 +156,26 @@
         update();
     }
 
+    /* A switch is a radio group (A14, 50.0): the arrow keys move to the
+       option beside the one in focus and choose it, as a radio group does;
+       Tab still reaches every option. */
+    document.addEventListener('keydown', function (event) {
+        var key = event.key;
+        if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'ArrowUp' && key !== 'ArrowDown') { return; }
+        var option = event.target.closest && event.target.closest('[role="radiogroup"] > [role="radio"]');
+        if (!option) { return; }
+        var options = Array.prototype.filter.call(option.parentNode.children, function (o) {
+            return o.getAttribute('role') === 'radio' && !o.disabled;
+        });
+        var at = options.indexOf(option);
+        var step = key === 'ArrowLeft' || key === 'ArrowUp' ? -1 : 1;
+        var next = options[(at + step + options.length) % options.length];
+        if (!next || next === option) { return; }
+        event.preventDefault();
+        next.focus();
+        next.click();
+    });
+
     /* For a screen added after load — a new goal's detail page. */
     window.AppChrome = {
         bind: function (scroller) {

@@ -18,7 +18,8 @@ $share     = max(0.0, min(1.0, (float) $progress['share']));
 $tipId     = 'insight-lock-' . $progress['id'];
 $focusable = $progress['focusable'] ?? true;
 ?>
-<span class="goal__track insight-lock" data-goal-track<?= $focusable ? ' tabindex="0"' : '' ?> aria-describedby="<?= e($tipId) ?>">
+<?php /* Focusable, so it has a role and a name (A14, 50.0): the bar, read with its tip. */ ?>
+<span class="goal__track insight-lock" data-goal-track<?= $focusable ? ' tabindex="0" role="group" aria-label="' . e((string) ($progress['label'] ?? $progress['text'])) . '"' : '' ?> aria-describedby="<?= e($tipId) ?>">
     <span class="meter insight-lock__meter" role="img" aria-label="<?= e((string) ($progress['label'] ?? $progress['text'])) ?>">
         <span class="meter__fill" data-bar data-progress="<?= e((string) round($share, 4)) ?>"></span>
     </span>
