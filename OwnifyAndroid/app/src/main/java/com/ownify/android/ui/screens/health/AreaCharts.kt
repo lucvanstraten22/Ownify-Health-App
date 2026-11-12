@@ -106,7 +106,7 @@ internal fun seriesColor(series: AreaSeries, mixed: Boolean, accent: Accent): Co
 // Two by two
 // ---------------------------------------------------------------------------
 
-/** The small chart's room under its head: 12 above the plot, the plot at least 48, the dates' two rows and the 4 above them. */
+/** The small chart's room under its head: 12 above the plot, the plot at least 48, the dates' one row (50.0: weekdays fit in one) and the 4 above them. */
 internal val MiniPlotMin = 48.dp
 
 /**
@@ -125,7 +125,7 @@ fun AreaChartsGrid(area: String, charts: List<AreaChart>) {
         // A chart alone in its grid (Training's Hartbelasting) is as wide as the cards around it, as tall as a row of squares.
         val cw = if (charts.size == 1) constraints.maxWidth else w
         val pad = Ownify.Space4.roundToPx()
-        val axis = with(density) { (Ownify.FsCaption.toPx() * 2.5f) }.toInt() + Ownify.Space1.roundToPx()
+        val axis = with(density) { (Ownify.FsCaption.toPx() * 1.25f) }.toInt() + Ownify.Space1.roundToPx()
         val rest = 2 * pad + 2 + Ownify.Space3.roundToPx() + MiniPlotMin.roundToPx() + axis
         val heads = charts.mapIndexed { i, chart ->
             subcompose("head$i") { MiniHead(chart, accent) }.firstOrNull()
@@ -220,7 +220,7 @@ internal fun AreaChartMini(chart: AreaChart, accent: Accent, height: Dp, bare: B
     val content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         MiniHead(chart, accent)
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(top = Ownify.Space3)) {
-            val axis = with(LocalDensity.current) { (Ownify.FsCaption.toPx() * 2.5f).toDp() } + Ownify.Space1
+            val axis = with(LocalDensity.current) { (Ownify.FsCaption.toPx() * 1.25f).toDp() } + Ownify.Space1   // one row (50.0)
             AreaPlot(chart, accent, week, Modifier, height = (maxHeight - axis).coerceAtLeast(MiniPlotMin), mini = true)
         }
     }

@@ -1146,6 +1146,11 @@ a.settings-row { color: inherit; text-decoration: none; }
    as Voeding's rows do. */
 .text-link[aria-expanded="true"] .text-link__icon { transform: rotate(90deg); }
 
+/* A text link as a card's last element (50.0): its 44 px touch height must
+   not read as extra padding under the card's text — the card ends where
+   its words do, as every card. */
+.card > .text-link:last-child { margin-bottom: calc(-1 * var(--space-2)); }
+
 .text-link:focus-visible {
     outline: 2px solid rgba(var(--ink), 0.55);
     outline-offset: 2px;

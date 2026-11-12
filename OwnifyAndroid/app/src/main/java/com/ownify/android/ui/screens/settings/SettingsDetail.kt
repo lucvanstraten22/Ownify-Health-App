@@ -201,7 +201,7 @@ private fun IdentityHero(data: AppData) {
     }
 }
 
-/** A block's eyebrow and, when it has one, its lede (`.settings-block__lede`: 4 closer, 12 above the card). */
+/** A block's eyebrow and, when it has one, its lede (`.settings-block__lede`: 4 closer, 8 above the card — a label's own 8, C44). */
 @Composable
 private fun BlockHead(title: String, lede: String?) {
     // Without a title it sits straight under the section heading above it.
@@ -212,7 +212,7 @@ private fun BlockHead(title: String, lede: String?) {
             JStyle.Meta,
             // margin-top: -4px collapses into the eyebrow's 8, so the lede and
             // everything under it sit 4 higher: drawn 4 up, 4 less below.
-            Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).padding(bottom = Ownify.Space3 - 4.dp).offset(y = (-4).dp)
+            Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).padding(bottom = Ownify.Space2 - 4.dp).offset(y = (-4).dp)
         )
     }
 }
@@ -1247,7 +1247,7 @@ private fun RowsBlock(block: SettingsBlock.Rows) {
         SettingsEyebrow(block.title)
         // `.card.settings-rows`: the choice lists' inner padding, so the text starts on one line.
         JCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Ownify.Space4, vertical = Ownify.Space3)) {
-            block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0, list = true) }
+            block.items.forEachIndexed { i, (label, value) -> PhoneRow(label, value, first = i == 0, list = true, last = i == block.items.lastIndex) }
         }
     }
 }

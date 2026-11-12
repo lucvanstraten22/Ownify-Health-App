@@ -431,7 +431,7 @@ internal fun ChallengeCard(view: ChallengeView, onClick: () -> Unit) {
             .press(interaction)
             .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
             .semantics { testTag = CHALLENGE_ITEM },
-        padding = PaddingValues(Ownify.Space4)
+        padding = PaddingValues(Ownify.Space5)   // `.ch-card2`: 24 (50.0)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
@@ -748,7 +748,7 @@ fun ChallengesDetail(data: AppData, scroll: ScrollState) {
 private fun Group(title: String, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxWidth().reveal()) {
         GroupEyebrow(title)
-        Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) { content() }
+        Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space3)) { content() }   // `.ch-list`: 12 between cards of one kind (B14)
     }
 }
 

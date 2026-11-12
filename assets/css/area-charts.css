@@ -230,7 +230,7 @@
 
 .area-chart--mini .chart__axis {
     flex: none;
-    height: 2.5em;                    /* two rows of the dates' own size */
+    height: 1.25em;                   /* one row of dates (50.0): 7 dagen names weekdays, which fit in one */
     margin-top: var(--space-1);
     font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);

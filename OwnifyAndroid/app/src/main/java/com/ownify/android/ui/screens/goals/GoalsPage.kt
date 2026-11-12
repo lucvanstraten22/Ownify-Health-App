@@ -114,8 +114,8 @@ fun GoalsPage(data: AppData, scroll: ScrollState) {
     val addWizard = { shell.open(Overlay.Wizard) }
 
     PageColumn(scroll) {
-        // .goals-intro
-        Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        // .goals-intro: the intro 16 above the switch, as every intro above its content (C44, 50.0)
+        Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2),
                 verticalAlignment = Alignment.Top,

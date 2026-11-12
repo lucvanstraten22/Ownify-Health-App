@@ -138,10 +138,7 @@
 
 /* The way into the Scorekompas: the text link (components.css .text-link),
    its 44 px target pulled back so its text sits 8 under the note. */
-.calibration__open {
-    margin-top: var(--space-2);
-    margin-bottom: calc(-1 * var(--space-2));
-}
+.calibration__open { margin-top: var(--space-2); }
 
 /* --------------------------------------------------------------------------
    Very small phones — stop forcing two columns

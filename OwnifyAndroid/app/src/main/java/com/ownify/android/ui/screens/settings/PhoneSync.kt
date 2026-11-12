@@ -316,13 +316,14 @@ fun Caption(text: String, modifier: Modifier = Modifier) {
  * label, as on every other settings row.
  */
 @Composable
-fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolean = false, list: Boolean = false) {
+fun PhoneRow(label: String, value: String, first: Boolean = false, empty: Boolean = false, list: Boolean = false, last: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
         if (!first) Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
         Row(
             Modifier
                 .fillMaxWidth()
-                .cssPadding(top = if (first) 0.dp else Ownify.Space3, bottom = Ownify.Space3, above = if (first) 0.dp else 1.dp)
+                // The last row of a `.settings-rows` card ends with its words (C40, 50.0): the card's own padding is all below it.
+                .cssPadding(top = if (first) 0.dp else Ownify.Space3, bottom = if (last) 0.dp else Ownify.Space3, above = if (first) 0.dp else 1.dp)
                 .semantics(mergeDescendants = true) { },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)

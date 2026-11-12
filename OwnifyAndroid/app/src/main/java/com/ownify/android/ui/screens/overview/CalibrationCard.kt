@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -66,7 +67,14 @@ fun CalibrationCard(data: AppData) {
     val shell = LocalShell.current
     val (play, sight) = rememberPlayOnSight()
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
+    // A text link as the card's last element (C43, 50.0): its 44 dp target must not read as extra
+    // padding, so the card ends 8 closer under it — the card ends where its words do.
+    val endsInLink = cal.open != null && data.compass.available
+    JCard(
+        Modifier.fillMaxWidth().reveal().then(sight),
+        padding = if (endsInLink) PaddingValues(start = Ownify.Space5, top = Ownify.Space5, end = Ownify.Space5, bottom = Ownify.Space5 - Ownify.Space2)
+        else PaddingValues(Ownify.Space5)
+    ) {
         T(cal.eyebrow, JStyle.Caption, uppercase = true)
         T(cal.title, JStyle.Subtitle, Modifier.padding(top = Ownify.Space1).semantics { heading() })
         cal.lede?.let { T(it, JStyle.Lede, Modifier.padding(top = Ownify.Space2)) }

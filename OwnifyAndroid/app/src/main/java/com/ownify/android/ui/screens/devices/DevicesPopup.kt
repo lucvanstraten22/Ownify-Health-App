@@ -121,7 +121,8 @@ private fun DeviceRow(line: DeviceLine) {
         }
         Column(Modifier.weight(1f)) {
             T(line.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), maxLines = 1, ellipsis = true)
-            if (line.source != null) T(line.source, JStyle.Meta, Modifier.padding(top = 2.dp), maxLines = 1, ellipsis = true)
+            // Up to two lines (50.0, `.devices__source`): a description is read, not cut at one.
+            if (line.source != null) T(line.source, JStyle.Meta, Modifier.padding(top = 2.dp), maxLines = 2, ellipsis = true)
         }
         // Only what is linked is listed: not connected means it needs a look.
         StatusBadge(line.state, if (line.connected) StatusTone.On else StatusTone.Warn, textSize = Ownify.FsSubhead)

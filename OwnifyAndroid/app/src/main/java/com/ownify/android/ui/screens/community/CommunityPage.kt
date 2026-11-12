@@ -120,7 +120,7 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
         PageIntro(community.title, null, Modifier.reveal())
 
         // Ranglijst: the top three on a podium, you among them.
-        JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space4)) {
+        JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space5)) {   // `.cm-dest`: 24, as every full-width card (50.0)
             Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
                 CardHead(OwnifyIcons.solidRanking, preview.title, preview.sub) { shell.openDetail(Detail.Leaderboard) }
                 Podium(preview.rows, addFriend)
@@ -134,7 +134,7 @@ fun CommunityPage(data: AppData, scroll: ScrollState) {
 
         if (ch.available) {
             // Uitdagingen: what you are in, as a stack of cards, and the two ways to start one.
-            JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space4)) {
+            JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(Ownify.Space5)) {   // `.cm-dest`: 24, as every full-width card (50.0)
                 Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space4)) {
                     CardHead(OwnifyIcons.solidTarget, ch.copy.text("page", "title"), ch.summary) { shell.openDetail(Detail.Challenges) }
                     ch.invites.forEach { invite ->

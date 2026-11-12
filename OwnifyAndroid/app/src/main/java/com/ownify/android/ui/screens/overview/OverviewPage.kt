@@ -177,9 +177,10 @@ private fun HealthScoreCard(data: AppData) {
             )
         }
 
-    Column(Modifier.fillMaxWidth().reveal().then(sight).then(opens).padding(top = Ownify.Space1, bottom = Ownify.Space2)) {
-        // .card__head: the day and the chosen focus.
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+    Column(Modifier.fillMaxWidth().reveal().then(sight).then(opens).padding(bottom = Ownify.Space2)) {
+        // .card__head: the day and the chosen focus — "Vandaag" on the title line every
+        // other tab's title stands on (C38, 50.0): 8 in from the edge, no step down.
+        Row(Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Column(Modifier.weight(1f)) {
                 T(data.overview.title, JStyle.LargeTitle, Modifier.semantics { heading() })
                 val date = if (screen.narrow) data.today.date else "${data.today.weekday} ${data.today.date}"
