@@ -40,14 +40,38 @@ if (!function_exists('health_source_id')) {
 
     function health_metric_type_id(string $code): ?int
     {
-        static $cache = [];
+        $type = health_metric_type($code);
 
-        if (!array_key_exists($code, $cache)) {
-            $id = db_value('SELECT id FROM health_metric_types WHERE code = ?', [$code]);
-            $cache[$code] = $id === null ? null : (int) $id;
+        return $type === null ? null : (int) $type['id'];
+    }
+
+    /**
+     * One metric type of the catalogue — its id and how a day of it rolls up
+     * — or null. The catalogue is read once per request (50.0, Phase 5: a
+     * page asked for it some 140 times, one code at a time); only a
+     * migration changes it.
+     *
+     * @return array{id: int, aggregation: string}|null
+     */
+    function health_metric_type(string $code): ?array
+    {
+        static $types = null;
+
+        if ($types === null) {
+            $rows = db_available() ? db_all('SELECT id, code, aggregation FROM health_metric_types') : [];
+            $types = [];
+            foreach ($rows as $row) {
+                $types[(string) $row['code']] = ['id' => (int) $row['id'], 'aggregation' => (string) $row['aggregation']];
+            }
+            /* Not cached while the database cannot answer: it may next time. */
+            if ($rows === [] && !db_available()) {
+                $types = null;
+
+                return null;
+            }
         }
 
-        return $cache[$code];
+        return $types[$code] ?? null;
     }
 
     function health_metric_types(?string $domain = null): array
@@ -292,7 +316,7 @@ if (!function_exists('health_source_id')) {
      */
     function health_daily_metric(int $userId, string $metricCode, string $date): ?float
     {
-        $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$metricCode]);
+        $type = health_metric_type($metricCode);
         if ($type === null) {
             return null;
         }
@@ -321,7 +345,7 @@ if (!function_exists('health_source_id')) {
     /** A daily series for a trend chart. Days without a reading are absent. */
     function health_metric_series(int $userId, string $metricCode, string $from, string $to): array
     {
-        $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$metricCode]);
+        $type = health_metric_type($metricCode);
         if ($type === null) {
             return [];
         }
@@ -362,7 +386,7 @@ if (!function_exists('health_source_id')) {
      */
     function health_daily_metric_days(int $userId, string $metricCode, string $from, string $to): array
     {
-        $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$metricCode]);
+        $type = health_metric_type($metricCode);
         if ($type === null) {
             return [];
         }

@@ -85,6 +85,17 @@ if (!function_exists('health_score_now')) {
     }
 
     /**
+     * health_score_now() for the page being built: worked out once per
+     * render (50.0, Phase 5; db_memo_scope()), so the ring, Gezondheid's
+     * trend and the Scorekompas show one result for today instead of three
+     * runs of the engine a few milliseconds apart. Outside a render, now.
+     */
+    function health_score_now_shared(int $userId): array
+    {
+        return db_memo('health_score_now|' . $userId, static fn (): array => health_score_now($userId));
+    }
+
+    /**
      * Just the numbers: the three categories and the overall score, null where
      * there is none. What an endpoint answers with.
      *
@@ -156,6 +167,12 @@ if (!function_exists('health_score_now')) {
      */
     function health_score_history(int $userId, int $days = 28, ?DateTimeImmutable $now = null, ?array $today = null): array
     {
+        /* No moment asked for: today is the page's own score as it stands,
+           and its moment is the one the days count back from. */
+        if ($now === null && $today === null && db_memo_active()) {
+            $today = health_score_now_shared($userId);
+            $now   = new DateTimeImmutable((string) $today['as_of']);
+        }
         $now      ??= new DateTimeImmutable('now');
         $todayDate = $now->format('Y-m-d');
         $first     = $now->setTime(0, 0)->modify('-' . max(0, $days - 1) . ' days');

@@ -104,8 +104,14 @@
     /* A goal's page added after load brings its own chart. */
     if ('MutationObserver' in window) {
         var queued = false;
-        new MutationObserver(function () {
+        new MutationObserver(function (records) {
             if (queued) { return; }
+            /* Only elements arriving can bring an axis: text changing in place
+               — the score counting up — is no reason to look (50.0, Phase 5). */
+            var added = records.some(function (record) {
+                return Array.prototype.some.call(record.addedNodes, function (node) { return node.nodeType === 1; });
+            });
+            if (!added) { return; }
             queued = true;
             window.requestAnimationFrame(function () {
                 queued = false;

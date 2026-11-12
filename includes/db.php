@@ -175,4 +175,60 @@ if (!function_exists('db')) {
 
         return $pdo === null ? null : (int) $pdo->lastInsertId();
     }
+
+    /* ------------------------------------------------- the render's memo */
+
+    /**
+     * What one page render has already read (50.0, Phase 5). Building the
+     * page asks for the same thing many times over — a metric's day totals,
+     * the account, the score as it stands, a research source — and the
+     * answer cannot change while the page is built: nothing in it writes the
+     * readings, the profile or the research. Inside db_memo_scope() each such
+     * read happens once; outside it (every API that writes, every test, the
+     * crons) db_memo() simply reads, as before.
+     *
+     * @return array{depth: int, values: array<string, mixed>}
+     */
+    function &db_memo_state(): array
+    {
+        static $state = ['depth' => 0, 'values' => []];
+
+        return $state;
+    }
+
+    /** Runs $render with the memo on; whatever it remembered is gone after. */
+    function db_memo_scope(callable $render): mixed
+    {
+        $state = &db_memo_state();
+        $state['depth']++;
+
+        try {
+            return $render();
+        } finally {
+            if (--$state['depth'] === 0) {
+                $state['values'] = [];
+            }
+        }
+    }
+
+    /** $read(), once per render for $key; every time outside one. */
+    function db_memo(string $key, callable $read): mixed
+    {
+        $state = &db_memo_state();
+
+        if ($state['depth'] === 0) {
+            return $read();
+        }
+        if (!array_key_exists($key, $state['values'])) {
+            $state['values'][$key] = $read();
+        }
+
+        return $state['values'][$key];
+    }
+
+    /** Whether a render's memo is on (db_memo_scope()). */
+    function db_memo_active(): bool
+    {
+        return db_memo_state()['depth'] > 0;
+    }
 }

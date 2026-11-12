@@ -98,6 +98,75 @@ if (!function_exists('health_metric_totals')) {
      */
     function health_metric_totals(int $userId, string $metricCode, string $from, string $to): array
     {
+        if ($from > $to) {
+            return [];
+        }
+
+        /* A page reads the same totals many times over (50.0, Phase 5: 94
+           reads for one render — the score's week, the goals' month, the
+           charts' quarter and year, today). Inside a render (db_memo_scope())
+           each day is read once: a range asks only for the days no earlier
+           range of the same metric has read, and the rest come from what was.
+           A day's total does not depend on the range it was asked in — its
+           fingerprint is its own readings and the next day's, and its total
+           is worked out from the readings that reach into it. */
+        if (db_memo_active()) {
+            $state = &db_memo_state();
+            $key   = 'health_metric_totals|' . $userId . '|' . $metricCode;
+            $known = $state['values'][$key] ?? ['spans' => [], 'days' => []];
+
+            foreach (health_totals_gaps($known['spans'], $from, $to) as [$gapFrom, $gapTo]) {
+                $known['days']    = health_metric_totals_read($userId, $metricCode, $gapFrom, $gapTo) + $known['days'];
+                $known['spans'][] = [$gapFrom, $gapTo];
+            }
+            ksort($known['days']);
+            $state['values'][$key] = $known;
+
+            return array_filter($known['days'], static fn ($date): bool => $date >= $from && $date <= $to, ARRAY_FILTER_USE_KEY);
+        }
+
+        return health_metric_totals_read($userId, $metricCode, $from, $to);
+    }
+
+    /**
+     * The stretches of $from..$to (Y-m-d) that none of $spans covers, oldest
+     * first — what a render still has to read of a metric.
+     *
+     * @param list<array{0: string, 1: string}> $spans
+     * @return list<array{0: string, 1: string}>
+     */
+    function health_totals_gaps(array $spans, string $from, string $to): array
+    {
+        $day  = static fn (string $date, int $days): string => gmdate('Y-m-d', strtotime($date . ' UTC') + $days * 86400);
+        usort($spans, static fn (array $a, array $b): int => strcmp($a[0], $b[0]));
+
+        $gaps = [];
+        $at   = $from;
+        foreach ($spans as [$f, $t]) {
+            if ($t < $at) {
+                continue;
+            }
+            if ($f > $to) {
+                break;
+            }
+            if ($f > $at) {
+                $gaps[] = [$at, min($to, $day($f, -1))];
+            }
+            $at = max($at, $day($t, 1));
+            if ($at > $to) {
+                return $gaps;
+            }
+        }
+        if ($at <= $to) {
+            $gaps[] = [$at, $to];
+        }
+
+        return $gaps;
+    }
+
+    /** health_metric_totals(), read: never remembered. */
+    function health_metric_totals_read(int $userId, string $metricCode, string $from, string $to): array
+    {
         $typeId = health_metric_type_id($metricCode);
 
         if ($typeId === null || $from > $to) {

@@ -147,7 +147,7 @@ if (!function_exists('goal_today')) {
 
         switch ($kind) {
             case 'metric':
-                $type = db_one('SELECT id, aggregation FROM health_metric_types WHERE code = ?', [$key]);
+                $type = health_metric_type($key);
 
                 if ($type !== null && $type['aggregation'] === 'sum') {
                     $out = health_metric_totals($userId, $key, $from, $to);

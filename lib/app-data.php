@@ -60,6 +60,15 @@ if (!function_exists('app_page_data')) {
      */
     function app_page_data(array $data, int $userId): array
     {
+        /* Built in one go with the render's memo on (50.0, Phase 5,
+           includes/db.php db_memo_scope()): what the page reads twice it
+           reads once. */
+        return db_memo_scope(static fn (): array => app_page_data_build($data, $userId));
+    }
+
+    /** app_page_data(), built: the steps in their order. */
+    function app_page_data_build(array $data, int $userId): array
+    {
         $config = dirname(__DIR__) . '/config';
 
         /* The account's focus and where its setup stands (includes/setup.php):

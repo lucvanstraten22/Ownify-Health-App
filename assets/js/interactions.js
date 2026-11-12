@@ -53,11 +53,18 @@
             return page ? page.querySelector('[data-scroller]') : null;
         }
 
+        var written = null;
+
         function update() {
             ticking = false;
             var scroller = frontScroller();
             var gutter = scroller ? Math.max(0, scroller.offsetWidth - scroller.clientWidth) : 0;
-            root.style.setProperty('--scroll-gutter', gutter + 'px');
+            /* Written only when it changes (50.0, Phase 5): a custom property
+               on the root restyles the whole document, every time. */
+            if (gutter !== written) {
+                written = gutter;
+                root.style.setProperty('--scroll-gutter', gutter + 'px');
+            }
         }
 
         function schedule() {
@@ -66,11 +73,28 @@
             window.requestAnimationFrame(update);
         }
 
+        /* Elements coming or going, an attribute named below: worth a look.
+           Text changing inside an element is not (50.0, Phase 5: the score
+           counting up on Overzicht asked for a layout every frame) — what
+           text does to a page's height, the ResizeObserver below sees. */
+        function changed(mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+                var m = mutations[i];
+                if (m.type === 'attributes') { schedule(); return; }
+                var nodes = [m.addedNodes, m.removedNodes];
+                for (var j = 0; j < 2; j++) {
+                    for (var k = 0; k < nodes[j].length; k++) {
+                        if (nodes[j][k].nodeType === 1) { schedule(); return; }
+                    }
+                }
+            }
+        }
+
         window.addEventListener('resize', schedule);
 
         if ('MutationObserver' in window) {
             /* Another page shown, a detail opened or closed, a detail added. */
-            new MutationObserver(schedule).observe(document.body, {
+            new MutationObserver(changed).observe(document.body, {
                 subtree: true,
                 childList: true,
                 attributes: true,

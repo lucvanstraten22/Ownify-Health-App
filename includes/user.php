@@ -83,6 +83,14 @@ if (!function_exists('user_validate_username')) {
     /** The owner's own account. Private — never render this for someone else. */
     function user_account(int $userId): ?array
     {
+        /* A page reads the account a dozen times (the score, the nutrition
+           targets, the insights, the goals…); once per render (50.0). */
+        return db_memo('user_account|' . $userId, static fn (): ?array => user_account_read($userId));
+    }
+
+    /** user_account(), read: never remembered. */
+    function user_account_read(int $userId): ?array
+    {
         $row = db_one(
             'SELECT u.id, u.username, u.status, u.created_at, u.last_seen_at,
                     p.first_name, p.last_name, p.date_of_birth, p.gender,

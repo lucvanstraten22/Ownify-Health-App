@@ -86,8 +86,46 @@ if (!function_exists('api_json')) {
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: no-store');
 
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $body = (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        /* A large answer travels compressed to a client that asks for it
+           (50.0, Phase 5): the app's state is some 580 KB of JSON and about
+           a fifth of that gzipped. Android's HttpURLConnection asks and
+           unpacks it by itself; a client that does not ask gets it plain. */
+        if (strlen($body) >= 16384 && api_accepts_gzip()) {
+            $packed = gzencode($body, 6);
+            if ($packed !== false) {
+                header('Content-Encoding: gzip');
+                header('Vary: Accept-Encoding');
+                $body = $packed;
+            }
+        }
+
+        echo $body;
         exit;
+    }
+
+    /** Whether this request takes a gzipped answer, and nothing on the way compresses it already. */
+    function api_accepts_gzip(): bool
+    {
+        if (!function_exists('gzencode') || headers_sent() || filter_var(ini_get('zlib.output_compression'), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+        foreach (explode(',', strtolower((string) ($_SERVER['HTTP_ACCEPT_ENCODING'] ?? ''))) as $coding) {
+            $parts = array_map('trim', explode(';', $coding));
+            if ($parts[0] !== 'gzip') {
+                continue;
+            }
+            foreach (array_slice($parts, 1) as $param) {
+                if (preg_match('/^q\s*=\s*0(\.0*)?$/', $param)) {
+                    return false;   // gzip;q=0: not wanted
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     function api_ok(array $payload = []): never

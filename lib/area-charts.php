@@ -178,10 +178,15 @@ if (!function_exists('area_charts')) {
             }
             $days[$date] = [round($value, $decimals), area_chart_text($s, $value), false];
         }
-        $first = db_value(
-            'SELECT MIN(m.recorded_on) FROM health_metrics m JOIN health_metric_types t ON t.id = m.metric_type_id
-              WHERE m.user_id = ? AND t.code = ?',
-            [$userId, $code]
+        /* The first day there is a reading: the date of the earliest reading
+           (recorded_on is recorded_at's date), found in the index on
+           (user_id, metric_type_id, recorded_at) — 50.0, Phase 5: the join on
+           the code read every reading of the account, 6 ms each with a year
+           of Health Connect records. */
+        $typeId = health_metric_type_id($code);
+        $first  = $typeId === null ? null : db_value(
+            'SELECT DATE(MIN(recorded_at)) FROM health_metrics WHERE user_id = ? AND metric_type_id = ?',
+            [$userId, $typeId]
         );
 
         return [$days, $first === null ? null : (string) $first];

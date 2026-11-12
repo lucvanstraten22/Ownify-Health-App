@@ -422,6 +422,14 @@ if (!function_exists('friend_pair')) {
      */
     function friend_ids(int $userId): array
     {
+        /* Once per render (50.0, Phase 5): the boards, the friends list and
+           the challenges each asked; nothing in a render changes friendships. */
+        return db_memo('friend_ids|' . $userId, static fn (): array => friend_ids_read($userId));
+    }
+
+    /** friend_ids(), read: never remembered. */
+    function friend_ids_read(int $userId): array
+    {
         $rows = db_all(
             'SELECT CASE WHEN user_low_id = ? THEN user_high_id ELSE user_low_id END AS friend_id
                FROM friendships

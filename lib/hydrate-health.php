@@ -59,7 +59,7 @@ if (!function_exists('hydrate_health')) {
         /* Area scores come from the Health Score engine — the last 168 hours
            up to this moment — never from the values map: one place decides
            what a score is. Rendering also writes down today's result. */
-        $scores  = health_score_now($userId);
+        $scores  = health_score_now_shared($userId);
         $minDays = (int) health_scoring_config()['min_days'];
 
         health_score_store($userId, $scores);

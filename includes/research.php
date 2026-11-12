@@ -321,6 +321,25 @@ if (!function_exists('research_config')) {
             return null;
         }
 
+        /* In a render every claim is read in one go (50.0: a page asked for
+           58 of them one by one); the table holds a few dozen rows. */
+        if (db_memo_active()) {
+            $all = db_memo('research_claims_by_id', static function (): array {
+                $byId = [];
+                foreach (db_all(
+                    'SELECT id, claim_key, version, source_code, topic, metric, age_min, age_max, strength,
+                            finding_json, statement, population, limitations_json, content_hash, status
+                       FROM research_claims'
+                ) as $row) {
+                    $byId[(int) $row['id']] = research_claim_decode($row);
+                }
+
+                return $byId;
+            });
+
+            return $all[$id] ?? null;
+        }
+
         $row = db_one(
             'SELECT id, claim_key, version, source_code, topic, metric, age_min, age_max, strength,
                     finding_json, statement, population, limitations_json, content_hash, status
@@ -336,6 +355,20 @@ if (!function_exists('research_config')) {
     {
         if (!research_installed()) {
             return null;
+        }
+
+        /* In a render every source is read in one go, as the claims are. */
+        if (db_memo_active()) {
+            $all = db_memo('research_sources_by_code', static function (): array {
+                $byCode = [];
+                foreach (db_all('SELECT * FROM research_sources') as $row) {
+                    $byCode[(string) $row['code']] = $row;
+                }
+
+                return $byCode;
+            });
+
+            return $all[$code] ?? null;
         }
 
         return db_one('SELECT * FROM research_sources WHERE code = ?', [$code]);
