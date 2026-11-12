@@ -227,6 +227,8 @@
         color: var(--text-primary);
     }
 
+    .fab.glass--cta:hover { background: var(--action); color: var(--action-ink); }
+
     .fab.press:hover { transform: translate(var(--fab-x), -2px); }
 }
 

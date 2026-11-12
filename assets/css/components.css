@@ -553,15 +553,16 @@
     cursor: not-allowed;
 }
 
-/* The one way forward, and the step that cannot be undone: the Liquid Glass
-   with the app's green in it (as the goal wizard's .glass--cta), or with the
-   attention gold — every primary and every leave / delete / wipe in the app.
-   The rim is ::before here: a .btn's ::after is its hit margin. */
+/* The one way forward (50.0): solid --action with its white label, flat, a
+   faint top edge and a neutral shadow — not glass (as the goal wizard's
+   .glass--cta). The step that cannot be undone: the Liquid Glass with the
+   attention gold in it — every leave / delete / wipe in the app. The rim is
+   ::before here: a .btn's ::after is its hit margin. */
 .btn--primary,
 .btn--caution {
     isolation: isolate;
     border: 0;
-    background: var(--lg-face), var(--lg-green), var(--lg-body);
+    background: var(--lg-face), var(--lg-gold), var(--lg-body);
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
     box-shadow: var(--lg-shadow), var(--lg-glint);
@@ -570,7 +571,14 @@
     cursor: pointer;
 }
 
-.btn--caution { background: var(--lg-face), var(--lg-gold), var(--lg-body); }
+.btn--primary {
+    background: var(--action);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--action-shadow);
+    color: var(--action-ink);
+}
+
 
 .btn--primary::before,
 .btn--caution::before {
@@ -580,16 +588,25 @@
     z-index: -1;
     border-radius: inherit;
     padding: 1px;
-    background: var(--lg-green-rim);
+    background: var(--lg-gold-rim);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     pointer-events: none;
 }
 
-.btn--caution::before { background: var(--lg-gold-rim); }
+.btn--primary::before { content: none; }
 
-.btn--primary:disabled,
+/* Not to be taken yet: no longer the solid thing, the plain glass instead. */
+.btn--primary:disabled {
+    opacity: 1;
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    color: var(--text-muted);
+}
+
 .btn--caution:disabled { opacity: 0.5; }
 
 /* Every control drawn smaller than --hit-min takes taps over at least that
@@ -1921,7 +1938,7 @@ a.settings-row { color: inherit; text-decoration: none; }
      .glass               the material
      .glass--chip         Health Connect's data chips' size (.chip): 4 × 12, 11px
      .glass--round        a 44px circle for one icon; --small 34px
-     .glass--cta          the one way forward: the app's green in the glass
+     .glass--cta          the one way forward: solid --action, not glass (50.0)
      .glass--select       a select inside the glass, its chevron drawn
 
    Chosen ([aria-pressed|aria-checked="true"]): the green in the glass and in
@@ -2020,13 +2037,18 @@ a.settings-row { color: inherit; text-decoration: none; }
     font: inherit;
     font-size: var(--fs-body);
     font-weight: 600;
-    background: var(--lg-face), var(--lg-green), var(--lg-body);
+    background: var(--action);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--action-shadow);
+    color: var(--action-ink);
     cursor: pointer;
     letter-spacing: var(--tracking-body);
 }
 
-.glass--cta::after { background: var(--lg-green-rim); }
+.glass--cta::after { content: none; }
 .glass--cta .icon { width: 18px; height: 18px; }
+.glass--round.glass--cta { color: var(--action-ink); }
 
 /* Round, it is the same one way forward with an icon (Doelen's +). */
 .glass--round.glass--cta { padding: 0; }
@@ -2035,10 +2057,15 @@ a.settings-row { color: inherit; text-decoration: none; }
 .glass--cta:disabled,
 .glass--cta[aria-disabled="true"] {
     background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
+    color: var(--text-muted);
     cursor: default;
 }
 
-.glass--cta:disabled::after { background: var(--pane-rim); opacity: 0.6; }
+.glass--cta:disabled::after,
+.glass--cta[aria-disabled="true"]::after { content: ""; background: var(--pane-rim); opacity: 0.6; }
 .glass--cta:disabled.press:active { transform: none; }
 
 /* 41.0 — Liquid Glass under the finger. A control that is glass grows a
@@ -2064,6 +2091,10 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .glass--chip.press:not(:disabled):active { box-shadow: var(--lg-shadow-small), var(--lg-glint-lit); }
+
+/* The solid way forward grows the same, and keeps its own edge and shadow. */
+.glass--cta.press:not(:disabled, [aria-disabled="true"]):active,
+.fab.glass--cta:active { box-shadow: var(--action-shadow), var(--lg-glint-lit); }
 
 .fab:active {
     transform: translate(var(--fab-x), 0) scale(var(--glass-grow));
@@ -2115,11 +2146,13 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 /* ---------------------------------------------------------------------------
-   The in-field round button: the goal search's clear, and a password field's
-   eye (45.0, password-reveal.js) — one rule, so the two cannot drift apart.
+   The in-field round button: the goal search's clear, a password field's
+   eye (45.0, password-reveal.js) and the friend search's arrow (50.0) — one
+   rule, so they cannot drift apart.
    --------------------------------------------------------------------------- */
 .goal-search__clear,
-.password-field__toggle {
+.password-field__toggle,
+.friends__go {
     position: absolute;
     right: 6px;
     top: 50%;
@@ -2135,7 +2168,10 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .goal-search__clear .icon,
-.password-field__toggle .icon { width: 14px; height: 14px; }
+.password-field__toggle .icon,
+.friends__go .icon { width: 14px; height: 14px; }
+.friends__go { cursor: pointer; }
+.friends__go:disabled { opacity: 0.45; cursor: default; }
 .goal-search__clear[hidden],
 .password-field__toggle[hidden] { display: none; }
 

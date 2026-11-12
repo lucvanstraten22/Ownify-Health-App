@@ -129,6 +129,17 @@
        the original gold (rgba(191, 168, 99, …)). */
     --health: #3C9E72;
     --attention: #C6B275;
+    /* The one way forward (50.0, the owner's choice: Solid, Jade · Deep ·
+       Grey-green, oklch(0.42 0.03 160)): a flat, solid fill of the app's
+       green, deep and nearly grey, with a white label at 8.4:1 — the same in
+       both themes. Not glass: everything that floats is, so the step to take
+       is the one solid thing. A faint top edge, a neutral shadow, no glow.
+       Mirrored in OwnifyTheme.kt (Ownify.Action, ActionInk). */
+    --action: #3F5247;
+    --action-ink: #FFFFFF;
+    --action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        0 1px 2px rgba(var(--shade), calc(0.22 * var(--shade-k))),
+        0 4px 12px rgba(var(--shade), calc(0.14 * var(--shade-k)));
     /* The solid tile of a card head that has no category: grey, not a colour. */
     --neutral: #6B6769;
     --accent: var(--health);

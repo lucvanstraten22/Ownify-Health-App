@@ -127,7 +127,7 @@ fun EntryFab(entry: ManualEntry?, area: String) {
                 .glass(CircleShape, GlassLook(cta = true)),
             contentAlignment = Alignment.Center
         ) {
-            JIcon(OwnifyIcons.plus, size = 22.dp, color = Ownify.TextPrimary)
+            JIcon(OwnifyIcons.plus, size = 22.dp, color = Ownify.ActionInk)
         }
     }
 }

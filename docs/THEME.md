@@ -174,13 +174,24 @@ and date and time fields were already the platform's own.
 
 **Actions.** The secondary button in a card stays what it was (`.btn`, `Btn`
 with the default `BtnLook`: `--glass` with the glass border, a pill). What
-floats or leads is the glass, in three looks:
+floats or leads is the glass — except the one way forward, which is solid:
 
 | Look | Website | Android | For |
 | --- | --- | --- | --- |
 | glass | `.glass`, `.pill`, `.ch-act` | `Modifier.glass(…)`, `Pill` | back and close, round buttons, the actions of Uitdagingen |
-| primary | `.btn--primary`, `.glass--cta` (`--lg-green`, `--lg-green-rim`) | `BtnLook.Primary`, `GlassCta` | the one action a step leads to: Volgende, Opslaan, Doel aanmaken, Akkoord |
+| primary | `.btn--primary`, `.glass--cta` (`--action`, `--action-ink`, `--action-shadow`) | `BtnLook.Primary`, `GlassCta` (`Modifier.solidAction`, `Ownify.Action`) | the one action a step leads to: Volgende, Opslaan, Doel aanmaken, Akkoord, and the round + (Doelen, a detail page's +) |
 | cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`), or the gold forward half of a split (`.split--caution`) | `BtnLook.Caution` (`Final`) | only the irreversible yes: the step that deletes, wipes or leaves for good (N2, 50.0). The button that opens that step is neutral — the bin icon for deleting and wiping, the leave icon for leaving, none for disconnecting — and the question stands in the one attention Note above the yes. "Vriend verwijderen" and "Account verwijderen" keep their own looks |
+
+**The solid primary** (50.0, the owner's pick from the button prototypes:
+Solid · Jade · Deep · Grey-green, `oklch(0.42 0.03 160)` = `#3F5247`). Not
+glass: everything that floats is, so the step to take is the one solid
+thing on the screen. A flat fill, the same in both themes, with a white
+label (8.4:1); a faint white top edge, a neutral two-step shadow, no
+gradient, no rim, no green glow. Held, it grows on the glass's spring as
+every glass control does. Not to be taken yet (`:disabled`), it is plain
+glass with the muted ink — never a faded green. The app's green
+(`--health`) keeps its other jobs: the chosen option, the step bar, ticks,
+the ring.
 
 **The split button** (50.0, the owner's pick "Quiet + Joined"): two actions
 that belong together — a way back and a way forward, or a choice and its

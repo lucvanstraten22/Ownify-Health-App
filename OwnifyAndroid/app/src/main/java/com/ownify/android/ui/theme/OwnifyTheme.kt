@@ -386,6 +386,14 @@ object Ownify {
      */
     val AttentionGold = Color(0xFFBFA863)
 
+    /**
+     * `--action`, `--action-ink`: the one way forward (50.0, the owner's
+     * Solid · Jade · Deep · Grey-green) — a flat, solid fill, the same in both
+     * themes, its label white at 8.4:1. Not glass ([solidAction]).
+     */
+    val Action = Color(0xFF3F5247)
+    val ActionInk = Color.White
+
     /** `--zone-N`: heart-rate zone [n] (1–4), blue, green, amber, red; null-safe outside 1–4. */
     fun zone(n: Int): Color = palette.zones[(n - 1).coerceIn(0, 3)]
 

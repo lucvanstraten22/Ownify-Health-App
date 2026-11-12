@@ -608,26 +608,29 @@
         return draft.type === 'milestone' ? words.direction : words.direction_daily;
     }
 
+    /* The period switch's segmented control (50.0): the arrow and the words
+       side by side, so which way is better reads at once — no long press. */
     function directionRow() {
         var wrap = el('div', 'goal-direction');
         var label = el('p', 'wizard__label goal-direction__label', words.direction_label);
         label.id = 'goal-direction-label';
         wrap.appendChild(label);
 
-        var group = el('div', 'goal-direction__buttons');
+        var group = el('div', 'range-switch range-switch--wide goal-direction__switch');
         group.setAttribute('role', 'radiogroup');
         group.setAttribute('aria-labelledby', 'goal-direction-label');
 
         var w = directionWords();
         ['increase', 'decrease'].forEach(function (key) {
-            var b = el('button', 'glass glass--round goal-direction__button press');
+            var on = draft.direction === key;
+            var b = el('button', 'range-switch__option goal-direction__option' + (on ? ' is-active' : ''));
             b.type = 'button';
             b.setAttribute('role', 'radio');
-            b.setAttribute('aria-checked', draft.direction === key ? 'true' : 'false');
-            b.setAttribute('aria-label', w[key].label);
+            b.setAttribute('aria-checked', on ? 'true' : 'false');
             b.setAttribute('aria-describedby', 'goal-direction-hint-' + key);
             b.setAttribute('data-wizard-direction', key);
             b.innerHTML = iconMarkup(key === 'increase' ? 'arrow-up' : 'arrow-down');
+            b.appendChild(el('span', null, w[key].label));
             group.appendChild(b);
 
             var hint = el('span', 'sr-only', w[key].hint);
@@ -636,40 +639,17 @@
         });
 
         wrap.appendChild(group);
-
-        var tip = el('span', 'goal-direction__tip');
-        tip.setAttribute('aria-hidden', 'true');
-        tip.setAttribute('data-wizard-tip', '');
-        tip.hidden = true;
-        wrap.appendChild(tip);
         return wrap;
     }
 
     function chooseDirection(key) {
         draft.direction = key;
         each('[data-wizard-direction]', function (b) {
-            b.setAttribute('aria-checked', b.getAttribute('data-wizard-direction') === key ? 'true' : 'false');
+            var on = b.getAttribute('data-wizard-direction') === key;
+            b.setAttribute('aria-checked', on ? 'true' : 'false');
+            b.classList.toggle('is-active', on);
         }, setup);
         validateSetup();
-    }
-
-    /* Press and hold: the explanation, above the buttons, for as long as it is held. */
-    var hold = { timer: 0, shown: false, button: null };
-
-    function showTip(button) {
-        var tip = setup.querySelector('[data-wizard-tip]');
-        if (!tip) { return; }
-        tip.textContent = directionWords()[button.getAttribute('data-wizard-direction')].hint;
-        tip.hidden = false;
-        tip.classList.add('is-shown');
-        hold.shown = true;
-        if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) { /* not allowed */ } }
-    }
-
-    function hideTip() {
-        window.clearTimeout(hold.timer);
-        var tip = setup.querySelector('[data-wizard-tip]');
-        if (tip) { tip.classList.remove('is-shown'); tip.hidden = true; }
     }
 
     /* ------------------------------------------------------------ baseline */
@@ -1199,7 +1179,6 @@
 
     function close(saved) {
         if (saving) { return; }
-        hideTip();
         root.classList.remove('is-open');
         window.setTimeout(function () { root.hidden = true; }, 200);
         if (!saved && lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
@@ -1241,7 +1220,6 @@
             return;
         }
         if ((hit = t.closest('[data-wizard-direction]'))) {
-            if (hold.shown) { hold.shown = false; return; }   // a long press explains, it does not choose
             chooseDirection(hit.getAttribute('data-wizard-direction'));
             return;
         }
@@ -1296,27 +1274,6 @@
             draft.period = field.value;
             validateSetup();
         }
-    });
-
-    /* Press and hold on a direction button: its explanation. */
-    root.addEventListener('pointerdown', function (event) {
-        var button = event.target.closest('[data-wizard-direction]');
-        if (!button) { return; }
-        hold.shown = false;
-        window.clearTimeout(hold.timer);
-        hold.timer = window.setTimeout(function () { showTip(button); }, 450);
-    });
-
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
-        root.addEventListener(type, function (event) {
-            if (!event.target.closest || !event.target.closest('[data-wizard-direction]')) { return; }
-            window.clearTimeout(hold.timer);
-            if (hold.shown) { window.setTimeout(hideTip, 900); }
-        }, true);
-    });
-
-    root.addEventListener('contextmenu', function (event) {
-        if (event.target.closest('[data-wizard-direction]')) { event.preventDefault(); }
     });
 
     root.addEventListener('keydown', function (event) {

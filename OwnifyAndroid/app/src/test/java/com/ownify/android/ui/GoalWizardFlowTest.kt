@@ -257,13 +257,17 @@ class GoalWizardFlowTest {
         type("Startwaarde", "82,4")
         button("Volgende").assertIsEnabled()
 
-        // Lower is better was chosen for Gewicht; a long press explains and changes nothing.
-        described("Lager is beter").assertExists()
-        described("Hoger is beter").performTouchInput { longClick() }
+        // Lower is better was chosen for Gewicht (50.0: the words side by side in a segmented control).
+        fun way(words: String) = compose.onNode(hasText(words) and hasClickAction()).inView()
+        fun chosen(words: String) = way(words).fetchSemanticsNode().config.getOrNull(SemanticsProperties.Selected)
+        assertEquals("lower is better, chosen for Gewicht", true, chosen("Lager is beter"))
+        assertEquals(false, chosen("Hoger is beter"))
+        way("Hoger is beter").performClick()
         compose.waitForIdle()
-        assertTrue(shows("Hoger is beter: je voortgang groeit als je waarde stijgt."))
-        val decrease = described("Lager is beter").fetchSemanticsNode().config.getOrNull(SemanticsProperties.Selected)
-        assertEquals("the long press chose nothing", true, decrease)
+        assertEquals("a tap chooses", true, chosen("Hoger is beter"))
+        way("Lager is beter").performClick()
+        compose.waitForIdle()
+        assertEquals(true, chosen("Lager is beter"))
 
         // The unit: kg to lb — what was typed keeps its meaning.
         described("Eenheid").performClick()

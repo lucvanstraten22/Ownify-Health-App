@@ -36,11 +36,14 @@ $allowed   = !empty($community['allow_requests']);
 
         <form class="account__form friends__search" id="friends-search" data-friends-search novalidate hidden>
             <label class="account__label" for="friends-username"><?= e(t('Gebruikersnaam')) ?></label>
-            <div class="account__row">
+            <?php /* The search is in the field (50.0): its round arrow, as the
+                     password eye and the goal search's clear are, and the
+                     keyboard's own search key. */ ?>
+            <div class="friends__field">
                 <input class="account__input" type="text" id="friends-username" name="username"
                        maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false"
-                       placeholder="<?= e(t('Gebruikersnaam')) ?>" required>
-                <button type="submit" class="btn press"><?= e(t('Zoeken')) ?></button>
+                       enterkeyhint="search" placeholder="<?= e(t('Gebruikersnaam')) ?>" required>
+                <button type="submit" class="friends__go press" aria-label="<?= e(t('Zoeken')) ?>"><?= icon('chevron-right') ?></button>
             </div>
             <p class="account__hint"><?= e(t('Vul de volledige gebruikersnaam in.')) ?></p>
 

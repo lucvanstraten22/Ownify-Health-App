@@ -268,7 +268,7 @@ private fun AddButton(enabled: Boolean, label: String, onClick: () -> Unit) {
             },
         contentAlignment = Alignment.Center
     ) {
-        JIcon(OwnifyIcons.plus, size = 22.dp, color = if (enabled) Ownify.TextPrimary else Ownify.TextMuted)
+        JIcon(OwnifyIcons.plus, size = 22.dp, color = if (enabled) Ownify.ActionInk else Ownify.TextMuted)
     }
 }
 

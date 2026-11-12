@@ -112,6 +112,8 @@ import com.ownify.android.ui.design.focusSafely
 import androidx.compose.runtime.withFrameNanos
 import com.ownify.android.ui.design.blurring
 import com.ownify.android.ui.screens.community.FRIENDS_ADD
+import com.ownify.android.ui.design.GlassRound
+import androidx.compose.foundation.layout.offset
 
 /** A picture larger than this is not read at all; the server's own limit (3 MB) answers below it. */
 private const val MAX_PICTURE_BYTES = 8 * 1024 * 1024
@@ -539,22 +541,29 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
 
     if (searching) {
         FieldLabel(tr("Gebruikersnaam"), Modifier.padding(top = Ownify.Space4))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        // The search is in the field (50.0, account-friends.php): its round arrow, and the keyboard's search key.
+        run {
             JInput(
                 query, {
                     query = it.take(30)
                     searchError = null
                 },
-                modifier = Modifier.weight(1f).focusRequester(searchField),
+                modifier = Modifier.fillMaxWidth().focusRequester(searchField),
                 placeholder = tr("Gebruikersnaam"),
                 label = tr("Gebruikersnaam"),
                 keyboard = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false,
                     keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Search
                 ),
-                actions = KeyboardActions(onSearch = { if (!busySearch) search() })
+                actions = KeyboardActions(onSearch = { if (!busySearch) search() }),
+                trailing = {
+                    GlassRound(
+                        OwnifyIcons.chevronRight, tr("Zoeken"), ::search,
+                        Modifier.align(Alignment.CenterEnd).offset(x = 10.dp),
+                        size = 32.dp, enabled = !busySearch, keepFocus = true
+                    )
+                }
             )
-            Btn(tr("Zoeken"), onClick = ::search, enabled = !busySearch)
         }
         FieldHint(tr("Vul de volledige gebruikersnaam in."))
         searchError?.let { ErrorBox(it, Modifier.padding(top = Ownify.Space3)) }

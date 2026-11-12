@@ -230,7 +230,8 @@ class GoogleSignInFlowTest {
         waitFor("Deze gebruikersnaam is al bezet.")
         compose.onNodeWithText("Kies je gebruikersnaam").assertIsDisplayed()
 
-        button("Annuleren").performScrollTo().performClick()
+        // The round back button beside Account aanmaken (50.0): its name, no words of its own.
+        compose.onNode(hasContentDescription("Annuleren") and hasClickAction()).performScrollTo().performClick()
 
         waitForGoogle()
         settle { server.google("cancel").size == 1 }

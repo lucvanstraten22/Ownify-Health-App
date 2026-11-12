@@ -107,6 +107,7 @@ import com.ownify.android.ui.design.JStyle
 import com.ownify.android.ui.design.LocalReducedMotion
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.design.OwnifyIcons
+import com.ownify.android.ui.design.RangeSwitch
 import com.ownify.android.ui.design.T
 import com.ownify.android.ui.design.blurring
 import com.ownify.android.ui.design.cssPadding
@@ -835,49 +836,25 @@ private fun PeriodRow(draft: Draft, goals: Goals, m: GoalMeasurement) {
 }
 
 /**
- * Which way is better: two round glass buttons, up and down. A long press
- * says what each means — also TalkBack's "explain" action — and chooses
- * nothing; no line of text stays on screen.
+ * Which way is better (50.0, goal-wizard.js directionRow): the period
+ * switch's segmented control, the arrow and the words side by side, so it
+ * reads at once — no long press.
  */
 @Composable
 private fun DirectionRow(draft: Draft, goals: Goals) {
     val words = goals.wizard
     val daily = draft.type != "milestone"
-    var tip by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(tip) {
-        if (tip != null) {
-            delay(2400)
-            tip = null
-        }
-    }
-    Column {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            T(words["direction_label"], JStyle.Caption, Modifier.weight(1f), uppercase = true)
-            Row(horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                listOf("increase" to OwnifyIcons.arrowUp, "decrease" to OwnifyIcons.arrowDown).forEach { (key, icon) ->
-                    val (label, hint) = words.direction(key, daily)
-                    GlassRound(
-                        icon, label,
-                        onClick = { draft.direction = key },
-                        chosen = draft.direction == key,
-                        longPressLabel = hint,
-                        onLongPress = { tip = hint }
-                    )
-                }
-            }
-        }
-        tip?.let {
-            T(
-                it,
-                OwnifyType.style(Ownify.FsSubhead),
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = Ownify.Space2)
-                    .liquidGlass(RoundedCornerShape(Ownify.RadiusSm), Panes.Tip)
-                    .padding(horizontal = Ownify.Space3, vertical = Ownify.Space2)
-                    .semantics { liveRegion = LiveRegionMode.Polite }
-            )
-        }
+    val keys = listOf("increase", "decrease")
+    Column(verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        T(words["direction_label"], JStyle.Caption, uppercase = true)
+        RangeSwitch(
+            options = keys.map { it to words.direction(it, daily).first },
+            selected = draft.direction,
+            onSelect = { draft.direction = it },
+            wide = true,
+            label = words["direction_label"],
+            icons = mapOf("increase" to OwnifyIcons.arrowUp, "decrease" to OwnifyIcons.arrowDown)
+        )
     }
 }
 

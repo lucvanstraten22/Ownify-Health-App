@@ -111,6 +111,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.heading
+import androidx.compose.foundation.layout.BoxScope
 
 // ---------------------------------------------------------------------------
 // Type — the website's text classes
@@ -476,9 +477,9 @@ data class BtnLook(
     val glass: GlassLook? = null
 ) {
     companion object {
-        /** `.btn--primary`: the one way forward — the app's green in the glass. */
+        /** `.btn--primary`: the one way forward — the solid `--action`, its label white (50.0). */
         val Primary: BtnLook
-            get() = BtnLook(glass = GlassLook(cta = true), disabledAlpha = 0.5f)
+            get() = BtnLook(text = Ownify.ActionInk, glass = GlassLook(cta = true), disabledAlpha = 1f)
 
         /** `.btn--caution`: leave, remove, delete, wipe — the attention gold in the glass. */
         val Caution: BtnLook
@@ -492,8 +493,9 @@ data class BtnLook(
 
 /**
  * `.btn`: a capsule at least 44 high, 16 either side, `--glass` over the
- * glass border, 13/600; disabled at 45%. [BtnLook.Primary] and
- * [BtnLook.Caution] draw it in the Liquid Glass, green or gold.
+ * glass border, 13/600; disabled at 45%. [BtnLook.Primary] is the solid
+ * `--action` (plain glass and the muted ink while disabled); [BtnLook.Caution]
+ * the Liquid Glass with the gold in it.
  */
 @Composable
 fun Btn(
@@ -513,6 +515,10 @@ fun Btn(
         SplitBtn(side, label, onClick, modifier, enabled, icon, look.glass?.caution == true, contentDescription)
         return
     }
+    // Not to be taken yet, the solid way forward is the plain glass (`.btn--primary:disabled`).
+    val idle = !enabled && look.glass?.cta == true
+    val glassLook = if (idle) GlassLook() else look.glass
+    val ink = if (idle) Ownify.TextMuted else look.text
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val shape = RoundedCornerShape(50)
@@ -527,7 +533,7 @@ fun Btn(
                 .alpha(if (enabled) 1f else look.disabledAlpha)
                 .heightIn(min = 44.dp)
                 .then(
-                    if (look.glass != null) Modifier.glass(shape, look.glass).padding(horizontal = Ownify.Space4)
+                    if (glassLook != null) Modifier.glass(shape, glassLook).padding(horizontal = Ownify.Space4)
                     else Modifier
                         .clip(shape)
                         .background(look.fill)
@@ -540,8 +546,8 @@ fun Btn(
             if (content != null) {
                 content()
             } else {
-                if (icon != null) JIcon(icon, size = iconSize, color = look.text)
-                ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, look.text), maxLines = 1) }
+                if (icon != null) JIcon(icon, size = iconSize, color = ink)
+                ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, ink), maxLines = 1) }
             }
         }
     }
@@ -953,7 +959,9 @@ fun RangeSwitch(
     optionHeight: Dp = if (wide) 34.dp else 32.dp,
     optionPadding: Dp = if (wide) Ownify.Space2 else Ownify.Space3,
     label: String? = null,
-    disabled: Set<String> = emptySet()
+    disabled: Set<String> = emptySet(),
+    /** 50.0: an icon before an option's words (the goal direction's arrows, `.goal-direction__option`). */
+    icons: Map<String, ImageVector> = emptyMap()
 ) {
     InButton {
         val shape = RoundedCornerShape(50)
@@ -1052,7 +1060,15 @@ fun RangeSwitch(
                         .cssPadding(PaddingValues(horizontal = optionPadding), border = 1.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    ChromeText { T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color), maxLines = 1) }
+                    val icon = icons[key]
+                    if (icon == null) {
+                        ChromeText { T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color), maxLines = 1) }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
+                            JIcon(icon, size = 14.dp, color = color)
+                            ChromeText { T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, color), maxLines = 1) }
+                        }
+                    }
                 }
             }
         }
@@ -1102,7 +1118,9 @@ fun JInput(
     password: Boolean = false,
     enabled: Boolean = true,
     textSize: TextUnit = Ownify.FsInput,
-    label: String? = null
+    label: String? = null,
+    /** 50.0: the in-field round button of another kind — the friend search's arrow. */
+    trailing: (@Composable BoxScope.() -> Unit)? = null
 ) {
     var focused by remember { mutableStateOf(false) }
     // 45.0: a password field's eye — what was typed, shown or hidden.
@@ -1153,7 +1171,7 @@ fun JInput(
                 contentAlignment = Alignment.CenterStart
             ) {
                 // A password leaves the eye its room, as the search field leaves its cross.
-                Box(if (password) Modifier.padding(end = 28.dp) else Modifier, contentAlignment = Alignment.CenterStart) {
+                Box(if (password || trailing != null) Modifier.padding(end = 28.dp) else Modifier, contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty() && placeholder.isNotEmpty()) {
                         T(placeholder, style.copy(color = Ownify.TextMuted), maxLines = 1)
                     }
@@ -1171,6 +1189,7 @@ fun JInput(
                         keepFocus = true
                     )
                 }
+                trailing?.invoke(this)
             }
         }
     )

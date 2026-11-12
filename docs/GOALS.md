@@ -48,9 +48,10 @@ a small round glass back button and one glass primary button.
    measurement with one type has it chosen for you.
 3. **Instellen** — what it takes: a number with its unit dropdown (always
    there), or for a Streak per periode how many times per week, maand,
-   kwartaal or jaar. Which way is better, as two round icon buttons (up,
-   down) — only where both make sense; a long press explains each and chooses
-   nothing. A Mijlpaal's starting value: measured (and shown) when there is
+   kwartaal or jaar. Which way is better, as the period switch's segmented
+   control, an arrow and its words side by side (Hoger is beter / Lager is
+   beter, or Minstens / Hoogstens for a daily streak; 50.0) — only where both
+   make sense. A Mijlpaal's starting value: measured (and shown) when there is
    data, typed when there is none. Then the period: **Start** (today, or
    earlier — up to a year) and **Einde**. Tapping Start opens the calendar for
    the start; **Gereed** moves on to the end's calendar. Five looptijden

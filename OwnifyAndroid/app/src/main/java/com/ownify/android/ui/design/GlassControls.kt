@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
@@ -80,6 +81,8 @@ data class GlassLook(val chosen: Boolean = false, val cta: Boolean = false, val 
 
 /** `.glass`: the Liquid Glass (Panes, theme.css `--lg-*`), in [shape]. */
 fun Modifier.glass(shape: Shape, look: GlassLook = GlassLook()): Modifier = composed {
+    // The one way forward is not glass (50.0): the solid --action.
+    if (look.cta) return@composed this.solidAction(shape)
     val small = look.shadow < 10.dp
     val base = if (small) Panes.Chip else Panes.Control
     val style = remember(look, base) {
@@ -91,6 +94,27 @@ fun Modifier.glass(shape: Shape, look: GlassLook = GlassLook()): Modifier = comp
         }
     }
     this.liquidGlass(shape, style)
+}
+
+/**
+ * `--action` (theme.css `.btn--primary`, `.glass--cta`): a flat fill with a
+ * faint top edge and a neutral shadow (`--action-shadow`) — no blur, no rim,
+ * no glow. Its label and icons are [Ownify.ActionInk].
+ */
+fun Modifier.solidAction(shape: Shape): Modifier = composed {
+    val shadowContext = LocalGraphicsContext.current.shadowContext
+    val outer = listOf(
+        BoxShadow(y = 1.dp, blur = 2.dp, color = Ownify.shade(0.22f)),
+        BoxShadow(y = 4.dp, blur = 12.dp, color = Ownify.shade(0.14f))
+    )
+    val inner = listOf(BoxShadow(y = 1.dp, blur = 0.dp, color = Color.White.copy(alpha = 0.14f), inset = true))
+    drawWithContent {
+        val outline = shape.createOutline(size, layoutDirection, this)
+        drawBoxShadows(shape, outer, shadowContext, outline)
+        clipPath(Path().apply { addOutline(outline) }) { drawRect(Ownify.Action) }
+        drawBoxShadows(shape, inner, shadowContext, outline)
+        drawContent()
+    }.clip(shape)
 }
 
 /** Chosen: `--health-fill` in the glass. */
@@ -258,7 +282,7 @@ fun GlassCta(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, e
             if (loading) Spinner(15.dp)
             T(
                 text,
-                OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (enabled) Ownify.TextPrimary else Ownify.TextMuted),
+                OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (!enabled) Ownify.TextMuted else if (caution) Ownify.TextPrimary else Ownify.ActionInk),
                 maxLines = 1
             )
         }

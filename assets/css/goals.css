@@ -1488,49 +1488,23 @@
 
 .goal-setup__error { margin: 0; }
 
-/* Which way is better: two round glass buttons, the words on a long press. */
+/* Which way is better (50.0): the period switch's segmented control, its
+   arrow and its words side by side. */
 .goal-direction {
-    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-2) var(--space-3);
+    gap: var(--space-2);
 }
 
 .goal-direction__label { margin: 0; }
 
-.goal-direction__buttons {
-    display: flex;
-    gap: var(--space-2);
+.goal-direction__option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
 }
 
-.goal-direction__button {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-.goal-direction__tip {
-    grid-column: 1 / -1;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-sm);
-    background: var(--lg-face), var(--lg-body-thick);
-    box-shadow: var(--lg-shadow), var(--lg-glint);
-    font-size: var(--fs-subhead);
-    color: var(--text-primary);
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity var(--transition-fast), transform var(--transition-fast);
-    isolation: isolate;
-    border: 0;
-    -webkit-backdrop-filter: var(--lg-filter);
-    backdrop-filter: var(--lg-filter);
-    position: relative;
-    letter-spacing: var(--tracking-small);
-}
-
-.goal-direction__tip.is-shown { opacity: 1; transform: none; }
-.goal-direction__tip[hidden] { display: none; }
+.goal-direction__option .icon { width: 14px; height: 14px; flex: none; }
 
 .goal-baseline__measured {
     display: flex;
@@ -1682,11 +1656,9 @@
 @media (prefers-reduced-motion: reduce) {
     .goal-card.is-new { animation: none; }
     .goal-wizard__spinner { animation-duration: 2400ms; }
-    .goal-direction__tip { transition: none; transform: none; }
 }
 
 :root[data-motion="reduce"] .goal-card.is-new { animation: none; }
-:root[data-motion="reduce"] .goal-direction__tip { transition: none; transform: none; }
 
 /* Narrow phones: the two halves keep their dates whole. */
 @media (max-width: 359px) {

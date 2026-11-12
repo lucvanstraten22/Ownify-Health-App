@@ -92,6 +92,8 @@ import com.ownify.android.ui.theme.OwnifyType
 import com.ownify.android.ui.theme.InButton
 import androidx.compose.ui.focus.focusRequester
 import com.ownify.android.ui.design.rememberFocusOnOpen
+import com.ownify.android.ui.design.OwnifyIcons
+import com.ownify.android.ui.design.GlassRound
 
 /** Room for any username or e-mail address the server accepts (191 for an address). */
 private const val MAX_FIELD = 191
@@ -437,19 +439,21 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     )
     FieldHint(tr("3 tot 30 tekens: letters, cijfers, punt, streepje of underscore."))
 
-    Btn(
-        tr("Account aanmaken"),
-        onClick = { submit() },
-        enabled = !working,
-        look = BtnLook.Primary,
-        modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
-    )
-    Btn(
-        tr("Annuleren"),
-        onClick = { OwnifyConnection.cancelGoogle() },
-        enabled = !working,
-        modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
-    )
+    // The way back and the way forward side by side (50.0, `.account__nav-pair`), as the goal wizard has them.
+    Row(
+        Modifier.fillMaxWidth().padding(top = Ownify.Space4),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
+    ) {
+        GlassRound(OwnifyIcons.chevronLeft, tr("Annuleren"), { OwnifyConnection.cancelGoogle() }, enabled = !working)
+        Btn(
+            tr("Account aanmaken"),
+            onClick = { submit() },
+            enabled = !working,
+            look = BtnLook.Primary,
+            modifier = Modifier.weight(1f)
+        )
+    }
 
     FieldHint(
         trn(step.minutes, "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuut.",

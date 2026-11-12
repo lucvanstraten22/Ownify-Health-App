@@ -64,7 +64,7 @@ plainly instead of working as if it had been used.
 Never introduce new styles, components, variants, tokens or one-off
 implementations without the user's explicit approval. Always use the
 approved, consolidated style system (`docs/THEME.md`: the one Liquid Glass,
-the quiet card, Well / Row / Note / Slot, the green and gold glass actions,
+the quiet card, Well / Row / Note / Slot, the solid primary and the gold glass action,
 the pill field, the two icon-tile sizes, the radius scale, the Randlicht
 ground) consistently across both the web app and the Android app. Never
 introduce inconsistencies or make design decisions on the user's behalf. If

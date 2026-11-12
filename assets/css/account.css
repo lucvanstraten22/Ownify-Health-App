@@ -263,6 +263,19 @@
     margin-top: var(--space-4);
 }
 
+/* The way back and the way forward in one row (50.0, as .goal-wizard__nav). */
+.account__nav-pair {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.account__nav-pair .account__submit { flex: 1; margin-top: 0; }
+
+/* A form that is only the target of a button elsewhere: nothing of its own to draw. */
+.account__form--bare { display: contents; }
+
 .account__hint {
     margin-top: var(--space-2);
     font-size: var(--fs-subhead);
@@ -433,6 +446,10 @@
 .friends__add-icon { width: 16px; height: 16px; }
 
 .friends__search { margin-top: var(--space-4); }
+
+/* The field and its arrow (components.css, the in-field round button). */
+.friends__field { position: relative; display: block; }
+.friends__field > .account__input { padding-right: 44px; }
 
 .friends__error { margin: var(--space-3) 0 0; }
 
