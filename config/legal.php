@@ -220,7 +220,7 @@ return [
         /* =========================================================== licenses */
         'licenses' => [
             'label' => 'Licenties',
-            'icon'  => 'copy',
+            'icon'  => 'info',   // B8 (50.0): a document's icon, as Voorwaarden — copy only copies
             'title' => 'Licenties',
             'lede'  => 'De software van anderen die Ownify gebruikt, met de licentie die daarbij hoort.',
             'sections' => [

@@ -180,7 +180,27 @@ floats or leads is the glass, in three looks:
 | --- | --- | --- | --- |
 | glass | `.glass`, `.pill`, `.ch-act` | `Modifier.glass(…)`, `Pill` | back and close, round buttons, the actions of Uitdagingen |
 | primary | `.btn--primary`, `.glass--cta` (`--lg-green`, `--lg-green-rim`) | `BtnLook.Primary`, `GlassCta` | the one action a step leads to: Volgende, Opslaan, Doel aanmaken, Akkoord |
-| cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`) | `BtnLook.Caution` (`Final`) | deleting, leaving, ending — every destructive step, the last one included |
+| cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`), or the gold forward half of a split (`.split--caution`) | `BtnLook.Caution` (`Final`) | only the irreversible yes: the step that deletes, wipes or leaves for good (N2, 50.0). The button that opens that step is neutral — the bin icon for deleting and wiping, the leave icon for leaving, none for disconnecting — and the question stands in the one attention Note above the yes. "Vriend verwijderen" and "Account verwijderen" keep their own looks |
+
+**The split button** (50.0, the owner's pick "Quiet + Joined"): two actions
+that belong together — a way back and a way forward, or a choice and its
+list — as one block across the width of the card or page they are in.
+
+| | Website | Android |
+| --- | --- | --- |
+| the pair | `.split` with two `.split__part`s | `SplitRow` (two `Btn`s, each drawn as its half through `LocalSplitSide`), or `SplitButton` |
+| a half with content of its own (a date's label over its value) | `.split__part` with its content | `SplitHalf` |
+| a dropdown | `.split--menu`: the value 85 %, the chevron 15 % | `SplitMenu` |
+
+- Both halves are the neutral Liquid Glass, 2 apart; the outer corners are
+  pills, the inner ones `--radius-sm`. Each half presses on its own (0.97).
+- The way back is on the left, the way forward on the right.
+- One ink for both halves, `--text-primary`; only the forward half of a
+  step with no way back (`.split--caution`, `caution = true`) reads gold.
+- Text at Subhead 600, as every button; the welcome screen's pair at Body
+  and the tab bar's height.
+- A pair of buttons side by side is a split; a field and the button beside
+  it (a unit, a period) is not.
 
 The send button of OwnifyAI stays solid green: it is the composer's own mark.
 Controls are 44 tall (`--hit-min`); round ones 44, the small round one 34.
@@ -200,8 +220,15 @@ is no other card.
 
 **Fields** are all the pill of "Zoek een doel": `--radius-pill`, 44 tall, the
 faint fill and hairline, and on focus the health edge with its halo
-(`JInput`). A date button in the wizard is a glass button, not a field, and
-keeps `--radius-sm`.
+(`JInput`). A date is a split's half (50.0): its label over its value, the
+start on the left and the end on the right, opening the date wheel — no
+calendar.
+
+**Focus** (N17, 50.0): one ring for whoever moves with a keyboard, on every
+control, the glass ones too — 2 px in the ink at .55, 3 px out, following
+the control's own corners. A page or dialog that opens takes focus itself,
+by its name (`AppNav.focusLayer`), so nothing wears a ring it was not given;
+a field that opens a form takes it as before.
 
 **Chips**: a label chip is a 24 high pill (`.chip`, `Chip`); a chip to choose
 is the glass chip (`.glass--chip`). A status bubble (27.0, Voeding's
@@ -240,11 +267,15 @@ what is still needed as its reading — a sentence, so it may wrap.
 glass thumb (`.glass`), on a 44 tall track. The only slider.
 
 **Icon tiles**, two sizes: 36 at radius 12 and 30 at radius 10
-(`Ownify.TileRadius`, `TileSmall`, `TileRadiusSmall`). A challenge's 48
-artwork is an illustration, not a tile.
+(`Ownify.TileRadius`, `TileSmall`, `TileRadiusSmall`), each with one glyph
+size (N4, 50.0): 18 in a 36 tile, 16 in a 30 tile (`--tile-glyph`,
+`--tile-glyph-sm`; `Ownify.TileGlyph`, `TileGlyphSmall`, `IconTile`'s
+default). An icon has one meaning everywhere — `warning` for a problem,
+`theme` for Thema & uiterlijk, `sparkle` for insights, `rings` for the
+score. A challenge's 48 artwork is an illustration, not a tile.
 
 **Radii**: 28 (a card), 20 (a well, a note, a slot, a small card), 14 (a row,
-a date button, a tooltip on a chart), pill. `--radius-inner` is gone.
+a split's inner corners, a tooltip on a chart), pill. `--radius-inner` is gone.
 
 **The red dot** (26.0, docs/NOTICES.md): `--notice` (`Ownify.Notice`), flat,
 cut out of a tile, a picture or a round button by a ring of the ground, or
