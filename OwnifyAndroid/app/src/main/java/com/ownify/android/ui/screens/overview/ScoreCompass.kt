@@ -364,7 +364,7 @@ private fun PeriodChart(period: CompassPeriod, days: List<CompassDay>, modifier:
         lines = listOf(line),
         filled = period.chart.hasData,
         dayDots = period.dayDots,
-        small = false,
+        small = period.group == "day" && xs.size > 7,   // N7: a month's days as small dots, as the Verloop
         carried = { i -> points.getOrNull(i)?.state == "carried" },
         axis = period.axis,
         // Each date under its day (lib/time-axis.php); a server from before that: first and last at the edges.

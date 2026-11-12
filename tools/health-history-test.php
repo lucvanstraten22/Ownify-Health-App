@@ -111,6 +111,12 @@ function account(int $age = 400): int
 }
 
 /** Y-m-d, $days before today. */
+/** A position across the window, the one side margin in (N7, time_axis_inset()). */
+function edge(int $days, string $grain, float $x): float
+{
+    return time_axis_inset(['days' => $days, 'grain' => $grain])($x);
+}
+
 function day(int $days): string
 {
     return (new DateTimeImmutable('today'))->modify(sprintf('%+d days', -$days))->format('Y-m-d');
@@ -344,21 +350,21 @@ $pages = pages($u);
 $ok = true;
 foreach ([...$pages['history']['periods'], ...$pages['compass']['trend']['periods']] as $p) {
     $x = $p['chart']['x'] ?? array_column($p['chart']['at'], 0);
-    if (($x[0] ?? null) !== 0.0) { $ok = false; }
+    if (($x[0] ?? null) !== edge((int) $p['days'], (string) $p['group'], 0.0)) { $ok = false; }
 }
-check('two days of Slaap: in every period of both charts the first point is at the left edge', $ok);
+check('two days of Slaap: in every period of both charts the first point is at the left, the one side margin in (N7)', $ok);
 $week = period($pages, '7');
 check('  7 dagen: the week from its first day, every day by its weekday, the days ahead empty',
     array_column($week['axis'], 'label') === array_map(static fn ($ago) => wd(day($ago)), [2, 1, 0, -1, -2, -3, -4])
-    && $week['chart']['x'] === [0.0, 16.67, 33.33], json_encode($week['axis']));
+    && $week['chart']['x'] === [edge(7, 'day', 0.0), edge(7, 'day', 16.67), edge(7, 'day', 33.33)], json_encode($week['axis']));
 check('  — not moved to the right, not stretched over the width', max($week['chart']['x']) < 50);
 $month = period($pages, '30');
 check('  30 dagen: 30 days from the first, a date every third day',
     count($month['axis']) === 10 && $month['axis'][0]['label'] === score_compass_date(day(2), true)
-    && $month['axis'][1]['label'] === (string) (int) (new DateTimeImmutable(day(-1)))->format('j') && $month['chart']['x'] === [0.0, 3.45, 6.9]);
+    && $month['axis'][1]['label'] === (string) (int) (new DateTimeImmutable(day(-1)))->format('j') && $month['chart']['x'] === [edge(30, 'day', 0.0), edge(30, 'day', 3.45), edge(30, 'day', 6.9)]);
 $quarter = period($pages, '90');
 check('  90 dagen: a date every week from the first day, one week begun so far',
-    count($quarter['axis']) === 13 && $quarter['axis'][0]['x'] === 0.0 && count($quarter['points']) === 1);
+    count($quarter['axis']) === 13 && $quarter['axis'][0]['x'] === edge(90, 'week', 0.0) && count($quarter['points']) === 1);
 $year = period($pages, '365');
 check('  1 jaar: 13 month boundaries from its first day — the same month at both ends — one month begun',
     count($year['axis']) === 12 + 1 && $year['axis'][0]['label'] === $year['axis'][12]['label'] && count($year['points']) === 1
@@ -412,10 +418,10 @@ $pages = pages($u);
 $week  = period($pages, '7');
 check('7 dagen: the last seven days, today the last place — by its weekday',
     $week['axis'][0]['label'] === wd(day(6)) && end($week['axis'])['label'] === wd(day(0))
-    && end($week['chart']['x']) === 100.0);
+    && end($week['chart']['x']) === edge(7, 'day', 100.0));
 $month = period($pages, '30');
 check('30 dagen: the last 30, a point a day, the newest at the right',
-    count($month['points']) === 30 && $month['axis'][0]['label'] === score_compass_date(day(29), true) && end($month['chart']['x']) === 100.0);
+    count($month['points']) === 30 && $month['axis'][0]['label'] === score_compass_date(day(29), true) && end($month['chart']['x']) === edge(30, 'day', 100.0));
 
 $weeks = period($pages, '90');
 $axis  = time_axis(90, $pages['compass']['trend']['days'][0]['date'], day(0));
@@ -426,7 +432,7 @@ foreach ($axis['slots'] as $w => $slot) {
     foreach (array_keys($scores) as $k => $id) {
         if ($weeks['points'][$w]['values'][$k] !== mean_over($scores[$id], $slot['from'], $slot['to'])) { $ok = false; }
     }
-    if ($weeks['chart']['x'][$w] !== $slot['x'] || $slot['x'] !== $weeks['axis'][$w]['x']) { $ok = false; }
+    if ($weeks['chart']['x'][$w] !== edge(90, 'week', (float) $slot['x']) || $weeks['chart']['x'][$w] !== $weeks['axis'][$w]['x']) { $ok = false; }
 }
 check('  each week the mean of its seven days, standing at its own date', $ok);
 check('  that it is a mean, in its reading', $weeks['points'][5]['detail'] === 'weekgemiddelde');
@@ -503,8 +509,8 @@ check('  7 and 30 days: the Scorekompas\'s own days, from the window\'s first',
     $cp['30']['start'] === $bare['30']['start'] && array_column($cp['30']['points'], 'date') === array_column(array_slice($list, $bare['30']['start'], 30), 'date'));
 check('  weeks and months point past the list: an older app reads no day there',
     $cp['90']['start'] === count($list) && $cp['365']['start'] === count($list));
-check('  the dots: every day of a week, every week and month — a month\'s days where the line begins',
-    array_column($cp, 'day_dots') === [true, false, true, true]);
+check('  the dots: every point in every period, as the Verloop (N7)',
+    array_column($cp, 'day_dots') === [true, true, true, true]);
 check('  spoken per week and per month, with its direction',
     str_starts_with($cp['90']['aria'], 'Je Gezondheidsscore per week, de afgelopen 90 dagen')
     && str_starts_with($cp['365']['aria'], 'Je Gezondheidsscore per maand, het afgelopen jaar'));
@@ -545,6 +551,17 @@ $long = $chart(500);
 check('more than a year: the year that ends today, 13 month boundaries',
     count($long['x_ticks']) === 13 && preg_match('/^[a-z]{3}$/', $long['x_ticks'][0]['label']) === 1
     && end($long['points'])['date'] === day(0) && $long['points'][0]['date'] === day(364));
+
+/* A goal that ended: its own days, not up to today (C63). Thirty days of
+   history that stopped 200 days ago: 30 dagen ending on its last day. */
+$ended = ['tracking' => 'manual', 'target_unit' => 'kg', 'status' => 'ended', 'completed_at' => null, 'end_date' => day(200)];
+$past  = [];
+for ($ago = 229; $ago >= 200; $ago--) {
+    $past[] = ['date' => day($ago), 'value' => 80 - $ago / 100];
+}
+$done = goal_chart_build($ended, ['points' => $past, 'mode' => 'best', 'target' => 75.0, 'best' => null], $today);
+check('an ended goal: its own 30 days, ending where it ended — not a year up to today',
+    count($done['x_ticks']) === 10 && $done['points'][0]['x'] === $done['x_ticks'][0]['left'] && end($done['points'])['date'] === day(200));
 
 section('The height: honest, and readable');
 

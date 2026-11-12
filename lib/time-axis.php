@@ -73,7 +73,9 @@ if (!function_exists('time_axis')) {
 
         $now   = new DateTimeImmutable($today);
         $back  = $now->modify('-' . ($days - 1) . ' day');           // where a full window starts
-        $begin = $first === null ? $now : new DateTimeImmutable($first);
+        /* No history at all (N6, 50.0): the same past week its neighbours
+           show, ending today — never the week ahead. */
+        $begin = $first === null ? $back : new DateTimeImmutable($first);
         $start = $begin > $back ? $begin : $back;                      // never before the history, never more than the period back
         $end   = $start->modify('+' . ($days - 1) . ' day');
 
@@ -239,5 +241,19 @@ if (!function_exists('time_axis')) {
         }
 
         return 365;
+    }
+
+    /**
+     * The one side margin of a chart over time (N7, 50.0): most of half a
+     * point's room at either edge, so a dot or a bar over the first or the
+     * last date stands inside the plot and its date centred under it. A
+     * position 0–100 across the window, moved in by it.
+     */
+    function time_axis_inset(array $axis): callable
+    {
+        $room = ($axis['grain'] === 'month' ? 365 / 12 : ($axis['grain'] === 'week' ? 7 : 1)) / max(1, $axis['days'] - 1);
+        $pad  = 0.3 * $room;
+
+        return static fn (float $x): float => round(($pad + $x / 100 * (1 - 2 * $pad)) * 100, 3);
     }
 }

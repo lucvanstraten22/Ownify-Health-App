@@ -116,12 +116,14 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
                              line begins and a day with no neighbour to draw a line
                              to. A day whose score was carried is a ring. */ ?>
                     <?php $begin = array_key_first(array_filter($at, static fn ($p) => $p[1] !== null)); ?>
+                    <?php /* N7: a month's days as small dots, as the Verloop draws them. */ ?>
+                    <?php $small = ($period['group'] ?? 'day') === 'day' && count($at) > 7; ?>
                     <?php foreach ($at as $i => [$x, $y]):
                         $alone = ($at[$i - 1][1] ?? null) === null && ($at[$i + 1][1] ?? null) === null;
                         if ($y === null || (!$period['day_dots'] && !$alone && $i !== $begin)) { continue; }
                         $state = (string) ($period['points'][$i]['state'] ?? '');
                         ?>
-                        <span class="compass-plot__dot<?= $state === 'carried' ? ' is-carried' : '' ?>" aria-hidden="true"
+                        <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $state === 'carried' ? ' is-carried' : '' ?>" aria-hidden="true"
                               style="left: <?= e((string) $x) ?>%; top: <?= e((string) $y) ?>%;"></span>
                     <?php endforeach; ?>
 

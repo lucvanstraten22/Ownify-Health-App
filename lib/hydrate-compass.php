@@ -287,6 +287,13 @@ if (!function_exists('hydrate_compass')) {
     {
         $today  = $days === [] ? (new DateTimeImmutable('today'))->format('Y-m-d') : (string) $days[count($days) - 1]['date'];
         $axis   = time_axis($length, $days === [] ? null : (string) $days[0]['date'], $today);
+        /* The one side margin (N7): points and dates move in together. */
+        $place  = time_axis_inset($axis);
+        foreach (['slots', 'ticks'] as $part) {
+            foreach ($axis[$part] as $i => $at) {
+                $axis[$part][$i]['x'] = $place((float) $at['x']);
+            }
+        }
         $points = hydrate_history_points($days, $axis, $read, $copy, substr($today, 0, 4));
         $chart  = hydrate_health_history_chart(array_column($points, 'x'), $points, $accents);
 
@@ -465,6 +472,41 @@ if (!function_exists('hydrate_compass')) {
                 'line'   => array_values(array_map('goal_chart_monotone', array_filter($runs, static fn ($r) => count($r) > 1))),
                 'y'      => $y,
             ];
+        }
+
+        /* Dots that would cover each other (N8, 50.0): where two lines'
+           points on one day stand less than a dot apart, each moves 2 px
+           aside — the first line left, the next right — so no category
+           disappears under another. `dx` is each point's shift in px. */
+        $dot = 7.0;
+        foreach ($lines as $k => $line) {
+            $lines[$k]['dx'] = array_fill(0, count($points), 0);
+        }
+        for ($i = 0, $n = count($points); $i < $n && count($lines) > 1; $i++) {
+            $here = [];
+            foreach ($lines as $k => $line) {
+                if ($line['y'][$i] !== null) {
+                    $here[$k] = $line['y'][$i] / 100 * $height;
+                }
+            }
+            asort($here);
+            $group = [];
+            $prev  = null;
+            $flush = static function (array $group) use (&$lines, $i): void {
+                sort($group);                                   // the lines' own order, left to right
+                foreach ($group as $j => $k) {
+                    $lines[$k]['dx'][$i] = count($group) > 1 ? (int) round(($j - (count($group) - 1) / 2) * 4) : 0;
+                }
+            };
+            foreach ($here as $k => $py) {
+                if ($prev !== null && $py - $prev >= $dot) {
+                    $flush($group);
+                    $group = [];
+                }
+                $group[] = $k;
+                $prev    = $py;
+            }
+            $flush($group);
         }
 
         $step = match (true) {

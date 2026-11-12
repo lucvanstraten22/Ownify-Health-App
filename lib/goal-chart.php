@@ -39,7 +39,6 @@ require_once __DIR__ . '/time-axis.php';
 if (!defined('GOAL_CHART_W')) {
     define('GOAL_CHART_W', 1000.0);   // viewBox width; the SVG stretches to the card
     define('GOAL_CHART_H', 132.0);    // viewBox height = CSS height, so strokes stay 1:1
-    define('GOAL_CHART_PAD', 0.03);   // keeps the end dots off the very edge
 }
 
 if (!function_exists('goal_chart_build')) {
@@ -271,12 +270,14 @@ if (!function_exists('goal_chart_build')) {
             'all_dots' => false, 'summary' => '', 'mode' => $mode,
         ];
 
-        /* No history yet: the week from today, its dates and nothing on it. */
+        /* No history yet: the past week, as every empty chart (N6), its dates and nothing on it. */
+        $week  = time_axis(7, null, $today->format('Y-m-d'));
+        $inset = time_axis_inset($week);
         $empty['x_ticks'] = array_map(static fn (array $t): array => [
-            'left'  => round((GOAL_CHART_PAD + $t['x'] / 100 * (1 - 2 * GOAL_CHART_PAD)) * 100, 3),
+            'left'  => $inset((float) $t['x']),
             'label' => $t['label'],
             'align' => 'center',
-        ], time_axis(7, null, $today->format('Y-m-d'))['ticks']);
+        ], $week['ticks']);
 
         if ($points === []) {
             return $empty;
@@ -288,20 +289,31 @@ if (!function_exists('goal_chart_build')) {
            the rest of the period empty ahead of it — never the few days
            there are stretched over the card; past a year, the year that
            ends today. A point from before that year is off the chart. */
-        $axis  = time_axis(time_axis_fit((string) $points[0]['date'], $today->format('Y-m-d')), (string) $points[0]['date'], $today->format('Y-m-d'));
+        /* A goal that has finished is drawn over its own days (C63, 50.0):
+           its window ends where the goal did — the day it was reached, or
+           its end date — never today, so a goal for april is april. */
+        $last = $today;
+        if (in_array((string) ($goal['status'] ?? ''), ['completed', 'ended'], true)) {
+            $stop = !empty($goal['completed_at']) ? substr((string) $goal['completed_at'], 0, 10) : (string) ($goal['end_date'] ?? '');
+            if ($stop !== '' && $stop < $today->format('Y-m-d') && $stop >= (string) $points[0]['date']) {
+                $last = new DateTimeImmutable($stop);
+            }
+        }
+        $axis  = time_axis(time_axis_fit((string) $points[0]['date'], $last->format('Y-m-d')), (string) $points[0]['date'], $last->format('Y-m-d'));
         $skip  = 0;
         while ($skip < count($points) && (string) $points[$skip]['date'] < $axis['start']) {
             $skip++;
         }
         $before = $skip > 0 ? (float) $points[$skip - 1]['value'] : 0.0;   // what a total had grown to before the year
-        $points = array_values(array_slice($points, $skip));
+        $points = array_values(array_filter(array_slice($points, $skip), static fn (array $p): bool => (string) $p['date'] <= $axis['end']));
         if ($points === []) {
             return $empty;
         }
         $dates = array_map(static fn (array $p): DateTimeImmutable => new DateTimeImmutable($p['date']), $points);
 
-        $xOf = static fn (DateTimeImmutable $d): float
-            => GOAL_CHART_PAD + time_axis_x($axis, $d->format('Y-m-d')) / 100 * (1 - 2 * GOAL_CHART_PAD);
+        /* The one side margin of every chart over time (N7, 50.0). */
+        $place = time_axis_inset($axis);
+        $xOf   = static fn (DateTimeImmutable $d): float => $place(time_axis_x($axis, $d->format('Y-m-d'))) / 100;
 
         /* ------------------------------------------------------- Y domain */
         $offset = (float) ($unit['offset'] ?? 0.0);
@@ -429,11 +441,12 @@ if (!function_exists('goal_chart_build')) {
                 . ' L ' . round($segment[0][0], 2) . ' ' . GOAL_CHART_H . ' Z';
         }
 
-        /* Every point gets a dot while there are few enough to tell apart; past
-           that, the line carries the shape and only the latest keeps its dot.
+        /* Every point gets a dot while there are few enough to tell apart —
+           a month of days, as every chart over time (N7, 50.0); past that,
+           the line carries the shape and only the latest keeps its dot.
            A lone day in a broken daily line always keeps one, or it would not
            be visible at all. */
-        $allDots = count($out) <= 16;
+        $allDots = count($out) <= 31;
         $lone    = [];
         $offset  = 0;
         foreach ($runs as $segment) {

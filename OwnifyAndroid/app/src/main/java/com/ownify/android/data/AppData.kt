@@ -1274,7 +1274,11 @@ data class HistoryLevel(val y: Float, val label: String)
  * from the top — null without a score; and [solo] the same line on its own,
  * over its own height, as that category's page draws it.
  */
-data class HistoryLine(val id: String, val accent: String, val line: List<String>, val y: List<Float?>, val solo: HistorySolo? = null) {
+data class HistoryLine(
+    val id: String, val accent: String, val line: List<String>, val y: List<Float?>, val solo: HistorySolo? = null,
+    /** Each point's step aside in dp (N8, 50.0): where two lines' dots would cover each other. */
+    val dx: List<Float?> = emptyList()
+) {
     companion object {
         fun parse(o: JSONObject): HistoryLine? {
             val id = o.str("id") ?: return null
@@ -1287,7 +1291,7 @@ data class HistoryLine(val id: String, val accent: String, val line: List<String
                     it.str("aria").orEmpty()
                 )
             }
-            return HistoryLine(id, o.str("accent").orEmpty(), o.arr("line").strings(), o.arr("y").floats(), solo)
+            return HistoryLine(id, o.str("accent").orEmpty(), o.arr("line").strings(), o.arr("y").floats(), solo, o.arr("dx").floats())
         }
     }
 }
@@ -1536,8 +1540,11 @@ data class AreaChart(
     /** 40.1: "Over …" under the large chart — its title and short points — or null. */
     val about: AreaAbout? = null
 ) {
+    /** The series with a line or bars of their own (N9: a second measure is only read). */
+    val drawn get() = series.filter { it.drawn }
+
     /** Bars and a line: drawn in two shades. */
-    val mixed get() = series.map { it.kind }.distinct().size > 1
+    val mixed get() = drawn.map { it.kind }.distinct().size > 1
 
     companion object {
         fun parse(o: JSONObject): AreaChart? {
@@ -1552,7 +1559,7 @@ data class AreaChart(
                 switchLabel = o.str("switch").orEmpty(),
                 hint = o.str("hint").orEmpty(),
                 empty = o.str("empty").orEmpty(),
-                series = o.arr("series").map { AreaSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line") },
+                series = o.arr("series").map { AreaSeries(it.str("key") ?: return@map null, it.str("label").orEmpty(), it.str("kind") ?: "line", !it.has("drawn") || it.optBoolean("drawn", true)) },
                 latest = o.obj("latest")?.let { AreaLatest(it.arr("texts").let(::textsOf), it.str("date"), it.str("of"), it.str("sub")) },
                 defaultPeriod = o.str("default") ?: periods.first().key,
                 periods = periods,
@@ -1566,7 +1573,8 @@ data class AreaChart(
     }
 }
 
-data class AreaSeries(val key: String, val label: String, val kind: String)
+/** [drawn] false (N9, 50.0): a second, different measure — read in the head and the reading, never drawn. */
+data class AreaSeries(val key: String, val label: String, val kind: String, val drawn: Boolean = true)
 
 /** A chart's "Over …": what it shows, what it measures and why it helps (40.1). */
 data class AreaAbout(val title: String, val points: List<String>)

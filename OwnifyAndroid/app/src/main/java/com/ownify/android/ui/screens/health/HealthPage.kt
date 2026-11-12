@@ -239,7 +239,7 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
     val filled = history.periods.any { p -> if (only == null) p.hasData else p.lines.firstOrNull { it.id == only }?.solo?.hasData ?: p.hasData }
     val lines = period.lines
         .filter { only == null || it.id == only }
-        .map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.solo?.takeIf { only != null }?.line ?: line.line, emptyList(), line.solo?.takeIf { only != null }?.y ?: line.y) }
+        .map { line -> PlotLine(Accent.of(names[line.id]?.accent ?: line.accent).color, line.solo?.takeIf { only != null }?.line ?: line.line, emptyList(), line.solo?.takeIf { only != null }?.y ?: line.y, dx = if (only == null) line.dx else emptyList()) }
     // Each point as the reading shows it: the period's own, or — from a server from before them — its day in the Scorekompas's list.
     val points: List<HistoryPoint?> = remember(period, days) {
         if (period.points.isNotEmpty()) period.points

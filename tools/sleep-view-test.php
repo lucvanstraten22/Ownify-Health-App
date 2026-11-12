@@ -208,7 +208,7 @@ check('  the bars: a top for each night, null — never 0 — between',
 check('Regelmaat as the score recorded it, the carried day said so',
     array_column($bed['points'], 4) === ['72', '72', '75'] && str_contains((string) $bed['points'][1][2], 'gold nog') && $bed['carried'] === [1],
     json_encode($bed['points']));
-check('  beside bars, no level named', $bed['grid'] === [] && count($bed['lines']) === 1);
+check('  Regelmaat is read, never drawn beside the bars on a scale of its own (N9); the bars\' levels named', $bed['lines'] === [] && $bed['grid'] !== []);
 check('SpO₂ on the one day it was measured, a gap on the others',
     array_column($spo2['points'], 3) === ['95%', null, '96%'] && $spo2['lines'][0]['y'][1] === null, json_encode($spo2['points']));
 check('  a line alone: its levels named, whole percents', $spo2['grid'] !== [] && !array_filter(array_column($spo2['grid'], 'label'), static fn ($l) => str_contains($l, ',')));

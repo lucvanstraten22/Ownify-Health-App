@@ -1050,15 +1050,24 @@
    ring is the card's own colour, so a dot stays legible where it sits on the
    line. HTML rather than SVG, because the SVG stretches and a stretched
    circle is an ellipse. */
+/* The one dot of every chart over time (N7, 50.0): 7 across, 5 where a
+   month's days must stay apart — the Scorekompas's dot. */
 .goal-chart__dot {
     position: absolute;
-    width: 8px;
-    height: 8px;
-    margin: -4px 0 0 -4px;
+    width: 7px;
+    height: 7px;
+    margin: -3.5px 0 0 -3.5px;
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 0 2px var(--bg-secondary);
     pointer-events: none;
+}
+
+.goal-chart__dot.is-small {
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    box-shadow: 0 0 0 1.5px var(--bg-secondary);
 }
 
 /* The latest value, written at the end of the line — the one direct label. */

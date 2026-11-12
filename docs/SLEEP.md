@@ -171,14 +171,15 @@ grow to the taller one.
 
 | Chart | What it draws | From |
 | --- | --- | --- |
-| Tijd in bed + Regelmaat | Tijd in bed as bars; Regelmaat as a line with dots, over it | the night's time in bed (`sleep_sessions`); the sleep score's regularity part as it was recorded each day (`daily_scores`, the same "Regelmaat" the Scorekompas shows), carried as the score is carried |
+| Tijd in bed + Regelmaat | Tijd in bed as bars; Regelmaat as a value in the head and in each night's reading (50.0: never a line on a scale of its own beside the bars, docs/CHARTS.md) | the night's time in bed (`sleep_sessions`); the sleep score's regularity part as it was recorded each day (`daily_scores`, the same "Regelmaat" the Scorekompas shows), carried as the score is carried |
 | SpO₂ | a line with dots | each day's value (`health_daily_metric()`) |
 | Huidtemperatuur | a line with dots | the same |
 | Hartslagvariabiliteit | a line with dots | the same |
 
-- **The bars and the line in the first chart have heights of their own.**
-  The bars run from 0 to the most hours. Regelmaat is a 0–100 score. So
-  neither scale is named, and the reading gives both values.
+- **The first chart draws Tijd in bed only.** The bars run from 0 to the
+  most hours, their levels named. Regelmaat is a 0–100 score — another
+  measure — so it is read, not drawn: its value beside the hours in the
+  head, and in each night's reading.
 - **The other three** name their levels in a gutter on the large chart,
   never finer than the values themselves (a whole percent, a tenth of a
   degree).

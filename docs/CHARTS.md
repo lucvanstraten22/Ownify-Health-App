@@ -37,6 +37,12 @@ server sends. Its own test is `tools/time-axis-test.php`.
     the rest of the week empty. Never the two days shifted to the right,
     never the chart zoomed into them.
   - A full history in 7 dagen: 2 to 8 oktober, today the last date.
+- **No history at all** (50.0): the period that ends today, as a full
+  history's — an empty chart shows the same past week as the chart beside
+  it, never the week ahead. It names its dates and draws nothing.
+- **A goal that has finished** (50.0) is drawn over its own days: its window
+  ends on the day it was reached, or on its end date — never today. A goal
+  for april is april, not a year from april to april.
 - **7 dagen names weekdays** (40.1): seven equal places, one per day, each
   under its own day whether it has a value or not — a missing day stays an
   empty place, it never shifts the others. The weekday fits the small
@@ -52,11 +58,22 @@ server sends. Its own test is `tools/time-axis-test.php`.
   same day of the month as the window's first day (the last day of a
   shorter month: 31 jan, 28 feb, 31 mrt …). The 13th boundary is not a 13th
   month.
+- **One side margin** (50.0): every chart over time keeps 0.3 of a point's
+  room free at either edge (`time_axis_inset()`), so the first and the last
+  point — a dot or a bar — stand inside the plot and their dates centred
+  under them. The Verloop, the Scorekompas, a goal's chart and the area
+  charts all take it; none has a margin of its own.
 - **A date at either end stays on the chart.** Each date stands centred
-  under its day; one at the edge that would stick out past the chart moves
-  in by just its overflow, and no further (`assets/js/chart-axis.js`,
+  under its day; one at the edge that would still stick out past the chart
+  moves in by just its overflow, and no further (`assets/js/chart-axis.js`,
   `--edge-shift`; in the app `TickAxis` and `XTicks`). Every other date
   stays exactly where its day is.
+- **Dates never touch** (50.0). Where the chart is too narrow for every
+  date of its period (a year's 13 months on a phone, the small charts),
+  every second, third … date is left out — an even stride, never a few
+  dates picked by what happens to fit — until 4 px stay free between
+  neighbours. The first and the last date stay (`chart-axis.js`; in the
+  app `evenTicks()`). The points do not change: only fewer dates are named.
 - **A chart too narrow for a week's dates** (Slaap's small charts) writes
   them in two rows as 30 and 90 days do — the day over its month, the month
   where it is named (`time_axis_rows()`): the same dates, at the same days.
@@ -99,7 +116,9 @@ as fixed:
 
 - always the whole day, 00:00 at the left edge and 24:00 at the right —
   never from the first measurement, never zoomed into the hours there are;
-- the hours every three, `00:00 · 03:00 … 21:00`, evenly spaced;
+- the hours every three, `00:00 · 03:00 … 21:00`, evenly spaced; where
+  they do not fit, every six (`00:00 · 06:00 · 12:00 · 18:00`) — counted
+  from 00:00, the same rule on both apps (50.0);
 - a point per five minutes that had a heart rate, at their middle; a line
   through points no more than 20 minutes apart, a dot where one stands
   alone; a stretch without any is a gap;
@@ -116,10 +135,35 @@ These are the same on every chart and are not part of the time rule:
 - the height: the period's own range in round tens, at least 30 points, its
   levels named in a gutter on the left (`hydrate_health_history_chart()`); a
   goal's range is rounded around its values and its target;
+- a measurement's height (50.0): its own range, but never less than the
+  measure's `span` — SpO₂ 10 points, heart rate 10 bpm, HRV 20 ms, breathing
+  4 per minute, skin temperature 1 °C — so a change inside a device's own
+  error does not fill the plot; a percentage never reaches past 100
+  (`area_chart_range()`);
 - monotone curves (`goal_chart_monotone()`), which never bend past a point;
+- the dots (50.0), one rule for every chart over days: a dot on every point
+  while there are at most 31 — 7 px across with a 2 px ring of the card,
+  5 px and 1.5 where a period has more than 7 days — and on every week and
+  month; past 31 points (a goal's long history) the line carries the shape
+  and only the first, a point alone and the last keep theirs. A day of
+  heart rate marks only a point that stands alone. Bars have no dots;
+- dots that would cover each other (50.0): where two lines' points on one
+  day stand less than a dot apart, each moves 2 px aside — the first line
+  left, the next right — and the reading's dots with them, so no category
+  disappears under another (`dx`, `hydrate_health_history_chart()`);
+- the key (50.0): a line's is a round dot, a bar's a small square — never a
+  dash, which reads as a minus beside a number. A chart of one series has
+  none; it is named by its title;
+- bars (50.0) at 75 % of their colour (`--bar`), strong enough to read on
+  the card in both themes;
+- a value's unit (50.0) after its number, smaller and quiet ("7,5 km");
+  a percent sign stays with its number;
 - the reading: a finger, a cursor or the arrow keys pick the nearest point,
   with a crosshair, a dot on each line and the reading above the chart; the
-  touch reading lingers 1.6 s; TalkBack steps with Vorige dag / Volgende dag;
+  touch reading lingers 1.6 s; TalkBack steps with Vorige dag / Volgende dag.
+  It names the day by its full date, today too — never "Vandaag" (50.0) —
+  and stands on a near-solid ground (`--tip-surface-solid`), so a control
+  it passes over does not show through it;
 - the period switch (`7 dagen | 30 dagen | 90 dagen | 1 jaar`, 7 dagen first)
   in the range switch's glass;
 - every colour through the theme (`docs/THEME.md`), Dark and White Mode.
@@ -134,6 +178,13 @@ An area chart (`lib/area-charts.php`) may carry, besides its series:
   bereik. Energie's and Water's (docs/NUTRITION.md).
 - `of`: a target; the small chart's head reads "1.844 van 2.300 kcal" —
   "van …" after the value, quieter.
+- a series' `drawn` false (50.0): a second, different measure — Regelmaat
+  beside Tijd in bed, Afstand beside Stappen. Its value stands in the head
+  and in each day's reading; it is never drawn as a line on a hidden scale
+  of its own beside the first. Two measures of one unit (Actieve and Totale
+  calorieën, `scale` shared) are still drawn together, on the one scale.
+- a series' `span`: the least its values are drawn over (see the height,
+  above), in the unit it is stored in.
 - `sub` [unit, factor]: the same value once more in a second unit, on a line
   of its own under the head ("1.200 ml").
 - a series' `alt` [unit, factor]: a second scale — its levels named on the

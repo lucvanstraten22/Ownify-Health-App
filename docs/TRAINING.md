@@ -75,7 +75,7 @@ with the chart large over 7 dagen, 30 dagen, 90 dagen and 1 jaar.
 
 | Chart | What it draws | From |
 | --- | --- | --- |
-| Stappen + Afstand | steps as bars, distance as a line with dots, each on its own height from 0 | each day's total (`health_daily_metric()`), each moment once over the apps |
+| Stappen + Afstand | steps as bars from 0, their levels named; distance as a value in the head and in each day's reading (50.0: never a line on a scale of its own beside the bars, docs/CHARTS.md) | each day's total (`health_daily_metric()`), each moment once over the apps |
 | Actieve + Totale calorieën | total as bars, active as a line, on one height (both kcal), its levels named | the same |
 | Verdiepingen | a line with dots | the same |
 | Actieve minuten | a line with dots | each day's `active_minutes` |

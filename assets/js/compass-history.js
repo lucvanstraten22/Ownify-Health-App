@@ -202,16 +202,19 @@
             var points = daysIn(range, '[data-history-points]');
             var xs;
             var ys;
+            var dx;
 
             try {
                 xs = JSON.parse(range.getAttribute('data-x') || '[]');
                 ys = JSON.parse(range.getAttribute('data-y') || '{}');
+                dx = JSON.parse(range.getAttribute('data-dx') || '{}');
             } catch (error) {
                 xs = [];
                 ys = {};
+                dx = {};
             }
 
-            ranges.push(plot && xs.length && points.length ? lines(plot, xs, ys, points) : null);
+            ranges.push(plot && xs.length && points.length ? lines(plot, xs, ys, points, dx) : null);
         });
 
         /* After health-trend.js has switched the chart: any reading put away. */
@@ -223,7 +226,7 @@
         /* One period's lines: the point's date — a day's, or a week's or
            month's days and that its scores are their mean — and each
            category's score above them, a dot on each line that had one. */
-        function lines(plot, xs, ys, points) {
+        function lines(plot, xs, ys, points, dx) {
             var cross = plot.querySelector('[data-reading-cross]');
             var tip   = plot.querySelector('[data-reading-tip]');
 
@@ -270,6 +273,8 @@
                             if (changed && !r.focus.hidden) {
                                 r.focus.style.left = xs[index] + '%';
                                 r.focus.style.top  = y + '%';
+                                /* Stepped aside as its dot is (N8), so neither covers the other. */
+                                r.focus.style.translate = (((dx || {})[r.id] || [])[index] || 0) + 'px 0';
                             }
                         }
 

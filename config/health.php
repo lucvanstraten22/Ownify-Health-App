@@ -198,7 +198,7 @@ return [
                                 ]],
                                 'series' => [
                                     ['key' => 'time_in_bed', 'label' => 'Tijd in bed', 'unit' => 'u', 'kind' => 'bars', 'format' => 'hours'],
-                                    ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line', 'format' => 'score', 'range' => [0, 100]],
+                                    ['key' => 'regularity',  'label' => 'Regelmaat',   'unit' => '',  'kind' => 'line', 'format' => 'score', 'range' => [0, 100], 'drawn' => false],
                                 ]],
                 'spo2'      => ['title' => 'SpO₂',
                                 'about' => ['name' => 'SpO₂', 'points' => [
@@ -207,14 +207,14 @@ return [
                                     "Een meting aan de pols kan tot zo'n 2 procentpunt afwijken van een medische meting.",
                                     'Ownify toont de waarde per nacht en trekt er geen medische conclusies uit.',
                                 ]],
-                                'series' => [['key' => 'spo2', 'label' => 'SpO₂', 'unit' => '%', 'kind' => 'line', 'decimals' => 0]]],
+                                'series' => [['key' => 'spo2', 'label' => 'SpO₂', 'unit' => '%', 'kind' => 'line', 'decimals' => 0, 'span' => 10]]],
                 'skin_temp' => ['title' => 'Huidtemperatuur',
                                 'about' => ['name' => 'Huidtemperatuur', 'points' => [
                                     'De temperatuur van je huid tijdens de slaap, gemeten door je horloge of ring.',
                                     'Het is niet je lichaamstemperatuur: je huid is koeler en reageert ook op je kamer en dekens.',
                                     'Vooral nuttig om te zien hoe een nacht afwijkt van je eigen gewone nachten.',
                                 ]],
-                                'series' => [['key' => 'skin_temp', 'label' => 'Huidtemperatuur', 'unit' => '°C', 'kind' => 'line', 'decimals' => 1]]],
+                                'series' => [['key' => 'skin_temp', 'label' => 'Huidtemperatuur', 'unit' => '°C', 'kind' => 'line', 'decimals' => 1, 'span' => 1]]],
                 'hrv'       => ['title' => 'Hartslag­variabiliteit',   /* a soft hyphen: where it breaks on a small card */
                                 'about' => ['name' => 'Hartslagvariabiliteit', 'points' => [
                                     'Hoeveel de tijd tussen twee hartslagen van slag tot slag verschilt, in milliseconden.',
@@ -222,7 +222,7 @@ return [
                                     'In je score vergelijkt Ownify het met je eigen waarden van de 60 dagen ervoor, niet met die van anderen.',
                                     'Hoe goed een horloge HRV meet, verschilt sterk per apparaat.',
                                 ]],
-                                'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0]]],
+                                'series' => [['key' => 'hrv', 'label' => 'HRV', 'unit' => 'ms', 'kind' => 'line', 'decimals' => 0, 'span' => 20]]],
                 /* Breathing and heart rate while asleep, each night's own value:
                    respiratory_rate as the source measured it (Polar once a
                    night, Health Connect per reading, averaged per night), and
@@ -234,7 +234,7 @@ return [
                                     'Gemeten door je horloge of ring; Ownify toont één waarde per nacht.',
                                     'Vooral nuttig om je eigen nachten met elkaar te vergelijken.',
                                 ]],
-                                'series' => [['key' => 'respiratory_rate', 'label' => 'Ademfrequentie', 'unit' => '/min', 'kind' => 'line', 'decimals' => 1]]],
+                                'series' => [['key' => 'respiratory_rate', 'label' => 'Ademfrequentie', 'unit' => '/min', 'kind' => 'line', 'decimals' => 1, 'span' => 4]]],
                 'sleeping_hr' => ['title' => 'Rusthartslag',
                                 'about' => ['name' => 'Rusthartslag', 'points' => [
                                     'Je gemiddelde hartslag tijdens de slaap, in slagen per minuut.',
@@ -242,7 +242,7 @@ return [
                                     'Horloges meten de hartslag in rust nauwkeurig.',
                                     'Vooral nuttig om je eigen nachten met elkaar te vergelijken.',
                                 ]],
-                                'series' => [['key' => 'sleeping_hr', 'label' => 'Hartslag in slaap', 'unit' => 'bpm', 'kind' => 'line', 'decimals' => 0]]],
+                                'series' => [['key' => 'sleeping_hr', 'label' => 'Hartslag in slaap', 'unit' => 'bpm', 'kind' => 'line', 'decimals' => 0, 'span' => 10]]],
             ],
             'chart_copy' => [
                 'empty'   => 'Nog geen metingen.',
@@ -431,7 +431,7 @@ return [
                                 ]],
                                      'series' => [
                                          ['key' => 'steps',    'label' => 'Stappen', 'unit' => '',   'kind' => 'bars', 'decimals' => 0],
-                                         ['key' => 'distance', 'label' => 'Afstand', 'unit' => 'km', 'kind' => 'line', 'decimals' => 1],
+                                         ['key' => 'distance', 'label' => 'Afstand', 'unit' => 'km', 'kind' => 'line', 'decimals' => 1, 'drawn' => false],
                                      ]],
                 /* Both kcal: one height, its levels named. */
                 'energy'         => ['title' => 'Actieve + Totale calorieën',

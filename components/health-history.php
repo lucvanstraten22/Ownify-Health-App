@@ -45,7 +45,7 @@ $periods    = array_map(static function (array $period) use ($only, $keep): arra
     /* One line, over its own height. */
     $line  = $period['chart']['lines'][$keep[0]];
     $solo  = $line['solo'] ?? null;
-    $period['chart']['lines'] = [$solo === null ? $line : ['line' => $solo['line'], 'y' => $solo['y']] + $line];
+    $period['chart']['lines'] = [['dx' => []] + ($solo === null ? $line : ['line' => $solo['line'], 'y' => $solo['y']] + $line)];   // alone: nothing to step aside for (N8)
     $period['chart']['grid']     = $solo['grid'] ?? $period['chart']['grid'];
     $period['chart']['has_data'] = $solo['has_data'] ?? $period['chart']['has_data'];
     $period['aria']   = $solo['aria'] ?? $period['aria'];
@@ -85,9 +85,10 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
             $chart = $period['chart'];
             $x     = $chart['x'];
             $y     = array_column($chart['lines'], 'y', 'id');
+            $dx    = array_filter(array_column($chart['lines'], 'dx', 'id'), static fn ($d) => array_filter((array) $d) !== []);
             ?>
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
-                 data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $y)) ?>">
+                 data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $y)) ?>"<?php if ($dx !== []): ?> data-dx="<?= e((string) json_encode((object) $dx)) ?>"<?php endif; ?>>
 
                 <?php if ($period['since'] !== null): ?>
                     <p class="compass-history__since health-history__since"><?= e($period['since']) ?></p>
@@ -139,7 +140,7 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
                             ?>
                             <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $carried ? ' is-carried' : '' ?>"
                                   data-accent="<?= e($series['accent']) ?>" aria-hidden="true"
-                                  style="left: <?= e((string) $x[$i]) ?>%; top: <?= e((string) $top) ?>%;"></span>
+                                  style="left: <?= e((string) $x[$i]) ?>%; top: <?= e((string) $top) ?>%;<?php if (!empty($series['dx'][$i])): ?> translate: <?= (int) $series['dx'][$i] ?>px 0;<?php endif; ?>"></span>
                         <?php endforeach; ?>
                     <?php endforeach; ?>
 

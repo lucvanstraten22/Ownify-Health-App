@@ -325,7 +325,7 @@ if (!function_exists('score_compass')) {
             'text'       => [],
             'empty'      => $t['empty'],
             'values'     => $values,
-            'axis'       => $dates === [] ? [] : [score_compass_date($dates[0], true), $t['today']],
+            'axis'       => $dates === [] ? [] : [score_compass_date($dates[0], true), score_compass_date($dates[count($dates) - 1], true)],
             'aria'       => sprintf($t['aria'], count($dates), ''),
         ];
 
@@ -561,8 +561,9 @@ if (!function_exists('score_compass')) {
         if ($n === 0) {
             return [];
         }
+        /* C59 (50.0, docs/CHARTS.md): a chart's dates are dates, never "Vandaag". */
         if ($n === 1) {
-            return [['label' => $today, 'x' => 0.0]];
+            return [['label' => score_compass_date_in((string) $dates[0], $year, true), 'x' => 0.0]];
         }
 
         $count = max(2, min($count, $n));
@@ -571,7 +572,7 @@ if (!function_exists('score_compass')) {
         for ($k = 0; $k < $count; $k++) {
             $i = (int) round($k * ($n - 1) / ($count - 1));
             $ticks[] = [
-                'label' => $i === $n - 1 ? $today : score_compass_date_in((string) $dates[$i], $year, true),
+                'label' => score_compass_date_in((string) $dates[$i], $year, true),
                 'x'     => round($i / ($n - 1) * 100, 2),
             ];
         }
@@ -604,7 +605,8 @@ if (!function_exists('score_compass')) {
 
         return [
             'date'       => (string) $day['date'],
-            'label'      => $state === 'today' ? $copy['trend']['today'] : score_compass_date_in((string) $day['date'], $year),
+            // The reading names the day, today too (C59, docs/CHARTS.md).
+            'label'      => score_compass_date_in((string) $day['date'], $year),
             'value'      => $value,
             'band'       => score_colour_band($value),
             'state'      => $state,

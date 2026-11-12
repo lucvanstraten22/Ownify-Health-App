@@ -204,10 +204,11 @@ return [
         /* `spoken` goes into the chart's spoken label; `ticks` is how many
            dates the 30 days an older app draws name (the line's own dates
            are Ownify's time axis, lib/time-axis.php); `day_dots` marks
-           every day — only where there are few enough days to tell apart. */
+           every day: 7 and 30 dagen, as Gezondheid's Verloop does (N7, 50.0;
+           a month's days as small dots); a week and a month are always dots. */
         'periods' => [
             ['days' => 7,   'label' => '7 dagen',  'spoken' => 'de afgelopen 7 dagen',  'ticks' => 4, 'day_dots' => true],
-            ['days' => 30,  'label' => '30 dagen', 'spoken' => 'de afgelopen 30 dagen', 'ticks' => 3, 'day_dots' => false],
+            ['days' => 30,  'label' => '30 dagen', 'spoken' => 'de afgelopen 30 dagen', 'ticks' => 3, 'day_dots' => true],
             ['days' => 90,  'label' => '90 dagen', 'spoken' => 'de afgelopen 90 dagen', 'ticks' => 4, 'day_dots' => false],
             ['days' => 365, 'label' => '1 jaar',   'spoken' => 'het afgelopen jaar',    'ticks' => 5, 'day_dots' => false],
         ],

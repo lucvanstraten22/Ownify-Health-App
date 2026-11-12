@@ -68,7 +68,7 @@ check('  from the first day to a year on, the last boundary at the right edge',
 check('  one point so far: the month that has begun', count($a['slots']) === 1 && $a['slots'][0]['to'] === '2026-11-07');
 
 $a = time_axis(7, null, '2026-10-08');
-check('no history: the period from today, no points', $a['start'] === '2026-10-08' && $a['slots'] === []);
+check('no history: the past week, as its neighbours show (N6), no points', $a['start'] === '2026-10-02' && $a['end'] === '2026-10-08' && $a['slots'] === []);
 
 section('A full history: the window rolls, today at the right');
 

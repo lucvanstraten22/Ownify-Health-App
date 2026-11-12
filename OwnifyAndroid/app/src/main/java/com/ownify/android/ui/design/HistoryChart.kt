@@ -92,7 +92,9 @@ class PlotLine(
     /** Each point's own colour for its dot and its reading (a zone's); null: [color]. */
     val dotColor: ((Int) -> Color)? = null,
     /** Dots only at these points (where a dense line stands alone); null: as [HistoryPlot]'s dayDots says. */
-    val dotsAt: Set<Int>? = null
+    val dotsAt: Set<Int>? = null,
+    /** Each point's step aside in dp (N8, 50.0): two lines' dots that would cover each other. */
+    val dx: List<Float?> = emptyList()
 )
 
 /**
@@ -151,6 +153,8 @@ fun HistoryPlot(
     carried: (Int) -> Boolean,
     axis: List<CompassTick>,
     centredAxis: Boolean,
+    /** A day's hours (the heart-rate day): no end to keep, every n-th time evenly from the first. */
+    freeAxisEnd: Boolean = false,
     aria: String,
     readable: (Int) -> Boolean,
     describe: (Int) -> String,
@@ -404,7 +408,7 @@ fun HistoryPlot(
                             if (line.dotsAt != null) {
                                 if (i !in line.dotsAt) return@forEachIndexed
                             } else if (!dayDots && !alone && i != begin) return@forEachIndexed
-                            val c = Offset(xs[i] / 100f * size.width, y / 100f * size.height)
+                            val c = Offset(xs[i] / 100f * size.width + (line.dx.getOrNull(i) ?: 0f).dp.toPx(), y / 100f * size.height)
                             val dot = if (small) 2.5.dp.toPx() else 3.5.dp.toPx()
                             drawCircle(Ownify.BgSecondary, radius = dot + (if (small) 1.5.dp else 2.dp).toPx(), center = c)
                             drawCircle(line.dotColor?.invoke(i) ?: line.color, radius = dot, center = c)
@@ -418,7 +422,7 @@ fun HistoryPlot(
                         drawRect(Ownify.ink(0.28f), topLeft = Offset(px - 0.5.dp.toPx(), 0f), size = Size(1.dp.toPx(), size.height))
                         for (line in lines) {
                             val y = line.y.getOrNull(reading) ?: continue
-                            val c = Offset(px, y / 100f * size.height)
+                            val c = Offset(px + (line.dx.getOrNull(reading) ?: 0f).dp.toPx(), y / 100f * size.height)
                             val color = line.dotColor?.invoke(reading) ?: line.color
                             drawCircle(Ownify.mix(color, 0.22f, Color.Transparent), radius = 12.dp.toPx(), center = c)
                             drawCircle(Ownify.BgSecondary, radius = 8.dp.toPx(), center = c)
@@ -441,9 +445,9 @@ fun HistoryPlot(
             // A history card keeps room for two rows of dates in every period (`.compass-history .chart__axis`).
             if (compact) {
                 // `.area-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
-                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true)
+                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true, freeEnd = freeAxisEnd)
             } else {
-                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1)
+                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1, freeEnd = freeAxisEnd)
             }
         }
 
@@ -481,7 +485,10 @@ fun ReadingTip(x: Float, content: @Composable ColumnScope.() -> Unit) {
             val shape = RoundedCornerShape(Ownify.RadiusSm)
             Column(
                 Modifier
-                    // A tooltip: the Liquid Glass, thick.
+                    // A tooltip: the Liquid Glass, thick — over the reading's own near-solid ground
+                    // (`--tip-surface-solid`, C59): the period switch or the "begint op" line it
+                    // passes over must not show through the value being read.
+                    .background(Ownify.TipSurfaceSolid, shape)
                     .liquidGlass(shape, Panes.Tip)
                     .cssPadding(PaddingValues(start = 11.dp, end = 11.dp, top = 4.dp, bottom = 5.dp), border = 1.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -508,8 +515,44 @@ fun ReadingTip(x: Float, content: @Composable ColumnScope.() -> Unit) {
  * is two rows, its day over its month (`.chart__axis--rows`); [rows] keeps
  * room for two in any period.
  */
+/**
+ * Which of [xs] (lefts, [widths]) stand: the smallest stride n at which every
+ * n-th label clears its neighbour by [gap]. Both ends always stand — the one
+ * before the end steps aside when only it is too close — unless [freeEnd]
+ * (a day's hours): then every n-th from the first, the last only on the stride.
+ */
+internal fun evenTicks(xs: List<Float>, widths: List<Int>, gap: Float, freeEnd: Boolean = false): BooleanArray {
+    val n = xs.size
+    val out = BooleanArray(n) { true }
+    if (n < 3) return out
+    val last = n - 1
+    fun clear(a: Int, b: Int) = xs[b] >= xs[a] + widths[a] + gap
+    for (stride in 1..last) {
+        val shown = (0 until last step stride).toMutableList()
+        if (freeEnd) {
+            if (last % stride == 0) shown += last
+            if ((1 until shown.size).all { clear(shown[it - 1], shown[it]) }) {
+                for (i in 0 until n) out[i] = i in shown
+                return out
+            }
+            continue
+        }
+        shown += last
+        var ok = (1 until shown.size - 1).all { clear(shown[it - 1], shown[it]) }
+        if (ok && !clear(shown[shown.size - 2], last)) {
+            if (shown.size > 2 && clear(shown[shown.size - 3], last)) shown.removeAt(shown.size - 2) else ok = false
+        }
+        if (ok) {
+            for (i in 0 until n) out[i] = i in shown
+            return out
+        }
+    }
+    for (i in 1 until last) out[i] = false
+    return out
+}
+
 @Composable
-fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1, compact: Boolean = false) {
+fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = false, rows: Int = 1, compact: Boolean = false, freeEnd: Boolean = false) {
     val density = LocalDensity.current
     val style = OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, lineHeight = if (compact) 1.2.em else 1.5.em)
     // height: 1.2em of the card's 15 sp text a row; 2.4em for two — compact, 2.5em of the dates' own size.
@@ -520,20 +563,23 @@ fun TickAxis(ticks: List<CompassTick>, modifier: Modifier, centred: Boolean = fa
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Int.MAX_VALUE)) }
-        layout(constraints.maxWidth, constraints.maxHeight) {
-            placeables.forEachIndexed { i, p ->
-                val left = ticks[i].x / 100f * constraints.maxWidth
-                val x = when {
-                    // Centred under its day, but never past either end of the
-                    // axis: an edge date moves in by just its overflow
-                    // (chart-axis.js on the website does the same).
-                    centred -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
-                    i == 0 -> left
-                    i == placeables.lastIndex -> left - p.width
-                    else -> left - p.width / 2f
-                }
-                p.place(x.toInt(), 0)
+        val xs = placeables.mapIndexed { i, p ->
+            val left = ticks[i].x / 100f * constraints.maxWidth
+            when {
+                // Centred under its day, but never past either end of the
+                // axis: an edge date moves in by just its overflow
+                // (chart-axis.js on the website does the same).
+                centred -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
+                i == 0 -> left
+                i == placeables.lastIndex -> left - p.width
+                else -> left - p.width / 2f
             }
+        }
+        // C56/C57 (50.0, N5): dates never collide and stay evenly spaced — every
+        // date where all fit, else every second, every third… (chart-axis.js).
+        val shown = evenTicks(xs, placeables.map { it.width }, 4.dp.toPx(), freeEnd)
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeables.forEachIndexed { i, p -> if (shown[i]) p.place(xs[i].toInt(), 0) }
         }
     }
 }

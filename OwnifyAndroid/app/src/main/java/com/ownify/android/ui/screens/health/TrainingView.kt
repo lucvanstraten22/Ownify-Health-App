@@ -379,8 +379,9 @@ private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
         else PlotBand(top, bottom, Ownify.zone(z).copy(alpha = when (z) { 2 -> 0.05f; 3 -> 0.07f; else -> 0.09f }))
     }
     val dotColor: (Int) -> Color = { i -> plot.zone.getOrNull(i)?.let { Ownify.zone(it) } ?: Ownify.Training }
-    // On the narrowest phones a day's hours every six, still evenly spaced: eight times "00:00" does not fit.
-    val axis = if (plot.group == "minutes" && LocalScreen.current.width < 380.dp) plot.axis.filterIndexed { i, _ -> i % 2 == 0 } else plot.axis
+    // A day's hours every three where they fit, else every six (C57): TickAxis
+    // hides a time that would touch its neighbour, as chart-axis.js does.
+    val axis = plot.axis
 
     HistoryPlot(
         key = "heart:" + plot.key,
@@ -393,6 +394,7 @@ private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
         carried = { false },
         axis = axis,
         centredAxis = true,
+        freeAxisEnd = plot.group == "minutes",
         aria = plot.aria,
         readable = { i -> plot.points.getOrNull(i) != null },
         describe = { i ->

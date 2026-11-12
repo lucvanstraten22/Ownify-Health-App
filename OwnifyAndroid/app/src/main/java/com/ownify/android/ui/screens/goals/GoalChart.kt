@@ -338,12 +338,15 @@ private fun PlotDrawing(chart: GoalChart, accent: Color, reading: Int) {
         }
         for (line in lines) drawChartLine(line.stretched(viewBox, size), accent, 2.2.dp.toPx(), draw.value)
 
-        // The dots: 8 across with a 2 px ring of the card behind them, never stretched.
+        // The dots (N7, 50.0): every chart's — 7 across with a 2 px ring of the card, 5 and 1.5
+        // where a month's days must stay apart — never stretched.
+        val small = chart.allDots && chart.points.size > 7
+        val dot = if (small) 2.5.dp.toPx() else 3.5.dp.toPx()
         for (point in chart.points) {
             if (!point.dot) continue
             val c = Offset(point.x / 100f * size.width, point.y / 100f * size.height)
-            drawCircle(Ownify.BgSecondary, radius = 6.dp.toPx(), center = c)
-            drawCircle(accent, radius = 4.dp.toPx(), center = c)
+            drawCircle(Ownify.BgSecondary, radius = dot + (if (small) 1.5.dp else 2.dp).toPx(), center = c)
+            drawCircle(accent, radius = dot, center = c)
         }
 
         // The reading: the crosshair and the focused point.
@@ -530,18 +533,20 @@ private fun XTicks(chart: GoalChart, modifier: Modifier) {
         modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { }
     ) { measurables, constraints ->
         val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0, maxWidth = Int.MAX_VALUE)) }
-        layout(constraints.maxWidth, constraints.maxHeight) {
-            placeables.forEachIndexed { i, p ->
-                val tick = chart.xTicks[i]
-                val left = tick.left / 100f * constraints.maxWidth
-                val x = when (tick.align) {
-                    "start" -> left
-                    "end" -> left - p.width
-                    // Centred, but never past either end of the axis.
-                    else -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
-                }
-                p.place(x.toInt(), 0)
+        val xs = placeables.mapIndexed { i, p ->
+            val tick = chart.xTicks[i]
+            val left = tick.left / 100f * constraints.maxWidth
+            when (tick.align) {
+                "start" -> left
+                "end" -> left - p.width
+                // Centred, but never past either end of the axis.
+                else -> (left - p.width / 2f).coerceIn(0f, (constraints.maxWidth - p.width).coerceAtLeast(0).toFloat())
             }
+        }
+        // C56 (50.0, N5): no two dates touch, evenly thinned, both ends always (TickAxis).
+        val shown = com.ownify.android.ui.design.evenTicks(xs, placeables.map { it.width }, 4.dp.toPx())
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeables.forEachIndexed { i, p -> if (shown[i]) p.place(xs[i].toInt(), 0) }
         }
     }
 }

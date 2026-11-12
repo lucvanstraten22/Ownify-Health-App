@@ -186,11 +186,9 @@
 /* A dot in its zone's colour. */
 .heart-plot .compass-plot__dot[data-zone] { background: var(--zone); }
 
-/* On the narrowest phones a day's hours every six, still evenly spaced:
-   eight times "00:00" does not fit. */
-@media (max-width: 379px) {
-    .heart-chart__range[data-heart-day] .chart__tick:nth-child(even) { visibility: hidden; }
-}
+/* A day's hours every three where they fit, else every six (C57, 50.0):
+   chart-axis.js hides a time that would touch its neighbour, as the app's
+   TickAxis does — no width rule of its own. */
 
 /* A day's own heart rate: five minutes a point, so the line a little finer. */
 .heart-chart__range[data-heart-day] .heart-plot__line { stroke-width: 1.8; }
@@ -244,11 +242,6 @@
    -------------------------------------------------------------------------- */
 .training-session-page__time { font-variant-numeric: tabular-nums; }
 
-/* 47.0: a day's hours where they fit. Eight times "00:00" do not fit side
-   by side under a phone-wide chart (the first was drawn over "03:00"): there,
-   every six hours, still evenly spaced, as the Android app has it on a
-   narrow phone. */
-.heart-chart__chart { container-type: inline-size; }
-@container (max-width: 480px) {
-    [data-heart-day] .chart__axis .chart__tick:nth-child(even) { display: none; }
-}
+/* 47.0 → 50.0: a day's hours where they fit — chart-axis.js now decides
+   (C57), the same rule as the app. */
+

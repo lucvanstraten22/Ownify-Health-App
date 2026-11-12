@@ -420,7 +420,7 @@ check('…30 and 90 days the same 18; 7 days its last week, with nothing to expl
     count($periods['30']['values']) === 18 && count($periods['90']['values']) === 18
     && count($periods['7']['values']) === 7 && $periods['7']['start'] === 11 && $periods['7']['since'] === null);
 check('…its year\'s dates are where those 18 days are, never before them',
-    $periods['365']['axis'][0] === ['label' => '15 sep', 'x' => 0.0] && end($periods['365']['axis']) === ['label' => 'Vandaag', 'x' => 100.0],
+    $periods['365']['axis'][0] === ['label' => '15 sep', 'x' => 0.0] && end($periods['365']['axis']) === ['label' => '2 okt', 'x' => 100.0],
     json_encode($periods['365']['axis']));
 
 $c = $compass(history(365, static fn ($i) => flat_day(60 + intdiv($i, 20))));
@@ -431,7 +431,7 @@ check('a full year: 365 days, each period the end of it',
 check('the periods are views of the stored scores, not scores of their own: each day the same number in every period',
     array_slice($periods['365']['values'], -7) === $periods['7']['values'] && array_slice($periods['90']['values'], -30) === $periods['30']['values']);
 check('a year\'s axis: five dates a quarter apart, the first with its year — it is not this October',
-    array_column($periods['365']['axis'], 'label') === ['3 okt 2025', '2 jan', '3 apr', '3 jul', 'Vandaag']
+    array_column($periods['365']['axis'], 'label') === ['3 okt 2025', '2 jan', '3 apr', '3 jul', '2 okt']
     && array_column($periods['365']['axis'], 'x') === [0.0, 25.0, 50.0, 75.0, 100.0], json_encode($periods['365']['axis']));
 check('a week: four dates two days apart, and a dot for every day',
     array_column($periods['7']['axis'], 'x') === [0.0, 33.33, 66.67, 100.0] && $periods['7']['day_dots'] === true
@@ -478,7 +478,7 @@ check('…and its parts, as the score weighed them that day',
     && $days[0]['categories'][2]['parts'] === null, json_encode(array_column($days[0]['categories'], 'parts')));
 check('a day with no score of its own says which day\'s score still held', $days[1]['note'] === 'Geen nieuwe gegevens: de score van 30 september gold nog.'
     && $days[1]['state'] === 'carried');
-check('today is called today', $days[2]['label'] === 'Vandaag' && $days[2]['note'] === null);
+check('today is named by its date, never "Vandaag" (C59)', $days[2]['label'] === '2 oktober' && $days[2]['state'] === 'today' && $days[2]['note'] === null);
 $gap = history(3, static fn ($i) => $i === 1 ? flat_day(null) : flat_day(70));
 check('a day without any score says so — never a 0', $compass($gap)['trend']['days'][1]['value'] === null
     && $compass($gap)['trend']['days'][1]['note'] === 'Geen score op deze dag.');

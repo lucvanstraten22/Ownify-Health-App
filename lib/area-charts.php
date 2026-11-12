@@ -16,6 +16,9 @@
  *                 shared  every series from 0 on one height, its levels
  *                         named: two measures of one unit (Actieve and
  *                         Totale calorieën, both kcal)
+ *               a series `drawn` false (N9, 50.0) is a second, different
+ *               measure: its value in the head and the reading, never a
+ *               line on a hidden scale of its own beside the first
  *               and, for Voeding (docs/NUTRITION.md):
  *                 band    [low, high]: a reference range, drawn as a green
  *                         zone behind the bars, and named in each day's
@@ -101,6 +104,9 @@ if (!function_exists('area_charts')) {
                 $chart['series'][$k]['stored_unit'] = $stored;
                 $chart['series'][$k]['unit']        = units_label($stored);
                 $chart['series'][$k]['decimals']    = max((int) ($s['decimals'] ?? 0), units_spec($stored)['decimals']);
+                if (isset($s['span'])) {
+                    $chart['series'][$k]['span'] = (float) $s['span'] * units_spec($stored)['factor'];   // a difference: no offset
+                }
             }
         }
 
@@ -131,6 +137,7 @@ if (!function_exists('area_charts')) {
                 'key'   => (string) $s['key'],
                 'label' => (string) $s['label'],
                 'kind'  => (string) $s['kind'],
+                'drawn' => ($s['drawn'] ?? true) !== false,
             ], $chart['series']),
             'latest'  => area_chart_latest_of($chart, $built[0], area_chart_latest($built[0], $today)),
             /* A chart with a second scale names both units over it: kcal, kJ. */
@@ -289,7 +296,11 @@ if (!function_exists('area_charts')) {
             $points[] = $row;
         }
 
-        $geometry = area_chart_geometry($chart['series'], array_column($points, 'x'), $values, $spacing * (1 - 2 * $pad) * 100, (string) ($chart['scale'] ?? 'own'), $chart['band'] ?? null);
+        /* Only what is drawn has a height (N9, 50.0): a series marked
+           `drawn` false — a second, different measure — is read, never
+           drawn on a scale of its own. */
+        $drawn    = array_filter($chart['series'], static fn (array $s): bool => ($s['drawn'] ?? true) !== false);
+        $geometry = area_chart_geometry($drawn, array_column($points, 'x'), array_intersect_key($values, $drawn), $spacing * (1 - 2 * $pad) * 100, (string) ($chart['scale'] ?? 'own'), $chart['band'] ?? null);
         $per      = ['day' => t('per dag'), 'week' => t('per week'), 'month' => t('per maand')][$grain];
 
         return [
@@ -372,7 +383,7 @@ if (!function_exists('area_charts')) {
                 /* With a band the height reaches its top too, so the zone
                    always shows. */
                 [, $high, $step] = $shared ?? $based($band !== null ? array_merge($kept, [(float) $band[1]]) : $kept, (int) ($def['decimals'] ?? 0));
-                if ($shared === null && !$mixed) {
+                if ($shared === null && !$mixed && $kept !== []) {      // no bars yet: no level to name
                     $grid = $levels($high, $step);
                     if (isset($def['alt']['factor'])) {
                         $alt = array_map(static fn (array $l): string => i18n_number($l['v'] * (float) $def['alt']['factor'], 0), $grid);
@@ -396,7 +407,7 @@ if (!function_exists('area_charts')) {
                 [$low, $high] = isset($def['range']) ? [(float) $def['range'][0], (float) $def['range'][1]] : array_slice($based($kept, (int) ($def['decimals'] ?? 0)), 0, 2);
                 $y = static fn (float $v): float => round(($padY + (1 - ($v - $low) / ($high - $low)) * ($h - 2 * $padY)) / $h * 100, 2);
             } else {
-                [$low, $high, $step] = area_chart_range($kept, (int) ($def['decimals'] ?? 0));
+                [$low, $high, $step] = area_chart_range($kept, (int) ($def['decimals'] ?? 0), (float) ($def['span'] ?? 0), ($def['unit'] ?? '') === '%' ? 100.0 : null);
                 $grid = area_chart_levels($low, $high, $step);
                 $y    = static fn (float $v): float => area_chart_y($v, $low, $high);
             }
@@ -485,12 +496,15 @@ if (!function_exists('area_charts')) {
      * step (1, 2 or 5 times a power of ten), with a little room around it,
      * so the grid reads 94 / 96 / 98, never 94.3 — and never finer than
      * the values themselves are written (a whole percent, a tenth of a
-     * degree).
+     * degree). A measure's `span` (N12, 50.0) is the least it is drawn
+     * over, around its values' middle: SpO₂ 96 to 98 inside 10 points, not
+     * across the whole plot, so a change within a device's own error does
+     * not look like a swing.
      *
      * @param float[] $values
      * @return array{0: float, 1: float, 2: float} low, high, step
      */
-    function area_chart_range(array $values, int $decimals = 0): array
+    function area_chart_range(array $values, int $decimals = 0, float $span = 0.0, ?float $top = null): array
     {
         if ($values === []) {
             return [0.0, 100.0, 25.0];
@@ -498,6 +512,14 @@ if (!function_exists('area_charts')) {
 
         $low  = min($values);
         $high = max($values);
+        if ($span > 0 && $high - $low < $span) {
+            $mid  = ($low + $high) / 2;
+            $low  = $mid - $span / 2;
+            $high = $mid + $span / 2;
+            if ($top !== null && $high > $top) {      // a percentage never reaches past 100
+                [$low, $high] = [$low - ($high - $top), $top];
+            }
+        }
         $room = max(($high - $low) * 0.15, abs($high) * 0.01, 0.1);
         $low -= $room;
         $high += $room;
@@ -505,6 +527,9 @@ if (!function_exists('area_charts')) {
         $step = max(goal_chart_step($low, $high, 3), 10 ** -$decimals);
         $low  = floor($low / $step) * $step;
         $high = ceil($high / $step) * $step;
+        if ($top !== null && $high > $top && max($values) <= $top) {
+            $high = $top;
+        }
         if ($high - $low < $step * 2) {
             $high += $step;
         }

@@ -28,7 +28,9 @@ $bare   = !empty($data['chart_bare']);          // inside another card (Training
 $id     = $area . '-' . $chart['id'];
 $suffix = $id . ($mini ? '-mini' : '-full');
 $series = $chart['series'];
-$mixed  = count(array_unique(array_column($series, 'kind'))) > 1;
+/* What is drawn (N9): a second, different measure is only read, in the head and the reading. */
+$drawn  = array_values(array_filter($series, static fn ($s) => $s['drawn'] ?? true));
+$mixed  = count(array_unique(array_column($drawn, 'kind'))) > 1;
 $periods = $mini ? array_slice($chart['periods'], 0, 1) : $chart['periods'];
 $default = $mini ? (string) $periods[0]['key'] : (string) $chart['default'];
 $filled  = array_filter($periods, static fn ($p) => $p['has_data']) !== [];
@@ -55,7 +57,7 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                     <?php /* Each series' key with its value, never apart: a pair that does not fit goes to the next line. */ ?>
                     <?php foreach ($series as $k => $s): if (($latest['texts'][$k] ?? null) === null) { continue; } ?>
                         <span class="area-chart__pair">
-                            <?php if (count($series) > 1): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
+                            <?php if (count($drawn) > 1 && ($s['drawn'] ?? true)): ?><span class="area-chart__key" data-tone="<?= e($tone($s)) ?>" aria-hidden="true"></span><?php endif; ?>
                             <?php $txt = (string) ($latest['texts'][$k] ?? '—'); $unitAt = (preg_match('/^([\d.,:\s\x{2212}-]*\d)\s?([^\d\s][^\d]*)$/u', $txt, $um) && $um[2] !== '%') ? $um : null; ?>
                             <span class="area-chart__value"><?php if ($unitAt): ?><?= e($unitAt[1]) ?><span class="area-chart__unit"><?= e($unitAt[2]) ?></span><?php else: ?><?= e($txt) ?><?php endif; ?></span>
                             <?php if ($k === 0 && !empty($latest['of'])): ?><span class="area-chart__of"><?= e($latest['of']) ?></span><?php endif; ?>
@@ -165,7 +167,7 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
 
                     <?php if ($period['has_data']): ?>
                         <span class="goal-chart__cross" data-reading-cross aria-hidden="true" hidden></span>
-                        <?php foreach ($series as $s): ?>
+                        <?php foreach ($drawn as $s): ?>
                             <span class="goal-chart__focus" data-reading-focus="<?= e($s['key']) ?>"
                                   data-tone="<?= e($tone($s)) ?>" aria-hidden="true" hidden></span>
                         <?php endforeach; ?>
@@ -174,7 +176,7 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                             <span class="health-history__tip-rows">
                                 <?php foreach ($series as $s): ?>
                                     <span class="health-history__tip-row" data-tip-row="<?= e($s['key']) ?>" data-tone="<?= e($tone($s)) ?>" hidden>
-                                        <span class="health-history__tip-key" aria-hidden="true"></span>
+                                        <?php if (count($drawn) > 1 && ($s['drawn'] ?? true)): ?><span class="health-history__tip-key" aria-hidden="true"></span><?php endif; ?>
                                         <span class="health-history__tip-label"><?= e($s['label']) ?></span>
                                         <strong class="goal-chart__tip-value" data-tip-value></strong>
                                     </span>
@@ -200,9 +202,9 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
     </div>
 
     <?php /* Two series: which is which. One is named by its title. */ ?>
-    <?php if (!$mini && count($series) > 1): ?>
+    <?php if (!$mini && count($drawn) > 1): ?>
         <ul class="legend health-history__legend area-chart__legend" role="list">
-            <?php foreach ($series as $s): ?>
+            <?php foreach ($drawn as $s): ?>
                 <li class="legend__item" data-tone="<?= e($tone($s)) ?>">
                     <span class="legend__dot" aria-hidden="true"></span>
                     <span class="legend__label"><?= e($s['label']) ?></span>

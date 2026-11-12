@@ -276,7 +276,7 @@ $height = 96.0;
                                                      the card, and a stretched circle is an ellipse. */ ?>
                                             <?php foreach ($chart['points'] as $point): ?>
                                                 <?php if ($point['dot']): ?>
-                                                    <span class="goal-chart__dot" aria-hidden="true"
+                                                    <span class="goal-chart__dot<?= $chart['all_dots'] && count($chart['points']) > 7 ? ' is-small' : '' ?>" aria-hidden="true"
                                                           style="left: <?= e((string) $point['x']) ?>%; top: <?= e((string) $point['y']) ?>%;"></span>
                                                 <?php endif; ?>
                                             <?php endforeach; ?>

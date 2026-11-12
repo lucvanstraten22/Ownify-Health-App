@@ -1,5 +1,6 @@
 package com.ownify.android.ui.screens.health
 
+import androidx.compose.foundation.shape.CircleShape
 import com.ownify.android.i18n.trf
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -84,8 +85,16 @@ import com.ownify.android.ui.theme.OwnifyType
  * server's (lib/area-charts.php).
  */
 
+/** "9.956 stappen" → ("9.956", "stappen"): the number and its unit apart (components/area-chart.php); null for a % or a bare value. */
+internal fun splitUnit(text: String): Pair<String, String>? {
+    val m = Regex("^([\\d.,:\\s\u2212-]*\\d)\\s?([^\\d\\s][^\\d]*)$").find(text) ?: return null
+    val unit = m.groupValues[2]
+    return if (unit == "%") null else m.groupValues[1] to unit
+}
+
 /** The area's colour (area-charts.css): its bars; a line alone in it, beside bars in its lighter shade. */
-private fun barColor(accent: Accent): Color = accent.color.copy(alpha = 0.58f)
+// N11 (50.0): the bars at 75 % (`--bar`), so they stand out against the card.
+private fun barColor(accent: Accent): Color = accent.color.copy(alpha = 0.75f)
 
 internal fun seriesColor(series: AreaSeries, mixed: Boolean, accent: Accent): Color = when {
     series.kind == "bars" -> barColor(accent)
@@ -165,16 +174,23 @@ private fun MiniHead(chart: AreaChart, accent: Accent) {
                 chart.series.forEachIndexed { k, s ->
                     val text = latest.texts.getOrNull(k) ?: return@forEachIndexed
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (chart.series.size > 1) {
+                        if (chart.drawn.size > 1 && s.drawn) {
                             val line = s.kind != "bars"
+                            // B11/C58 (50.0): a line's key is a dot, never a dash a minus could be read in.
                             Box(
                                 Modifier
-                                    .size(width = if (line) 10.dp else 8.dp, height = if (line) 2.5.dp else 8.dp)
-                                    .clip(RoundedCornerShape(2.dp))
+                                    .size(8.dp)
+                                    .clip(if (line) CircleShape else RoundedCornerShape(2.dp))
                                     .background(seriesColor(s, chart.mixed, accent))
                             )
                         }
-                        T(text, valueStyle, Modifier.alignByBaseline(), maxLines = 1)
+                        // D12: the unit after its number, small and grey (% stays with it).
+                        val split = splitUnit(text)
+                        if (split == null) T(text, valueStyle, Modifier.alignByBaseline(), maxLines = 1)
+                        else {
+                            T(split.first, valueStyle, Modifier.alignByBaseline(), maxLines = 1)
+                            T(split.second, OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, Ownify.TextMuted), Modifier.alignByBaseline().padding(start = 2.dp), maxLines = 1)
+                        }
                         // `.area-chart__of`: its target after the value, quieter — "van 2.300 kcal".
                         if (k == 0) latest.of?.let { T(it, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextMuted), Modifier.alignByBaseline(), maxLines = 1) }
                     }
@@ -282,13 +298,14 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
             for ((s, text) in values) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val line = s.kind != "bars"
-                    Box(
+                    val keyed = chart.drawn.size > 1 && s.drawn
+                    if (keyed) Box(
                         Modifier
-                            .size(width = if (line) 10.dp else 8.dp, height = if (line) 2.5.dp else 8.dp)
-                            .clip(RoundedCornerShape(2.dp))
+                            .size(8.dp)
+                            .clip(if (line) CircleShape else RoundedCornerShape(2.dp))
                             .background(seriesColor(s, mixed, accent))
                     )
-                    T(s.label, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), Modifier.padding(start = 6.dp), maxLines = 1)
+                    T(s.label, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), if (keyed) Modifier.padding(start = 6.dp) else Modifier, maxLines = 1)
                     Spacer(Modifier.width(8.dp))
                     T(text, OwnifyType.style(Ownify.FsSubhead, FontWeight.Bold, tabular = true), maxLines = 1)
                 }
@@ -366,9 +383,9 @@ private fun AreaChartCard(chart: AreaChart, accent: Accent) {
         Box(Modifier.fillMaxWidth().padding(top = if (units != null && period.gridAlt.isNotEmpty()) Ownify.Space1 else Ownify.Space4)) {
             AreaPlot(chart, accent, period, Modifier, height = 160.dp, mini = false)
         }
-        if (chart.series.size > 1) {
+        if (chart.drawn.size > 1) {
             Legend(
-                chart.series.map { LegendItem(it.label, null, accent, dot = seriesColor(it, chart.mixed, accent)) },
+                chart.drawn.map { LegendItem(it.label, null, accent, dot = seriesColor(it, chart.mixed, accent)) },
                 Modifier.padding(top = Ownify.Space4),
                 values = false
             )
