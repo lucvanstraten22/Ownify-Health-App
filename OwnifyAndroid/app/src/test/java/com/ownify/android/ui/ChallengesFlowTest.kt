@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
@@ -65,8 +66,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [36], qualifiers = "+w412dp-h915dp-port")
 class ChallengesFlowTest {
 
+    /*
+     * The sheets' coroutines on a standard test dispatcher, not the default
+     * unconfined one: unconfined, a coroutine goes on on whichever thread
+     * finished what it waited for — after a request, the network thread — and
+     * Code invoeren's clearFocus() there is refused (CalledFromWrongThread,
+     * about one run in two). In the app those coroutines always go on on the
+     * main thread (AndroidUiDispatcher); a standard dispatcher queues them back
+     * onto the test's main thread the same way.
+     */
     @get:Rule
-    val compose = createComposeRule()
+    val compose = createComposeRule(effectContext = StandardTestDispatcher())
 
     private lateinit var context: Context
     private lateinit var server: FakeOwnifyServer
