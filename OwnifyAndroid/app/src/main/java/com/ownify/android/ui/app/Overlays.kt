@@ -281,6 +281,3 @@ fun RoundButton(icon: ImageVector, label: String, onClick: () -> Unit, modifier:
         JIcon(icon, size = 17.dp, color = Ownify.TextPrimary)
     }
 }
-
-/** A minimum-height spacer the panels share. */
-fun Modifier.touchTarget(): Modifier = this.heightIn(min = 44.dp)

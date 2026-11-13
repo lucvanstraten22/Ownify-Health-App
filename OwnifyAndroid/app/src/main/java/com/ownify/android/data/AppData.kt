@@ -250,10 +250,6 @@ data class AiCopy(
     /** One of the server's sentences for [code], or its general one. */
     fun error(code: String): String = errors[code] ?: errors["unavailable"] ?: tr("OwnifyAI is tijdelijk niet beschikbaar. Probeer het later opnieuw.")
 
-    /** "Over 23 s kun je weer iets vragen": the minute is full for everybody, [seconds] left. */
-    fun busyText(seconds: Int): String =
-        (errors["busy"] ?: tr("Het is even druk bij OwnifyAI. Over %d s kun je weer iets vragen.")).replace("%d", seconds.toString())
-
     /** "Nog 7 van 10 berichten vandaag", or nothing without a limit. */
     fun remainingText(usage: AiUsage): String =
         if (usage.limit <= 0) "" else remaining.replaceFirst("%d", usage.remaining.toString()).replaceFirst("%d", usage.limit.toString())

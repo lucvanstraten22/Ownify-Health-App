@@ -260,14 +260,6 @@ if (!function_exists('challenges_available')) {
         return [$s, $e];
     }
 
-    /** The target a new Samen challenge suggests for its dates: `per_week` for each week of them. */
-    function challenge_suggest_target(array $metric, DateTimeImmutable $start, DateTimeImmutable $end): float
-    {
-        $days = challenge_days_between($start, $end) + 1;
-
-        return challenge_round_to((float) $metric['per_week'] * $days / 7, (float) $metric['step']);
-    }
-
     /** "1 okt – 30 nov" / "Oct 1 – Nov 30". */
     function challenge_period_text(DateTimeImmutable $start, DateTimeImmutable $end): string
     {

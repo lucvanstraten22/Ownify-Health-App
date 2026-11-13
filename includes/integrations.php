@@ -246,18 +246,6 @@ if (!function_exists('integration_providers')) {
         return $out;
     }
 
-    function integrations_connected_count(?int $userId): int
-    {
-        if ($userId === null || !db_available()) {
-            return 0;
-        }
-
-        return (int) db_value(
-            "SELECT COUNT(*) FROM user_integrations WHERE user_id = ? AND status = 'connected'",
-            [$userId]
-        );
-    }
-
     /* ----------------------------------------------------------- writing */
 
     /**

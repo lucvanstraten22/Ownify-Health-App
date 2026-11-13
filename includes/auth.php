@@ -109,33 +109,9 @@ if (!function_exists('auth_provider_available')) {
 
     /* --------------------------------------------------------- validation */
 
-    /**
-     * The canonical address (account_email_canonical(), includes/account-security.php).
-     * Something that is not an address comes back trimmed and lower-cased, so
-     * a lookup with it simply finds nothing.
-     */
-    function auth_normalise_email(string $email): string
-    {
-        return account_email_canonical($email) ?? mb_strtolower(trim($email));
-    }
-
     function auth_validate_email(string $email): ?string
     {
         return account_email_canonical($email) === null ? t('Vul een geldig e-mailadres in.') : null;
-    }
-
-    /** The length rule alone; account_password_problem() is the whole rule. */
-    function auth_validate_password(string $password): ?string
-    {
-        if (mb_strlen($password) < ACCOUNT_PASSWORD_MIN) {
-            return t('Kies een wachtwoord van minimaal 8 tekens.');
-        }
-
-        if (mb_strlen($password) > ACCOUNT_PASSWORD_MAX) {
-            return t('Kies een wachtwoord van hoogstens 200 tekens.');
-        }
-
-        return null;
     }
 
     /* ---------------------------------------------------------- register */

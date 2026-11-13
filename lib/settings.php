@@ -684,31 +684,6 @@ if (!function_exists('settings_drop_toggle')) {
 
         return $settings;
     }
-
-    /**
-     * The `states` items named in $labels show their `value_<variant>` /
-     * `note_<variant>` instead of their value and note.
-     */
-    function settings_use_state_variant(array $settings, string $pageId, array $labels, string $variant): array
-    {
-        foreach ($settings['pages'][$pageId]['blocks'] ?? [] as $b => $block) {
-            if (($block['type'] ?? null) !== 'states') {
-                continue;
-            }
-            foreach ($block['items'] as $i => $item) {
-                if (!in_array($item['label'] ?? null, $labels, true)) {
-                    continue;
-                }
-                foreach (['value', 'note'] as $field) {
-                    if (isset($item[$field . '_' . $variant])) {
-                        $settings['pages'][$pageId]['blocks'][$b]['items'][$i][$field] = $item[$field . '_' . $variant];
-                    }
-                }
-            }
-        }
-
-        return $settings;
-    }
 }
 
 if (!function_exists('settings_for_app')) {

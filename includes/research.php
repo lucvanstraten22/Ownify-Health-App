@@ -491,25 +491,6 @@ if (!function_exists('research_config')) {
     }
 
     /**
-     * The values of the band an age falls in — the source's own age
-     * boundaries, never ones Ownify made up — or null.
-     */
-    function research_band(array $bands, ?int $age): ?array
-    {
-        if ($age === null) {
-            return null;
-        }
-
-        foreach ($bands as [$min, $max, $values]) {
-            if ($age >= (int) $min && ($max === null || $age <= (int) $max)) {
-                return (array) $values;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * The strength an insight shows: the claim's own, one step lower when
      * Ownify's data only approximates what the source measured (proxy), two
      * when it fits only loosely (weak). Null below Beperkt onderbouwd: then

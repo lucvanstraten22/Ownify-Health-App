@@ -532,11 +532,4 @@ if (!function_exists('friend_pair')) {
 
         return ['ok' => true, 'error' => null];
     }
-
-    function user_blocked_ids(int $userId): array
-    {
-        $rows = db_all('SELECT blocked_id FROM user_blocks WHERE blocker_id = ?', [$userId]);
-
-        return array_map(static fn (array $r): int => (int) $r['blocked_id'], $rows);
-    }
 }

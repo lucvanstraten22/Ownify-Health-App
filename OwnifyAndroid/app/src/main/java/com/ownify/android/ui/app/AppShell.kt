@@ -519,7 +519,3 @@ fun Modifier.heroName(): Modifier = composed {
 
 /** `--dock-clearance`: the tab bar, its gap and the safe bottom. */
 fun dockClearance(safeBottom: Dp): Dp = Ownify.TabbarHeight + Ownify.DockGap + safeBottom
-
-/** A box over a page, in the page's own layer (the scroll-to-top control). */
-@Composable
-fun PageOverlay(content: @Composable BoxScope.() -> Unit) = Box(Modifier.fillMaxSize(), content = content)

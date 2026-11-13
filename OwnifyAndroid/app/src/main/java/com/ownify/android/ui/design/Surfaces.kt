@@ -318,14 +318,6 @@ object Panes {
     val HeaderButton: PaneStyle
         get() = Control
 
-    /** `.welcome__button`: a control. */
-    val WelcomeButton: PaneStyle
-        get() = Control
-
-    /** `.welcome__button--primary`: the control with the app's green in it (`--lg-green`). */
-    val WelcomePrimary: PaneStyle
-        get() = Control.copy(extra = GreenWash, rim = GreenRim)
-
     /** `--lg-green` / `--lg-gold`: one function each, so two looks of a button compare equal. */
     val GreenWash: (Size) -> Brush = { size -> Brush.verticalGradient(listOf(Ownify.HealthEdge, Ownify.HealthFill), startY = 0f, endY = size.height) }
     val GoldWash: (Size) -> Brush = { size -> Brush.verticalGradient(listOf(Ownify.AttentionEdge, Ownify.AttentionFill), startY = 0f, endY = size.height) }

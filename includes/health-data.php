@@ -709,45 +709,4 @@ if (!function_exists('health_source_id')) {
             return new DateTimeZone(date_default_timezone_get());
         }
     }
-
-    function health_sleep_sessions(int $userId, int $limit = 30): array
-    {
-        return db_all(
-            'SELECT * FROM sleep_sessions WHERE user_id = ? ORDER BY night_of DESC LIMIT ' . (int) max(1, min($limit, 365)),
-            [$userId]
-        );
-    }
-
-    function health_workouts(int $userId, int $limit = 30): array
-    {
-        return db_all(
-            'SELECT * FROM workouts WHERE user_id = ? ORDER BY started_at DESC LIMIT ' . (int) max(1, min($limit, 365)),
-            [$userId]
-        );
-    }
-
-    function health_nutrition_entries(int $userId, string $date): array
-    {
-        return db_all(
-            'SELECT * FROM nutrition_entries
-              WHERE user_id = ? AND DATE(consumed_at) = ?
-              ORDER BY consumed_at',
-            [$userId, $date]
-        );
-    }
-
-    /**
-     * Daily scores. Nothing writes these yet: the scoring formula is not
-     * decided, so the table stays empty rather than holding a guess.
-     */
-    function health_daily_scores(int $userId, string $from, string $to): array
-    {
-        return db_all(
-            'SELECT score_date, domain, score
-               FROM daily_scores
-              WHERE user_id = ? AND score_date BETWEEN ? AND ?
-           ORDER BY score_date',
-            [$userId, $from, $to]
-        );
-    }
 }

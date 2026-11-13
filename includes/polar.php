@@ -707,17 +707,6 @@ if (!function_exists('polar_config')) {
         return 'polar' . ($device === '' ? '' : ':' . mb_substr($device, 0, 150));
     }
 
-    /** The days from `$from` up to and including `$to`, as Y-m-d. */
-    function polar_days(string $from, string $to): array
-    {
-        $days = [];
-        for ($d = new DateTimeImmutable($from); $d->format('Y-m-d') <= $to; $d = $d->modify('+1 day')) {
-            $days[] = $d->format('Y-m-d');
-        }
-
-        return $days;
-    }
-
     function polar_next_day(string $date): string
     {
         return (new DateTimeImmutable($date))->modify('+1 day')->format('Y-m-d');

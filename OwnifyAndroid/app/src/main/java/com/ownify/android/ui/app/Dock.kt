@@ -466,7 +466,3 @@ private fun Tab(item: NavItem, active: Boolean, onClick: () -> Unit, modifier: M
         }
     }
 }
-
-/** For the settle of a tab bar that has no height yet. */
-@Composable
-internal fun DockSpacer() = Spacer(Modifier.height(Ownify.TabbarHeight + Ownify.DockGap))

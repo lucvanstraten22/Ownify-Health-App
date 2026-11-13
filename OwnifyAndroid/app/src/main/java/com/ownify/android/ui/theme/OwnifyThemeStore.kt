@@ -94,9 +94,6 @@ object OwnifyThemeStore {
     /** The splash of the next start: the phone's on Systeem (Theme.Ownify.System follows it), else the chosen one. */
     fun splashTheme(): Int = if (choice == OwnifyThemeChoice.SYSTEM) R.style.Theme_Ownify_System else windowTheme()
 
-    /** [context] in [windowTheme]: a dialog of the system's own made in it is light or dark with the app. */
-    fun dialogContext(context: Context): Context = ContextThemeWrapper(context, windowTheme())
-
     /** A phone that never chose: nothing kept, Systeem — where tests begin. */
     internal fun forget(context: Context) {
         prefs(context).edit { remove(KEY_THEME) }

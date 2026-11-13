@@ -331,39 +331,6 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
     }
 }
 
-/**
- * `.research-detail__actions`: the buttons in rows, each at least [basis]
- * wide (`flex: 1 1 160px`), the ones on a row sharing it equally, [gap]
- * between them and between rows.
- */
-@Composable
-private fun BasisRow(basis: Dp, gap: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Layout(content, modifier.fillMaxWidth()) { measurables, constraints ->
-        if (measurables.isEmpty()) return@Layout layout(constraints.minWidth, 0) {}
-        val width = constraints.maxWidth
-        val space = gap.roundToPx()
-        val perRow = ((width + space) / (basis.roundToPx() + space)).coerceIn(1, measurables.size)
-        val rows = measurables.chunked(perRow)
-        val placed = rows.map { row ->
-            val each = (width - space * (row.size - 1)) / row.size
-            row.map { it.measure(Constraints.fixedWidth(each)) }
-        }
-        val height = placed.sumOf { row -> row.maxOf { it.height } } + space * (placed.size - 1)
-        layout(width, height) {
-            var y = 0
-            placed.forEach { row ->
-                var x = 0
-                val tall = row.maxOf { it.height }
-                row.forEach { item ->
-                    item.place(x, y + (tall - item.height) / 2)
-                    x += item.width + space
-                }
-                y += tall + space
-            }
-        }
-    }
-}
-
 /** The browser, or whatever opens it — as the website's links do. */
 private fun view(context: Context, url: String) {
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

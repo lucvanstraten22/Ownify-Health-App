@@ -503,7 +503,7 @@ cannot be kept (the endpoints answer 503) and a phone cannot be renamed.
 **Goals, rebuilt** (22.0): `database/migrations/025-goals-rebuild.sql`
 replaces the goal tables and touches nothing else. The old goals and their
 progress are copied to `goals_backup_024` and `goal_progress_backup_024`
-first; then the old `goal_progress` and `goals` are dropped and the new
+first (`032-drop-goal-backups.sql` drops them in 50.0: nothing reads them); then the old `goal_progress` and `goals` are dropped and the new
 vocabulary (`goal_categories`, `goal_units`, `goal_measurements`) and goal
 tables (`goals`, `goal_entries`, `goal_day_results`, `goal_period_results`,
 `goal_progress`) are created — see [GOALS.md](GOALS.md). The old goals cannot

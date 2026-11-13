@@ -697,64 +697,6 @@ private fun Label(text: String) {
     T(text, JStyle.Caption, Modifier.fillMaxWidth().padding(top = Ownify.Space5, bottom = Ownify.Space2), uppercase = true)
 }
 
-/** `.ch-chip`: what to count, chosen in the Health colour. */
-@Composable
-private fun MetricChip(label: String, icon: String, accent: Accent, selected: Boolean, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(50)
-    Row(
-        Modifier
-            .hitArea(
-                Modifier
-                    .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-                    .semantics { this.selected = selected },
-                across = false
-            )
-            .glassPress(interaction, shape)
-            .glass(shape, GlassLook(chosen = selected, shadow = 7.dp, lift = 2.dp))
-            .cssPadding(PaddingValues(horizontal = Ownify.Space3, vertical = Ownify.Space1), border = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
-    ) {
-        OwnifyIcons.named(icon)?.let { JIcon(it, size = 14.dp, color = accent.color) }
-        T(label, OwnifyType.style(Ownify.FsCaption, if (selected) FontWeight.SemiBold else FontWeight.SemiBold, if (selected) Ownify.TextPrimary else Ownify.TextSecondary), maxLines = 1)
-    }
-}
-
-/** `.ch-pick__person`: a friend to invite — their circle, a check once chosen, their name. */
-@Composable
-private fun PickPerson(person: ChallengePerson, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    Column(
-        modifier
-            .press(interaction)
-            .clickable(interaction, indication = null, role = Role.Checkbox, onClick = onClick)
-            .semantics(mergeDescendants = true) { this.selected = selected }
-            .padding(vertical = Ownify.Space2),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Box {
-            Box(Modifier.then(if (selected) Modifier.border(2.dp, Ownify.Health, CircleShape) else Modifier).padding(if (selected) 1.dp else 0.dp)) {
-                ChallengeAvatar(person, if (selected) 42.dp else 44.dp)
-            }
-            if (selected) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = 6.dp, y = (-2).dp)
-                        .size(20.dp)
-                        .border(2.dp, Ownify.ground(1f), CircleShape)
-                        .clip(CircleShape)
-                        .background(Ownify.Health),
-                    contentAlignment = Alignment.Center
-                ) { JIcon(OwnifyIcons.check, size = 11.dp, color = Color.White) }
-            }
-        }
-        T(person.name, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextSecondary), maxLines = 1, ellipsis = true)
-    }
-}
-
 /** Made: the code to copy or share, and the way to the new challenge. */
 @Composable
 private fun MadeSheet(overlay: Overlay, data: AppData, answer: JSONObject) {

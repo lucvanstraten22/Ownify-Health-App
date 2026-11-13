@@ -785,27 +785,6 @@ if (!function_exists('points_process')) {
         return $lines;
     }
 
-    /**
-     * The person's own awards, newest first, each with the rule it followed —
-     * the answer to "why do I have these points?".
-     */
-    function points_history(int $userId, int $limit = 50): array
-    {
-        if (!points_available()) {
-            return [];
-        }
-
-        return db_all(
-            'SELECT e.points, e.awarded_at, e.note, e.award_key, r.code AS rule, r.label
-               FROM point_events e
-          LEFT JOIN point_rules r ON r.id = e.rule_id
-              WHERE e.user_id = ?
-           ORDER BY e.awarded_at DESC, e.id DESC
-              LIMIT ' . max(1, min($limit, 500)),
-            [$userId]
-        );
-    }
-
     /** "21 september" — for the week a bonus belongs to. Stored in a
         ledger note, so always Dutch, as the rest of the ledger. */
     function points_short_date(string $date): string

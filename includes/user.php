@@ -138,31 +138,6 @@ if (!function_exists('user_validate_username')) {
         ];
     }
 
-    /** Finding friends by handle. Returns public fields only. */
-    function user_search_by_username(string $query, int $limit = 20): array
-    {
-        $query = trim($query);
-        if (mb_strlen($query) < 2) {
-            return [];
-        }
-
-        $rows = db_all(
-            'SELECT u.id, u.username, p.avatar_path
-               FROM users u
-          LEFT JOIN user_profiles p ON p.user_id = u.id
-              WHERE u.status = ? AND u.username LIKE ?
-              ORDER BY CHAR_LENGTH(u.username), u.username
-              LIMIT ' . (int) max(1, min($limit, 50)),
-            ['active', $query . '%']
-        );
-
-        return array_map(static fn (array $r): array => [
-            'id'       => (int) $r['id'],
-            'username' => $r['username'],
-            'avatar'   => $r['avatar_path'],
-        ], $rows);
-    }
-
     /** Derived, never stored, so it cannot drift from the birth date. */
     function user_age(?string $dateOfBirth): ?int
     {

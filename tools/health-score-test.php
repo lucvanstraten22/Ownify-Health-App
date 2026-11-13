@@ -110,17 +110,6 @@ function schedule(array $daysAgo, float $minutes, callable $class, array $extra 
     return $out;
 }
 
-function range_days(int $from, int $to, int $step = 1, array $weekdays = null): array
-{
-    $out = [];
-    for ($d = $from; $d >= $to; $d -= $step) {
-        if ($weekdays === null || in_array($d % 7, $weekdays, true)) {
-            $out[] = $d;
-        }
-    }
-    return $out;
-}
-
 /* ====================================================================== */
 section('curves are smooth, and shaped the way the sources describe (38.0)');
 

@@ -300,60 +300,6 @@ fun AvatarCircle(path: String?, size: Dp, iconSize: Dp, modifier: Modifier = Mod
     }
 }
 
-/** The one field (25.0): a pill at least 44 high, the soft border, `.05`. */
-private fun Modifier.fieldBox(fill: Color = Ownify.fill(0.05f)): Modifier {
-    val shape = RoundedCornerShape(50)
-    return this
-        .heightIn(min = 44.dp)
-        .clip(shape)
-        .background(fill)
-        .border(1.dp, Ownify.GlassBorderSoft, shape)
-}
-
-/**
- * `.account__file`: the picture field — a "Bestand kiezen" pill and the
- * chosen name, the same on the website (which hides the browser's own file
- * control behind it); here it opens Android's photo picker. The name may take
- * two lines before it is cut, so "Geen bestand gekozen" fits beside the pill.
- */
-@Composable
-private fun FileField(name: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    InButton {
-        val interaction = remember { MutableInteractionSource() }
-        Row(
-            modifier
-                .fillMaxWidth()
-                .fieldBox()
-                .clickable(interaction, indication = null, role = Role.Button, onClickLabel = tr("Bestand kiezen"), onClick = blurring(onClick))
-                .semantics(mergeDescendants = true) { contentDescription = tr("Profielfoto") + ": " + (name ?: tr("Geen bestand gekozen")) }
-                .padding(horizontal = Ownify.Space4, vertical = Ownify.Space2),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)
-        ) {
-            val shape = RoundedCornerShape(50)
-            ChromeText {
-                T(
-                    tr("Bestand kiezen"),
-                    OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextPrimary),
-                    Modifier
-                        .clip(shape)
-                        .background(Ownify.fill(0.08f))
-                        .border(1.dp, Ownify.GlassBorderSoft, shape)
-                        .cssPadding(PaddingValues(horizontal = Ownify.Space2, vertical = 3.dp), border = 1.dp),
-                    maxLines = 1
-                )
-            }
-            T(
-                name ?: tr("Geen bestand gekozen"),
-                OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary),
-                Modifier.weight(1f),
-                maxLines = 2,
-                ellipsis = true
-            )
-        }
-    }
-}
-
 /** `.account__nav`: the text, a badge when requests wait, and a chevron; `.08` while pressed. */
 @Composable
 private fun NavField(text: String, value: String?, onClick: () -> Unit, label: String, notice: String? = null, modifier: Modifier = Modifier) {
@@ -386,23 +332,6 @@ private fun NavField(text: String, value: String?, onClick: () -> Unit, label: S
             if (value != null) T(value, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), maxLines = 1)
             JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextMuted)
         }
-    }
-}
-
-/** `.account__badge`: the requests waiting, in the green. */
-@Composable
-private fun Badge(text: String) {
-    val shape = RoundedCornerShape(50)
-    Box(
-        Modifier
-            .heightIn(min = 22.dp)
-            .clip(shape)
-            .background(Ownify.mix(Ownify.Health, 0.22f, Color.Transparent))
-            .border(1.dp, Ownify.mix(Ownify.Health, 0.42f, Color.Transparent), shape)
-            .cssPadding(PaddingValues(horizontal = Ownify.Space2), border = 1.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold), maxLines = 1)
     }
 }
 

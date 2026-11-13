@@ -120,11 +120,6 @@ if (!function_exists('goal_chart_build')) {
         return $unit['attached'] ? $text . $word : $text . ' ' . $word;
     }
 
-    function goal_chart_month(int $month, bool $long): string
-    {
-        return i18n_month($month, !$long);
-    }
-
     /**
      * "12 september". The year only when it is not this one — every value
      * here is a day, so a time of day would be precision the data does not

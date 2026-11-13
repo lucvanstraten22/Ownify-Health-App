@@ -172,6 +172,3 @@ fun Modifier.ground(placement: GroundPlacement): Modifier =
 class SurfacePosition {
     var inRoot by mutableStateOf(Offset.Zero)
 }
-
-@Composable
-fun groundAtHand(): GroundPlacement? = LocalGround.current

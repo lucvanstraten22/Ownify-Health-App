@@ -620,29 +620,6 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
     }
 }
 
-/** `.skeleton`: a quiet placeholder with a light sweeping across it every 2.4 s. */
-@Composable
-fun Skeleton(modifier: Modifier, shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(50)) {
-    val still = LocalStillMotion.current
-    val sweep = loopValue(-1f, 1f, infiniteRepeatable(tween(2_400, easing = Ownify.EaseOut)))
-    Box(
-        modifier
-            .clip(shape)
-            .background(Ownify.fill(0.07f))
-            .drawWithContent {
-                drawContent()
-                if (still) return@drawWithContent
-                val x = sweep * size.width
-                drawRect(
-                    Brush.horizontalGradient(
-                        listOf(Ownify.glint(0f), Ownify.glint(0.11f), Ownify.glint(0f)),
-                        startX = x, endX = x + size.width
-                    )
-                )
-            }
-    )
-}
-
 /**
  * `.fab` on Overzicht: "Terug naar je Gezondheidsscore", on the column's right edge
  * above the tab bar, once the page is more than 360 dp down.

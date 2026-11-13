@@ -86,7 +86,6 @@ data class GlassFilter(val blur: Dp, val saturate: Float = 1f, val brightness: F
 /** `--pane-blur`, `--pane-saturate`, `--pane-brightness`: softer in White Mode. */
 val PaneFilter: GlassFilter
     get() = GlassFilter(Ownify.PaneBlur, saturate = Ownify.PaneSaturate, brightness = Ownify.PaneBrightness)
-val CardFilter = GlassFilter(24.dp, saturate = 1.3f)
 
 /** The backdrops a surface can look through, innermost first; provided by the shell. */
 val LocalBackdrop = staticCompositionLocalOf<Backdrop?> { null }

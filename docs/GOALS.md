@@ -303,8 +303,9 @@ places left; a full board only disables the ways to add a goal.
 Migration **025** (`database/migrations/025-goals-rebuild.sql`) touches only
 goal tables. On a database with the old `goals` it first copies the old goals
 and progress to `goals_backup_024` and `goal_progress_backup_024` (plain
-copies, no keys, to look back at or drop), then drops the old `goal_progress`
-and `goals` and creates:
+copies, no keys, to look back at or drop — migration **032**,
+`032-drop-goal-backups.sql`, drops them in 50.0: nothing reads them), then
+drops the old `goal_progress` and `goals` and creates:
 
 | Table | Holds |
 | --- | --- |

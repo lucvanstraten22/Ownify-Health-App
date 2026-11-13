@@ -131,14 +131,6 @@ if (!function_exists('ai_conversation_get')) {
         return array_reverse($rows);
     }
 
-    function ai_message_count(int $userId, int $conversationId): int
-    {
-        return (int) db_value(
-            'SELECT COUNT(*) FROM ai_messages WHERE conversation_id = ? AND user_id = ?',
-            [$conversationId, $userId]
-        );
-    }
-
     function ai_message_add(
         int $userId,
         int $conversationId,
