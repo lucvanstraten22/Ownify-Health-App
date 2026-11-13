@@ -1184,7 +1184,7 @@ class OwnifyAppFlowTest {
     }
 
     @Test
-    fun `Primair doel - stops at 0, 50, 85 and 100, no line under the bar, and the reading shows while a finger rests on it`() {
+    fun `Primair doel - stops at 0, 50 and 100, no line under the bar, and the reading shows while a finger rests on it`() {
         MemoryTokenStorage.signedIn()
         show()
         waitForPages()
@@ -1200,7 +1200,7 @@ class OwnifyAppFlowTest {
         val tolerance = 1.5f * compose.density.density
         assertEquals("Start from the left edge", track.left, label("Start").left, tolerance)
         assertEquals("Halverwege centred at 50%", track.left + track.width * 0.50f, label("Halverwege").center.x, tolerance)
-        assertEquals("Bijna centred at 85%", track.left + track.width * 0.85f, label("Bijna").center.x, tolerance)
+        assertTrue("no Bijna stop (50.1)", compose.onAllNodesWithText("Bijna", useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
         assertEquals("Doel to the right edge", track.right, label("Doel").right, tolerance)
 
         // The line that said it under the bar is gone; the reading is on the bar, and only when asked.

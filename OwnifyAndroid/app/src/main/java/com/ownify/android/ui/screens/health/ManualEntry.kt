@@ -312,12 +312,8 @@ fun RemoveTraining(entry: ManualEntry?, session: TrainingSession) {
 
     Column(Modifier.fillMaxWidth().reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
         if (!confirming) {
-            Btn(copy["button"].orEmpty(), onClick = { confirming = true }, modifier = Modifier.fillMaxWidth(), look = BtnLook(text = Ownify.TextSecondary)) {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                    JIcon(OwnifyIcons.trash, size = 17.dp, color = Ownify.TextMuted)
-                    T(copy["button"].orEmpty(), OwnifyType.style(Ownify.FsSubhead, androidx.compose.ui.text.font.FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
-                }
-            }
+            // A lone action, drawn as Uitloggen: centred, the icon in the words' ink (50.1).
+            Btn(copy["button"].orEmpty(), onClick = { confirming = true }, modifier = Modifier.fillMaxWidth(), icon = OwnifyIcons.trash)
         } else {
             // .goal-confirm
             Column(

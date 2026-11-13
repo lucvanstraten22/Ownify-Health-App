@@ -47,8 +47,10 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
@@ -406,7 +408,8 @@ private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
         height = 160.dp,
         levels = plot.grid,
         gutter = if (plot.grid.isNotEmpty()) 26.dp else 0.dp,
-        bands = bands
+        bands = bands,
+        axisRows = 1                                // only times, never a month under them
     ) { i ->
         // `.health-history__tip`: "14:35 · Zone 3", then Hartslag and its bpm.
         val p = plot.points[i]
@@ -449,17 +452,27 @@ internal fun zoneStops(zonesY: List<Float>): List<Pair<Float, Color>> {
 /** `components/heart-zones.php`: each zone's colour, name and range — never colour alone — and what they are based on. */
 @Composable
 private fun HeartZonesLegend(zones: HeartZones) {
-    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
-        zones.bands.chunked(2).forEachIndexed { r, pair ->
+    // Down each column (50.1, `.heart-zones__list`): 1 and 2 on the left, 3 and
+    // 4 on the right — read across, 1 3 / 2 4. TalkBack keeps 1 to 4.
+    val rows = (zones.bands.size + 1) / 2
+    Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4).semantics { isTraversalGroup = true }) {
+        for (r in 0 until rows) {
             Row(Modifier.fillMaxWidth().padding(top = if (r > 0) Ownify.Space2 else 0.dp), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                pair.forEachIndexed { k, (name, range) ->
-                    Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(Ownify.zone(r * 2 + k + 1)))
+                for (c in 0 until 2) {
+                    val i = c * rows + r
+                    val band = zones.bands.getOrNull(i)
+                    if (band == null) { Spacer(Modifier.weight(1f)); continue }
+                    val (name, range) = band
+                    Row(
+                        Modifier.weight(1f).semantics(mergeDescendants = true) { traversalIndex = i.toFloat() },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(Ownify.zone(i + 1)))
                         T(name, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
                         T(range, OwnifyType.style(Ownify.FsCaption, color = Ownify.TextMuted, tabular = true), maxLines = 1)
                     }
                 }
-                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
         T(zones.note, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(top = Ownify.Space2))

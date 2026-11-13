@@ -554,6 +554,17 @@
     letter-spacing: var(--tracking-small);
 }
 
+/* A label centred on its capitals, not on its line (50.1): a line keeps
+   room under the baseline for descenders, so words without them ("Nieuw
+   doel instellen") sat about a pixel high. The words go down by that room's
+   share; an icon beside them stays where it was. Counted in em, so it holds
+   at every text size and in every system font. */
+.btn { padding-block: calc(1px + 0.075em) calc(1px - 0.075em); }
+.btn > .icon,
+.split__part > .icon { translate: 0 -0.075em; }
+/* Kopiëren | Delen: icons only, their own padding — nothing to counter. */
+.split__part.ch-icon-btn > .icon { translate: none; }
+
 /* Its rim is ::before: a .btn's ::after is its hit margin. */
 .btn::before {
     content: "";
@@ -1386,16 +1397,6 @@ a.settings-row { color: inherit; text-decoration: none; }
 
 .milestones__item:first-child { align-items: flex-start; transform: none; }
 .milestones__item:last-child { align-items: flex-end; transform: translateX(-100%); }
-
-/* On the narrowest phones Bijna (85) and Doel (100) are too close to centre
-   Bijna's word on its dot: the word ends at its dot instead, the dot itself
-   stays exactly at 85. */
-@media (max-width: 359px) {
-    .milestones__item:nth-child(3):not(:last-child) {
-        align-items: flex-end;
-        transform: translateX(calc(-100% + 3.5px));
-    }
-}
 
 .milestones__dot {
     width: 7px;
@@ -2363,7 +2364,8 @@ a.settings-row { color: inherit; text-decoration: none; }
     gap: var(--space-2);
     min-height: var(--hit-min);
     margin: 0;
-    padding: 6px var(--space-4);
+    /* Centred on its capitals, as .btn's label (50.1). */
+    padding: calc(6px + 0.075em) var(--space-4) calc(6px - 0.075em);
     border: 0;
     border-radius: var(--radius-pill);
     background: transparent;

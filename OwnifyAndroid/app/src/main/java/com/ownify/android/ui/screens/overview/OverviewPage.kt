@@ -264,10 +264,11 @@ private fun HealthScoreCard(data: AppData) {
  * 36 tall, a 34 cell for the glyph, the label small, medium, secondary). The
  * arrow comes in from the way the score goes — 4 dp and faded, over 900 ms,
  * twice, 1.2 s after the hero is in sight; a dash for unchanged, still. Still
- * with reduced motion.
+ * with reduced motion. The Gezondheidsscore page has the same pill in the
+ * same place (50.1, `components/score-trend.php`).
  */
 @Composable
-private fun TrendBubble(direction: com.ownify.android.data.CompassDirection, play: Boolean, modifier: Modifier = Modifier) {
+internal fun TrendBubble(direction: com.ownify.android.data.CompassDirection, play: Boolean, modifier: Modifier = Modifier) {
     val still = LocalStillMotion.current || com.ownify.android.ui.design.LocalReducedMotion.current
     val sign = when (direction.key) { "up" -> 1f; "down" -> -1f; else -> 0f }
     val travel = remember(direction.key) { androidx.compose.animation.core.Animatable(1f) }
@@ -443,14 +444,12 @@ private fun ReadingBubble(text: String, modifier: Modifier) {
 }
 
 /**
- * `.milestones`: each stop at its own place on the bar (`at`: 0, 50, 85,
- * 100) — the first from the left edge, the last to the right edge, the ones
- * between centred on their point. On the narrowest phones Bijna's word ends
- * at its dot instead, so it clears Doel; the dot stays where it is.
+ * `.milestones`: each stop at its own place on the bar (`at`: 0, 50, 100;
+ * 50.1: Bijna at 85 is gone) — the first from the left edge, the last to the
+ * right edge, the one between centred on its point.
  */
 @Composable
 private fun Milestones(goal: GoalCard) {
-    val narrow = LocalScreen.current.narrow
     val stops = goal.milestones
     Layout(
         content = {
@@ -458,7 +457,6 @@ private fun Milestones(goal: GoalCard) {
                 val align = when {
                     i == 0 -> Alignment.Start
                     i == stops.lastIndex -> Alignment.End
-                    narrow && i == stops.lastIndex - 1 -> Alignment.End
                     else -> Alignment.CenterHorizontally
                 }
                 Column(horizontalAlignment = align, verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
@@ -482,14 +480,12 @@ private fun Milestones(goal: GoalCard) {
     ) { measurables, constraints ->
         val items = measurables.map { it.measure(Constraints(maxWidth = constraints.maxWidth)) }
         val width = constraints.maxWidth
-        val half = DOT.toPx() / 2f
         layout(width, items.maxOfOrNull { it.height } ?: 0) {
             items.forEachIndexed { i, item ->
                 val point = stops[i].at.coerceIn(0, 100) / 100f * width
                 val x = when {
                     i == 0 -> 0f
                     i == items.lastIndex -> (width - item.width).toFloat()
-                    narrow && i == items.lastIndex - 1 -> point + half - item.width
                     else -> point - item.width / 2f
                 }
                 item.placeRelative(x.toInt(), 0)
@@ -610,13 +606,12 @@ fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: St
     ) {
         IconTile(icon, color = Color.White, background = tile, border = tile)
         Column(Modifier.weight(1f)) {
-            // A card that opens says so with the title's chevron (`.card__open-chevron`, C70, 50.0).
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space1)) {
-                T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
-                if (chevron) JIcon(OwnifyIcons.chevronRight, size = 15.dp, color = Ownify.TextMuted)
-            }
+            T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
             if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = Ownify.Space1))
         }
+        // A card that opens says so with a chevron at the head's right edge, as
+        // Ranglijst's and Nuttige inzichten' (`.cm-head__chev`, 50.1).
+        if (chevron) JIcon(OwnifyIcons.chevronRight, size = 16.dp, color = Ownify.TextFaint)
     }
 }
 

@@ -360,54 +360,21 @@
 
 .card--goal-hero { padding-block: var(--space-5); }
 
-.goal-hero__head {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.card--goal-hero .icon-tile:not(.icon-tile--solid) { color: var(--accent); }
-
-.goal-hero__heads { min-width: 0; }
-
-.goal-hero__category {
-    font-size: var(--fs-caption);
-    font-weight: 600;
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.goal-hero__name {
-    margin-top: var(--space-1);
-    font-size: var(--fs-title);
-    font-weight: 600;
-    letter-spacing: var(--tracking-title);
-    line-height: var(--lh-title);
-}
-
-/* A long name — over 40 characters — at Title 3 with balanced lines: calm, and
-   all of it readable. */
-.goal-hero__name.is-long {
-    font-size: var(--fs-headline);
-    letter-spacing: var(--tracking-headline);
-    line-height: var(--lh-headline);
-    text-wrap: balance;
-}
-
 .goal-hero__chips {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-    margin-top: var(--space-4);
+    margin-top: var(--space-1);
 }
+
+/* No status to show (not primary, not paused, still running): no row. */
+.goal-hero__chips:not(:has(> :not([hidden]))) { display: none; }
 
 .goal-hero__figures {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-3);
-    margin-top: var(--space-5);
 }
 
 .goal-hero__percent {
@@ -472,8 +439,10 @@
 }
 
 /* Periode: Gestart and Eindigt in one row. The two halves wrap as wholes —
-   on a narrow phone Eindigt moves under Gestart, never splits mid-date. */
-.goal-period {
+   on a narrow phone Eindigt moves under Gestart, never splits mid-date.
+   (Its own name: .goal-period is a row of the per-period list below, whose
+   padding and gap made this row 60 high instead of 43.) */
+.goal-hero__period {
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -482,7 +451,7 @@
     min-width: 0;
 }
 
-.goal-period__part { white-space: nowrap; }
+.goal-hero__period-part { white-space: nowrap; }
 
 /* --------------------------------------------------------------------------
    What feeds the goal
@@ -543,6 +512,11 @@
 .goal-manage__icon { width: 17px; height: 17px; flex: none; color: var(--text-muted); }
 
 .goal-manage__button--danger { color: var(--text-secondary); }
+
+/* A training's delete stands alone: drawn as Uitloggen (.settings-logout) —
+   centred, the icon in the words' ink — not as a row of Doelen's list. */
+.manual-entry__remove .goal-manage__button { justify-content: center; gap: var(--space-2); color: var(--text-primary); }
+.manual-entry__remove .goal-manage__icon { color: inherit; }
 
 .goal-manage__state {
     display: flex;
@@ -812,9 +786,6 @@
 
     .goal-hero__percent-value { font-size: var(--fs-display);
     letter-spacing: var(--tracking-display);
-}
-    .goal-hero__name { font-size: var(--fs-headline);
-    letter-spacing: var(--tracking-headline);
 }
 
 }

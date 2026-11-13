@@ -10,6 +10,8 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.ui.test.onAllNodesWithText
@@ -366,7 +368,12 @@ class ChallengesFlowTest {
         waitFor("Iemand erbij halen")
 
         // Activated as TalkBack activates it: whatever the dock floats over.
-        button("Uitdaging verlaten").performScrollTo().performSemanticsAction(SemanticsActions.OnClick)
+        // The page is scrolled to its end with its own scroll action, where
+        // the full-width leave button closes the page (50.1): performScrollTo()
+        // on that button never returns under Robolectric, although the page
+        // scrolls, settles and shows the button whole.
+        compose.onNode(hasScrollAction()).performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 10_000f) }
+        button("Uitdaging verlaten").assertIsDisplayed().performSemanticsAction(SemanticsActions.OnClick)
         waitFor("Uitdaging verlaten?")
         compose.onAllNodes(hasText("Verlaten") and hasClickAction()).onLast().performClick()
 

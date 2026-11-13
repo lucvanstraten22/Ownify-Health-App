@@ -48,7 +48,7 @@ $filled  = array_filter($periods, static fn ($p) => $p['chart']['has_data']) !==
             <?php if ($period['direction'] !== null): ?>
                 <span class="chip chip--quiet score-direction__chip" data-direction="<?= e($period['direction']['key']) ?>"
                       data-range-chip="<?= e($period['key']) ?>"<?= $period['key'] === $default ? '' : ' hidden' ?>>
-                    <?= icon('arrow-up', 'score-direction__icon') ?><?= e($period['direction']['label']) ?>
+                    <?= icon(['up' => 'arrow-up', 'down' => 'arrow-down'][$period['direction']['key']] ?? 'dash', 'score-direction__icon') ?><?= e($period['direction']['label']) ?>
                 </span>
             <?php endif; ?>
         <?php endforeach; ?>

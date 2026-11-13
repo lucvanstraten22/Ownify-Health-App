@@ -171,6 +171,9 @@ fun HistoryPlot(
     /** The same levels in a second unit (kJ), named in a gutter of [gutterEnd] on the right. */
     levelsEnd: List<String> = emptyList(),
     gutterEnd: Dp = 0.dp,
+    // The rows of dates the axis keeps room for; a chart that only ever shows
+    // one row (a heart chart's times, `.heart-chart .chart__axis`) passes 1.
+    axisRows: Int? = null,
     tip: @Composable ColumnScope.(Int) -> Unit
 ) {
     // "Animaties uit" and the device's reduced motion too (50.0): the line stands drawn, it is not drawn on.
@@ -448,7 +451,7 @@ fun HistoryPlot(
                 // `.area-chart--mini .chart__axis`: two rows of the dates' own size, 4 below the plot.
                 TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space1), centred = centredAxis, rows = 2, compact = true, freeEnd = freeAxisEnd)
             } else {
-                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space2), centred = centredAxis, rows = if (levels != null) 2 else 1, freeEnd = freeAxisEnd)
+                TickAxis(axis, Modifier.padding(start = gutter, end = gutterEnd, top = Ownify.Space2), centred = centredAxis, rows = axisRows ?: if (levels != null) 2 else 1, freeEnd = freeAxisEnd)
             }
         }
 

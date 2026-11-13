@@ -10,8 +10,8 @@
  *                 compare to, the open places add a friend. The card opens
  *                 the full board (pages/leaderboard.php) as it always was.
  *   Uitdagingen   invitations waiting for you, the challenge ending soonest
- *                 on top of a stack of the others, and Nieuwe uitdaging and
- *                 Code invoeren side by side. The card opens Uitdagingen
+ *                 on top of a stack of the others, and Nieuwe uitdaging |
+ *                 Code invoeren as one split (50.1). The card opens Uitdagingen
  *                 (pages/challenges.php).
  *
  * Challenges have nothing to do with points; the line under the cards says

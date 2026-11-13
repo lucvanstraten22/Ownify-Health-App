@@ -170,25 +170,22 @@
 .card--opens > .cm-head .cm-head__chev { transition: transform var(--press-out) var(--ease-out-strong); }
 .card--opens:has(> .cm-head:active) .cm-head__chev { transform: translateX(1px); }
 
-/* --------------------------------------------------------------------------
-   Direction — Stijgend, Stabiel, Dalend: one arrow, turned
-   -------------------------------------------------------------------------- */
-.score-direction {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--space-2);
-}
+/* The goal card's chevron at its head's right edge, as Ranglijst's (50.1),
+   nudging as the card is pressed. */
+.card__head > .cm-head__chev { flex: none; margin-left: auto; transition: transform var(--press-out) var(--ease-out-strong); }
+.card--opens:has(.card__open:active) > .card__head > .cm-head__chev { transform: translateX(1px); }
 
+/* --------------------------------------------------------------------------
+   A period's direction (Wat er verandert) — Stijgend, Stabiel, Dalend: an
+   arrow up, an arrow down, a dash, as the hero's trend pill (50.1)
+   -------------------------------------------------------------------------- */
 .score-direction__chip { gap: 6px; }
 
 .score-direction__icon {
     width: 13px;
     height: 13px;
-    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
-[data-direction="flat"] .score-direction__icon { transform: rotate(90deg); }
-[data-direction="down"] .score-direction__icon { transform: rotate(180deg); }
 
 /* --------------------------------------------------------------------------
    The page — the overall score's ring and glow, as on Overzicht

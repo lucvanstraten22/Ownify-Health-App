@@ -7,7 +7,6 @@
  *                             one. Nothing is looked up while you type.
  *   Vriendverzoeken           requests waiting for you — Accepteren or
  *                             Weigeren — and the ones you sent
- *   Vriendverzoeken toestaan  off, nobody can send you a new request
  *   Vrienden (n)              your friends, each with Verwijderen
  *
  * Everything here is read from the database for the signed-in account
@@ -22,7 +21,6 @@ $community = $data['community'];
 $incoming  = $community['pending'] ?? [];
 $sent      = $community['sent'] ?? [];
 $friends   = $community['friends'] ?? [];
-$allowed   = !empty($community['allow_requests']);
 ?>
 <div class="account__view friends" data-account-view="friends" hidden>
 
@@ -76,15 +74,6 @@ $allowed   = !empty($community['allow_requests']);
             </ul>
         <?php endif; ?>
     </section>
-
-    <!-- ---------------------------------------- Vriendverzoeken toestaan -->
-    <?php /* D6 (50.0): the switch lives in Instellingen › Privacy › Community;
-             this row says how it stands and opens it. */ ?>
-    <button type="button" class="account__nav press" data-account-goto="settings-privacy">
-        <span class="account__nav-text"><span><?= e(t('Vriendverzoeken toestaan')) ?></span></span>
-        <span class="settings-row__value"><?= e($allowed ? t('Aan') : t('Uit')) ?></span>
-        <?= icon('chevron-right', 'account__nav-icon') ?>
-    </button>
 
     <!-- --------------------------------------------------------- Vrienden -->
     <section class="friends__section" data-friends-list aria-labelledby="friends-list-title">

@@ -62,20 +62,16 @@ $height = 96.0;
             <div class="shell stack">
 
                 <!-- ----------------------------------------------- 1 + 2 -->
-                <section class="card card--goal-hero reveal <?= state_class($goal['percent']) ?>"
-                         aria-labelledby="goal-title-<?= e($id) ?>">
-
-                    <div class="goal-hero__head">
-                        <span class="icon-tile icon-tile--solid" aria-hidden="true"><?= icon_solid($goal['icon']) ?></span>
-                        <div class="goal-hero__heads">
-                            <p class="goal-hero__category"><?= e($goal['measurement_label']) ?> · <?= e($goal['kind_label']) ?></p>
-                            <?php /* A long name (over 40 characters, the wizard allows 120) steps down
-                                     to Title 3 with balanced lines — all of it, nothing cut
-                                     (goals.css .is-long; GoalDetail.kt GOAL_NAME_LONG). */ ?>
-                            <h1 class="goal-hero__name<?= mb_strlen((string) $goal['name']) > 40 ? ' is-long' : '' ?>" id="goal-title-<?= e($id) ?>"><?= e($goal['name']) ?></h1>
-                        </div>
-                    </div>
-
+                <?php /* The head on the ground, as a challenge's and a training's
+                         (50.1): what it measures and how, with its icon in the
+                         goal's colour; the name, all of it (over 32 characters a
+                         step down, balanced, as a challenge's); its category and
+                         length in one quiet line; then what it is now — Primair,
+                         Gepauzeerd, Afgelopen or Behaald — as chips. */ ?>
+                <header class="ch-dhead goal-dhead reveal">
+                    <span class="ch-kind"><?= icon($goal['icon']) ?><span><?= e($goal['measurement_label']) ?> · <?= e($goal['kind_label']) ?></span></span>
+                    <h1 class="page-intro__title ch-dhead__name<?= mb_strlen((string) $goal['name']) > 32 ? ' is-long' : '' ?>" id="goal-title-<?= e($id) ?>"><?= e($goal['name']) ?></h1>
+                    <p class="page-intro__lede"><?= e($goal['category_label']) ?><?php if ($goal['duration_label'] !== null): ?> · <?= e($goal['duration_label']) ?><?php endif; ?></p>
                     <div class="goal-hero__chips">
                         <span class="chip chip--accent" data-goal-chip="primary"
                               <?= $goal['is_primary'] ? '' : 'hidden' ?>><?= e($labels['primary_chip']) ?></span>
@@ -84,11 +80,11 @@ $height = 96.0;
                         <?php if ($goal['is_completed']): ?>
                             <span class="chip chip--accent"><?= e($goal['is_reached'] ? t('Behaald') : t('Afgelopen')) ?></span>
                         <?php endif; ?>
-                        <span class="chip chip--muted"><?= e($goal['category_label']) ?></span>
-                        <?php if ($goal['duration_label'] !== null): ?>
-                            <span class="chip chip--muted"><?= e($goal['duration_label']) ?></span>
-                        <?php endif; ?>
                     </div>
+                </header>
+
+                <section class="card card--goal-hero reveal <?= state_class($goal['percent']) ?>"
+                         aria-labelledby="goal-title-<?= e($id) ?>">
 
                     <div class="goal-hero__figures">
                         <p class="goal-hero__percent">
@@ -120,10 +116,10 @@ $height = 96.0;
                         <?php /* The period: its first and its last day. */ ?>
                         <div class="metric-row metric-row--period" data-goal-period>
                             <span class="metric-row__label"><?= e($copy['period'] ?? t('Periode')) ?></span>
-                            <span class="metric-row__value goal-period">
-                                <span class="goal-period__part"><?= e(t('Gestart')) ?>: <?= e((string) $goal['start_label']) ?></span>
-                                <span class="goal-period__dot" aria-hidden="true">·</span>
-                                <span class="goal-period__part"><?= e(t('Eindigt')) ?>: <?= e((string) $goal['end_label']) ?></span>
+                            <span class="metric-row__value goal-hero__period">
+                                <span class="goal-hero__period-part"><?= e(t('Gestart')) ?>: <?= e((string) $goal['start_label']) ?></span>
+                                <span class="goal-hero__period-dot" aria-hidden="true">·</span>
+                                <span class="goal-hero__period-part"><?= e(t('Eindigt')) ?>: <?= e((string) $goal['end_label']) ?></span>
                             </span>
                         </div>
                     </div>

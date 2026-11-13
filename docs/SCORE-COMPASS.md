@@ -26,7 +26,7 @@ translations.
 | Compass | `includes/score-compass.php` — pure: no database, no clock |
 | Words and rules | `config/compass.php` |
 | Page data | `lib/hydrate-compass.php` → `$data['compass']` in `app_page_data()`, so `index.php` and `api/app/state.php` (the app) show the same block |
-| Website | `pages/score-compass.php`, `components/compass-history.php`, `components/score-direction.php`, `assets/css/compass.css`, `assets/js/compass-history.js` |
+| Website | `pages/score-compass.php`, `components/compass-history.php`, `components/score-trend.php`, `assets/css/compass.css`, `assets/js/compass-history.js` |
 | App | `ui/screens/overview/ScoreCompass.kt`, `Detail.ScoreCompass`, `data/AppData.kt` (`Compass`, `CompassPeriod`, `CompassDay`) |
 
 Nothing the compass does changes a weight, a curve, the window, the minimum

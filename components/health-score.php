@@ -66,18 +66,9 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
 
     <?php /* Where the score is heading (32.2): the Scorekompas's own direction
              (includes/score-compass.php — the first and the last week of 30
-             days, 2 points apart), in the sync capsule's glass, between the
-             ring and its name. Too little history: no direction, no bubble. */ ?>
-    <?php if ($direction !== null): ?>
-        <p class="score-trend" data-direction="<?= e($direction['key']) ?>">
-            <span class="glass score-trend__pill">
-                <span class="score-trend__icon" aria-hidden="true">
-                    <?= icon(['up' => 'arrow-up', 'down' => 'arrow-down'][$direction['key']] ?? 'dash', 'score-trend__glyph') ?>
-                </span>
-                <span class="score-trend__label"><?= e($direction['label']) ?></span>
-            </span>
-        </p>
-    <?php endif; ?>
+             days, 2 points apart), between the ring and its name. Too little
+             history: no direction, no bubble. */ ?>
+    <?php if ($direction !== null) component('score-trend', ['direction' => $direction]); ?>
 
     <h2 class="score-ring__label">
         <?php if ($compass !== null): ?>

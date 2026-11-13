@@ -23,8 +23,10 @@ $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
             <button type="button" class="card__open" data-detail-open="goal-<?= e((string) $primaryId) ?>" aria-label="<?= e($goal['title'] . ': ' . t('doel openen')) ?>">
             <?php else: ?>
             <button type="button" class="card__open" data-nav="goals" aria-label="<?= e($goal['title'] . ': ' . t('naar Doelen')) ?>">
-            <?php endif; ?><?= e($goal['title']) ?><?= icon('chevron-right', 'card__open-chevron') ?></button>
+            <?php endif; ?><?= e($goal['title']) ?></button>
         </h2>
+        <?php /* At the head's right edge, as Ranglijst's and Nuttige inzichten' (50.1). */ ?>
+        <?= icon('chevron-right', 'cm-head__chev') ?>
     </div>
 
     <div class="goal__headline">
@@ -47,7 +49,7 @@ $fillAt  = round(max(0.0, min(1.0, (float) $ratio)) * 100, 2);
             <span class="goal__tip" id="goal-reading" role="tooltip" style="--p: <?= e((string) $fillAt) ?>"><?= e($reading) ?></span>
         <?php endif; ?>
 
-        <?php /* Each stop at its own place on the bar: 0, 50, 85, 100. */ ?>
+        <?php /* Each stop at its own place on the bar: 0, 50, 100. */ ?>
         <ol class="milestones" role="list">
             <?php foreach ($goal['milestones'] as $milestone): ?>
                 <li class="milestones__item<?= $milestone['reached'] ? ' is-reached' : '' ?>"

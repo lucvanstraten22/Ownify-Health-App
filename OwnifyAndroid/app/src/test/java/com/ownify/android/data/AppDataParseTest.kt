@@ -140,7 +140,7 @@ class AppDataParseTest {
         assertEquals(listOf("high", "mid", "high"), data.overview.contributors.map { it.scoreBand })
         assertEquals("active", data.overview.goal.state)
         assertEquals("3 van 31 dagen", data.overview.goal.unit)
-        assertEquals(4, data.overview.goal.milestones.size)
+        assertEquals(3, data.overview.goal.milestones.size)          // Start, Halverwege, Doel (50.1: no Bijna)
 
         // Gezondheid: metrics printed as the template prints them.
         val sleep = data.health.area("sleep")!!

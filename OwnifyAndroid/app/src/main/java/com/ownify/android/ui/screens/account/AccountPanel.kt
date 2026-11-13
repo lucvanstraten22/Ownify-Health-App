@@ -535,22 +535,6 @@ private fun ColumnScope.FriendsView(data: AppData, searchFirst: Boolean = false)
         }
     }
 
-    // --------------------------------------------- Vriendverzoeken toestaan
-    // D6 (50.0): the switch lives in Instellingen › Privacy › Community; this
-    // row says how it stands and opens it (components/account-friends.php).
-    val shell = LocalShell.current
-    NavField(
-        text = tr("Vriendverzoeken toestaan"),
-        value = if (community.allowRequests) tr("Aan") else tr("Uit"),
-        onClick = {
-            shell.closeAll()
-            shell.goTo("settings")
-            shell.openDetail(Detail.SettingsPage("privacy"))
-        },
-        label = tr("Vriendverzoeken toestaan"),
-        modifier = Modifier.padding(top = Ownify.Space5)
-    )
-
     // --------------------------------------------------------------- Vrienden
     FieldLabel(tr("Vrienden") + " (${community.friends.size})", Modifier.padding(top = Ownify.Space5))
     if (community.friends.isEmpty()) {

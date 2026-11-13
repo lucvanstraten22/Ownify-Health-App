@@ -36,7 +36,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -114,23 +113,22 @@ fun ScoreCompassDetail(data: AppData, scroll: ScrollState) {
 }
 
 /**
- * `components/score-direction.php`: Stijgend, Stabiel or Dalend — one arrow,
- * turned — in the text colour: a direction is not a judgement.
+ * A period's direction (`.score-direction__chip`, components/compass-history.php): Stijgend, Stabiel or Dalend in the text
+ * colour (a direction is not a judgement), with the same mark as Overzicht's
+ * trend: an arrow up, an arrow down, or a dash for Stabiel.
  */
 @Composable
 fun DirectionChip(direction: CompassDirection, modifier: Modifier = Modifier) {
-    val turn = when (direction.key) {
-        "flat" -> 90f
-        "down" -> 180f
-        else -> 0f
+    val glyph = when (direction.key) {
+        "up" -> OwnifyIcons.arrowUp
+        "down" -> OwnifyIcons.arrowDown
+        else -> OwnifyIcons.dash
     }
     Chip(
         direction.label,
         modifier,
         quiet = true,
-        leading = {
-            JIcon(OwnifyIcons.arrowUp, Modifier.graphicsLayer { rotationZ = turn }, size = 13.dp, color = Ownify.TextSecondary)
-        }
+        leading = { JIcon(glyph, size = 13.dp, color = Ownify.TextSecondary) }
     )
 }
 
@@ -153,10 +151,11 @@ private fun HeroCard(data: AppData) {
             description = overall.label + ": " + if (empty) tr("nog geen gegevens") else trf("%1\$s van %2\$s", compass.score, compass.max),
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = Ownify.Space6, bottom = Ownify.Space5)
+                .padding(top = Ownify.Space6, bottom = if (compass.direction != null) Ownify.Space3 else Ownify.Space5)
         )
+        // Overzicht's trend pill, in the same place: between the ring and its name (50.1).
+        compass.direction?.let { TrendBubble(it, play, Modifier.align(Alignment.CenterHorizontally).padding(bottom = Ownify.Space3)) }
         T(compass.title, JStyle.HeroLabel, Modifier.fillMaxWidth().semantics { heading() }.heroName(), align = TextAlign.Center)
-        compass.direction?.let { DirectionChip(it, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space2)) }
         T(
             compass.lede,
             JStyle.Lede,

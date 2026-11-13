@@ -2,7 +2,7 @@
 /**
  * Uitdagingen — every challenge you are in or invited to, and the two ways
  * to start one: make it (Nieuwe uitdaging) or join one with the code you
- * were given (Code invoeren), two tiles side by side. Each opens one bottom
+ * were given (Code invoeren), one split (50.1). Each opens one bottom
  * sheet (challenges.js).
  *
  *   Uitnodigingen   from friends; Bekijken shows what it is before Meedoen

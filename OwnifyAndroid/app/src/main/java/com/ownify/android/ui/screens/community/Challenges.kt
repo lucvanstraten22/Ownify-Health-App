@@ -292,42 +292,19 @@ internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownif
 }
 
 /**
- * `.ch-acts`: Nieuwe uitdaging and Code invoeren side by side — two glass
- * tiles of one size (the sync capsule's material), each with the same solid
- * neutral mark: a plus for making one, a hash for joining with a code.
+ * `.ch-acts`: Nieuwe uitdaging | Code invoeren — one split (50.1,
+ * docs/THEME.md), two equal choices in the full ink, each with its mark: a
+ * plus for making one, a hash for joining with a code.
  */
 @Composable
 internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Modifier) {
     val shell = LocalShell.current
-    Row(modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-        ActionTile(page["create"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCreate()) }) {
-            NeutralTile(OwnifyIcons.plus, size = 30.dp, radius = 10.dp)
-        }
-        ActionTile(page["join"].orEmpty(), Modifier.weight(1f).fillMaxHeight(), onClick = { shell.open(Overlay.ChallengeCode) }) {
-            NeutralTile(OwnifyIcons.hash, size = 30.dp, radius = 10.dp)
-        }
-    }
-}
-
-/** `.ch-act`: one of the two. */
-@Composable
-private fun ActionTile(label: String, modifier: Modifier, onClick: () -> Unit, mark: @Composable () -> Unit) {
-    val narrow = LocalScreen.current.narrow
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier
-            .press(interaction)
-            .heightIn(min = 60.dp)
-            .glass(RoundedCornerShape(Ownify.RadiusMd), GlassLook(shadow = 20.dp, lift = 8.dp))
-            .clickable(interaction, indication = null, role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { }
-            .padding(horizontal = if (narrow) Ownify.Space2 else Ownify.Space3, vertical = Ownify.Space2),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (narrow) Ownify.Space2 else Ownify.Space3)
-    ) {
-        Box(Modifier.clearAndSetSemantics { }) { mark() }
-        T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, Ownify.TextPrimary), Modifier.weight(1f))
-    }
+    SplitRow(
+        { Btn(page["create"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCreate()) }, modifier = it, icon = OwnifyIcons.plus) },
+        { Btn(page["join"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCode) }, modifier = it, icon = OwnifyIcons.hash) },
+        modifier,
+        quietBack = false
+    )
 }
 
 /** `.ch-art`: the empty target — dashed rings round the Uitdagingen mark. */
@@ -854,9 +831,8 @@ fun ChallengeDetail(data: AppData, view: ChallengeView, overList: Boolean, scrol
         // 5 — the small print
         T(view.note, JStyle.Footnote, Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).reveal())
         if (view.canLeave) {
-            Box(Modifier.fillMaxWidth().reveal(), contentAlignment = Alignment.Center) {
-                LinkButton(copy["leave"].orEmpty()) { shell.open(Overlay.ChallengeLeave(view.id)) }
-            }
+            // `.ch-leave`: a lone full-width action with the leave icon, as Uitloggen (50.1; the website's).
+            Btn(copy["leave"].orEmpty(), onClick = { shell.open(Overlay.ChallengeLeave(view.id)) }, modifier = Modifier.fillMaxWidth().reveal(), icon = OwnifyIcons.logout)
         }
     }
 }

@@ -162,37 +162,9 @@
 .ch-art__tile { position: relative; width: 48px; height: 48px; border-radius: 16px; }
 .ch-art__tile .icon { width: 24px; height: 24px; }
 
-/* Nieuwe uitdaging and Code invoeren: two glass tiles of one size. Neutral
-   glass, as the sync capsule; the solid tile marks making one, the outlined
-   one joining with a code. */
-.ch-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
-.ch-act {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: 60px;
-    padding: var(--space-2) var(--space-3);
-    border: 0;
-    border-radius: var(--radius-md);
-    background: var(--lg-face), var(--lg-body);
-    box-shadow: var(--lg-shadow), var(--lg-glint);
-    font: inherit;
-    color: var(--text-primary);
-    text-align: left;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    position: relative;
-    isolation: isolate;
-    -webkit-backdrop-filter: var(--lg-filter);
-    backdrop-filter: var(--lg-filter);
-}
-.ch-act .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
-.ch-act .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
-.ch-act__label { min-width: 0; font-size: var(--fs-body); font-weight: 600; line-height: var(--lh-body); letter-spacing: var(--tracking-body); }
-.ch-act:focus-visible { outline: 2px solid var(--focus-ring, rgba(var(--ink), 0.5)); outline-offset: 2px; }
-@media (hover: hover) and (pointer: fine) {
-    .ch-act:hover { border-color: rgba(var(--ink), 0.22); }
-}
+/* Nieuwe uitdaging | Code invoeren: one split (50.1), two equal choices in
+   the full ink, each with its mark. */
+.ch-acts { width: 100%; }
 
 .ch-line,
 .ch-pace {
@@ -679,8 +651,10 @@
 
 .ch-row { width: calc(100% + 2 * var(--space-2)); margin-inline: calc(-1 * var(--space-2)); }
 
-.ch-leave { align-self: stretch; justify-content: flex-start; gap: var(--space-3); padding-inline: var(--space-4); }
-.ch-leave__icon { width: 17px; height: 17px; flex: none; color: var(--text-muted); }
+/* A lone full-width action, drawn as Uitloggen (.settings-logout): centred,
+   the icon in the words' ink. */
+.ch-leave { align-self: stretch; gap: var(--space-2); }
+.ch-leave__icon { width: 17px; height: 17px; flex: none; }
 
 /* --------------------------------------------------------------------------
    The bottom sheet: the floating glass, rising from the bottom edge, its
@@ -1256,6 +1230,5 @@
     .ch-pick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .ch-code { --box: 44px; }
     .ch-code__boxes { gap: 6px; }
-    .ch-act { gap: var(--space-2); padding-inline: var(--space-2); }
     .cm-podium { gap: var(--space-2); padding-inline: 0; }
 }

@@ -133,8 +133,8 @@ fun GoalDetail(data: AppData, stored: Goal, scroll: ScrollState) {
 
 /** Sections 1 and 2: the name, the chips, the percentage against the target, the bar, the facts. */
 @OptIn(ExperimentalLayoutApi::class)
-/** Characters (code points) past which a goal's name is long (pages/goal-detail.php: mb_strlen > 40). */
-internal const val GOAL_NAME_LONG = 40
+/** Characters (code points) past which a goal's name is long (pages/goal-detail.php: mb_strlen > 32, as a challenge's). */
+internal const val GOAL_NAME_LONG = 32
 
 @Composable
 private fun Hero(data: AppData, goal: Goal) {
@@ -150,42 +150,36 @@ private fun Hero(data: AppData, goal: Goal) {
     val heroActive = if (goal.isCompleted) goal.lineActive else goal.remaining.orEmpty()
     val heroLine = if (goal.isPaused) labels["paused_line"].orEmpty() else heroActive
 
-    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
-        // .goal-hero__head
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            OwnifyIcons.solid(goal.icon)?.let { IconTile(it, color = androidx.compose.ui.graphics.Color.White, background = accent, border = accent) }
-            Column(Modifier.weight(1f)) {
-                T("${goal.measurementLabel} · ${goal.kindLabel}", JStyle.Caption, uppercase = true)
-                // A long name steps down to Title 3 with balanced lines (`.goal-hero__name.is-long`).
-                val long = goal.name.codePointCount(0, goal.name.length) > GOAL_NAME_LONG
-                T(
-                    goal.name,
-                    if (long) {
-                        OwnifyType.style(Ownify.FsHeadline, FontWeight.SemiBold)
-                            .copy(lineBreak = LineBreak.Heading)
-                    } else {
-                        OwnifyType.style(if (narrow) Ownify.FsHeadline else Ownify.FsTitle, FontWeight.SemiBold)
-                    },
-                    Modifier.padding(top = Ownify.Space1).semantics { heading() }
-                )
+    // The head on the ground, as a challenge's and a training's (50.1,
+    // `.ch-dhead.goal-dhead`): what it measures and how with its icon in the
+    // goal's colour; the name, all of it (over 32 characters a step down, as a
+    // challenge's); its category and length in one quiet line; then what it is
+    // now — Primair, Gepauzeerd, Afgelopen or Behaald — as chips.
+    Column(Modifier.fillMaxWidth().padding(horizontal = Ownify.Space2).reveal(), verticalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
+        com.ownify.android.ui.screens.community.KindLine(goal.icon, "${goal.measurementLabel} · ${goal.kindLabel}", LocalAccent.current)
+        val long = goal.name.codePointCount(0, goal.name.length) > GOAL_NAME_LONG
+        T(
+            goal.name,
+            if (long) OwnifyType.style(Ownify.FsTitle, FontWeight.Bold).copy(lineBreak = LineBreak.Heading) else JStyle.LargeTitle,
+            Modifier.semantics { heading() }
+        )
+        T(listOfNotNull(goal.categoryLabel, goal.durationLabel).joinToString(" · "), JStyle.Meta)
+        if (goal.isPrimary || goal.isPaused || goal.isCompleted) {
+            FlowRow(
+                Modifier.fillMaxWidth().padding(top = Ownify.Space1),
+                horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
+                verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
+            ) {
+                if (goal.isPrimary) AccentChip(labels["primary_chip"].orEmpty(), accent)
+                if (goal.isPaused) Chip(labels["paused_chip"].orEmpty(), quiet = true)
+                if (goal.isCompleted) AccentChip(if (goal.isReached) tr("Behaald") else tr("Afgelopen"), accent)
             }
         }
+    }
 
-        // .goal-hero__chips — 16 above even when it holds nothing, as on the website.
-        FlowRow(
-            Modifier.fillMaxWidth().padding(top = Ownify.Space4),
-            horizontalArrangement = Arrangement.spacedBy(Ownify.Space2),
-            verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
-        ) {
-            if (goal.isPrimary) AccentChip(labels["primary_chip"].orEmpty(), accent)
-            if (goal.isPaused) Chip(labels["paused_chip"].orEmpty(), quiet = true)
-            if (goal.isCompleted) AccentChip(if (goal.isReached) tr("Behaald") else tr("Afgelopen"), accent)
-            Chip(goal.categoryLabel, muted = true)
-            goal.durationLabel?.let { Chip(it, muted = true) }
-        }
-
+    JCard(Modifier.fillMaxWidth().reveal().then(sight)) {
         // .goal-hero__figures: the percentage and the target on one baseline.
-        Row(Modifier.fillMaxWidth().padding(top = Ownify.Space5), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f).alignByBaseline()) {
                 T(
                     countUpText(goal.percent?.toString() ?: "—", play && !empty),

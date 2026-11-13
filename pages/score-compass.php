@@ -66,10 +66,9 @@ $comparison  = $compass['comparison'];
                         </div>
                     </div>
 
+                    <?php /* Overzicht's trend pill, in the same place (50.1). */ ?>
+                    <?php if ($compass['direction'] !== null) component('score-trend', ['direction' => $compass['direction']]); ?>
                     <h1 class="score-ring__label" id="compass-title"><?= e($compass['title']) ?></h1>
-                    <?php if ($compass['direction'] !== null): ?>
-                        <?php component('score-direction', ['direction' => $compass['direction']]); ?>
-                    <?php endif; ?>
                     <p class="card__lede"><?= e($compass['lede']) ?></p>
                 </section>
 

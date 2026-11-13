@@ -133,19 +133,15 @@ if (!function_exists('ch_avatar')) {
     }
 
     /**
-     * Nieuwe uitdaging and Code invoeren side by side: two glass tiles of
-     * the same size, told apart by their mark — a solid tile for making
-     * one, an outlined one for joining with a code.
+     * Nieuwe uitdaging | Code invoeren: one split (50.1, docs/THEME.md),
+     * two equal choices in the full ink, each with its mark — a plus for
+     * making one, a hash for joining with a code.
      */
     function ch_actions(array $page): string
     {
-        return '<div class="ch-acts">'
-            . '<button type="button" class="ch-act press" data-challenge-create>'
-            . '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon('plus') . '</span>'
-            . '<span class="ch-act__label">' . e($page['create']) . '</span></button>'
-            . '<button type="button" class="ch-act ch-act--code press" data-challenge-join>'
-            . '<span class="icon-tile icon-tile--solid icon-tile--neutral" aria-hidden="true">' . icon('hash') . '</span>'
-            . '<span class="ch-act__label">' . e($page['join']) . '</span></button>'
+        return '<div class="split ch-acts" role="group">'
+            . '<button type="button" class="split__part" data-challenge-create>' . icon('plus') . '<span>' . e($page['create']) . '</span></button>'
+            . '<button type="button" class="split__part" data-challenge-join>' . icon('hash') . '<span>' . e($page['join']) . '</span></button>'
             . '</div>';
     }
 

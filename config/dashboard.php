@@ -136,11 +136,11 @@ return [
         'cta'         => ['label' => 'Doel instellen', 'enabled' => true, 'note' => ''],
         /* `at`: where each stop sits on the bar, in percent, and the progress
            at which it is reached — the same number, so a dot lights as the
-           fill passes it. */
+           fill passes it. Three stops (50.1: Bijna at 85 is gone, its word
+           crowded Doel's). */
         'milestones'  => [
             ['label' => 'Start',      'at' => 0,   'reached' => false],
             ['label' => 'Halverwege', 'at' => 50,  'reached' => false],
-            ['label' => 'Bijna',      'at' => 85,  'reached' => false],
             ['label' => 'Doel',       'at' => 100, 'reached' => false],
         ],
         /* What the bar says when you point at it or hold it: "85 kg van

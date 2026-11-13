@@ -287,6 +287,9 @@
    switching never moves what is under it. */
 .chart__axis--rows,
 .compass-history .chart__axis { height: 2.4em; }
+/* 50.1: a heart chart only ever shows times, one row, so it keeps no room
+   for a second (it left a blank line between the times and the zones). */
+.heart-chart .chart__axis { height: 1.2em; }
 .chart__tick-month { display: block; }
 
 /* The reading: the date, then each category that had a score that day —

@@ -105,9 +105,9 @@ invitations wait (or "Nog niets bezig"), the invitations with Bekijken, the
 challenge that ends first on top of a stack of up to two more (each opening
 its own page) — since 30.0 in the green Note (`--health-wash`, `--health-edge`;
 `Modifier.note()` on Android), the cards behind it showing only their foot —
-or the empty target; then Nieuwe uitdaging and Code invoeren
-as two glass tiles side by side, each with the same solid neutral mark (a
-plus, a hash) since 29.2. The cards' marks are solid white on the neutral
+or the empty target; then Nieuwe uitdaging | Code invoeren as one split
+(50.1; before, two glass tiles), two equal choices in the full ink, each with
+its mark (a plus, a hash). The cards' marks are solid white on the neutral
 grey, as Overzicht's: the podium bars for Ranglijst, an archery target for
 Uitdagingen.
 
