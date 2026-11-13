@@ -195,8 +195,9 @@ function views(array $who): array
     foreach ($m as [, $id, $priority]) {
         $article = substr($page, strpos($page, 'data-goal-detail="' . $id . '"'));
         $article = substr($article, 0, (int) strpos($article, '</article>'));
-        preg_match('/data-goal-action="set-primary"\s+aria-pressed="(\w+)"/', $article, $p);
-        preg_match('/data-goal-action="set-secondary"\s+aria-pressed="(\w+)"/', $article, $s);
+        /* A radio group since 50.0 (A14): the chosen half is aria-checked. */
+        preg_match('/data-goal-action="set-primary"\s+role="radio"\s+aria-checked="(\w+)"/', $article, $p);
+        preg_match('/data-goal-action="set-secondary"\s+role="radio"\s+aria-checked="(\w+)"/', $article, $s);
         $details[$names[$id] ?? $id] = $priority . ($p[1] ?? '?') === $priority . 'true' ? 'Primair' : (($s[1] ?? '') === 'true' ? 'Secundair' : '?');
     }
 

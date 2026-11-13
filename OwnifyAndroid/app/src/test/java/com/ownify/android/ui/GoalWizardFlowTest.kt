@@ -2,6 +2,10 @@ package com.ownify.android.ui
 
 import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
+import android.os.SystemClock
+import android.view.MotionEvent
+import android.view.WindowManager
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -18,7 +22,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
@@ -41,6 +47,7 @@ import com.ownify.android.ui.app.OwnifyApp
 import com.ownify.android.ui.design.LocalStillMotion
 import com.ownify.android.ui.screens.OwnifyScreens
 import com.ownify.android.ui.screens.goals.GoalBoard
+import com.ownify.android.ui.screens.goals.dateText
 import com.ownify.android.ui.screens.goals.durationEnd
 import com.ownify.android.ui.screens.goals.goalNumber
 import com.ownify.android.ui.screens.goals.periodAsks
@@ -60,6 +67,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowWindowManagerImpl
 
 /**
  * Nieuw doel in the app (GoalWizard.kt), against a server on localhost: the
@@ -130,9 +139,28 @@ class GoalWizardFlowTest {
 
     private fun button(text: String): SemanticsNodeInteraction = compose.onAllNodes(hasText(text) and hasClickAction()).onLast().inView()
 
-    /** Scrolled into the step's view first, where it scrolls at all. */
+    /**
+     * Scrolled into the step's view first, where something scrolls it. Not
+     * the wizard's foot or the tab bar, which nothing scrolls: there
+     * performScrollTo fails, and every failure writes out the whole app's
+     * semantics — minutes, and a test that times out instead of saying
+     * what went wrong (50.0, Phase 5).
+     */
     private fun SemanticsNodeInteraction.inView(): SemanticsNodeInteraction {
-        try { performScrollTo() } catch (_: Throwable) { }
+        val node = try { fetchSemanticsNode() } catch (_: Throwable) { return this }
+        // Already on the screen: nothing to scroll (and on step three an
+        // animated scroll to the end does not settle under Robolectric).
+        var top = node
+        while (top.parent != null) top = top.parent!!
+        if (node.boundsInRoot.top >= 0f && node.boundsInRoot.bottom <= top.size.height) return this
+        var parent = node.parent
+        while (parent != null) {
+            if (parent.config.contains(SemanticsActions.ScrollBy)) {
+                try { performScrollTo() } catch (_: Throwable) { }
+                break
+            }
+            parent = parent.parent
+        }
         return this
     }
 
@@ -144,18 +172,65 @@ class GoalWizardFlowTest {
     private fun described(words: String): SemanticsNodeInteraction =
         compose.onAllNodes(hasContentDescription(words, substring = true) and hasClickAction()).onLast().inView()
 
+    /**
+     * A text field is typed into. A number field is a wheel since 48.0, with
+     * no keyboard: it takes an exact figure the way TalkBack hands it one
+     * (setText) — as the challenge tests set theirs. Typing would first
+     * focus it, which no tap does: a focused wheel on a scrolled page is a
+     * state only the test harness reaches, and there it stops every later
+     * tap from landing.
+     */
     private fun type(label: String, text: String) {
         val field = compose.onNode(hasContentDescription(label) and hasSetTextAction()).inView()
-        field.performTextClearance()
-        field.performTextInput(text)
+        if (field.fetchSemanticsNode().config.getOrNull(SemanticsProperties.EditableText) != null) {
+            field.performTextClearance()
+            field.performTextInput(text)
+        } else {
+            field.performTextReplacement(text)
+        }
         compose.waitForIdle()
     }
 
     private fun shows(text: String) = compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
 
-    private fun fieldText(label: String): String =
-        compose.onNode(hasContentDescription(label) and hasSetTextAction()).fetchSemanticsNode()
-            .config.getOrNull(SemanticsProperties.EditableText)?.text.orEmpty()
+    /**
+     * A choice on a list's wheel (48.0, Wheel.kt): the field opens the
+     * wheel, a tap on a row turns it there, and the choice is made when the
+     * wheel closes — a tap outside it, as a finger does: on the popup's own
+     * window, which is what closes it (a touch sent to its content would
+     * land inside). The website's wheel chooses the same way.
+     */
+    private fun choose(field: String, option: String) {
+        described(field).performClick()
+        compose.waitForIdle()
+        tap(option)
+        val windows: List<android.view.View> =
+            Shadow.extract<ShadowWindowManagerImpl>(context.getSystemService(WindowManager::class.java)).views
+        val wheel = windows.last { it.javaClass.name.contains("Popup") }
+        val at = SystemClock.uptimeMillis()
+        wheel.dispatchTouchEvent(MotionEvent.obtain(at, at, MotionEvent.ACTION_DOWN, -20f, -20f, 0))
+        wheel.dispatchTouchEvent(MotionEvent.obtain(at, at + 50, MotionEvent.ACTION_UP, -20f, -20f, 0))
+        compose.waitForIdle()
+    }
+
+    /** What a node says to TalkBack — the end date's half: "Einde: 12 feb 2027". */
+    private fun said(words: String): String =
+        compose.onAllNodes(hasContentDescription(words, substring = true)).fetchSemanticsNodes()
+            .joinToString(" / ") { it.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString().orEmpty() }
+
+    private fun chosen(words: String): Boolean? =
+        compose.onNode(hasText(words) and hasClickAction()).fetchSemanticsNode().config.getOrNull(SemanticsProperties.Selected)
+
+    /**
+     * What a field holds: a text field's text, or — every number field is a
+     * wheel since 48.0 (WheelField), which has no editable text — what it
+     * shows, its state description (the placeholder while it is empty).
+     */
+    private fun fieldText(label: String): String {
+        val config = compose.onNode(hasContentDescription(label) and hasSetTextAction()).fetchSemanticsNode().config
+        return config.getOrNull(SemanticsProperties.EditableText)?.text
+            ?: config.getOrNull(SemanticsProperties.StateDescription).orEmpty()
+    }
 
     private fun form(request: FakeOwnifyServer.Request): Map<String, String> =
         request.body.optString("form").split('&').filter { it.contains('=') }.associate {
@@ -219,9 +294,9 @@ class GoalWizardFlowTest {
         assertTrue(shows("Elke dag minstens 8.000 stappen"))
         assertTrue(shows("Automatisch, uit je eigen gegevens"))
 
-        // Doel aanmaken, twice in a row: one goal.
-        button("Doel aanmaken").performClick()
-        button("Doel aanmaken").performClick()
+        // Doel aanmaken, twice in a row — a double tap on the one button, the
+        // second before it says it is saving: one goal.
+        button("Doel aanmaken").performTouchInput { click(); advanceEventTime(60); click() }
         compose.waitUntil(10_000) { server.requestsTo("create.php").isNotEmpty() && GoalBoard.reveal != null }
         val sent = server.requestsTo("create.php")
         assertEquals("one request, one goal", 1, sent.size)
@@ -256,6 +331,9 @@ class GoalWizardFlowTest {
         button("Volgende").assertIsNotEnabled()
         type("Startwaarde", "82,4")
         button("Volgende").assertIsEnabled()
+        // Not the placeholder's 75 kg: an empty wheel shows its placeholder, so a kept
+        // figure must differ from it to be told apart (48.0: every number is a wheel).
+        type("Doelwaarde", "70")
 
         // Lower is better was chosen for Gewicht (50.0: the words side by side in a segmented control).
         fun way(words: String) = compose.onNode(hasText(words) and hasClickAction()).inView()
@@ -269,23 +347,21 @@ class GoalWizardFlowTest {
         compose.waitForIdle()
         assertEquals(true, chosen("Lager is beter"))
 
-        // The unit: kg to lb — what was typed keeps its meaning.
-        described("Eenheid").performClick()
-        compose.waitForIdle()
-        tap("lb")
-        assertEquals("165,3", fieldText("Doelwaarde"))
+        // The unit: kg to lb on its wheel — what was typed keeps its meaning.
+        choose("Eenheid", "lb")
+        assertEquals("154,3", fieldText("Doelwaarde"))
         assertEquals("181,7", fieldText("Startwaarde"))
 
         tap("Volgende")
         waitFor("Klopt alles?")
-        assertTrue(shows("165,3 lb"))
+        assertTrue(shows("154,3 lb"))
         assertTrue(shows("Handmatig, op de pagina van je doel"))
         tap("Doel aanmaken")
         compose.waitUntil(10_000) { server.requestsTo("create.php").isNotEmpty() }
         val goal = form(server.requestsTo("create.php").single())
         assertEquals("milestone", goal["type"])
         assertEquals("lb", goal["unit"])
-        assertEquals("165,3", goal["target_value"])
+        assertEquals("154,3", goal["target_value"])
         assertEquals("181,7", goal["baseline_value"])
         assertEquals("decrease", goal["direction"])
     }
@@ -316,16 +392,23 @@ class GoalWizardFlowTest {
         type("Naam", "Mijn stappen")
         tap("Optellen")
         tap("Volgende")
-        type("Totaal", "200000")
+        // Not the placeholder's 200.000: an empty wheel shows its placeholder.
+        type("Totaal", "250000")
+        tap("3 maanden")
+        val end = said("Einde:")
+        assertEquals("three months on", "Einde: " + dateText(LocalDate.now().plusMonths(3).minusDays(1)), end)
         described("Terug").performClick()
         compose.waitForIdle()
         assertEquals("Mijn stappen", fieldText("Naam"))
+        assertEquals("Optellen is still the type", true, chosen("Optellen"))
         described("Terug").performClick()
         compose.waitForIdle()
         button("Volgende").assertIsEnabled()      // Stappen is still chosen
+        assertEquals("Stappen is still the measurement", true, chosen("Stappen"))
         tap("Volgende")
         tap("Volgende")
-        assertEquals("200000", fieldText("Totaal"))
+        assertEquals("250000", fieldText("Totaal"))
+        assertEquals("the looptijd is kept", end, said("Einde:"))
         described("Terug").performClick()
         described("Terug").performClick()
         described("Terug").performClick()
@@ -346,9 +429,8 @@ class GoalWizardFlowTest {
         assertTrue(shows("trainingen") && shows("per"))
         tap("1 week")
         button("Volgende").assertIsEnabled()
-        described("Periode").performClick()
-        compose.waitForIdle()
-        tap("maand")
+        choose("Periode: week", "maand")
+        assertEquals("Periode: maand", said("Periode:"))
         // A month asked of one week: 3 × 7/30 rounds to 1 — still something.
         button("Volgende").assertIsEnabled()
         type("Aantal keer", "1")
