@@ -562,7 +562,7 @@
 /* Primair | Secundair: the shared segmented switch, full width. */
 .goal-priority { margin-bottom: var(--space-1); }
 
-.goal-priority .range-switch__option:disabled { opacity: 0.45; cursor: default; }
+.goal-priority .range-switch__option:disabled { color: var(--text-muted); cursor: default; }
 
 .goal-priority__note { margin: 0 0 var(--space-1); padding-inline: var(--space-1); color: var(--text-muted); }
 
@@ -1445,7 +1445,8 @@
 
 .goal-type[aria-checked="true"] .goal-type__example { color: var(--text-secondary); }
 
-.goal-type:disabled { opacity: 0.55; cursor: default; }
+.goal-type:disabled { color: var(--text-muted); cursor: default; }
+.goal-type:disabled .goal-type__example { color: var(--text-muted); }
 .goal-type:disabled.press:active { transform: none; }
 
 /* ---------------------------------------------------------- 3 · instellen */
@@ -1622,13 +1623,7 @@
 .goal-wizard__foot[hidden] { display: none; }
 .goal-wizard__foot .wizard__error { margin: 0 0 var(--space-3); text-align: center; }
 
-.goal-wizard__nav {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.goal-wizard__next { flex: 1; }
+/* .goal-wizard__nav is a .split.split--go (components.css): Terug | Volgende. */
 
 .goal-wizard__spinner {
     display: none;

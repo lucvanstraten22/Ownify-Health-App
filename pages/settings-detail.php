@@ -420,7 +420,7 @@ foreach ($page['blocks'] as $block) {
                                         <div class="settings-action__confirm" data-setting-action-confirm hidden>
                                             <p class="settings-action__question"><?= e($item['question']) ?></p>
                                             <div class="settings-action__buttons split<?= !empty($item['danger']) ? ' split--caution' : '' ?>" role="group">
-                                                <button type="button" class="split__part" data-setting-action-no><?= e($item['cancel']) ?></button>
+                                                <button type="button" class="split__part split__part--back" data-setting-action-no><?= e($item['cancel']) ?></button>
                                                 <button type="button" class="split__part settings-action__yes" data-setting-action-yes><?= e($item['confirm']) ?></button>
                                             </div>
                                         </div>

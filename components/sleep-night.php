@@ -66,10 +66,10 @@ $stages  = $night['stages'] ?? [];
 
                 <?php /* The night: older to the left, newer to the right. */ ?>
                 <div class="heart-chart__day" data-day-swipe data-gesture-own>
-                    <button type="button" class="heart-chart__step press" data-day-step="1"
+                    <button type="button" class="glass glass--round glass--small heart-chart__step press" data-day-step="1"
                             aria-label="<?= e($night['prev']) ?>"<?= $i === $last ? ' disabled' : '' ?>><?= icon('chevron-left', 'heart-chart__step-icon') ?></button>
                     <p class="heart-chart__date"><?= e($one['heading']) ?></p>
-                    <button type="button" class="heart-chart__step press" data-day-step="-1"
+                    <button type="button" class="glass glass--round glass--small heart-chart__step press" data-day-step="-1"
                             aria-label="<?= e($night['next']) ?>"<?= $i === 0 ? ' disabled' : '' ?>><?= icon('chevron-right', 'heart-chart__step-icon') ?></button>
                 </div>
 

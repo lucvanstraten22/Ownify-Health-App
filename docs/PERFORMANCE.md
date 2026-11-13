@@ -99,6 +99,13 @@ update 104 → 3 ms; the axis scan 81 → 1.8 ms.
 `includes/health-totals.php` itself (`health_totals_rule()`), and the file
 changed, so every account's kept totals are worked out again on its first
 page — as after any change to that file. The totals come out the same.
+Measured on a copy whose kept totals the old code wrote: the first render
+gave all 985 kept days of the account that has them a new fingerprint, every
+total identical (985 of 985, no row added or lost), in 1.1 s once; the next
+renders left the table byte for byte the same and wrote nothing but their
+usual one or two rows. A kept day that the first page does not read (a long
+goal's earlier months) is worked out the first time something reads it —
+again once.
 
 Left as it is, on purpose:
 
@@ -109,6 +116,19 @@ Left as it is, on purpose:
 - **The Overzicht arrival** (about 1.1 s of main-thread work in the first
   2.5 s: the ring's glow, the halo, the count-up; 13 layouts with reduced
   motion, 162 without): it is the approved motion design (B12), not waste.
+  Looked into in Phase 6 (a trace of the first 2.5 s, three runs each):
+  with motion the main thread is busy 2.4–2.6 s against 0.8–0.9 s with
+  reduced motion, and the difference is not paint or script but the frames
+  themselves — some 150 frames of the ring, the halo and the count-up, each
+  committing the page's layers (Commit ≈ 990 ms against 39), with the hit
+  test and the intersection checks that follow every changed layout
+  (≈ 185 and 150 ms). Switched off one at a time, nothing paid: the AI
+  sheet's endless sky and the handle's hint (no change), keeping the pages
+  out of view out of rendering (no change), and watching only Overzicht's
+  425 `.reveal` blocks (intersection 152 → 73 ms, the total no lower; runs
+  of the same page differ by ±300 ms). Headless Chromium here has no GPU, so
+  the commit is mostly this machine's. No change was made: none of them
+  shows a benefit that can be measured.
 - **The page's size** (2.1 MB of HTML, 198 KB gzipped; a third of it
   indentation, 336 KB inline icons): compressed by the web server, and
   changing how it is written touches every template.

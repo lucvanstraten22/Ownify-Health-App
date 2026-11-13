@@ -38,6 +38,7 @@
     --device-edge-hi: #A9A6A2;          /* titanium, lit */
     --device-edge-lo: #4B4946;          /* titanium, in shade */
     --device-black: #050505;            /* bezel, island, buttons' shade */
+    --device-rim: rgba(255, 255, 255, 0.06); /* the glass's edge inside the bezel */
     --device-ink-on-dark: #FFFFFF;      /* status bar over a dark page */
     --device-ink-on-light: #000000;     /* status bar over a light page */
     --sim-k: 1;                         /* the device's scale, phone-sim.js */
@@ -85,7 +86,7 @@
     padding: 12px;
     border-radius: 67px;
     background: var(--device-black);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 1px var(--device-rim);
 }
 
 .phone-sim__screen {

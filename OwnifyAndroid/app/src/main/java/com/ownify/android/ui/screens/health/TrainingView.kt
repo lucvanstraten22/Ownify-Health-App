@@ -319,7 +319,7 @@ internal fun DayRow(title: String, prev: String, next: String, day: Int, last: I
     }
 }
 
-/** `.heart-chart__step`: a round arrow, dimmed at either end. */
+/** `.heart-chart__step`: the small round Liquid Glass arrow, muted at either end. */
 @Composable
 private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
@@ -327,14 +327,14 @@ private fun StepButton(icon: androidx.compose.ui.graphics.vector.ImageVector, la
         Box(
             Modifier
                 .size(34.dp)
-                .alpha(if (enabled) 1f else 0.35f)
                 .press(interaction, enabled = enabled)
                 .glass(CircleShape)
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClickLabel = label, onClick = onClick)
                 .semantics { contentDescription = label },
             contentAlignment = Alignment.Center
         ) {
-            JIcon(icon, size = 16.dp, color = Ownify.TextSecondary)
+            // At either end: the muted glass (50.0, 6A), the arrow in the muted ink — nothing faded.
+            JIcon(icon, size = 16.dp, color = if (enabled) Ownify.TextSecondary else Ownify.TextMuted)
         }
     }
 }

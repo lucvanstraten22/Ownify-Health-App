@@ -36,7 +36,7 @@ declare(strict_types=1);
         <p class="field-editor__error" role="alert" data-editor-error hidden></p>
 
         <div class="confirm__row split" role="group">
-            <button type="button" class="split__part" data-editor-close><?= e(t('Annuleren')) ?></button>
+            <button type="button" class="split__part split__part--back" data-editor-close><?= e(t('Annuleren')) ?></button>
             <button type="submit" class="split__part" data-editor-save><?= e(t('Opslaan')) ?></button>
         </div>
 

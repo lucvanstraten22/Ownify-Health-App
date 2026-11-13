@@ -206,7 +206,7 @@ class OwnifyAppFlowTest {
         field("Gebruikersnaam").performTextInput("nieuw")
         field("E-mailadres").performTextInput("nieuw@example.com")
         field("Wachtwoord").performTextInput("lang-genoeg-wachtwoord")
-        button("Account aanmaken").performScrollTo().performClick()
+        button("Account aanmaken").onScreen().performClick()
 
         waitForPages()
         assertEquals(OwnifyCredential(ACCOUNT_TOKEN, OwnifyScope.ACCOUNT), MemoryTokenStorage.load())
@@ -476,10 +476,11 @@ class OwnifyAppFlowTest {
         compose.onNode(hasContentDescription("Terug naar Gezondheid") and hasClickAction()).performClick()
         compose.waitUntil(5_000) { compose.onAllNodes(hasContentDescription("Voeding —", substring = true)).fetchSemanticsNodes().isNotEmpty() }
 
+        // The account popup as a list since 50.0 (B5): you, Vrienden, Uitloggen.
         compose.onNode(hasContentDescription("Account en profiel openen", substring = true)).performClick()
-        waitFor("Lid sinds")
+        waitFor("Uitloggen")
         compose.onNode(hasContentDescription("Sluiten") and hasClickAction()).performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithText("Lid sinds", substring = true).fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Uitloggen", substring = true).fetchSemanticsNodes().isEmpty() }
 
         compose.onNode(hasContentDescription("OwnifyAI openen", substring = true)).performClick()
         waitFor("OwnifyAI gebruiken?")
@@ -607,7 +608,7 @@ class OwnifyAppFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithText("Elke nacht minstens 7 uur").fetchSemanticsNodes().isEmpty() }
 
         button("Zelf een doel instellen").performClick()
-        waitFor("Waar gaat je doel over?")
+        waitFor("Wat wil je bijhouden?")      // the goal wizard's first step since 22.0
         assertTrue(server.requestsTo("create.php").isEmpty())
     }
 
@@ -727,9 +728,9 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("Dagcijfer 7,3")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Tik of schuif over de lijn om je score te bekijken.")).performScrollTo().assertIsDisplayed()
         // Another period: its own sentences, the same score's history.
-        compose.onNode(hasText("30 dagen") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("30 dagen") and hasClickAction()).onScreen().performClick()
         compose.onNode(hasText("Je score daalde van gemiddeld 71 in de week van 7 september naar 69 in de afgelopen week.")).performScrollTo().assertIsDisplayed()
-        compose.onNode(hasText("1 jaar") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("1 jaar") and hasClickAction()).onScreen().performClick()
         compose.onNode(hasText("Je geschiedenis begint op 23 augustus.")).performScrollTo().assertIsDisplayed()
         // A screen reader steps through the points as the arrow keys do: the panel follows — a
         // month of the year as its days' mean, without parts.
@@ -737,7 +738,7 @@ class OwnifyAppFlowTest {
         compose.onNode(hasText("23 aug – 22 sep")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("maandgemiddelde")).assertIsDisplayed()
         // A day of the week: its categories and their parts.
-        compose.onNode(hasText("7 dagen") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("7 dagen") and hasClickAction()).onScreen().performClick()
         repeat(2) { customAction(hasContentDescription("Je Gezondheidsscore per dag, de afgelopen 7 dagen", substring = true), "Vorige dag") }
         compose.onNode(hasText("5 oktober")).performScrollTo().assertIsDisplayed()
         compose.onNode(hasText("Slaapduur 68 · Regelmaat 57 · Kwaliteit 66")).performScrollTo().assertIsDisplayed()
@@ -779,7 +780,7 @@ class OwnifyAppFlowTest {
 
         // Each opens its own page, never the Scorekompas behind it.
         for (label in listOf("Slaap", "Voeding", "Training")) {
-            compose.onNode(hasContentDescription("$label:", substring = true) and hasClickAction()).performScrollTo().performClick()
+            compose.onNode(hasContentDescription("$label:", substring = true) and hasClickAction()).onScreen().performClick()
             compose.waitUntil(5_000) { compose.onAllNodes(hasText(label) and isHeading()).fetchSemanticsNodes().isNotEmpty() }
             compose.onAllNodes(hasText("Gezondheidsscore") and isHeading()).assertCountEquals(0)
             compose.onAllNodes(hasContentDescription("Terug", substring = true) and hasClickAction()).onFirst().performClick()
@@ -1188,7 +1189,10 @@ class OwnifyAppFlowTest {
         show()
         waitForPages()
 
-        val bar = compose.onNode(hasContentDescription("0% — 0 dagen van 14 dagen op rij"), useUnmergedTree = true)
+        // The demo's primary goal, as the state has it (not a copy of one that was there once).
+        val primary = JSONObject(server.stateBody).getJSONObject("data").getJSONObject("goal")
+        val said = primary.getInt("progress").toString() + "% — " + primary.getString("reading")
+        val bar = compose.onNode(hasContentDescription(said), useUnmergedTree = true)
         bar.performScrollTo()
         compose.waitForIdle()
         val track = bar.fetchSemanticsNode().boundsInRoot
@@ -1201,7 +1205,7 @@ class OwnifyAppFlowTest {
 
         // The line that said it under the bar is gone; the reading is on the bar, and only when asked.
         val reading = hasTestTag(com.ownify.android.ui.screens.overview.GoalReadingTag)
-        assertTrue(compose.onAllNodesWithText("0 dagen van 14 dagen op rij", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText(primary.getString("reading"), substring = true).fetchSemanticsNodes().isEmpty())
         assertTrue(compose.onAllNodes(reading, useUnmergedTree = true).fetchSemanticsNodes().isEmpty())
 
         // A tap: nothing.

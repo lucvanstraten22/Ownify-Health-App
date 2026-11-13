@@ -179,13 +179,11 @@ $titles    = ['login' => $data['welcome']['login'], 'register' => $data['welcome
                         <p class="account__hint"><?= e(t('3 tot 30 tekens: letters, cijfers, punt, streepje of underscore.')) ?></p>
                     </div>
 
-                    <?php /* The way back and the way forward side by side (50.0), as
-                             the goal wizard has them: the round back button
-                             cancels (its own form below), the wide one goes on. */ ?>
-                    <div class="account__nav-pair">
-                        <button type="submit" form="account-google-cancel" class="glass glass--round press"
-                                aria-label="<?= e(t('Annuleren')) ?>"><?= icon('chevron-left') ?></button>
-                        <button type="submit" class="btn btn--primary account__submit press"><?= e(t('Account aanmaken')) ?></button>
+                    <?php /* The way back and the way forward: one split (50.0), as the
+                             goal wizard's. Annuleren cancels (its own form below). */ ?>
+                    <div class="account__nav-pair split split--go" role="group">
+                        <button type="submit" form="account-google-cancel" class="split__part split__part--back"><?= e(t('Annuleren')) ?></button>
+                        <button type="submit" class="split__part"><?= e(t('Account aanmaken')) ?></button>
                     </div>
                 </form>
 

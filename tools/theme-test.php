@@ -221,9 +221,11 @@ check('Dark multipliers are all 1', array_unique(array_map(static fn (string $k)
 /* Outside the token blocks — the two themes, and Extra contrast's twins of
    the more-contrast block (19.0) — nobody writes a white, a black or the
    ground's greys as a colour of their own: they are roles. A mask is not a
-   colour: only its alpha counts, and it is never painted. */
+   colour: only its alpha counts, and it is never painted. The iPhone around
+   the website on a wide screen has a phone's colours, not Ownify's: named
+   once as --device-* (phone-sim.css) and only there. */
 $tokenBlocks = '/:root(\[data-contrast="more"\])?(\[data-theme="light"\])? \{.*?\n\}/s';
-$masks       = '/^\s*(-webkit-)?mask(-image)?\s*:.*$/m';
+$masks       = '/^\s*((-webkit-)?mask(-image)?|--device-[a-z-]+)\s*:.*$/m';
 $literal     = '/rgba\(\s*(255\s*,\s*255\s*,\s*255|0\s*,\s*0\s*,\s*0|48\s*,\s*45\s*,\s*47|30\s*,\s*28\s*,\s*29)\s*,\s*[0-9.]+\s*\)/';
 foreach (glob($root . '/assets/css/*.css') ?: [] as $file) {
     $text  = (string) file_get_contents($file);

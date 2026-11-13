@@ -226,14 +226,14 @@ private fun DeleteLink(label: String, enabled: Boolean, onClick: () -> Unit) {
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val pressed by interaction.collectIsPressedAsState()
-        val color by animateColorAsState(if (pressed) Ownify.TextSecondary else Ownify.TextMuted, tween(Ownify.FastMs, easing = Ownify.Ease), label = "delete")
+        // The quiet link (`.settings-delete` = `.quiet-link`, 50.0); pressed the full ink, off the muted ink.
+        val color by animateColorAsState(if (!enabled) Ownify.TextMuted else if (pressed) Ownify.TextPrimary else Ownify.TextSecondary, tween(Ownify.FastMs, easing = Ownify.Ease), label = "delete")
         T(
             label,
-            OwnifyType.style(Ownify.FsSubhead, color = color).copy(textDecoration = if (enabled) TextDecoration.Underline else TextDecoration.None),
+            com.ownify.android.ui.screens.account.quietLinkStyle(enabled).copy(color = color),
             Modifier
                 .padding(top = Ownify.Space2)
                 .press(interaction, enabled = enabled)
-                .alpha(if (enabled) 1f else 0.45f)
                 .clip(RoundedCornerShape(50))
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space2)

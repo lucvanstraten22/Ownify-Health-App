@@ -46,10 +46,14 @@
     border: 0;
     border-radius: var(--radius-pill);
     background: transparent;
-    color: var(--text-secondary);
-    font-size: var(--fs-caption);
+    /* The quiet link (.quiet-link, 50.0: one of the two links). */
+    font-size: var(--fs-subhead);
+    font-weight: 400;
     letter-spacing: var(--tracking-small);
-    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-decoration-color: rgba(var(--ink), 0.35);
+    text-underline-offset: 3px;
     transition: color var(--transition-fast);
 }
 
@@ -400,14 +404,8 @@
     color: var(--text-muted);
 }
 
-.setup-suggestion__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-}
-
-.setup-suggestion__actions .setup__primary { flex: 0 0 auto; padding-inline: var(--space-5); }
+/* Liever niet | Toevoegen: a .split.split--go (components.css). */
+.setup-suggestion__actions { margin-top: var(--space-4); }
 
 .setup__own {
     gap: var(--space-2);
@@ -424,24 +422,15 @@
    The way on — the goal wizard's footer
    -------------------------------------------------------------------------- */
 .setup__foot {
-    display: flex;
-    gap: var(--space-2);
     margin-top: var(--space-6);
     padding-top: var(--space-4);
     border-top: 1px solid var(--glass-hairline);
 }
 
-.setup__foot [hidden] { display: none; }
-
-.setup__back,
-.setup__skip { flex: 0 0 auto; }
-
-.setup__primary {
-    flex: 1;
-    min-height: 48px;
-}
-
-.setup__foot .btn { min-height: 48px; }
+/* Terug | Overslaan | the way forward: one .split.split--go, the parts the
+   step does not have hidden; at the footer's own 48. */
+.setup__actions.split,
+.setup__actions .split__part { min-height: 48px; }
 
 /* --------------------------------------------------------------------------
    Very small phones
@@ -451,12 +440,6 @@
     .setup-source { padding: var(--space-3); }
     .setup-suggestion { padding: var(--space-3); }
 
-    /* Three ways on (Over jou) do not fit one row here: the primary takes a
-       row of its own, on top, and Terug and Overslaan share the one below. */
-    .setup__foot:has(.setup__skip:not([hidden])) { flex-wrap: wrap; }
-    .setup__foot:has(.setup__skip:not([hidden])) .setup__primary { flex-basis: 100%; order: -1; }
-    .setup__foot:has(.setup__skip:not([hidden])) .setup__back,
-    .setup__foot:has(.setup__skip:not([hidden])) .setup__skip { flex: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

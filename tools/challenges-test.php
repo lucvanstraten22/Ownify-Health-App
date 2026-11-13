@@ -506,8 +506,13 @@ try {
     check('an invitation: who sent it, and what to review', ($invite['inviter']['name'] ?? null) === $daan['username']
         && $invite['review']['by'] === $daan['username'] . ' nodigt je uit' && $invite['review']['invited'] === true);
     check('the summary line', $all['summary'] === count($all['running']) . ' bezig · 1 uitnodiging', $all['summary']);
-    check('what Nieuwe uitdaging needs: five metrics, three lengths, two starts', count($all['metrics']) === 5
-        && count($all['lengths']) === 3 && count($all['from']) === 2 && $all['from'][1]['label'] !== '');
+    /* 49.1 offered fourteen; 49.3–49.5 made three of them one each (Uren
+       slaap, Water, Stappen with the group's own number): eleven. Before
+       migration 031 only those of the first five that are still offered. */
+    $eleven = ['workouts', 'steps', 'active_minutes', 'distance', 'active_energy', 'floors', 'workout_minutes', 'sleep_hours', 'water', 'protein', 'fibre'];
+    $offered = challenge_metrics_ready() ? $eleven : array_values(array_intersect($eleven, CHALLENGE_FIRST_METRICS));
+    check('what Nieuwe uitdaging needs: the metrics it offers, three lengths, two starts', array_column($all['metrics'], 'key') === $offered
+        && count($all['lengths']) === 3 && count($all['from']) === 2 && $all['from'][1]['label'] !== '', implode(',', array_column($all['metrics'], 'key')));
     check('friends to invite, and who of them is not in a challenge yet', count($all['friends']) === 2
         && array_column(view_of($steps['id'], $lotte)['invitable'], 'name') === [$mila['username']]);
     check('a person carries nothing but their public fields', array_keys($all['running'][0]['people'][0]) === [

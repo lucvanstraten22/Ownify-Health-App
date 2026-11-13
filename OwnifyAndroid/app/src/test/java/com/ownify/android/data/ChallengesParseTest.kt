@@ -98,8 +98,12 @@ class ChallengesParseTest {
     }
 
     @Test
-    fun `Nieuwe uitdaging - five metrics, three lengths, two starts, and your friends with their ids`() {
-        assertEquals(listOf("workouts", "steps", "active_minutes", "distance", "sleep_nights"), challenges.metrics.map { it.key })
+    fun `Nieuwe uitdaging - its eleven metrics, three lengths, two starts, and your friends with their ids`() {
+        // 49.1 offered fourteen; 49.3–49.5 made three of them one each: eleven (the server's, tools/challenges-test.php).
+        assertEquals(
+            listOf("workouts", "steps", "active_minutes", "distance", "active_energy", "floors", "workout_minutes", "sleep_hours", "water", "protein", "fibre"),
+            challenges.metrics.map { it.key }
+        )
         val km = challenges.metric("distance")!!
         assertEquals("%s km", km.many)
         assertEquals(25.0, km.step, 0.0)

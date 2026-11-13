@@ -147,21 +147,8 @@
     text-align: center;
 }
 
-.heart-chart__step {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid var(--glass-hairline);
-    border-radius: 50%;
-    background: rgba(var(--fill), calc(0.04 * var(--fill-k)));
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-
-.heart-chart__step:disabled { opacity: 0.35; cursor: default; }
-.heart-chart__step:focus { outline: none; }
-.heart-chart__step:focus-visible { outline: 2px solid var(--glass-border); outline-offset: 2px; }
+/* The day's arrows: the small round Liquid Glass (.glass--round.glass--small),
+   as Voeding's — off, the muted glass (50.0, the owner's 6A). */
 .heart-chart__step-icon { width: 16px; height: 16px; }
 
 /* The zones' own colours, wherever a zone is drawn or named. */

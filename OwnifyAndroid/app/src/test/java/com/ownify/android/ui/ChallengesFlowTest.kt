@@ -179,7 +179,7 @@ class ChallengesFlowTest {
         waitFor("Samen trainen")
         waitFor("Samen goed slapen")
 
-        compose.onAllNodes(hasText("Wie zet de meeste stappen?") and hasClickAction()).onLast().performScrollTo().performClick()
+        compose.onAllNodes(hasText("Wie zet de meeste stappen?") and hasClickAction()).onLast().onScreen().performClick()
         // 49.0: the wizard opens on step 1 with Stappen chosen; on through Wedstrijd to the review and the invitations.
         waitFor("Stap 1 van 3 · Wat")
         repeat(4) { button("Volgende").performClick(); compose.waitForIdle() }
@@ -246,7 +246,7 @@ class ChallengesFlowTest {
             .put("message", "Je uitdaging staat klaar").toString()
         community()
 
-        compose.onAllNodes(hasText("Nieuwe uitdaging") and hasClickAction()).onFirst().performScrollTo().performClick()
+        compose.onAllNodes(hasText("Nieuwe uitdaging") and hasClickAction()).inSight().performClick()
         waitFor("Stap 1 van 3 · Wat")
         waitFor("Wat tellen jullie?")
         button("Volgende").assertIsNotEnabled()
@@ -258,7 +258,7 @@ class ChallengesFlowTest {
         waitFor("Water")
         assertTrue("the search leaves the rest out", gone("Stappen"))
         compose.onNode(hasContentDescription("Zoek wat jullie tellen") and hasSetTextAction()).performTextReplacement("")
-        button("Stappen").performScrollTo().performClick()
+        button("Stappen").onScreen().performClick()
         button("Volgende").assertIsEnabled().performClick()
 
         waitFor("Stap 2 van 3 · Soort")
@@ -297,18 +297,22 @@ class ChallengesFlowTest {
         challenges()
 
         button("Nieuwe uitdaging").performClick()
-        button("Afstand").performScrollTo().performClick()
+        button("Afstand").onScreen().performClick()
         button("Volgende").performClick()
         waitFor("Samen 100 km in een week")
         button("Volgende").performClick()
         compose.onNode(hasContentDescription("Samen naar") and hasSetTextAction()).performTextReplacement("150")
-        // The goal wizard's dates: a looptijd, and the calendar for the start, then the end.
+        // The goal wizard's dates (50.0: Start | Einde on the wheel): a looptijd,
+        // then the start's wheel and the end's, each closed with its date kept.
         bubble("1 maand").performClick()
         compose.onAllNodes(hasClickAction() and hasContentDescription("Start", substring = true)).onFirst().performClick()
-        waitFor("Kies de startdatum")
-        button("Gereed").performClick()
-        waitFor("Kies de einddatum")
-        button("Gereed").performClick()
+        compose.waitForIdle()
+        closeWheel(context)
+        compose.waitForIdle()
+        compose.onAllNodes(hasClickAction() and hasContentDescription("Einde", substring = true)).onFirst().performClick()
+        compose.waitForIdle()
+        closeWheel(context)
+        compose.waitForIdle()
         waitFor("Stap 3 van 3 · Instellen")
         repeat(2) { button("Volgende").performClick(); compose.waitForIdle() }
         button("Uitdaging maken").performClick()
@@ -345,7 +349,7 @@ class ChallengesFlowTest {
         server.challengeReplies["respond.php"] = 200 to """{"ok":true,"message":"Je doet niet meer mee aan 100 trainingen in oktober"}"""
         challenges()
 
-        compose.onAllNodes(hasText("100 trainingen in oktober") and hasClickAction()).onLast().performScrollTo().performClick()
+        compose.onAllNodes(hasText("100 trainingen in oktober") and hasClickAction()).onLast().onScreen().performClick()
         waitFor("Wie draagt wat bij")
         compose.onNode(hasContentDescription("Terug naar Uitdagingen") and hasClickAction()).assertExists()
         waitFor("noor_e is uitgenodigd")

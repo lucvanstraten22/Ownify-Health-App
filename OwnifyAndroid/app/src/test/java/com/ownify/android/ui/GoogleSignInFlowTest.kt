@@ -231,7 +231,7 @@ class GoogleSignInFlowTest {
         compose.onNodeWithText("Kies je gebruikersnaam").assertIsDisplayed()
 
         // The round back button beside Account aanmaken (50.0): its name, no words of its own.
-        compose.onNode(hasContentDescription("Annuleren") and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText("Annuleren") and hasClickAction()).onScreen().performClick()
 
         waitForGoogle()
         settle { server.google("cancel").size == 1 }

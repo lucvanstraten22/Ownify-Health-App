@@ -481,8 +481,8 @@
             + '<div class="ch-sheet__body">' + reviewBody(r) + '</div>'
             + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
             + (invited
-                ? '<button type="button" class="split__part" data-review-decline>' + esc(C.review.decline) + '</button>'
-                : '<button type="button" class="split__part" data-sheet-close>' + esc(C.review.later) + '</button>')
+                ? '<button type="button" class="split__part split__part--back" data-review-decline>' + esc(C.review.decline) + '</button>'
+                : '<button type="button" class="split__part split__part--back" data-sheet-close>' + esc(C.review.later) + '</button>')
             + '<button type="button" class="split__part" data-review-join data-sheet-focus>' + esc(C.review.join) + '</button>'
             + '</div></div>');
 
@@ -508,7 +508,7 @@
                     + '<h2 class="ch-sheet__title" id="ch-sheet-title">' + esc(C.review.joined_title) + '</h2>'
                     + '<p class="ch-hint">' + esc(r.joined) + '</p></div>'
                     + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
-                    + '<button type="button" class="split__part" data-sheet-close>' + esc(C.review.close) + '</button>'
+                    + '<button type="button" class="split__part split__part--back" data-sheet-close>' + esc(C.review.close) + '</button>'
                     + '<button type="button" class="split__part" data-review-see data-sheet-focus>' + esc(C.review.see) + '</button>'
                     + '</div></div>');
 
@@ -623,9 +623,9 @@
             + '<li class="wizard__bar" data-cw-bar="1"></li><li class="wizard__bar" data-cw-bar="2"></li><li class="wizard__bar" data-cw-bar="3"></li></ol>'
             + '<p class="wizard__count" data-cw-count aria-live="polite"></p></div>'
             + '<div class="wizard__body" data-cw-body></div>'
-            + '<div class="wizard__foot goal-wizard__foot"><div class="goal-wizard__nav">'
-            + '<button type="button" class="glass glass--round press" data-cw-back aria-label="' + esc(cc.back) + '">' + icon('chevron-left') + '</button>'
-            + '<button type="button" class="glass glass--cta goal-wizard__next press" data-cw-next><span class="goal-wizard__spinner" aria-hidden="true"></span><span data-cw-next-label></span></button>'
+            + '<div class="wizard__foot goal-wizard__foot"><div class="goal-wizard__nav split split--go" role="group">'
+            + '<button type="button" class="split__part split__part--back" data-cw-back>' + esc(cc.back) + '</button>'
+            + '<button type="button" class="split__part goal-wizard__next" data-cw-next><span class="goal-wizard__spinner" aria-hidden="true"></span><span data-cw-next-label></span></button>'
             + '</div></div></div>';
         document.body.appendChild(root);
         wiz = { root: root, body: root.querySelector('[data-cw-body]'), count: root.querySelector('[data-cw-count]'),
@@ -990,7 +990,7 @@
                     : '<p class="ch-note">' + esc(ci.none) + '</p>')
                 + '</div>'
                 + '<div class="ch-sheet__foot"><div class="ch-row-btns split" role="group">'
-                + '<button type="button" class="split__part" data-sheet-close>' + esc(ci.cancel) + '</button>'
+                + '<button type="button" class="split__part split__part--back" data-sheet-close>' + esc(ci.cancel) + '</button>'
                 + '<button type="button" class="split__part" data-invite-send' + (chosen.length ? '' : ' disabled') + '>'
                 + esc(chosen.length > 1 ? T.tf('%d uitnodigen', chosen.length) : ci.send) + '</button></div></div>';
 
@@ -1037,7 +1037,7 @@
         show(head(cd.leave_title)
             + '<div class="ch-sheet__body"><p class="ch-hint ch-hint--top">' + esc(cd.leave_body) + '</p></div>'
             + '<div class="ch-sheet__foot"><div class="ch-row-btns split split--caution" role="group">'
-            + '<button type="button" class="split__part" data-sheet-close data-sheet-focus>' + esc(cd.cancel) + '</button>'
+            + '<button type="button" class="split__part split__part--back" data-sheet-close data-sheet-focus>' + esc(cd.cancel) + '</button>'
             + '<button type="button" class="split__part" data-leave-yes>' + esc(cd.leave_confirm) + '</button>'
             + '</div></div>');
 

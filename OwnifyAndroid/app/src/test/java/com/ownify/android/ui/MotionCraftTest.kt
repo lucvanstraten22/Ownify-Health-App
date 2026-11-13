@@ -104,7 +104,7 @@ class MotionCraftTest {
         compose.mainClock.autoAdvance = false
         tap("Volgende")
         compose.mainClock.advanceTimeBy(80)
-        compose.onAllNodes(hasContentDescription("Terug") and hasClickAction()).onLast().performClick()
+        compose.onAllNodes(hasText("Terug") and hasClickAction()).onLast().performClick()
         compose.mainClock.advanceTimeBy(60)
         shows("Wat wil je bijhouden?", "Wat is je doel?")
         tap("Volgende")

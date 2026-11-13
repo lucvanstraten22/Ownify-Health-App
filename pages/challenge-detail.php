@@ -91,11 +91,14 @@ $versus = $view['kind'] === 'versus';
                         <h2 class="card__eyebrow" id="challenge-share-<?= $id ?>"><?= e($detail['share_title']) ?></h2>
                         <div class="ch-share__row">
                             <span class="ch-share__code" aria-label="<?= e(implode(' ', str_split($view['code']))) ?>"><?= e($view['code']) ?></span>
-                            <button type="button" class="btn press ch-icon-btn" data-challenge-copy="<?= e($view['code']) ?>"
-                                    aria-label="<?= e($detail['copy']) ?>"><?= icon('copy') ?></button>
-                            <button type="button" class="btn press ch-icon-btn" data-challenge-share="<?= e($view['code']) ?>"
-                                    data-share-text="<?= e((string) $view['share_text']) ?>"
-                                    aria-label="<?= e($detail['share']) ?>"><?= icon('share') ?></button>
+                            <?php /* Kopiëren | Delen: one split (50.0), as the icons they are. */ ?>
+                            <span class="split ch-share__actions" role="group">
+                                <button type="button" class="split__part ch-icon-btn" data-challenge-copy="<?= e($view['code']) ?>"
+                                        aria-label="<?= e($detail['copy']) ?>"><?= icon('copy') ?></button>
+                                <button type="button" class="split__part ch-icon-btn" data-challenge-share="<?= e($view['code']) ?>"
+                                        data-share-text="<?= e((string) $view['share_text']) ?>"
+                                        aria-label="<?= e($detail['share']) ?>"><?= icon('share') ?></button>
+                            </span>
                         </div>
                         <button type="button" class="settings-row press ch-row" data-challenge-invite="<?= $id ?>">
                             <span class="settings-row__mark" aria-hidden="true"><?= icon('user-plus') ?></span>

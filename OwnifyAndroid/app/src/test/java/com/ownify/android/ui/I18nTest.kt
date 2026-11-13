@@ -9,7 +9,6 @@ import com.ownify.android.i18n.trn
 import com.ownify.android.ui.screens.account.memberSince
 import com.ownify.android.ui.screens.goals.daysText
 import com.ownify.android.ui.screens.goals.dutchDate
-import com.ownify.android.ui.screens.goals.dutchNumber
 import com.ownify.android.ui.screens.goals.spanText
 import com.ownify.android.ui.screens.goals.unitKey
 import com.ownify.android.ui.screens.goals.unitLabel
@@ -103,7 +102,7 @@ class I18nTest {
         assertEquals("1,234.5", OwnifyFormat.number(1234.5, 1))
         assertEquals("72.5", OwnifyFormat.numberTrim(72.50, 2))
         assertEquals("1234", OwnifyFormat.number(1234.0, 0, grouping = false))
-        assertEquals("10,000", dutchNumber("10000"))
+        assertEquals("10,000", OwnifyFormat.numberTrim(10000.0, 2))
 
         for ((typed, value) in mapOf("72,5" to 72.5, "72.5" to 72.5, "1.234,5" to 1234.5, "1,234.5" to 1234.5, " 80 " to 80.0, "-3,5" to -3.5)) {
             assertEquals("'$typed'", value, OwnifyFormat.parseNumber(typed)!!, 1e-9)

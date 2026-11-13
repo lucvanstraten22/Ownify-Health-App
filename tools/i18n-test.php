@@ -506,6 +506,15 @@ function seed(int $userId): void
 
     user_record_measurement($userId, 'height', 180.0, 'cm');
     user_record_measurement($userId, 'weight', 80.0, 'kg');
+
+    /* A goal in kg, so "not one stored row changed" covers goals too: a
+       switch to lb or to English shows it differently and stores nothing. */
+    goal_create($userId, [
+        'name' => 'To 75 kg', 'category_code' => 'body', 'measurement_code' => 'weight', 'goal_type' => 'milestone',
+        'tracking' => 'manual', 'unit_code' => 'kg', 'direction' => 'decrease', 'target_value' => 75,
+        'baseline_value' => 80, 'baseline_source' => 'manual',
+        'start_date' => $today->format('Y-m-d'), 'end_date' => $today->modify('+90 days')->format('Y-m-d'),
+    ]);
 }
 
 /** Every stored row of the account that a setting could have touched, in one comparable string. */
@@ -513,7 +522,7 @@ function rows_of(int $userId): string
 {
     return json_encode([
         db_all('SELECT measurement_type, value, unit FROM user_measurements WHERE user_id = ? ORDER BY id', [$userId]),
-        db_all('SELECT name, target_value, target_unit, daily_target, start_value, best_value, total_value FROM goals WHERE user_id = ? ORDER BY id', [$userId]),
+        db_all('SELECT name, unit_code, custom_unit, target_value, baseline_value, current_value FROM goals WHERE user_id = ? ORDER BY id', [$userId]),
         db_all('SELECT distance_m, elevation_gain_m, duration_seconds FROM workouts WHERE user_id = ? ORDER BY id', [$userId]),
         db_all('SELECT m.value FROM health_metrics m WHERE m.user_id = ? ORDER BY m.id', [$userId]),
     ]);
@@ -591,7 +600,10 @@ try {
     check('the search works: the same state in Dutch has plenty of Dutch in it', $nlHits > 200, (string) $nlHits);
 
     @file_put_contents(sys_get_temp_dir() . '/i18n-test-page-en.html', $page['raw']);
-    $leftHtml = dutch_in(page_texts($page['raw']), $dutch);
+    /* People's own names are theirs, in no language: the board shows other
+       accounts too (a development database's dev_jij is no Dutch "jij"). */
+    $names    = array_column(db_all('SELECT username FROM users'), 'username');
+    $leftHtml = dutch_in(array_map(static fn (string $t): string => str_ireplace($names, ' ', $t), page_texts($page['raw'])), $dutch);
     check('the website, signed in, every page and screen in the document: no Dutch', $leftHtml === [],
         implode("\n          ", array_map(static fn ($t, $w) => "[$w] " . mb_substr($t, 0, 140), array_keys($leftHtml), $leftHtml)));
 

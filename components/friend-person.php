@@ -48,7 +48,7 @@ $status = match ($kind) {
 
     <?php if ($kind === 'incoming'): ?>
         <span class="friend__actions friend__actions--wide split" role="group" data-friend-actions>
-            <button type="button" class="split__part" data-friend-action="decline"><?= e(t('Weigeren')) ?></button>
+            <button type="button" class="split__part split__part--back" data-friend-action="decline"><?= e(t('Weigeren')) ?></button>
             <button type="button" class="split__part" data-friend-action="accept"><?= e(t('Accepteren')) ?></button>
         </span>
     <?php elseif ($kind === 'friend'): ?>
@@ -61,7 +61,7 @@ $status = match ($kind) {
         <span class="friend__confirm" data-friend-confirm hidden>
             <span class="friend__confirm-text"><?= e(tf('%s verwijderen uit je vrienden?', $name)) ?></span>
             <span class="friend__actions friend__actions--wide split split--caution" role="group">
-                <button type="button" class="split__part" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
+                <button type="button" class="split__part split__part--back" data-friend-action="remove-cancel"><?= e(t('Annuleren')) ?></button>
                 <button type="button" class="split__part" data-friend-action="remove"><?= e(t('Verwijderen')) ?></button>
             </span>
         </span>

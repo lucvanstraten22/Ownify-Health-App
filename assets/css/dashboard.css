@@ -205,7 +205,7 @@
     }
 
     .pill:hover,
-    .btn:not(:disabled):hover {
+    .btn:not(:disabled):not(.btn--primary):hover {
         background-color: var(--glass-strong);
         border-color: var(--glass-border);
         color: var(--text-primary);

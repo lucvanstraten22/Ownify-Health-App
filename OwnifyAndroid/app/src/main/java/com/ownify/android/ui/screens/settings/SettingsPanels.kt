@@ -139,12 +139,13 @@ private fun ConfirmBody(text: String, modifier: Modifier = Modifier, align: Text
     T(text, OwnifyType.style(Ownify.FsSubhead, color = color), modifier.fillMaxWidth().padding(top = Ownify.Space2), align = align)
 }
 
-/** `.confirm__row`: two equal answers, 24 below what they answer. */
+/** `.confirm__row.split`: two answers as one split, 24 below what they answer. */
 @Composable
 private fun ConfirmRow(first: @Composable (Modifier) -> Unit, second: @Composable (Modifier) -> Unit) {
     // The split button (50.0): the way back left, the way forward right.
     SplitRow(first, second, Modifier.padding(top = Ownify.Space5))
 }
+
 
 // ----------------------------------------------------------- the editor
 
@@ -687,9 +688,10 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
             IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
             ConfirmTitle(copy["title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
+            // Not yet the step that cannot be undone: a plain split (50.0, 3A).
             ConfirmRow(
                 { Btn(copy["cancel"].orEmpty(), onClick = { shell.close(overlay) }, modifier = it) },
-                { Btn(copy["confirm"].orEmpty(), onClick = { step = 2 }, look = BtnLook.Caution, modifier = it) }
+                { Btn(copy["confirm"].orEmpty(), onClick = { step = 2 }, modifier = it) }
             )
             // .confirm__note
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4)) {
@@ -729,8 +731,10 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         .semantics { liveRegion = LiveRegionMode.Assertive }
                 )
             }
-            // Swapped on purpose: the safe answer is where "Ja, verwijderen" was.
+            // The step that cannot be undone: the split's gold forward half (50.0, 2C), on the right as every step forward.
             ConfirmRow(
+                { Btn(copy["final_no"].orEmpty(), onClick = { shell.close(overlay) }, modifier = it) },
+
                 {
                     Btn(
                         if (byGoogle) tr("Bevestig met Google") else copy["final_yes"].orEmpty(),
@@ -758,8 +762,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                         look = BtnLook.Final,
                         modifier = it
                     )
-                },
-                { Btn(copy["final_no"].orEmpty(), onClick = { shell.close(overlay) }, modifier = it) }
+                }
             )
         }
     }
@@ -816,7 +819,7 @@ fun PairingPanel(overlay: Overlay.Pairing, data: AppData) {
         error?.let { EditorError(it) }
         ConfirmRow(
             { Btn(tr("Sluiten"), onClick = { shell.close(overlay) }, modifier = it) },
-            { Btn(tr("Nieuwe code"), onClick = ::request, enabled = !asking, look = YesLook, modifier = it) }
+            { Btn(tr("Nieuwe code"), onClick = ::request, enabled = !asking, modifier = it) }
         )
     }
 }

@@ -14,7 +14,8 @@
  *   - api/profile/wipe.php: nothing without confirm=wissen; with it, the
  *     health data and what was worked out from it gone — and only the
  *     account's own; the account, its sign-in, profile, friends, phones and
- *     OwnifyAI conversations still there; the board re-ranked
+ *     OwnifyAI conversations still there; the board re-ranked without her
+ *     (a development database has its own accounts on it too)
  *
  * Accounts are named `dx_…` and removed at the end. Never point it at a
  * live database.
@@ -253,6 +254,13 @@ try {
     check('with anything else: 422 too', $r['status'] === 422);
     check('without CSRF or a token: 419', http('/api/profile/wipe.php', ['form' => ['confirm' => 'wissen']])['status'] === 419);
 
+    /* Where they stand before: the development database has its own
+       accounts on the board too, so the check is where Anna's going leaves
+       Bram — one place up if she stood above him — not that he ends first. */
+    $rank = static fn (int $id): ?int => ($p = db_value("SELECT position FROM user_period_points WHERE user_id = ? AND period_type = 'alltime'", [$id])) === null ? null : (int) $p;
+    $annaRank = $rank($anna['id']);
+    $bramRank = $rank($bram['id']);
+
     $bramBefore = [];
     foreach (data_wipe_tables() as $table) {
         $bramBefore[$table] = count_of($table, $bram['id']);
@@ -280,9 +288,10 @@ try {
     }
     unset($bramBefore['user_period_points'], $bramAfter['user_period_points'], $bramBefore['leaderboard_best_positions'], $bramAfter['leaderboard_best_positions']);
     check('Bram\'s data untouched', $bramBefore === $bramAfter, json_encode([$bramBefore, $bramAfter]));
-    check('the board re-ranked: Bram first, Anna off it',
-        (int) db_value("SELECT position FROM user_period_points WHERE user_id = ? AND period_type = 'alltime'", [$bram['id']]) === 1
-        && count_of('user_period_points', $anna['id']) === 0);
+    $bramExpected = $bramRank === null ? null : $bramRank - ($annaRank !== null && $annaRank < $bramRank ? 1 : 0);
+    check('the board re-ranked: Anna off it, Bram where that leaves him',
+        $bramRank !== null && $rank($bram['id']) === $bramExpected && count_of('user_period_points', $anna['id']) === 0,
+        json_encode(['anna' => $annaRank, 'bram' => $bramRank, 'bram after' => $rank($bram['id'])]));
 
     check('her account, profile and sign-in stay', db_value('SELECT username FROM users WHERE id = ?', [$anna['id']]) === $anna['username']
         && db_value('SELECT first_name FROM user_profiles WHERE user_id = ?', [$anna['id']]) === 'Anna'

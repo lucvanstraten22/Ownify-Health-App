@@ -172,48 +172,59 @@ the browser has it, with its motion and haptic; the row stays the same
 `role="switch"` button. Elsewhere, and in the app, the drawn switch. Selects
 and date and time fields were already the platform's own.
 
-**Actions.** The secondary button in a card stays what it was (`.btn`, `Btn`
-with the default `BtnLook`: `--glass` with the glass border, a pill). What
-floats or leads is the glass — except the one way forward, which is solid:
+**Actions** (50.0, the owner's button decisions 1A–7A and split style 2,
+"Eén capsule"). Five looks, the same on both apps; nothing else:
 
 | Look | Website | Android | For |
 | --- | --- | --- | --- |
-| glass | `.glass`, `.pill`, `.ch-act` | `Modifier.glass(…)`, `Pill` | back and close, round buttons, the actions of Uitdagingen |
-| primary | `.btn--primary`, `.glass--cta` (`--action`, `--action-ink`, `--action-shadow`) | `BtnLook.Primary`, `GlassCta` (`Modifier.solidAction`, `Ownify.Action`) | the one action a step leads to: Volgende, Opslaan, Doel aanmaken, Akkoord, and the round + (Doelen, a detail page's +) |
-| cautious | `.btn--caution` (`--lg-gold`, `--lg-gold-rim`), or the gold forward half of a split (`.split--caution`) | `BtnLook.Caution` (`Final`) | only the irreversible yes: the step that deletes, wipes or leaves for good (N2, 50.0). The button that opens that step is neutral — the bin icon for deleting and wiping, the leave icon for leaving, none for disconnecting — and the question stands in the one attention Note above the yes. "Vriend verwijderen" and "Account verwijderen" keep their own looks |
-| muted | `:disabled` on any `.btn`, `.glass`, `.glass--cta`, `.split__part`, `.friends__go` | `Btn(enabled = false)` with any look, `GlassRound`, `GlassChip`, `GlassCta`, a split's halves | not to be taken yet (50.0, Phase 5): the glass it stands in — the solid primary and the gold yes become the plain Liquid Glass — with the muted ink (`--text-muted`, `Ownify.TextMuted`), never faded. Choices that cannot be chosen (a goal type, a period option) and text links keep their own dimming; so does the Google button, whose mark has its own colours |
+| neutral | `.btn`, `.glass`, `.pill`, `.ch-act` — all the Liquid Glass (`--lg-*`, the `--pane-rim`) | `Btn` (the default `BtnLook`: `GlassLook()`), `Modifier.glass(…)`, `GlassRound`, `GlassChip`, `Pill` | every neutral action: Uitloggen, Vriend toevoegen, the round back and close, chips. There is no flat glass (1A) |
+| primary | `.btn--primary`, `.glass--cta` (`--action`, `--action-ink`, `--action-shadow`) | `BtnLook.Primary`, `GlassCta` (`Modifier.solidAction`) | the one way forward **when it stands alone**: Inloggen, Account aanmaken (sign-up form), Nieuw doel, Stuur link, Koppelen, the round +. Beside another button it is a split's green forward part instead |
+| chosen | `[aria-pressed="true"]`, `[aria-checked="true"]`, `.ch-friend__pick.is-on` | `GlassLook(chosen = true)` | the glass washed green (`--health-fill`, `--lg-green-rim`): a chosen chip, category, friend |
+| cautious | `.split--caution` — the gold words (`--attention`, 700) | `SplitRow` with `BtnLook.Caution` / `Final` on the forward part | only the step that cannot be undone, always as a split's forward part (2C); the one lone case, the armed "Gesprek verwijderen?" in OwnifyAI, is the neutral glass with the gold words. There is no gold glass button. What opens such a step is neutral, and Account verwijderen's first step is a plain split (3A) |
+| muted | `:disabled` on any of the above | `enabled = false` on any of the above | not to be taken yet: the glass it stands in with the muted ink (`--text-muted`, `Ownify.TextMuted`) — the solid primary becomes the plain Liquid Glass. Never faded (6A): not the day arrows, a goal type, Primair/Secundair, a link, nor the Google button (its mark in the muted ink, laid on once) |
 
-**The solid primary** (50.0, the owner's pick from the button prototypes:
-Solid · Jade · Deep · Grey-green, `oklch(0.42 0.03 160)` = `#3F5247`, in
-Dark Mode; one step lighter in White Mode, Jade · Dark · Grey-green,
-`oklch(0.51 0.03 160)` = `#586C60`). Not glass: everything that floats is,
-so the step to take is the one solid thing on the screen. A flat fill with
-a white label (8.4:1 in Dark, 5.6:1 in White); a faint white top edge, a neutral two-step shadow, no
-gradient, no rim, no green glow. Held, it grows on the glass's spring as
-every glass control does. Not to be taken yet (`:disabled`), it is plain
-glass with the muted ink — never a faded green. The app's green
-(`--health`) keeps its other jobs: the chosen option, the step bar, ticks,
-the ring.
+Two links (5A): `.text-link` / `TextLink` — the one with a chevron that goes
+somewhere (Bekijk de publicatie ›); and the quiet link — `.quiet-link`
+(and `.settings-delete`, `.setup__link`, `.account__link`, `.btn--link`,
+which draw it) / `QuietLink`, `quietLinkStyle()` — Subhead 400, the secondary
+ink, underlined, for everything else, in a sentence too.
 
-**The split button** (50.0, the owner's pick "Quiet + Joined"): two actions
-that belong together — a way back and a way forward, or a choice and its
-list — as one block across the width of the card or page they are in.
+**The solid primary** (the owner's pick from the button prototypes:
+Solid · Jade · Deep · Grey-green, `#3F5247` in Dark Mode, `#586C60` in White
+Mode): a flat fill with a white label (8.4:1 in Dark, 5.6:1 in White); a
+faint white top edge, a neutral two-step shadow, no gradient, no rim. Held,
+it grows on the glass's spring. Not to be taken yet, it is plain glass with
+the muted ink — never a faded green.
+
+**The split button** (style "Eén capsule", the owner's pick): **every pair
+of buttons side by side is a split** — the way back and the way forward,
+two equal choices, a choice and its list — one block across the width of
+the card or page it is in. A field and the button beside it (a unit, a
+period) is not a pair.
 
 | | Website | Android |
 | --- | --- | --- |
-| the pair | `.split` with two `.split__part`s | `SplitRow` (two `Btn`s, each drawn as its half through `LocalSplitSide`), or `SplitButton` |
-| a half with content of its own (a date's label over its value) | `.split__part` with its content | `SplitHalf` |
+| the split | `.split` with its `.split__part`s, any number | `SplitRow(back, forward)` or `SplitRow(parts)` (each `Btn` drawn as its part through `LocalSplitSide`), `SplitButton` |
+| a part with content of its own (a date's label over its value) | `.split__part` with its content | `SplitHalf` in a row with `Modifier.splitCapsule()` |
 | a dropdown | `.split--menu`: the value 85 %, the chevron 15 % | `SplitMenu` |
 
-- Both halves are the neutral Liquid Glass, 2 apart; the outer corners are
-  pills, the inner ones `--radius-sm`. Each half presses on its own (0.97).
-- The way back is on the left, the way forward on the right.
-- One ink for both halves, `--text-primary`; only the forward half of a
-  step with no way back (`.split--caution`, `caution = true`) reads gold.
-- Text at Subhead 600, as every button; the welcome screen's pair at Body
-  and the tab bar's height.
-- A pair of buttons side by side is a split; a field and the button beside
-  it (a unit, a period) is not.
+- One Liquid Glass capsule (the pill, the `--pane-rim`); the parts are not
+  glass of their own and are divided by a hairline (1 wide, 11 in from the
+  top and bottom, `rgba(var(--ink), .16)`). Pressed, a part darkens in place
+  (`rgba(var(--ink), .08)`); it does not scale.
+- The way back is on the left, the way forward on the right — Account
+  verwijderen's "Definitief verwijderen" too.
+- The words carry the role: the way back quiet (`.split__part--back`,
+  `quietBack`: secondary, 500); a plain step the full ink at 600; the way
+  forward in a flow green (`.split--go`, `go = true`: `--go-ink` /
+  `Ownify.GoInk` — `--health` in Dark Mode, 4.8:1, Dark's `#3F5247` in White
+  Mode, 6:1 — at 700): the wizards' Volgende, the setup's Verder, Account
+  aanmaken, Toevoegen; the step that cannot be undone gold (`.split--caution`,
+  700). Two equal choices (Kopiëren | Delen, Downloaden | Lezen, Inloggen |
+  Registreren) are both the full ink. Panels' "Annuleren | Opslaan" and the
+  Koppelcode's "Sluiten | Nieuwe code" are plain splits (4A).
+- Text at Subhead, up to two lines; the welcome screen's pair at Body and
+  the tab bar's height; the setup's at 48.
 
 The send button of OwnifyAI stays solid green: it is the composer's own mark.
 Controls are 44 tall (`--hit-min`); round ones 44, the small round one 34.

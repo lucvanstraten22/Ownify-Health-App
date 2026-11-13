@@ -832,8 +832,9 @@
             /* What the button says — Opslaan, unless the row says otherwise —
                and the caution tone for what takes something away. */
             saveBtn.textContent = spec.save || T.t('Opslaan');
-            saveBtn.classList.toggle('btn--caution', spec.tone === 'caution');
-            saveBtn.classList.toggle('btn--primary', spec.tone !== 'caution');
+            /* The split's own gold words on its forward half (50.0, .split--caution),
+               as every split's step that takes something away — not a .btn's look. */
+            saveBtn.parentElement.classList.toggle('split--caution', spec.tone === 'caution');
             onceEl.hidden = !current.once;
             setError('');
             saveBtn.disabled = false;

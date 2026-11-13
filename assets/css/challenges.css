@@ -666,9 +666,12 @@
     user-select: all;
 }
 
+.ch-share__actions.split { width: auto; flex: none; }
+
 .ch-icon-btn {
-    width: 44px;
-    min-width: 44px;
+    flex: none;
+    width: 48px;
+    min-width: 48px;
     padding: 0;
     font-size: var(--fs-headline);
     letter-spacing: var(--tracking-headline);
@@ -1183,7 +1186,9 @@
 }
 
 .ch-friend__pick { min-height: 36px; gap: var(--space-1); padding-inline: var(--space-3); }
-.ch-friend__pick.is-on { border-color: var(--health-edge); background: var(--health-fill); color: var(--text-primary); }
+/* Chosen: the chosen glass (as .glass[aria-pressed="true"]). */
+.ch-friend__pick.is-on { background: var(--lg-face), linear-gradient(var(--health-fill), var(--health-fill)), var(--lg-body); color: var(--text-primary); }
+.ch-friend__pick.is-on::before { background: var(--lg-green-rim); }
 .ch-friend__pick .icon { width: 15px; height: 15px; }
 
 /* --------------------------------------------------------------------------

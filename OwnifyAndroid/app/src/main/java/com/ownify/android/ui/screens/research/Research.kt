@@ -298,7 +298,8 @@ private fun SourceBlock(copy: ResearchCopy, detail: ResearchDetail) {
                 SplitRow(
                     { Btn(copy.downloadPdf, onClick = { download(context, address, source.code + ".pdf") }, modifier = it) },
                     { Btn(copy.readPdf, onClick = read, modifier = it) },
-                    Modifier.padding(top = Ownify.Space3)
+                    Modifier.padding(top = Ownify.Space3),
+                    quietBack = false
                 )
             } else {
                 Btn(copy.readPdf, onClick = read, look = BtnLook.Primary, modifier = Modifier.padding(top = Ownify.Space3))

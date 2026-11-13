@@ -770,14 +770,14 @@ fun LinkButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = t
                     layout((placeable.width - past).coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
                 }
                 .press(interaction, enabled = enabled)
-                .alpha(if (enabled) 1f else 0.45f)
                 .heightIn(min = 44.dp)
                 .clip(RoundedCornerShape(50))
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = blurring(onClick))
                 .padding(horizontal = Ownify.Space2),
             contentAlignment = Alignment.Center
         ) {
-            T(text, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary), maxLines = 1)
+            // The quiet link (`.btn--link` = `.quiet-link`, 50.0); off, the muted ink.
+            T(text, quietLinkStyle(enabled), maxLines = 1)
         }
     }
 }

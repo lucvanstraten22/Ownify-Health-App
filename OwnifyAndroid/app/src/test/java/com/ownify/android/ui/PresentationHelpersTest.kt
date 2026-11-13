@@ -6,7 +6,6 @@ import com.ownify.android.ui.screens.account.memberSince
 import com.ownify.android.ui.screens.community.avatarAccent
 import com.ownify.android.ui.screens.community.initial
 import com.ownify.android.ui.screens.community.points
-import com.ownify.android.ui.screens.goals.dutchNumber
 import com.ownify.android.ui.screens.goals.slotNote
 import com.ownify.android.ui.screens.goals.spanText
 import com.ownify.android.ui.screens.settings.moment
@@ -96,17 +95,6 @@ class PresentationHelpersTest {
             329 to "11 maanden", 330 to "1 jaar", 365 to "1 jaar", 547 to "1 jaar", 730 to "2 jaar"
         )
         for ((days, text) in expected) assertEquals("$days days", text, spanText(days))
-    }
-
-    @Test
-    fun `numbers - goal-wizard's dutchNumber(), parseNumber() then toLocaleString('nl-NL') to two decimals`() {
-        val expected = mapOf(
-            "10000" to "10.000", "8000" to "8.000", "1234567" to "1.234.567",
-            "2,5" to "2,5", "2.345" to "2,35", "2.355" to "2,36", "0.005" to "0,01",
-            "abc" to "abc", "" to "", "12 " to "12", "-3,456" to "-3,46", "1e3" to "1e3",
-            "1.234,5" to "1.234,5", "1,234.5" to "1.234,5"
-        )
-        for ((typed, text) in expected) assertEquals("'$typed'", text, dutchNumber(typed))
     }
 
     @Test

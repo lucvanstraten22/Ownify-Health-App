@@ -27,9 +27,9 @@ declare(strict_types=1);
 
         <p class="field-editor__error" role="alert" data-pairing-error hidden></p>
 
-        <div class="confirm__row">
-            <button type="button" class="btn press" data-pairing-close><?= e(t('Sluiten')) ?></button>
-            <button type="button" class="btn btn--primary press" data-pairing-refresh><?= e(t('Nieuwe code')) ?></button>
+        <div class="confirm__row split" role="group">
+            <button type="button" class="split__part split__part--back" data-pairing-close><?= e(t('Sluiten')) ?></button>
+            <button type="button" class="split__part" data-pairing-refresh><?= e(t('Nieuwe code')) ?></button>
         </div>
 
     </div>

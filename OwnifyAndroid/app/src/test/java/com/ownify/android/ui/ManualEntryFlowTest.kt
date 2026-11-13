@@ -153,7 +153,7 @@ class ManualEntryFlowTest {
         assertTrue("its note", shown("De ochtend waarop je opstond. Een nacht hoort bij de ochtend waarop hij eindigt."))
         // 23:00 → 07:00 on the morning of Wednesday 4 November: from Tuesday evening.
         assertTrue("the night it makes", shown("di 3 nov 23:00 tot wo 4 nov 07:00 · 8:00 u"))
-        assertTrue("only Slaap's fields", !shown("ACTIVITEIT") && !shown("DUUR"))
+        assertTrue("only Slaap's fields", !shown("SOORT TRAINING") && !shown("DUUR"))
 
         click(button("Opslaan"))
         assertEquals(mapOf("date" to "2026-11-04", "bedtime" to "23:00", "wakeup" to "07:00"), sent("sleep-entry.php"))
@@ -168,7 +168,8 @@ class ManualEntryFlowTest {
 
         click(described("Training invoeren").onLast())
         assertTrue(heading("Training invoeren").fetchSemanticsNodes().isNotEmpty())
-        for (label in listOf("DATUM", "ACTIVITEIT", "BEGINTIJD", "DUUR", "VERBRANDE CALORIEËN")) assertTrue(label, shown(label))
+        // "Soort training" since 50.0 (B13: clearer words; "Activiteit" before).
+        for (label in listOf("DATUM", "SOORT TRAINING", "BEGINTIJD", "DUUR", "VERBRANDE CALORIEËN")) assertTrue(label, shown(label))
         assertTrue("Health Connect's types, the first chosen", shown("Hardlopen"))
         assertTrue("calories optional", shown("Optioneel"))
         assertTrue("only Training's fields", !shown("NAAR BED") && !shown("OPGESTAAN"))

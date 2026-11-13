@@ -44,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.scale
@@ -81,6 +83,7 @@ import com.ownify.android.ui.app.PanelColumn
 import com.ownify.android.ui.app.PanelHead
 import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.JInput
 import com.ownify.android.ui.design.JStyle
@@ -193,7 +196,7 @@ fun Notice(text: String, link: OwnifyLink? = null) {
 fun AccountLink(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     T(
         text,
-        OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold).copy(textDecoration = TextDecoration.Underline),
+        quietLinkStyle(),
         modifier.clickable(role = Role.Button, onClick = onClick)
     )
 }
@@ -347,7 +350,8 @@ private fun ColumnScope.EmailForm(
  * `.social`: the website's Google button — the Google mark, no label, in a
  * 46 circle of soft glass (`--glass-soft`, a 1 px `--glass-border-soft`
  * ring), the G at 21. Pressed it settles to 0.94 and the glass firms up to
- * `--glass`, both over `--transition-fast`; disabled it fades to 50 %.
+ * `--glass`, both over `--transition-fast`; disabled the glass stays and the
+ * G is drawn in the muted ink.
  *
  * The website's `backdrop-filter: blur(16px)` blurs what is behind the mark:
  * inside the panel that is the panel's own even glass, already blurred, which
@@ -367,7 +371,6 @@ private fun GoogleButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifi
     Box(
         modifier
             .press(interaction, scale = 0.94f, enabled = enabled)
-            .alpha(if (enabled) 1f else 0.5f)
             .size(44.dp)
             .glass(CircleShape)
             // Compose still hands a disabled node's click action through; this button does nothing then.
@@ -375,14 +378,19 @@ private fun GoogleButton(onClick: () -> Unit, enabled: Boolean, modifier: Modifi
             .semantics { contentDescription = tr("Doorgaan met Google") },
         contentAlignment = Alignment.Center
     ) {
-        GoogleG(Modifier.size(21.dp))
+        // Not to be taken yet: the same glass, the mark in the muted ink (50.0, Phase 5) — nothing faded.
+        GoogleG(Modifier.size(21.dp), muted = !enabled)
     }
 }
 
 /** Google's standard "G", unaltered: the same four paths the website draws. */
 @Composable
-private fun GoogleG(modifier: Modifier) {
-    Canvas(modifier.semantics { }) {
+private fun GoogleG(modifier: Modifier, muted: Boolean = false) {
+    // Muted: the four parts in the muted ink's own colour, made see-through once
+    // as a whole (one layer) — each part see-through on its own would darken where they meet.
+    val mutedInk = Ownify.TextMuted
+    val layer = if (muted) Modifier.graphicsLayer(alpha = mutedInk.alpha, compositingStrategy = CompositingStrategy.Offscreen) else Modifier
+    Canvas(modifier.then(layer).semantics { }) {
         val scale = size.width / 24f
         val parts = listOf(
             Color(0xFF4285F4) to "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z",
@@ -391,7 +399,7 @@ private fun GoogleG(modifier: Modifier) {
             Color(0xFFEA4335) to "M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83C6.71 7.31 9.14 5.38 12 5.38Z"
         )
         scale(scale, scale, pivot = androidx.compose.ui.geometry.Offset.Zero) {
-            for ((color, data) in parts) drawPath(PathParser().parsePathString(data).toPath(), color)
+            for ((color, data) in parts) drawPath(PathParser().parsePathString(data).toPath(), if (muted) mutedInk.copy(alpha = 1f) else color)
         }
     }
 }
@@ -439,21 +447,13 @@ private fun ColumnScope.GoogleUsernameForm(step: GoogleUsernameStep) {
     )
     FieldHint(tr("3 tot 30 tekens: letters, cijfers, punt, streepje of underscore."))
 
-    // The way back and the way forward side by side (50.0, `.account__nav-pair`), as the goal wizard has them.
-    Row(
-        Modifier.fillMaxWidth().padding(top = Ownify.Space4),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-    ) {
-        GlassRound(OwnifyIcons.chevronLeft, tr("Annuleren"), { OwnifyConnection.cancelGoogle() }, enabled = !working)
-        Btn(
-            tr("Account aanmaken"),
-            onClick = { submit() },
-            enabled = !working,
-            look = BtnLook.Primary,
-            modifier = Modifier.weight(1f)
-        )
-    }
+    // Annuleren | Account aanmaken: one split (50.0, `.account__nav-pair.split--go`), as the goal wizard's.
+    SplitRow(
+        { Btn(tr("Annuleren"), onClick = { OwnifyConnection.cancelGoogle() }, enabled = !working, modifier = it) },
+        { Btn(tr("Account aanmaken"), onClick = { submit() }, enabled = !working, modifier = it) },
+        Modifier.padding(top = Ownify.Space4),
+        go = true
+    )
 
     FieldHint(
         trn(step.minutes, "Er wordt niets opgeslagen tot je een gebruikersnaam kiest. Deze stap verloopt over %d minuut.",
@@ -604,16 +604,23 @@ fun QuietLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
         val interaction = remember { MutableInteractionSource() }
         T(
             text,
-            OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted).copy(textDecoration = TextDecoration.Underline),
+            quietLinkStyle(enabled),
             modifier
                 .clip(RoundedCornerShape(50))
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-                .padding(horizontal = Ownify.Space4, vertical = Ownify.Space2)
-                .alpha(if (enabled) 1f else 0.45f),
+                .padding(horizontal = Ownify.Space4, vertical = Ownify.Space2),
             align = TextAlign.Center
         )
     }
 }
+
+/**
+ * `.quiet-link` (50.0, the owner's 5A: one of the two links — the other is
+ * [com.ownify.android.ui.design.TextLink] with its chevron): Subhead 400, the
+ * secondary ink, underlined. Not to be taken yet, the muted ink — nothing faded.
+ */
+fun quietLinkStyle(enabled: Boolean = true) =
+    OwnifyType.style(Ownify.FsSubhead, FontWeight.Normal, if (enabled) Ownify.TextSecondary else Ownify.TextMuted).copy(textDecoration = TextDecoration.Underline)
 
 /**
  * The Android phone's own way in without an account: a pairing code from
@@ -667,5 +674,6 @@ private fun ColumnScope.PairingForm(onBack: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
     )
 
-    QuietLink(tr("Terug naar inloggen"), onBack, Modifier.align(Alignment.CenterHorizontally).padding(top = Ownify.Space3), enabled = !pairing)
+    // As Wachtwoord vergeten's: the same words, the same button.
+    Btn(tr("Terug naar inloggen"), onClick = onBack, enabled = !pairing, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4))
 }

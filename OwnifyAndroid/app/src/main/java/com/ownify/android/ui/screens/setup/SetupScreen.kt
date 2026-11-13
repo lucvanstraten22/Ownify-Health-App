@@ -78,6 +78,7 @@ import com.ownify.android.ui.app.LocalShell
 import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.app.ShellState
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.IconTile
 import com.ownify.android.ui.design.JIcon
@@ -305,49 +306,44 @@ private fun SetupColumn(data: AppData, setup: Setup, step: String, index: Int, d
                 }
             }
             val back: @Composable (Modifier) -> Unit = { m ->
-                Btn(setup.back, onClick = { go(order[index - 1], -1) }, enabled = !busy, modifier = m.heightIn(min = 48.dp))
+                Btn(setup.back, onClick = { go(order[index - 1], -1) }, enabled = !busy, modifier = m)
             }
             val skip: @Composable (Modifier) -> Unit = { m ->
-                Btn(setup.profile.skip, onClick = { next() }, enabled = !busy, modifier = m.heightIn(min = 48.dp))
+                Btn(setup.profile.skip, onClick = { next() }, enabled = !busy, modifier = m)
+            }
+            // Each step's own way on, as one split (50.0, `.setup__actions.split--go`): Terug,
+            // Overslaan, and the way forward in green — at the footer's 48.
+            val forward: @Composable (Modifier) -> Unit = { m ->
+                when (step) {
+                    "focus" -> Btn(setup.next, enabled = focus != null && !busy, modifier = m, onClick = {
+                        val chosen = focus ?: return@Btn
+                        if (chosen == savedFocus) next()
+                        else post("api/profile/update.php", mapOf("focus" to chosen), setup.focus.error) {
+                            savedFocus = chosen
+                            next()
+                        }
+                    })
+                    "connect" -> Btn(if (linked) setup.next else setup.connect.skip, enabled = !busy, modifier = m, onClick = { next() })
+                    "profile" -> Btn(setup.profile.save, enabled = changed().isNotEmpty() && !busy, modifier = m, onClick = saveProfile)
+                    else -> Btn(setup.goal.finish, enabled = !busy, modifier = m, onClick = {
+                        post("api/setup/finish.php", emptyMap(), setup.goal.error) { }
+                    })
+                }
             }
             Column(Modifier.fillMaxWidth().padding(top = Ownify.Space4, bottom = Ownify.Space4)) {
                 Box(Modifier.fillMaxWidth().height(1.dp).background(Ownify.GlassHairline))
-                if (step == "profile" && screen.narrow) {
-                    Primary(setup.profile.save, enabled = changed().isNotEmpty() && !busy, modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4), onClick = saveProfile)
-                    Row(Modifier.fillMaxWidth().padding(top = Ownify.Space2), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                        back(Modifier.weight(1f))
-                        skip(Modifier.weight(1f))
-                    }
-                } else Row(Modifier.fillMaxWidth().padding(top = Ownify.Space4), horizontalArrangement = Arrangement.spacedBy(Ownify.Space2)) {
-                    if (index > 0) back(Modifier)
-                    when (step) {
-                        "focus" -> Primary(setup.next, enabled = focus != null && !busy, modifier = Modifier.weight(1f)) {
-                            val chosen = focus ?: return@Primary
-                            if (chosen == savedFocus) next()
-                            else post("api/profile/update.php", mapOf("focus" to chosen), setup.focus.error) {
-                                savedFocus = chosen
-                                next()
-                            }
-                        }
-                        "connect" -> Primary(if (linked) setup.next else setup.connect.skip, enabled = !busy, modifier = Modifier.weight(1f)) { next() }
-                        "profile" -> {
-                            skip(Modifier)
-                            Primary(setup.profile.save, enabled = changed().isNotEmpty() && !busy, modifier = Modifier.weight(1f), onClick = saveProfile)
-                        }
-                        else -> Primary(setup.goal.finish, enabled = !busy, modifier = Modifier.weight(1f)) {
-                            post("api/setup/finish.php", emptyMap(), setup.goal.error) { }
-                        }
-                    }
-                }
+                SplitRow(
+                    buildList {
+                        if (index > 0) add(back)
+                        if (step == "profile") add(skip)
+                        add(forward)
+                    },
+                    Modifier.padding(top = Ownify.Space4).heightIn(min = 48.dp),
+                    go = true
+                )
             }
         }
     }
-}
-
-/** The setup's next: the primary glass (`.btn--primary`), 48 high. */
-@Composable
-private fun Primary(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Btn(label, onClick = onClick, enabled = enabled, look = BtnLook.Primary, modifier = modifier.heightIn(min = 48.dp))
 }
 
 /** `.setup__title` and `.setup__lede`. */
@@ -565,10 +561,13 @@ private fun ColumnScope.GoalStep(
             T(suggestion.name, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold), Modifier.padding(top = Ownify.Space2))
             T(suggestion.basis, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space1))
             T(suggestion.summary, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
-            Row(Modifier.padding(top = Ownify.Space4), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                Primary(suggestion.add, enabled = !busy) { onAdd(suggestion.input) }
-                LinkButton(suggestion.decline, enabled = !busy) { onDecline() }
-            }
+            // Liever niet | Toevoegen: one split (50.0, `.setup-suggestion__actions.split--go`).
+            SplitRow(
+                { Btn(suggestion.decline, onClick = { onDecline() }, enabled = !busy, modifier = it) },
+                { Btn(suggestion.add, onClick = { onAdd(suggestion.input) }, enabled = !busy, modifier = it) },
+                Modifier.padding(top = Ownify.Space4),
+                go = true
+            )
         }
     }
 

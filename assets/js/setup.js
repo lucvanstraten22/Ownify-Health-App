@@ -80,7 +80,7 @@
 
     function setBusy(state) {
         busy = state;
-        each('.setup__foot .btn', function (button) {
+        each('.setup__foot .split__part', function (button) {
             if (state) {
                 button.setAttribute('data-was-disabled', button.disabled ? '1' : '0');
                 button.disabled = true;

@@ -473,8 +473,11 @@ data class BtnLook(
     val border: Color = Ownify.GlassBorder,
     val fill: Color = Ownify.Glass,
     val text: Color = Ownify.TextPrimary,
-    /** Drawn in the Liquid Glass instead of [fill] and [border]. */
-    val glass: GlassLook? = null
+    /**
+     * Drawn in the Liquid Glass instead of [fill] and [border] — every button
+     * since 50.0 (the owner's 1A: one neutral material, as `.btn`).
+     */
+    val glass: GlassLook? = GlassLook()
 ) {
     companion object {
         /** `.btn--primary`: the one way forward — the solid `--action`, its label white (50.0). */
@@ -492,12 +495,13 @@ data class BtnLook(
 }
 
 /**
- * `.btn`: a capsule at least 44 high, 16 either side, `--glass` over the
- * glass border, 13/600. [BtnLook.Primary] is the solid `--action`;
- * [BtnLook.Caution] the Liquid Glass with the gold in it. Not to be taken
- * yet, every one is the muted glass (`.btn:disabled`, 50.0 Phase 5): its own
- * glass — the solid and the gold ones the plain Liquid Glass — with the
- * muted ink, nothing faded.
+ * `.btn`: a capsule at least 44 high, 16 either side, in the Liquid Glass
+ * (50.0, the owner's 1A), 13/600. [BtnLook.Primary] is the solid `--action`,
+ * for the one way forward that stands alone. Beside another button a [Btn]
+ * is a part of a [SplitRow] instead, where [BtnLook.Caution] marks the gold
+ * step that cannot be undone (2C: there is no gold button of its own). Not
+ * to be taken yet, every one is the muted glass (`.btn:disabled`): the plain
+ * Liquid Glass with the muted ink, nothing faded.
  */
 @Composable
 fun Btn(
@@ -509,19 +513,23 @@ fun Btn(
     iconSize: Dp = 16.dp,
     look: BtnLook = BtnLook(),
     contentDescription: String? = null,
+    /** Inside a split: saving, the spinner before its words (the wizards' last step). */
+    loading: Boolean = false,
     content: (@Composable RowScope.() -> Unit)? = null
 ) {
-    // Inside a SplitRow (50.0) the button is that half of the split.
+    // Inside a SplitRow (50.0) the button is that part of the split.
     val side = LocalSplitSide.current
     if (side != null) {
-        SplitBtn(side, label, onClick, modifier, enabled, icon, look.glass?.caution == true, contentDescription)
+        SplitBtn(side, label, onClick, modifier, enabled, icon, look.glass?.caution == true, contentDescription, loading)
         return
     }
-    // Not to be taken yet: the muted glass. The solid way forward and the
-    // gold yes are the plain glass then (`.btn--primary:disabled`,
-    // `.btn--caution:disabled`); the neutral button keeps its own.
-    val glassLook = if (!enabled && look.glass != null) GlassLook() else look.glass
-    val ink = if (enabled) look.text else Ownify.TextMuted
+    // Not to be taken yet: the muted glass — the plain Liquid Glass, the
+    // muted ink (`.btn:disabled`, `.btn--primary:disabled`). A lone step that
+    // cannot be undone (the armed delete in OwnifyAI) is no gold glass of its
+    // own (50.0, 2C): the glass with the split's gold words.
+    val caution = look.glass?.caution == true
+    val glassLook = if ((!enabled || caution) && look.glass != null) GlassLook() else look.glass
+    val ink = if (!enabled) Ownify.TextMuted else if (caution) Ownify.Attention else look.text
     InButton {
         val interaction = remember { MutableInteractionSource() }
         val shape = RoundedCornerShape(50)
@@ -549,7 +557,7 @@ fun Btn(
                 content()
             } else {
                 if (icon != null) JIcon(icon, size = iconSize, color = ink)
-                ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, ink), maxLines = 1) }
+                ChromeText { T(label, OwnifyType.style(Ownify.FsSubhead, if (caution && enabled) FontWeight.Bold else FontWeight.SemiBold, ink), maxLines = 1) }
             }
         }
     }

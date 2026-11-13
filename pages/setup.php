@@ -185,9 +185,9 @@ $source  = $connect['source'];
                         <p class="setup-suggestion__name"><?= e($suggestion['name']) ?></p>
                         <p class="setup-suggestion__basis"><?= e($suggestion['basis']) ?></p>
                         <p class="setup-suggestion__summary"><?= e($suggestion['summary']) ?></p>
-                        <div class="setup-suggestion__actions">
-                            <button type="button" class="btn btn--primary press setup__primary" data-setup-suggestion-add><?= e($suggestion['add']) ?></button>
-                            <button type="button" class="setup__link press" data-setup-suggestion-decline><?= e($suggestion['decline']) ?></button>
+                        <div class="setup-suggestion__actions split split--go" role="group">
+                            <button type="button" class="split__part split__part--back" data-setup-suggestion-decline><?= e($suggestion['decline']) ?></button>
+                            <button type="button" class="split__part" data-setup-suggestion-add><?= e($suggestion['add']) ?></button>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -212,18 +212,18 @@ $source  = $connect['source'];
         </div>
 
         <footer class="setup__foot">
-            <button type="button" class="btn press setup__back" data-setup-back hidden><?= e($setup['back']) ?></button>
-
-            <!-- Each step's own way on: one quiet, one primary. -->
-            <button type="button" class="btn press setup__skip" data-setup-skip="profile" hidden><?= e($profile['skip']) ?></button>
-
-            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="focus"
-                    <?= array_filter($focus['options'], static fn ($o) => $o['chosen']) === [] ? 'disabled' : '' ?>><?= e($setup['next']) ?></button>
-            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="connect" hidden>
-                <?= e($connect['connected'] ? $setup['next'] : $connect['skip']) ?>
-            </button>
-            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="profile" hidden><?= e($profile['save']) ?></button>
-            <button type="button" class="btn btn--primary press setup__primary" data-setup-next="goal" hidden><?= e($goal['finish']) ?></button>
+            <!-- Each step's own way on, as one split (50.0): Terug, Overslaan, and the way forward in green. -->
+            <div class="split split--go setup__actions" role="group">
+                <button type="button" class="split__part split__part--back setup__back" data-setup-back hidden><?= e($setup['back']) ?></button>
+                <button type="button" class="split__part split__part--back setup__skip" data-setup-skip="profile" hidden><?= e($profile['skip']) ?></button>
+                <button type="button" class="split__part setup__primary" data-setup-next="focus"
+                        <?= array_filter($focus['options'], static fn ($o) => $o['chosen']) === [] ? 'disabled' : '' ?>><?= e($setup['next']) ?></button>
+                <button type="button" class="split__part setup__primary" data-setup-next="connect" hidden>
+                    <?= e($connect['connected'] ? $setup['next'] : $connect['skip']) ?>
+                </button>
+                <button type="button" class="split__part setup__primary" data-setup-next="profile" hidden><?= e($profile['save']) ?></button>
+                <button type="button" class="split__part setup__primary" data-setup-next="goal" hidden><?= e($goal['finish']) ?></button>
+            </div>
         </footer>
 
     </main>

@@ -106,7 +106,7 @@ $wheel = static fn (string $kind, ?string $start = null): string => e(json_encod
                 <div class="manual-entry__foot reveal">
                     <p class="wizard__error" role="alert" data-entry-error hidden></p>
                     <div class="goal-confirm__row split" role="group">
-                        <button type="button" class="split__part" data-detail-close><?= e($common['cancel']) ?></button>
+                        <button type="button" class="split__part split__part--back" data-detail-close><?= e($common['cancel']) ?></button>
                         <button type="button" class="split__part" data-entry-save
                                 data-saving="<?= e($common['saving']) ?>" data-offline="<?= e($common['offline']) ?>"
                                 data-endpoint="<?= e($kind === 'sleep' ? 'api/health/sleep-entry.php' : 'api/health/training-entry.php') ?>"><?= e($common['save']) ?></button>

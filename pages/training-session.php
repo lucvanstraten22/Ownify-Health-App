@@ -91,7 +91,7 @@ $suffix  = $session['detail'];
                                 <p class="goal-confirm__text manual-entry__imported"><?= e($remove['imported']) ?></p>
                             <?php endif; ?>
                             <div class="goal-confirm__row split split--caution" role="group">
-                                <button type="button" class="split__part" data-entry-action="remove-cancel"><?= e($remove['no']) ?></button>
+                                <button type="button" class="split__part split__part--back" data-entry-action="remove-cancel"><?= e($remove['no']) ?></button>
                                 <button type="button" class="split__part" data-entry-action="remove-confirm"><?= e($remove['yes']) ?></button>
                             </div>
                         </div>

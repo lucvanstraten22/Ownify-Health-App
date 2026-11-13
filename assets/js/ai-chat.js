@@ -417,7 +417,7 @@
             buttons.className = 'ai-action__buttons split';
             buttons.setAttribute('role', 'group');
 
-            [['decline', action.decline, 'split__part'], ['confirm', action.confirm, 'split__part']].forEach(function (b) {
+            [['decline', action.decline, 'split__part split__part--back'], ['confirm', action.confirm, 'split__part']].forEach(function (b) {
                 var button = document.createElement('button');
                 button.type = 'button';
                 button.className = b[2];

@@ -132,10 +132,10 @@ $steps = $copy['steps'];
 
         <div class="wizard__foot goal-wizard__foot" data-wizard-foot>
             <p class="wizard__error" data-wizard-error role="alert" hidden></p>
-            <div class="goal-wizard__nav">
-                <button type="button" class="glass glass--round press" data-wizard-back
-                        aria-label="<?= e($copy['back']) ?>"><?= icon('chevron-left') ?></button>
-                <button type="button" class="glass glass--cta goal-wizard__next press" data-wizard-next disabled>
+            <?php /* The way back and the way forward: one split (50.0), the forward word green. */ ?>
+            <div class="goal-wizard__nav split split--go" role="group">
+                <button type="button" class="split__part split__part--back" data-wizard-back><?= e($copy['back']) ?></button>
+                <button type="button" class="split__part goal-wizard__next" data-wizard-next disabled>
                     <span class="goal-wizard__spinner" aria-hidden="true"></span>
                     <span data-wizard-next-label><?= e($copy['next']) ?></span>
                 </button>

@@ -2,10 +2,6 @@ package com.ownify.android.ui
 
 import android.content.Context
 import androidx.compose.runtime.CompositionLocalProvider
-import android.os.SystemClock
-import android.view.MotionEvent
-import android.view.WindowManager
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -19,7 +15,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -67,8 +62,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadow.api.Shadow
-import org.robolectric.shadows.ShadowWindowManagerImpl
 
 /**
  * Nieuw doel in the app (GoalWizard.kt), against a server on localhost: the
@@ -139,30 +132,8 @@ class GoalWizardFlowTest {
 
     private fun button(text: String): SemanticsNodeInteraction = compose.onAllNodes(hasText(text) and hasClickAction()).onLast().inView()
 
-    /**
-     * Scrolled into the step's view first, where something scrolls it. Not
-     * the wizard's foot or the tab bar, which nothing scrolls: there
-     * performScrollTo fails, and every failure writes out the whole app's
-     * semantics — minutes, and a test that times out instead of saying
-     * what went wrong (50.0, Phase 5).
-     */
-    private fun SemanticsNodeInteraction.inView(): SemanticsNodeInteraction {
-        val node = try { fetchSemanticsNode() } catch (_: Throwable) { return this }
-        // Already on the screen: nothing to scroll (and on step three an
-        // animated scroll to the end does not settle under Robolectric).
-        var top = node
-        while (top.parent != null) top = top.parent!!
-        if (node.boundsInRoot.top >= 0f && node.boundsInRoot.bottom <= top.size.height) return this
-        var parent = node.parent
-        while (parent != null) {
-            if (parent.config.contains(SemanticsActions.ScrollBy)) {
-                try { performScrollTo() } catch (_: Throwable) { }
-                break
-            }
-            parent = parent.parent
-        }
-        return this
-    }
+    /** Scrolled into the step's view first, where needed (WheelTesting.kt onScreen()). */
+    private fun SemanticsNodeInteraction.inView(): SemanticsNodeInteraction = onScreen()
 
     private fun tap(text: String) {
         button(text).performClick()
@@ -204,12 +175,7 @@ class GoalWizardFlowTest {
         described(field).performClick()
         compose.waitForIdle()
         tap(option)
-        val windows: List<android.view.View> =
-            Shadow.extract<ShadowWindowManagerImpl>(context.getSystemService(WindowManager::class.java)).views
-        val wheel = windows.last { it.javaClass.name.contains("Popup") }
-        val at = SystemClock.uptimeMillis()
-        wheel.dispatchTouchEvent(MotionEvent.obtain(at, at, MotionEvent.ACTION_DOWN, -20f, -20f, 0))
-        wheel.dispatchTouchEvent(MotionEvent.obtain(at, at + 50, MotionEvent.ACTION_UP, -20f, -20f, 0))
+        closeWheel(context)
         compose.waitForIdle()
     }
 
@@ -397,11 +363,11 @@ class GoalWizardFlowTest {
         tap("3 maanden")
         val end = said("Einde:")
         assertEquals("three months on", "Einde: " + dateText(LocalDate.now().plusMonths(3).minusDays(1)), end)
-        described("Terug").performClick()
+        button("Terug").performClick()
         compose.waitForIdle()
         assertEquals("Mijn stappen", fieldText("Naam"))
         assertEquals("Optellen is still the type", true, chosen("Optellen"))
-        described("Terug").performClick()
+        button("Terug").performClick()
         compose.waitForIdle()
         button("Volgende").assertIsEnabled()      // Stappen is still chosen
         assertEquals("Stappen is still the measurement", true, chosen("Stappen"))
@@ -409,9 +375,9 @@ class GoalWizardFlowTest {
         tap("Volgende")
         assertEquals("250000", fieldText("Totaal"))
         assertEquals("the looptijd is kept", end, said("Einde:"))
-        described("Terug").performClick()
-        described("Terug").performClick()
-        described("Terug").performClick()
+        button("Terug").performClick()
+        button("Terug").performClick()
+        button("Terug").performClick()
         compose.waitForIdle()
         compose.waitUntil(5_000) { !shows("Wat wil je bijhouden?") }
     }

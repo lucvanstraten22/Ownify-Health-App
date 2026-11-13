@@ -809,7 +809,8 @@ private fun MadeSheet(overlay: Overlay, data: AppData, answer: JSONObject) {
         SplitRow(
             { Btn(copy["copy"].orEmpty(), onClick = { copyCode(context, code) }, modifier = it, icon = OwnifyIcons.copy) },
             { Btn(copy["share"].orEmpty(), onClick = { shareCode(context, answer.optString("share_text"), code) }, modifier = it, icon = OwnifyIcons.share) },
-            Modifier.padding(top = Ownify.Space4)
+            Modifier.padding(top = Ownify.Space4),
+            quietBack = false
         )
     }
 }
@@ -877,7 +878,8 @@ fun ChallengeInviteSheet(overlay: Overlay.ChallengeInvite, data: AppData) {
                         if (on) copy["picked"].orEmpty() else copy["pick"].orEmpty(),
                         onClick = { if (on) chosen.remove(id) else chosen.add(id) },
                         icon = if (on) OwnifyIcons.check else null,
-                        look = if (on) PrimaryLook else com.ownify.android.ui.design.BtnLook(),
+                        // `.ch-friend__pick.is-on`: the chosen one is the chosen glass (the website's), not the solid way forward.
+                        look = if (on) com.ownify.android.ui.design.BtnLook(glass = com.ownify.android.ui.design.GlassLook(chosen = true)) else com.ownify.android.ui.design.BtnLook(),
                         contentDescription = friend.name + ": " + (if (on) copy["picked"] else copy["pick"]).orEmpty()
                     )
                 }

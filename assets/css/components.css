@@ -536,16 +536,37 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    isolation: isolate;
     min-height: var(--hit-min);
     padding-inline: var(--space-4);
-    border: 1px solid var(--glass-border);
+    border: 0;
     border-radius: var(--radius-pill);
-    background: var(--glass);
+    /* The one neutral material (50.0, the owner's 1A): the Liquid Glass of
+       the split, the round buttons and the chips — no flat glass beside it. */
+    background: var(--lg-face), var(--lg-body);
+    -webkit-backdrop-filter: var(--lg-filter);
+    backdrop-filter: var(--lg-filter);
+    box-shadow: var(--lg-shadow), var(--lg-glint);
     color: var(--text-primary);
     font-size: var(--fs-subhead);
     font-weight: 600;
     transition: background-color var(--transition-fast), transform var(--press-out) var(--ease-out-strong);
     letter-spacing: var(--tracking-small);
+}
+
+/* Its rim is ::before: a .btn's ::after is its hit margin. */
+.btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--pane-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
 }
 
 /* Not to be taken yet (50.0, Phase 5): every action the same muted glass —
@@ -555,54 +576,23 @@
     cursor: not-allowed;
 }
 
-/* The one way forward (50.0): solid --action with its white label, flat, a
-   faint top edge and a neutral shadow — not glass (as the goal wizard's
-   .glass--cta). The step that cannot be undone: the Liquid Glass with the
-   attention gold in it — every leave / delete / wipe in the app. The rim is
-   ::before here: a .btn's ::after is its hit margin. */
-.btn--primary,
-.btn--caution {
-    isolation: isolate;
-    border: 0;
-    background: var(--lg-face), var(--lg-gold), var(--lg-body);
-    -webkit-backdrop-filter: var(--lg-filter);
-    backdrop-filter: var(--lg-filter);
-    box-shadow: var(--lg-shadow), var(--lg-glint);
-    color: var(--text-primary);
-    font-weight: 600;
-    cursor: pointer;
-}
-
+/* The one way forward when it stands alone (Inloggen, Nieuw doel, Stuur
+   link): solid --action with its white label, flat, a faint top edge and a
+   neutral shadow — not glass. Beside another button it is a split's forward
+   half instead (.split--go). */
 .btn--primary {
     background: var(--action);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     box-shadow: var(--action-shadow);
     color: var(--action-ink);
-}
-
-
-.btn--primary::before,
-.btn--caution::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    padding: 1px;
-    background: var(--lg-gold-rim);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    pointer-events: none;
+    cursor: pointer;
 }
 
 .btn--primary::before { content: none; }
 
-/* Not to be taken yet: no longer the solid thing or the gold yes, the plain
-   glass instead — the same muted glass as every disabled action. */
-.btn--primary:disabled,
-.btn--caution:disabled {
+/* Not to be taken yet: the plain Liquid Glass, the muted ink. */
+.btn--primary:disabled {
     background: var(--lg-face), var(--lg-body);
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
@@ -610,7 +600,7 @@
     color: var(--text-muted);
 }
 
-.btn--caution:disabled::before { content: none; }
+.btn--primary:disabled::before { content: ""; }
 
 /* Every control drawn smaller than --hit-min takes taps over at least that
    much: an invisible margin, centred on it, as far as it falls short — none
@@ -619,7 +609,6 @@
 .btn,
 .account__close,
 .range-switch__option,
-.heart-chart__step,
 .settings-delete,
 .ai-handle {
     position: relative;
@@ -632,7 +621,6 @@
 .ch-sheet__close::before,
 .glass--small::before,
 .range-switch__option::after,
-.heart-chart__step::after,
 .settings-delete::after,
 .ai-handle::after {
     content: "";
@@ -2321,61 +2309,35 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 /* ==========================================================================
-   The split button (50.0, the owner's pick: "Quiet + Joined"). Two actions
-   side by side as one block across the width: two halves of the neutral
-   Liquid Glass meeting at a 2 px seam, the inner corners at the small radius.
-   Both halves read in the one full ink; only the step that cannot be undone
-   reads gold. The way back sits left, the way forward right. .split--menu is a dropdown: the value 85 %, the chevron 15 %.
-   Android: SplitButton / SplitMenu (ui/design/SplitButton.kt).
+   The split button (50.0; style "Eén capsule", the owner's pick). Every pair
+   of buttons side by side is one: a single Liquid Glass capsule across the
+   width, its parts divided by a hairline. The parts are not glass of their
+   own; what each does is in its words — the way back quiet (.split__part--back,
+   secondary, 500), a plain step full ink 600, the way forward in a flow green
+   (.split--go), the step that cannot be undone gold (.split--caution), both
+   700. Pressed, a part darkens in place. The way back sits left, the way
+   forward right. .split--menu is a dropdown: the value 85 %, the chevron 15 %.
+   Android: SplitRow / SplitButton / SplitHalf / SplitMenu (ui/design/SplitButton.kt).
    ========================================================================== */
 /* The doubled class outranks the containers it is put on (.confirm__row,
-   .friend__actions…), whose own two-button layouts it replaces. */
+   .friend__actions…), whose own layouts it replaces. */
 .split.split {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-wrap: nowrap;
     justify-content: normal;
-    gap: 2px;
+    gap: 0;
     width: 100%;
     min-height: var(--hit-min);
-}
-
-.split__part {
-    position: relative;
-    isolation: isolate;
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    min-height: var(--hit-min);
-    margin: 0;
-    padding: 6px var(--space-4);
-    border: 0;
-    border-radius: var(--radius-sm) var(--radius-pill) var(--radius-pill) var(--radius-sm);
+    border-radius: var(--radius-pill);
     background: var(--lg-face), var(--lg-body);
     -webkit-backdrop-filter: var(--lg-filter);
     backdrop-filter: var(--lg-filter);
     box-shadow: var(--lg-shadow), var(--lg-glint);
-    color: var(--text-primary);
-    font: inherit;
-    font-size: var(--fs-subhead);
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: var(--tracking-small);
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    transition: transform var(--press-out) var(--ease-out-strong);
 }
 
-.split__part:first-child { border-radius: var(--radius-pill) var(--radius-sm) var(--radius-sm) var(--radius-pill); }
-
-.split__part::after {
+.split.split::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -2389,14 +2351,63 @@ a.settings-row { color: inherit; text-decoration: none; }
     pointer-events: none;
 }
 
-.split--caution > .split__part:last-child { color: var(--attention); }
+.split.split[hidden] { display: none; }
 
-.split__part:active { transform: scale(0.97); transition-duration: var(--press-in); }
+.split__part {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: var(--hit-min);
+    margin: 0;
+    padding: 6px var(--space-4);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-subhead);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: var(--tracking-small);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: background-color var(--press-out) var(--ease-out-strong);
+}
+
+.split__part[hidden] { display: none; }
+
+/* The hairline: before every part that has a part shown before it. */
+.split > .split__part:not([hidden]) ~ .split__part:not([hidden])::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 11px;
+    bottom: 11px;
+    width: 1px;
+    background: rgba(var(--ink), 0.16);
+    pointer-events: none;
+}
+
+.split__part--back { color: var(--text-secondary); font-weight: 500; }
+.split--go > .split__part:not(.split__part--back) { color: var(--go-ink); font-weight: 700; }
+.split--caution > .split__part:last-child { color: var(--attention); font-weight: 700; }
+
+.split__part:active:not(:disabled) { background-color: rgba(var(--ink), 0.08); transition-duration: var(--press-in); }
 .split__part:focus-visible { z-index: 1; }   /* the one ring (theme.css), over its neighbour */
 .split__part:disabled,
 .split__part[aria-disabled="true"],
+.split--go > .split__part:not(.split__part--back):disabled,
 .split--caution > .split__part:last-child:disabled,
-.split--menu > .split__part:last-child:disabled { color: var(--text-muted); cursor: not-allowed; transform: none; }
+.split--menu > .split__part:last-child:disabled { color: var(--text-muted); cursor: not-allowed; }
 .split__part .icon { width: 18px; height: 18px; flex: none; }
 
 /* The dropdown: the value takes 85 %, the chevron the rest. */
@@ -2422,10 +2433,10 @@ a.settings-row { color: inherit; text-decoration: none; }
 }
 
 .split--menu select:focus-visible { outline: none; }
-.split--menu:focus-within > .split__part:first-child { box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); }
+.split--menu:focus-within { box-shadow: var(--lg-shadow), var(--lg-glint), var(--focus-halo); }
 .split--menu option { color: initial; background: initial; }
 .split--menu .icon { width: 14px; height: 14px; color: var(--text-muted); }
 
 @media (prefers-reduced-motion: reduce) {
-    .split__part:active { transform: none; }
+    .split__part { transition: none; }
 }

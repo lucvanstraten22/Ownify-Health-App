@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import com.ownify.android.ui.design.WheelPopup
 import com.ownify.android.ui.design.SplitSide
 import com.ownify.android.ui.design.SplitHalf
+import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.SplitRow
+import com.ownify.android.ui.design.splitCapsule
 import com.ownify.android.ui.design.WheelInput
 import com.ownify.android.ui.design.WheelSpec
 import com.ownify.android.ui.design.Wheel
@@ -97,7 +100,6 @@ import com.ownify.android.ui.app.OverlayFrame
 import com.ownify.android.ui.app.RoundButton
 import com.ownify.android.ui.app.panelGlass
 import com.ownify.android.ui.design.GlassChip
-import com.ownify.android.ui.design.GlassCta
 import com.ownify.android.ui.design.GlassLook
 import com.ownify.android.ui.design.GlassRound
 import com.ownify.android.ui.design.GlassSelect
@@ -334,14 +336,13 @@ internal fun WizardFrame(
                                 align = TextAlign.Center
                             )
                         }
-                        Row(
-                            Modifier.fillMaxWidth().padding(top = Ownify.Space4),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
-                        ) {
-                            GlassRound(OwnifyIcons.chevronLeft, backLabel, onBack, enabled = !saving)
-                            GlassCta(cta, onClick = onForward, modifier = Modifier.weight(1f), enabled = ctaEnabled, loading = saving)
-                        }
+                        // Terug | Volgende: one split (50.0), the way forward in green (`.goal-wizard__nav.split--go`).
+                        SplitRow(
+                            { Btn(backLabel, onClick = onBack, modifier = it, enabled = !saving) },
+                            { Btn(cta, onClick = onForward, modifier = it, enabled = ctaEnabled, loading = saving) },
+                            Modifier.padding(top = Ownify.Space4),
+                            go = true
+                        )
                     }
                 }
             }
@@ -648,8 +649,7 @@ internal fun TypeCard(label: String, hint: String, example: String, chosen: Bool
             Modifier
                 .fillMaxWidth()
                 .press(interaction, enabled = enabled)
-                .alpha(if (enabled) 1f else 0.55f)
-                .glass(RoundedCornerShape(Ownify.RadiusMd), GlassLook(chosen = chosen))
+                .glass(RoundedCornerShape(Ownify.RadiusMd), GlassLook(chosen = chosen && enabled))
                 .clickable(interaction, indication = null, enabled = enabled, role = Role.RadioButton, onClick = blurring(onClick))
                 .semantics(mergeDescendants = true) {
                     selected = chosen
@@ -658,9 +658,10 @@ internal fun TypeCard(label: String, hint: String, example: String, chosen: Bool
                 .padding(horizontal = Ownify.Space4, vertical = Ownify.Space3),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
-            T(hint, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary))
-            T(example, OwnifyType.style(Ownify.FsSubhead, color = if (chosen) Ownify.TextSecondary else Ownify.TextMuted))
+            // Not to be chosen: the same glass, every word in the muted ink (50.0, 6A) — nothing faded.
+            T(label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold, if (enabled) Ownify.TextPrimary else Ownify.TextMuted))
+            T(hint, OwnifyType.style(Ownify.FsSubhead, color = if (enabled) Ownify.TextSecondary else Ownify.TextMuted))
+            T(example, OwnifyType.style(Ownify.FsSubhead, color = if (chosen && enabled) Ownify.TextSecondary else Ownify.TextMuted))
         }
     }
 }
@@ -927,8 +928,8 @@ internal fun Dates(draft: PeriodState, words: (String) -> String, durations: Lis
     Column {
         FieldLabel(words("dates_label"))
         Row(
-            Modifier.fillMaxWidth().height(IntrinsicSize.Min).semantics { contentDescription = words("dates_label") },
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
+            // Start | Einde: one split capsule (50.0), the parts its own.
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).splitCapsule().semantics { contentDescription = words("dates_label") }
         ) {
             listOf("start", "end").forEach { which ->
                 val value = if (which == "start") dateText(draft.start) else draft.end?.let(::dateText) ?: words("end_choose")
@@ -1216,9 +1217,3 @@ internal fun spanText(days: Int): String = when {
 
 /** "1 dag", "30 dagen". */
 internal fun daysText(n: String): String = trn(n.trim().toDoubleOrNull()?.toInt() ?: 0, "%d dag", "%d dagen")
-
-/** "10.000" or "10,000": the way the rest of the app writes a number, at most two decimals. */
-internal fun dutchNumber(text: String): String {
-    val n = goalNumber(text) ?: return text
-    return OwnifyFormat.numberTrim(n, 2)
-}

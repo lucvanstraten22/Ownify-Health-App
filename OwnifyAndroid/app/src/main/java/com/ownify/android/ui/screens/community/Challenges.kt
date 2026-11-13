@@ -91,6 +91,7 @@ import com.ownify.android.ui.app.Overlay
 import com.ownify.android.ui.app.OwnifyToast
 import com.ownify.android.ui.app.heroName
 import com.ownify.android.ui.design.Btn
+import com.ownify.android.ui.design.SplitRow
 import com.ownify.android.ui.design.BtnLook
 import com.ownify.android.ui.design.CardStyle
 import com.ownify.android.ui.design.IconTile
@@ -838,12 +839,13 @@ fun ChallengeDetail(data: AppData, view: ChallengeView, overList: Boolean, scrol
                         Modifier.weight(1f).clearAndSetSemantics { contentDescription = code.toCharArray().joinToString(" ") },
                         maxLines = 1
                     )
-                    Btn("", onClick = { copyCode(context, code) }, contentDescription = copy["copy"]) {
-                        JIcon(OwnifyIcons.copy, size = 18.dp, color = Ownify.TextPrimary)
-                    }
-                    Btn("", onClick = { shareCode(context, view.shareText ?: code, code) }, contentDescription = copy["share"]) {
-                        JIcon(OwnifyIcons.share, size = 18.dp, color = Ownify.TextPrimary)
-                    }
+                    // Kopiëren | Delen: one split of its icons (50.0, `.ch-share__actions`), each part 48 wide.
+                    SplitRow(
+                        { Btn("", onClick = { copyCode(context, code) }, modifier = it, icon = OwnifyIcons.copy, contentDescription = copy["copy"]) },
+                        { Btn("", onClick = { shareCode(context, view.shareText ?: code, code) }, modifier = it, icon = OwnifyIcons.share, contentDescription = copy["share"]) },
+                        Modifier.width(96.dp),
+                        quietBack = false
+                    )
                 }
                 InviteRow(copy["invite"].orEmpty(), copy["invite_hint"].orEmpty()) { shell.open(Overlay.ChallengeInvite(view.id)) }
             }
@@ -895,7 +897,7 @@ internal fun LinkButton(label: String, onClick: () -> Unit) {
             .padding(horizontal = Ownify.Space3),
         contentAlignment = Alignment.Center
     ) {
-        T(label, OwnifyType.style(Ownify.FsSubhead, FontWeight.SemiBold, Ownify.TextMuted), maxLines = 1)
+        T(label, com.ownify.android.ui.screens.account.quietLinkStyle(), maxLines = 1)
     }
 }
 

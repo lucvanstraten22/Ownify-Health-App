@@ -221,7 +221,6 @@
     pointer-events: none;
 }
 
-.ai-history__delete.is-armed::after { background: var(--lg-gold-rim); }
 
 .ai-round {
     display: grid;
@@ -1091,8 +1090,10 @@
 
 .ai-history__delete .icon { width: 18px; height: 18px; }
 
-.ai-history__delete:focus-visible,
-.ai-history__delete.is-armed { color: var(--text-primary); }
+.ai-history__delete:focus-visible { color: var(--text-primary); }
+
+/* Armed, the step that cannot be undone: the gold words on the glass (50.0, 2C). */
+.ai-history__delete.is-armed { color: var(--attention); }
 
 /* A pointer that can hover (a mouse, a trackpad): a phone's tap would leave it lit. */
 @media (hover: hover) and (pointer: fine) {
@@ -1107,11 +1108,11 @@
     width: auto;
     padding-inline: var(--space-3);
     border-radius: var(--radius-pill);
-    background: var(--lg-face), var(--lg-gold), var(--lg-body);
+    background: var(--lg-face), var(--lg-body);
     box-shadow: var(--lg-shadow-small), var(--lg-glint);
     font-size: var(--fs-caption);
     letter-spacing: var(--tracking-small);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .ai-history__empty {

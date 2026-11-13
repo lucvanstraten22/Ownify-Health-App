@@ -53,9 +53,10 @@ foreach ($data['auth']['identities'] ?? [] as $identity) {
             <?php if ($hasGoogle): ?><?= ' ' . e($delete['google']) ?><?php endif; ?>
         </p>
 
-        <div class="confirm__row">
-            <button type="button" class="btn press" data-confirm-close><?= e($delete['cancel']) ?></button>
-            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-next><?= e($delete['confirm']) ?></button>
+        <?php /* Not yet the step that cannot be undone: a plain split (50.0, 3A). */ ?>
+        <div class="confirm__row split" role="group">
+            <button type="button" class="split__part split__part--back" data-confirm-close><?= e($delete['cancel']) ?></button>
+            <button type="button" class="split__part" data-confirm-next><?= e($delete['confirm']) ?></button>
         </div>
 
         <p class="confirm__note">
@@ -91,14 +92,12 @@ foreach ($data['auth']['identities'] ?? [] as $identity) {
 
         <p class="confirm__error" data-confirm-error role="alert" hidden></p>
 
-        <?php /* Swapped on purpose: the safe answer is on the right, where the
-                 previous step's confirmation was. */ ?>
-        <div class="confirm__row">
-            <button type="button" class="btn btn--caution confirm__yes press" data-confirm-delete
-                    <?= !$byPassword && !$googleReady ? 'disabled' : '' ?>>
-                <?= e($delete['final_yes']) ?>
-            </button>
-            <button type="button" class="btn press" data-confirm-close><?= e($delete['final_no']) ?></button>
+        <?php /* The step that cannot be undone: the split's gold forward half (50.0, 2C),
+                 on the right as every step forward. */ ?>
+        <div class="confirm__row split split--caution" role="group">
+            <button type="button" class="split__part split__part--back" data-confirm-close><?= e($delete['final_no']) ?></button>
+            <button type="button" class="split__part" data-confirm-delete
+                    <?= !$byPassword && !$googleReady ? 'disabled' : '' ?>><?= e($delete['final_yes']) ?></button>
         </div>
     </div>
 </div>

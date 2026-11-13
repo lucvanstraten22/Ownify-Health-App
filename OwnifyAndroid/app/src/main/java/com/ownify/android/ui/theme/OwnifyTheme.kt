@@ -395,6 +395,13 @@ object Ownify {
     val Action: Color get() = if (light) Color(0xFF586C60) else Color(0xFF3F5247)
     val ActionInk = Color.White
 
+    /**
+     * `--go-ink`: the way forward's words in a split (`.split--go`) — Health in
+     * Dark Mode (4.8:1 on the split's glass), Dark Mode's solid primary in
+     * White Mode (6:1).
+     */
+    val GoInk: Color get() = if (light) Color(0xFF3F5247) else Health
+
     /** `--zone-N`: heart-rate zone [n] (1–4), blue, green, amber, red; null-safe outside 1–4. */
     fun zone(n: Int): Color = palette.zones[(n - 1).coerceIn(0, 3)]
 

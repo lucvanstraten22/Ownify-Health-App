@@ -53,10 +53,10 @@ $y      = static fn (array $p): string => (string) json_encode((object) ['heart'
 
                 <?php /* The day: older to the left, newer to the right. */ ?>
                 <div class="heart-chart__day" data-day-swipe data-gesture-own>
-                    <button type="button" class="heart-chart__step press" data-day-step="1"
+                    <button type="button" class="glass glass--round glass--small heart-chart__step press" data-day-step="1"
                             aria-label="<?= e($heart['prev']) ?>"<?= $i === $last ? ' disabled' : '' ?>><?= icon('chevron-left', 'heart-chart__step-icon') ?></button>
                     <p class="heart-chart__date"><?= e($day['title']) ?></p>
-                    <button type="button" class="heart-chart__step press" data-day-step="-1"
+                    <button type="button" class="glass glass--round glass--small heart-chart__step press" data-day-step="-1"
                             aria-label="<?= e($heart['next']) ?>"<?= $i === 0 ? ' disabled' : '' ?>><?= icon('chevron-right', 'heart-chart__step-icon') ?></button>
                 </div>
 
