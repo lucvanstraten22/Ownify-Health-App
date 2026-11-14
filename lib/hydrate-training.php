@@ -64,7 +64,9 @@ if (!function_exists('hydrate_training')) {
                 (array) $area['charts'],
                 (array) $area['chart_copy'],
                 $periods,
-                static fn (array $s): array => hydrate_training_series_days($s, $userId, $counted, $yearAgo, $today),
+                static fn (array $s): array => (string) $s['key'] === 'training_load'
+                    ? hydrate_training_load_days($s, (array) $area['heart']['zones'], $userId, $records, $yearAgo, $today)
+                    : hydrate_training_series_days($s, $userId, $counted, $yearAgo, $today),
                 $today
             ),
             'heart'    => hydrate_training_heart((array) $area['heart'], (array) $area['chart_copy'], $periods, $zones, $userId, $today),
@@ -172,6 +174,80 @@ if (!function_exists('hydrate_training')) {
         }
 
         return [$days, $first];
+    }
+
+    /**
+     * Hartbelasting per day (50.8). A source's own value where it sends one;
+     * otherwise worked out from the heart rate minute by minute — Google does
+     * not share Fitbit's Cardio load — with Banister's TRIMP, the model Google
+     * says its Cardio load is based on: each minute above 30% of the heart
+     * rate reserve weighs HRr x 0.64 x e^(1.92 HRr) (0.86 and 1.67 for a woman),
+     * HRr = (bpm - rest) / (max - rest), summed per day. Rest is the median
+     * resting heart rate of the last days, max health_hr_max(). Without both,
+     * only what a source sent.
+     */
+    function hydrate_training_load_days(array $s, array $zoneCfg, int $userId, array $records, string $from, string $to): array
+    {
+        [$days, $first] = area_metric_days($userId, 'training_load', $s, $from, $to);
+        if (!db_available()) {
+            return [$days, $first];
+        }
+
+        $max     = health_hr_max($userId, $records);
+        $restFrom = (new DateTimeImmutable($to))->modify('-' . max(0, (int) ($zoneCfg['resting_days'] ?? 30) - 1) . ' day')->format('Y-m-d');
+        $rest    = hydrate_training_median(array_values(health_daily_metric_days($userId, 'resting_hr', $restFrom, $to)));
+        if ($max === null || $rest === null || $rest < 30 || $rest >= 0.75 * $max) {
+            return [$days, $first];
+        }
+
+        $female = db_value('SELECT gender FROM user_profiles WHERE user_id = ?', [$userId]) === 'female';
+        [$a, $b] = $female ? [0.86, 1.67] : [0.64, 1.92];
+        $reserve = $max - $rest;
+        $floor   = $rest + 0.30 * $reserve;
+        $end     = (new DateTimeImmutable($to))->modify('+1 day')->format('Y-m-d');
+
+        /* One heart rate per minute (the highest, when two devices measured
+           it), only the minutes that count, summed per day in the database. */
+        $rows = db_all(
+            'SELECT DATE(m.minute_at) AS day,
+                    SUM(LEAST(1, (m.bpm - ?) / ?) * ? * EXP(? * LEAST(1, (m.bpm - ?) / ?))) AS load_sum
+               FROM (SELECT minute_at, MAX(bpm) AS bpm FROM heart_rate_minutes
+                      WHERE user_id = ? AND minute_at >= ? AND minute_at < ? AND bpm >= ?
+                      GROUP BY minute_at) m
+              GROUP BY DATE(m.minute_at)',
+            [$rest, $reserve, $a, $b, $rest, $reserve, $userId, $from . ' 00:00:00', $end . ' 00:00:00', $floor]
+        );
+
+        $decimals = (int) ($s['decimals'] ?? 0);
+        $computedFirst = null;
+        foreach ($rows as $row) {
+            $day = (string) $row['day'];
+            if (isset($days[$day])) {
+                continue;                                   // the source's own value wins
+            }
+            $value = round((float) $row['load_sum'], $decimals);
+            $days[$day] = [$value, area_chart_text($s, $value), false];
+            $computedFirst = $computedFirst === null || $day < $computedFirst ? $day : $computedFirst;
+        }
+        if ($computedFirst === null) {
+            return [$days, $first];
+        }
+
+        /* A day the heart rate was measured but never hard enough: 0. A day
+           without any heart rate stays empty. */
+        $measured = db_all(
+            'SELECT DATE(minute_at) AS day FROM heart_rate_minutes WHERE user_id = ? AND minute_at >= ? AND minute_at < ? GROUP BY DATE(minute_at)',
+            [$userId, $from . ' 00:00:00', $end . ' 00:00:00']
+        );
+        $start = $computedFirst;
+        foreach ($measured as $row) {
+            $key = (string) $row['day'];
+            $days[$key] ??= [0.0, area_chart_text($s, 0.0), false];
+            $start = min($start, $key);
+        }
+        ksort($days);
+
+        return [$days, $first === null ? $start : min($first, $start)];
     }
 
     /* ==================================================================

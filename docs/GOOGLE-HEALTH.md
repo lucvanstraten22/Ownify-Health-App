@@ -44,8 +44,11 @@ or a step means the same whichever way it arrived:
 | `active-minutes` (46.0) | Actieve minuten: the minutes Google counts as moderate or vigorous, with their intervals (light minutes are not active minutes) |
 | `daily-sleep-temperature-derivations` (46.0) | Huidtemperatuur: the night's mean skin temperature while asleep, filed in the morning |
 
-**Not read, on purpose (46.0 audit).** `floors` exists but Google offers it
-only as a rollup, not as a list of points. `vo2-max` and `run-vo2-max` (VO2
+`floors` (50.8): Google offers it only as a total per day (`dataPoints:dailyRollUp`,
+`floors.countSum`, from its own wearables), read as one Verdiepingen record per day
+that is rewritten as the day goes on.
+
+**Not read, on purpose (46.0 audit).** `vo2-max` and `run-vo2-max` (VO2
 max was taken out of Ownify), `basal-energy-burned`, `altitude`,
 `time-in-heart-rate-zone`, `daily-heart-rate-zones` (Ownify works the zones
 out from the heart rate itself), `sedentary-period`, `activity-level`, and

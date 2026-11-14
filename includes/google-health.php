@@ -562,8 +562,8 @@ if (!function_exists('google_health_config')) {
         return ['status' => 'ok', 'points' => $points];
     }
 
-    /** One GET. @return array{status: string, data: array} */
-    function google_health_get(array &$ctx, string $url): array
+    /** One GET — or, given a body, one POST of JSON (a roll-up, 50.8). @return array{status: string, data: array} */
+    function google_health_get(array &$ctx, string $url, ?array $post = null): array
     {
         $retried   = false;
         $refreshed = false;
@@ -579,7 +579,10 @@ if (!function_exists('google_health_config')) {
             }
 
             $ctx['requests']++;
-            $response = google_health_http('GET', $url, ['Authorization: Bearer ' . $ctx['token'], 'Accept: application/json']);
+            $response = $post === null
+                ? google_health_http('GET', $url, ['Authorization: Bearer ' . $ctx['token'], 'Accept: application/json'])
+                : google_health_http('POST', $url, ['Authorization: Bearer ' . $ctx['token'], 'Accept: application/json', 'Content-Type: application/json'],
+                    (string) json_encode($post, JSON_UNESCAPED_SLASHES));
 
             if ($response === null || $response['status'] >= 500) {
                 if (!$retried) {
@@ -621,7 +624,7 @@ if (!function_exists('google_health_config')) {
                     return ['status' => 'limited', 'data' => []];
 
                 default:
-                    error_log('[google-health] GET ' . (string) parse_url($url, PHP_URL_PATH) . ' answered HTTP ' . $response['status']);
+                    error_log('[google-health] ' . ($post === null ? 'GET ' : 'POST ') . (string) parse_url($url, PHP_URL_PATH) . ' answered HTTP ' . $response['status']);
                     return ['status' => 'error', 'data' => []];
             }
         }
@@ -983,6 +986,62 @@ if (!function_exists('google_health_config')) {
     /* ================================================================= sync */
 
     /**
+     * Floors per day from $from (Y-m-d) to today (50.8), as Health Connect's
+     * FloorsClimbed records: Google's daily roll-up of its own devices
+     * (dataPoints:dailyRollUp, floors.countSum), each day from its midnight
+     * to its last second on the person's clock.
+     *
+     * @return array{status: string, records: list<array>}
+     */
+    function google_health_floors(array &$ctx, string $from): array
+    {
+        $start = new DateTimeImmutable($from);
+        $end   = new DateTimeImmutable('tomorrow');
+        if ($start >= $end) {
+            return ['status' => 'ok', 'records' => []];
+        }
+        if ((int) $start->diff($end)->days > 90) {
+            $start = $end->modify('-90 days');
+        }
+        $civil = static fn (DateTimeImmutable $d): array => [
+            'date' => ['year' => (int) $d->format('Y'), 'month' => (int) $d->format('n'), 'day' => (int) $d->format('j')],
+            'time' => ['hours' => 0, 'minutes' => 0, 'seconds' => 0, 'nanos' => 0],
+        ];
+        $url = rtrim(google_health_config()['api_base'], '/') . '/users/me/dataTypes/floors/dataPoints:dailyRollUp';
+
+        $records = [];
+        $token   = null;
+        do {
+            if ($ctx['revoked'] || $ctx['limited'] || $ctx['requests'] >= $ctx['budget'] || microtime(true) > ($ctx['deadline'] ?? INF)) {
+                $ctx['limited'] = $ctx['limited'] || !$ctx['revoked'];
+                return ['status' => $ctx['revoked'] ? 'revoked' : 'limited', 'records' => $records];
+            }
+            $body = ['range' => ['start' => $civil($start), 'end' => $civil($end)], 'windowSizeDays' => 1, 'pageSize' => 90,
+                     'dataSourceFamily' => 'users/me/dataSourceFamilies/google-wearables'];
+            if ($token !== null) {
+                $body['pageToken'] = $token;
+            }
+            $page = google_health_get($ctx, $url, $body);
+            if ($page['status'] !== 'ok') {
+                return ['status' => $page['status'], 'records' => $records];
+            }
+            foreach ((array) ($page['data']['rollupDataPoints'] ?? []) as $point) {
+                $day   = google_health_date($point['civilStartTime']['date'] ?? null);
+                $count = google_health_number($point['floors']['countSum'] ?? null);
+                if ($day === null || $count === null || $count < 0) {
+                    continue;
+                }
+                $records[] = ['recordType' => 'FloorsClimbed',
+                              'metadata'   => ['id' => 'gh:floors:' . $day, 'dataOrigin' => 'google_health:floors'],
+                              'startTime'  => $day . 'T00:00:00', 'endTime' => $day . 'T23:59:59', 'floors' => $count];
+            }
+            $token = is_string($page['data']['nextPageToken'] ?? null) && $page['data']['nextPageToken'] !== '' ? $page['data']['nextPageToken'] : null;
+        } while ($token !== null);
+
+        return ['status' => 'ok', 'records' => $records];
+    }
+
+    /**
      * What is read, and how its filter names the time. The categories are
      * what the owner reads when one does not come through.
      */
@@ -1266,6 +1325,23 @@ if (!function_exists('google_health_config')) {
             if ($ctx['revoked'] || $ctx['limited']) {
                 break;
             }
+        }
+
+        /* 50.8: Verdiepingen. Google gives floors only as a total per day (a
+           roll-up), never as points: one per day, from the watches and
+           trackers themselves — what came from Health Connect arrives
+           through the Ownify app — rewritten as the day goes on. */
+        if (!$ctx['revoked'] && !$ctx['limited']) {
+            $answer = google_health_floors($ctx, $from);
+            if ($answer['status'] === 'forbidden') {
+                $forbidden['verdiepingen'] = true;
+            } elseif ($answer['status'] !== 'ok' && $answer['status'] !== 'limited') {
+                $failed['verdiepingen'] = true;
+            }
+            if ($answer['records'] !== []) {
+                $import(health_connect_map($answer['records'])['records']);
+            }
+            $tick();
         }
 
         if ($devices !== []) {

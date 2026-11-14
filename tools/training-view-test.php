@@ -340,9 +340,13 @@ foreach ($charts['steps']['periods'][0]['points'] as $p) {
 }
 check('a day\'s steps as every page counts them: each moment once, 6.000', ($steps[$name($day(1))] ?? null) === '6.000', json_encode($steps));
 check('Actieve + Totale calorieën on one height, its levels named', $charts['energy']['periods'][1]['grid'] !== []);
-check('Hartbelasting and Actieve minuten: no source sends them — empty, never a 0',
-    array_filter(array_column($charts['training_load']['periods'], 'has_data')) === [] && $charts['training_load']['latest'] === null
-    && array_filter(array_column($charts['active_minutes']['periods'], 'has_data')) === []);
+check('Actieve minuten: no source sends them — empty, never a 0',
+    array_filter(array_column($charts['active_minutes']['periods'], 'has_data')) === []);
+/* 50.8: no source sends Hartbelasting, so it is worked out from the heart
+   rate per minute (TRIMP) — only where the heart rate was measured. */
+check('Hartbelasting: worked out from the heart rate when no source sends it',
+    array_filter(array_column($charts['training_load']['periods'], 'has_data')) !== [] && $charts['training_load']['latest'] !== null,
+    json_encode($charts['training_load']['latest']));
 
 echo "\n" . str_repeat('-', 72) . "\n  {$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

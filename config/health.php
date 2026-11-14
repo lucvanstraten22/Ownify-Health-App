@@ -460,9 +460,9 @@ return [
                                      'series' => [['key' => 'active_minutes', 'label' => 'Actieve minuten', 'unit' => 'min', 'kind' => 'line', 'decimals' => 0]]],
                 'training_load'  => ['title' => 'Hartbelasting',
                                 'about' => ['name' => 'Hartbelasting', 'points' => [
-                                    'Een waarde van je bron voor hoe zwaar je hart die dag werkte tijdens inspanning.',
-                                    'Ownify rekent dit niet zelf uit en toont het zoals de bron het stuurt.',
-                                    'Health Connect stuurt deze waarde niet; de grafiek vult zich als een andere bron dat doet.',
+                                    'Hoe zwaar je hart die dag werkte tijdens inspanning.',
+                                    'Stuurt je bron deze waarde, dan toont Ownify die. Anders rekent Ownify hem uit je hartslag per minuut uit, met hetzelfde model (TRIMP) waarop Google zijn Hartbelasting baseert. De uitkomst ligt dicht bij die van je horloge, maar is niet precies gelijk.',
+                                    'Alleen minuten boven 30% van je hartslagreserve tellen mee, en zwaardere minuten tellen veel zwaarder. Zonder rusthartslag of leeftijd kan Ownify hem niet uitrekenen.',
                                 ]],
                                      'series' => [['key' => 'training_load', 'label' => 'Hartbelasting', 'unit' => '', 'kind' => 'line', 'decimals' => 0]]],
             ],

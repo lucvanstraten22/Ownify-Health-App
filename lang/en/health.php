@@ -242,8 +242,9 @@ return [
     'Health Connect stuurt deze waarde niet; de grafiek vult zich als een andere bron dat doet.' => 'Health Connect does not send this value; the chart fills in when another source does.',
     'Hartslagvariabiliteit: hoeveel de tijd tussen twee hartslagen van slag tot slag verschilt, in milliseconden.' => 'Heart rate variability: how much the time between two heartbeats varies from beat to beat, in milliseconds.',
     'Gemeten in rust, meestal tijdens de nacht; dezelfde waarde als op Slaap.' => 'Measured at rest, usually during the night; the same value as on Sleep.',
-    'Een waarde van je bron voor hoe zwaar je hart die dag werkte tijdens inspanning.' => 'A value from your source for how hard your heart worked during exercise that day.',
-    'Ownify rekent dit niet zelf uit en toont het zoals de bron het stuurt.' => 'Ownify does not calculate this itself and shows it as the source sends it.',
+    'Hoe zwaar je hart die dag werkte tijdens inspanning.' => 'How hard your heart worked during exercise that day.',
+    'Stuurt je bron deze waarde, dan toont Ownify die. Anders rekent Ownify hem uit je hartslag per minuut uit, met hetzelfde model (TRIMP) waarop Google zijn Hartbelasting baseert. De uitkomst ligt dicht bij die van je horloge, maar is niet precies gelijk.' => 'If your source sends this value, Ownify shows it. Otherwise Ownify works it out from your heart rate minute by minute, with the same model (TRIMP) Google bases its Cardio load on. The result is close to your watch\'s, but not exactly the same.',
+    'Alleen minuten boven 30% van je hartslagreserve tellen mee, en zwaardere minuten tellen veel zwaarder. Zonder rusthartslag of leeftijd kan Ownify hem niet uitrekenen.' => 'Only minutes above 30% of your heart rate reserve count, and harder minutes count much more. Without a resting heart rate or your age Ownify cannot work it out.',
     /* ---- Slaapverloop over the nights (40.1) */
     'Vorige nacht' => 'Previous night',
     'Volgende nacht' => 'Next night',
