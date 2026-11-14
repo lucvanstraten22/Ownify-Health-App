@@ -268,7 +268,7 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
         // .card__head: the icon and title — and on a wide screen the switch at its far end.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge)
                 T(history.title, JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             if (wide) Switch(Modifier.width(IntrinsicSize.Max))
@@ -389,7 +389,7 @@ fun TrendCard(data: AppData, only: String?) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
             ) {
-                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge)
                 T(trend.title, JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             RangeSwitch(

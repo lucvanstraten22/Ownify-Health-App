@@ -7,6 +7,7 @@ import com.ownify.android.data.Contributor
 import com.ownify.android.ui.screens.overview.overviewLegend
 import com.ownify.android.ui.theme.Accent
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.Plek
 import com.ownify.android.ui.theme.OwnifyMode
 import com.ownify.android.ui.theme.OwnifyPalette
 import com.ownify.android.ui.theme.ScoreBand
@@ -116,9 +117,25 @@ class ColourSystemTest {
             "nutrition" to Ownify.Nutrition, "nutrition-light" to Ownify.NutritionLight,
             "training" to Ownify.Training, "training-light" to Ownify.TrainingLight,
             "score-high" to Ownify.ScoreHigh, "score-mid" to Ownify.ScoreMid, "score-low" to Ownify.ScoreLow,
-            "health" to Ownify.Health, "attention" to Ownify.Attention, "neutral" to Ownify.Neutral,
+            "health" to Ownify.Health, "attention" to Ownify.Attention,
         )) {
             assertEquals("--$name", token(name), hex(colour))
+        }
+    }
+
+    @Test
+    fun `every place's colour is the website's, in both themes`() {
+        val css = themeCss()
+        val names = mapOf(Plek.Overview to "overview", Plek.Health to "health", Plek.Goals to "goals",
+            Plek.Community to "community", Plek.Settings to "settings", Plek.Devices to "devices")
+        for ((mode, selector) in listOf(OwnifyMode.DARK to ":root", OwnifyMode.LIGHT to ":root[data-theme=\"light\"]")) {
+            Ownify.use(mode)
+            val decl = block(css, selector)
+            for ((place, name) in names) {
+                fun token(t: String) = Regex("""--$t:\s*(#[0-9A-Fa-f]{6})\s*;""").find(decl)?.groupValues?.get(1)?.uppercase()
+                assertEquals("$mode --plek-$name", token("plek-$name"), hex(Ownify.plek(place)))
+                assertEquals("$mode --plek-$name-edge", token("plek-$name-edge"), hex(Ownify.plekEdge(place)))
+            }
         }
     }
 

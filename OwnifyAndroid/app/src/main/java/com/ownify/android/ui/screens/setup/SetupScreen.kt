@@ -110,6 +110,7 @@ import com.ownify.android.ui.design.LocalGround
 import com.ownify.android.ui.design.ground
 import com.ownify.android.ui.theme.InButton
 import com.ownify.android.ui.theme.Ownify
+import com.ownify.android.ui.theme.Plek
 import com.ownify.android.ui.theme.OwnifyType
 import kotlinx.coroutines.launch
 
@@ -390,7 +391,7 @@ private fun FocusChoice(option: SetupFocusOption, chosen: Boolean, onClick: () -
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
-            OwnifyIcons.named(option.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = accent) }
+            OwnifyIcons.named(option.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = accent, background = Ownify.fill(0.065f), border = Ownify.GlassHairline) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 T(option.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
                 T(option.line, JStyle.Meta)
@@ -438,7 +439,7 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
             .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space4), border = 1.dp)
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            OwnifyIcons.named(source.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, color = if (linked) Ownify.Health else Ownify.TextSecondary) }
+            OwnifyIcons.named(source.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, background = Ownify.plek(Plek.Devices), border = Ownify.plekEdge(Plek.Devices)) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 T(source.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
                 T(source.note, JStyle.Footnote)

@@ -685,7 +685,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
 
     ConfirmFrame(overlay, title = if (step == 1) copy["title"].orEmpty() else copy["final_title"].orEmpty()) {
         if (step == 1) {
-            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill, border = Ownify.GlassHairline)
             ConfirmTitle(copy["title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["body"].orEmpty() + if (google) " " + copy["google"].orEmpty() else "")
             // Not yet the step that cannot be undone: a plain split (50.0, 3A).
@@ -702,7 +702,7 @@ fun DeleteConfirm(overlay: Overlay, data: AppData) {
                 }
             }
         } else {
-            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill)
+            IconTile(OwnifyIcons.trash, color = Ownify.Attention, background = Ownify.AttentionFill, border = Ownify.GlassHairline)
             ConfirmTitle(copy["final_title"].orEmpty(), Modifier.padding(top = Ownify.Space3))
             ConfirmBody(copy["final_body"].orEmpty() + if (google) " " + copy["final_google"].orEmpty() else "")
             if (byPassword) {

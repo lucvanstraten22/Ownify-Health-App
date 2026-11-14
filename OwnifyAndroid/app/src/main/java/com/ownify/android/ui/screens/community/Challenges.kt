@@ -288,7 +288,7 @@ internal fun NeutralTile(icon: String, small: Boolean = false, modifier: Modifie
 
 @Composable
 internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownify.TileRadius, iconSize: Dp = 18.dp, modifier: Modifier = Modifier) {
-    IconTile(icon, modifier, size = size, radius = radius, iconSize = iconSize, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+    IconTile(icon, modifier, size = size, radius = radius, iconSize = iconSize, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge)
 }
 
 /**

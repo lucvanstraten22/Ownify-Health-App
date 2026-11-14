@@ -646,8 +646,7 @@ private fun IntegrationCard(data: AppData, item: Integration) {
         // .integration__head
         val head: @Composable () -> Unit = {
             OwnifyIcons.named(item.icon)?.let {
-                IconTile(it, size = 30.dp, radius = 10.dp, color = if (connected) Ownify.Health else Ownify.TextSecondary,
-                    notice = "source:" + item.provider.orEmpty())
+                IconTile(it, size = 30.dp, radius = 10.dp, notice = "source:" + item.provider.orEmpty())
             }
         }
         // A <button>: its text keeps letter-spacing: normal.

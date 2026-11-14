@@ -234,7 +234,7 @@ private fun SlotNote(text: String) {
 private fun EmptyCard(copy: GoalsEmpty, icon: androidx.compose.ui.graphics.vector.ImageVector, onAdd: (() -> Unit)?) {
     JCard(Modifier.fillMaxWidth().reveal(), padding = PaddingValues(horizontal = Ownify.Space5, vertical = Ownify.Space6)) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            IconTile(icon, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral)
+            IconTile(icon, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.PlekTile, border = com.ownify.android.ui.theme.Ownify.PlekEdge)
             T(copy.title, JStyle.Section, Modifier.padding(top = Ownify.Space4).semantics { heading() }, align = TextAlign.Center)
             T(
                 copy.body,

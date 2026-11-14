@@ -598,13 +598,13 @@ private fun RecommendationCard(rec: Recommendation) {
  * the body.
  */
 @Composable
-fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.Neutral, dimmed: Boolean = false, chevron: Boolean = false) {
+fun CompactHead(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, meta: String? = null, tile: Color = Ownify.PlekTile, edge: Color = Ownify.PlekEdge, dimmed: Boolean = false, chevron: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().padding(bottom = Ownify.Space4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon, color = Color.White, background = tile, border = tile)
+        IconTile(icon, color = Color.White, background = tile, border = edge)
         Column(Modifier.weight(1f)) {
             T(title, if (dimmed) JStyle.Eyebrow.copy(color = Ownify.TextSecondary) else JStyle.Eyebrow, Modifier.semantics { heading() })
             if (meta != null) T(meta, JStyle.Meta, Modifier.padding(top = Ownify.Space1))

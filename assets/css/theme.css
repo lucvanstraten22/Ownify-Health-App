@@ -144,8 +144,33 @@
     --action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
         0 1px 2px rgba(var(--shade), calc(0.22 * var(--shade-k))),
         0 4px 12px rgba(var(--shade), calc(0.14 * var(--shade-k)));
-    /* The solid tile of a card head that has no category: grey, not a colour. */
-    --neutral: #6B6769;
+    /* --- the colour of a place (50.2, the owner's choice: Per plek · Rust) --
+       Every icon that belongs to no category takes the colour of the part of
+       the app it is in, one per place, chosen for what that place is about:
+       Overzicht peach (morning light, the start of the day), Gezondheid and
+       the Gezondheidsscore jade (calm, balanced health), Doelen steel blue
+       (focus), Community and the account mauve (gentle, social),
+       Instellingen warm stone (a tool: hardly a colour at all), Apparaten
+       aqua (fresh, technical). One lightness for all of them — oklch 0.64
+       here, 0.69 in White Mode with 1.12 × the chroma — so no place is
+       louder than another; the hues keep clear of Slaap's indigo, Voeding's
+       green and Training's terracotta. The edge is the same colour 0.05
+       lighter. Where a tile takes it: components.css (.icon-tile, place);
+       docs/THEME.md. Mirrored in OwnifyTheme.kt (Ownify.plek(…)). */
+    --plek-overview: #A28572;
+    --plek-overview-edge: #B29581;
+    --plek-health: #739588;
+    --plek-health-edge: #82A497;
+    --plek-goals: #7291A4;
+    --plek-goals-edge: #81A0B4;
+    --plek-community: #97859C;
+    --plek-community-edge: #A794AB;
+    --plek-settings: #958A7E;
+    --plek-settings-edge: #A4998D;
+    --plek-devices: #6E9498;
+    --plek-devices-edge: #7DA3A8;
+    /* The icon on it: white, as on a category's tile. */
+    --plek-ink: #FFFFFF;
     --accent: var(--health);
     --accent-light: color-mix(in srgb, var(--health) 65%, #ffffff);
 
@@ -967,6 +992,21 @@ button {
    ========================================================================== */
 :root[data-theme="light"] {
     color-scheme: light;
+
+    /* The place colours a step lighter, a little fuller (oklch 0.69, 1.12 ×
+       the chroma), to sit on the light ground as they sit on the dark. */
+    --plek-overview: #B5947E;
+    --plek-overview-edge: #C5A38D;
+    --plek-health: #7FA597;
+    --plek-health-edge: #8EB5A6;
+    --plek-goals: #7DA1B6;
+    --plek-goals-edge: #8CB1C6;
+    --plek-community: #A893AD;
+    --plek-community-edge: #B8A2BD;
+    --plek-settings: #A6998B;
+    --plek-settings-edge: #B5A89A;
+    --plek-devices: #79A4A9;
+    --plek-devices-edge: #88B4B9;
 
     --bg-main: #F6F1F6;
     --bg-mid: #FAF8F8;

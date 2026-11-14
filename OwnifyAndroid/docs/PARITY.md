@@ -156,8 +156,14 @@ Colour has two separate meanings, identical on both sides:
   shades; `Ownify.Sleep` … / `Accent`): which part of health something is.
   Fixed per category, never changed by a score. `health` (`--health`) is the
   app's own green for positive states and for what has no category;
-  `--attention` / `Ownify.Attention` is warnings; `--neutral` /
-  `Ownify.Neutral` is the solid grey tile of a card head without a category.
+  `--attention` / `Ownify.Attention` is warnings.
+- Place (50.2, `--plek-*`; `Ownify.plek(…)`, `PlekTile`, `PlekEdge`): the
+  colour of a tile without a category, by the part of the app it is in
+  (docs/THEME.md). The web sets `--plek` on each page, detail and panel
+  (components.css); Android provides `LocalPlek` in `OwnifyScreens` (page,
+  `plekOf(detail)`, overlay) — the same mapping, and `ColourSystemTest`
+  holds both themes' values to theme.css. `IconTile` and the settings mark
+  take it by default.
 - Score (`--score-high/-mid/-low`; `Ownify.ScoreHigh/Mid/Low` / `ScoreBand`):
   how high a score is — only each pillar's ring on Overzicht. The
   band (80–100, 60–79, 0–59) is decided once on the server

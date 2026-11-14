@@ -294,7 +294,7 @@ private fun TrendCard(trend: CompassTrend) {
         // .card__head: the icon and title, and the period's direction at the far end.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge)
                 T(trend.title, JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             period.direction?.let { DirectionChip(it) }
@@ -455,7 +455,7 @@ private fun LegacyTrendCard(trend: CompassTrend) {
     JCard(Modifier.fillMaxWidth().reveal()) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral)
+                IconTile(OwnifyIcons.solidChart, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge)
                 T(trend.title, JStyle.Eyebrow, Modifier.semantics { heading() })
             }
             trend.direction?.let { DirectionChip(it) }

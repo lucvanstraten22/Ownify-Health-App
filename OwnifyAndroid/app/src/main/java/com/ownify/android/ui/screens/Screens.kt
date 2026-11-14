@@ -60,6 +60,8 @@ import com.ownify.android.ui.screens.welcome.PairedStatus
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
+import com.ownify.android.ui.theme.LocalPlek
+import com.ownify.android.ui.theme.Plek
 import androidx.compose.ui.Modifier
 import com.ownify.android.ui.screens.insights.InsightDetailPage
 import com.ownify.android.ui.screens.insights.InsightsPage
@@ -72,16 +74,24 @@ object OwnifyScreens {
 
     val shell = ShellScreens(
         page = { id, data, scroll ->
-            when (id) {
+            // Each page's tiles in its own colour (50.2, `--plek`; components.css).
+            val place = when (id) {
+                "health" -> Plek.Health
+                "goals" -> Plek.Goals
+                "community" -> Plek.Community
+                "settings" -> Plek.Settings
+                else -> Plek.Overview
+            }
+            CompositionLocalProvider(LocalPlek provides place) { when (id) {
                 "overview" -> OverviewPage(data, scroll)
                 "health" -> HealthPage(data, scroll)
                 "goals" -> GoalsPage(data, scroll)
                 "community" -> CommunityPage(data, scroll)
                 "settings" -> SettingsPage(data, scroll)
-            }
+            } }
         },
         detail = { detail, data, scroll ->
-            when (detail) {
+            CompositionLocalProvider(LocalPlek provides plekOf(detail)) { when (detail) {
                 Detail.ScoreCompass -> ScoreCompassDetail(data, scroll)
                 is Detail.HealthArea -> data.health.area(detail.id)?.let { HealthDetail(data, it, scroll) }
                 is Detail.GoalPage -> data.goals.goal(detail.id)?.let { GoalDetail(data, it, scroll) }
@@ -109,11 +119,18 @@ object OwnifyScreens {
                 is Detail.InsightPage -> data.correlations.detail(detail.id)?.let { InsightDetailPage(data.correlations, it, scroll) }
                 is Detail.LegalPage -> data.legal.document(detail.id)?.let { LegalDocumentPage(data.legal, it, scroll) }
                 is Detail.ManualEntry -> data.manualEntry?.let { ManualEntryPage(it, detail.kind, scroll) }
-            }
+            } }
         },
         assistant = { data -> AssistantSheet(data.ai) },
         overlay = { overlay, data ->
-            when (overlay) {
+            val place = when (overlay) {
+                Overlay.Devices -> Plek.Devices
+                is Overlay.Account, is Overlay.ChallengeCreate, Overlay.ChallengeCode, is Overlay.ChallengeReview,
+                is Overlay.ChallengeInvite, is Overlay.ChallengeLeave -> Plek.Community
+                Overlay.Wizard -> Plek.Goals
+                else -> Plek.Overview
+            }
+            CompositionLocalProvider(LocalPlek provides place) { when (overlay) {
                 Overlay.Devices -> DevicesPopup(overlay, data)
                 is Overlay.Account -> AccountPanel(overlay, data)
                 Overlay.Wizard -> GoalWizard(overlay, data)
@@ -128,12 +145,26 @@ object OwnifyScreens {
                 is Overlay.ChallengeReview -> ChallengeReviewSheet(overlay, data)
                 is Overlay.ChallengeInvite -> ChallengeInviteSheet(overlay, data)
                 is Overlay.ChallengeLeave -> ChallengeLeaveSheet(overlay, data)
-            }
+            } }
         },
         setup = { data -> SetupScreen(data) }
     )
 
     val signedOut = SignedOutScreens { paired -> WelcomeRoute(paired) }
+
+    /**
+     * The place a detail belongs to, whose colour its tiles take (50.2,
+     * components.css): a goal Doelen's, the score and every health page
+     * Gezondheid's, a settings, legal or research page Instellingen's (`.settings-detail`), the
+     * leaderboard and the challenges Community's, the insights Overzicht's.
+     */
+    fun plekOf(detail: Detail): Plek = when (detail) {
+        is Detail.GoalPage -> Plek.Goals
+        is Detail.SettingsPage, is Detail.LegalPage, is Detail.Research -> Plek.Settings
+        Detail.Leaderboard, Detail.Challenges, is Detail.Challenge -> Plek.Community
+        Detail.Insights, is Detail.InsightPage -> Plek.Overview
+        else -> Plek.Health
+    }
 }
 
 /**

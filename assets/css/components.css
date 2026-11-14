@@ -1010,15 +1010,49 @@
 
 /* A solid tile (icon_solid()): the tile in the colour, the icon white and
    filled. The colour is the element's accent — a category's own — or, for
-   a card head without a category (--neutral), the neutral grey. */
+   a card head without a category (.icon-tile--neutral), its place's colour. */
 .icon-tile.icon-tile--solid {
     --tile: var(--accent);
-    border-color: var(--tile);
+    --tile-edge: var(--tile);
+    border-color: var(--tile-edge);
     background: var(--tile);
     color: #ffffff;
 }
 
-.icon-tile--neutral.icon-tile--solid { --tile: var(--neutral); }
+.icon-tile--neutral.icon-tile--solid { --tile: var(--plek); --tile-edge: var(--plek-edge); }
+
+/* --- the colour of a place (50.2, Per plek · Rust; theme.css) -------------
+   Where a tile is decides its colour: a page, a detail, the devices popup,
+   the account panel, the goal wizard (Doelen's), a challenge sheet
+   (Community's). Anything outside them (setup, a connect page, the settings
+   panels) is Overzicht's. Android: LocalPlek, set where OwnifyScreens shows each one. */
+:root, [data-page="overview"] { --plek: var(--plek-overview); --plek-edge: var(--plek-overview-edge); }
+[data-page="health"], [data-detail] { --plek: var(--plek-health); --plek-edge: var(--plek-health-edge); }
+[data-page="settings"], .settings-detail { --plek: var(--plek-settings); --plek-edge: var(--plek-settings-edge); }
+.insights-detail { --plek: var(--plek-overview); --plek-edge: var(--plek-overview-edge); }
+[data-page="goals"], [data-detail^="goal-"], [data-goal-wizard] { --plek: var(--plek-goals); --plek-edge: var(--plek-goals-edge); }
+[data-page="community"], [data-detail="leaderboard"], [data-detail="challenges"], [data-detail^="challenge-"],
+[data-account], [data-challenge-sheet] { --plek: var(--plek-community); --plek-edge: var(--plek-community-edge); }
+[data-devices], .setup-source { --plek: var(--plek-devices); --plek-edge: var(--plek-devices-edge); }
+
+/* The glass tiles and the settings rows' marks without a category take it
+   too, solid, with a white icon — as the card heads. Not: a category's own
+   tile (setup's focus choices, a goal card's), the gold of a confirmation,
+   a connect page's green outcome. A connected source says so in its words. */
+.icon-tile:not(.icon-tile--solid, .confirm__mark, .connect__tile, .setup-choice .icon-tile, .goal-card .icon-tile),
+.settings-row__mark:not([data-accent]) {
+    border-color: var(--plek-edge);
+    background: var(--plek);
+    color: var(--plek-ink);
+}
+
+/* A mark that is a category's (an insight about sleep or food) is in that
+   category's colour. */
+.settings-row__mark[data-accent] {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--plek-ink);
+}
 
 .chip {
     display: inline-flex;

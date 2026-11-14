@@ -303,6 +303,12 @@ class OwnifyPalette(
  * each time they are used, so a screen drawn with them is drawn again when the
  * theme changes ([use]) — in composition, layout or a draw call alike.
  */
+/** The parts of the app with a colour of their own (`--plek-*`, [Ownify.plek]); the account shares Community's. */
+enum class Plek { Overview, Health, Goals, Community, Settings, Devices }
+
+/** Where the tiles below are: the place whose colour they take (`--plek`). Outside any, Overzicht's. */
+val LocalPlek = compositionLocalOf { Plek.Overview }
+
 object Ownify {
 
     // --- the theme --------------------------------------------------------
@@ -405,8 +411,44 @@ object Ownify {
     /** `--zone-N`: heart-rate zone [n] (1–4), blue, green, amber, red; null-safe outside 1–4. */
     fun zone(n: Int): Color = palette.zones[(n - 1).coerceIn(0, 3)]
 
-    /** `--neutral`: the solid tile of a card head that has no category — grey, not a colour. */
-    val Neutral = Color(0xFF6B6769)
+    /**
+     * `--plek-*`: the colour of a place (50.2, the owner's choice: Per plek ·
+     * Rust). Every icon tile that belongs to no category — a card head's solid
+     * tile, a glass tile, a settings row's mark — takes the colour of the part
+     * of the app it is in ([LocalPlek], set where OwnifyScreens shows each
+     * page, detail and panel): Overzicht peach, Gezondheid and the
+     * Gezondheidsscore jade, Doelen steel blue, Community and the account
+     * mauve, Instellingen warm stone, Apparaten aqua. One lightness for all
+     * (oklch 0.64; White Mode 0.69 with 1.12 × the chroma), the edge 0.05
+     * lighter, the icon on it white ([PlekInk]). theme.css carries the same.
+     */
+    fun plek(place: Plek): Color = when (place) {
+        Plek.Overview -> if (light) Color(0xFFB5947E) else Color(0xFFA28572)
+        Plek.Health -> if (light) Color(0xFF7FA597) else Color(0xFF739588)
+        Plek.Goals -> if (light) Color(0xFF7DA1B6) else Color(0xFF7291A4)
+        Plek.Community -> if (light) Color(0xFFA893AD) else Color(0xFF97859C)
+        Plek.Settings -> if (light) Color(0xFFA6998B) else Color(0xFF958A7E)
+        Plek.Devices -> if (light) Color(0xFF79A4A9) else Color(0xFF6E9498)
+    }
+
+    /** `--plek-*-edge`: the place's colour 0.05 lighter, the tile's border. */
+    fun plekEdge(place: Plek): Color = when (place) {
+        Plek.Overview -> if (light) Color(0xFFC5A38D) else Color(0xFFB29581)
+        Plek.Health -> if (light) Color(0xFF8EB5A6) else Color(0xFF82A497)
+        Plek.Goals -> if (light) Color(0xFF8CB1C6) else Color(0xFF81A0B4)
+        Plek.Community -> if (light) Color(0xFFB8A2BD) else Color(0xFFA794AB)
+        Plek.Settings -> if (light) Color(0xFFB5A89A) else Color(0xFFA4998D)
+        Plek.Devices -> if (light) Color(0xFF88B4B9) else Color(0xFF7DA3A8)
+    }
+
+    /** `--plek`: this place's tile colour. */
+    val PlekTile: Color @Composable get() = plek(LocalPlek.current)
+
+    /** `--plek-edge`: this place's tile border. */
+    val PlekEdge: Color @Composable get() = plekEdge(LocalPlek.current)
+
+    /** `--plek-ink`: the icon on a place's tile — white, as on a category's. */
+    val PlekInk = Color.White
 
     /** The olive of the website's ambient backdrop washes — decoration, not a category. */
     val AmbientOlive = Color(0xFF78A560)

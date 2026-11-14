@@ -119,8 +119,9 @@ fun InsightsPage(correlations: Correlations, scroll: ScrollState) {
  */
 @Composable
 private fun InsightRow(row: Insight, divided: Boolean, onClick: () -> Unit) {
+    // The mark of an insight is its category's, in that category's colour (50.2).
     NavRow(markOf(row.accent), row.title, row.body, divided, description = row.title + " — " + row.body, progress = row.progress,
-        reading = row.progressText, onClick = onClick)
+        reading = row.progressText, tint = Accent.of(row.accent).color, onClick = onClick)
 }
 
 /** The outline mark of the area an insight is about (heart belongs to Training). */
@@ -136,7 +137,7 @@ private fun markOf(accent: String): ImageVector = when (accent) {
  */
 @Composable
 private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Boolean, description: String, progress: Float? = null,
-                   reading: String? = null, onClick: () -> Unit) {
+                   reading: String? = null, tint: Color? = null, onClick: () -> Unit) {
     InButton {
         val narrow = LocalScreen.current.narrow
         val interaction = remember { MutableInteractionSource() }
@@ -159,9 +160,9 @@ private fun NavRow(icon: ImageVector, label: String, value: String?, divided: Bo
         ) {
             val shape = RoundedCornerShape(10.dp)
             Box(
-                Modifier.size(30.dp).clip(shape).background(Ownify.fill(0.055f)).border(1.dp, Ownify.GlassHairline, shape),
+                Modifier.size(30.dp).clip(shape).background(tint ?: Ownify.PlekTile).border(1.dp, tint ?: Ownify.PlekEdge, shape),
                 contentAlignment = Alignment.Center
-            ) { JIcon(icon, size = 16.dp, color = Ownify.TextSecondary) }
+            ) { JIcon(icon, size = 16.dp, color = Ownify.PlekInk) }
             Column(Modifier.weight(1f)) {
                 T(label, OwnifyType.style(Ownify.FsBody, FontWeight.Normal))
                 if (progress != null) {

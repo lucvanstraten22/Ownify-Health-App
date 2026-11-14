@@ -55,7 +55,7 @@ $mark = static fn (string $accent): string => match ($accent) {
                             <?php foreach ($group['rows'] as $row): ?>
                                 <button type="button" class="settings-row press" data-detail-open="<?= e($row['detail']) ?>"
                                         aria-label="<?= e($row['title'] . ' — ' . $row['body']) ?>">
-                                    <span class="settings-row__mark" aria-hidden="true"><?= icon($mark($row['accent'])) ?></span>
+                                    <span class="settings-row__mark" data-accent="<?= e($row['accent']) ?>" aria-hidden="true"><?= icon($mark($row['accent'])) ?></span>
                                     <span class="settings-row__text">
                                         <span class="settings-row__label"><?= e($row['title']) ?></span>
                                         <?php if (isset($row['progress'])): ?>

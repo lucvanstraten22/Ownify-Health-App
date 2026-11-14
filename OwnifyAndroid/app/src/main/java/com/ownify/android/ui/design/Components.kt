@@ -338,8 +338,9 @@ fun JIcon(icon: ImageVector, modifier: Modifier = Modifier, size: Dp = 20.dp, co
 
 /**
  * `.icon-tile`: 36 square at radius 12, or [Ownify.TileSmall] (30) at 10 —
- * the two sizes since 25.0; hairline border, `.065` white, a
- * secondary-coloured icon of 18.
+ * the two sizes since 25.0. Unless told otherwise, in its place's colour
+ * (50.2, `--plek`, [LocalPlek]) with its edge and a white icon of 18; a
+ * category's tile, a warning's gold or a glass tile say so.
  */
 @Composable
 fun IconTile(
@@ -348,9 +349,9 @@ fun IconTile(
     size: Dp = 36.dp,
     radius: Dp = if (size < 34.dp) Ownify.TileRadiusSmall else Ownify.TileRadius,
     iconSize: Dp = if (size < 34.dp) Ownify.TileGlyphSmall else Ownify.TileGlyph,
-    color: Color = Ownify.TextSecondary,
-    background: Color = Ownify.fill(0.065f),
-    border: Color = Ownify.GlassHairline,
+    color: Color = Ownify.PlekInk,
+    background: Color = Ownify.PlekTile,
+    border: Color = Ownify.PlekEdge,
     /** The red dot's key (docs/NOTICES.md), shown on the tile's corner while it waits. */
     notice: String? = null
 ) {

@@ -63,7 +63,7 @@ under the same lights at about half strength), the glass tokens
 saturate and brightness), the text tiers, the roles above, and three accents.
 
 **Unchanged in both themes:** `--sleep`, `--nutrition`, `--training` and
-their `-light` shades, `--score-high`, `--health`, `--neutral`, `--miss`, the
+their `-light` shades, `--score-high`, `--health`, `--miss`, the
 backdrop washes. A category keeps its colour; a score band keeps its meaning,
 its thresholds and its dot.
 
@@ -297,6 +297,32 @@ size (N4, 50.0): 18 in a 36 tile, 16 in a 30 tile (`--tile-glyph`,
 default). An icon has one meaning everywhere — `warning` for a problem,
 `theme` for Thema & uiterlijk, `sparkle` for insights, `rings` for the
 score. A challenge's 48 artwork is an illustration, not a tile.
+
+**The colour of a place** (50.2, the owner's choice: Per plek · Rust).
+A tile that belongs to no category is not grey: it takes the colour of the
+part of the app it is in, solid, with a white icon — a card head's tile
+(`.icon-tile--neutral`), a glass tile (`.icon-tile`), a settings row's mark.
+One colour per place, chosen for what the place is about:
+
+| place | colour | why | where |
+|---|---|---|---|
+| Overzicht | peach `--plek-overview` | morning light, the start of the day | the page, the insights, everything outside a place (setup, connect pages, the settings panels) |
+| Gezondheid | jade `--plek-health` | calm, balanced health | the page, every health detail, the Gezondheidsscore |
+| Doelen | steel blue `--plek-goals` | focus | the page, a goal, the goal wizard |
+| Community | mauve `--plek-community` | gentle, social | the page, the leaderboard, the challenges and their sheets, the account panel |
+| Instellingen | warm stone `--plek-settings` | a tool: hardly a colour | the page, every settings, legal and research page |
+| Apparaten | aqua `--plek-devices` | fresh, technical | the devices popup, setup's source |
+
+All six share one lightness (oklch 0.64 in Dark Mode; 0.69 with 1.12 × the
+chroma in White Mode), so no place is louder than another, and keep clear
+of the three categories' hues. Each has an `-edge`, 0.05 lighter, for the
+border; the icon is `--plek-ink` (white). The place is set where a page,
+detail or panel is (components.css; Android: `LocalPlek`, set in
+`OwnifyScreens`, `Ownify.PlekTile`, `PlekEdge`, `PlekInk`), so a component
+never names its own. Not a place's: a category's tile (its own colour; an
+insight row's mark too), the gold of a confirmation, the green of a connect
+page's outcome, setup's focus choices (glass, the category's icon colour).
+A connected source says so in its words, not its tile.
 
 **Radii**: 28 (a card), 20 (a well, a note, a slot, a small card), 14 (a row,
 a split's inner corners, a tooltip on a chart), pill. `--radius-inner` is gone.

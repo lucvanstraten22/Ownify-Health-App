@@ -586,7 +586,6 @@
 
 .integration .icon-tile { width: 30px; height: 30px; border-radius: 10px; }
 .integration .icon-tile .icon { width: var(--tile-glyph-sm); height: var(--tile-glyph-sm); }
-.integration.is-connected .icon-tile { color: var(--health); }
 
 .integration__text { min-width: 0; }
 

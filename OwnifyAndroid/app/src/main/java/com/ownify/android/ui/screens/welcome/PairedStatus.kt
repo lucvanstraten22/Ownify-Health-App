@@ -44,7 +44,7 @@ fun PairedStatus() {
 
     JCard(Modifier.width(screen.shell).padding(top = Ownify.Space5), style = CardStyle.Quiet) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-            IconTile(OwnifyIcons.pulse, color = Ownify.Health)
+            IconTile(OwnifyIcons.pulse, color = Ownify.Health, background = Ownify.fill(0.065f), border = Ownify.GlassHairline)
             Column(Modifier.weight(1f)) {
                 val who = (state as? OwnifyState.Connected)?.profile?.username
                 T(if (who != null) trf("Gekoppeld aan %s", who) else tr("Deze telefoon is gekoppeld"), JStyle.Eyebrow, Modifier.semantics { heading() })

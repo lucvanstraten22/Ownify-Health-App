@@ -226,7 +226,6 @@
     border-radius: 12px;
 }
 
-.setup-source.is-connected .icon-tile { color: var(--health); }
 
 .setup-source__text {
     display: flex;

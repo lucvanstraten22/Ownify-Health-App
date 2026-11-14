@@ -316,7 +316,7 @@ private fun CardHead(icon: androidx.compose.ui.graphics.vector.ImageVector, titl
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
     ) {
-        IconTile(icon, color = Color.White, background = Ownify.Neutral, border = Ownify.Neutral, notice = notice)
+        IconTile(icon, color = Color.White, background = Ownify.PlekTile, border = Ownify.PlekEdge, notice = notice)
         T(title, JStyle.Eyebrow, Modifier.semantics { heading() })
     }
 }

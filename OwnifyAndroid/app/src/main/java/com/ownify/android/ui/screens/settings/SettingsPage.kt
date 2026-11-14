@@ -203,7 +203,7 @@ internal fun SettingsRowButton(row: SettingsRow, divided: Boolean, description: 
     }
 }
 
-/** `.settings-row__mark`: a 30 square with a hairline, the row's icon in the secondary colour. */
+/** `.settings-row__mark`: a 30 square in its place's colour (50.2, `--plek`), the row's icon white. */
 @Composable
 private fun Mark(icon: ImageVector?, notice: String? = null) {
     val shape = RoundedCornerShape(10.dp)
@@ -212,11 +212,11 @@ private fun Mark(icon: ImageVector?, notice: String? = null) {
             .then(if (notice != null) Modifier.notice(notice) else Modifier)
             .size(30.dp)
             .clip(shape)
-            .background(Ownify.fill(0.055f))
-            .border(1.dp, Ownify.GlassHairline, shape),
+            .background(Ownify.PlekTile)
+            .border(1.dp, Ownify.PlekEdge, shape),
         contentAlignment = Alignment.Center
     ) {
-        if (icon != null) JIcon(icon, size = 16.dp, color = Ownify.TextSecondary)
+        if (icon != null) JIcon(icon, size = 16.dp, color = Ownify.PlekInk)
     }
 }
 

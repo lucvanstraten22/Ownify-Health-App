@@ -120,7 +120,7 @@ fun GoalHistory(goal: Goal, copy: Map<String, String>, footer: @Composable () ->
         // .card__head
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
-                IconTile(OwnifyIcons.solid("chart")!!, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.Neutral, border = com.ownify.android.ui.theme.Ownify.Neutral)
+                IconTile(OwnifyIcons.solid("chart")!!, color = androidx.compose.ui.graphics.Color.White, background = com.ownify.android.ui.theme.Ownify.PlekTile, border = com.ownify.android.ui.theme.Ownify.PlekEdge)
                 T(history, JStyle.Eyebrow)
             }
             val target = chart?.target
