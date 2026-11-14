@@ -434,12 +434,22 @@ a part carried a thought signature. Since 50.3 it ends with how the request
 went:
 
     attempt=1  phase=waiting  curl=28 "Operation timed out after 24600 milliseconds with 0 bytes received"
-    elapsed=24.60s  connect=0.03s tls=0.09s first_byte=-  timeouts: connect=5000ms request=24600ms
-    question=25s max_execution_time=30  ip=v4 http=2
+    elapsed=24.60s  connect=0.03s tls=0.09s first_byte=-  sent=61234/61234B received=0B
+    timeouts: connect=5000ms request=24600ms question=25s max_execution_time=30  ip=v4 http=2 curl=8.5.0
 
-`phase` is where it ended: `resolving`, `connecting`, `tls` (nothing reached
-Google), `sending`, `waiting` (sent; Google had not answered yet),
-`receiving`, `done`, or `not sent` (no time left). A retry adds its own line
+`phase` is where it ended, from what was actually sent and received:
+`resolving`, `connecting`, `tls` (nothing reached Google), `sending` (not
+all of the body went out: `sent` says how much), `waiting` (all of it sent,
+not a byte back), `receiving`, `done`, or `not sent` (no time left).
+`first_byte` is cURL's starttransfer time, which HTTP/2 can set on Google's
+first frames before any answer: read `received` for whether one came. (Up
+to 50.3 `tls` read a key PHP does not have, so every failed request looked
+stuck in TLS; 50.4 reads it right.)
+
+**IPv4 or IPv6?** `php tools/check-config.php --ai-net` tries the way to
+Gemini over each separately with this server's PHP and cURL — DNS, the
+connection and TLS alone, then a question-sized body to `countTokens`,
+which only counts tokens: nothing generated, none of the free quota. A retry adds its own line
 (`retry 1 in 1043 ms after Gemini answered HTTP 503 …`), and a question that
 fails ends with one saying how many requests and retries it took, and in
 how many seconds. Never the key, never a word of a

@@ -5,6 +5,7 @@
  *     php tools/check-config.php
  *     php tools/check-config.php --generate-key
  *     php tools/check-config.php --ai-ping        does the Gemini key work?
+ *     php tools/check-config.php --ai-net         IPv4 and IPv6 to Gemini, connection only
  *     php tools/check-config.php --check-schema-rules   before importing migration 027
  *     php tools/check-config.php --send-test=you@example.com   one test message (Release B setup)
  *
@@ -98,6 +99,102 @@ if (in_array('--ai-ping', $argvFlags, true)) {
     };
 
     exit($answer['ok'] ? 0 : 1);
+}
+
+/* The way to Gemini, over IPv4 and over IPv6 separately, with this server's
+   own PHP and cURL — and nothing generated, so none of the free quota of
+   requests is used: the name (A and AAAA records), the connection and the
+   TLS handshake alone (CONNECT_ONLY), and then a body as large as a
+   question's sent to models/<model>:countTokens, which only counts tokens
+   (Google answers with the count once it has the whole body; it generates
+   nothing). Prints addresses, timings, cURL's errors and statuses — never the
+   key, and the body is filler, nothing of anyone's. Runs from a Hestia cron
+   job too (docs/AI.md). */
+if (in_array('--ai-net', $argvFlags, true)) {
+    require_once dirname(__DIR__) . '/includes/ai/config.php';
+
+    $host  = (string) (parse_url((string) ai_config()['api_base'], PHP_URL_HOST) ?: 'generativelanguage.googleapis.com');
+    $base  = rtrim((string) ai_config()['api_base'], '/');
+    $model = ai_model() ?? 'gemini-3.8-flash';
+    $key   = ai_api_key();
+    $size  = 60000;   // about a question's body: the system instruction with the day's data, the nine tools
+    foreach ($argvFlags as $flag) {
+        if (preg_match('/^--bytes=(\d{3,7})$/', $flag, $m) === 1) {
+            $size = (int) $m[1];
+        }
+    }
+    $v = curl_version();
+    echo 'PHP ' . PHP_VERSION . ' (' . PHP_SAPI . '), cURL ' . $v['version'] . ' ' . $v['ssl_version']
+        . ', IPv6 in cURL: ' . ((($v['features'] ?? 0) & CURL_VERSION_IPV6) ? 'yes' : 'no')
+        . ', HTTP/2: ' . ((($v['features'] ?? 0) & CURL_VERSION_HTTP2) ? 'yes' : 'no') . "\n";
+    foreach (['http_proxy', 'https_proxy', 'HTTPS_PROXY', 'all_proxy', 'ALL_PROXY'] as $proxy) {
+        if (getenv($proxy) !== false && getenv($proxy) !== '') {
+            echo "A proxy is set in the environment ($proxy): cURL uses it.\n";
+        }
+    }
+    echo "Host $host\n";
+
+    $a    = @dns_get_record($host, DNS_A) ?: [];
+    $aaaa = @dns_get_record($host, DNS_AAAA) ?: [];
+    echo '  DNS A:    ' . ($a === [] ? 'none' : implode(' ', array_column($a, 'ip'))) . "\n";
+    echo '  DNS AAAA: ' . ($aaaa === [] ? 'none' : implode(' ', array_column($aaaa, 'ipv6'))) . "\n";
+
+    $ms  = static fn (float $s): string => $s > 0 ? number_format($s * 1000, 0, '.', '') . ' ms' : '-';
+    $run = static function (string $label, int $resolve, bool $connectOnly) use ($host, $base, $model, $key, $size, $ms): void {
+        $url = $connectOnly ? 'https://' . $host . '/' : $base . '/v1beta/models/' . $model . ':countTokens';
+        $h   = curl_init($url);
+        $opt = [
+            CURLOPT_IPRESOLVE         => $resolve,
+            CURLOPT_RETURNTRANSFER    => true,
+            CURLOPT_CONNECTTIMEOUT_MS => 5000,
+            CURLOPT_TIMEOUT_MS        => $connectOnly ? 6000 : 20000,
+            CURLOPT_NOSIGNAL          => true,
+        ];
+        $bytes = 0;
+        if ($connectOnly) {
+            $opt[CURLOPT_CONNECT_ONLY] = true;
+        } else {
+            $payload = json_encode(['contents' => [['role' => 'user', 'parts' => [['text' => str_repeat('Ownify connection check. ', intdiv($size, 25))]]]]]);
+            $bytes   = strlen($payload);
+            $opt    += [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Expect:', 'x-goog-api-key: ' . (string) $key]];
+        }
+        curl_setopt_array($h, $opt);
+        $started = microtime(true);
+        $raw     = curl_exec($h);
+        $elapsed = microtime(true) - $started;
+        $i       = curl_getinfo($h);
+        $errno   = curl_errno($h);
+        $line    = sprintf('  %-26s %s  ip %s  connect %s  tls %s  total %s',
+            $label, $errno === 0 ? 'ok  ' : 'FAIL', ($i['primary_ip'] ?? '') ?: '-',
+            $ms((float) ($i['connect_time'] ?? 0)), $ms((float) curl_getinfo($h, CURLINFO_APPCONNECT_TIME)), $ms($elapsed));
+        if (!$connectOnly) {
+            $json   = is_string($raw) ? json_decode($raw, true) : null;
+            $status = (int) ($i['http_code'] ?? 0);
+            $line  .= sprintf('  sent %d of %d bytes  HTTP %s', (int) ($i['size_upload'] ?? 0), $bytes, $status === 0 ? '-' : (string) $status)
+                . (isset($json['totalTokens']) ? '  (Google read it: ' . (int) $json['totalTokens'] . ' tokens)' : '')
+                . (isset($json['error']['status']) ? '  ' . (string) $json['error']['status'] : '');
+        }
+        if ($errno !== 0) {
+            $line .= '  curl ' . $errno . ' ' . preg_replace('/[?&]\S*/', '', curl_error($h));
+        }
+        echo $line . "\n";
+    };
+
+    echo "Connection and TLS only:\n";
+    $run('IPv4', CURL_IPRESOLVE_V4, true);
+    $run('IPv6', CURL_IPRESOLVE_V6, true);
+    $run('either (as the app does)', CURL_IPRESOLVE_WHATEVER, true);
+
+    if ($key === null) {
+        echo "No Gemini API key here, so no upload test (it needs the key to be read by Google).\n";
+        exit(0);
+    }
+    echo 'A ' . $size . "-byte body to countTokens (counts tokens, generates nothing):\n";
+    $run('IPv4', CURL_IPRESOLVE_V4, false);
+    $run('IPv6', CURL_IPRESOLVE_V6, false);
+    $run('either (as the app does)', CURL_IPRESOLVE_WHATEVER, false);
+    exit(0);
 }
 
 /* Before migration 027 is imported (docs/ACCOUNT-SECURITY.md §5a): the

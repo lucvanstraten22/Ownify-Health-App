@@ -850,7 +850,7 @@ try {
         $took < 3.0, number_format($took, 2) . ' s');
     $lines = (string) @file_get_contents($fakeDir . '/diagnostic.log');
     check('the diagnostic says where it stopped: waiting for Google, with cURL\'s error, the seconds and the timeouts',
-        preg_match('/phase=waiting  curl=28 "[^"]*"  elapsed=\S+  connect=\S+ tls=- first_byte=-  timeouts: connect=\d+ms request=\d+ms question=2s max_execution_time=\d+/', $lines) === 1);
+        preg_match('/phase=waiting  curl=28 "[^"]*"  elapsed=\S+  connect=\S+ tls=- first_byte=-  sent=(\d+)\/\1B received=0B  timeouts: connect=\d+ms request=\d+ms question=2s max_execution_time=\d+/', $lines) === 1);
     /* The stand-in sleeps on; the next question must not meet it. */
     usleep(2_200_000);
 

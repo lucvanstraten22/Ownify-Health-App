@@ -180,9 +180,10 @@ if (!function_exists('ai_diagnostic_path')) {
                 . (($t['errno'] ?? 0) === 0 ? '' : '  curl=' . (int) $t['errno'] . ' "' . str_replace('"', "'", (string) ($t['error'] ?? '')) . '"')
                 . (isset($t['elapsed']) ? '  elapsed=' . $sec($t['elapsed']) : '')
                 . (isset($t['connect']) ? '  connect=' . $sec($t['connect']) . ' tls=' . $sec($t['tls']) . ' first_byte=' . $sec($t['first_byte']) : '')
+                . (isset($t['sent']) ? '  sent=' . (int) $t['sent'] . '/' . (int) $t['bytes'] . 'B received=' . (int) $t['received'] . 'B' : '')
                 . '  timeouts: connect=' . (int) ($t['connect_ms'] ?? 0) . 'ms request=' . (int) ($t['timeout_ms'] ?? 0) . 'ms'
                 . ' question=' . (string) (ai_config()['timeout'] ?? '?') . 's max_execution_time=' . (string) ini_get('max_execution_time')
-                . (isset($t['ip']) ? '  ip=' . $t['ip'] . ' http=' . (string) ($t['http'] ?? '-') : '');
+                . (isset($t['ip']) ? '  ip=' . $t['ip'] . ' http=' . (string) ($t['http'] ?? '-') . ' curl=' . (string) ($t['curl'] ?? '?') : '');
         }
 
         ai_diagnostic_write($line);

@@ -193,23 +193,31 @@ if (!function_exists('ai_gemini_generate')) {
      * family and HTTP version.
      *
      * Phases: resolving (the name), connecting (TCP), tls, sending (the
-     * body), waiting (sent, no answer yet: Google is working on it),
-     * receiving (the answer was arriving), done.
+     * body: not all of it went out), waiting (all of it sent, not a byte
+     * back), receiving (the answer was arriving), done.
      */
     function ai_gemini_transport(\CurlHandle $handle, int $errno, float $elapsed, int $connectMs, int $timeoutMs, int $bytes, bool $https): array
     {
         $info = curl_getinfo($handle);
         $time = static fn (string $k): float => (float) ($info[$k] ?? 0);
+        /* PHP's info array has no appconnect_time (only appconnect_time_us);
+           the constant gives the seconds. Up to 50.3 the missing key read as
+           0, and every failed HTTPS request looked stuck in TLS. */
+        $tls      = (float) curl_getinfo($handle, CURLINFO_APPCONNECT_TIME);
+        $upload   = (int) ($info['size_upload'] ?? 0);
+        $download = (int) ($info['size_download'] ?? 0);
 
+        /* The phase from what was actually sent and received, not from
+           starttransfer_time: cURL can set that on Google's first HTTP/2
+           frames, long before an answer. */
         $phase = match (true) {
-            $errno === 0                                            => 'done',
-            $errno === 6                                            => 'resolving',
-            $time('connect_time') <= 0.0                            => 'connecting',
-            $https && $time('appconnect_time') <= 0.0               => 'tls',
-            (int) ($info['size_upload'] ?? 0) < $bytes
-                && $time('starttransfer_time') <= 0.0               => 'sending',
-            $time('starttransfer_time') <= 0.0                      => 'waiting',
-            default                                                 => 'receiving',
+            $errno === 0                                   => 'done',
+            $errno === 6                                   => 'resolving',
+            $time('connect_time') <= 0.0                   => 'connecting',
+            $https && $tls <= 0.0                          => 'tls',
+            $upload < $bytes                               => 'sending',
+            $download === 0 && (int) ($info['http_code'] ?? 0) === 0 => 'waiting',
+            default                                        => 'receiving',
         };
 
         $error = $errno === 0 ? '' : (string) curl_error($handle);
@@ -224,13 +232,17 @@ if (!function_exists('ai_gemini_generate')) {
             'error'      => $error,
             'elapsed'    => round($elapsed, 3),
             'connect'    => round($time('connect_time'), 3),
-            'tls'        => round($time('appconnect_time'), 3),
+            'tls'        => round($tls, 3),
             'first_byte' => round($time('starttransfer_time'), 3),
             'total'      => round($time('total_time'), 3),
+            'sent'       => $upload,
+            'bytes'      => $bytes,
+            'received'   => $download,
             'connect_ms' => $connectMs,
             'timeout_ms' => $timeoutMs,
             'ip'         => $ip === '' ? '-' : (str_contains($ip, ':') ? 'v6' : 'v4'),
             'http'       => match ((int) ($info['http_version'] ?? 0)) { 1 => '1.0', 2 => '1.1', 3 => '2', 30 => '3', default => '-' },
+            'curl'       => (string) (curl_version()['version'] ?? '?'),
         ];
     }
 
