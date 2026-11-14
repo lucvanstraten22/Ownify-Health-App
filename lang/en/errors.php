@@ -174,7 +174,8 @@ return [
     'Op de ranglijst staat nu je initiaal in plaats van je foto.' => 'The leaderboard now shows your initial instead of your picture.',
 
     /* ---- Account security (28.0): passwords, confirming, registration closed */
-    'Kies een wachtwoord van hoogstens 200 tekens.' => 'Choose a password of at most 200 characters.',
+    'no time left' => 'no time left',
+    'Kies een wachtwoord van maximaal 200 tekens.' => 'Choose a password of at most 200 characters.',
     'Je wachtwoord mag niet hetzelfde zijn als je gebruikersnaam.' => 'Your password cannot be the same as your username.',
     'Je wachtwoord mag niet hetzelfde zijn als je e-mailadres.' => 'Your password cannot be the same as your email address.',
     'De twee wachtwoorden zijn niet hetzelfde.' => 'The two passwords are not the same.',

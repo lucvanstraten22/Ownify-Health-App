@@ -189,7 +189,6 @@ private fun HealthScoreCard(data: AppData) {
                 val date = if (screen.narrow) data.today.date else "${data.today.weekday} ${data.today.date}"
                 T(date, OwnifyType.style(Ownify.FsBody, color = Ownify.TextSecondary), Modifier.padding(top = 2.dp))
             }
-            Chip(data.focusLabel, dot = true, modifier = Modifier.semantics { contentDescription = tr("Gekozen focus") + ": " + data.focusLabel })
         }
 
         ScoreRing(

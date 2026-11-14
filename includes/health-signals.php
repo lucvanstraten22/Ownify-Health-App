@@ -874,29 +874,74 @@ if (!function_exists('health_scoring_config')) {
             || ($workout['minutes'] ?? 0) >= health_scoring_config()['workouts']['heavy_minutes'];
     }
 
-    /** What to call an activity type in Dutch, for points history and feedback. */
-    function health_activity_label(string $type): string
+    /**
+     * The training type a stored activity_type stands for (50.6): the keys of
+     * config/manual-entry.php's training types — Health Connect's names, Google
+     * Health's (lower case) and a few other spellings onto them — or null.
+     */
+    function health_activity_key(string $type): ?string
     {
-        $type = mb_strtolower($type);
+        static $types = null;
+        $types ??= (array) ((require __DIR__ . '/../config/manual-entry.php')['training']['types'] ?? []);
 
-        $names = [
-            'running' => 'hardlopen', 'run' => 'hardlopen', 'treadmill' => 'hardlopen',
-            'walking' => 'wandelen', 'walk' => 'wandelen', 'hiking' => 'wandeltocht',
-            'cycling' => 'fietsen', 'biking' => 'fietsen', 'bike' => 'fietsen', 'ride' => 'fietsen',
-            'swimming' => 'zwemmen', 'swim' => 'zwemmen',
-            'strength' => 'krachttraining', 'strength_training' => 'krachttraining',
-            'weightlifting' => 'krachttraining', 'weight_training' => 'krachttraining',
-            'yoga' => 'yoga', 'pilates' => 'pilates', 'rowing' => 'roeien',
-            'elliptical' => 'crosstrainer', 'dancing' => 'dansen', 'football' => 'voetbal',
-            'soccer' => 'voetbal', 'tennis' => 'tennis', 'hiit' => 'HIIT',
+        $type = str_replace([' ', '-'], '_', mb_strtolower(trim($type)));
+        $type = (string) preg_replace('/^(exercise_type_|activity_type_)/', '', $type);
+        if ($type === '') {
+            return null;
+        }
+        if (isset($types[$type])) {
+            return $type;
+        }
+
+        $aliases = [
+            'run' => 'running', 'treadmill_running' => 'running_treadmill', 'running_on_sand' => 'running_sand',
+            'walk' => 'walking', 'nordic_walking' => 'walking_nordic', 'treadmill_walking' => 'walking_treadmill',
+            'cycling' => 'biking', 'bike' => 'biking', 'ride' => 'biking', 'stationary_biking' => 'biking_stationary',
+            'indoor_cycling' => 'spinning', 'mountain_bike' => 'mountain_biking', 'road_cycling' => 'road_biking',
+            'swim' => 'swimming', 'pool_swimming' => 'swimming_pool', 'open_water_swimming' => 'swimming_open_water',
+            'strength' => 'strength_training', 'weight_training' => 'strength_training',
+            'hiit' => 'high_intensity_interval_training', 'football' => 'soccer', 'frisbee' => 'frisbee_disc',
+            'ice_hockey' => 'hockey', 'roller_hockey' => 'hockey', 'field_hockey' => 'hockey',
+            'paddling' => 'stand_up_paddleboarding', 'paddleboarding' => 'stand_up_paddleboarding', 'sup' => 'stand_up_paddleboarding',
+            'boot_camp' => 'circuit_training', 'jump_rope' => 'jumping_rope', 'rollerblading' => 'inline_skating',
+            'cross_country_skiing' => 'skiing_cross_country', 'downhill_skiing' => 'skiing_downhill',
+            'backcountry_skiing' => 'skiing_backcountry', 'beach_volleyball' => 'volleyball_beach',
+            'indoor_volleyball' => 'volleyball_indoor', 'mma' => 'mixed_martial_arts', 'other' => 'other_workout',
+            'climbing' => 'rock_climbing', 'american_football' => 'football_american', 'australian_football' => 'football_australian', 'horse_riding' => 'horseback_riding', 'kayak' => 'kayaking',
         ];
+        if (isset($aliases[$type])) {
+            return $aliases[$type];
+        }
 
-        foreach ($names as $needle => $label) {
-            if ($type === $needle || str_contains($type, $needle)) {
-                return $label;
+        /* A longer name that holds a known one ("outdoor_running"): the longest that fits. */
+        $best = null;
+        foreach (array_merge(array_keys($types), array_keys($aliases)) as $known) {
+            if (mb_strlen((string) $known) >= 4 && str_contains($type, (string) $known)
+                && ($best === null || mb_strlen((string) $known) > mb_strlen($best))) {
+                $best = (string) $known;
             }
         }
 
-        return 'training';
+        return $best === null ? null : ($aliases[$best] ?? $best);
+    }
+
+    /** What to call an activity type in Dutch, for points history and feedback: "hardlopen", "HIIT". */
+    function health_activity_label(string $type): string
+    {
+        static $types = null;
+        $types ??= (array) ((require __DIR__ . '/../config/manual-entry.php')['training']['types'] ?? []);
+
+        $key = health_activity_key($type);
+        if ($key === null || $key === 'other_workout' || $key === 'unknown') {
+            return 'training';
+        }
+
+        /* The label as a word in a sentence: "hardlopen", but "HIIT" and "CrossFit" stay as they are. */
+        $label = (string) $types[$key];
+        $rest  = mb_substr($label, 1);
+
+        return $rest === mb_strtolower($rest) || str_contains($label, ' ')
+            ? mb_strtolower(mb_substr($label, 0, 1)) . $rest
+            : $label;
     }
 }

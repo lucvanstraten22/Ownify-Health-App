@@ -678,12 +678,12 @@ return [
         'period_label'   => 'Periode',
         'direction_label'=> 'Wat is beter?',
         'direction' => [
-            'increase' => ['label' => 'Hoger is beter', 'hint' => 'Hoger is beter: je voortgang groeit als je waarde stijgt.'],
-            'decrease' => ['label' => 'Lager is beter', 'hint' => 'Lager is beter: je voortgang groeit als je waarde daalt.'],
+            'increase' => ['label' => 'Hoger', 'hint' => 'Hoger is beter: je voortgang groeit als je waarde stijgt.'],
+            'decrease' => ['label' => 'Lager', 'hint' => 'Lager is beter: je voortgang groeit als je waarde daalt.'],
         ],
         'direction_daily' => [
-            'increase' => ['label' => 'Minstens',  'hint' => 'Minstens: een dag telt als je dit haalt of meer.'],
-            'decrease' => ['label' => 'Hoogstens', 'hint' => 'Hoogstens: een dag telt als je hier niet boven komt.'],
+            'increase' => ['label' => 'Hoger', 'hint' => 'Hoger is beter: een dag telt als je dit haalt of meer.'],
+            'decrease' => ['label' => 'Lager', 'hint' => 'Lager is beter: een dag telt als je maximaal dit haalt.'],
         ],
         'direction_hold' => 'Houd vast voor uitleg',
         'baseline_label'    => 'Startwaarde',

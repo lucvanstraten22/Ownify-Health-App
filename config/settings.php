@@ -100,7 +100,7 @@ return [
         [
             'label' => 'Over',
             'rows'  => [
-                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 50.5'],
+                ['id' => 'about', 'icon' => 'info', 'label' => 'Over de app', 'value' => 'Versie Beta 50.6'],
             ],
         ],
     ],
@@ -178,7 +178,6 @@ return [
                         /* Chosen in the setup a new account starts with; what
                            Overzicht puts first (docs/FIRST-DAYS.md). Left out
                            until migration 016 can keep it. */
-                        ['key' => 'focus',      'label' => 'Focus',           'edit' => true],
                     ],
                 ],
 
@@ -317,7 +316,7 @@ return [
         'notifications' => [
             'title' => 'Meldingen',
             'icon'  => 'bell',
-            'lede'  => 'Een melding in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.',
+            'lede'  => 'Een melding in de app wijst je op wat op je wacht.',
             'blocks' => [
                 /* The red dots (lib/notices.php, docs/NOTICES.md): on what
                    waits for you, gone once it is done. */
@@ -332,33 +331,12 @@ return [
                     'name'     => 'rating_notice',
                     'saves'    => true,
                     'selected' => '20',
-                    'options'  => [
-                        ['key' => '16', 'label' => '16:00'],
-                        ['key' => '18', 'label' => '18:00'],
-                        ['key' => '19', 'label' => '19:00'],
-                        ['key' => '20', 'label' => '20:00', 'note' => 'Standaard'],
-                        ['key' => '21', 'label' => '21:00'],
-                        ['key' => '22', 'label' => '22:00'],
-                    ],
+                    /* 50.6: turned on the wheel, every whole hour from 12:00 to 23:00. */
+                    'wheel'    => true,
+                    'note'     => 'Standaard 20:00.',
+                    'options'  => array_map(static fn (int $h) => ['key' => (string) $h, 'label' => sprintf('%02d:00', $h)], range(12, 23)),
                 ],
 
-                ['type' => 'section', 'title' => 'Meldingen buiten de app', 'icon' => 'bell',
-                 'lede' => 'Er worden nog geen meldingen verstuurd. Dit zijn de soorten die er komen.'],
-
-                [
-                    'type'  => 'toggles',
-                    'title' => 'Soorten',
-                    'items' => [
-                        ['label' => 'Doelen',        'note' => 'Voortgang en mijlpalen',        'on' => false],
-                        ['label' => 'Dagherinnering','note' => 'Eén moment per dag, door jou gekozen', 'on' => false],
-                        ['label' => 'Gezondheid',    'note' => 'Opvallende veranderingen',      'on' => false],
-                        ['label' => 'Suggesties',    'note' => 'Hooguit één per dag',           'on' => false],
-                        ['label' => 'Community',     'note' => 'Vriendverzoeken en ranglijst',  'on' => false],
-                    ],
-                ],
-
-                ['type' => 'note', 'icon' => 'lock',
-                 'text' => 'Welke meldingen er precies komen, is nog niet besloten. De app stuurt liever te weinig dan te veel.'],
             ],
         ],
 
@@ -513,7 +491,7 @@ return [
                     'title' => 'App',
                     'items' => [
                         ['label' => 'Naam',    'value' => 'Ownify'],
-                        ['label' => 'Versie',  'value' => 'Beta 50.5'],
+                        ['label' => 'Versie',  'value' => 'Beta 50.6'],
                     ],
                 ],
 

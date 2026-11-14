@@ -248,8 +248,41 @@
                 if (by) { e.preventDefault(); to(col, col.index + by, true); }
             });
             list.addEventListener('click', function (e) {
+                if (list._dragged) { list._dragged = false; return; }   // the end of a drag is not a tap
                 var item = e.target.closest('.wheel__item');
                 if (item) { to(col, Array.prototype.indexOf.call(list.children, item), true); }
+            });
+            /* 50.6: held and dragged with a mouse, as a finger turns it — 1:1
+               while held (snapping off), then onto the nearest row, carried a
+               little further by the flick. Touch keeps the native scroll. */
+            list.addEventListener('pointerdown', function (e) {
+                if (e.pointerType !== 'mouse' || e.button !== 0) { return; }
+                e.preventDefault();
+                var startY = e.clientY, startTop = list.scrollTop, lastY = e.clientY, lastT = e.timeStamp, v = 0, moved = false;
+                list.setPointerCapture(e.pointerId);
+                list.style.scrollSnapType = 'none';
+                list.style.cursor = 'grabbing';
+                function move(ev) {
+                    var dy = ev.clientY - startY;
+                    if (Math.abs(dy) > 3) { moved = true; }
+                    list.scrollTop = startTop - dy;
+                    var dt = ev.timeStamp - lastT;
+                    if (dt > 0) { v = (ev.clientY - lastY) / dt; }   // px per ms
+                    lastY = ev.clientY; lastT = ev.timeStamp;
+                }
+                function up() {
+                    list.removeEventListener('pointermove', move);
+                    list.removeEventListener('pointerup', up);
+                    list.removeEventListener('pointercancel', up);
+                    list.style.cursor = '';
+                    list._dragged = moved;
+                    var projected = list.scrollTop - v * 120;          // a short flick carries on
+                    list.style.scrollSnapType = '';
+                    to(col, Math.round(projected / ROW), true);
+                }
+                list.addEventListener('pointermove', move);
+                list.addEventListener('pointerup', up);
+                list.addEventListener('pointercancel', up);
             });
             if (n === 0) { panel._first = list; }
         });

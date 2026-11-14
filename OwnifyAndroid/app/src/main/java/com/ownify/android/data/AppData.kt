@@ -2602,7 +2602,10 @@ sealed interface SettingsBlock {
         val selected: String?,
         val options: List<ChoiceOption>,
         val name: String? = null,
-        val saves: Boolean = false
+        val saves: Boolean = false,
+        /** 50.6: picked on the wheel, not from a list of rows (Melding bij Voeding vanaf). */
+        val wheel: Boolean = false,
+        val note: String? = null
     ) : SettingsBlock
     /** [status]: its values say what is the case now (Voorkeuren's Nu actief), drawn as a status, not as values. */
     data class States(val title: String, val lede: String?, val items: List<StateItem>, val status: Boolean = false) : SettingsBlock
@@ -2629,7 +2632,9 @@ sealed interface SettingsBlock {
                     o.str("title").orEmpty(), o.str("selected"),
                     o.arr("options").map { ChoiceOption(it.str("key").orEmpty(), it.str("label").orEmpty(), it.str("note"), it.bool("disabled")) },
                     name = o.str("name"),
-                    saves = o.bool("saves")
+                    saves = o.bool("saves"),
+                    wheel = o.bool("wheel"),
+                    note = o.str("note")?.takeIf { it.isNotEmpty() }
                 )
                 "states" -> States(
                     o.str("title").orEmpty(), o.str("lede"),
@@ -2989,7 +2994,8 @@ data class Setup(
     val goal: SetupGoalStep
 ) {
     /** The steps in their order, as ids: focus, connect, profile, goal. */
-    val order: List<String> get() = listOf("focus", "connect", "profile", "goal")
+    /** 50.6: no focus step any more (it changed nothing). */
+    val order: List<String> get() = listOf("connect", "profile", "goal")
 
     fun countText(index: Int): String = count.replace("%1\$d", (index + 1).toString()).replace("%2\$d", order.size.toString())
 
@@ -3011,7 +3017,7 @@ data class Setup(
                 back = o.str("back").orEmpty(),
                 next = o.str("next").orEmpty(),
                 logout = o.str("logout").orEmpty(),
-                resume = o.str("resume") ?: "focus",
+                resume = o.str("resume") ?: "connect",
                 focus = SetupFocusStep.parse(step("focus")),
                 connect = SetupConnectStep.parse(step("connect")),
                 profile = SetupProfileStep.parse(step("profile")),

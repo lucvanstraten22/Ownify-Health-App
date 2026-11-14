@@ -188,7 +188,7 @@ if (!function_exists('account_email_canonical')) {
         }
 
         if ($length > ACCOUNT_PASSWORD_MAX) {
-            return t('Kies een wachtwoord van hoogstens 200 tekens.');
+            return t('Kies een wachtwoord van maximaal 200 tekens.');
         }
 
         $same = static fn (string $a, string $b): bool

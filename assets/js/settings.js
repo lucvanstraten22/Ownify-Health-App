@@ -53,6 +53,15 @@
         }
     });
 
+    /* 50.6: a choice turned on the wheel (Melding bij Voeding vanaf): saved
+       once the wheel closes on another hour. */
+    document.addEventListener('change', function (e) {
+        var field = e.target.closest && e.target.closest('[data-choice-wheel]');
+        if (!field) { return; }
+        var hour = parseInt(field.value, 10);
+        if (isFinite(hour)) { savePreference(field.getAttribute('data-choice-wheel'), String(hour), field); }
+    });
+
     /* The page around the iPhone on a wide screen leaves the notes below
        for the iPhone, which opens them (back from Google, components/document-head.php). */
     var aroundPhone = document.documentElement.getAttribute('data-layout') === 'phone-frame'

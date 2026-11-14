@@ -54,6 +54,10 @@ if (!defined('HEALTH_ENRICH_DISTANCE_TYPES')) {
         'running', 'running_treadmill', 'walking', 'hiking', 'biking', 'biking_stationary',
         'swimming_pool', 'swimming_open_water', 'rowing', 'rowing_machine', 'paddling',
         'skating', 'ice_skating', 'skiing', 'snowshoeing', 'wheelchair', 'elliptical',
+        /* 50.6: the newer kinds of training (config/manual-entry.php) that cover a distance */
+        'jogging', 'running_sand', 'walking_fitness', 'walking_nordic', 'walking_treadmill', 'walking_stroller',
+        'mountain_biking', 'road_biking', 'utility_biking', 'handbiking', 'kayaking', 'stand_up_paddleboarding',
+        'inline_skating', 'cross_skating', 'skiing_cross_country', 'skiing_roller', 'swimming',
     ]);
 }
 

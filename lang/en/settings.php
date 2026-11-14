@@ -261,7 +261,8 @@ return [
     'Onbekende waarde.' => 'Unknown value.',
 
     /* Meldingen › the red dots (26.0, docs/NOTICES.md) */
-    'Een melding in de app wijst je op wat op je wacht. Meldingen buiten de app worden nog niet verstuurd.' => 'A notification in the app points you to what is waiting for you. Notifications outside the app are not sent yet.',
+    'Een melding in de app wijst je op wat op je wacht.' => 'A notification in the app points you to what is waiting for you.',
+    'Standaard 20:00.' => 'Default 20:00.',
     'Meldingen in de app' => 'Notifications in the app',
     'Een melding staat op wat je zelf nog moet doen: je cijfer bij Voeding, een doel dat je zelf afvinkt, een vriendverzoek, een uitnodiging of een bron die niet werkt. Hij verdwijnt zodra het gedaan is.' => 'A notification sits on what you still have to do yourself: your Nutrition rating, a goal you tick off yourself, a friend request, an invitation or a source that is not working. It goes away once it is done.',
     'Melding bij Voeding vanaf' => 'Nutrition notification from',

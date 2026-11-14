@@ -11,7 +11,7 @@
  *   text_large     0 | 1            Toegankelijkheid › Grotere tekst
  *   contrast_more  0 | 1            Toegankelijkheid › Extra contrast
  *   motion_off     0 | 1            Toegankelijkheid › Animaties uit
- *   rating_notice  16 | 18 | 19 | 20 | 21 | 22
+ *   rating_notice  12 … 23 (a whole hour)
  *                                   Meldingen › Stip bij Voeding: from which
  *                                   hour a dot asks for today's cijfer
  *                                   (migration 026)

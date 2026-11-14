@@ -91,16 +91,9 @@ if (!function_exists('hydrate_setup')) {
             'logout'  => $s['logout'],
             /* A reload in the middle starts where it makes sense: past the
                focus once it has been chosen. */
-            'resume'  => $state['chosen'] ? 'connect' : 'focus',
+            /* 50.6: no focus step any more (it changed nothing): Gegevens first. */
+            'resume'  => 'connect',
             'steps'   => [
-                [
-                    'id'      => 'focus',
-                    'label'   => $steps['focus']['label'],
-                    'title'   => $steps['focus']['title'],
-                    'lede'    => $steps['focus']['lede'],
-                    'options' => $options,
-                    'error'   => $steps['focus']['error'],
-                ],
                 [
                     'id'        => 'connect',
                     'label'     => $c['label'],
@@ -198,6 +191,23 @@ if (!function_exists('hydrate_setup')) {
         ];
     }
 
+    /** 50.6: whether anything was measured before $start (the registration's day): sleep, a workout, a metric or a meal. */
+    function calibration_has_older_data(int $userId, DateTimeImmutable $start): bool
+    {
+        $before = $start->format('Y-m-d H:i:s');
+        try {
+            return (bool) db_value(
+                'SELECT EXISTS (SELECT 1 FROM sleep_sessions    WHERE user_id = ? AND ended_at    < ?)
+                     OR EXISTS (SELECT 1 FROM workouts          WHERE user_id = ? AND started_at  < ?)
+                     OR EXISTS (SELECT 1 FROM health_metrics    WHERE user_id = ? AND recorded_at < ?)
+                     OR EXISTS (SELECT 1 FROM nutrition_entries WHERE user_id = ? AND consumed_at < ?)',
+                [$userId, $before, $userId, $before, $userId, $before, $userId, $before]
+            );
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
     /**
      * The `calibration` block — the Overzicht card of the first days — or
      * null outside them.
@@ -218,6 +228,13 @@ if (!function_exists('hydrate_setup')) {
         $day   = (int) $start->diff($today)->days + 1;
 
         if ($start > $today || $day > (int) $c['window']) {
+            return null;
+        }
+
+        /* 50.6: history from before the registration (a source that brought
+           older days along) already makes a score, so "Dag 1 van 3" has
+           nothing to count: no card of the first days at all. */
+        if (calibration_has_older_data($userId, $start)) {
             return null;
         }
 

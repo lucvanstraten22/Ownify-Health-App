@@ -269,6 +269,28 @@ foreach ($page['blocks'] as $block) {
                             </div>
                         </section>
 
+                    <?php elseif ($block['type'] === 'choice' && !empty($block['wheel'])): ?>
+
+                        <?php /* 50.6: one choice among many hours, picked on the wheel
+                                  (wheel-picker.js) instead of a long list of options. */
+                              $wheelOptions = array_map(static fn ($o) => ['value' => $o['label'], 'label' => $o['label']], $block['options']);   // the field shows and keeps the label ("20:00"); settings.js reads its hour
+                              $wheelShown = '';
+                              foreach ($block['options'] as $o) { if ($o['key'] === $block['selected']) { $wheelShown = $o['label']; } } ?>
+                        <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">
+                            <h2 class="settings-eyebrow" id="<?= e($blockId) ?>"><?= e($block['title']) ?></h2>
+
+                            <div class="card">
+                                <input class="wizard__input wizard__input--number" type="text" readonly
+                                       aria-labelledby="<?= e($blockId) ?>"
+                                       value="<?= e($wheelShown) ?>"
+                                       data-choice-wheel="<?= e($block['name']) ?>"
+                                       data-wheel="<?= e(json_encode(['kind' => 'list', 'options' => $wheelOptions], JSON_UNESCAPED_UNICODE)) ?>">
+                                <?php if (!empty($block['note'])): ?>
+                                    <p class="card__hint card__hint--plain"><?= e($block['note']) ?></p>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+
                     <?php elseif ($block['type'] === 'choice'): ?>
 
                         <section class="settings-block reveal" aria-labelledby="<?= e($blockId) ?>">

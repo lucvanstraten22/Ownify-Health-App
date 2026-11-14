@@ -402,7 +402,9 @@ fun WheelField(
     modifier: Modifier = Modifier,
     label: String? = null,
     placeholder: String = "",
-    focus: FocusRequester = remember { FocusRequester() }
+    focus: FocusRequester = remember { FocusRequester() },
+    /** 50.6: the value given only when the wheel closes (a choice that is saved), as a list on the website. */
+    commitOnClose: Boolean = false
 ) {
     var open by remember { mutableStateOf(false) }
     var width by remember { mutableStateOf(0.dp) }
@@ -431,7 +433,7 @@ fun WheelField(
             contentAlignment = Alignment.CenterStart
         ) {
             T(shown.ifEmpty { placeholder }, OwnifyType.style(Ownify.FsInput, color = if (shown.isEmpty()) Ownify.TextMuted else Ownify.TextPrimary, tabular = true), maxLines = 1)
-            if (open) WheelPopup(spec, value, width, onValue, onClose = { open = false })
+            if (open) WheelPopup(spec, value, width, onValue, onClose = { open = false }, commitOnClose = commitOnClose)
         }
     }
 }

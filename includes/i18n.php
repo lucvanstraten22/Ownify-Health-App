@@ -45,7 +45,7 @@ if (!defined('I18N_LOCALES')) {
 /* Meldingen › Stip bij Voeding: the hours to choose from, and the default. */
 if (!defined('NOTICE_RATING_HOUR')) {
     define('NOTICE_RATING_HOUR', 20);
-    define('NOTICE_RATING_HOURS', [16, 18, 19, 20, 21, 22]);
+    define('NOTICE_RATING_HOURS', range(12, 23));
 }
 
 if (!function_exists('i18n_locale')) {

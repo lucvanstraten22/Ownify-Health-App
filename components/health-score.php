@@ -31,10 +31,6 @@ $openLabel = $compass === null ? '' : $overall['label'] . ': '
             <h1 class="card__title" id="overview-title"><?= e($overview['title']) ?></h1>
             <p class="card__meta"><span class="card__meta-day"><?= e($today['weekday']) ?> </span><?= e($today['date']) ?></p>
         </div>
-        <span class="chip chip--focus" title="<?= e(t('Gekozen focus')) ?>">
-            <span class="chip__dot" aria-hidden="true"></span>
-            <?= e($focusLabel) ?>
-        </span>
     </div>
 
     <div class="score-ring score-ring--glow" data-ring data-ring-paint="glow" data-progress="<?= e((string) round($ratio, 4)) ?>"

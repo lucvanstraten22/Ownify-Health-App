@@ -2,6 +2,8 @@ package com.ownify.android.ui.screens.settings
 import androidx.activity.result.PickVisualMediaRequest
 import com.ownify.android.ui.app.Avatars
 import com.ownify.android.ui.design.press
+import com.ownify.android.ui.design.WheelField
+import com.ownify.android.ui.design.WheelSpec
 import com.ownify.android.ui.screens.account.QuietLink
 import com.ownify.android.ui.screens.account.upload
 import com.ownify.android.ui.design.NoteTone
@@ -861,6 +863,27 @@ private fun ChoiceBlock(pageId: String, index: Int, block: SettingsBlock.Choice)
             }
             busy = false
         }
+    }
+    if (block.wheel) {
+        // 50.6: many hours, one choice — turned on the wheel, saved once it closes (settings-detail.php).
+        Column(Modifier.fillMaxWidth().reveal()) {
+            SettingsEyebrow(block.title)
+            SettingsCard {
+                Column(Modifier.fillMaxWidth().padding(if (narrow) Ownify.Space3 else Ownify.Space4)) {
+                    WheelField(
+                        selected.orEmpty(),
+                        { key -> if (key.isNotEmpty() && key != picked && !busy) save(key) },
+                        WheelSpec.list(block.options.map { it.key to it.label }),
+                        Modifier.fillMaxWidth(),
+                        label = block.title,
+                        commitOnClose = true
+                    )
+                    if (block.note != null) T(block.note, JStyle.Footnote, Modifier.padding(top = Ownify.Space2))
+                }
+            }
+            problem?.let { IntegrationHint(it, OwnifyIcons.warning, warn = true) }
+        }
+        return
     }
     Column(Modifier.fillMaxWidth().reveal()) {
         SettingsEyebrow(block.title)

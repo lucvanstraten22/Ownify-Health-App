@@ -21,7 +21,8 @@
     var root = document.querySelector('[data-setup]');
     if (!root) { return; }
 
-    var ORDER    = ['focus', 'connect', 'profile', 'goal'];
+    /* 50.6: the steps the page has (the focus step is gone). */
+    var ORDER    = ['focus', 'connect', 'profile', 'goal'].filter(function (id) { return !!root.querySelector('[data-setup-step="' + id + '"]'); });
     var body     = root.querySelector('[data-setup-body]');
     var count    = root.querySelector('[data-setup-count]');
     var backBtn  = root.querySelector('[data-setup-back]');
@@ -29,7 +30,7 @@
     var total    = parseInt(root.getAttribute('data-total'), 10) || ORDER.length;
     var template = root.getAttribute('data-count') || '%1$d / %2$d';
 
-    var current = 'focus';
+    var current = ORDER[0];
     var busy = false;
 
     var chosen = root.querySelector('[data-setup-focus][aria-checked="true"]');
@@ -149,7 +150,7 @@
         each('[data-setup-focus]', function (option) {
             option.setAttribute('aria-checked', option.getAttribute('data-setup-focus') === key ? 'true' : 'false');
         });
-        nextButton('focus').disabled = false;
+        if (ORDER.indexOf('focus') !== -1) { nextButton('focus').disabled = false; }
     }
 
     each('[data-setup-focus]', function (option) {
@@ -172,7 +173,7 @@
         choose(next.getAttribute('data-setup-focus'));
     });
 
-    nextButton('focus').addEventListener('click', function () {
+    if (ORDER.indexOf('focus') !== -1) nextButton('focus').addEventListener('click', function () {
         if (busy || !focus) { return; }
 
         if (focus === savedFocus) {
@@ -366,7 +367,7 @@
 
     /* A reload in the middle starts where it makes sense (lib/hydrate-setup.php). */
     var resume = root.getAttribute('data-resume');
-    if (resume && resume !== 'focus' && ORDER.indexOf(resume) > 0) {
+    if (resume && ORDER.indexOf(resume) > 0) {
         show(resume, 1, true);
     }
 })();

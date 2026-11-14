@@ -219,7 +219,7 @@ if (!function_exists('goal_create_from_input')) {
         }
 
         if ($end > $start->modify('+3 year')) {
-            return $fail(t('Een doel loopt hoogstens drie jaar.'), 'end_date');
+            return $fail(t('Een doel loopt maximaal drie jaar.'), 'end_date');
         }
 
         if ($variant === 'period') {

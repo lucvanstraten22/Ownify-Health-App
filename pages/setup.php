@@ -25,7 +25,7 @@ $steps = $setup['steps'];
 $total = count($steps);
 $byId  = array_column($steps, null, 'id');
 
-$focus   = $byId['focus'];
+$focus   = $byId['focus'] ?? null;   // 50.6: no focus step
 $connect = $byId['connect'];
 $profile = $byId['profile'];
 $goal    = $byId['goal'];
@@ -35,7 +35,7 @@ $source  = $connect['source'];
 <html lang="<?= e($app['locale']) ?>" data-units="<?= e(units_system()) ?>" data-theme="<?= e(app_theme()) ?>" data-focus="<?= e($data['focus']) ?>">
 <head>
     <?php component('document-head', $data + ['styles' => [
-        'theme', 'components', 'goals', 'setup', 'phone-sim',
+        'theme', 'components', 'health', 'goals', 'setup', 'phone-sim',   // health: the switch (.range-switch), as in the app
     ]]); ?>
 </head>
 <body class="app app--setup">
@@ -68,6 +68,7 @@ $source  = $connect['source'];
 
         <div class="setup__body" data-setup-body>
 
+            <?php if ($focus !== null): ?>
             <!-- ------------------------------------------------ 1 · focus -->
             <section class="setup__step is-active" data-setup-step="focus" data-label="<?= e($focus['label']) ?>"
                      aria-labelledby="setup-focus-title">
@@ -92,9 +93,11 @@ $source  = $connect['source'];
                 <p class="setup__error" role="alert" data-setup-error="focus" data-message="<?= e($focus['error']) ?>" hidden></p>
             </section>
 
+            <?php endif; ?>
+
             <!-- ---------------------------------------------- 2 · gegevens -->
-            <section class="setup__step" data-setup-step="connect" data-label="<?= e($connect['label']) ?>"
-                     aria-labelledby="setup-connect-title" hidden>
+            <section class="setup__step<?= $focus === null ? ' is-active' : '' ?>" data-setup-step="connect" data-label="<?= e($connect['label']) ?>"
+                     aria-labelledby="setup-connect-title" <?= $focus === null ? '' : 'hidden' ?>>
                 <h2 class="setup__title" id="setup-connect-title"><?= e($connect['title']) ?></h2>
                 <p class="setup__lede"><?= e($connect['lede']) ?></p>
 
@@ -216,9 +219,11 @@ $source  = $connect['source'];
             <div class="split split--go setup__actions" role="group">
                 <button type="button" class="split__part split__part--back setup__back" data-setup-back hidden><?= e($setup['back']) ?></button>
                 <button type="button" class="split__part split__part--back setup__skip" data-setup-skip="profile" hidden><?= e($profile['skip']) ?></button>
+                <?php if ($focus !== null): ?>
                 <button type="button" class="split__part setup__primary" data-setup-next="focus"
                         <?= array_filter($focus['options'], static fn ($o) => $o['chosen']) === [] ? 'disabled' : '' ?>><?= e($setup['next']) ?></button>
-                <button type="button" class="split__part setup__primary" data-setup-next="connect" hidden>
+                <?php endif; ?>
+                <button type="button" class="split__part setup__primary" data-setup-next="connect" <?= $focus === null ? '' : 'hidden' ?>>
                     <?= e($connect['connected'] ? $setup['next'] : $connect['skip']) ?>
                 </button>
                 <button type="button" class="split__part setup__primary" data-setup-next="profile" hidden><?= e($profile['save']) ?></button>
