@@ -941,10 +941,13 @@ if (!function_exists('health_score_now')) {
 
     /* --------------------------------------------------------- training */
 
-    /** Whether a workout is strength training (config `strength_types`). */
+    /** Whether a workout is strength training (config `strength_types`), by its training type however it is spelled (52.0). */
     function health_score_is_strength(array $workout): bool
     {
-        return in_array($workout['type'] ?? '', (array) health_scoring_config()['training']['strength_types'], true);
+        $types = (array) health_scoring_config()['training']['strength_types'];
+        $type  = (string) ($workout['type'] ?? '');
+
+        return in_array($type, $types, true) || in_array(health_activity_key($type), $types, true);
     }
 
     /**
@@ -1110,7 +1113,7 @@ if (!function_exists('health_score_now')) {
             'active_days' => health_curve($t['active_days_curve'], $activeWeek),
             'resting_hr'  => $rhr === null ? null : health_curve($t['resting_hr_curve'], $rhr),
             'recovery'    => $recovery,
-            'progression' => $progression,
+            /* 52.0: no progression — it cannot be measured reliably. */
         ];
 
         $facts = [
@@ -1125,7 +1128,6 @@ if (!function_exists('health_score_now')) {
             'active_count'      => $activeCount,
             'resting_hr'        => $rhr,
             'recovery'          => $recoveryFacts,
-            'progression'       => $progressionFacts,
         ];
 
         return health_score_result(health_weighted($components, $t['weights']), $days, $components, $facts) + ['dates' => $dates];

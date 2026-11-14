@@ -499,18 +499,19 @@ return [
                 'next'   => 'Volgende dag',
                 'aria_day' => 'Hartslag op %s, minuut voor minuut',
                 /* Four zones (docs/TRAINING.md), a visual layer only: the
-                   values are never changed by them. With a resting heart
-                   rate (the median of the last `resting_days` days' resting
-                   heart rate) and a maximum, from the heart-rate reserve
-                   (Karvonen) at ACSM's light, moderate and vigorous: 30%, 40%
-                   and 60%. With a maximum alone, from it: ACSM's light 57%,
-                   and the moderate and vigorous of config/scoring.php (64%,
-                   77%). The maximum is health_hr_max(): the highest recorded
-                   in a training, or 208 − 0,7 × age if that is higher. */
+                   values are never changed by them. 52.0: as Fitbit and
+                   Google draw them (Karvonen, the heart-rate reserve), so
+                   Ownify's zones agree with the watch's: zone 2 fat burn from
+                   40%, zone 3 cardio from 60% (ACSM's vigorous), zone 4 peak
+                   from 85%. With a resting heart rate (the median of the last
+                   `resting_days` days') and a maximum; with a maximum alone,
+                   its shares that come closest: 64%, 77% and 91%. The maximum
+                   is health_hr_max(): the highest recorded in a training, or
+                   208 − 0,7 × age if that is higher. */
                 'zones' => [
                     'labels'  => ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'],
-                    'reserve' => [0.30, 0.40, 0.60],
-                    'light'   => 0.57,
+                    'reserve' => [0.40, 0.60, 0.85],
+                    'max'     => [0.64, 0.77, 0.91],
                     'resting_days' => 30,
                     'basis_reserve' => 'Op basis van je rusthartslag (%1$d bpm) en maximale hartslag (%2$d bpm).',
                     'basis_max'     => 'Op basis van je maximale hartslag (%d bpm).',

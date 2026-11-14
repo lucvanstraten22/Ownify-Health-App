@@ -732,7 +732,77 @@ if (!function_exists('health_scoring_config')) {
             ];
         }
 
-        return $out;
+        return health_workout_zones_from_minutes($userId, $out);
+    }
+
+    /**
+     * Time per heart-rate zone for the workouts that have none of their own
+     * (52.0): from the heart rate minute by minute during each one
+     * (heart_rate_minutes, the highest where two devices measured a minute),
+     * in the four zones the Training page shows (config/health.php,
+     * hydrate_training_zones()) — the heart rate reserve's 40, 60 and 85%, as
+     * Fitbit and Google draw them, when the resting heart rate is known, else
+     * shares of the maximum. Zone 2 and up is moderate and zone 3 and up
+     * vigorous, as ACSM draws them (40 and 60% of the reserve), so
+     * health_workout_effort() reads them with hard_zone 3 (config/scoring.php).
+     * Only where the minutes cover at least half the workout; otherwise it
+     * stays as it was.
+     */
+    function health_workout_zones_from_minutes(int $userId, array $workouts): array
+    {
+        $open = array_values(array_filter($workouts, static fn (array $w): bool => $w['zones'] === [] && ($w['minutes'] ?? 0) > 0));
+        if ($open === [] || !db_available()) {
+            return $workouts;
+        }
+
+        $max = health_hr_max($userId, $workouts);
+        if ($max === null || $max <= 0) {
+            return $workouts;
+        }
+        $cfg   = (array) (((require dirname(__DIR__) . '/config/health.php')['areas']['training']['heart']['zones']) ?? []);
+        $last  = date('Y-m-d', max(array_column($workouts, 'start')));
+        $first = date('Y-m-d', strtotime($last . ' -' . max(0, (int) ($cfg['resting_days'] ?? 30) - 1) . ' days'));
+        $rests = array_values(health_daily_metric_days($userId, 'resting_hr', $first, $last));
+        sort($rests);
+        $rest  = $rests === [] ? null : (count($rests) % 2 ? $rests[intdiv(count($rests), 2)] : ($rests[count($rests) / 2 - 1] + $rests[count($rests) / 2]) / 2);
+        $bounds = ($rest !== null && $rest >= 30 && $rest < 0.75 * $max)
+            ? array_map(static fn (float $p): float => $rest + $p * ($max - $rest), (array) ($cfg['reserve'] ?? [0.40, 0.60, 0.85]))
+            : array_map(static fn (float $p): float => $p * $max, (array) ($cfg['max'] ?? [0.64, 0.77, 0.91]));
+
+        $byId = [];
+        foreach ($open as $w) {
+            $byId[(int) $w['id']] = $w;
+        }
+        $zones = [];
+        foreach (array_chunk(array_keys($byId), 200) as $chunk) {
+            $marks = implode(',', array_fill(0, count($chunk), '?'));
+            $rows  = db_all(
+                'SELECT w.id, h.minute_at, MAX(h.bpm) AS bpm
+                   FROM workouts w
+                   JOIN heart_rate_minutes h
+                     ON h.user_id = w.user_id
+                    AND h.minute_at >= w.started_at
+                    AND h.minute_at < COALESCE(w.ended_at, DATE_ADD(w.started_at, INTERVAL COALESCE(w.duration_seconds, 0) SECOND))
+                  WHERE w.id IN (' . $marks . ')
+               GROUP BY w.id, h.minute_at',
+                $chunk
+            );
+            foreach ($rows as $r) {
+                $bpm  = (float) $r['bpm'];
+                $zone = $bpm < $bounds[0] ? 1 : ($bpm < $bounds[1] ? 2 : ($bpm < $bounds[2] ? 3 : 4));
+                $zones[(int) $r['id']][$zone] = ($zones[(int) $r['id']][$zone] ?? 0) + 60;
+            }
+        }
+
+        foreach ($workouts as $k => $w) {
+            $got = $zones[(int) $w['id']] ?? [];
+            if ($got !== [] && $w['zones'] === [] && array_sum($got) >= 0.5 * (float) $w['minutes'] * 60) {
+                ksort($got);
+                $workouts[$k]['zones'] = $got;
+            }
+        }
+
+        return $workouts;
     }
 
     /** Whether a recorded workout is a real, complete one that counts. */

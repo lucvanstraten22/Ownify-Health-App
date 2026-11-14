@@ -177,12 +177,21 @@ if (!function_exists('score_compass')) {
                 'note'    => match (true) {
                     !$scored  => null,
                     $counted  => score_compass_fact($category, $key, $result['facts'] ?? [], $c),
+                    /* 52.0: Voeding's parts that are not measured say nothing —
+                       one line each for every nutrient not logged was too much. */
+                    $category === 'nutrition' => null,
                     default   => $c['not_counted'] . ' · ' . $def['missing'],
                 },
+                'nominal' => (float) $weights[$key],
             ];
         }
 
-        return $rows;
+        /* 52.0: heaviest first — what counts, by the weight it has now; then
+           what does not count yet, by the weight it will have. */
+        usort($rows, static fn (array $a, array $b): int =>
+            [$b['weight'] !== null, $b['weight'] ?? 0, $b['nominal']] <=> [$a['weight'] !== null, $a['weight'] ?? 0, $a['nominal']]);
+
+        return array_map(static fn (array $r): array => array_diff_key($r, ['nominal' => 0]), $rows);
     }
 
     /** One line of what a factor was worked out from, or null. */

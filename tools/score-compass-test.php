@@ -308,9 +308,9 @@ $collect($c);
 check('three categories, each counting equally, over the configured window',
     $c['composition']['note'] === 'Je Gezondheidsscore is het gemiddelde van Slaap, Voeding en Training over de afgelopen 7 dagen. Elk telt even zwaar.',
     $c['composition']['note']);
-check('Slaap: its eight factors, those with data sharing the weight (34.5 : 34.5 : 17.3)',
-    array_column($sleep['parts'], 'weight', 'id') === ['duration' => 40, 'regularity' => 40, 'social_jetlag' => 20, 'efficiency' => null,
-        'awake' => null, 'deep' => null, 'rem' => null, 'hrv' => null], json_encode(array_column($sleep['parts'], 'weight', 'id')));
+check('Slaap: its eight factors, those with data sharing the weight (34.5 : 34.5 : 17.3), heaviest first (52.0)',
+    array_column($sleep['parts'], 'weight', 'id') === ['duration' => 40, 'regularity' => 40, 'social_jetlag' => 20, 'hrv' => null,
+        'efficiency' => null, 'awake' => null, 'deep' => null, 'rem' => null], json_encode(array_column($sleep['parts'], 'weight', 'id')));
 check('…their values as whole numbers, and their score bands', array_slice(array_column($sleep['parts'], 'value'), 0, 3) === [76, 93, 100]
     && array_slice(array_column($sleep['parts'], 'band'), 0, 3) === ['mid', 'high', 'high']);
 check('…each with what it was worked out from', $sleep['parts'][0]['note'] === 'Gemiddeld 6:39 per nacht'
@@ -327,7 +327,7 @@ check('a category\'s colour is its identity, its band its score', $sleep['accent
 
 $c = $compass(history(1, static fn () => [result(null, 2), result(null, 0), result(null, 0)]));
 check('no score yet: the factors with the weights they will have, no values',
-    array_column($c['composition']['categories'][0]['parts'], 'weight') === [35, 35, 17, 3, 3, 2, 2, 4]
+    array_column($c['composition']['categories'][0]['parts'], 'weight') === [35, 35, 17, 4, 3, 3, 2, 2]
     && array_filter(array_column($c['composition']['categories'][0]['parts'], 'value')) === []);
 
 /* ======================================================================

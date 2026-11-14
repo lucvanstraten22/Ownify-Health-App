@@ -159,8 +159,9 @@ $approved = [
                     'awake' => 2.54, 'deep' => 2.16, 'rem' => 2.16, 'hrv' => 4.31],
     'nutrition' => ['fibre' => 31.07, 'sodium' => 15.53, 'saturated_fat' => 9.71, 'sugar' => 7.77, 'protein' => 7.77,
                     'water' => 7.77, 'caffeine' => 7.77, 'fat_share' => 4.85, 'energy' => 3.88, 'rating' => 3.88],
-    'training'  => ['steps' => 26.45, 'aerobic' => 9.92, 'strength' => 19.83, 'intensity' => 6.61,
-                    'active_days' => 9.92, 'resting_hr' => 19.83, 'recovery' => 4.96, 'progression' => 2.48],
+    /* 52.0: progression taken out; the other seven share its weight. */
+    'training'  => ['steps' => 27.12, 'aerobic' => 10.17, 'strength' => 20.34, 'intensity' => 6.78,
+                    'active_days' => 10.17, 'resting_hr' => 20.34, 'recovery' => 5.08],
 ];
 foreach ($approved as $category => $table) {
     $w = health_score_weights($category);
@@ -185,23 +186,23 @@ $example = [
     'nutrition' => ['fibre' => 56, 'sodium' => 67, 'saturated_fat' => 70, 'sugar' => 53, 'protein' => 100,
                     'water' => 100, 'caffeine' => 78, 'fat_share' => 100, 'energy' => 100, 'rating' => 70],
     'training'  => ['steps' => 72, 'aerobic' => 54, 'strength' => 87, 'intensity' => 60, 'active_days' => 90,
-                    'resting_hr' => 80, 'recovery' => 100, 'progression' => 60],
+                    'resting_hr' => 80, 'recovery' => 100],
 ];
 $scored = [];
 foreach ($example as $category => $components) {
     $scored[$category] = health_weighted($components, $cfg[$category]['weights']);
 }
-check('Slaap 95.7, Voeding 71.8, Training 76.9',
-    round($scored['sleep'], 1) === 95.7 && round($scored['nutrition'], 1) === 71.8 && round($scored['training'], 1) === 76.9,
+check('Slaap 95.7, Voeding 71.8, Training 77.3',
+    round($scored['sleep'], 1) === 95.7 && round($scored['nutrition'], 1) === 71.8 && round($scored['training'], 1) === 77.3,
     json_encode(array_map(static fn ($v) => round($v, 1), $scored)));
-check('…and a Health Score of 82 (81.5)', score_combine(array_map(static fn ($v) => (int) round($v), $scored)) === 82
-    && round(array_sum(array_map(static fn ($v) => round($v, 1), $scored)) / 3, 1) === 81.5);
+check('…and a Health Score of 82 (81.6)', score_combine(array_map(static fn ($v) => (int) round($v), $scored)) === 82
+    && round(array_sum(array_map(static fn ($v) => round($v, 1), $scored)) / 3, 1) === 81.6);
 
 $u = health_score_uncertainty(array_map(static fn ($c) => ['score' => 1, 'components' => $c], $example));
 $near = static fn (array $r, float $lo, float $hi): bool => abs($r[0] - $lo) <= 0.6 && abs($r[1] - $hi) <= 0.6;
-check('the uncertainty ranges match the proposal\'s (Slaap 92.9–96.6, Voeding 68.5–81.2, Training 72.1–81.3)',
+check('the uncertainty ranges match the proposal\'s (Slaap 92.9–96.6, Voeding 68.5–81.2; Training 72.6–82.4 without progression, 52.0)',
     $near($u['sleep']['range'], 92.9, 96.6) && $near($u['nutrition']['range'], 68.5, 81.2)
-    && $near($u['training']['range'], 72.1, 81.3), json_encode($u));
+    && $near($u['training']['range'], 72.6, 82.4), json_encode($u));
 check('every factor measured: coverage 1', $u['sleep']['coverage'] === 1.0 && $u['overall']['coverage'] === 1.0);
 check('the same factors always give the same range (a fixed seed)', health_score_uncertainty(
     array_map(static fn ($c) => ['score' => 1, 'components' => $c], $example)) === $u);
@@ -212,8 +213,8 @@ $half['training'] = array_map(static fn () => null, $half['training']);
 $half['training']['steps'] = 72;
 $hu = health_score_uncertainty(['sleep' => ['score' => 1, 'components' => $half['sleep']], 'nutrition' => ['score' => null, 'components' => []],
     'training' => ['score' => 1, 'components' => $half['training']]]);
-check('coverage is the share of the weight with data: steps only is 26%, a missing category 0',
-    abs($hu['training']['coverage'] - 0.265) < 0.002 && $hu['nutrition']['coverage'] === 0.0 && $hu['nutrition']['range'] === null
+check('coverage is the share of the weight with data: steps only is 27%, a missing category 0',
+    abs($hu['training']['coverage'] - 0.271) < 0.002 && $hu['nutrition']['coverage'] === 0.0 && $hu['nutrition']['range'] === null
     && abs($hu['overall']['coverage'] - (1 + 0 + $hu['training']['coverage']) / 3) < 0.002, json_encode($hu));
 
 /* ====================================================================== */
@@ -486,29 +487,8 @@ check('from 60, 7,000 steps a day is the top', $older['components']['steps'] ===
 $rhr = health_score_training([], [], [], $now, $today, $stepsWeek, array_fill_keys(array_keys($stepsWeek), 62.0), []);
 check('resting heart rate 62: 80', abs($rhr['components']['resting_hr'] - 80) < 0.01, (string) $rhr['components']['resting_hr']);
 
-$paced = static function (float $from, float $to): array {
-    global $now;
-    $out = [];
-    foreach ([6, 5, 4, 3, 2, 1] as $i => $ago) {
-        $kmh = $from + ($to - $from) * $i / 5;
-        $out[] = workout($i + 1, $now - $ago * 86400, 40, 'moderate', ['km' => 6.0, 'kmh' => $kmh]);
-    }
-    return $out;
-};
-$better = health_score_training($paced(10.0, 11.0), [], [], $now, $today)['components']['progression'];
-$same   = health_score_training($paced(10.0, 10.0), [], [], $now, $today)['components']['progression'];
-$worse  = health_score_training($paced(11.0, 10.0), [], [], $now, $today)['components']['progression'];
-check('progression is relative to yourself: faster > steady > slower', $better > $same && $same > $worse,
-    "$better / $same / $worse");
-check('without anything to compare, progression is left out, not zero', $mixed['components']['progression'] === null);
-
-$goalUp = [['direction' => 'increase', 'entries' => [
-    ['at' => $now - 6 * $day, 'value' => 80.0], ['at' => $now - 4 * $day, 'value' => 82.5],
-    ['at' => $now - 2 * $day, 'value' => 85.0], ['at' => $now - 1 * $day, 'value' => 87.5],
-]]];
-check('a strength goal going up counts as progression',
-    health_score_training($week([1, 3, 5], 50, 'moderate'), [], $goalUp, $now, $today)['components']['progression'] === null
-    || health_score_training($week([1, 3, 5], 50, 'moderate'), [], $goalUp, $now, $today)['components']['progression'] >= 60);
+/* 52.0: progression is no longer part of the score. */
+check('progression is not a training factor any more', !array_key_exists('progression', health_score_training($week([1, 3, 5], 50, 'moderate'), [], [], $now, $today)['components']));
 
 /* ====================================================================== */
 section('nutrition: what was eaten, on days logged well enough');

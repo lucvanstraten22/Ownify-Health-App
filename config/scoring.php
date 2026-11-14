@@ -283,7 +283,7 @@ return [
     ],
 
     /* ==================================================================
-       TRAINING — eight factors
+       TRAINING — seven factors (52.0: progression taken out)
        ================================================================== */
     'training' => [
         'factors' => [
@@ -294,7 +294,8 @@ return [
             'active_days' => ['evidence' => 0.25, 'measurement' => 1],
             'resting_hr'  => ['evidence' => 1,    'measurement' => 0.5],
             'recovery'    => ['evidence' => 0.25, 'measurement' => 0.5],
-            'progression' => ['evidence' => 0.25, 'measurement' => 0.25],
+            /* 52.0: no progression factor any more — whether someone is
+               getting better cannot be measured reliably from what comes in. */
         ],
         'overlap' => [['steps', 'aerobic', 0.5], ['aerobic', 'intensity', 0.5]],
 
@@ -309,8 +310,11 @@ return [
         'aerobic_curve'  => [[0, 0], [75, 45], [150, 60], [225, 75], [375, 94], [600, 100]],
         /* Strength minutes per week (Momma et al. 2022). */
         'strength_curve' => [[0, 0], [30, 80], [60, 100]],
-        /* The workouts that are strength training. */
-        'strength_types' => ['strength', 'strength_training', 'weightlifting', 'weight_training', 'calisthenics'],
+        /* The workouts that are strength training: training types
+           (config/manual-entry.php), however a source spells them —
+           health_activity_key() reads "Krachttraining", "WEIGHTS" or
+           "EXERCISE_TYPE_STRENGTH_TRAINING" as one of these (52.0). */
+        'strength_types' => ['strength_training', 'weightlifting', 'calisthenics', 'crossfit', 'kettlebell_training', 'circuit_training', 'p90x'],
         /* The share of aerobic minutes that were vigorous -> score. */
         'intensity_curve' => [[0, 0], [0.5, 100]],
         /* Days with at least `active_day_minutes` aerobic minutes or
@@ -333,8 +337,10 @@ return [
             /* Perceived effort, 1-10. */
             'rpe'        => ['moderate' => 5, 'hard' => 7],
             /* Time in zone >= hard_zone, as a share of the workout, makes it
-               hard; time in the zone below it and up, moderate. */
-            'hr_zones'   => ['hard_zone' => 4, 'hard_share' => 0.30, 'moderate_share' => 0.50],
+               hard; time in the zone below it and up, moderate. 52.0: the
+               Training page's zones (Fitbit's, config/health.php) — zone 3
+               from 60% of the reserve is vigorous, zone 2 from 40% moderate. */
+            'hr_zones'   => ['hard_zone' => 3, 'hard_share' => 0.30, 'moderate_share' => 0.50],
             /* Average heart rate as a share of the maximum (ACSM: moderate
                from 64%, vigorous from 77%). The maximum is the highest heart
                rate the person recorded, or 208 - 0.7 x age if that is higher. */

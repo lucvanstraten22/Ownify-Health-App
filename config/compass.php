@@ -126,7 +126,6 @@ return [
                 'active_days'   => ['label' => 'Actieve dagen',      'title' => 'Actieve dagen',           'missing' => 'Nog geen gegevens'],
                 'resting_hr'    => ['label' => 'Rusthartslag',       'title' => 'Rusthartslag',            'missing' => 'Nog geen rusthartslag'],
                 'recovery'      => ['label' => 'Herstel',            'title' => 'Herstel na zware dagen',  'missing' => 'Nog te weinig zware trainingsdagen'],
-                'progression'   => ['label' => 'Progressie',         'title' => 'Progressie',              'missing' => 'Nog niets om mee te vergelijken'],
             ],
         ],
 
@@ -134,7 +133,7 @@ return [
            that day back in the history: their labels as they were. */
         'earlier_parts' => [
             'sleep'    => ['quality' => 'Kwaliteit'],
-            'training' => ['volume' => 'Volume', 'balance' => 'Balans'],
+            'training' => ['volume' => 'Volume', 'balance' => 'Balans', 'progression' => 'Progressie'],
         ],
 
         /* One line of what each factor was worked out from. */

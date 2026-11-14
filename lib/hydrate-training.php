@@ -308,7 +308,7 @@ if (!function_exists('hydrate_training')) {
             $out['note']   = sprintf((string) $cfg['basis_reserve'], (int) round($resting), (int) round($max));
         } else {
             $pct           = health_scoring_config()['training']['intensity']['hr_max_pct'];
-            $bounds        = [(float) $cfg['light'] * $max, (float) $pct['moderate'] * $max, (float) $pct['hard'] * $max];
+            $bounds        = array_map(static fn (float $p): float => $p * $max, (array) $cfg['max']);
             $out['basis']  = 'max';
             $out['note']   = sprintf((string) $cfg['basis_max'], (int) round($max));
         }

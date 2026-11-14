@@ -255,17 +255,17 @@ $import([
     ['recordType' => 'RestingHeartRate', 'metadata' => ['id' => 'r3'], 'time' => $at($day(3), '06:00'), 'beatsPerMinute' => 54],
 ]);
 $z = hydrate_training_zones($area['heart']['zones'], $userId, health_workout_records($userId), $today);
-check('with a resting heart rate: from the reserve, 52 + 30/40/60% of (180 − 52) = 90, 103, 129',
-    $z['basis'] === 'reserve' && $z['thresholds'] === [90, 103, 129], json_encode($z));
+check('with a resting heart rate: from the reserve, 52 + 40/60/85% of (180 − 52) = 103, 129, 161 (52.0, as Fitbit)',
+    $z['basis'] === 'reserve' && $z['thresholds'] === [103, 129, 161], json_encode($z));
 check('  named with their ranges, and what they are based on',
-    array_column($z['bands'], 'range') === ['< 90', '90–102', '103–128', '≥ 129']
+    array_column($z['bands'], 'range') === ['< 103', '103–128', '129–160', '≥ 161']
     && $z['note'] === 'Op basis van je rusthartslag (52 bpm) en maximale hartslag (180 bpm).', json_encode($z['bands']));
-check('  each heart rate\'s zone by its whole number: 72 → 1, 95 → 2, 110 → 3, 150 → 4, 89,6 → 2',
-    [hydrate_training_zone($z, 72), hydrate_training_zone($z, 95), hydrate_training_zone($z, 110), hydrate_training_zone($z, 150), hydrate_training_zone($z, 89.6)] === [1, 2, 3, 4, 2]);
+check('  each heart rate\'s zone by its whole number: 72 → 1, 110 → 2, 140 → 3, 170 → 4, 102,6 → 2',
+    [hydrate_training_zone($z, 72), hydrate_training_zone($z, 110), hydrate_training_zone($z, 140), hydrate_training_zone($z, 170), hydrate_training_zone($z, 102.6)] === [1, 2, 3, 4, 2]);
 
 $maxOnly = $account(40);
 $z2 = hydrate_training_zones($area['heart']['zones'], $maxOnly, [], $today);
-check('without one: from the maximum, 57/64/77% of 180 = 103, 115, 139', $z2['basis'] === 'max' && $z2['thresholds'] === [103, 115, 139], json_encode($z2));
+check('without one: from the maximum, 64/77/91% of 180 = 115, 139, 164', $z2['basis'] === 'max' && $z2['thresholds'] === [115, 139, 164], json_encode($z2));
 
 $none = $account(null);
 $z3 = hydrate_training_zones($area['heart']['zones'], $none, [], $today);
@@ -323,7 +323,7 @@ check('  how long: 40 min', ($stats['duration']['value'] ?? null) === '40' && $s
 check('its heart rate minute by minute, from its start at the left to its end at the right',
     count($session['heart']['x']) === 40 && $session['heart']['axis'][0]['label'] === '18:00' && end($session['heart']['axis'])['label'] === '18:40'
     && $session['heart']['points'][39][3] === '159 bpm', json_encode(array_column($session['heart']['axis'], 'label')));
-check('  its zones over it: 159 bpm in zone 4', $session['heart']['points'][39][1] === 'Zone 4');
+check('  its zones over it: 159 bpm in zone 3 (zone 4 from 161, 52.0)', $session['heart']['points'][39][1] === 'Zone 3');
 
 $window = health_metric_window_total($userId, 'steps', $day(1) . ' 18:00:00', $day(1) . ' 18:30:00');
 check('a stretch two apps both cover: each moment once, 3000 — not 6000', $window !== null && round($window) === 3000.0, (string) $window);
