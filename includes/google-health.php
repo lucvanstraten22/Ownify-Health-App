@@ -48,6 +48,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/crypto.php';
 require_once __DIR__ . '/integrations.php';
+require_once __DIR__ . '/health-signals.php';   // health_activity_pick(): a training's type
 
 if (!function_exists('google_health_config')) {
 
@@ -964,8 +965,8 @@ if (!function_exists('google_health_config')) {
                     'started_at'       => $start,
                     'ended_at'         => $end,
                     'duration_seconds' => $seconds !== null && $seconds > 0 ? $seconds : null,
-                    'activity_type'    => mb_substr($type !== '' && $type !== 'exercise_type_unspecified' ? $type
-                                            : (trim((string) ($payload['displayName'] ?? '')) ?: 'other'), 0, 40),
+                    /* 50.7: the type, or its own name when that says more ("Aerobics"), as a training type. */
+                    'activity_type'    => health_activity_pick([$type, $payload['displayName'] ?? null, $payload['activityName'] ?? null]),
                     'distance_m'       => $mm === null || $mm <= 0 ? null : round($mm / 1000, 1),
                     'total_kcal'       => google_health_number($m['caloriesKcal'] ?? null),
                     'avg_hr'           => google_health_number($m['averageHeartRateBeatsPerMinute'] ?? null),

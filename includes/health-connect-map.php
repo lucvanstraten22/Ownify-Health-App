@@ -40,6 +40,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/health-signals.php';   // health_activity_pick(): a training's type
+
 /**
  * Sleep stage constants, as Health Connect numbers them.
  * @see androidx.health.connect.client.records.SleepSessionRecord
@@ -359,13 +361,9 @@ if (!function_exists('health_connect_map')) {
      */
     function health_connect_exercise_name(array $r): string
     {
-        foreach (['exerciseTypeName', 'title', 'exerciseType'] as $key) {
-            if (isset($r[$key]) && $r[$key] !== '' && $r[$key] !== null) {
-                return mb_substr((string) $r[$key], 0, 40);
-            }
-        }
-
-        return 'other';
+        /* 50.7: the first that is one of the training types — a generic type
+           ("other_workout") gives way to the session's own title ("Aerobics"). */
+        return health_activity_pick([$r['exerciseTypeName'] ?? null, $r['title'] ?? null, $r['exerciseType'] ?? null]);
     }
 
     /* ----------------------------------------------------------- nutrition */

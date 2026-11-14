@@ -881,48 +881,224 @@ if (!function_exists('health_scoring_config')) {
      */
     function health_activity_key(string $type): ?string
     {
-        static $types = null;
-        $types ??= (array) ((require __DIR__ . '/../config/manual-entry.php')['training']['types'] ?? []);
-
-        $type = str_replace([' ', '-'], '_', mb_strtolower(trim($type)));
-        $type = (string) preg_replace('/^(exercise_type_|activity_type_)/', '', $type);
-        if ($type === '') {
+        $index = health_activity_index();
+        $norm  = health_activity_norm($type);
+        if ($norm === '' || ctype_digit(str_replace('_', '', $norm))) {
             return null;
         }
-        if (isset($types[$type])) {
-            return $type;
+        if (isset($index[$norm])) {
+            return $index[$norm];
         }
 
-        $aliases = [
-            'run' => 'running', 'treadmill_running' => 'running_treadmill', 'running_on_sand' => 'running_sand',
-            'walk' => 'walking', 'nordic_walking' => 'walking_nordic', 'treadmill_walking' => 'walking_treadmill',
-            'cycling' => 'biking', 'bike' => 'biking', 'ride' => 'biking', 'stationary_biking' => 'biking_stationary',
-            'indoor_cycling' => 'spinning', 'mountain_bike' => 'mountain_biking', 'road_cycling' => 'road_biking',
-            'swim' => 'swimming', 'pool_swimming' => 'swimming_pool', 'open_water_swimming' => 'swimming_open_water',
-            'strength' => 'strength_training', 'weight_training' => 'strength_training',
-            'hiit' => 'high_intensity_interval_training', 'football' => 'soccer', 'frisbee' => 'frisbee_disc',
-            'ice_hockey' => 'hockey', 'roller_hockey' => 'hockey', 'field_hockey' => 'hockey',
-            'paddling' => 'stand_up_paddleboarding', 'paddleboarding' => 'stand_up_paddleboarding', 'sup' => 'stand_up_paddleboarding',
-            'boot_camp' => 'circuit_training', 'jump_rope' => 'jumping_rope', 'rollerblading' => 'inline_skating',
-            'cross_country_skiing' => 'skiing_cross_country', 'downhill_skiing' => 'skiing_downhill',
-            'backcountry_skiing' => 'skiing_backcountry', 'beach_volleyball' => 'volleyball_beach',
-            'indoor_volleyball' => 'volleyball_indoor', 'mma' => 'mixed_martial_arts', 'other' => 'other_workout',
-            'climbing' => 'rock_climbing', 'american_football' => 'football_american', 'australian_football' => 'football_australian', 'horse_riding' => 'horseback_riding', 'kayak' => 'kayaking',
-        ];
-        if (isset($aliases[$type])) {
-            return $aliases[$type];
-        }
-
-        /* A longer name that holds a known one ("outdoor_running"): the longest that fits. */
+        /* A longer name that holds a known one ("ochtend_handbal",
+           "outdoor_running", "aerobic_exercise"): the longest that fits, as a
+           whole word or at a word's start. */
         $best = null;
-        foreach (array_merge(array_keys($types), array_keys($aliases)) as $known) {
-            if (mb_strlen((string) $known) >= 4 && str_contains($type, (string) $known)
-                && ($best === null || mb_strlen((string) $known) > mb_strlen($best))) {
-                $best = (string) $known;
+        foreach ($index as $known => $key) {
+            if (strlen($known) < 4 || strlen($known) <= strlen((string) $best)) {
+                continue;
+            }
+            if (preg_match('/(^|_)' . preg_quote($known, '/') . '/', $norm) === 1) {
+                $best = $known;
             }
         }
 
-        return $best === null ? null : ($aliases[$best] ?? $best);
+        return $best === null ? null : $index[$best];
+    }
+
+    /** "Hardlopen op de loopband", "EXERCISE-TYPE Ice Hockey" → "hardlopen_op_de_loopband", "exercise_type_ice_hockey" — no accents. */
+    function health_activity_norm(string $text): string
+    {
+        $text = mb_strtolower(trim($text));
+        $plain = class_exists('Normalizer') ? (string) Normalizer::normalize($text, Normalizer::FORM_D) : $text;
+        $plain = (string) preg_replace('/\p{Mn}+/u', '', $plain);
+        $plain = trim((string) preg_replace('/[^a-z0-9]+/', '_', $plain), '_');
+
+        return (string) preg_replace('/^(exercise_type|activity_type|activity|exercise|type)_/', '', $plain);
+    }
+
+    /**
+     * Every name a training type goes by (50.7): its key, its Dutch and English
+     * names (config/manual-entry.php, lang/en/training.php), the names Health
+     * Connect, Google Health, Google Fit, Polar and others use — normalised,
+     * onto the type's key.
+     */
+    function health_activity_index(): array
+    {
+        static $index = null;
+        if ($index !== null) {
+            return $index;
+        }
+
+        $types   = (array) ((require __DIR__ . '/../config/manual-entry.php')['training']['types'] ?? []);
+        $english = is_file(__DIR__ . '/../lang/en/training.php') ? (array) require __DIR__ . '/../lang/en/training.php' : [];
+        $index   = [];
+
+        $aliases = [
+            'running'                 => ['run', 'runs', 'outdoor_run', 'trail_running', 'trail_run', 'hardloop', 'loopje'],
+            'running_treadmill'       => ['treadmill_running', 'treadmill_run', 'indoor_run', 'indoor_running', 'loopband_hardlopen'],
+            'running_sand'            => ['running_on_sand', 'sand_running', 'beach_running'],
+            'walking'                 => ['walk', 'outdoor_walk', 'wandeling'],
+            'walking_nordic'          => ['nordic_walking', 'nordic_walk'],
+            'walking_treadmill'       => ['treadmill_walking', 'treadmill_walk', 'indoor_walk', 'indoor_walking'],
+            'walking_fitness'         => ['fitness_walking', 'power_walking'],
+            'walking_stroller'        => ['stroller_walking', 'walking_with_stroller', 'kinderwagen'],
+            'hiking'                  => ['hike', 'hiken', 'trekking', 'bergwandelen'],
+            'biking'                  => ['cycling', 'bike', 'ride', 'outdoor_cycling', 'outdoor_bike', 'bicycling', 'cycle', 'fietstocht', 'fietsrit'],
+            'biking_stationary'       => ['stationary_biking', 'stationary_bike', 'exercise_bike', 'indoor_bike', 'bike_trainer', 'fietstrainer'],
+            'spinning'                => ['indoor_cycling', 'spin', 'spin_class'],
+            'mountain_biking'         => ['mountain_bike', 'mtb', 'mountainbike'],
+            'road_biking'             => ['road_cycling', 'road_bike', 'racefiets', 'racefietsen'],
+            'utility_biking'          => ['commuting', 'bike_commute', 'woon_werkverkeer'],
+            'handbiking'              => ['hand_cycling', 'handcycling', 'handbike'],
+            'swimming'                => ['swim', 'zwem'],
+            'swimming_pool'           => ['pool_swimming', 'pool_swim', 'lap_swimming', 'zwembad'],
+            'swimming_open_water'     => ['open_water_swimming', 'open_water_swim', 'open_water', 'buitenzwemmen'],
+            'strength_training'       => ['strength', 'weight_training', 'weights', 'gym', 'resistance_training', 'functional_strength_training',
+                                          'traditional_strength_training', 'fitness', 'krachtsport', 'bodybuilding'],
+            'weightlifting'           => ['weight_lifting', 'powerlifting', 'power_lifting', 'olympic_weightlifting', 'olympic_lifting', 'krachttillen'],
+            'high_intensity_interval_training' => ['hiit', 'high_intensity_interval', 'tabata'],
+            'interval_training'       => ['intervals', 'interval', 'intervallen'],
+            'circuit_training'        => ['circuit', 'boot_camp', 'bootcamp'],
+            'crossfit'                => ['cross_fit', 'cross_training', 'wod'],
+            'calisthenics'            => ['bodyweight', 'bodyweight_training', 'street_workout'],
+            'kettlebell_training'     => ['kettlebell', 'kettlebells'],
+            'aerobics'                => ['aerobic', 'exercise_class', 'step_aerobics', 'group_exercise', 'groepsles'],
+            'dancing'                 => ['dance', 'dans', 'social_dance', 'cardio_dance'],
+            'zumba'                   => ['zumba_fitness'],
+            'yoga'                    => ['stretching', 'flexibility', 'mind_and_body', 'rekken'],
+            'pilates'                 => ['reformer'],
+            'meditation'              => ['mindfulness', 'mediteren'],
+            'guided_breathing'        => ['breathing', 'breathwork', 'ademhaling', 'ademhalingsoefening'],
+            'elliptical'              => ['elliptical_trainer', 'cross_trainer', 'crosstrainen'],
+            'rowing'                  => ['row', 'roeitocht'],
+            'rowing_machine'          => ['indoor_rowing', 'indoor_rower', 'rowing_ergometer', 'ergometer_rowing', 'roeiergometer'],
+            'stair_climbing'          => ['stairs', 'stair_climb', 'stairs_climbing', 'trappen'],
+            'stair_climbing_machine'  => ['stair_stepper', 'stepper', 'stairmaster', 'stair_climber', 'stepping_machine'],
+            'jumping_rope'            => ['jump_rope', 'skipping', 'rope_skipping', 'springtouw', 'touwspringen'],
+            'soccer'                  => ['football', 'association_football', 'futsal', 'zaalvoetbal'],
+            'football_american'       => ['american_football'],
+            'football_australian'     => ['australian_football', 'australian_rules_football', 'aussie_rules'],
+            'basketball'              => ['basket'],
+            'handball'                => ['team_handball', 'handbal'],
+            'hockey'                  => ['ice_hockey', 'roller_hockey', 'field_hockey', 'ijshockey', 'veldhockey', 'zaalhockey'],
+            'volleyball'              => ['volley'],
+            'volleyball_beach'        => ['beach_volleyball', 'beachvolley'],
+            'volleyball_indoor'       => ['indoor_volleyball'],
+            'table_tennis'            => ['ping_pong', 'pingpong', 'pingpongen'],
+            'tennis'                  => ['padel', 'paddle_tennis', 'pickleball'],
+            'squash'                  => ['squash_racquet'],
+            'badminton'               => ['shuttle', 'shuttle_cock'],
+            'racquetball'             => ['racquet_ball'],
+            'baseball'                => ['honkbal'],
+            'softball'                => ['softbal'],
+            'cricket'                 => ['krikket'],
+            'rugby'                   => ['rugby_union', 'rugby_league'],
+            'water_polo'              => ['waterpolo'],
+            'team_sports'             => ['team_sport', 'korfball', 'korfbal', 'lacrosse'],
+            'frisbee_disc'            => ['frisbee', 'ultimate', 'ultimate_frisbee', 'disc_golf', 'discgolf'],
+            'golf'                    => ['golfing'],
+            'boxing'                  => ['box', 'boks'],
+            'kickboxing'              => ['kick_boxing'],
+            'martial_arts'            => ['karate', 'judo', 'taekwondo', 'jiu_jitsu', 'jujitsu', 'kung_fu', 'aikido', 'tai_chi', 'krav_maga', 'wrestling', 'worstelen'],
+            'mixed_martial_arts'      => ['mma'],
+            'fencing'                 => ['schermsport'],
+            'archery'                 => ['boogschiet'],
+            'gymnastics'              => ['gymnastiek', 'turnles'],
+            'rock_climbing'           => ['climbing', 'bouldering', 'indoor_climbing', 'klimsport', 'boulderen', 'sport_climbing'],
+            'horseback_riding'        => ['horse_riding', 'equestrian', 'equestrian_sports', 'paardrijden_buiten'],
+            'polo'                    => ['horse_polo'],
+            'sailing'                 => ['sail', 'zeilboot'],
+            'kayaking'                => ['kayak', 'canoeing', 'canoe', 'kanoen', 'kano'],
+            'stand_up_paddleboarding' => ['paddling', 'paddleboarding', 'paddle_boarding', 'sup', 'paddle_sports', 'suppen'],
+            'surfing'                 => ['surf'],
+            'windsurfing'             => ['wind_surfing', 'windsurf'],
+            'kitesurfing'             => ['kite_surfing', 'kitesurf', 'kiteboarding'],
+            'wakeboarding'            => ['wakeboard', 'waterskiing', 'water_skiing'],
+            'diving'                  => ['springplank'],
+            'scuba_diving'            => ['scuba', 'snorkeling', 'snorkelen'],
+            'paragliding'             => ['parachuting', 'hang_gliding'],
+            'skating'                 => ['skate'],
+            'inline_skating'          => ['rollerblading', 'rollerblade', 'inline_skate', 'skeeleren', 'skeeler', 'roller_skating'],
+            'ice_skating'             => ['ice_skate', 'speed_skating', 'figure_skating', 'kunstschaatsen', 'schaats'],
+            'indoor_skating'          => ['indoor_skate'],
+            'cross_skating'           => ['crossskate'],
+            'skateboarding'           => ['skateboard'],
+            'skiing'                  => ['ski', 'snow_sports'],
+            'skiing_downhill'         => ['downhill_skiing', 'alpine_skiing', 'alpine_ski'],
+            'skiing_cross_country'    => ['cross_country_skiing', 'nordic_skiing', 'langlauf'],
+            'skiing_backcountry'      => ['backcountry_skiing', 'back_country_skiing', 'ski_touring', 'skitouring'],
+            'skiing_roller'           => ['roller_skiing', 'rollerski'],
+            'skiing_kite'             => ['kite_skiing', 'snowkiting'],
+            'snowboarding'            => ['snowboard'],
+            'snowshoeing'             => ['snowshoe', 'snow_shoeing'],
+            'sledding'                => ['sled', 'sledge', 'tobogganing', 'slee'],
+            'snowmobile'              => ['snowmobiling'],
+            'biathlon'                => ['biatlon'],
+            'curling'                 => ['curlen'],
+            'gardening'               => ['garden', 'tuin', 'tuinwerk'],
+            'housework'               => ['house_work', 'cleaning', 'schoonmaken', 'huishoudelijk_werk'],
+            'wheelchair'              => ['wheelchair_run', 'wheelchair_walk', 'wheelchair_pace', 'rolstoelsport'],
+            'p90x'                    => ['p90x_exercises', 'p_90_x'],
+            'ergometer'               => ['erg'],
+            'treadmill'               => ['loopband'],
+            'still'                   => ['still_not_moving', 'not_moving'],
+            'in_vehicle'              => ['vehicle', 'driving', 'in_car'],
+            'tilting'                 => ['tilt'],
+            'elevator'                => ['lift_ride'],
+            'escalator'               => ['moving_stairs'],
+            'unknown'                 => ['unspecified', 'undefined', 'onbekende_activiteit'],
+            'other_workout'           => ['other', 'workout', 'exercise', 'training', 'sport', 'other_sport', 'other_exercise', 'mixed_cardio', 'cardio'],
+        ];
+
+        foreach ($types as $key => $nl) {
+            $key = (string) $key;
+            foreach ([$key, (string) $nl, (string) ($english[(string) $nl] ?? '')] as $name) {
+                $n = health_activity_norm($name);
+                if ($n !== '' && !isset($index[$n])) {
+                    $index[$n] = $key;
+                }
+            }
+        }
+        foreach ($aliases as $key => $names) {
+            if (!isset($types[$key])) {
+                continue;
+            }
+            foreach ($names as $name) {
+                $n = health_activity_norm($name);
+                if ($n !== '' && !isset($index[$n])) {
+                    $index[$n] = $key;
+                }
+            }
+        }
+
+        return $index;
+    }
+
+    /**
+     * The activity_type to store for a synced training (50.7): of what a source
+     * says about it — its type, its own name ("Aerobics") — the first that is
+     * one of the training types, as that type's key ("aerobics"); a generic
+     * type ("other_workout", "exercise_type_unspecified", a bare number) gives
+     * way to a name that says more. Nothing known: the first that was given.
+     */
+    function health_activity_pick(array $candidates): string
+    {
+        $given = [];
+        foreach ($candidates as $c) {
+            $c = trim((string) $c);
+            if ($c !== '' && !ctype_digit($c)) {
+                $given[] = $c;
+            }
+        }
+        foreach ($given as $c) {
+            $key = health_activity_key($c);
+            if ($key !== null && $key !== 'other_workout' && $key !== 'unknown') {
+                return $key;
+            }
+        }
+
+        return mb_substr($given[0] ?? 'other', 0, 40);
     }
 
     /** What to call an activity type in Dutch, for points history and feedback: "hardlopen", "HIIT". */
