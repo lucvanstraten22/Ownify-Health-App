@@ -137,7 +137,7 @@ $source  = $connect['source'];
                         <?php if ($cloud['last_sync'] !== null): ?>
                             <p class="setup-source__sync"><?= e($cloud['last_sync']) ?></p>
                         <?php elseif (!$cloud['connected']): ?>
-                            <a class="btn press setup-source__connect" href="api/integrations/<?= e(rawurlencode($cloud['provider'])) ?>/start.php"><?= e($cloud['connect']) ?></a>
+                            <a class="btn press setup-source__connect" target="_top" href="api/integrations/<?= e(rawurlencode($cloud['provider'])) ?>/start.php"><?= e($cloud['connect']) ?></a>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
