@@ -41,6 +41,21 @@
         Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
     }
 
+    /* 52.2: provider consent pages must be top-level. On desktop this setup
+       runs inside the phone preview iframe; use the same whole-window exit
+       as Instellingen so Google and Polar never open inside that frame. */
+    each('.setup-source__connect', function (link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+
+            if (typeof window.ownifyLeave === 'function') {
+                window.ownifyLeave(link.href);
+            } else {
+                window.location.assign(link.href);
+            }
+        });
+    });
+
     function nextButton(id) {
         return root.querySelector('[data-setup-next="' + id + '"]');
     }
