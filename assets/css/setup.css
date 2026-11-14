@@ -452,3 +452,19 @@
 
 /* Focus is moved to a new step's title for screen readers; it is not a control. */
 .setup__title:focus { outline: none; }
+
+
+/*
+ * The registration setup is a standalone document, unlike the main app's
+ * screens, which scroll inside the rail. theme.css locks body scrolling for
+ * that app shell; the setup has no rail, so its document must own the scroll.
+ * This lets the Gegevens step and its footer remain reachable on short screens
+ * when all three health-source cards are present.
+ */
+body.app--setup {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
