@@ -266,6 +266,8 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
         },
         filled = period.hasData,
         dayDots = true,
+        // 50.10, a guided line (Hartbelasting): only today's dot on the right.
+        lastDotOnly = period.zones != null,
         small = period.group == "day" && period.x.size > 7,
         carried = { i -> i in period.carried },
         axis = if (mini || alt.isNotEmpty()) period.axisRows ?: period.axis else period.axis,

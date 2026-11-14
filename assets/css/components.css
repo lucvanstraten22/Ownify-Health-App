@@ -2198,6 +2198,8 @@ a.settings-row { color: inherit; text-decoration: none; }
 .friends__go .icon { width: 14px; height: 14px; }
 .friends__go { cursor: pointer; }
 .friends__go:disabled { color: var(--text-muted); cursor: default; }
+/* 50.10: no press animation — the press's scale replaced the centring and the arrow dropped half its height. */
+.friends__go.press:active { transform: translateY(-50%); }
 .goal-search__clear[hidden],
 .password-field__toggle[hidden] { display: none; }
 

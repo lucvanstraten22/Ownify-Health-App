@@ -172,8 +172,12 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
 
                     <?php foreach ($period['lines'] as $line):
                         $def = array_values(array_filter($series, static fn ($s) => $s['key'] === $line['key']))[0];
+                        /* 50.10, a guided line (Hartbelasting): only the last point's dot,
+                           today's on the right — and a point on its own, which has no line. */
+                        $lastY = array_key_last(array_filter($line['y'], static fn ($v) => $v !== null));
                         foreach ($line['y'] as $i => $top):
                             if ($top === null) { continue; }
+                            if ($zones !== null && $i !== $lastY && !((($line['y'][$i - 1] ?? null) === null) && (($line['y'][$i + 1] ?? null) === null))) { continue; }
                             $ring = isset($carried[$i]);      // a value carried from an earlier day (Regelmaat)
                             ?>
                             <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $ring ? ' is-carried' : '' ?>"

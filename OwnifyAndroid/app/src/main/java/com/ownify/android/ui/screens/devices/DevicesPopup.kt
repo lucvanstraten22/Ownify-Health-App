@@ -62,6 +62,8 @@ fun DevicesPopup(overlay: Overlay, data: AppData) {
             val connected = source.status == "connected"
             val state = if (connected) labels["connected"].orEmpty() else labels["error"].orEmpty()
             if (source.devices.isNotEmpty()) source.devices.map { DeviceLine(source.icon, connected, state, it.label, source.label) }
+            // 50.10: a cloud source (Google Health, Polar) by the watches and trackers its data came from, the source under it.
+            else if (!source.account.isNullOrEmpty()) listOf(DeviceLine(source.icon, connected, state, source.account, source.label))
             else listOf(DeviceLine(source.icon, connected, state, source.label, null))
         }
 

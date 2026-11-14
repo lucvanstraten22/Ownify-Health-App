@@ -42,6 +42,10 @@ foreach ($data['settings']['integrations'] as $source) {
         foreach ($source['devices'] as $device) {
             $lines[] = $line + ['name' => $device['label'], 'source' => $source['label']];
         }
+    } elseif (!empty($source['account'])) {
+        /* 50.10: a cloud source (Google Health, Polar) by the watches and
+           trackers its data came from ("Fitbit Air"), the source under it. */
+        $lines[] = $line + ['name' => (string) $source['account'], 'source' => $source['label']];
     } else {
         $lines[] = $line + ['name' => $source['label'], 'source' => null];
     }
