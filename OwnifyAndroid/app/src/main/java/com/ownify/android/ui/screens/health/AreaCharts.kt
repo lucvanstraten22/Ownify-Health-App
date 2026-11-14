@@ -53,6 +53,8 @@ import com.ownify.android.ui.screens.settings.SettingsCard
 import com.ownify.android.ui.screens.settings.SettingsEyebrow
 import com.ownify.android.ui.screens.settings.settingsRow
 import com.ownify.android.data.AreaPeriod
+import com.ownify.android.data.Evidence
+import com.ownify.android.ui.screens.research.ResearchEvidence
 import com.ownify.android.data.AreaSeries
 import com.ownify.android.ui.app.Detail
 import com.ownify.android.ui.app.DetailColumn
@@ -253,7 +255,15 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
         key = chart.id + period.key + if (mini) ":mini" else "",
         viewBox = Size(period.width, period.height),
         xs = period.x,
-        lines = lineSeries.map { (s, line) -> PlotLine(seriesColor(s, mixed, accent), line.line, emptyList(), line.y) },
+        lines = lineSeries.mapIndexed { k, (s, line) ->
+            // 50.9, a guide (Hartbelasting): the line in each point's colour — under, within, above — running from one into the next.
+            val zones = period.zones?.takeIf { k == 0 }
+            PlotLine(
+                seriesColor(s, mixed, accent), line.line, emptyList(), line.y,
+                dotColor = zones?.let { z -> { i: Int -> z.getOrNull(i)?.let { Ownify.zone(it) } ?: seriesColor(s, mixed, accent) } },
+                xStops = zones?.mapIndexedNotNull { i, z -> z?.let { (period.x.getOrElse(i) { 0f } / 100f).coerceIn(0f, 1f) to Ownify.zone(it) } }
+            )
+        },
         filled = period.hasData,
         dayDots = true,
         small = period.group == "day" && period.x.size > 7,
@@ -325,10 +335,10 @@ private fun AreaPlot(chart: AreaChart, accent: Accent, period: AreaPeriod, modif
  * area's page; back goes to it.
  */
 @Composable
-fun AreaChartDetail(chart: AreaChart, area: String, scroll: ScrollState) {
+fun AreaChartDetail(chart: AreaChart, area: String, scroll: ScrollState, guideEvidence: Evidence? = null) {
     DetailColumn(scroll, back = chart.back, backAria = trf("Terug naar %s", chart.back)) {
         PageIntro(chart.title, null, Modifier.reveal())
-        AreaChartCard(chart, Accent.of(area))
+        AreaChartCard(chart, Accent.of(area), guideEvidence)
         chart.about?.let { AreaAboutBlock(it) }
     }
 }
@@ -357,7 +367,7 @@ private fun AreaAboutBlock(about: AreaAbout) {
 }
 
 @Composable
-private fun AreaChartCard(chart: AreaChart, accent: Accent) {
+private fun AreaChartCard(chart: AreaChart, accent: Accent, guideEvidence: Evidence? = null) {
     var selected by rememberSaveable(chart.id) { mutableStateOf(chart.defaultPeriod) }
     val period = chart.periods.firstOrNull { it.key == selected } ?: chart.periods.first()
     val filled = chart.periods.any { it.hasData }
@@ -389,6 +399,11 @@ private fun AreaChartCard(chart: AreaChart, accent: Accent) {
                 Modifier.padding(top = Ownify.Space4),
                 values = false
             )
+        }
+        // 50.9: a guide's colours named under the chart, as the heart rate's zones are — and its research.
+        chart.guide?.let { guide ->
+            HeartZonesLegend(guide)
+            ResearchEvidence(guideEvidence)
         }
         if (filled) {
             T(chart.hint, JStyle.Footnote, Modifier.fillMaxWidth().padding(top = Ownify.Space3), align = TextAlign.Center)

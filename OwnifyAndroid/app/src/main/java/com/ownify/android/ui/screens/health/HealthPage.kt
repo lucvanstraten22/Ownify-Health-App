@@ -287,6 +287,7 @@ internal fun HistoryCard(history: HealthHistory, days: List<CompassDay>, only: S
                 lines = lines,
                 filled = solo?.hasData ?: period.hasData,
                 dayDots = period.dots == "every",
+                lastDotOnly = true,   // 50.9: only today's (this week's, this month's) dot
                 // A month's days, smaller so they stay apart; a week's or a month's points as a week's days.
                 small = period.dots == "every" && period.group == "day" && period.x.size > 7,
                 carried = { i -> points.getOrNull(i)?.carried == true },

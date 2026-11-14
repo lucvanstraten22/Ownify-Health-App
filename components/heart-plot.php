@@ -7,8 +7,9 @@
  *
  * The four zones are a layer over the values, never a change to them: the
  * line takes each zone's colour where it runs through that zone — grey low,
- * the Training colour higher, its brightest at the top — a faint band marks
- * zones 2 to 4 behind it, and the reading names the zone. A day's points
+ * the Training colour higher, its brightest at the top — flowing from one
+ * zone's colour into the next (50.9: no bands behind it), and the reading
+ * names the zone. A day's points
  * stand five minutes apart; a dot only where one stands alone. A period's
  * points each have their dot.
  *
@@ -33,25 +34,30 @@ $w      = (int) $p['width'];
 $h      = (int) $p['height'];
 
 /* The zones from the bottom of the box (offset 0) to its top (1): each a
-   colour from where it begins to where the next does — hard edges. */
+   colour from where it begins to where the next does. 50.9: no hard edge —
+   each zone's colour runs into the next over a short stretch at their
+   border, the line flowing from blue to green, orange and red. */
 $edges = $zy === null ? null : array_merge([0.0], array_map(static fn (float $y): float => round(max(0, min(1, 1 - $y / 100)), 4), $zy), [1.0]);
+$stops = [];
+if ($edges !== null) {
+    $blend = 0.04;                                  // half the stretch two zones share, of the plot's height
+    for ($z = 1; $z <= 4; $z++) {
+        $lo = $edges[$z - 1];
+        $hi = max($lo, $edges[$z]);
+        $a  = $z === 1 ? $lo : min($lo + $blend, ($lo + $hi) / 2);
+        $b  = $z === 4 ? $hi : max($hi - $blend, ($lo + $hi) / 2);
+        $stops[] = [round($a, 4), $z];
+        $stops[] = [round($b, 4), $z];
+    }
+}
 ?>
 <div class="compass-plot heart-plot<?= $p['grid'] !== [] ? ' has-levels' : '' ?>"<?php if ($p['has_data']): ?>
      data-history-plot data-gesture-own tabindex="0" role="group" aria-roledescription="<?= e(t('grafiek')) ?>"
      aria-label="<?= e($p['aria']) ?>" aria-describedby="<?= e($data['suffix']) ?>-hint"<?php else: ?>
      role="img" aria-label="<?= e($p['aria']) ?>"<?php endif; ?>>
 
-    <?php if ($zy !== null && $p['has_data']):
-        for ($z = 2; $z <= 4; $z++):
-            $bottom = max(0.0, min(100.0, (float) $zy[$z - 2]));
-            $top    = $z === 4 ? 0.0 : max(0.0, min(100.0, (float) $zy[$z - 1]));
-            if ($bottom - $top <= 0.05) { continue; }
-            ?>
-            <span class="heart-plot__band" data-zone="<?= $z ?>" aria-hidden="true"
-                  style="top: <?= e((string) $top) ?>%; height: <?= e((string) round($bottom - $top, 2)) ?>%;"></span>
-        <?php endfor;
-    endif; ?>
-
+    <?php /* 50.9: no bands behind the line any more — the card stays its own
+             grey; only the line is in the zones' colours. */ ?>
     <?php foreach ($p['grid'] as $level): ?>
         <span class="compass-plot__level" aria-hidden="true" style="top: <?= e((string) $level['y']) ?>%;"><?= e($level['label']) ?></span>
     <?php endforeach; ?>
@@ -61,10 +67,9 @@ $edges = $zy === null ? null : array_merge([0.0], array_map(static fn (float $y)
         <?php if ($edges !== null): ?>
             <defs>
                 <linearGradient id="<?= e($gid) ?>" gradientUnits="userSpaceOnUse" x1="0" y1="<?= $h ?>" x2="0" y2="0">
-                    <?php for ($z = 1; $z <= 4; $z++): ?>
-                        <stop offset="<?= e((string) $edges[$z - 1]) ?>" style="stop-color: var(--zone-<?= $z ?>)"/>
-                        <stop offset="<?= e((string) $edges[$z]) ?>" style="stop-color: var(--zone-<?= $z ?>)"/>
-                    <?php endfor; ?>
+                    <?php foreach ($stops as [$offset, $z]): ?>
+                        <stop offset="<?= e((string) $offset) ?>" style="stop-color: var(--zone-<?= $z ?>)"/>
+                    <?php endforeach; ?>
                 </linearGradient>
             </defs>
         <?php endif; ?>

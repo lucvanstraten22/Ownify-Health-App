@@ -146,6 +146,16 @@ if (!function_exists('area_charts')) {
                 : null,
             'default' => (string) $periods[0]['days'],
             'periods' => $built,
+            /* 50.9: the guide named under the chart — each colour, what it
+               means and its range over seven days, never colour alone. */
+            'guide'   => isset($chart['guide']) ? [
+                'bands' => [
+                    ['label' => t('Onder'),  'range' => '< ' . i18n_number((float) $chart['guide']['low'], 0)],
+                    ['label' => t('Binnen'), 'range' => i18n_number((float) $chart['guide']['low'], 0) . '–' . i18n_number((float) $chart['guide']['high'], 0)],
+                    ['label' => t('Boven'),  'range' => '> ' . i18n_number((float) $chart['guide']['high'], 0)],
+                ],
+                'note'  => t('Hartbelasting in 7 dagen. De WHO raadt 150 tot 300 minuten matig intensief bewegen per week aan; Ownify rekent dat om naar hartbelasting en kleurt elke dag naar je totaal van de 7 dagen tot en met die dag.'),
+            ] : null,
             /* 40.1: "Over …" under the large chart — what it shows, what it
                measures and why it helps, in short points. Only the chart's
                own page shows it, never the small chart. */
@@ -289,8 +299,28 @@ if (!function_exists('area_charts')) {
                 $row['texts'][] = $text;
             }
 
+            /* 50.9, a guide over a week (Hartbelasting): this point's last
+               seven days together — a day's own and the six before it, a
+               week's or month's mean per day times seven — against it. */
+            if (isset($chart['guide']) && $values[0][count($values[0]) - 1] !== null) {
+                if ($grain === 'day') {
+                    $week = 0.0;
+                    for ($d = new DateTimeImmutable($from), $n = 0; $n < 7; $n++, $d = $d->modify('-1 day')) {
+                        $week += (float) ($series[0][$d->format('Y-m-d')][0] ?? 0);
+                    }
+                } else {
+                    $week = (float) $values[0][count($values[0]) - 1] * 7;
+                }
+                $zone = $week < (float) $chart['guide']['low'] ? 1 : ($week > (float) $chart['guide']['high'] ? 3 : 2);
+                $row['zone']   = $zone;
+                $row['detail'] = tf('%1$s in 7 dagen · %2$s', i18n_number($week, 0),
+                    [1 => t('onder de richtlijn'), 2 => t('binnen de richtlijn'), 3 => t('boven de richtlijn')][$zone]);
+            }
+
             if (array_filter($row['texts'], static fn ($t) => $t !== null) === []) {
                 $row['note'] = (string) ($copy['none'][$grain] ?? '');
+            } elseif (isset($row['zone'])) {
+                // the guide's detail, set above
             } elseif ($grain === 'day' && isset($chart['band']) && $values[0][count($values[0]) - 1] !== null) {
                 $v = (float) $values[0][count($values[0]) - 1];
                 $row['detail'] = $v < (float) $chart['band'][0] ? t('Onder bereik') : ($v > (float) $chart['band'][1] ? t('Boven bereik') : t('Binnen bereik'));
@@ -321,6 +351,10 @@ if (!function_exists('area_charts')) {
             'x'        => array_column($points, 'x'),
             'points'   => array_map(static fn (array $p): array => array_merge([$p['label'], $p['detail'], $p['note']], $p['texts']), $points),
             'carried'  => array_keys(array_filter(array_column($points, 'carried'))),
+            /* 50.9: with a guide, each point's place against it — 1 under,
+               2 within, 3 above, null without a value — the line's colour
+               there: zone 1's blue, zone 2's green, zone 3's orange. */
+            'zones'    => isset($chart['guide']) ? array_map(static fn (array $p): ?int => $p['zone'] ?? null, $points) : null,
             /* Each point's values as numbers, for what is drawn over them
                (the heart rate's zones); the texts above are what is read. */
             'values'   => $values,

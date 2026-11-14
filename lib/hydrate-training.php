@@ -55,6 +55,9 @@ if (!function_exists('hydrate_training')) {
         $records = db_available() ? health_workout_records($userId, $yearAgo . ' 00:00:00', $tomorrow . ' 00:00:00') : [];
         $counted = $records === [] ? [] : health_workouts_counted($records)[0];
         $zones   = hydrate_training_zones((array) $area['heart']['zones'], $userId, $records, $today);
+        if (isset($area['charts']['training_load'])) {
+            $area['charts']['training_load']['guide'] = hydrate_training_load_guide($userId);
+        }
         $recent  = array_slice(array_reverse($counted), 0, (int) $area['sessions']['count']);
 
         return [
@@ -174,6 +177,24 @@ if (!function_exists('hydrate_training')) {
         }
 
         return [$days, $first];
+    }
+
+    /**
+     * Hartbelasting's guide (50.9): the WHO's 150–300 minutes of moderate
+     * activity a week (ACT-01, ACT-05) as heart load — a moderate minute is
+     * one at half the heart rate reserve, worth HRr x a x e^(b HRr) with the
+     * person's own TRIMP weights (hydrate_training_load_days()). A day is
+     * coloured by its last seven days together: under, within, above.
+     *
+     * @return array{low: float, high: float}
+     */
+    function hydrate_training_load_guide(int $userId): array
+    {
+        $female = db_available() && db_value('SELECT gender FROM user_profiles WHERE user_id = ?', [$userId]) === 'female';
+        [$a, $b] = $female ? [0.86, 1.67] : [0.64, 1.92];
+        $minute = 0.5 * $a * exp($b * 0.5);
+
+        return ['low' => round(150 * $minute), 'high' => round(300 * $minute)];
     }
 
     /**

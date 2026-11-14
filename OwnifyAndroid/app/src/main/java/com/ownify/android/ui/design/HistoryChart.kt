@@ -94,7 +94,13 @@ class PlotLine(
     /** Dots only at these points (where a dense line stands alone); null: as [HistoryPlot]'s dayDots says. */
     val dotsAt: Set<Int>? = null,
     /** Each point's step aside in dp (N8, 50.0): two lines' dots that would cover each other. */
-    val dx: List<Float?> = emptyList()
+    val dx: List<Float?> = emptyList(),
+    /**
+     * 50.9, a line coloured along its length (Hartbelasting against its guide):
+     * colours from the plot's left (0) to its right (1), each at its point,
+     * running from one into the next. Null: [stops] or [color].
+     */
+    val xStops: List<Pair<Float, Color>>? = null
 )
 
 /**
@@ -168,6 +174,8 @@ fun HistoryPlot(
     readOnDrag: Boolean = false,
     compact: Boolean = false,
     bands: List<PlotBand> = emptyList(),
+    /** 50.9: one dot per line, its last point on the right (today, this week, this month) — and a point on its own. The Verloop, Wat er verandert. */
+    lastDotOnly: Boolean = false,
     /** The same levels in a second unit (kJ), named in a gutter of [gutterEnd] on the right. */
     levelsEnd: List<String> = emptyList(),
     gutterEnd: Dp = 0.dp,
@@ -397,6 +405,8 @@ fun HistoryPlot(
                     lines.forEachIndexed { i, line -> washes[i].forEach { drawPath(it.stretched(viewBox, size), line.color.copy(alpha = 0.10f)) } }
                     lines.forEachIndexed { i, line ->
                         val brush = line.stops?.let { androidx.compose.ui.graphics.Brush.verticalGradient(colorStops = it.toTypedArray(), startY = 0f, endY = size.height) }
+                            ?: line.xStops?.takeIf { it.size >= 2 }?.let { androidx.compose.ui.graphics.Brush.horizontalGradient(colorStops = it.toTypedArray(), startX = 0f, endX = size.width) }
+                            ?: line.xStops?.singleOrNull()?.let { androidx.compose.ui.graphics.SolidColor(it.second) }
                             ?: androidx.compose.ui.graphics.SolidColor(line.color)
                         paths[i].forEach { drawChartLine(it.stretched(viewBox, size), brush, 2.2.dp.toPx(), draw.value) }
                     }
@@ -406,10 +416,13 @@ fun HistoryPlot(
                     for (line in lines) {
                         // Where the line begins: a dot of its own, whatever the period (docs/CHARTS.md).
                         val begin = line.y.indexOfFirst { it != null }
+                        val last = line.y.indexOfLast { it != null }
                         line.y.forEachIndexed { i, y ->
                             if (y == null) return@forEachIndexed
                             val alone = line.y.getOrNull(i - 1) == null && line.y.getOrNull(i + 1) == null
-                            if (line.dotsAt != null) {
+                            if (lastDotOnly) {
+                                if (!alone && i != last) return@forEachIndexed
+                            } else if (line.dotsAt != null) {
                                 if (i !in line.dotsAt) return@forEachIndexed
                             } else if (!dayDots && !alone && i != begin) return@forEachIndexed
                             val c = Offset(xs[i] / 100f * size.width + (line.dx.getOrNull(i) ?: 0f).dp.toPx(), y / 100f * size.height)

@@ -318,6 +318,8 @@ if (!function_exists('insights_render')) {
             'nutrition.sugar'      => ['nutrition.free_sugars', 'proxy'],
             'nutrition.energy'     => ['nutrition.energy_estimate', 'direct'],
             'training.intensity'   => ['activity.intensity.age', 'direct'],
+            /* 50.9: Hartbelasting's guide, the WHO's minutes a week as heart load. */
+            'training.load'        => [$age !== null && $age >= 65 ? ['activity.who.older', 'activity.who.adults'] : ['activity.who.adults', 'activity.who.older'], 'proxy'],
             'sleep.age'            => ['sleep.architecture.age', 'direct'],
         ];
         /* What the chip says where it is about your age, beside another one. */

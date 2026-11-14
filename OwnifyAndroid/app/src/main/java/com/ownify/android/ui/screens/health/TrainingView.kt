@@ -374,12 +374,8 @@ internal fun Modifier.flicks(step: (Int) -> Unit): Modifier = pointerInput(Unit)
 @Composable
 private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
     val zy = plot.zonesY
-    val bands = if (zy == null || !plot.hasData) emptyList() else (2..4).mapNotNull { z ->
-        val bottom = zy[z - 2]
-        val top = if (z == 4) 0f else zy[z - 1]
-        if (bottom.coerceIn(0f, 100f) - top.coerceIn(0f, 100f) <= 0.05f) null
-        else PlotBand(top, bottom, Ownify.zone(z).copy(alpha = when (z) { 2 -> 0.05f; 3 -> 0.07f; else -> 0.09f }))
-    }
+    // 50.9: no bands behind the line — the card stays its own grey; only the line is in the zones' colours.
+    val bands = emptyList<PlotBand>()
     val dotColor: (Int) -> Color = { i -> plot.zone.getOrNull(i)?.let { Ownify.zone(it) } ?: Ownify.Training }
     // A day's hours every three where they fit, else every six (C57): TickAxis
     // hides a time that would touch its neighbour, as chart-axis.js does.
@@ -433,25 +429,34 @@ private fun HeartPlotView(plot: HeartPlot, label: String, empty: String) {
 
 /**
  * The line's colours from the plot's top (0) to its bottom (1): zone 4 down
- * to where it begins, then 3, 2 and 1 — hard edges, as the website's
- * gradient has them. [zonesY]: where zones 2, 3 and 4 begin, % from the top.
+ * to where it begins, then 3, 2 and 1 — 50.9: each running into the next
+ * over a short stretch at their border, as the website's gradient does
+ * (heart-plot.php). [zonesY]: where zones 2, 3 and 4 begin, % from the top.
  */
 internal fun zoneStops(zonesY: List<Float>): List<Pair<Float, Color>> {
     val e = zonesY.map { (it / 100f).coerceIn(0f, 1f) }      // zone 2, 3, 4's lower edges
     val z4 = e.getOrElse(2) { 0f }
     val z3 = e.getOrElse(1) { 0f }.coerceAtLeast(z4)
     val z2 = e.getOrElse(0) { 0f }.coerceAtLeast(z3)
-    return listOf(
-        0f to Ownify.zone(4), z4 to Ownify.zone(4),
-        z4 to Ownify.zone(3), z3 to Ownify.zone(3),
-        z3 to Ownify.zone(2), z2 to Ownify.zone(2),
-        z2 to Ownify.zone(1), 1f to Ownify.zone(1)
-    )
+    // Each zone from its top to its bottom edge (top 0 … bottom 1): zone 4, 3, 2, 1.
+    val spans = listOf(4 to (0f to z4), 3 to (z4 to z3), 2 to (z3 to z2), 1 to (z2 to 1f))
+    val blend = 0.04f
+    val stops = ArrayList<Pair<Float, Color>>()
+    for ((z, span) in spans) {
+        val (top, bottom) = span
+        val mid = (top + bottom) / 2f
+        val a = if (z == 4) top else minOf(top + blend, mid)
+        val b = if (z == 1) bottom else maxOf(bottom - blend, mid)
+        val last = stops.lastOrNull()?.first ?: 0f
+        stops += maxOf(a, last) to Ownify.zone(z)
+        stops += maxOf(b, a, last) to Ownify.zone(z)
+    }
+    return stops
 }
 
 /** `components/heart-zones.php`: each zone's colour, name and range — never colour alone — and what they are based on. */
 @Composable
-private fun HeartZonesLegend(zones: HeartZones) {
+internal fun HeartZonesLegend(zones: HeartZones) {
     // Down each column (50.1, `.heart-zones__list`): 1 and 2 on the left, 3 and
     // 4 on the right — read across, 1 3 / 2 4. TalkBack keeps 1 to 4.
     val rows = (zones.bands.size + 1) / 2

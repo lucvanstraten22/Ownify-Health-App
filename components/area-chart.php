@@ -99,6 +99,14 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
             $band   = $period['band'] ?? null;                    // the bereik, a green zone behind the bars
             $small  = count($x) > 7 && $period['group'] === 'day';
             $carried = array_flip($period['carried']);
+            /* 50.9, a guide (Hartbelasting): the line takes each point's colour
+               — under, within, above — running from one into the next. */
+            $zones  = $period['zones'] ?? null;
+            $gid    = 'guide-' . $suffix . '-' . $period['key'];
+            $zstops = [];
+            foreach ((array) $zones as $i => $z) {
+                if ($z !== null) { $zstops[] = [round($x[$i] / 100, 4), (int) $z]; }
+            }
             ?>
             <div class="chart__range<?= $period['key'] === $default ? ' is-active' : '' ?>" data-range="<?= e($period['key']) ?>"
                  data-x="<?= e((string) json_encode($x)) ?>" data-y="<?= e((string) json_encode((object) $ys)) ?>">
@@ -142,12 +150,21 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                         <?php if ($levels === []): ?>
                             <line class="chart__grid" x1="0" x2="<?= (int) $period['width'] ?>" y1="<?= (int) $period['height'] ?>" y2="<?= (int) $period['height'] ?>"/>
                         <?php endif; ?>
+                        <?php if ($zstops !== []): ?>
+                            <defs>
+                                <linearGradient id="<?= e($gid) ?>" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="<?= (int) $period['width'] ?>" y2="0">
+                                    <?php foreach ($zstops as [$offset, $z]): ?>
+                                        <stop offset="<?= e((string) $offset) ?>" style="stop-color: var(--zone-<?= $z ?>)"/>
+                                    <?php endforeach; ?>
+                                </linearGradient>
+                            </defs>
+                        <?php endif; ?>
                         <?php foreach ($period['lines'] as $k => $line):
                             $def = array_values(array_filter($series, static fn ($s) => $s['key'] === $line['key']))[0];
                             ?>
                             <g class="chart__series" data-tone="<?= e($tone($def)) ?>">
                                 <?php foreach ($line['line'] as $path): ?>
-                                    <path class="chart__line" d="<?= e($path) ?>" data-draw/>
+                                    <path class="chart__line" d="<?= e($path) ?>" data-draw<?= $zstops !== [] && $k === 0 ? ' style="stroke: url(#' . e($gid) . ')"' : '' ?>/>
                                 <?php endforeach; ?>
                             </g>
                         <?php endforeach; ?>
@@ -160,7 +177,7 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                             $ring = isset($carried[$i]);      // a value carried from an earlier day (Regelmaat)
                             ?>
                             <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $ring ? ' is-carried' : '' ?>"
-                                  data-tone="<?= e($tone($def)) ?>" aria-hidden="true"
+                                  data-tone="<?= e($tone($def)) ?>"<?= ($zones[$i] ?? null) !== null ? ' data-zone="' . (int) $zones[$i] . '"' : '' ?> aria-hidden="true"
                                   style="left: <?= e((string) $x[$i]) ?>%; top: <?= e((string) $top) ?>%;"></span>
                         <?php endforeach; ?>
                     <?php endforeach; ?>
@@ -211,6 +228,16 @@ $wide    = !$mini && array_filter($periods, static fn ($p) => array_filter($p['g
                 </li>
             <?php endforeach; ?>
         </ul>
+    <?php endif; ?>
+
+    <?php /* 50.9: the guide's colours named under the large chart, as the
+             heart rate's zones are (heart-zones.php) — and its research. */ ?>
+    <?php if (!$mini && !empty($chart['guide'])): ?>
+        <?php component('heart-zones', ['zones' => $chart['guide']]); ?>
+        <?php $guideRef = $data['insights']['references']['training.load'] ?? null;
+        if ($guideRef !== null && is_file(dirname(__DIR__) . '/components/research-evidence.php')) {
+            component('research-evidence', $data + ['evidences' => [$guideRef]]);
+        } ?>
     <?php endif; ?>
 
     <?php if ($filled): ?>

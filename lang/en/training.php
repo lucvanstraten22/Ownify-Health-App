@@ -120,4 +120,14 @@ return [
     'Zumba' => 'Zumba',
     'Zwemmen in het zwembad' => 'Pool swimming',
     'Zwemmen in open water' => 'Open water swimming',
+
+    /* 50.9: Hartbelasting's guide */
+    '%1$s in 7 dagen · %2$s' => '%1$s in 7 days · %2$s',
+    'onder de richtlijn' => 'below the guideline',
+    'binnen de richtlijn' => 'within the guideline',
+    'boven de richtlijn' => 'above the guideline',
+    'Onder' => 'Below',
+    'Binnen' => 'Within',
+    'Boven' => 'Above',
+    'Hartbelasting in 7 dagen. De WHO raadt 150 tot 300 minuten matig intensief bewegen per week aan; Ownify rekent dat om naar hartbelasting en kleurt elke dag naar je totaal van de 7 dagen tot en met die dag.' => 'Heart load over 7 days. The WHO recommends 150 to 300 minutes of moderate activity a week; Ownify converts that into heart load and colours each day by your total over the 7 days up to and including that day.',
 ];

@@ -96,7 +96,7 @@ object OwnifyScreens {
                 is Detail.HealthArea -> data.health.area(detail.id)?.let { HealthDetail(data, it, scroll) }
                 is Detail.GoalPage -> data.goals.goal(detail.id)?.let { GoalDetail(data, it, scroll) }
                 is Detail.SettingsPage -> data.settings.page(detail.id)?.let { SettingsDetail(data, it, scroll) }
-                is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id)?.let { AreaChartDetail(it, detail.area, scroll) }
+                is Detail.AreaChart -> data.health.area(detail.area)?.view?.chart(detail.id)?.let { AreaChartDetail(it, detail.area, scroll, data.overview.insights.references["training.load"]) }
                 is Detail.TrainingSession -> (data.health.area("training")?.view as? TrainingView)?.let { view ->
                     view.session(detail.id)?.let { TrainingSessionDetail(it, view.heart, scroll, data.manualEntry) }
                 }

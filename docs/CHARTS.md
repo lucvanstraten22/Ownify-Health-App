@@ -147,6 +147,14 @@ These are the same on every chart and are not part of the time rule:
   month; past 31 points (a goal's long history) the line carries the shape
   and only the first, a point alone and the last keep theirs. A day of
   heart rate marks only a point that stands alone. Bars have no dots;
+- the Verloop and Wat er verandert (50.9): one dot per line, its last point
+  on the right — today, this week, this month — and a point that stands
+  alone (it has no line to show it). The small charts keep theirs;
+- a guide (50.9, Hartbelasting): the line and its dots take each point's
+  place against the guide — zone 1's blue under it, zone 2's green within,
+  zone 3's orange above — running from one into the next along the line,
+  the three named under the large chart. The heart rate's line runs from
+  zone to zone the same way, with no bands behind it;
 - dots that would cover each other (50.0): where two lines' points on one
   day stand less than a dot apart, each moves 2 px aside — the first line
   left, the next right — and the reading's dots with them, so no category

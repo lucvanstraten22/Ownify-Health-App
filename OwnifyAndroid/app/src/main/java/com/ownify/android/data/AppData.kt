@@ -1534,7 +1534,9 @@ data class AreaChart(
     /** The two units over a chart with a second scale — "kcal" on the left, "kJ" on the right — or null. */
     val units: Pair<String, String>? = null,
     /** 40.1: "Over …" under the large chart — its title and short points — or null. */
-    val about: AreaAbout? = null
+    val about: AreaAbout? = null,
+    /** 50.9: a guide (Hartbelasting): its three colours named — under, within, above — and what it is based on; null without one. */
+    val guide: HeartZones? = null
 ) {
     /** The series with a line or bars of their own (N9: a second measure is only read). */
     val drawn get() = series.filter { it.drawn }
@@ -1563,7 +1565,8 @@ data class AreaChart(
                 about = o.obj("about")?.let { a ->
                     val points = a.arr("points")?.let { list -> (0 until list.length()).map { list.optString(it) }.filter { it.isNotEmpty() } }.orEmpty()
                     if (points.isEmpty()) null else AreaAbout(a.str("title").orEmpty(), points)
-                }
+                },
+                guide = o.obj("guide")?.let { HeartZones.parse(it) }?.takeIf { it.bands.isNotEmpty() }
             )
         }
     }
@@ -1607,7 +1610,9 @@ data class AreaPeriod(
     /** The levels once more in a second unit (kJ), on the right; empty without one. */
     val gridAlt: List<String> = emptyList(),
     /** The bereik as a green zone behind the bars: its top and bottom in % of the plot. */
-    val band: AreaZone? = null
+    val band: AreaZone? = null,
+    /** 50.9, a guide: each point's place against it — 1 under, 2 within, 3 above, null without a value — the line's colour there. */
+    val zones: List<Int?>? = null
 ) {
     companion object {
         fun parse(o: JSONObject): AreaPeriod? {
@@ -1636,7 +1641,8 @@ data class AreaPeriod(
                 bars = o.arr("bars").map { AreaBars(it.str("key") ?: return@map null, (it.num("w") ?: 0.0).toFloat(), it.arr("top").floats()) },
                 grid = o.arr("grid").map { HistoryLevel((it.num("y") ?: return@map null).toFloat(), it.str("label").orEmpty()) },
                 gridAlt = o.arr("grid_alt").strings(),
-                band = o.obj("band")?.let { b -> AreaZone((b.num("top") ?: return@let null).toFloat(), (b.num("bottom") ?: return@let null).toFloat()) }
+                band = o.obj("band")?.let { b -> AreaZone((b.num("top") ?: return@let null).toFloat(), (b.num("bottom") ?: return@let null).toFloat()) },
+                zones = o.arr("zones")?.floats()?.map { it?.toInt() }
             )
         }
     }

@@ -132,10 +132,12 @@ $hint       = $only === null ? $history['hint'] : ($history['hint_one'] ?? $hist
                     <?php $small = $period['dots'] === 'every' && $period['group'] === 'day' && count($x) > 7; ?>
                     <?php foreach ($chart['lines'] as $series):
                         $ys    = $series['y'];
-                        $begin = array_key_first(array_filter($ys, static fn ($v) => $v !== null));
+                        /* 50.9: one dot, the last point on the right (today, this week,
+                           this month) — and a point on its own, which has no line. */
+                        $last = array_key_last(array_filter($ys, static fn ($v) => $v !== null));
                         foreach ($ys as $i => $top):
                             $alone = ($ys[$i - 1] ?? null) === null && ($ys[$i + 1] ?? null) === null;
-                            if ($top === null || ($period['dots'] !== 'every' && !$alone && $i !== $begin)) { continue; }
+                            if ($top === null || (!$alone && $i !== $last)) { continue; }
                             $carried = !empty($period['points'][$i]['carried']);
                             ?>
                             <span class="compass-plot__dot<?= $small ? ' is-small' : '' ?><?= $carried ? ' is-carried' : '' ?>"

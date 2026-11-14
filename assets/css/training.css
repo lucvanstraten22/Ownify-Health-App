@@ -157,21 +157,10 @@
 [data-zone="3"] { --zone: var(--zone-3); }
 [data-zone="4"] { --zone: var(--zone-4); }
 
-/* Zones 2 to 4 a faint band behind the line, so where they lie reads even
-   where the line is not; zone 1 is the plot itself. */
-.heart-plot__band {
-    position: absolute;
-    left: 0;
-    right: 0;
-    background: color-mix(in srgb, var(--zone) 5%, transparent);
-    pointer-events: none;
-}
-
-.heart-plot__band[data-zone="3"] { background: color-mix(in srgb, var(--zone) 7%, transparent); }
-.heart-plot__band[data-zone="4"] { background: color-mix(in srgb, var(--zone) 9%, transparent); }
-
 /* A dot in its zone's colour. */
 .heart-plot .compass-plot__dot[data-zone] { background: var(--zone); }
+/* 50.9: a guided line's dots (Hartbelasting) in their place's colour too. */
+.area-chart__plot .compass-plot__dot[data-zone] { background: var(--zone); }
 
 /* A day's hours every three where they fit, else every six (C57, 50.0):
    chart-axis.js hides a time that would touch its neighbour, as the app's
