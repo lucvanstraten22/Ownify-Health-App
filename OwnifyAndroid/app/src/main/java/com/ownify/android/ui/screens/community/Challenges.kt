@@ -299,9 +299,11 @@ internal fun NeutralTile(icon: ImageVector, size: Dp = 36.dp, radius: Dp = Ownif
 @Composable
 internal fun ChallengeActions(page: Map<String, String>, modifier: Modifier = Modifier) {
     val shell = LocalShell.current
+    // 51.0: on a phone the words alone, on one line — beside their marks they did not fit (`.ch-acts`, max-width 440px).
+    val marks = com.ownify.android.ui.design.LocalScreen.current.width >= 441.dp
     SplitRow(
-        { Btn(page["create"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCreate()) }, modifier = it, icon = OwnifyIcons.plus) },
-        { Btn(page["join"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCode) }, modifier = it, icon = OwnifyIcons.hash) },
+        { Btn(page["create"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCreate()) }, modifier = it, icon = if (marks) OwnifyIcons.plus else null) },
+        { Btn(page["join"].orEmpty(), onClick = { shell.open(Overlay.ChallengeCode) }, modifier = it, icon = if (marks) OwnifyIcons.hash else null) },
         modifier,
         quietBack = false
     )

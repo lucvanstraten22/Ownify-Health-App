@@ -118,6 +118,30 @@ $source  = $connect['source'];
                     <?php endif; ?>
                 </div>
 
+                <?php /* 51.0: Google Health and Polar, each linked with its own sign-in —
+                         Instellingen's connect (api/integrations/…/start.php); coming
+                         back, the setup opens where it was. */ ?>
+                <?php foreach ($connect['sources'] ?? [] as $cloud): ?>
+                    <div class="setup-source<?= $cloud['connected'] ? ' is-connected' : '' ?>">
+                        <div class="setup-source__head">
+                            <span class="icon-tile" aria-hidden="true"><?= icon($cloud['icon']) ?></span>
+                            <span class="setup-source__text">
+                                <span class="setup-source__label"><?= e($cloud['label']) ?></span>
+                                <span class="setup-source__note"><?= e($cloud['note']) ?></span>
+                            </span>
+                            <span class="setup-source__status">
+                                <span class="setup-source__dot" aria-hidden="true"></span><?= e($cloud['status']) ?>
+                            </span>
+                        </div>
+                        <p class="setup-source__body"><?= e($cloud['body']) ?></p>
+                        <?php if ($cloud['last_sync'] !== null): ?>
+                            <p class="setup-source__sync"><?= e($cloud['last_sync']) ?></p>
+                        <?php elseif (!$cloud['connected']): ?>
+                            <a class="btn press setup-source__connect" href="api/integrations/<?= e(rawurlencode($cloud['provider'])) ?>/start.php"><?= e($cloud['connect']) ?></a>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+
                 <p class="setup__quiet"><?= icon('utensils', 'setup__quiet-icon') ?><span><?= e($connect['manual']) ?></span></p>
                 <p class="setup__quiet"><?= icon('sliders', 'setup__quiet-icon') ?><span><?= e($connect['later']) ?></span></p>
             </section>

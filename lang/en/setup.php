@@ -97,4 +97,8 @@ return [
     'Nog geen startpunt' => 'No starting point yet',
     'Daarvoor zijn 3 dagen met gegevens nodig. Zodra ze er zijn, verschijnt je eerste score hier.' => 'That takes 3 days with data. Once they are there, your first score appears here.',
     'Bekijk je Gezondheidsscore' => 'See your Health score',
+
+    /* 51.0: the cloud sources in the setup */
+    'Koppel je Google-account: je slaap, stappen, hartslag en trainingen van je Fitbit of Pixel Watch komen dan vanzelf binnen.' => 'Link your Google account: your sleep, steps, heart rate and workouts from your Fitbit or Pixel Watch then come in by themselves.',
+    'Koppel je Polar Flow-account: je slaap, hartslag en trainingen van je Polar-horloge komen dan vanzelf binnen.' => 'Link your Polar Flow account: your sleep, heart rate and workouts from your Polar watch then come in by themselves.',
 ];

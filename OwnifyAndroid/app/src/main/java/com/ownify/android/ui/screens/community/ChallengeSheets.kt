@@ -565,7 +565,7 @@ fun ChallengeCreateSheet(overlay: Overlay.ChallengeCreate, data: AppData) {
                             WizardOption(m.label, categoryOf(m.category), chosen = metricKey == m.key, onClick = {
                                 metricKey = m.key
                                 if (!touched) target = suggestTarget(m, period)
-                            }, accent = Accent.of(m.accent).color, icon = OwnifyIcons.named(m.icon))
+                            }, accent = Accent.of(m.accent).color, icon = OwnifyIcons.solid(m.icon))
                         }
                     }
                 }

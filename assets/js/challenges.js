@@ -681,7 +681,7 @@
             if (!shown.length) { return '<p class="wizard__hint goal-list__empty">' + esc(cc.no_metric) + '</p>'; }
             return '<div class="glass goal-list"><div class="goal-list__scroll" role="radiogroup" aria-label="' + esc(cc.metric) + '">'
                 + shown.map(function (m) {
-                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, icon(m.icon), m.label, categoryLabel(m.category), draft.metric === m.key, 'radio');
+                    return row('data-cw-metric="' + esc(m.key) + '"', m.accent, solid(m.icon), m.label, categoryLabel(m.category), draft.metric === m.key, 'radio');
                 }).join('') + '</div></div>';
         }
 

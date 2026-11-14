@@ -55,6 +55,10 @@
     margin-top: 0;
 }
 
+/* 51.0: one height for a score and an empty dash, so the three tiles' bars
+   and names stand level whichever have a score. */
+.health-card .score-value { min-height: calc(var(--fs-large-title) * 1.05); }
+
 .health-card .meter {
     width: 100%;
     margin-top: 0;

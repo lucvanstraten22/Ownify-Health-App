@@ -533,7 +533,7 @@ private fun MeasureOption(m: GoalMeasurement, goals: Goals, draft: Draft) {
         chosen = draft.measurement == m.code,
         onClick = { choose(m, draft, goals) },
         accent = Accent.of(category?.accent ?: "health").color,
-        icon = if (m.custom) OwnifyIcons.flag else OwnifyIcons.named(category?.icon)
+        icon = if (m.custom) OwnifyIcons.solid("flag") else OwnifyIcons.solid(category?.icon)
     )
 }
 
@@ -565,11 +565,12 @@ internal fun WizardOption(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)
         ) {
+            // 51.0: the app's icon style (50.2) — the tile solid in its category's colour, the icon white and filled.
             if (mark != null) mark() else Box(
-                Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(Ownify.mix(accent, 0.16f, Color.Transparent)),
+                Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(accent).border(1.dp, accent, RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                icon?.let { JIcon(it, size = 15.dp, color = accent) }
+                icon?.let { JIcon(it, size = 15.dp, color = Ownify.PlekInk) }
             }
             Column(Modifier.weight(1f)) {
                 // A row's label at Body, its meta at Subhead (C69, 50.0): one size of choice row in every step.

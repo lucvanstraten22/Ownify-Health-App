@@ -1335,8 +1335,11 @@
     width: 30px;
     height: 30px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--accent, var(--health)) 16%, transparent);
-    color: var(--accent, var(--health));
+    /* 51.0: the app's icon style (50.2) — the tile solid in its category's
+       colour, the icon white — as every other tile with a category. */
+    border: 1px solid var(--accent, var(--plek));
+    background: var(--accent, var(--plek));
+    color: var(--plek-ink);
 }
 
 .goal-option__icon .icon { width: 15px; height: 15px; }

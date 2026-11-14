@@ -124,11 +124,11 @@ private fun InsightRow(row: Insight, divided: Boolean, onClick: () -> Unit) {
         reading = row.progressText, tint = Accent.of(row.accent).color, onClick = onClick)
 }
 
-/** The outline mark of the area an insight is about (heart belongs to Training). */
+/** The mark of the area an insight is about (heart belongs to Training) — 51.0: filled, white on its colour, as every solid tile. */
 private fun markOf(accent: String): ImageVector = when (accent) {
-    "sleep" -> OwnifyIcons.moon
-    "nutrition" -> OwnifyIcons.utensils
-    else -> OwnifyIcons.bolt
+    "sleep" -> OwnifyIcons.solidMoon
+    "nutrition" -> OwnifyIcons.solid("utensils") ?: OwnifyIcons.utensils
+    else -> OwnifyIcons.solid("bolt") ?: OwnifyIcons.bolt
 }
 
 /**
@@ -245,7 +245,7 @@ fun InsightDetailPage(correlations: Correlations, detail: CorrelationDetail, scr
                 SettingsEyebrow(detail.sourcesTitle, Modifier.padding(top = Ownify.Space4))
                 SettingsCard {
                     detail.sources.forEachIndexed { i, source ->
-                        NavRow(OwnifyIcons.chart, source.title, source.citation, divided = i > 0, description = source.title + ". " + source.citation) {
+                        NavRow(OwnifyIcons.solid("chart") ?: OwnifyIcons.chart, source.title, source.citation, divided = i > 0, description = source.title + ". " + source.citation) {
                             view(context, source.href)
                         }
                     }

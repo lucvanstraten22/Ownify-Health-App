@@ -181,7 +181,8 @@ private fun HealthCard(area: Area, modifier: Modifier) {
                                 },
                                 if (empty) FontWeight.Normal else FontWeight.Bold,
                                 if (empty) Ownify.TextMuted else Ownify.TextPrimary,
-                                lineHeight = 1.em, tabular = true
+                                // 51.0: the dash's line as tall as a score's, so an empty tile's bar and name stand level with the others'.
+                                lineHeight = if (empty) Ownify.FsLargeTitle else 1.em, tabular = true
                             ),
                             Modifier.alignByBaseline().padding(end = if (empty) 3.dp else 0.dp)
                         )

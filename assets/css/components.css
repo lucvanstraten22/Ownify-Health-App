@@ -940,6 +940,9 @@
 .is-empty .score-value .score-value__number {
     margin-inline-end: 3px;
     font-size: calc(var(--fs-large-title) * 0.6);
+    /* 51.0: the line as tall as a score's, so an empty tile's bar and name
+       stand level with its neighbours' instead of 10 px higher. */
+    line-height: var(--fs-large-title);
     font-weight: 400;
     color: var(--text-muted);
 }

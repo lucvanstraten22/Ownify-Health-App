@@ -473,8 +473,75 @@ private fun ColumnScope.ConnectStep(setup: Setup, health: PhoneHealth) {
         if (health.granted > 0) SyncResult()
     }
 
+    // 51.0: Google Health and Polar, each linked with its own sign-in, as in Instellingen.
+    c.clouds.forEach { cloud -> CloudSource(cloud) }
+
     Quiet(OwnifyIcons.utensils, c.manual, Modifier.padding(top = Ownify.Space4))
     Quiet(OwnifyIcons.sliders, c.later, Modifier.padding(top = Ownify.Space3))
+}
+
+/**
+ * 51.0, a cloud source (`pages/setup.php`, `.setup-source`): its name, what it
+ * reads from, whether it is linked, what it brings — and, until it is,
+ * Instellingen's connect: the server makes the consent address for this
+ * account (start.php), the browser opens it, and coming back the browser asks
+ * which Ownify account it is for.
+ */
+@Composable
+private fun CloudSource(cloud: com.ownify.android.data.SetupCloud) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    val shape = RoundedCornerShape(Ownify.RadiusMd)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = Ownify.Space5)
+            .clip(shape)
+            .background(Ownify.InsetFill)
+            .border(1.dp, if (cloud.connected) Ownify.mix(Ownify.Health, 0.30f, Color.Transparent) else Ownify.GlassHairline, shape)
+            .cssPadding(androidx.compose.foundation.layout.PaddingValues(Ownify.Space4), border = 1.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Ownify.Space3)) {
+            OwnifyIcons.named(cloud.icon)?.let { IconTile(it, size = 36.dp, radius = 12.dp, iconSize = 18.dp, background = Ownify.plek(Plek.Devices), border = Ownify.plekEdge(Plek.Devices)) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                T(cloud.label, OwnifyType.style(Ownify.FsBody, FontWeight.SemiBold))
+                T(cloud.note, JStyle.Footnote)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(Modifier.size(7.dp).clip(CircleShape).background(if (cloud.connected) Ownify.Health else Ownify.TextFaint))
+                T(cloud.status, OwnifyType.style(Ownify.FsCaption, FontWeight.SemiBold, Ownify.TextSecondary))
+            }
+        }
+        Box(Modifier.fillMaxWidth().padding(top = Ownify.Space3).height(1.dp).background(Ownify.GlassHairline))
+        T(cloud.body, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextSecondary), Modifier.padding(top = Ownify.Space3))
+        cloud.lastSync?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(top = Ownify.Space2)) }
+        if (!cloud.connected) {
+            Btn(
+                cloud.connect,
+                onClick = {
+                    busy = true
+                    problem = null
+                    scope.launch {
+                        when (val outcome = OwnifyActions.form(context, "api/integrations/" + android.net.Uri.encode(cloud.provider) + "/start.php", emptyMap(), tr("Koppelen kan nu niet. Probeer het opnieuw."), reload = false)) {
+                            is Outcome.Done -> outcome.body.optString("url").takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { url ->
+                                runCatching {
+                                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                                }
+                            }
+                            is Outcome.Refused -> problem = outcome.message
+                            Outcome.SignedOut -> Unit
+                        }
+                        busy = false
+                    }
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth().padding(top = Ownify.Space4)
+            )
+        }
+        problem?.let { T(it, OwnifyType.style(Ownify.FsSubhead, color = Ownify.TextMuted), Modifier.padding(top = Ownify.Space2)) }
+    }
 }
 
 /** `.setup__quiet`: a muted line with its icon. */

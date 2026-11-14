@@ -62,6 +62,11 @@ return [
                     /* The app asks Health Connect itself. */
                     'app'   => 'Ownify leest je slaap, stappen en trainingen uit Health Connect. Je kiest zelf wat het mag lezen.',
                 ],
+                /* 51.0: the cloud sources, linked with their own sign-in. */
+                'cloud' => [
+                    'google_health' => 'Koppel je Google-account: je slaap, stappen, hartslag en trainingen van je Fitbit of Pixel Watch komen dan vanzelf binnen.',
+                    'polar'         => 'Koppel je Polar Flow-account: je slaap, hartslag en trainingen van je Polar-horloge komen dan vanzelf binnen.',
+                ],
                 'connected'     => 'Verbonden',
                 'not_connected' => 'Nog niet verbonden',
                 'last_sync'     => 'Laatste synchronisatie: %s',

@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/includes/setup.php';
 require_once dirname(__DIR__) . '/includes/goal-create.php';
+require_once dirname(__DIR__) . '/includes/integrations.php';   // 51.0: the cloud sources' notes
 
 if (!function_exists('hydrate_setup')) {
 
@@ -52,6 +53,33 @@ if (!function_exists('hydrate_setup')) {
 
         $c = $steps['connect'];
         $connected = !empty($health['connected']);
+
+        /* 51.0: the cloud sources too — Google Health and Polar — each with
+           Instellingen's own connect, while the server can link them. */
+        $labels = $data['settings']['integration_labels'] ?? [];
+        $cloud  = [];
+        foreach ($data['settings']['integrations'] ?? [] as $item) {
+            $provider = (string) ($item['provider'] ?? '');
+            if (!in_array($provider, ['google_health', 'polar'], true)) {
+                continue;
+            }
+            $linked = in_array($item['status'] ?? '', ['connected', 'error'], true);
+            if (!$linked && empty($item['available'])) {
+                continue;                               // not set up on this server: nothing to offer
+            }
+            $cloud[] = [
+                'provider'  => $provider,
+                'label'     => (string) ($item['label'] ?? $provider),
+                'note'      => (string) (integration_providers()[$provider]['note'] ?? ''),
+                'icon'      => (string) ($item['icon'] ?? 'link'),
+                'connected' => $linked,
+                'status'    => $linked ? $c['connected'] : $c['not_connected'],
+                'body'      => $c['cloud'][$provider] ?? '',
+                'connect'   => (string) (($item['status'] ?? '') === 'revoked' ? ($labels['reconnect'] ?? 'Opnieuw koppelen') : ($labels['connect'] ?? 'Koppelen')),
+                'last_sync' => $linked && !empty($item['last_sync']) ? sprintf($c['last_sync'], $item['last_sync']) : null,
+            ];
+            $connected = $connected || $linked;
+        }
 
         /* 3 — about you: only what Ownify uses, each with why, as
            Instellingen would edit it (the same inputs, the same endpoints). */
@@ -119,6 +147,7 @@ if (!function_exists('hydrate_setup')) {
                             ? sprintf($c['last_sync'], $health['last_sync'])
                             : null,
                     ],
+                    'sources'   => $cloud,
                     'connected' => $connected,
                     'manual'    => $c['manual'],
                     'later'     => $c['later'],

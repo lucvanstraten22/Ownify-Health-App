@@ -147,7 +147,7 @@ $id     = $d['id'];
                         <div class="card settings-card">
                             <?php foreach ($d['method']['sources'] as $source): ?>
                                 <a class="settings-row press" href="<?= e($source['href']) ?>" target="_blank" rel="noopener noreferrer">
-                                    <span class="settings-row__mark" aria-hidden="true"><?= icon('chart') ?></span>
+                                    <span class="settings-row__mark" aria-hidden="true"><?= icon_solid('chart') ?></span>
                                     <span class="settings-row__text">
                                         <span class="settings-row__label" lang="<?= e($source['language']) ?>"><?= e($source['title']) ?></span>
                                         <span class="settings-row__value"><?= e($source['citation']) ?></span>

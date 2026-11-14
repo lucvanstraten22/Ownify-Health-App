@@ -3087,13 +3087,39 @@ data class SetupConnectStep(
     val connected: Boolean,
     val manual: String,
     val later: String,
-    val skip: String
+    val skip: String,
+    /** 51.0: Google Health and Polar, each linked with its own sign-in. */
+    val clouds: List<SetupCloud> = emptyList()
 ) {
     companion object {
         fun parse(o: JSONObject?) = SetupConnectStep(
             o.str("label").orEmpty(), o.str("title").orEmpty(), o.str("lede").orEmpty(), SetupSource.parse(o.obj("source")),
-            o.bool("connected"), o.str("manual").orEmpty(), o.str("later").orEmpty(), o.str("skip").orEmpty()
+            o.bool("connected"), o.str("manual").orEmpty(), o.str("later").orEmpty(), o.str("skip").orEmpty(),
+            o.arr("sources").map(SetupCloud::parse)
         )
+    }
+}
+
+/** A cloud source in the setup (51.0): what it is, whether it is linked, what it brings and its connect button's words. */
+data class SetupCloud(
+    val provider: String,
+    val label: String,
+    val note: String,
+    val icon: String,
+    val connected: Boolean,
+    val status: String,
+    val body: String,
+    val connect: String,
+    val lastSync: String?
+) {
+    companion object {
+        fun parse(o: JSONObject): SetupCloud? {
+            val provider = o.str("provider") ?: return null
+            return SetupCloud(
+                provider, o.str("label").orEmpty(), o.str("note").orEmpty(), o.str("icon") ?: "link", o.bool("connected"),
+                o.str("status").orEmpty(), o.str("body").orEmpty(), o.str("connect").orEmpty(), o.str("last_sync")
+            )
+        }
     }
 }
 

@@ -165,6 +165,14 @@
 /* Nieuwe uitdaging | Code invoeren: one split (50.1), two equal choices in
    the full ink, each with its mark. */
 .ch-acts { width: 100%; }
+/* 51.0: on a phone "Nieuwe uitdaging | Code invoeren" did not fit beside
+   their icons and broke onto a second, clipped line: there, the words alone,
+   on one line. */
+.ch-acts > .split__part { white-space: nowrap; }
+@media (max-width: 440px) {
+    .ch-acts > .split__part { padding-inline: var(--space-2); }
+    .ch-acts > .split__part > .icon { display: none; }
+}
 
 .ch-line,
 .ch-pace {

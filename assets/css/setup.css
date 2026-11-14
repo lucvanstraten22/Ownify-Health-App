@@ -279,6 +279,9 @@
     letter-spacing: var(--tracking-small);
 }
 
+/* 51.0: a cloud source's way to link it, under what it brings. */
+.setup-source__connect { margin-top: var(--space-3); width: 100%; text-decoration: none; }
+
 .setup-source__sync {
     margin-top: var(--space-2);
     font-size: var(--fs-subhead);
