@@ -16,10 +16,15 @@
  * be downloaded from the site. At most 1 MB is written.
  *
  * What a line holds, and nothing else:
- *   the time, a tag shared by the requests of one question, the HTTP status,
- *   the outcome, Gemini's error status and message, the model, and the
- *   outline of what was sent and what came back — roles, part kinds, text
- *   lengths, whether a part carried a thought signature.
+ *   the time, a tag shared by the requests of one question, the attempt,
+ *   the HTTP status, the outcome, whether asking again could help, how the
+ *   request went (the phase it ended in, the cURL error number and text,
+ *   the seconds it took and to connect, to finish TLS and to the first
+ *   byte, the connect and request timeouts it had, IPv4 or IPv6, the HTTP
+ *   version, PHP's max_execution_time), Gemini's error status and message,
+ *   the model, and the outline of what was sent and what came back —
+ *   roles, part kinds, text lengths, whether a part carried a thought
+ *   signature.
  * Never the key, never a word of the text (questions, answers, health data),
  * never a signature itself. Gemini's error message describes the request's
  * structure; should it ever quote part of the request, it is withheld.
@@ -138,7 +143,7 @@ if (!function_exists('ai_diagnostic_path')) {
     }
 
     /** One Gemini request: what was sent, what came back, how it ended. */
-    function ai_diagnostic_exchange(array $body, int $status, array $json, array $answer, string $model): void
+    function ai_diagnostic_exchange(array $body, int $status, array $json, array $answer, string $model, int $attempt = 1): void
     {
         if (ai_diagnostic_path() === null) {
             return;
@@ -162,6 +167,22 @@ if (!function_exists('ai_diagnostic_path')) {
         if (is_array($parts)) {
             $line .= '  received: [model: ' . ai_gemini_part_kinds($parts) . ']'
                 . ($finish === '' ? '' : ' finish=' . $finish);
+        }
+
+        /* How the request went: where it ended, how long each step took,
+           the timeouts it had. */
+        $line .= '  attempt=' . $attempt . (($answer['retryable'] ?? false) === true ? ' retryable' : '');
+
+        $t = is_array($answer['transport'] ?? null) ? $answer['transport'] : null;
+        if ($t !== null) {
+            $sec = static fn ($v): string => is_numeric($v) && (float) $v > 0 ? number_format((float) $v, 2, '.', '') . 's' : '-';
+            $line .= '  phase=' . (string) ($t['phase'] ?? '?')
+                . (($t['errno'] ?? 0) === 0 ? '' : '  curl=' . (int) $t['errno'] . ' "' . str_replace('"', "'", (string) ($t['error'] ?? '')) . '"')
+                . (isset($t['elapsed']) ? '  elapsed=' . $sec($t['elapsed']) : '')
+                . (isset($t['connect']) ? '  connect=' . $sec($t['connect']) . ' tls=' . $sec($t['tls']) . ' first_byte=' . $sec($t['first_byte']) : '')
+                . '  timeouts: connect=' . (int) ($t['connect_ms'] ?? 0) . 'ms request=' . (int) ($t['timeout_ms'] ?? 0) . 'ms'
+                . ' question=' . (string) (ai_config()['timeout'] ?? '?') . 's max_execution_time=' . (string) ini_get('max_execution_time')
+                . (isset($t['ip']) ? '  ip=' . $t['ip'] . ' http=' . (string) ($t['http'] ?? '-') : '');
         }
 
         ai_diagnostic_write($line);

@@ -317,6 +317,8 @@ $appEnv = [
     'GEMINI_API_BASE'        => 'http://127.0.0.1:' . $fakePort,
     'GEMINI_MODEL'           => 'gemini-3.8-flash',
     'GEMINI_TIMEOUT'         => '2',
+    /* Retries wait 100 ms, then 300 (production: 1 s, then 3). */
+    'AI_RETRY_BACKOFF_MS'    => '100',
     'AI_DAILY_MESSAGE_LIMIT' => '20',
     'AI_GLOBAL_DAILY_LIMIT'  => '100000',
     /* The temporary diagnostic, on for this run (checked at the end). */
@@ -332,6 +334,11 @@ $noKeyEnv = $appEnv;
 unset($noKeyEnv['GEMINI_API_KEY']);
 $noKeyPort   = free_port();
 $noKeyServer = serve($noKeyPort, ['-t', $root], $noKeyEnv);
+
+/* A third with Gemini nowhere to be reached: a port nothing listens on. */
+$downEnv = ['GEMINI_API_BASE' => 'http://127.0.0.1:' . free_port(), 'AI_DIAGNOSTIC_LOG' => $fakeDir . '/diagnostic-down.log'] + $appEnv;
+$downPort   = free_port();
+$downServer = serve($downPort, ['-t', $root], $downEnv);
 
 db_run("DELETE FROM ai_service_state WHERE name = 'quota_block'");
 
@@ -742,8 +749,10 @@ try {
     $messages = (int) db_value('SELECT COUNT(*) FROM ai_messages WHERE user_id = ?', [$sanne['id']]);
     $used     = used_today($sanne['id']);
 
+    forget_sent();
     gemini(quota(false));
     $r = chat($sanne, 'Hoe was mijn week?', $conversation);
+    check('a 429 is never asked again: one request, nothing more spent on the quota', count(sent()) === 1, (string) count(sent()));
     check('free quota used up (per minute): 503 quota, the free-limit sentence', $r['status'] === 503 && ($r['body']['code'] ?? null) === 'quota'
         && str_contains((string) ($r['body']['error'] ?? ''), 'gratis gebruikslimiet'), summary($r));
     check('Gemini\'s own text is not in it', !str_contains($r['raw'], 'exceeded your current quota') && !str_contains($r['raw'], 'RESOURCE_EXHAUSTED'));
@@ -766,7 +775,8 @@ try {
     db_run("DELETE FROM ai_service_state WHERE name = 'quota_block'");
 
     foreach ([
-        'Gemini down (500)'           => [['status' => 500, 'body' => ['error' => ['code' => 500, 'status' => 'INTERNAL']]], 503, 'unavailable'],
+        /* Asked three times (two retries), then given up. */
+        'Gemini down (500)'           => [['status' => 500, 'body' => ['error' => ['code' => 500, 'status' => 'INTERNAL']]], 503, 'unavailable', 3],
         'an answer that is not JSON'  => [['status' => 200, 'raw' => '<html>oops'], 503, 'unavailable'],
         'a 200 with nothing in it'    => [['status' => 200, 'body' => ['candidates' => []]], 503, 'unavailable'],
         'refused for safety'          => [['status' => 200, 'body' => ['promptFeedback' => ['blockReason' => 'SAFETY']]], 422, 'blocked'],
@@ -776,12 +786,20 @@ try {
            candidate without an answer (the 2048 ceiling up to 23.0). */
         'cut off while thinking'      => [['status' => 200, 'body' => ['candidates' => [['content' => ['role' => 'model'], 'finishReason' => 'MAX_TOKENS']],
             'usageMetadata' => ['promptTokenCount' => 6100, 'candidatesTokenCount' => 0, 'thoughtsTokenCount' => 2047]]], 503, 'unavailable'],
-    ] as $label => [$answer, $status, $code]) {
-        gemini($answer);
+    ] as $label => $case) {
+        [$answer, $status, $code] = $case;
+        $times = $case[3] ?? 1;
+        forget_sent();
+        gemini(...array_fill(0, $times, $answer));
         $r = chat($sanne, 'Hoe was mijn week?', $conversation);
+        /* The stand-in serves one request at a time: let a sleeping one finish. */
+        if (isset($answer['sleep'])) {
+            usleep(2_500_000);
+        }
         check("$label: $status $code, and nothing stored or counted", $r['status'] === $status && ($r['body']['code'] ?? null) === $code
             && is_string($r['body']['error'] ?? null) && used_today($sanne['id']) === $used
             && (int) db_value('SELECT COUNT(*) FROM ai_messages WHERE user_id = ?', [$sanne['id']]) === $messages, summary($r));
+        check("$label: asked $times time(s), no more", count(sent()) === $times, (string) count(sent()));
     }
     check('the failures are counted, without their content', (int) db_value('SELECT errors FROM ai_usage WHERE user_id = ? AND usage_date = CURDATE()', [$sanne['id']]) >= 9);
 
@@ -798,6 +816,50 @@ try {
     $r = chat($sanne, 'Hoe was mijn week?', $conversation);
     check('a model that takes no thinking setting is asked again without it', $r['status'] === 200 && count(sent()) === 2
         && !isset(sent()[1]['body']['generationConfig']['thinkingConfig']), summary($r));
+
+    /* --------------------------- transient failures: asked again, bounded */
+
+    $calls = static fn (): int => (int) db_value('SELECT COALESCE(SUM(gemini_calls), 0) FROM ai_usage WHERE usage_date = CURDATE()');
+
+    forget_sent();
+    $before = $calls();
+    gemini(['status' => 503, 'body' => ['error' => ['code' => 503, 'status' => 'UNAVAILABLE',
+        'message' => 'This model is currently experiencing high demand. Please try again later.']]], says('Na even wachten.'));
+    $r = chat($sanne, 'Hoe was mijn week?', $conversation);
+    check('Google busy for a moment (503 high demand): asked once more, and answered', $r['status'] === 200
+        && count(sent()) === 2 && json_encode(sent()[0]['body']) === json_encode(sent()[1]['body']), summary($r));
+    check('the retry counts as a Gemini request for the day, like any other', $calls() - $before === 2, (string) ($calls() - $before));
+
+    forget_sent();
+    gemini(calls('get_sleep_summary', ['days' => 7]),
+        ['status' => 503, 'body' => ['error' => ['code' => 503, 'status' => 'UNAVAILABLE']]], says('Met een look-up, na even wachten.'));
+    $r = chat($sanne, 'Hoe sliep ik deze week?', $conversation);
+    $responses = array_map(static fn (array $q): int => substr_count(json_encode($q['body']['contents'] ?? []), '"functionResponse"'), sent());
+    check('a retry after a look-up sends the same look-up again: the tool ran once, its answer went along twice',
+        $r['status'] === 200 && count(sent()) === 3 && $responses === [0, 1, 1]
+        && json_encode(sent()[1]['body']) === json_encode(sent()[2]['body']), summary($r) . ' ' . json_encode($responses));
+
+    forget_sent();
+    $started = microtime(true);
+    gemini(['sleep' => 4, 'status' => 200, 'body' => says('Te laat.')['body']], says('Niet gevraagd.'));
+    $r = chat($sanne, 'Hoe was mijn week?', $conversation);
+    $took = microtime(true) - $started;
+    check('no answer in time from a request that reached Google: not asked again (it may have counted), 503 timeout',
+        $r['status'] === 503 && ($r['body']['code'] ?? null) === 'timeout' && count(sent()) === 1, summary($r));
+    check('and the whole question stays within its time (GEMINI_TIMEOUT 2 s here; 25 s live, under Apache\'s 30)',
+        $took < 3.0, number_format($took, 2) . ' s');
+    $lines = (string) @file_get_contents($fakeDir . '/diagnostic.log');
+    check('the diagnostic says where it stopped: waiting for Google, with cURL\'s error, the seconds and the timeouts',
+        preg_match('/phase=waiting  curl=28 "[^"]*"  elapsed=\S+  connect=\S+ tls=- first_byte=-  timeouts: connect=\d+ms request=\d+ms question=2s max_execution_time=\d+/', $lines) === 1);
+    /* The stand-in sleeps on; the next question must not meet it. */
+    usleep(2_200_000);
+
+    $r = http('/api/ai/chat.php', ['base' => 'http://127.0.0.1:' . $downPort, 'bearer' => $sanne['token'], 'form' => ['message' => 'Hallo']]);
+    $down = (string) @file_get_contents($fakeDir . '/diagnostic-down.log');
+    check('Gemini not reachable at all: asked three times (nothing reached it), then 503 unavailable',
+        $r['status'] === 503 && ($r['body']['code'] ?? null) === 'unavailable'
+        && substr_count($down, 'retryable  phase=connecting  curl=7 ') === 3
+        && str_contains($down, 'retry 2 in '), summary($r));
 
     forget_sent();
     gemini(says('Zo sta je ervoor.'));
@@ -875,7 +937,7 @@ try {
     }
     db_run("DELETE FROM ai_service_state WHERE name = 'quota_block'");
 
-    foreach ([$server, $noKeyServer, $fake] as $process) {
+    foreach ([$server, $noKeyServer, $downServer, $fake] as $process) {
         proc_terminate($process);
     }
     array_map('unlink', glob($fakeDir . '/*') ?: []);

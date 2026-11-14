@@ -223,20 +223,27 @@ if (!function_exists('ai_chat')) {
 
         $turn     = ['proposal' => null, 'tools' => []];
         $rounds   = max(1, (int) ai_config()['max_rounds']);
-        $deadline = microtime(true) + 55;   // under the web server's own time limit
+        /* One deadline for the whole question, counted from when the request
+           reached PHP: the web server in front gives up on its own clock
+           (on Hestia Apache's Timeout 30), and an answer after that reaches
+           nobody. config `timeout` stays under it (config/ai.php). */
+        $budget   = ai_gemini_budget();
+        $started  = min((float) ($_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true)), microtime(true));
+        $deadline = $started + $budget;
         $answer   = null;
         $calls    = 0;
+        $retries  = 0;
         $tokens   = ['input_tokens' => 0, 'output_tokens' => 0];
 
         for ($round = 1; $round <= $rounds; $round++) {
             /* The last round must answer in words; so must one that would
                otherwise run past the time there is. */
-            $last = $round === $rounds || microtime(true) > $deadline - 20;
+            $last = $round === $rounds || $deadline - microtime(true) < $budget * 0.4;
 
             $body['contents']   = $contents;
             $body['toolConfig'] = ['functionCallingConfig' => ['mode' => $last ? 'NONE' : 'AUTO']];
 
-            if ($round > 1 && ai_usage_global_calls() >= (int) ai_config()['global_daily_limit']) {
+            if ($round > 1 && ai_usage_global_calls() + $calls >= (int) ai_config()['global_daily_limit']) {
                 $answer = ['ok' => false, 'outcome' => 'quota'];
                 break;
             }
@@ -246,8 +253,28 @@ if (!function_exists('ai_chat')) {
                 break;
             }
 
-            $answer = ai_gemini_generate($body);
+            $answer = ai_gemini_generate($body, $deadline);
             $calls++;
+
+            /* Google overloaded for a moment (5xx), or the request never
+               reached it: the same request again, a little later. Never a
+               tool again (tools run only after an answer), never past the
+               deadline, and each retry takes a place in the minute and
+               counts against the day like any request. */
+            for ($retried = 0; ($wait = ai_gemini_retry_wait($answer, $retried, $deadline)) !== null; $retried++) {
+                if (ai_usage_global_calls() + $calls >= (int) ai_config()['global_daily_limit'] || !ai_pace_use($paceTag)) {
+                    break;
+                }
+
+                error_log('[ownify] ai: Gemini ' . ai_gemini_failure_label($answer) . '; asking again in ' . $wait . ' ms'
+                    . ' (retry ' . ($retried + 1) . ' of ' . (int) ai_config()['retries'] . ')');
+                ai_diagnostic_write('retry ' . ($retried + 1) . ' in ' . $wait . ' ms after Gemini ' . ai_gemini_failure_label($answer));
+                usleep($wait * 1000);
+
+                $answer = ai_gemini_generate($body, $deadline, $retried + 2);
+                $calls++;
+                $retries++;
+            }
 
             if (!$answer['ok'] && $answer['outcome'] === 'thinking' && isset($body['generationConfig']['thinkingConfig'])) {
                 unset($body['generationConfig']['thinkingConfig']);
@@ -257,7 +284,7 @@ if (!function_exists('ai_chat')) {
                     break;
                 }
 
-                $answer = ai_gemini_generate($body);
+                $answer = ai_gemini_generate($body, $deadline);
                 $calls++;
             }
 
@@ -314,12 +341,15 @@ if (!function_exists('ai_chat')) {
             };
 
             ai_diagnostic_write('question failed: outcome=' . $outcome . ' after ' . $calls
-                . ' Gemini request(s); the person is told: ' . $code);
+                . ' Gemini request(s), ' . $retries . ' of them retries, in '
+                . number_format(microtime(true) - $started, 1, '.', '') . ' s; the person is told: ' . $code);
 
             return ai_fail($code === 'quota' ? 503 : ($code === 'blocked' ? 422 : 503), $code, ['usage' => ai_usage_summary($userId)]);
         }
 
         error_log('[ownify] ai: Gemini request successful (' . $calls . ' request' . ($calls === 1 ? '' : 's')
+            . ($retries === 0 ? '' : ', ' . $retries . ' of them retries')
+            . ', ' . number_format(microtime(true) - $started, 1, '.', '') . ' s'
             . ($turn['tools'] === [] ? '' : ', tools: ' . implode(', ', array_unique($turn['tools']))) . ')');
 
         /* ---------------------------------------------------------- stored */

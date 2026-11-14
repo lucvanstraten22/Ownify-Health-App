@@ -130,7 +130,7 @@ step. `database/schema.sql` already has everything for a fresh install.
 <https://aistudio.google.com/rate-limit>. Google applies them per project, not
 per key, and resets the daily ones at midnight Pacific time. If the daily
 number of requests for `gemini-3.8-flash` there is lower than Ownify's
-`global_daily_limit` (250), lower that setting to match (see *Settings*).
+`global_daily_limit` (20), lower that setting to match (see *Settings*).
 
 ### 3. The key on the server
 
@@ -184,14 +184,17 @@ environment — so the model or a limit changes without a code change:
 | --- | --- | --- | --- |
 | `model` | `gemini-3.8-flash` | `GEMINI_MODEL` | the Gemini model; must be one on the free tier |
 | `daily_limit` | 10 | `AI_DAILY_MESSAGE_LIMIT` | questions per person per day |
-| `global_daily_limit` | 250 | `AI_GLOBAL_DAILY_LIMIT` | Gemini requests per day, everybody together |
+| `global_daily_limit` | 20 | `AI_GLOBAL_DAILY_LIMIT` | Gemini requests per day, everybody together — retries included. Google's free tier allows `gemini-3.8-flash` 20 a day for the project (its 429 said so, October 2026) |
 | `max_rounds` | 2 | — | Gemini requests one question may take: an answer, or one look-up and the answer |
 | `minute_limit` | 5 | `AI_MINUTE_LIMIT` | Gemini requests per minute, everybody together (at most 8); Google's free tier allows `gemini-3.8-flash` 5 |
 | `max_message_chars` | 2000 | — | the longest question |
 | `history_messages` | 12 | — | recent messages sent along with a question; each earlier answer goes back exactly as Gemini sent it, thought signature included (Gemini 3 refuses a model turn without one) |
 | `history_digest` | 8 | — | earlier questions of the conversation, listed as a reminder |
 | `max_conversations` | 50 | — | conversations kept per person; the oldest go |
-| `timeout` | 45 | `GEMINI_TIMEOUT` | seconds to wait for Gemini |
+| `timeout` | 25 | `GEMINI_TIMEOUT` | seconds for one whole question — every Gemini request, the look-up, every retry — from when it reaches the server. Under the web server's own limit: on Hestia Apache gives PHP-FPM 30 s (`Timeout 30`) and then answers the app 504 itself, while PHP goes on for nobody. Up to 50.2 it was 45 s per request (90 for two rounds) |
+| `connect_timeout` | 5 | `GEMINI_CONNECT_TIMEOUT` | seconds to reach Google (DNS, TCP, TLS) |
+| `retries` | 2 | `AI_RETRIES` | how often one request may be asked again, only when that can help: Google overloaded for a moment (500, 502, 503 *high demand*, 504) or the request never reached Google (no name, connection or TLS). Never after a 429, never after a request that reached Google and got no answer in time (it may have counted), never past `timeout` and only with a third of it left. Each retry takes a place in the minute and counts for the day; a look-up is never run twice (the retry resends the same request) |
+| `retry_backoff_ms` | 1000 | `AI_RETRY_BACKOFF_MS` | the first wait before a retry; then 3 ×, plus up to a quarter at random, or longer when Google sends `Retry-After` |
 | `max_output_tokens` | 8192 | — | the ceiling on an answer, thinking included. Gemini 3 counts its thinking against it; a model that thinks up to the ceiling sends back no answer at all (`finishReason` `MAX_TOKENS`), which the person sees as *tijdelijk niet beschikbaar* — 2048 was too low for `gemini-3.8-flash` |
 | `thinking_level` | `low` | `AI_THINKING_LEVEL` | how hard the model thinks; `low` is fastest and cheapest on quota |
 | `consent_version` | `2026-10-gemini-free` | — | the consent wording people said yes to (see *Consent*) |
@@ -427,7 +430,19 @@ PHP's upload folder — on Hestia `/home/<user>/tmp/`, which the File Manager
 shows as `tmp/`, outside the web root. A line holds the HTTP status, the
 outcome, Gemini's error status and message, the model, and the outline of
 what was sent and what came back: roles, part kinds, text lengths, whether
-a part carried a thought signature. Never the key, never a word of a
+a part carried a thought signature. Since 50.3 it ends with how the request
+went:
+
+    attempt=1  phase=waiting  curl=28 "Operation timed out after 24600 milliseconds with 0 bytes received"
+    elapsed=24.60s  connect=0.03s tls=0.09s first_byte=-  timeouts: connect=5000ms request=24600ms
+    question=25s max_execution_time=30  ip=v4 http=2
+
+`phase` is where it ended: `resolving`, `connecting`, `tls` (nothing reached
+Google), `sending`, `waiting` (sent; Google had not answered yet),
+`receiving`, `done`, or `not sent` (no time left). A retry adds its own line
+(`retry 1 in 1043 ms after Gemini answered HTTP 503 …`), and a question that
+fails ends with one saying how many requests and retries it took, and in
+how many seconds. Never the key, never a word of a
 question, an answer or any health data, never a signature itself; an error
 message that repeats the conversation is withheld, and values it quotes are
 replaced. Lines of one question share a tag. The file is the server user's

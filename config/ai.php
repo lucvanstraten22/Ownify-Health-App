@@ -22,6 +22,10 @@
  * code change:
  *
  *   GEMINI_MODEL              model            which Gemini model answers
+ *   GEMINI_TIMEOUT            timeout          seconds for one question
+ *   GEMINI_CONNECT_TIMEOUT    connect_timeout  seconds to reach Google
+ *   AI_RETRIES                retries          retries of one request, at most
+ *   AI_RETRY_BACKOFF_MS       retry_backoff_ms the first wait before a retry
  *   AI_DAILY_MESSAGE_LIMIT    daily_limit      questions per person per day
  *   AI_GLOBAL_DAILY_LIMIT     global_daily_limit   Gemini requests per day,
  *                                                  everybody together
@@ -57,8 +61,36 @@ $settings = [
     /** The Gemini API. Only ever changed to point a test at a stand-in. */
     'api_base' => 'https://generativelanguage.googleapis.com',
 
-    /** Seconds to wait for Gemini's answer before saying it took too long. */
-    'timeout' => 45,
+    /**
+     * Seconds one question may take, from the moment it reaches the server:
+     * every Gemini request, the look-up between them and every retry
+     * together. It must stay under the web server's own limit. On Hestia,
+     * nginx hands the request to Apache, and Apache gives PHP-FPM 30 s
+     * (`Timeout 30` in /etc/apache2/apache2.conf, Hestia's default) before
+     * it answers the app 504 by itself — after which PHP goes on asking
+     * Gemini for nobody, and what it answers is stored but never seen. Up to
+     * 50.2 this was 45 s for each request (two rounds: 90), so an answer
+     * slower than 30 s always failed. Raise it only together with Apache's
+     * Timeout, and keep it under the Android app's 90 s.
+     */
+    'timeout' => 25,
+
+    /** Seconds to set up the connection to Google (DNS, TCP, TLS) — it takes well under one. */
+    'connect_timeout' => 5,
+
+    /**
+     * How often one request may be asked again when asking again can help:
+     * Google overloaded for a moment (HTTP 500, 502, 503 "high demand", 504),
+     * or the request never reached Google (no name, no connection, no TLS —
+     * nothing was counted there). Never after a 429 (quota) or after a request
+     * that reached Google and got no answer in time (Google may have counted
+     * it), never past `timeout`, and only with a third of it left. Each retry
+     * takes a place in the minute and counts against the day like any other
+     * request. The waits: retry_backoff_ms, then 3 x that, plus a little at
+     * random, or longer when Google says Retry-After.
+     */
+    'retries'          => 2,
+    'retry_backoff_ms' => 1000,
 
     /**
      * How much Gemini may write, thinking included. Answers are asked to be
@@ -85,11 +117,14 @@ $settings = [
 
     /**
      * Requests Ownify makes to Gemini per day, everybody together — one
-     * question can take two or three when the assistant looks something up.
-     * Kept under what Google's free tier allows (see your limits in AI
-     * Studio), so Ownify stops itself before Google has to.
+     * question can take two when the assistant looks something up, more
+     * with a retry. Google's free tier allows gemini-3.8-flash 20 requests
+     * a day for the whole project (its own 429 said so, October 2026:
+     * "free-tier limit of 20 requests"), so Ownify stops itself there
+     * instead of letting Google refuse. Raise it only when AI Studio shows
+     * a higher limit for the project.
      */
-    'global_daily_limit' => 250,
+    'global_daily_limit' => 20,
 
     /**
      * Requests Ownify makes to Gemini per minute, everybody together — one
@@ -160,6 +195,9 @@ foreach ([
     'GEMINI_MODEL'           => ['model', 'string'],
     'GEMINI_API_BASE'        => ['api_base', 'string'],
     'GEMINI_TIMEOUT'         => ['timeout', 'int'],
+    'GEMINI_CONNECT_TIMEOUT' => ['connect_timeout', 'int'],
+    'AI_RETRIES'             => ['retries', 'int'],
+    'AI_RETRY_BACKOFF_MS'    => ['retry_backoff_ms', 'int'],
     'AI_DAILY_MESSAGE_LIMIT' => ['daily_limit', 'int'],
     'AI_GLOBAL_DAILY_LIMIT'  => ['global_daily_limit', 'int'],
     'AI_MINUTE_LIMIT'        => ['minute_limit', 'int'],
