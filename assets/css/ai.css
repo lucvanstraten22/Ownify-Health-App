@@ -407,6 +407,9 @@
 
 /* Three questions to start with: quiet glass chips, one per line on a
    phone so none is cut off. */
+/* Switched off (50.5): no questions to start with. */
+.ai-suggestions[hidden] { display: none; }
+
 .ai-suggestions {
     display: flex;
     flex-direction: column;

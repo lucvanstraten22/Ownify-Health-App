@@ -107,10 +107,15 @@ if (!function_exists('ai_config')) {
      * Whether the assistant can answer at all, and if not, why — for the
      * people who run Ownify, never shown as such to a user.
      *
-     * @return array{ok: bool, reason: ?string}   reason: not_installed | no_key | bad_model
+     * @return array{ok: bool, reason: ?string}   reason: off | not_installed | no_key | bad_model
      */
     function ai_readiness(): array
     {
+        /* Switched off by the owner (config/ai.php): before anything else,
+           so nothing is asked of Gemini whatever is configured. */
+        if ((ai_config()['switched_off'] ?? false) === true) {
+            return ['ok' => false, 'reason' => 'off'];
+        }
         if (!ai_installed()) {
             return ['ok' => false, 'reason' => 'not_installed'];
         }

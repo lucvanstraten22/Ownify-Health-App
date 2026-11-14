@@ -26,6 +26,7 @@
  *   GEMINI_CONNECT_TIMEOUT    connect_timeout  seconds to reach Google
  *   AI_RETRIES                retries          retries of one request, at most
  *   AI_RETRY_BACKOFF_MS       retry_backoff_ms the first wait before a retry
+ *   AI_SWITCHED_OFF           switched_off     1/0: OwnifyAI off or on
  *   AI_DAILY_MESSAGE_LIMIT    daily_limit      questions per person per day
  *   AI_GLOBAL_DAILY_LIMIT     global_daily_limit   Gemini requests per day,
  *                                                  everybody together
@@ -54,6 +55,15 @@
 declare(strict_types=1);
 
 $settings = [
+
+    /**
+     * OwnifyAI switched off (50.5, the owner's decision): Gemini cannot be made
+     * to answer on the free tier (docs/AI.md). Nothing is sent to Gemini;
+     * the sheet keeps its conversations, shows its field disabled and,
+     * always above it, errors.off from config/dashboard.php. Set to false
+     * to switch it on again.
+     */
+    'switched_off' => true,
 
     /** A model on the free tier. Changing it is a line here, or GEMINI_MODEL. */
     'model' => 'gemini-3.8-flash',
@@ -203,13 +213,18 @@ foreach ([
     'AI_MINUTE_LIMIT'        => ['minute_limit', 'int'],
     'AI_THINKING_LEVEL'      => ['thinking_level', 'string'],
     'AI_DIAGNOSTIC_LOG'      => ['diagnostic_log', 'string'],
+    'AI_SWITCHED_OFF'        => ['switched_off', 'bool'],
 ] as $variable => [$key, $type]) {
     $value = getenv($variable);
     if (!is_string($value) || $value === '') {
         $value = isset($_SERVER[$variable]) && is_string($_SERVER[$variable]) ? $_SERVER[$variable] : '';
     }
     if ($value !== '') {
-        $settings[$key] = $type === 'int' ? (int) $value : $value;
+        $settings[$key] = match ($type) {
+            'int'   => (int) $value,
+            'bool'  => in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true),
+            default => $value,
+        };
     }
 }
 

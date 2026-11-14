@@ -54,6 +54,9 @@
         conversations: [],
         usage: session.usage || { used: 0, limit: 0, remaining: 0 },
         available: session.available !== false,
+        /* Switched off (50.5, config/ai.php): the field stays disabled and the
+           notice always shows. */
+        off: session.unavailable === 'off',
         unavailableNotice: session.notice || null,
         lastFailed: null,
         waitUntil: 0,
@@ -340,6 +343,14 @@
 
     /** The field works unless the day's messages are used up; the button when there is something to send. */
     function refreshComposer() {
+        if (state.off) {
+            input.disabled = true;
+            send.disabled = true;
+            if (left) { left.hidden = true; }
+            setNotice(state.unavailableNotice || errors.off || null);
+            return;
+        }
+
         var out = state.usage && state.usage.limit > 0 && state.usage.remaining <= 0;
 
         /* Never disabled while an answer is on its way: on a phone that
@@ -516,7 +527,10 @@
         if (!next) { return; }
 
         state.available = next.available !== false;
+        state.off = next.unavailable === 'off';
         state.unavailableNotice = next.notice || null;
+        var suggestions = sheet.querySelector('[data-ai-suggestions]');
+        if (suggestions) { suggestions.hidden = state.off; }
         setUsage(next.usage);
         if (noData) { noData.hidden = !!next.has_data; }
 
@@ -530,6 +544,8 @@
     }
 
     function viewFor(consent) {
+        /* Switched off (50.5): no consent to ask for — the chat, its field disabled. */
+        if (state.off) { return 'chat'; }
         return consent === 'accepted' ? 'chat' : (consent === 'declined' ? 'declined' : 'consent');
     }
 
@@ -615,7 +631,7 @@
 
     function ask(text) {
         text = (text || '').trim();
-        if (!text || state.busy || state.queued) { return; }
+        if (state.off || !text || state.busy || state.queued) { return; }
 
         /* The minute is still full: it waits, and goes by itself. */
         if (waitLeft() > 0) {

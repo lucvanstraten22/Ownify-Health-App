@@ -303,6 +303,9 @@ return [
         ],
 
         'errors' => [
+            /* Switched off for good (config/ai.php switched_off, 50.5): always
+               above the disabled field. */
+            'off'         => 'OwnifyAI is helaas niet werkend te krijgen.',
             'unavailable' => 'OwnifyAI is tijdelijk niet beschikbaar. Probeer het later opnieuw.',
             'quota'       => 'De gratis gebruikslimiet van OwnifyAI is bereikt. Probeer het later opnieuw.',
             /* The minute is full for everybody together (includes/ai/pace.php);

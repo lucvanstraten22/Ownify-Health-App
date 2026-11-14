@@ -151,7 +151,7 @@ if (!function_exists('ai_chat')) {
             error_log('[ownify] ai: not available: ' . $ready['reason']
                 . ($ready['reason'] === 'no_key' ? ' — set GEMINI_API_KEY (docs/AI.md)' : ''));
 
-            return ai_fail(503, 'unavailable', ['usage' => ai_usage_summary($userId)]);
+            return ai_fail(503, $ready['reason'] === 'off' ? 'off' : 'unavailable', ['usage' => ai_usage_summary($userId)]);
         }
 
         if (ai_quota_blocked_until() !== null) {
@@ -723,9 +723,11 @@ if (!function_exists('ai_chat')) {
     {
         $ready = ai_readiness();
 
-        /* Why the assistant cannot answer right now, if it cannot: not set
-           up (no key, no migration) or Gemini's free quota used up. */
+        /* Why the assistant cannot answer right now, if it cannot: switched
+           off (50.5), not set up (no key, no migration) or Gemini's free quota
+           used up. */
         $unavailable = match (true) {
+            $ready['reason'] === 'off' => 'off',
             !$ready['ok'] => 'unavailable',
             ai_quota_blocked_until() !== null,
             ai_usage_global_calls() >= (int) ai_config()['global_daily_limit'] => 'quota',

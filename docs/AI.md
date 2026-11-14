@@ -1,5 +1,16 @@
 # OwnifyAI
 
+> **Switched off (50.5, the owner's decision).** `gemini-3.8-flash` could not
+> be made to answer on the free tier, and Google's terms allow only paid
+> access for an app used in the EEA. `config/ai.php` `switched_off` is `true`
+> (or `AI_SWITCHED_OFF=1`): `ai_readiness()` says `off`, nothing is sent to
+> Gemini, `chat.php` answers 503 `off`, and the sheet opens on the chat with
+> its field and send button disabled, no starter questions, and always,
+> above the field, *OwnifyAI is helaas niet werkend te krijgen.*
+> (`errors.off`, config/dashboard.php). Same on Android (`OwnifyAssistant.off`);
+> an installed app from before 50.5 shows the server's notice and gets 503
+> `off` if it asks. Set `switched_off` to `false` to switch it on again.
+
 The assistant in the sheet you swipe up — on the website and in the Android
 app. It answers questions about the person's own sleep, nutrition, training,
 activity, body measurements, Health Score and goals, with Google Gemini on the

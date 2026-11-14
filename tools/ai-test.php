@@ -319,6 +319,8 @@ $appEnv = [
     'GEMINI_TIMEOUT'         => '2',
     /* Retries wait 100 ms, then 300 (production: 1 s, then 3). */
     'AI_RETRY_BACKOFF_MS'    => '100',
+    /* Switched on for these tests; switched off is tested on its own server. */
+    'AI_SWITCHED_OFF'        => '0',
     'AI_DAILY_MESSAGE_LIMIT' => '20',
     'AI_GLOBAL_DAILY_LIMIT'  => '100000',
     /* The temporary diagnostic, on for this run (checked at the end). */
@@ -334,6 +336,11 @@ $noKeyEnv = $appEnv;
 unset($noKeyEnv['GEMINI_API_KEY']);
 $noKeyPort   = free_port();
 $noKeyServer = serve($noKeyPort, ['-t', $root], $noKeyEnv);
+
+/* One switched off, as the live site is since 50.5 (config/ai.php). */
+$offEnv    = ['AI_SWITCHED_OFF' => '1'] + $appEnv;
+$offPort   = free_port();
+$offServer = serve($offPort, ['-t', $root], $offEnv);
 
 /* A third with Gemini nowhere to be reached: a port nothing listens on. */
 $downEnv = ['GEMINI_API_BASE' => 'http://127.0.0.1:' . free_port(), 'AI_DIAGNOSTIC_LOG' => $fakeDir . '/diagnostic-down.log'] + $appEnv;
@@ -861,6 +868,19 @@ try {
         && substr_count($down, 'retryable  phase=connecting  curl=7 ') === 3
         && str_contains($down, 'retry 2 in '), summary($r));
 
+    /* ------------------------------------------- switched off (50.5) */
+
+    forget_sent();
+    $offBase = 'http://127.0.0.1:' . $offPort;
+    $state = http('/api/ai/state.php', ['base' => $offBase, 'bearer' => $sanne['token']])['body'];
+    check('switched off: the sheet is told off, with the sentence for above the field',
+        ($state['available'] ?? null) === false && ($state['unavailable'] ?? null) === 'off'
+        && ($state['notice'] ?? null) === 'OwnifyAI is helaas niet werkend te krijgen.', json_encode([$state['available'] ?? null, $state['unavailable'] ?? null, $state['notice'] ?? null]));
+    $usedBefore = used_today($sanne['id']);
+    $r = http('/api/ai/chat.php', ['base' => $offBase, 'bearer' => $sanne['token'], 'form' => ['message' => 'Hoe sliep ik?']]);
+    check('switched off: a question is refused (503 off), nothing is sent to Gemini and nothing is counted',
+        $r['status'] === 503 && ($r['body']['code'] ?? null) === 'off' && sent() === [] && used_today($sanne['id']) === $usedBefore, summary($r));
+
     forget_sent();
     gemini(says('Zo sta je ervoor.'));
     chat($sanne, 'Hoe sta ik in de ranglijst?', $conversation);
@@ -937,7 +957,7 @@ try {
     }
     db_run("DELETE FROM ai_service_state WHERE name = 'quota_block'");
 
-    foreach ([$server, $noKeyServer, $downServer, $fake] as $process) {
+    foreach ([$server, $noKeyServer, $downServer, $offServer, $fake] as $process) {
         proc_terminate($process);
     }
     array_map('unlink', glob($fakeDir . '/*') ?: []);

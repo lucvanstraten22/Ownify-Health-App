@@ -102,6 +102,7 @@ return [
     'Om OwnifyAI te gebruiken moet je toestaan dat je Ownify-gezondheidsgegevens door Google Gemini worden verwerkt. Zolang je dat niet doet, gaat er niets naar Gemini.' => 'To use OwnifyAI, you need to allow your Ownify health data to be processed by Google Gemini. Until you do, nothing goes to Gemini.',
     'Toestemming bekijken' => 'Review consent',
     'OwnifyAI is tijdelijk niet beschikbaar. Probeer het later opnieuw.' => 'OwnifyAI is temporarily unavailable. Please try again later.',
+    'OwnifyAI is helaas niet werkend te krijgen.' => 'Unfortunately, OwnifyAI could not be made to work.',
     'De gratis gebruikslimiet van OwnifyAI is bereikt. Probeer het later opnieuw.' => 'OwnifyAI\'s free usage limit has been reached. Please try again later.',
     'Het is even druk bij OwnifyAI. Over %d s kun je weer iets vragen.' => 'OwnifyAI is busy right now. You can ask again in %d s.',
     'Even druk — je vraag wacht' => 'A little busy — your question is waiting',

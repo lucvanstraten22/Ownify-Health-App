@@ -154,6 +154,13 @@ object OwnifyAssistant {
 
     var available by mutableStateOf<Boolean?>(null)
         private set
+
+    /** Why it cannot answer, as the server says ("off" since 50.5: switched off for good). */
+    var unavailable by mutableStateOf<String?>(null)
+        private set
+
+    /** Switched off (50.5, config/ai.php): nothing is asked; the field stays disabled. */
+    fun off(session: AiSession): Boolean = (if (loaded) unavailable else session.unavailable) == "off"
     var usage by mutableStateOf<AiUsage?>(null)
         private set
     var hasData by mutableStateOf<Boolean?>(null)
@@ -269,7 +276,8 @@ object OwnifyAssistant {
     )
 
     /** The screen for this moment: the pages' answer ([session]) unless this holder heard a newer one. */
-    fun view(session: AiSession): AiView = when (consent ?: session.consent) {
+    fun view(session: AiSession): AiView = if (off(session)) AiView.Chat else when (consent ?: session.consent) {
+        // Switched off (50.5): no consent to ask for — the chat, its field disabled.
         "accepted" -> AiView.Chat
         "declined" -> if (reviewing) AiView.Consent else AiView.Declined
         else -> AiView.Consent
@@ -323,6 +331,7 @@ object OwnifyAssistant {
         if (incoming != consent) reviewing = false
         consent = incoming
         available = body.optBoolean("available", true)
+        unavailable = body.str("unavailable")
         usage = AiUsage.parse(body.obj("usage"))
         hasData = body.bool("has_data")
         conversations = body.arr("conversations").map(AiConversation::parse)
@@ -332,6 +341,7 @@ object OwnifyAssistant {
         historyStale = false
 
         notice = when {
+            unavailable == "off" -> AiNotice(body.str("notice") ?: copy.error("off"))
             available == false -> AiNotice(body.str("notice") ?: copy.error("unavailable"))
             usage?.out == true -> AiNotice(copy.error("limit"))
             else -> null
@@ -345,7 +355,7 @@ object OwnifyAssistant {
 
     fun ask(context: Context, copy: AiCopy, question: String) {
         val text = question.trim()
-        if (text.isEmpty() || sending != null || queued != null) return
+        if (unavailable == "off" || text.isEmpty() || sending != null || queued != null) return
 
         // The minute is still full: it waits, and goes by itself.
         if (waitLeft() > 0) {
@@ -487,6 +497,7 @@ object OwnifyAssistant {
         conversation = null
         messages = emptyList()
         notice = when {
+            unavailable == "off" -> AiNotice(copy.error("off"))
             available == false -> AiNotice(copy.error("unavailable"))
             usage?.out == true -> AiNotice(copy.error("limit"))
             else -> null
@@ -564,6 +575,12 @@ object OwnifyAssistant {
             }
 
             "limit" -> notice = AiNotice(outcome.message)
+
+            // Switched off on the server (50.5): no retry, the field stays disabled.
+            "off" -> {
+                unavailable = "off"
+                notice = AiNotice(outcome.message)
+            }
 
             // The minute is full for everybody: the composer counts down, the question stays.
             "busy" -> {

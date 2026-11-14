@@ -617,7 +617,8 @@ private fun EmptyState(ai: AiCopy, modifier: Modifier) {
                 Modifier.padding(top = Ownify.Space5).widthIn(max = 360.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(Ownify.Space2)
             ) {
-                ai.empty.suggestions.forEach { suggestion ->
+                // Switched off (50.5): no questions to start with, as on the website.
+                if (!OwnifyAssistant.off(ai.session)) ai.empty.suggestions.forEach { suggestion ->
                     Suggestion(suggestion) { OwnifyAssistant.ask(context, ai, suggestion) }
                 }
             }
@@ -844,8 +845,11 @@ private fun Composer(ai: AiCopy) {
     val out = usage.out
     val sending = a.sending != null
     val unavailable = (a.available ?: ai.session.available) == false
+    // Switched off (50.5): the field stays disabled and this notice always shows.
+    val off = a.off(ai.session)
 
-    val notice = a.notice
+    val notice = (if (off) AiNotice(ai.session.notice ?: ai.error("off")) else null)
+        ?: a.notice
         ?: if (unavailable) AiNotice(ai.session.notice ?: ai.error("unavailable")) else null
         ?: if (out) AiNotice(ai.error("limit")) else null
 
@@ -888,7 +892,7 @@ private fun Composer(ai: AiCopy) {
                     .padding(vertical = 9.dp)
                     .onFocusChanged { focused = it.isFocused }
                     .semantics { contentDescription = ai.composerAria },
-                enabled = !out,
+                enabled = !out && !off,
                 textStyle = style,
                 maxLines = 5,
                 cursorBrush = SolidColor(Ownify.TextPrimary),
@@ -900,12 +904,12 @@ private fun Composer(ai: AiCopy) {
                     }
                 }
             )
-            SendButton(ai.send, enabled = !out && !sending && a.queued == null && a.draft.isNotBlank()) {
+            SendButton(ai.send, enabled = !off && !out && !sending && a.queued == null && a.draft.isNotBlank()) {
                 a.ask(context, ai, a.draft)
             }
         }
 
-        val left = ai.remainingText(usage)
+        val left = if (off) "" else ai.remainingText(usage)
         if (left.isNotEmpty()) {
             T(left, JStyle.Meta, Modifier.fillMaxWidth().padding(top = Ownify.Space2), align = TextAlign.Center)
         }

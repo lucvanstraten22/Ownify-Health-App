@@ -21,7 +21,8 @@ declare(strict_types=1);
 
 $ai      = $data['ai'];
 $session = $ai['session'] ?? ['consent' => 'unknown', 'available' => false, 'usage' => ['used' => 0, 'limit' => 0, 'remaining' => 0]];
-$view    = match ($session['consent'] ?? 'unknown') {
+/* Switched off (50.5): no consent to ask for — the chat, its field disabled. */
+$view    = ($session['unavailable'] ?? null) === 'off' ? 'chat' : match ($session['consent'] ?? 'unknown') {
     'accepted' => 'chat',
     'declined' => 'declined',
     default    => 'consent',

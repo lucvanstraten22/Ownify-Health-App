@@ -26,7 +26,8 @@ $empty   = $ai['empty'];
         <p class="ai-empty__status"><?= e($empty['body']) ?></p>
         <p class="ai-empty__note" data-ai-no-data <?= empty($session['has_data']) ? '' : 'hidden' ?>><?= e($empty['no_data']) ?></p>
 
-        <div class="ai-suggestions" role="list">
+        <?php /* Switched off (50.5): no questions to start with. */ ?>
+        <div class="ai-suggestions" role="list" data-ai-suggestions <?= ($session['unavailable'] ?? null) === 'off' ? 'hidden' : '' ?>>
             <?php foreach ($empty['suggestions'] as $suggestion): ?>
                 <button type="button" class="ai-suggestion press" role="listitem" data-ai-suggestion><?= e($suggestion) ?></button>
             <?php endforeach; ?>
